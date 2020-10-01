@@ -1,0 +1,253 @@
+import data.fintype.basic
+import data.set 
+import data.finset
+import tactic
+
+noncomputable theory
+localized "attribute [instance, priority 100000] classical.prop_decidable
+  noncomputable theory" in classical
+open_locale classical
+open finset 
+
+universes u v
+
+@[ext]
+structure matroid (γ : Type u) [fintype γ] :=
+(r : finset γ → ℕ)
+(R1 : ∀ (X : finset γ), r X ≤ X.card)
+(R2 : ∀ {X Y : finset γ}, X ⊆ Y → r X ≤ r Y)
+(R3 : ∀ (X Y : finset γ), r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y)
+
+namespace matroid
+variables {γ : Type u} [fintype γ] (M : matroid γ)
+
+abbreviation E (M : matroid γ) : finset γ := univ
+
+@[simp]
+lemma r_empty_eq_zero : M.r ∅ = 0 := 
+by linarith [M.R1 ∅, @card_empty γ]
+
+@[simp]
+lemma r_univ_compl_eq_zero : M.r M.Eᶜ = 0 :=
+by { convert M.r_empty_eq_zero, convert_to ⊤ᶜ = _, simp only [compl_top], refl }
+
+@[simp] lemma subset_E (X : finset γ) : X ⊆ M.E :=
+subset_univ X
+
+lemma r_subadditive (X Y : finset γ) : M.r (X ∪ Y) ≤ M.r X + M.r Y :=
+le_trans (nat.le.intro rfl) (M.R3 X Y)
+
+lemma r_le_union (X Y : finset γ) : M.r X ≤ M.r (X ∪ Y) :=
+by { apply R2, apply subset_union_left }
+
+lemma r_le_union_right (X Y : finset γ) : M.r Y ≤ M.r (X ∪ Y) :=
+by { rw union_comm, apply r_le_union }
+
+lemma r_compl (X : finset γ) : M.r M.E ≤ M.r X + M.r Xᶜ :=
+begin
+  convert M.R3 X Xᶜ,
+  suffices h1 : X ∪ Xᶜ = univ,
+  suffices h2 : X ∩ Xᶜ = ∅,
+  rw [h1, h2, r_empty_eq_zero], simp,
+  simp [compl_eq_univ_sdiff],
+  simp [compl_eq_univ_sdiff, subset_univ],
+end
+
+lemma corank_le (M : matroid γ) (X : finset γ) : M.r M.E - M.r Xᶜ ≤ X.card :=
+begin
+  have hxc := M.R2 (M.subset_E Xᶜ),
+  have h1 := M.r_compl X,
+  have h2 := M.R1 X,
+  omega,
+end
+
+/--
+The dual matroid
+-/
+def dual (M : matroid γ) : matroid γ :=
+{ r := λ X, X.card + M.r Xᶜ - M.r M.E,
+  R1 := λ X, begin
+    have h : M.r Xᶜ ≤ M.r M.E := M.R2 (subset_univ _),
+    omega,
+  end,
+  R2 := λ X Y hXY, begin 
+    sorry,
+  end,
+  R3 := λ X Y, begin
+    sorry
+  end }
+
+end matroid    
+
+/--
+A "submatroid" is the matroid restricted to a subset then contracted.
+The rank function is then meant to be for subsets of `E` that contain
+`F`.
+-/
+@[ext]
+structure submatroid {γ : Type u} [fintype γ] (M : matroid γ) :=
+(E : finset γ)
+(F : finset γ)
+(F_sub : F ⊆ E . obviously)
+
+namespace submatroid
+variables {γ : Type u} [fintype γ] {M : matroid γ}
+
+
+def r (M' : submatroid M) (X : finset γ) : ℕ := M.r (X ∪ M'.F) - M.r M'.F
+
+lemma R1 (M' : submatroid M) (X : finset γ) : M'.r X ≤ X.card :=
+begin
+  dunfold r,
+  have h1 := M.R1 X,
+  have h2 := M.r_subadditive X M'.F,
+  omega,
+end
+
+lemma R2 (M' : submatroid M) {X Y : finset γ} (hX : X ⊆ Y) : M'.r X ≤ M'.r Y :=
+begin
+  dunfold r,
+  have hX' : X ∪ M'.F ⊆ Y ∪ M'.F,
+  { intro x, simp only [mem_union], intro h, cases h,
+    left, exact hX h,
+    right, exact h, },
+  have h1 := M.R2 hX',
+  omega,
+end
+
+lemma R3 (M' : submatroid M) (X Y : finset γ) : M'.r (X ∪ Y) + M'.r (X ∩ Y) ≤ M'.r X + M'.r Y :=
+begin
+  dunfold r,
+  have h1 := M.R3 (X ∪ M'.F) (Y ∪ M'.F),
+  have ha : X ∪ M'.F ∪ (Y ∪ M'.F) = X ∪ Y ∪ M'.F,
+  { rw [union_assoc, union_assoc X Y], congr' 1,
+    rw [union_comm, union_assoc], simp, },
+  rw ha at h1,
+  have hb : (X ∪ M'.F) ∩ (Y ∪ M'.F) = (X ∩ Y) ∪ M'.F,
+  { rw union_distrib_right, },
+  rw hb at h1,
+  have h2 := M.r_le_union_right Y M'.F,
+  have h3 := M.r_le_union_right X M'.F,
+  have h4 := M.r_le_union_right (X ∪ Y) M'.F,
+  have h5 := M.r_le_union_right (X ∩ Y) M'.F,
+  omega,
+end
+
+def to_matroid (M' : submatroid M) : matroid (↑M'.E : set γ) :=
+{ r := λ X, M'.r (X.map (function.embedding.subtype _)),
+  R1 := λ X, by { rw ← card_map, apply M'.R1 },
+  R2 := λ X Y hs, M'.R2 (map_subset_map.mpr hs),
+  R3 := λ X Y, by { rw [map_union, map_inter], apply M'.R3 } }
+
+instance : has_top (submatroid M) :=
+{ top := { E := univ, F := ∅ } }
+
+instance : has_bot (submatroid M) :=
+{ bot := { E := ∅, F := ∅ } }
+
+/--
+Delete all of `D` from the given submatroid.
+`D` is allowed have elements outside of `M'.E`.
+To delete from a matroid `M`, there is also the definition `M.delete D`
+to get a `submatroid M`.
+-/
+def delete (M' : submatroid M) (D : finset γ) : submatroid M := 
+{ E := M'.E \ D, F := M'.F \ D,
+  F_sub := begin
+    intro x, simp only [and_imp, mem_sdiff],
+    intros xel xnel, use M'.F_sub xel,
+  end }
+
+/--
+Contract the elements of `D`.  `D` is allowed to have elements outside of `M'.E`.
+-/
+def contract (M' : submatroid M) (D : finset γ) : submatroid M :=
+{ E := M'.E ∪ D, F := M'.F ∪ D,
+  F_sub := begin
+    intro x, simp only [mem_union], intro h',
+    cases h', exact or.inl (M'.F_sub h'), exact or.inr h',
+  end }
+
+/--
+This is a lemma that seems to be missing from mathlib. (Using a lazy proof for now.)
+-/
+lemma sdiff_sdiff_eq_sdiff_union (s t u : finset γ) : s \ t \ u = s \ (t ∪ u) :=
+begin
+  ext x, simp, push_neg, tidy,
+end
+
+lemma delete_delete_eq_delete (M' : submatroid M) (F F' : finset γ) :
+  (M'.delete F).delete F' = M'.delete (F ∪ F') :=
+begin
+  ext1,
+  repeat { dsimp [delete], apply sdiff_sdiff_eq_sdiff_union, },
+end
+
+lemma contract_contract_eq_contract (M' : submatroid M) (F F' : finset γ) :
+  (M'.contract F).contract F' = M'.contract (F ∪ F') :=
+begin
+  ext, simp [contract], simp [contract],
+end
+
+def dual (M' : submatroid M) : submatroid M.dual :=
+{ E := M.E \ M'.F,
+  F := M.E \ M'.E,
+  F_sub := begin
+    intro x,
+    simp only [true_and, mem_sdiff, mem_univ],
+    contrapose, push_neg, intro h, exact M'.F_sub h,
+  end }
+
+lemma dual_contract (M' : submatroid M) (D : finset γ) :
+  (M'.contract D).dual = M'.dual.delete D :=
+begin
+  ext, repeat { dsimp [contract, delete, dual], rw sdiff_sdiff_eq_sdiff_union, },
+end
+
+lemma dual_delete (M' : submatroid M) (D : finset γ) :
+  (M'.delete D).dual = M'.dual.contract D :=
+begin
+  ext,
+  dsimp [contract, delete, dual],
+  simp only [true_and, mem_union, not_and, mem_sdiff, mem_univ, not_not],
+  split,
+  intro h', by_cases h'' : a ∈ M'.F, exact or.inr (h' h''), exact or.inl h'',
+  intro h', cases h', cc, cc,
+  dsimp [contract, delete, dual],
+  simp only [true_and, mem_union, not_and, mem_sdiff, mem_univ, not_not],
+  split,
+  intro h', by_cases h'' : a ∈ M'.E, exact or.inr (h' h''), exact or.inl h'',
+  intro h', cases h', cc, cc,
+end
+
+end submatroid
+
+namespace matroid
+variables {γ : Type u} [fintype γ]
+
+/--
+Deletion from a matroid, yielding a submatroid.
+-/
+def delete (M : matroid γ) (F : finset γ) : submatroid M :=
+(⊤ : submatroid M).delete F
+
+def contract (M : matroid γ) (F : finset γ) : submatroid M :=
+(⊤ : submatroid M).contract F
+
+
+@[simp] lemma dual_E_eq (M : matroid γ) : M.dual.E = M.E := rfl
+@[simp] lemma dual_r_eq (M : matroid γ) (X : finset γ) : M.dual.r X = X.card + M.r Xᶜ - M.r M.E := rfl
+
+lemma dual_dual_eq (M : matroid γ) : M.dual.dual = M :=
+begin
+  ext X,
+  change X.card + M.dual.r Xᶜ - M.dual.r M.dual.E = M.r X,
+  rw dual_E_eq, rw [dual_r_eq, dual_r_eq], simp [finset.card_compl],
+  have hh : fintype.card γ = M.E.card := rfl, rw hh,
+  have h1 := M.R1 X, have h2 := M.R1 M.E,
+  have h3 := M.subset_E X, have h4 := M.R2 h3,
+  have h5 := card_le_of_subset h3,
+  sorry, -- just need a few more inequalities to make omega happy, I think.
+end
+
+end matroid

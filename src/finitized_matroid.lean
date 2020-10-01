@@ -283,8 +283,18 @@ variable (M : α)
 variable (X : finset (γ M))
 #check matroids.to_matroid (dual (delete M X))
 #check matroids.to_matroid (contract (dual M) X)
+#check (matroids.γ (dual (delete M X)))
+#check (matroids.γ (contract (dual M) X))
 
-lemma contract_delete_dual (M: α) (X: finset (γ M)) : matroids.to_matroid(dual (delete M X)) = matroids.to_matroid(contract (dual M) X) := 
+def dual_equiv (M : α): matroid_contraction M ≃ submatroid (dual M) :=
+begin
+    
+end
+lemma dual_types (M: α) (X: finset (γ M)) : (matroids.γ (dual (delete M X))) = (matroids.γ (contract (dual M) X)) :=
+begin
+    sorry,
+end
+lemma contract_delete_dual (M: α) (X: finset (γ M)) : (matroids.to_matroid (dual (delete M X))) = (matroids.to_matroid (contract (dual M) X)) := 
 begin
    sorry, 
 end
