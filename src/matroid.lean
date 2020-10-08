@@ -86,10 +86,10 @@ def rank {E : finset α} (M: rank_matroid E) := M.r E (subset.refl E)
 
 @[simp] def is_loop {E : finset α} (M: rank_matroid E) (e : α) (he : e ∈ E) := (M.r {e} (singleton_subset_iff.mpr he) = 0)
 
-@[simp] lemma l1 {E: finset α}(M: rank_matroid E) (e: α) (he : e ∈ E) (hr: M.r {e} sorry ≤ 0) : is_loop M e sorry := 
+@[simp] lemma l1 {E: finset α}(M: rank_matroid E) (e: α) (he : e ∈ E) (hr: M.r {e} (by tidy) ≤ 0) : is_loop M e (by tidy) := 
 begin
   --have := (by simp):({e} ⊆ E),
-  have := (M.R1 (sorry : {e} ⊆ E) ).1,
+  have := (M.R1 (by tidy : {e} ⊆ E) ).1,
   simp, 
   linarith,
 end 
@@ -106,7 +106,8 @@ def is_spanning {E: finset α} (M: rank_matroid E) (X : finset α) (hX : X ⊆ E
 
 def is_hyperplane {E : finset α} (M: rank_matroid E) (H: finset α)(hH : H ⊆ E) := is_flat M H hH ∧ M.r H hH = M.r E (subset.refl E) - 1
 
-def is_circuit {E : finset α} (M: rank_matroid E) (C: finset α)(hC : C ⊆ E) := (is_dep M C hC) ∧ ∀ X ⊂ C, is_indep M X (sorry : X ⊆ E)
+def is_circuit {E : finset α} (M: rank_matroid E) (C: finset α)(hC : C ⊆ E) := (is_dep M C hC) ∧ ∀ X ⊂ C, is_indep M X 
+(by tidy : X ⊆ E)
 
 def is_basis {E : finset α} (M: rank_matroid E) (B : finset α) (hB : B ⊆ E) :=
     is_indep M B hB ∧ (∀ {X: finset α} (hbX : B ⊂ X) (hX : X ⊆ E), ¬ is_indep M X hX)
@@ -157,14 +158,14 @@ in
       let C := (E \ Y) ∩ (Y \ X),
       have hA : A = E \ X, exact sdiff_tel hXY hY,
       have hB : B ⊆ E, exact  subset.trans (sdiff_subset Y X) hY,
-      have hC : C = ∅, sorry,
+      have hC : C = ∅, tidy,
 
       have hXC : E \ X ⊆ E, exact sdiff_subset E X,
       --have : M.r (E \ Y) (hXc hY) + M.r B hB ≥ M.r (E \ X) (hXC),
       --{
-      have := eq_r M (sorry: (E \ Y) ∪ B ⊆ E) (sorry: (E \ Y) ∪ B = E \ X),
-      have := (M.R1 (sorry: ((E \ Y) ∩ B ⊆ E))).1,
-      have := M.R3 (sorry: E \ Y ⊆ E) hB,
+      have := eq_r M (by tidy: (E \ Y) ∪ B ⊆ E) (sdiff_tel hXY hY: (E \ Y) ∪ B = E \ X),
+      have := (M.R1 (by tidy: ((E \ Y) ∩ B ⊆ E))).1,
+      have := M.R3 (by tidy: E \ Y ⊆ E) hB,
       --  linarith,
       --} 
       
@@ -172,7 +173,7 @@ in
       {
         calc M.r B hB          = M.r (Y \ X) _    : by trivial
                            ... ≤ size (Y \ X)     : (M.R1 hB).2
-                           ... = size Y - size X  : by linarith [(sorry: (size (Y \ X ) = size Y - size X))],
+                           ... = size Y - size X  : by linarith [(begin unfold size, apply finset.card_sdiff, end: (size (Y \ X ) = size Y - size X))],
       },
       linarith,   
     end ,
@@ -624,7 +625,7 @@ begin
   have Nloopy: ∀ (a : α) (ha :a ∈ ((X ∪ Y) \ X)), N.r {a} sorry = 0,
   {
     intros a ha,
-    have ha': {a} ⊆ Y \ X, sorry,
+    have ha': {a} ⊆ Y \ X, tidy,
     suffices: N.r {a} sorry ≤ 0, linarith [(N.R1 (sorry: {a} ⊆ ((X ∪ Y) \ X))).1],
     --have hXa: X ∪ {a} ⊆ X ∪ Y, sorry,
     calc N.r {a} sorry = M.r ({a} ∪ X) sorry - M.r X sorry : by trivial
