@@ -77,13 +77,76 @@ def dual (M : matroid γ) : matroid γ :=
     sorry
   end }
 
-end matroid    
-
+/-
+invalid field notation, type is not of the form (C ...) where C is a constant
+  M'
+has type
+  ⁇
+-/
+end matroid 
 /--
 A "submatroid" is the matroid restricted to a subset then contracted.
 The rank function is then meant to be for subsets of `E` that contain
 `F`.
 -/
+
+
+@[ext] structure minor {γ : Type u} [fintype γ] (M : matroid γ) := 
+(C : finset γ)
+(D : finset γ)
+(H : C ∩ D = ∅)
+
+namespace minor 
+variables {γ : Type u} [fintype γ] {M : matroid γ}
+def r (M' : minor M) (X : finset γ) : ℕ := M.r (X ∪ M'.C) - M.r M'.C --This allows rank-evaluations of sets intersecting C ∪ D - maybe this is ok. 
+
+lemma R1 (M' : minor M) (X : finset γ) : M'.r X ≤ X.card :=
+begin
+  sorry
+end
+
+lemma R2 (M' : minor M) {X Y : finset γ} (hX : X ⊆ Y) : M'.r X ≤ M'.r Y :=
+begin
+  sorry
+end
+
+lemma R3 (M' : minor M) (X Y : finset γ) : M'.r (X ∪ Y) + M'.r (X ∩ Y) ≤ M'.r X + M'.r Y :=
+begin
+  sorry
+end
+
+
+def to_matroid (M' : minor M) : matroid (↑(M.E \ M'.C \ M'.D) : set γ) :=
+{ r := λ X, M'.r (X.map (function.embedding.subtype _)),
+  R1 := λ X, by { rw ← card_map, apply M'.R1 },
+  R2 := λ X Y hs, M'.R2 (map_subset_map.mpr hs),
+  R3 := λ X Y, by { rw [map_union, map_inter], apply M'.R3 } }
+@[simp]
+def delete (M' : minor M) (D' : finset γ) (H : D' ∩ (M'.C ∪ M'.D) = ∅) : minor M := 
+{ C := M'.C , D := D' ∪ M'.D, H := 
+begin
+  have := M'.H,
+  sorry, 
+end, 
+}
+@[simp]
+def contract (M' : minor M) (C': finset γ) (H: C' ∩ (M'.C ∪ M'.D) = ∅) : minor M := 
+{ C := C' ∪ M'.C, D := M'.D, H := sorry, 
+}
+
+
+def dual (M' : minor M) : minor M.dual :=
+{ C := M'.D,
+  D := M'.C,
+  H := calc M'.D ∩ M'.C = M'.C ∩ M'.D : inter_comm M'.D M'.C ... = ∅ : M'.H,
+}
+
+instance : has_top (minor M) :=
+{ top := { C := ∅, D := ∅, H := by tidy } }
+
+end minor 
+
+
 @[ext]
 structure submatroid {γ : Type u} [fintype γ] (M : matroid γ) :=
 (E : finset γ)
@@ -151,6 +214,7 @@ Delete all of `D` from the given submatroid.
 To delete from a matroid `M`, there is also the definition `M.delete D`
 to get a `submatroid M`.
 -/
+@[simp]
 def delete (M' : submatroid M) (D : finset γ) : submatroid M := 
 { E := M'.E \ D, F := M'.F \ D,
   F_sub := begin
@@ -159,10 +223,11 @@ def delete (M' : submatroid M) (D : finset γ) : submatroid M :=
   end }
 
 /--
-Contract the elements of `D`.  `D` is allowed to have elements outside of `M'.E`.
+Contract the elements of `C`.  `C` is allowed to have elements outside of `M'.E`.
 -/
-def contract (M' : submatroid M) (D : finset γ) : submatroid M :=
-{ E := M'.E ∪ D, F := M'.F ∪ D,
+@[simp]
+def contract (M' : submatroid M) (C : finset γ) : submatroid M :=
+{ E := M'.E ∪ C, F := M'.F ∪ C,
   F_sub := begin
     intro x, simp only [mem_union], intro h',
     cases h', exact or.inl (M'.F_sub h'), exact or.inr h',
@@ -249,5 +314,58 @@ begin
   have h5 := card_le_of_subset h3,
   sorry, -- just need a few more inequalities to make omega happy, I think.
 end
+
+@[simp]
+def mdelete (M : matroid γ) (F : finset γ) : minor M :=
+  { C := ∅, D := F, H := empty_inter F }
+
+@[simp]
+def mcontract (M : matroid γ) (F : finset γ) : minor M :=
+  { C := F, D := ∅, H := inter_empty F }
+
+lemma cd_rank_equal (M : matroid γ) (X : finset γ) : (delete M X).dual.r =
+  (contract M.dual X).r := 
+begin
+  sorry, 
+end
+
+lemma cd_matroid_equal (M : matroid γ) (X : finset γ) : (delete M X).dual== (contract M.dual X) :=
+begin
+  sorry, 
+end
+
+--lemma something {C: finset γ}{D: finset γ}(h: C ∩ D = ∅) : D ∩ C = ∅ := 
+
+lemma mdelete_D (M : matroid γ) (D : finset γ) : (M.mdelete D).D = D := rfl
+
+lemma clear_emptl {C D : finset γ} (h : C ∩ D = ∅) : C ∩ (∅ ∪ D) = ∅ := by tidy
+lemma clear_emptr {C D : finset γ} (h : C ∩ D = ∅) : D ∩ (C ∪ ∅)  = ∅ := sorry 
+
+
+lemma cd_eq_dc (M: matroid γ) (C: finset γ) (D: finset γ) (h: C ∩ D = ∅) :
+  (minor.contract (mdelete M D) C (clear_emptl h)) =
+  (minor.delete (mcontract M C) D (clear_emptr h)) := 
+by apply minor.ext; simp
+
+
+lemma cd_eq_dc_m (M: matroid γ) (C: finset γ) (D: finset γ) (h: C ∩ D = ∅) :
+  minor.to_matroid (minor.contract (mdelete M D) C (clear_emptl h)) ==
+  minor.to_matroid (minor.delete (mcontract M C) D (clear_emptr h)) := by rw cd_eq_dc
+
+
+/-
+{C := ∅, D := D, H := _}.contract C _).C = ({C := C, D := ∅, H := _}.delete D _).C
+-/
+/-
+⊢ a ∈ ((M.mdelete D).contract C _).C ↔ a ∈ ((M.mcontract C).delete D _).C
+γ: Type u
+_inst_1: fintype γ
+M: matroid γ
+CD: finset γ
+h: C ∩ D = ∅
+a: γ
+⊢ a ∈ ((M.mdelete D).contract C _).D ↔ a ∈ ((M.mcontract C).delete D _).D
+-/
+
 
 end matroid
