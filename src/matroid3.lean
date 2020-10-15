@@ -365,6 +365,10 @@ end
 
 --lemma something {C: finset γ}{D: finset γ}(h: C ∩ D = ∅) : D ∩ C = ∅ := 
 
+
+def make_minor (M : matroid γ) (C D : finset γ) (h : C ∩ D = ∅) : minor M :=
+  { C := C, D := D, H := h }
+
 lemma mdelete_D (M : matroid γ) (D : finset γ) : (M.mdelete D).D = D := rfl
 
 lemma clear_emptl {C D : finset γ} (h : C ∩ D = ∅) : C ∩ (∅ ∪ D) = ∅ := by tidy
@@ -381,7 +385,58 @@ lemma cd_eq_dc_m (M: matroid γ) (C: finset γ) (D: finset γ) (h: C ∩ D = ∅
   minor.to_matroid (minor.contract (mdelete M D) C (clear_emptl h)) ==
   minor.to_matroid (minor.delete (mcontract M C) D (clear_emptr h)) := by rw cd_eq_dc
 
+variables M : matroid γ 
+variables C D : finset γ 
+lemma cd_eq_dc_dual (M : matroid γ)  (C D : finset γ ) (h : C ∩ D = ∅) :
+  (make_minor M C D h).dual = M.dual.make_minor D C (sorry : D ∩ C = ∅) := 
+  begin
+    unfold make_minor, tidy,
+  end
+lemma cd_eq_dc_dual_m (M : matroid γ)  (C D : finset γ ) (h : C ∩ D = ∅) :
+(make_minor M C D h).dual.to_matroid = (M.dual.make_minor D C (sorry : D ∩ C = ∅)).to_matroid := 
+begin
+  unfold make_minor, tidy,
+end
 
+lemma dual_minors_r (M : matroid γ) (M' : minor M) :
+  M'.dual.to_matroid.r == M'.to_matroid.dual.r := 
+begin
+  unfold minor.to_matroid, 
+  unfold minor.dual,
+  unfold matroid.dual,
+  simp, 
+  ext, 
+  tidy, 
+  have h: {x // x ∉ M'.C ∧ x ∉ M'.D} = {x // x ∉ M'.dual.C ∧ x ∉ M'.dual.D},
+    apply congr_arg subtype,
+    apply funext,
+    intro x,
+    apply propext,
+    split,
+    intro h,
+    split,
+    exact h.2,
+    exact h.1,
+    intro h,
+    split,
+    exact h.2,
+    exact h.1,
+rw h,    
+-- we r here nao
+    
+end
+
+lemma dual_minors (M : matroid γ) (M' : minor M) :
+  M'.dual.to_matroid == M'.to_matroid.dual := 
+begin
+  unfold minor.to_matroid, 
+  unfold minor.dual,
+  unfold matroid.dual,
+
+
+end
+
+  /- (M \ D /  C)* = M* / D \ C -/
 /-
 {C := ∅, D := D, H := _}.contract C _).C = ({C := C, D := ∅, H := _}.delete D _).C
 -/
