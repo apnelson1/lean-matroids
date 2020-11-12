@@ -33,10 +33,14 @@ structure fin_bool_alg :=
   (size_monotone {X Y : subset} : (contained X Y) → size X ≤ size Y)
   (size_nonneg (X: subset) : 0 ≤ size X) 
   (size_modular (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
+  (size_empty : size bot = 0)
 
   (inter_subset_left (X Y : subset) : contained (inter X Y) X)
   (inter_subset_right (X Y : subset) : contained (inter X Y) Y)
   (inter_is_lb (X Y Z : subset) : (contained Z X) → (contained Z Y) → contained (inter X Y) Z) 
+
+  (union_compl (X: subset) : union X (compl X) = top)
+  (inter_compl (X: subset) : inter X (compl X) = bot)
 
 
 instance i1 : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
@@ -224,17 +228,17 @@ def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
 -- The empty set always has rank zero.
 lemma matroid.rank_empty (M : matroid) :
   M.rank ⊥ = 0
-    := le_antisymm (calc M.rank ⊥ ≤ (⊥ : M.ground.subset).size : M.R1 ⊥ ... = 0 : finite_set.subset.size_empty) (M.R0 ⊥)
+    := le_antisymm (calc M.rank ⊥ ≤ size (⊥ : M.subset) : M.R1 ⊥ ... = 0 : M.subset.size_empty) (M.R0 ⊥)
 
 -- The definition of the dual matroid. R2 is the trickier axiom to prove.
 def matroid.dual : matroid → matroid := fun M, {
-  ground := M.ground,
-  rank := (fun (X : M.ground.subset), M.rank Xᶜ + X.size - M.rank ⊤),
+  subset := M.subset,
+  rank := (fun (X : M.subset), M.rank Xᶜ + (size X) - M.rank ⊤),
 
   R0 := (fun X, calc
     0   ≤ M.rank Xᶜ + M.rank X - M.rank (X ∪ Xᶜ) - M.rank (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
-    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [X.union_compl, X.inter_compl]
-    ... ≤ M.rank Xᶜ + X.size   - M.rank ⊤                          : by linarith [M.R1 X, M.rank_empty]),
+    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [M.subset.union_compl X, M.subset.inter_compl X]
+    ... ≤ M.rank Xᶜ + (size X)  - M.rank ⊤                         : by linarith [M.R1 X, M.rank_empty]),
   R1 := (fun X, by linarith [M.R2 Xᶜ.subset_top]),
   R2 := (fun X Y (hXY : X ⊆ Y), let
     h₁ : (Xᶜ ∩ Y) ∩ Yᶜ = ⊥ := calc
