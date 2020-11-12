@@ -14,6 +14,7 @@ universes u v
 
 -- A concrete matroid
 @[ext]
+-- M: why not square brackets around fintype parameter?
 structure matroid_on (γ : Type u) (finite : fintype γ) :=
   (r : finset γ → ℤ)
   (R0 : ∀ (X : finset γ), 0 ≤ r X)
@@ -25,7 +26,7 @@ structure matroid_on (γ : Type u) (finite : fintype γ) :=
 structure matroid :=
   (γ : Type u)
   [class_finite : fintype γ]
-  (mat : @matroid_on γ class_finite)
+  (mat : @matroid_on γ class_finite) -- M: not need for @
 
 /--
 Type with matroids interpretations (for example matroid minors) may implement
@@ -33,6 +34,7 @@ this to get access to the `↟` coercion arrow.  (Note: this is getting
 around a problem with `has_coe` class resolution where universe
 variables do not seem to be inferrable.)
 
+-- M: simple_graphs2 seems to be missing from the repo.
 See simple_graphs2 for where this came from.
 -/
 class has_coe_to_matroid (α : Type u) :=
@@ -72,6 +74,7 @@ abbreviation E := @matroid_on.E M.γ M.class_finite M.mat
     @matroid_on.r_empty_eq_zero γ finite M.mat
 #check r_eq_empty_zero
 
+-- M: What? Typechecking seems to work fine? Oh ok, if uncommenting the type annotation.
 /- note that the typechecking doesn't work here -/
 @[simp] def r_univ_compl_eq_zero /- : M.mat.r M.mat.Eᶜ = 0 -/ :=
   let γ := M.γ,

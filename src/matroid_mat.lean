@@ -22,6 +22,36 @@ import tactic.linarith
 -- The API I would like to use for various basic objects.
 section API
 
+structure fin_bool_alg :=
+  (subset : Type)
+  (contained : subset → subset → Prop)
+  (bot top : subset)
+  (inter union : subset → subset → subset)
+  (compl : subset → subset)
+  (size : subset → ℤ)
+
+  (size_monotone {X Y : subset} : (contained X Y) → size X ≤ size Y)
+  (size_nonneg (X: subset) : 0 ≤ size X) 
+  (size_modular (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
+
+  (inter_subset_left (X Y : subset) : contained (inter X Y) X)
+  (inter_subset_right (X Y : subset) : contained (inter X Y) Y)
+  (inter_is_lb (X Y Z : subset) : (contained Z X) → (contained Z Y) → contained (inter X Y) Z) 
+
+
+instance i1 : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
+instance i2 {A : fin_bool_alg} : has_bot A := {bot := A.bot}
+instance i3 {A : fin_bool_alg} : has_top A := {top := A.top}
+instance i4 {A : fin_bool_alg} : has_inter A := {inter := A.inter}
+instance i5 {A : fin_bool_alg} : has_union A := {union := A.union}
+instance i6 {A : fin_bool_alg} : has_compl A := {compl := A.compl}
+instance i7 {A : fin_bool_alg} : has_subset A := {subset := A.contained} 
+
+def size {A : fin_bool_alg} (X : A) : ℤ := A.size X
+
+def fin_bool_alg.canonical (size : ℤ) :
+  (0 ≤ size) → fin_bool_alg := sorry
+
 def finite_set : Type := sorry
 def finite_set.subset : finite_set → Type := sorry
 def finite_set.subset.size {γ : finite_set} : γ.subset → ℤ := sorry
@@ -138,56 +168,57 @@ end API
 
 -- The rank-function definition of a matroid, as a packed structure.
 @[ext] structure matroid :=
-  (ground : finite_set)
-  (rank : ground.subset → ℤ)
+  (subset : fin_bool_alg)
+  (rank : subset → ℤ)
 
-  (R0 : forall (X : ground.subset),
+  (R0 : forall (X : subset),
     0 ≤ rank X)
-  (R1 : forall (X : ground.subset),
-    rank X ≤ X.size)
-  (R2 : forall {X Y : ground.subset},
+  (R1 : forall (X : subset),
+    rank X ≤ size X)
+  (R2 : forall {X Y : subset},
     X ⊆ Y → rank X ≤ rank Y)
-  (R3 : forall (X Y : ground.subset),
+  (R3 : forall (X Y : subset),
     rank (X ∩ Y) + rank (X ∪ Y) ≤ rank X + rank Y)
 
 -- An example: uniform matroids, with rank `k` and size `n`.
 def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
   fun (h0k : 0 ≤ k) (hkn : k ≤ n), let
-    γ : finite_set := finite_set.canonical n (le_trans h0k hkn)
+    A : fin_bool_alg := fin_bool_alg.canonical n (le_trans h0k hkn)
   in {
-    ground := γ,
-    rank := (fun (X : γ.subset), min k X.size),
+    subset := A,
+    rank := (fun (X : A), min k (size X)),
 
-    R0 := (fun X, le_min h0k X.size_nonneg),
+    R0 := (fun X, le_min h0k (A.size_nonneg X)),
     R1 := (fun X, min_le_right _ _),
-    R2 := (fun X Y (h : X ⊆ Y), le_min (min_le_left k _) (le_trans (min_le_right _ X.size) (X.size_monotone Y h))),
-    R3 := (fun X Y, or.elim (le_total k X.size)
-      (fun (hkX : k ≤ X.size), or.elim (le_total k Y.size)
-        (fun (hkY : k ≤ Y.size), let
-          term1 : (min k (X ∩ Y).size) ≤ k := min_le_left _ _,
-          term2 : (min k (X ∪ Y).size) ≤ k := min_le_left _ _,
-          term3 : (min k X.size) = k := min_eq_left hkX,
-          term4 : (min k Y.size) = k := min_eq_left hkY
+    R2 := (fun X Y (h : X ⊆ Y), le_min (min_le_left k _) (le_trans (min_le_right _ (size X)) (A.size_monotone h))),
+    R3 := (fun X Y, or.elim (le_total k (size X))
+      (fun (hkX : k ≤ size X), or.elim (le_total k (size Y))
+        (fun (hkY : k ≤ (size Y)), let
+          term1 : (min k (size (X ∩ Y)) ) ≤ k := min_le_left _ _,
+          term2 : (min k (size (X ∪ Y)) ) ≤ k := min_le_left _ _,
+          term3 : (min k (size X)) = k := min_eq_left hkX,
+          term4 : (min k (size Y)) = k := min_eq_left hkY
           in by linarith)
-        (fun (hYk : Y.size ≤ k), let
-          term1 : (min k (X ∩ Y).size) ≤ Y.size := le_trans (min_le_right _ _) ((X ∩ Y).size_monotone Y (finite_set.subset.inter_subset_right _ _)),
-          term2 : (min k (X ∪ Y).size) ≤ k := min_le_left _ _,
-          term3 : (min k X.size) = k := min_eq_left hkX,
-          term4 : (min k Y.size) = Y.size := min_eq_right hYk
+        (fun (hYk : (size Y) ≤ k), let
+          term1 : (min k (size (X ∩ Y))) ≤ (size Y) := le_trans (min_le_right _ _) (A.size_monotone (A.inter_subset_right X Y)),
+          term2 : (min k (size (X ∪ Y))) ≤ k := min_le_left _ _,
+          term3 : (min k (size X)) = k := min_eq_left hkX,
+          term4 : (min k (size Y)) = (size Y) := min_eq_right hYk
           in by linarith))
-      (fun (hXk : X.size ≤ k), or.elim (le_total k Y.size)
-        (fun (hkY : k ≤ Y.size), let
-          term1 : (min k (X ∩ Y).size) ≤ X.size := le_trans (min_le_right _ _) ((X ∩ Y).size_monotone X (finite_set.subset.inter_subset_left _ _)),
-          term2 : (min k (X ∪ Y).size) ≤ k := min_le_left _ _,
-          term3 : (min k X.size) = X.size := min_eq_right hXk,
-          term4 : (min k Y.size) = k := min_eq_left hkY
+      (fun (hXk : (size X) ≤ k), or.elim (le_total k (size Y))
+        (fun (hkY : k ≤ (size Y)), let
+          term1 : (min k (size (X ∩ Y))) ≤ (size X) := le_trans (min_le_right _ _) (A.size_monotone (A.inter_subset_left X Y)),
+          term2 : (min k (size (X ∪ Y))) ≤ k := min_le_left _ _,
+          term3 : (min k (size X)) = (size X) := min_eq_right hXk,
+          term4 : (min k (size Y)) = k := min_eq_left hkY
           in by linarith)
-        (fun (hYk : Y.size ≤ k), let
-          term1 : (min k (X ∩ Y).size) ≤ (X ∩ Y).size := min_le_right _ _,
-          term2 : (min k (X ∪ Y).size) ≤ (X ∪ Y).size := min_le_right _ _,
-          term3 : (min k X.size) = X.size := min_eq_right hXk,
-          term4 : (min k Y.size) = Y.size := min_eq_right hYk
-          in by linarith [X.size_modular Y]))),
+        (fun (hYk : size Y ≤ k), let
+          term1 : (min k (size (X ∩ Y))) ≤ size (X ∩ Y) := min_le_right _ _,
+          term2 : (min k (size (X ∪ Y))) ≤ size (X ∪ Y) := min_le_right _ _,
+          term3 : (min k (size X)) = size X := min_eq_right hXk,
+          term4 : (min k (size Y)) = size Y := min_eq_right hYk,
+          term5 : size (X ∪ Y) + size (X ∩ Y) = size X + size Y := A.size_modular X Y
+          in by linarith))),
   }
 
 -- The empty set always has rank zero.
