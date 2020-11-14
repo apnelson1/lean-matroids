@@ -3,16 +3,6 @@ import tactic data.finset
 namespace finset 
 variables {α : Type*} {β : Type*} [decidable_eq α]
 
-  -- Cheaty tactic ---------------------------
-  
-  lemma cheat_lemma : false := sorry
-
-  lemma test_lemma : 3 = 4 :=
-  begin
-    sorry,
-  end
-  --------------------------------------------
-
 
 
  def size (A: finset α) := (card A: ℤ)
