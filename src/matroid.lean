@@ -150,7 +150,7 @@ lemma finite_set.subset.subset_bot {γ : finite_set} (X : γ.subset) :
 end API
 
 -/
-
+namespace fin_bool_alg 
 -- The rank-function definition of a matroid, as a packed structure.
 @[ext] structure matroid :=
   (subset : fin_bool_alg)
@@ -238,7 +238,7 @@ def matroid.dual : matroid → matroid := fun M, {
       ...       = M.rank ((Xᶜ ∩ Y) ∩ Yᶜ) + M.rank ((Xᶜ ∩ Y) ∪ Yᶜ) : by rw [h₁, h₃]
       ...       ≤ M.rank (Xᶜ ∩ Y) + M.rank Yᶜ                     : M.R3 _ _
       ...       ≤ size (Xᶜ ∩ Y) + M.rank Yᶜ                       : by linarith [M.R1 (Xᶜ ∩ Y)]
-      ...       = size Y - size X + M.rank Yᶜ                     : by rw [compl_int_size hXY]
+      ...       = size Y - size X + M.rank Yᶜ                     : by rw [compl_inter_size_subset hXY]
     in by linarith),
   R3 := (fun X Y, calc
       (M.rank (X ∩ Y)ᶜ  + size (X ∩ Y) - M.rank ⊤) + (M.rank (X ∪ Y)ᶜ  + size (X ∪ Y) - M.rank ⊤)
@@ -291,4 +291,5 @@ def minor.contract {M : matroid} (m : minor M) (C : M.ground.subset) :
     rank := sorry,
     kernel := sorry,
   }
--/
+
+end fin_bool_alg
