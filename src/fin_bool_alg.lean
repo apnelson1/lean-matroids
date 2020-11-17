@@ -1,6 +1,7 @@
 import tactic.ext
 --import tactic.ring 
 import tactic.linarith
+import tactic.tidy 
 
 -- The API I would like to use for various basic objects.
 -- This probably belongs in its own file by this point. 
@@ -20,7 +21,7 @@ structure fin_bool_alg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: subset) : 0 ≤ size X) 
   (size_modular_ax (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (size_singleton_ax (X : subset) (hX : (∀ (Y: subset), (Y = inter Y X) → (Y ≠ X) → (Y = bot))) : size X = 1)
+  (size_singleton_ax (X : subset) (hX : (∀ (Y: subset), (Y = inter Y X) → (Y ≠ X) → (Y = bot))) : size X ≤ 1)
 
   (inter_comm_ax (X Y : subset) : inter X Y = inter Y X)
   (union_comm_ax (X Y : subset) : union X Y = union Y X)
@@ -55,13 +56,15 @@ def sdiff {A: fin_bool_alg} (X Y : A) : A := (X - Y) ∪ (Y - X)
 
 -- Lemmas (some are just the axioms rewritten in terms of the notation to make linarith etc behave more nicely)
 
-
-
 -- Commutativity
 
-lemma inter_comm {A : fin_bool_alg} (X Y : A) : (X ∩ Y = Y ∩ X) := A.inter_comm_ax X Y
+lemma inter_comm {A : fin_bool_alg} (X Y : A) : 
+  (X ∩ Y = Y ∩ X) := 
+  A.inter_comm_ax X Y
 
-lemma union_comm {A : fin_bool_alg} (X Y : A) : (X ∪ Y = Y ∪ X) := A.union_comm_ax X Y
+lemma union_comm {A : fin_bool_alg} (X Y : A) :
+  (X ∪ Y = Y ∪ X) := 
+  A.union_comm_ax X Y
 
 -- Top/Bottom with unions and intersections 
 
@@ -230,8 +233,8 @@ lemma top_subset {A : fin_bool_alg} {X : A}
 
 
 lemma bot_subset {A : fin_bool_alg} (X : A) : 
-  ⊥ ⊆ X 
-  := by unfold has_subset.subset; exact eq.symm (inter_bot_left X)
+  ⊥ ⊆ X := 
+  by unfold has_subset.subset; exact eq.symm (inter_bot_left X)
 
 lemma subset_bot {A : fin_bool_alg} {X : A} 
   (hX : X ⊆ ⊥) : X = ⊥ := 
@@ -261,7 +264,7 @@ begin
 end
  
 lemma compl_unique {A : fin_bool_alg} {X Y : A} 
-(hU : X ∪ Y = ⊤) (hI : X ∩ Y = ⊥) : Y = Xᶜ := 
+  (hU : X ∪ Y = ⊤) (hI : X ∩ Y = ⊥) : Y = Xᶜ := 
 begin
   apply ss_antisymm,
   exact disjoint_compl_subset (eq.trans (inter_comm Y X) hI),
@@ -270,7 +273,7 @@ end
 
 
 lemma compl_involution {A : fin_bool_alg} (X : A) : 
-Xᶜᶜ = X := 
+  Xᶜᶜ = X := 
 begin
   apply ss_antisymm,
   apply cover_compl_subset, 
@@ -280,7 +283,7 @@ end
 
 
 lemma compl_inter {A : fin_bool_alg} (X Y : A) : 
-(X ∩ Y)ᶜ = Xᶜ ∪ Yᶜ := 
+  (X ∩ Y)ᶜ = Xᶜ ∪ Yᶜ := 
 begin
   apply eq.symm, 
   apply compl_unique, 
@@ -447,39 +450,39 @@ end
 def fin_bool_alg.canonical (size : ℤ) :
   (0 ≤ size) → fin_bool_alg := sorry
 
-def power_set_alg {γ : Type} (S : finset γ) : fin_bool_alg := 
+-- Construct a fin_bool_alg from a finite set S 
+
+def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg := 
 {
   subset := {X: finset γ | X ⊆ S},
-  bot := 
+
+  bot := ⟨∅, finset.empty_subset S⟩,
+  top := ⟨S, finset.subset.refl S⟩,
+  inter := λ (X Y : _), ⟨X.val ∩ Y.val, finset.subset.trans (X.val.inter_subset_left Y) X.property⟩, 
+  union := λ (X Y : _), ⟨X.val ∪ Y.val, finset.union_subset X.property Y.property⟩,
+  size  := λ X, (finset.card (X.val) : ℤ), 
+  compl := λ X, ⟨S \ X.val, finset.sdiff_subset_self⟩,
+
+  size_bot_ax := by tidy, 
+  size_nonneg_ax := by tidy, 
+  size_modular_ax := by tidy; apply finset.card_union_add_card_inter,
+  size_singleton_ax := 
   begin
+    tidy, 
     
     sorry, 
   end, 
-  top := sorry, 
-  inter := sorry, 
-  union := sorry, 
-  size := sorry, 
-  compl := sorry, 
 
-  size_bot_ax := sorry, 
-  size_nonneg_ax := sorry, 
-  size_modular_ax := sorry, 
-  size_singleton_ax := sorry, 
-
-  inter_comm_ax := sorry,
-  union_comm_ax := sorry,
-
-  inter_assoc_ax := sorry, 
-  union_assoc_ax := sorry, 
-
-  union_distrib_left_ax := sorry, 
-  inter_distrib_left_ax := sorry, 
-
-  inter_top_ax := sorry, 
-  union_bot_ax := sorry, 
-  
-  union_compl_ax := sorry, 
-  inter_compl_ax := sorry, 
+  inter_comm_ax := by tidy, 
+  union_comm_ax := by intros X Y; simp_rw finset.union_comm; trivial, 
+  inter_assoc_ax := by tidy, 
+  union_assoc_ax := by tidy,
+  union_distrib_left_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.union_distrib_left; exact finset.union_distrib_right _ _ _,
+  inter_distrib_left_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.inter_distrib_left; exact finset.inter_distrib_right _ _ _,  
+  inter_top_ax := by tidy, 
+  union_bot_ax := by tidy, 
+  union_compl_ax := by tidy, 
+  inter_compl_ax := by tidy, 
 }
 
 
