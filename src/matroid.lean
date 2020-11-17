@@ -185,7 +185,7 @@ def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
           term4 : (min k (size Y)) = k := min_eq_left hkY
           in by linarith)
         (fun (hYk : (size Y) ≤ k), let
-          term1 : (min k (size (X ∩ Y))) ≤ (size Y) := le_trans (min_le_right _ _) (size_monotone (A.inter_subset_right X Y)),
+          term1 : (min k (size (X ∩ Y))) ≤ (size Y) := le_trans (min_le_right _ _) (size_monotone (inter_subset_right X Y)),
           term2 : (min k (size (X ∪ Y))) ≤ k := min_le_left _ _,
           term3 : (min k (size X)) = k := min_eq_left hkX,
           term4 : (min k (size Y)) = (size Y) := min_eq_right hYk
@@ -225,14 +225,14 @@ def matroid.dual : matroid → matroid := fun M, {
     h₁ : (Xᶜ ∩ Y) ∩ Yᶜ = ⊥ := calc
       (Xᶜ ∩ Y) ∩ Yᶜ = Xᶜ ∩ (Y ∩ Yᶜ) : inter_assoc Xᶜ Y Yᶜ
       ...           = Xᶜ ∩ ⊥        : by rw [inter_compl Y]
-      ...           = ⊥             : inter_bot_left Xᶜ,
+      ...           = ⊥             : inter_bot Xᶜ,
     h₂ : (Xᶜ ∪ Yᶜ) = Xᶜ := calc
       (Xᶜ ∪ Yᶜ) = (X ∩ Y)ᶜ : (compl_inter X Y).symm
-      ...       = Xᶜ       : by rw [(inter_subset X Y).mp hXY],
+      ...       = Xᶜ       : by rw [inter_subset hXY],
     h₃ : (Xᶜ ∩ Y) ∪ Yᶜ = Xᶜ := calc
       (Xᶜ ∩ Y) ∪ Yᶜ = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : union_distrib_left Xᶜ Y Yᶜ --Xᶜ.union_distrib_inter_left Y Yᶜ
       ...           = Xᶜ ∩ ⊤               : by rw [h₂, union_compl Y]
-      ...           = Xᶜ                   : inter_top_left Xᶜ,
+      ...           = Xᶜ                   : inter_top Xᶜ,
     h₄ : M.rank Xᶜ ≤ size Y - size X + M.rank Yᶜ := calc
       M.rank Xᶜ = M.rank ⊥ + M.rank Xᶜ                            : by linarith [M.rank_empty]
       ...       = M.rank ((Xᶜ ∩ Y) ∩ Yᶜ) + M.rank ((Xᶜ ∩ Y) ∪ Yᶜ) : by rw [h₁, h₃]
@@ -248,33 +248,51 @@ def matroid.dual : matroid → matroid := fun M, {
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
 @[ext] structure minor (major : matroid) :=
-  (subset : major.subset)
-  (rank   : {X : major.subset // X ⊆ subset} → ℤ)
+  (ground : major.subset)
+  (rank   : (sub_alg major.subset ground) → ℤ)
   (kernel : exists (C : major.subset),
-    (subset ∩ C = ⊥) ∧
+    (ground ∩ C = ⊥) ∧
     (forall X, rank X = major.rank (X.val ∪ C) - major.rank C))
+
 
 -- A matroid minor is a matroid in its own right.
 def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
-  subset := m.subset,
-  rank := (fun (X : m.ground.as_finite_set.subset),
-    m.rank (m.ground.embed X) (m.ground.embed_subset X)),
+  subset := (sub_alg M.subset m.ground),
+  rank := (λ X, m.rank X),  
 
-  R0 := (exists.elim m.kernel (fun C h mX, let
-    X := m.ground.embed mX,
-    h₁ : m.rank X _ = M.rank (X ∪ C) - M.rank C := h.2 _ (m.ground.embed_subset _),
-    h₂ : M.rank C ≤ M.rank (X ∪ C) := M.R2 (X.right_subset_union C)
-    in by linarith)),
-  R1 := (exists.elim m.kernel (fun C h mX, let
-    X := m.ground.embed mX,
-    h₁ : m.rank X _ = M.rank (X ∪ C) - M.rank C := h.2 _ (m.ground.embed_subset _)
-    in _)),
-  R2 := sorry,
-  R3 := sorry,
+  R0 := by intros X; rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩; linarith [M.R2 (subset_union_right X.val C), hCr X], 
+  R1 := 
+  begin
+    intros X,
+    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
+    unfold size at *,
+    calc m.rank X = M.rank (X.val ∪ C) - M.rank C         : hCr X
+          ...     ≤ M.rank X.val                          : by linarith [M.R0 (X.val ∩ C), M.R3 X.val C]
+          ...     ≤ M.subset.size X.val                   : M.R1 X.val 
+          ...     = (sub_alg M.subset m.ground).size X    : (sub_alg_size M.subset X.property.2),    
+  end,
+  R2 := 
+  begin
+    intros X Y hXY, 
+    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
+    have hXY' : X.val ⊆ Y.val := by rw ←interval_alg_subset; exact hXY, 
+    linarith [M.R2 (subset_union_subset_left X.val Y.val C hXY'), hCr X, hCr Y],
+  end, 
+  R3 := 
+  begin
+    intros X Y, 
+    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
+    have hu : (X.val ∪ C) ∪ (Y.val ∪ C) = (X ∪ Y).val ∪ C := by rw ←union_distrib_union_left; simp,
+    have hi : (X.val ∪ C) ∩ (Y.val ∪ C) = (X ∩ Y).val ∪ C := by rw ←union_distrib_left; simp, 
+    have hR3 := M.R3 (X.val ∪ C) (Y.val ∪ C), 
+    rw [hu, hi] at hR3, 
+    linarith [hCr X, hCr Y, hCr (X ∪ Y), hCr (X ∩ Y), hR3],
+    -- There are issues with smoothly transitioning between subalgebra operations (size, inter, union, etc) and operations in the algebra.  
+  end, 
 }
 
 -- Is this possible to prove? Mathematically it should be.
-lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
+/-lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
   (m₁.as_matroid = m₂.as_matroid) → m₁ = m₂ :=
     sorry
 
@@ -290,6 +308,6 @@ def minor.contract {M : matroid} (m : minor M) (C : M.ground.subset) :
     ground := (Cᶜ ∩ m.ground),
     rank := sorry,
     kernel := sorry,
-  }
+  }-/
 
 end fin_bool_alg
