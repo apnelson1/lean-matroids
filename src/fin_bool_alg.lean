@@ -6,6 +6,8 @@ import tactic.tidy
 -- The API I would like to use for various basic objects.
 -- This probably belongs in its own file by this point. 
 
+local attribute [instance] classical.prop_decidable
+
 section API
 
 namespace fin_bool_alg 
@@ -21,7 +23,7 @@ structure fin_bool_alg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: subset) : 0 ≤ size X) 
   (size_modular_ax (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (size_singleton_ax (X : subset) (hX : (∀ (Y: subset), (Y = inter Y X) → (Y ≠ X) → (Y = bot))) : size X ≤ 1)
+  (size_singleton_ax (X : subset) : (1 < size X) → (∃ (Y : subset), (inter X Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)))
 
   (inter_comm_ax (X Y : subset) : inter X Y = inter Y X)
   (union_comm_ax (X Y : subset) : union X Y = union Y X)
@@ -68,17 +70,17 @@ lemma union_comm {A : fin_bool_alg} (X Y : A) :
 
 -- Top/Bottom with unions and intersections 
 
-lemma inter_top_right  {A : fin_bool_alg} (X : A) : X ∩ ⊤ = X := A.inter_top_ax X
+lemma inter_top  {A : fin_bool_alg} (X : A) : X ∩ ⊤ = X := A.inter_top_ax X
 
-lemma inter_top_left {A : fin_bool_alg} (X : A) : 
+lemma top_inter {A : fin_bool_alg} (X : A) : 
   ⊤ ∩ X = X := 
-  eq.trans (inter_comm ⊤ X) (inter_top_right  X) 
+  eq.trans (inter_comm ⊤ X) (inter_top  X) 
 
-lemma union_bot_right {A : fin_bool_alg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
+lemma union_bot {A : fin_bool_alg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
 
-lemma union_bot_left {A : fin_bool_alg} (X : A) : 
+lemma bot_union {A : fin_bool_alg} (X : A) : 
   ⊥ ∪ X = X := 
-  eq.trans (union_comm ⊥ X) (union_bot_right X)
+  eq.trans (union_comm ⊥ X) (union_bot X)
 
 
 -- Complements
@@ -111,62 +113,53 @@ lemma inter_distrib_right {A : fin_bool_alg} (X Y Z : A) : X ∩ (Y ∪ Z) = (X 
 
 lemma bot_unique {A : fin_bool_alg} (X : A) : 
   (∀ (Y: A), Y ∪ X = Y) → X = ⊥ := 
-  by intros hX; calc X = ⊥ ∪ X : (union_bot_left X).symm ... = ⊥ : hX ⊥
+  by intros hX; calc X = ⊥ ∪ X : (bot_union X).symm ... = ⊥ : hX ⊥
 
 lemma top_unique {A : fin_bool_alg} (X : A) : 
   (∀ (Y: A), Y ∩ X = Y) → X = ⊤ := 
-  by intros hX; calc X = ⊤ ∩ X : (inter_top_left X).symm ... = ⊤ : hX ⊤ 
+  by intros hX; calc X = ⊤ ∩ X : (top_inter X).symm ... = ⊤ : hX ⊤ 
 
 -- Idempotence
 
 lemma union_idem {A : fin_bool_alg} (X : A) : 
   X ∪ X = X := 
-  by rw [←(inter_top_right  (X ∪ X)), ←(union_compl X), ←(union_distrib_right X X Xᶜ), inter_compl, union_bot_right]
+  by rw [←(inter_top  (X ∪ X)), ←(union_compl X), ←(union_distrib_right X X Xᶜ), inter_compl, union_bot]
 
 lemma inter_idem {A : fin_bool_alg} (X : A): 
   X ∩ X = X := 
-  by rw [←(union_bot_right (X ∩ X)), ←(inter_compl X), ←(inter_distrib_right X X Xᶜ), union_compl, inter_top_right ]
+  by rw [←(union_bot (X ∩ X)), ←(inter_compl X), ←(inter_distrib_right X X Xᶜ), union_compl, inter_top ]
 
-lemma union_top_right {A : fin_bool_alg} (X : A) :
+lemma union_top {A : fin_bool_alg} (X : A) :
   X ∪ ⊤ = ⊤ := 
-  by calc X ∪ ⊤ = ⊤ ∩ (X ∪ ⊤)        : by rw inter_top_left
+  by calc X ∪ ⊤ = ⊤ ∩ (X ∪ ⊤)        : by rw top_inter
             ... = (X ∪ Xᶜ) ∩ (X ∪ ⊤) : by rw union_compl 
-            ... = ⊤    : by rw [←union_distrib_right, inter_top_right , union_compl]
+            ... = ⊤    : by rw [←union_distrib_right, inter_top , union_compl]
 
-lemma union_top_left {A : fin_bool_alg} (X : A) : 
+lemma top_union {A : fin_bool_alg} (X : A) : 
   ⊤ ∪ X = ⊤ := 
-  eq.trans (union_comm ⊤ X) (union_top_right X)
+  eq.trans (union_comm ⊤ X) (union_top X)
 
 
-lemma inter_bot_right {A : fin_bool_alg} (X : A) :
+lemma inter_bot {A : fin_bool_alg} (X : A) :
   X ∩ ⊥ = ⊥ := 
-  by calc X ∩ ⊥ = ⊥ ∪ (X ∩ ⊥)        : by rw union_bot_left
+  by calc X ∩ ⊥ = ⊥ ∪ (X ∩ ⊥)        : by rw bot_union
             ... = (X ∩ Xᶜ) ∪ (X ∩ ⊥) : by rw inter_compl 
-            ... = ⊥    : by rw [←inter_distrib_right, union_bot_right, inter_compl]
+            ... = ⊥    : by rw [←inter_distrib_right, union_bot, inter_compl]
 
-lemma inter_bot_left {A : fin_bool_alg} (X : A) : 
+lemma bot_inter {A : fin_bool_alg} (X : A) : 
   ⊥ ∩ X = ⊥ := 
-  eq.trans (inter_comm ⊥ X) (inter_bot_right X)
+  eq.trans (inter_comm ⊥ X) (inter_bot X)
 
 
 -- Absorption
 
 lemma absorb_union_inter {A : fin_bool_alg} (X Y : A) : 
   X ∪ (X ∩ Y) = X := 
-  by calc X ∪ (X ∩ Y) = (X ∩ ⊤) ∪ (X ∩ Y) : by rw inter_top_right  ... = X : by rw [←inter_distrib_right, union_comm, union_top_right, inter_top_right ]
+  by calc X ∪ (X ∩ Y) = (X ∩ ⊤) ∪ (X ∩ Y) : by rw inter_top  ... = X : by rw [←inter_distrib_right, union_comm, union_top, inter_top ]
 
 lemma absorb_inter_union {A : fin_bool_alg} (X Y : A) : 
   X ∩ (X ∪ Y) = X := 
-  by calc X ∩ (X ∪ Y) = (X ∪ ⊥) ∩ (X ∪ Y) : by rw union_bot_right ... = X : by rw [←union_distrib_right, inter_comm, inter_bot_right, union_bot_right]
-
-
--- Associativity (In fact, this can be discarded eventually : WIP)
-
-lemma inter_assoc {A : fin_bool_alg} (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := A.inter_assoc_ax X Y Z 
-
-lemma union_assoc {A : fin_bool_alg} (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := A.union_assoc_ax X Y Z 
-
-
+  by calc X ∩ (X ∪ Y) = (X ∪ ⊥) ∩ (X ∪ Y) : by rw union_bot ... = X : by rw [←union_distrib_right, inter_comm, inter_bot, union_bot]
 
 
 
@@ -178,15 +171,19 @@ lemma size_bot (A : fin_bool_alg) :
   size (⊥ : A) = 0 := 
   A.size_bot_ax
 
-lemma size_singleton {A : fin_bool_alg} (X : A) 
-  (hX : (∀ (Y : A), Y ⊆ X → Y ≠ X → Y = ⊥)) : size X = 1 := 
-  A.size_singleton_ax X hX 
+lemma size_singleton {A : fin_bool_alg} (X : A) :
+  (1 < size X) → (∃ (Y : A), (X ∩ Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)) := 
+  A.size_singleton_ax X 
 
 lemma size_nonneg {A : fin_bool_alg} (X : A) : 
   0 ≤ size X := 
   A.size_nonneg_ax X 
 
 -- Subsets 
+
+lemma subset_refl {A : fin_bool_alg} (X : A) :
+  X ⊆ X 
+  := by unfold has_subset.subset; rw inter_idem 
 
 lemma inter_subset {A : fin_bool_alg} (X Y: A) : 
   (X ⊆ Y) ↔ (X ∩ Y = X) 
@@ -217,15 +214,22 @@ lemma inter_subset_left {A: fin_bool_alg} (X Y : A) :
   (X ∩ Y) ⊆ X := 
   by apply (union_subset (X ∩ Y) X).mpr; rw union_comm (X ∩ Y) X; apply absorb_union_inter
 
-
 lemma inter_subset_right {A : fin_bool_alg} (X Y : A) : 
   (X ∩ Y) ⊆ Y := 
   by apply (union_subset (X ∩ Y) Y).mpr; rw [union_comm,inter_comm X Y]; apply absorb_union_inter
 
+lemma subset_union_left {A : fin_bool_alg} (X Y : A) :
+  X ⊆ X ∪ Y := 
+  by unfold has_subset.subset; exact (absorb_inter_union X Y).symm 
+
+lemma subset_union_right {A : fin_bool_alg} (X Y : A) : 
+  Y ⊆ X ∪ Y := 
+  by rw union_comm; exact subset_union_left Y X
+   
 
 lemma subset_top {A : fin_bool_alg} (X : A) : 
   X ⊆ ⊤ := 
-  by unfold has_subset.subset; exact eq.symm (inter_top_right  X)
+  by unfold has_subset.subset; exact eq.symm (inter_top  X)
 
 lemma top_subset {A : fin_bool_alg} {X : A} 
   (hX : ⊤ ⊆ X) : X = ⊤ := 
@@ -234,7 +238,7 @@ lemma top_subset {A : fin_bool_alg} {X : A}
 
 lemma bot_subset {A : fin_bool_alg} (X : A) : 
   ⊥ ⊆ X := 
-  by unfold has_subset.subset; exact eq.symm (inter_bot_left X)
+  by unfold has_subset.subset; exact eq.symm (bot_inter X)
 
 lemma subset_bot {A : fin_bool_alg} {X : A} 
   (hX : X ⊆ ⊥) : X = ⊥ := 
@@ -245,22 +249,22 @@ lemma disjoint_compl_subset {A : fin_bool_alg} {X Y : A}
   (hXY: X ∩ Y = ⊥) : X ⊆ Yᶜ := 
 begin
   apply eq.symm, 
-  calc X ∩ Yᶜ = ⊥ ∪ (X ∩ Yᶜ)       : (union_bot_left _).symm 
+  calc X ∩ Yᶜ = ⊥ ∪ (X ∩ Yᶜ)       : (bot_union _).symm 
           ... = (X ∩ Y) ∪ (X ∩ Yᶜ) : by rw ←hXY
           ... = X ∩ (Y ∪ Yᶜ)       : (inter_distrib_right _ _ _).symm 
           ... = X ∩ ⊤              : by rw (union_compl Y)
-          ... = X                  : inter_top_right  X, 
+          ... = X                  : inter_top  X, 
 end
 
 lemma cover_compl_subset {A: fin_bool_alg} {X Y : A} 
   (hXY: X ∪ Y = ⊤) : Xᶜ ⊆ Y  := 
 begin
   apply (union_subset Xᶜ Y).mpr, 
-  calc Xᶜ ∪ Y = ⊤ ∩ (Xᶜ ∪ Y)        : (inter_top_left _).symm 
+  calc Xᶜ ∪ Y = ⊤ ∩ (Xᶜ ∪ Y)        : (top_inter _).symm 
           ... = (X ∪ Y) ∩ (Xᶜ ∪ Y)  : by rw ←hXY
           ... = (X ∩ Xᶜ) ∪ Y        : (union_distrib_left _ _ _).symm 
           ... = ⊥ ∪ Y               : by rw inter_compl
-          ... = Y                   : union_bot_left Y,
+          ... = Y                   : bot_union Y,
 end
  
 lemma compl_unique {A : fin_bool_alg} {X Y : A} 
@@ -272,7 +276,7 @@ begin
 end 
 
 
-lemma compl_involution {A : fin_bool_alg} (X : A) : 
+lemma compl_compl {A : fin_bool_alg} (X : A) : 
   Xᶜᶜ = X := 
 begin
   apply ss_antisymm,
@@ -282,28 +286,50 @@ begin
 end
 
 
+lemma union_compl_union {A : fin_bool_alg} (X Y : A) :
+  X ∪ (Xᶜ ∪ Y) = ⊤ :=  
+  by rw [←top_inter(X ∪ (Xᶜ ∪ Y)), ←union_compl, ←union_distrib_right, absorb_inter_union] 
+
+lemma inter_compl_inter {A : fin_bool_alg}(X Y : A) :
+  X ∩ (Xᶜ ∩ Y) = ⊥ := 
+  by rw [←bot_union(X ∩ (Xᶜ ∩ Y)), ←inter_compl, ←inter_distrib_right, absorb_union_inter]
+
+lemma union_inter_compl_inter {A : fin_bool_alg} (X Y : A) :
+  (X ∪ Y) ∪ (Xᶜ ∩ Yᶜ)  = ⊤ := 
+  begin
+    rw [union_distrib_right, union_comm _ Xᶜ, union_comm X Y, union_comm _ Yᶜ, ←(compl_compl Y)],
+    rw [compl_compl Yᶜ, union_compl_union Yᶜ, union_comm _ X, ←(compl_compl X), compl_compl Xᶜ, union_compl_union Xᶜ, inter_idem],
+  end
+
+lemma inter_union_compl_union {A : fin_bool_alg} (X Y : A) :
+  (X ∩ Y) ∩ (Xᶜ ∪ Yᶜ)  = ⊥ := 
+  begin
+    rw [inter_distrib_right, inter_comm _ Xᶜ, inter_comm X Y, inter_comm _ Yᶜ, ←(compl_compl Y)],
+    rw [compl_compl Yᶜ, inter_compl_inter Yᶜ, inter_comm _ X, ←(compl_compl X), compl_compl Xᶜ, inter_compl_inter Xᶜ, union_idem],
+  end
+
+
+lemma inter_union_compl_inter {A : fin_bool_alg} (X Y : A) :
+  (X ∪ Y) ∩ (Xᶜ ∩ Yᶜ) = ⊥ := 
+  by rw [inter_distrib_left X Y, inter_compl_inter, inter_comm Xᶜ, inter_compl_inter, union_idem]
+  
+lemma union_inter_compl_union {A : fin_bool_alg} (X Y : A) : 
+  (X ∩ Y) ∪ (Xᶜ ∪ Yᶜ) = ⊤ := 
+  by rw [union_distrib_left X Y, union_compl_union, union_comm Xᶜ, union_compl_union, inter_idem]
+
 lemma compl_inter {A : fin_bool_alg} (X Y : A) : 
   (X ∩ Y)ᶜ = Xᶜ ∪ Yᶜ := 
-begin
-  apply eq.symm, 
-  apply compl_unique, 
-  calc X ∩ Y ∪ (Xᶜ ∪ Yᶜ) = (X ∪ (Xᶜ ∪ Yᶜ)) ∩ (Y ∪ (Xᶜ ∪ Yᶜ)) : union_distrib_left _ _ _ 
-                    ...  = ((X ∪ Xᶜ) ∪ Yᶜ) ∩ ((Y ∪ Yᶜ) ∪ Xᶜ) : by rw [(union_assoc X), (union_comm Xᶜ), (union_assoc Y)]
-                    ...  = ⊤                                 : by rw [union_compl X, union_compl Y, union_top_left, union_top_left, inter_idem],
-  
-  calc (X ∩ Y) ∩ (Xᶜ ∪ Yᶜ) = (X ∩ Y ∩ Xᶜ) ∪ (X ∩ Y ∩ Yᶜ)     : inter_distrib_right _ _ _
-                      ...  = (Y ∩ X ∩ Xᶜ) ∪ (X ∩ Y ∩ Yᶜ)     : by rw (inter_comm X Y)
-                      ...  = (Y ∩ (X ∩ Xᶜ)) ∪ (X ∩ (Y ∩ Yᶜ)) : by rw [inter_assoc, inter_assoc]
-                      ...  = ⊥                               : by rw [inter_compl X, inter_compl Y, inter_bot_right Y, inter_bot_right X, union_idem]
-end 
+  eq.symm (compl_unique (union_inter_compl_union X Y) (inter_union_compl_union X Y))
 
 lemma compl_union {A : fin_bool_alg} (X Y : A) : 
-(X ∪ Y)ᶜ = Xᶜ ∩ Yᶜ := 
-begin
-  calc (X ∪ Y)ᶜ = (Xᶜᶜ ∪ Yᶜᶜ)ᶜ    : by rw [compl_involution X,compl_involution Y]
-        ...     = ((Xᶜ ∩ Yᶜ)ᶜ)ᶜ   : by rw (compl_inter Xᶜ Yᶜ)
-        ...     = (Xᶜ ∩ Yᶜ)       : by rw (compl_involution (Xᶜ ∩ Yᶜ)), 
-end
+  (X ∪ Y)ᶜ = Xᶜ ∩ Yᶜ := 
+  eq.symm (compl_unique (union_inter_compl_inter X Y) (inter_union_compl_inter X Y))
+
+-- Associativity (In fact, this can be discarded eventually : WIP)
+
+lemma inter_assoc {A : fin_bool_alg} (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := A.inter_assoc_ax X Y Z 
+
+lemma union_assoc {A : fin_bool_alg} (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := A.union_assoc_ax X Y Z 
 
 lemma compl_subset {A : fin_bool_alg} {X Y : A} 
 (hXY : X ⊆ Y) : Yᶜ ⊆ Xᶜ := 
@@ -364,7 +390,7 @@ begin
   rw ← inter_comm Y X, 
   rw ← inter_distrib_right, 
   rw union_compl, 
-  exact inter_top_right  Y,
+  exact inter_top  Y,
 end
 
 lemma diff_union_subset {A : fin_bool_alg} {X Y : A} (hXY : X ⊆ Y) : 
@@ -380,7 +406,7 @@ lemma diff_inter {A : fin_bool_alg} (X Y : A) :
 X ∩ (Y - X) = ⊥ := 
 begin
   unfold has_sub.sub, 
-  rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot_right],
+  rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot],
 end
 
 lemma size_monotone {A : fin_bool_alg} {X Y: A} 
@@ -410,7 +436,7 @@ end
 
 lemma compl_inter_size {A: fin_bool_alg} (X Y : A) : 
 size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
-    by rw [←size_modular, ←inter_distrib_left, union_compl, inter_top_left, ←inter_distrib_inter_left, inter_compl, inter_bot_left, size_bot]; ring
+    by rw [←size_modular, ←inter_distrib_left, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
 
 
 lemma compl_inter_size_subset {A : fin_bool_alg} {X Y : A} 
@@ -429,6 +455,39 @@ begin
     exact compl_inter_size_subset hXY, 
 end  
 
+-- more subsets 
+
+lemma subset_trans {A : fin_bool_alg} {X Y Z : A} 
+  (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) : X ⊆ Z :=
+  by unfold has_subset.subset at *; rw [hXY, inter_assoc, ←hYZ]
+  
+lemma union_of_subsets {A : fin_bool_alg} (X Y Z : A) :
+  (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
+  begin
+    unfold has_subset.subset, 
+    intros hXZ hYZ, 
+    calc X ∪ Y = (X ∩ Z) ∪ (Y ∩ Z) : by rw [←hXZ, ←hYZ] 
+           ... = (X ∪ Y) ∩ Z : by rw inter_distrib_left, 
+  end
+
+lemma inter_of_supsets {A : fin_bool_alg} (X Y Z : A) :
+  (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
+  begin
+    intros hXY hXZ, 
+    unfold has_subset.subset at *,
+    calc X = X ∩ Z       : by rw ←hXZ
+      ...  = (X ∩ Y) ∩ Z : by rw ←hXY
+      ...  = X ∩ (Y ∩ Z) : inter_assoc _ _ _, 
+  end 
+
+
+lemma inter_of_subsets {A : fin_bool_alg} (X Y Z : A) : 
+  (X ⊆ Z) → (Y ⊆ Z) → (X ∩ Y ⊆ Z) := 
+  by intros h1 h2; exact subset_trans (inter_subset_left X Y) h1
+
+lemma union_of_supsets {A : fin_bool_alg} (X Y Z : A) : 
+  (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∪ Z) := 
+  by intros h1 h2; exact subset_trans h1 (subset_union_left Y Z)
 
 lemma subset_inter_subset_left {A : fin_bool_alg} (X Y Z : A) : 
 (X ⊆ Y) → (X ∩ Z) ⊆ (Y ∩ Z) := 
@@ -447,13 +506,25 @@ begin
   rw [←union_distrib_union_left, hXY], 
 end
 
+lemma in_between {A : fin_bool_alg} {X Y : A} :
+  (X ⊆ Y) ∧ (X ≠ Y) → (∀ Z, (X ⊆ Z ∧ Z ⊆ Y) → (Z = X ∨ Z = Y)) → size Y - size X = 1 := 
+  begin
+    intros hZ,
+    let S := Y-X, 
+    sorry, 
+  end
+
+
+
+
+
 def fin_bool_alg.canonical (size : ℤ) :
   (0 ≤ size) → fin_bool_alg := sorry
 
 -- Construct a fin_bool_alg from a finite set S 
 
-def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg := 
-{
+def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg := {
+
   subset := {X: finset γ | X ⊆ S},
 
   bot := ⟨∅, finset.empty_subset S⟩,
@@ -468,15 +539,17 @@ def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg :
   size_modular_ax := by tidy; apply finset.card_union_add_card_inter,
   size_singleton_ax := 
   begin
+    intros X hX, 
+    have X_nonempty : X.val.nonempty, by apply (finset.card_pos).mp; linarith,  
+    cases finset.nonempty.bex X_nonempty with x hx, 
+    use {x},
     tidy, 
-    
-    sorry, 
   end, 
 
   inter_comm_ax := by tidy, 
   union_comm_ax := by intros X Y; simp_rw finset.union_comm; trivial, 
-  inter_assoc_ax := by tidy, 
-  union_assoc_ax := by tidy,
+  inter_assoc_ax := by intros X Y Z; cases Z; cases Y; cases X; dsimp at *; simp at *, 
+  union_assoc_ax := by intros X Y Z; cases Z; cases Y; cases X; dsimp at *; simp at *,
   union_distrib_left_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.union_distrib_left; exact finset.union_distrib_right _ _ _,
   inter_distrib_left_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.inter_distrib_left; exact finset.inter_distrib_right _ _ _,  
   inter_top_ax := by tidy, 
@@ -485,7 +558,40 @@ def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg :
   inter_compl_ax := by tidy, 
 }
 
+def subinterval_alg (A : fin_bool_alg) (S T : A) (hST : S ⊆ T): fin_bool_alg := {
 
---def sub_alg (A : fin_bool_alg) (X : A) : fin_bool_alg := {}
+  subset := {X: A | (S ⊆ X) ∧ (X ⊆ T)},
+
+  bot := ⟨S, ⟨subset_refl S, hST⟩⟩,
+  top := ⟨T, ⟨hST, subset_refl T⟩⟩,
+  inter := λ (X Y : _), ⟨X.1 ∩ Y.1, ⟨inter_of_supsets S X Y X.2.1 Y.2.1, inter_of_subsets X Y T X.2.2 Y.2.2⟩ ⟩, 
+  union := λ (X Y : _), ⟨X.1 ∪ Y.1, ⟨union_of_supsets S X Y X.2.1 Y.2.1, union_of_subsets X Y T X.2.2 Y.2.2⟩ ⟩,
+  size  := λ X, (size (X.1) - size S),
+  compl := λ X, ⟨S ∪ (T ∩ (X.1)ᶜ), ⟨by apply subset_union_left S, begin apply union_of_subsets S, exact hST, apply inter_subset_left, end ⟩ ⟩,
+
+  size_bot_ax := by simp,
+  size_nonneg_ax := by intros X; linarith [size_monotone (X.2.1)],
+
+  size_modular_ax := by intros X Y; linarith[size_modular X.1 Y.1],
+  size_singleton_ax := sorry,
+
+  inter_comm_ax := by intros X Y; apply subtype.eq; simp_rw [inter_comm X.1 Y.1], 
+  union_comm_ax := by intros X Y; apply subtype.eq; simp_rw [union_comm X.1 Y.1],
+  inter_assoc_ax := by tidy; apply inter_assoc,
+  union_assoc_ax := by tidy; apply union_assoc,
+  union_distrib_left_ax := by tidy; apply union_distrib_left,
+  inter_distrib_left_ax := by tidy; apply inter_distrib_left,
+  inter_top_ax := by intros X; cases X; cases X_property; simp; solve_by_elim,
+  union_bot_ax := by intros X; cases X; cases X_property; simp; unfold has_subset.subset at *; rw [X_property_left, inter_comm S, absorb_union_inter],
+  union_compl_ax := begin
+     intros X, 
+     tidy,
+     sorry,
+  end,
+  inter_compl_ax := sorry, 
+}
+
+
+
 end fin_bool_alg
 end API 
