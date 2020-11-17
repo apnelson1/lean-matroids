@@ -212,7 +212,8 @@ lemma matroid.rank_empty (M : matroid) :
     := le_antisymm (calc M.rank ⊥ ≤ size (⊥ : M.subset) : M.R1 ⊥ ... = 0 : size_bot M.subset) (M.R0 ⊥)
 
 -- The definition of the dual matroid. R2 is the trickier axiom to prove.
-def matroid.dual : matroid → matroid := fun M, {
+def matroid.dual (M : matroid) : matroid := 
+{
   subset := M.subset,
   rank := (fun (X : M.subset), M.rank Xᶜ + (size X) - M.rank ⊤),
 
@@ -245,6 +246,47 @@ def matroid.dual : matroid → matroid := fun M, {
     = (M.rank (Xᶜ ∪ Yᶜ) + size (X ∩ Y) - M.rank ⊤) + (M.rank (Xᶜ ∩ Yᶜ) + size (X ∪ Y) - M.rank ⊤) : by rw [compl_inter X Y, compl_union X Y]
 ... ≤ (M.rank Xᶜ        + size X       - M.rank ⊤) + (M.rank Yᶜ        + size Y       - M.rank ⊤) : by linarith [M.R3 Xᶜ Yᶜ, size_modular X Y]),
 }
+
+lemma test_eq (M N : matroid) : M = N := 
+begin
+  ext, 
+  sorry, 
+end
+
+lemma dual_dual (M: matroid) : M.dual.dual = M := 
+  begin
+    --cases M, 
+    ext, 
+    refl, refl, sorry, 
+    /-ext, refl, refl, 
+    intros X X' hXX', 
+    calc M.dual.dual.rank X == M.dual.rank Xᶜ + size X - M.dual.rank ⊤ : sorry, 
+                    ...     == M.rank X'                               : sorry,   -/
+    
+  end
+
+@[ext] structure test := 
+  (n : ℤ) 
+  (f : ℤ → ℤ) 
+
+def test_dual (T : test) : test :=  
+  {
+    n := -(T.n), 
+    f := λ x, -(T.f x), 
+  }
+
+lemma dual_dual_test (T: test) : test_dual (test_dual T) = T := 
+begin
+  --cases T, 
+  ext, 
+  --unfold test_dual, 
+  sorry, 
+
+  
+
+  sorry, 
+end
+
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
 @[ext] structure minor (M : matroid) :=
@@ -287,6 +329,8 @@ def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
     -- There are issues with smoothly transitioning between subalgebra operations (size, inter, union, etc) and operations in the algebra.  
   end, 
 }
+
+
 
 -- Is this possible to prove? Mathematically it should be.
 /-lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
