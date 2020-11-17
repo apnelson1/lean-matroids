@@ -247,12 +247,12 @@ def matroid.dual : matroid → matroid := fun M, {
 }
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
-@[ext] structure minor (major : matroid) :=
-  (ground : major.subset)
-  (rank   : (sub_alg major.subset ground) → ℤ)
-  (kernel : exists (C : major.subset),
+@[ext] structure minor (M : matroid) :=
+  (ground : M.subset)
+  (rank   : (sub_alg M.subset ground) → ℤ)
+  (kernel : exists (C : M.subset),
     (ground ∩ C = ⊥) ∧
-    (forall X, rank X = major.rank (X.val ∪ C) - major.rank C))
+    (forall X, rank X = M.rank (X.val ∪ C) - M.rank C))
 
 
 -- A matroid minor is a matroid in its own right.
@@ -265,11 +265,8 @@ def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
   begin
     intros X,
     rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
-    unfold size at *,
-    calc m.rank X = M.rank (X.val ∪ C) - M.rank C         : hCr X
-          ...     ≤ M.rank X.val                          : by linarith [M.R0 (X.val ∩ C), M.R3 X.val C]
-          ...     ≤ M.subset.size X.val                   : M.R1 X.val 
-          ...     = (sub_alg M.subset m.ground).size X    : (sub_alg_size M.subset X.property.2),    
+    have : size X = size X.val := by simp only [sub_alg_size],
+    linarith [M.R0 (X.val ∩ C), M.R3 X.val C, M.R1 X.val, hCr X],
   end,
   R2 := 
   begin
@@ -282,8 +279,8 @@ def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
   begin
     intros X Y, 
     rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
-    have hu : (X.val ∪ C) ∪ (Y.val ∪ C) = (X ∪ Y).val ∪ C := by rw ←union_distrib_union_left; simp,
-    have hi : (X.val ∪ C) ∩ (Y.val ∪ C) = (X ∩ Y).val ∪ C := by rw ←union_distrib_left; simp, 
+    have hu : (X.val ∪ C) ∪ (Y.val ∪ C) = (X ∪ Y).val ∪ C := by rw ←union_distrib_union_left; simp only [interval_alg_union],
+    have hi : (X.val ∪ C) ∩ (Y.val ∪ C) = (X ∩ Y).val ∪ C := by rw ←union_distrib_left; simp only [interval_alg_inter],
     have hR3 := M.R3 (X.val ∪ C) (Y.val ∪ C), 
     rw [hu, hi] at hR3, 
     linarith [hCr X, hCr Y, hCr (X ∪ Y), hCr (X ∩ Y), hR3],

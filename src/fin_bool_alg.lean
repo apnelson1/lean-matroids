@@ -534,10 +534,6 @@ lemma in_between {A : fin_bool_alg} {X Y : A} :
     sorry, 
   end
 
-
-
-
-
 def fin_bool_alg.canonical (size : ℤ) :
   (0 ≤ size) → fin_bool_alg := sorry
 
@@ -636,25 +632,20 @@ def interval_alg (A : fin_bool_alg) (S T : A) (hST : S ⊆ T): fin_bool_alg := {
   begin
     unfold has_subset.subset,
     split, 
-    intros hXY, 
-    nth_rewrite 0 hXY, 
-    apply interval_alg_inter, 
-    intros hXY, 
-    rw ←interval_alg_inter at hXY,
-    exact subtype.eq hXY,   
+    intros hXY, nth_rewrite 0 hXY, apply interval_alg_inter, 
+    intros hXY, rw ←interval_alg_inter at hXY, exact subtype.eq hXY,   
   end 
-
-
 
 def sub_alg (A : fin_bool_alg) (T : A) : fin_bool_alg := 
   interval_alg A (⊥ : A) T (sorry : (⊥ :A ) ⊆ T)
 
-lemma sub_alg_size (A : fin_bool_alg) {X T : A} (hXT: X ⊆ T) :
-  size X = @size (sub_alg A T) ⟨X, bot_subset X, hXT⟩ := 
+
+@[simp] lemma sub_alg_size {A : fin_bool_alg} {T : A} (X : sub_alg A T) : 
+  size X = size X.val :=
   begin
     unfold size, 
-    have : A.size ⊥ = 0 := A.size_bot_ax, 
-    exact ( by linarith : A.size X = A.size X - A.size ⊥), 
+    have : A.size ⊥ = 0 := A.size_bot_ax,
+    exact ( by linarith : A.size X.val - A.size ⊥ =  A.size X.val), 
   end
 
 @[simp] lemma sub_alg_subset {A : fin_bool_alg} {T : A} {X Y : sub_alg A T} : 
