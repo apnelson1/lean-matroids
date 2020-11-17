@@ -257,12 +257,13 @@ lemma dual_dual (M: matroid) : M.dual.dual = M :=
   begin
     --cases M, 
     ext, 
-    refl, refl, sorry, 
-    /-ext, refl, refl, 
-    intros X X' hXX', 
-    calc M.dual.dual.rank X == M.dual.rank Xᶜ + size X - M.dual.rank ⊤ : sorry, 
-                    ...     == M.rank X'                               : sorry,   -/
-    
+    refl, refl,
+    intros X X' h_heqXX',
+    apply heq_of_eq,
+    have hXX' : X = X' := eq_of_heq h_heqXX',
+    calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤ : rfl
+    ...                     = M.rank X                                : sorry
+    ...                     = M.rank X'                               : congr_arg _ hXX'
   end
 
 @[ext] structure test := 
