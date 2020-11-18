@@ -52,10 +52,11 @@ structure fin_bool_alg :=
   (self_inter_compl_ (X : subset) : (inter X (compl X) = bot))
   (self_union_compl_ (X : subset) : (union X (compl X) = top))
 
-  (size_nonneg_ (X: subset) : 0 ≤ size X) 
-  (size_monotone_ (X Y : subset) : (contained X Y) → size X ≤ size Y)
-  (size_modular_ (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
   (size_bot_ : size bot = 0)
+  (size_monotone_ (X Y : subset) : (contained X Y) → size X ≤ size Y)
+  (size_antisymm_ (X Y : subset) : (contained X Y) → size X = size Y → X = Y)
+  (size_atom_ (X : subset) : (forall (Y Z : subset), (contained X (union Y Z)) → (contained X Y) ∨ (contained X Z)) → size X = 1)
+  (size_modular_ (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
 
 /-
 Various instances to allow nice notations:
@@ -70,6 +71,9 @@ instance i6 {A : fin_bool_alg} : has_compl A := {compl := A.compl}
 instance i7 {A : fin_bool_alg} : has_subset A := {subset := A.contained} 
 
 abbreviation size {A : fin_bool_alg} (X : A) : ℤ := A.size X
+
+def atom {A : fin_bool_alg} (X : A) : Prop :=
+  ∀ (Y Z : A), (X ⊆ Y ∪ Z) → (X ⊆ Y) ∨ (X ⊆ Z)
 
 /-
 The axiom versions below, without a trailing underscore, are written using the notation instances above,
@@ -92,10 +96,11 @@ lemma right_subset_union : Y ⊆ (X ∪ Y) := A.right_subset_union_ X Y
 lemma union_minimal : (X ⊆ Z) → (Y ⊆ Z) → ((X ∪ Y) ⊆ Z) := A.union_minimal_ X Y Z
 lemma self_inter_compl : (X ∩ Xᶜ) = ⊥ := A.self_inter_compl_ X
 lemma self_union_compl : (X ∪ Xᶜ) = ⊤ := A.self_union_compl_ X
-lemma size_nonneg : 0 ≤ A.size X := A.size_nonneg_ X
+lemma size_bot : A.size ⊥ = 0 := A.size_bot_
 lemma size_monotone : (X ⊆ Y) → A.size X ≤ A.size Y := A.size_monotone_ X Y
+lemma size_antisymm : (X ⊆ Y) → A.size X = A.size Y → X = Y := A.size_antisymm_ X Y
+lemma size_atom : (atom X) → (A.size X = 1) := A.size_atom_ X
 lemma size_modular : A.size (X ∪ Y) + A.size (X ∩ Y) = A.size X + A.size Y := A.size_modular_ X Y
-lemma size_bot : A.size (⊥ : A) = 0 := A.size_bot_
 
 /-
 Because union and intersection are defined in terms of their universal property,
@@ -152,6 +157,9 @@ lemma bot_union : (⊥ ∪ X) = X := A.antisymm (A.union_minimal A.bot_subset A.
 lemma union_top : (X ∪ ⊤) = ⊤ := A.antisymm A.subset_top A.right_subset_union
 lemma top_union : (⊤ ∪ X) = ⊤ := A.antisymm A.subset_top A.left_subset_union
 lemma union_self : (X ∪ X) = X := A.antisymm (A.union_minimal A.refl A.refl) A.left_subset_union
+
+lemma union_eq_left : (X ⊆ Y) → (Y ∪ X = Y) := fun h, A.antisymm (A.union_minimal A.refl h) A.left_subset_union
+lemma union_eq_right : (X ⊆ Y) → (X ∪ Y = Y) := fun h, A.antisymm (A.union_minimal h A.refl) A.right_subset_union
 
 lemma inter_distrib_union_left : X ∩ (Y ∪ Z) = (X ∩ Y) ∪ (X ∩ Z) := A.inter_distrib_union_ X Y Z
 lemma inter_distrib_union_right : (X ∪ Y) ∩ Z = (X ∩ Z) ∪ (Y ∩ Z) := calc
@@ -240,7 +248,7 @@ def fin_bool_alg.interval (A : fin_bool_alg) (small big : A): (small ⊆ big) �
   top := ⟨big, H, A.refl⟩,
   inter := (fun X Y, ⟨X.val ∩ Y.val, A.inter_maximal X.prop.left Y.prop.left, A.trans A.inter_subset_left X.prop.right⟩),
   union := (fun X Y, ⟨X.val ∪ Y.val, A.trans X.prop.left A.left_subset_union, A.union_minimal X.prop.right Y.prop.right⟩),
-  compl := (fun X, ⟨(X.valᶜ ∪ small) ∩ big, A.inter_maximal A.right_subset_union h, A.inter_subset_right⟩),
+  compl := (fun X, ⟨(X.valᶜ ∪ small) ∩ big, A.inter_maximal A.right_subset_union H, A.inter_subset_right⟩),
   size := (fun X, A.size X.val - A.size small),
 
   refl_ := (fun X, A.refl),
@@ -257,18 +265,22 @@ def fin_bool_alg.interval (A : fin_bool_alg) (small big : A): (small ⊆ big) �
   inter_distrib_union_ := (fun X Y Z, subtype.ext A.inter_distrib_union_left),
   self_inter_compl_ := (fun X, subtype.ext (calc
       X.val ∩ ((X.valᶜ ∪ small) ∩ big)
-    = (X.val ∩ (X.valᶜ ∪ small)) ∩ big           : A.inter_assoc.symm
-... = ((X.val ∩ X.valᶜ) ∪ (X.val ∩ small)) ∩ big : by rw A.inter_distrib_union_left
-... = (⊥ ∪ small) ∩ big                          : sorry
-... = small                                      : sorry
+    = (X.val ∩ X.valᶜ ∩ big) ∪ (X.val ∩ small ∩ big) : by simp only [fin_bool_alg.inter_distrib_union_left, fin_bool_alg.inter_distrib_union_right, fin_bool_alg.inter_assoc]
+... =                          (X.val ∩ small ∩ big) : by rw [fin_bool_alg.self_inter_compl, fin_bool_alg.bot_inter, fin_bool_alg.bot_union]
+... = small                                          : let h₁ : X.val ∩ small = small := A.inter_eq_right X.prop.left, h₂ : small ∩ big = small := A.inter_eq_left H in by rw [h₁, h₂]
   )),
-  self_union_compl_ := (fun X, subtype.ext sorry),
+  self_union_compl_ := (fun X, subtype.ext (calc
+      X.val ∪ ((X.valᶜ ∪ small) ∩ big)
+    = (X.val ∪ X.valᶜ ∪ small) ∩ (X.val ∪ big) : by simp only [fin_bool_alg.union_distrib_inter_left, fin_bool_alg.union_assoc]
+... =                            (X.val ∪ big) : by rw [fin_bool_alg.self_union_compl, fin_bool_alg.top_union, fin_bool_alg.top_inter]
+... = big                                      : A.union_eq_right X.prop.right
+  )),
   size_nonneg_ := (fun X, by linarith [A.size_monotone_ small X.val X.prop.left]),
   size_monotone_ := (fun X Y h, by linarith [A.size_monotone h]),
   size_modular_ := (fun X Y, by linarith [@fin_bool_alg.size_modular A X.val Y.val]),
   size_bot_ := (by linarith),
 }
--- TODO: restriction to an interval
+
 -- TODO: isomorphisms of fin_bool_alg
 
 example (A : fin_bool_alg) (small X big : A) :
