@@ -650,8 +650,20 @@ lemma interval_alg_injective {A : fin_bool_alg} {S T S' T' : A} {hST : S ⊆ T} 
   (interval_alg A S T hST = interval_alg A S' T' hST') → (S = S' ∧ T = T')  := 
   begin
     intros hA, 
-    split, 
-    have : (interval_alg A S T hST).bot = (interval_alg A S' T' hST').bot := by rw ←hA, 
+    split,
+    have : (interval_alg A S T hST).subset = (interval_alg A S' T' hST').subset := by rw ←hA,
+    have : S == S' := begin
+      apply eq_rec_heq,
+
+    end,
+    have : (interval_alg A S T hST).bot.val = (interval_alg A S' T' hST').bot.val := begin 
+      congr,
+      funext,
+      apply propext,
+      
+      sorry,
+      exact hA
+    end
 
   end
 

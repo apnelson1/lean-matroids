@@ -123,3 +123,154 @@ example : bla_eq = bla_ne := begin
   -- TODO: what now?
   sorry
 end
+
+------------------------------------------------
+
+inductive binary_string : Type
+| empty : binary_string
+| append_zero : binary_string → binary_string
+| append_one : binary_string → binary_string
+
+inductive my_nat : Type
+| zero : my_nat
+| succ : my_nat → my_nat
+
+example : my_nat := my_nat.succ (my_nat.succ my_nat.zero)
+
+#print prefix my_nat
+
+/-
+my_nat.rec :
+Π {C : my_nat → Sort l},
+  (C my_nat.zero) →
+  (Π (a : my_nat), (C a) → (C a.succ)) →
+Π (n : my_nat), (C n)
+-/
+
+def f : my_nat → bool
+| (my_nat.zero) := tt
+| (my_nat.succ n) := ff
+
+def g : my_nat → bool :=
+  @my_nat.rec
+    (fun n, bool)
+    tt
+    (fun (n : my_nat) (recur : bool), ff)
+
+def my_factorial : nat → nat :=
+  @nat.rec
+    (fun n, nat)
+    1
+    (fun n recur, (n+1) * recur)
+
+
+def foo (a b : nat): Prop := (a = b)
+--set_option pp.all true
+#print foo
+
+#print eq
+#print eq.rec
+
+inductive optionat : Type
+| none : optionat
+| some : nat → optionat
+
+example : optionat := optionat.none
+example : optionat := optionat.some 5
+example : optionat := optionat.some 3
+
+inductive my_bool_list : Type
+| nil : my_bool_list
+| cons : bool → my_bool_list → my_bool_list
+open my_bool_list
+
+example : my_bool_list :=
+  (cons ff (cons tt nil))
+
+/-
+eq.rec :
+Π {α : Sort u}       nat
+  {a : α}            a : nat
+  {C : α → Sort l},
+  (C a) →
+Π {b : α},           b : nat
+  (a = b) →          h : a = b
+(C b)
+-/
+
+example (a b : nat) : (a = b) = (@eq nat a b) := rfl
+
+example (a b : nat) (f : nat → bool) :
+  (a = b) → (f a = f b) :=
+    λ (h : a = b),
+    @eq.rec
+      nat
+      a
+      (fun rhs, (f a = f rhs))
+      (eq.refl (f a) : (f a = f a))
+      b
+      h
+
+example (a b : nat) :
+  (a = b) → (b = a) :=
+    λ (h : a = b), @eq.rec
+    nat
+    a
+    (fun rhs, (rhs = a))
+    (eq.refl a : (a = a))
+    b
+    h
+
+example (a b c : nat) :
+  (a = b) → (b = c) → (a = c) :=
+    λ (hab : a = b) (hbc : b = c), @eq.rec
+    nat
+    b
+    (fun rhs, (a = rhs))
+    (hab : a = b)
+    c
+    hbc
+
+#print eq
+/-
+inductive eq : Π {α : Sort u}, α → α → Prop
+constructors:
+eq.refl : ∀ {α : Sort u} (a : α), a = a  -- @eq α a a
+-/
+
+example (a b : nat) : Prop := @eq nat a b
+
+#print eq.rec
+/-
+eq.rec :
+Π {α : Sort u}       nat
+  {a : α}            a : nat
+  {C : α → Sort l},
+  (C a) →
+Π {b : α},           b : nat
+  (a = b) →          h : a = b
+(C b)
+-/
+
+#print heq
+/-
+inductive heq : Π {α : Sort u}, α → Π {β : Sort u}, β → Prop
+constructors:
+heq.refl : ∀ {α : Sort u} (a : α), a == a  -- @heq α a α a
+-/
+
+example (a b : nat) : Prop := @heq nat a nat b
+
+#print heq.rec
+/-
+heq.rec :
+Π {α : Sort u}
+  {a : α}
+  {C : Π {β : Sort u} (b : β), Sort l},
+  (@C α a) →
+Π {β : Sort u}
+  {b : β},
+  (a == b) →
+(@C β b)
+-/
+
