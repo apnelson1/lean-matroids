@@ -119,6 +119,8 @@ lemma top_unique {A : fin_bool_alg} (X : A) :
   (∀ (Y: A), Y ∩ X = Y) → X = ⊤ := 
   by intros hX; calc X = ⊤ ∩ X : (top_inter X).symm ... = ⊤ : hX ⊤ 
 
+
+
 -- Idempotence
 
 lemma union_idem {A : fin_bool_alg} (X : A) : 
@@ -295,6 +297,14 @@ begin
 end
 
 
+lemma compl_top (A : fin_bool_alg) :
+  (⊤ : A)ᶜ = ⊥ := 
+  eq.symm (compl_unique (top_union ⊥) (inter_bot ⊤))
+
+lemma compl_bot (A : fin_bool_alg) :
+  (⊥ : A)ᶜ = ⊤ := 
+  eq.symm (compl_unique (union_top ⊥) (bot_inter ⊤)) 
+  
 lemma union_compl_union {A : fin_bool_alg} (X Y : A) :
   X ∪ (Xᶜ ∪ Y) = ⊤ :=  
   by rw [←top_inter(X ∪ (Xᶜ ∪ Y)), ←union_compl, ←union_distrib_right, absorb_inter_union] 
@@ -636,9 +646,18 @@ def interval_alg (A : fin_bool_alg) (S T : A) (hST : S ⊆ T): fin_bool_alg := {
     intros hXY, rw ←interval_alg_inter at hXY, exact subtype.eq hXY,   
   end 
 
+lemma interval_alg_injective {A : fin_bool_alg} {S T S' T' : A} {hST : S ⊆ T} {hST' : S' ⊆ T'} :
+  (interval_alg A S T hST = interval_alg A S' T' hST') → (S = S' ∧ T = T')  := 
+  begin
+    intros hA, 
+    split, 
+    have : (interval_alg A S T hST).bot = (interval_alg A S' T' hST').bot := by rw ←hA, 
+
+  end
+
+
 def sub_alg (A : fin_bool_alg) (T : A) : fin_bool_alg := 
   interval_alg A (⊥ : A) T (sorry : (⊥ :A ) ⊆ T)
-
 
 @[simp] lemma sub_alg_size {A : fin_bool_alg} {T : A} (X : sub_alg A T) : 
   size X = size X.val :=
@@ -651,6 +670,8 @@ def sub_alg (A : fin_bool_alg) (T : A) : fin_bool_alg :=
 @[simp] lemma sub_alg_subset {A : fin_bool_alg} {T : A} {X Y : sub_alg A T} : 
   X ⊆ Y ↔ X.val ⊆ Y.val := 
   by simp only [interval_alg_subset]
+
+
 
 end fin_bool_alg
 end API 

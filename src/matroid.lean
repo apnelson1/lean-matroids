@@ -247,47 +247,22 @@ def matroid.dual (M : matroid) : matroid :=
 ... ≤ (M.rank Xᶜ        + size X       - M.rank ⊤) + (M.rank Yᶜ        + size Y       - M.rank ⊤) : by linarith [M.R3 Xᶜ Yᶜ, size_modular X Y]),
 }
 
-lemma test_eq (M N : matroid) : M = N := 
+lemma rank_bot (M : matroid) : 
+  M.rank ⊥ = 0 := 
+  by linarith[M.R0 ⊥, M.R1 ⊥, size_bot M.subset]
+
+lemma dual_dual (M : matroid) : M.dual.dual = M := 
 begin
-  ext, 
-  sorry, 
+    ext, refl, refl,
+    intros X X' hXX',
+    apply heq_of_eq, rw ←(eq_of_heq hXX'),
+
+    calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤                                                    : rfl
+    ...                     = (M.rank Xᶜᶜ + size Xᶜ - M.rank ⊤) + size X - (M.rank ⊤ᶜ + size (⊤ : M.subset) - M.rank ⊤) : rfl  
+    ...                     = M.rank Xᶜᶜ + (size X + size Xᶜ - size (⊤ : M.subset)) - (M.rank ⊤ᶜ)                        : by linarith 
+    ...                     = M.rank X + (size (⊤ : M.subset) - size (⊤ : M.subset)) - M.rank ⊥                          : by rw [compl_compl, size_compl_sum, compl_top]
+    ...                     = M.rank X                                                                                    : by linarith [rank_bot M]   
 end
-
-lemma dual_dual (M: matroid) : M.dual.dual = M := 
-  begin
-    --cases M, 
-    ext, 
-    refl, refl,
-    intros X X' h_heqXX',
-    apply heq_of_eq,
-    have hXX' : X = X' := eq_of_heq h_heqXX',
-    calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤ : rfl
-    ...                     = M.rank X                                : sorry
-    ...                     = M.rank X'                               : congr_arg _ hXX'
-  end
-
-@[ext] structure test := 
-  (n : ℤ) 
-  (f : ℤ → ℤ) 
-
-def test_dual (T : test) : test :=  
-  {
-    n := -(T.n), 
-    f := λ x, -(T.f x), 
-  }
-
-lemma dual_dual_test (T: test) : test_dual (test_dual T) = T := 
-begin
-  --cases T, 
-  ext, 
-  --unfold test_dual, 
-  sorry, 
-
-  
-
-  sorry, 
-end
-
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
 @[ext] structure minor (M : matroid) :=
@@ -327,18 +302,27 @@ def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
     have hR3 := M.R3 (X.val ∪ C) (Y.val ∪ C), 
     rw [hu, hi] at hR3, 
     linarith [hCr X, hCr Y, hCr (X ∪ Y), hCr (X ∩ Y), hR3],
-    -- There are issues with smoothly transitioning between subalgebra operations (size, inter, union, etc) and operations in the algebra.  
   end, 
 }
 
 
 
 -- Is this possible to prove? Mathematically it should be.
-/-lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
+lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
   (m₁.as_matroid = m₂.as_matroid) → m₁ = m₂ :=
-    sorry
+  begin
+    intros hmm, 
+    ext, 
+    have h : m₁.as_matroid.subset = m₂.as_matroid.subset := by rw hmm, 
+    have h1: sub_alg M.subset m₁.ground = sub_alg M.subset m₂.ground := sorry, 
+    sorry, 
+  end
 
-def minor.delete {M : matroid} (m : minor M) (D : M.ground.subset) :
+
+end fin_bool_alg
+
+
+/-def minor.delete {M : matroid} (m : minor M) (D : M.ground.subset) :
   (D ⊆ m.ground) → (minor M) := fun h, {
     ground := (Dᶜ ∩ m.ground),
     rank := sorry,
@@ -351,5 +335,3 @@ def minor.contract {M : matroid} (m : minor M) (C : M.ground.subset) :
     rank := sorry,
     kernel := sorry,
   }-/
-
-end fin_bool_alg
