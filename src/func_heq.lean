@@ -235,7 +235,7 @@ example (a b c : nat) :
 /-
 inductive eq : Π {α : Sort u}, α → α → Prop
 constructors:
-eq.refl : ∀ {α : Sort u} (a : α), a = a  -- @eq α a a
+eq.refl : ∀ {α : Sort u} (a : α), a = a  -- (@eq α a a)
 -/
 
 example (a b : nat) : Prop := @eq nat a b
@@ -256,7 +256,7 @@ eq.rec :
 /-
 inductive heq : Π {α : Sort u}, α → Π {β : Sort u}, β → Prop
 constructors:
-heq.refl : ∀ {α : Sort u} (a : α), a == a  -- @heq α a α a
+heq.refl : ∀ {α : Sort u} (a : α), a == a  -- (@heq α a α a)
 -/
 
 example (a b : nat) : Prop := @heq nat a nat b
@@ -286,7 +286,7 @@ example (α β : Sort*) (a : α) (b : β) :
   β b
 
 -- heq of values can be upgraded to eq of values with a type-cast
-example (α β : Sort*) (a : α) (b : β) :
+lemma cast_eq_of_heq (α β : Sort*) (a : α) (b : β) :
   forall (h : a == b),
   let cast : α → β := fun x, (@eq.rec _ α id x β (type_eq_of_heq h)) in
   (cast a) = b
@@ -297,6 +297,18 @@ example (α β : Sort*) (a : α) (b : β) :
   (fun _, eq.refl a)
   β b
   h (type_eq_of_heq h)
+
+lemma cast_func_eq_of_heq (α β γ: Sort*) (a : α → γ) (b : β → γ) :
+  forall (h_type : α = β) (h : a == b),
+  let cast : (α → γ) → (β → γ) := fun x, (@eq.rec _ α (fun δ, δ → γ) x β h_type) in
+  (cast a) = b
+:=
+  fun h_type h, @heq.rec
+  (α → γ) a
+  (fun argh x, forall (hγ : (α → γ) = argh), (@eq.rec _ (α → γ) id a argh hγ) = x)
+  (fun _, eq.refl a)
+  (β → γ) b
+  h (sorry : (α → γ) = (β → γ))
 
 -- the type-cast isn't needed when the types are defeq
 #check @eq_of_heq
@@ -309,3 +321,47 @@ example (α : Sort*) (a b : α) :
   (fun _, eq.refl a)
   α b
   h (eq.refl α)
+
+#check @congr
+/-
+congr :
+∀ {α β : Sort*}
+  {f₁ f₂ : α → β}
+  {a₁ a₂ : α},
+  (f₁ = f₂) →
+  (a₁ = a₂) →
+(f₁ a₁ = f₂ a₂)
+-/
+
+example
+  (α₁ α₂ β : Sort*)
+  (f₁ : α₁ → β)
+  (f₂ : α₂ → β)
+  (a₁ : α₁) (a₂ : α₂)
+:
+  (f₁ == f₂) →
+  (a₁ == a₂) →
+(f₁ a₁ = f₂ a₂)
+:=
+  fun hf ha, let
+    hα : α₁ = α₂ := type_eq_of_heq ha,
+    cast_a : α₁ → α₂ := fun a, (@eq.rec _ α₁ id a α₂ hα),
+    cast_f : (α₁ → β) → (α₂ → β) := fun f, (@eq.rec _ α₁ (fun α, α → β) f α₂ hα),
+    h₁ : (cast_f f₁) = f₂ := sorry,
+    h₂ : (cast_a a₁) = a₂ := cast_eq_of_heq _ _ _ _ _,
+    h₃ : (cast_f f₁) (cast_a a₁) = f₁ a₁ := cast_func_apply_eq _ _ _ _ _ _,
+    kernel : ((cast_f f₁) (cast_a a₁) = f₂ a₂) := by rw [h₁, h₂]
+  in h₃.symm.trans kernel
+
+
+
+#check @congr_arg_heq
+/-
+congr_arg_heq :
+∀ {α : Sort*}
+  {β : α → Sort*}
+  (f : Π (a : α), β a)
+  {a₁ a₂ : α},
+  (a₁ = a₂) →
+(f a₁ == f a₂)
+-/

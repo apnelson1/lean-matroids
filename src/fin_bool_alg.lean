@@ -651,6 +651,8 @@ lemma interval_alg_injective {A : fin_bool_alg} {S T S' T' : A} {hST : S ⊆ T} 
   begin
     intros hA, 
     split,
+    injections_and_clear,
+    
     have : (interval_alg A S T hST).subset = (interval_alg A S' T' hST').subset := by rw ←hA,
     have : S == S' := begin
       apply eq_rec_heq,
