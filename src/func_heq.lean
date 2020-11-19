@@ -274,3 +274,38 @@ heq.rec :
 (@C β b)
 -/
 
+-- heq on the level of values imples eq in the level of types
+#check @type_eq_of_heq
+example (α β : Sort*) (a : α) (b : β) :
+  (a == b) → (α = β)
+:=
+  @heq.rec
+  α a
+  (fun γ c, α = γ)
+  (eq.refl α)
+  β b
+
+-- heq of values can be upgraded to eq of values with a type-cast
+example (α β : Sort*) (a : α) (b : β) :
+  forall (h : a == b),
+  let cast : α → β := fun x, (@eq.rec _ α id x β (type_eq_of_heq h)) in
+  (cast a) = b
+:=
+  fun h, @heq.rec
+  α a
+  (fun γ c, forall (hγ : α = γ), (@eq.rec _ α id a γ hγ) = c)
+  (fun _, eq.refl a)
+  β b
+  h (type_eq_of_heq h)
+
+-- the type-cast isn't needed when the types are defeq
+#check @eq_of_heq
+example (α : Sort*) (a b : α) :
+  (a == b) → (a = b)
+:=
+  fun h, @heq.rec
+  α a
+  (fun γ c, forall (hγ : α = γ), (@eq.rec _ α id a γ hγ) = c)
+  (fun _, eq.refl a)
+  α b
+  h (eq.refl α)
