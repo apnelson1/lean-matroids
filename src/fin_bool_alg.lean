@@ -544,6 +544,17 @@ lemma in_between {A : fin_bool_alg} {X Y : A} :
     sorry, 
   end
 
+section embedding
+
+structure fin_bool_alg.embedding (A B : fin_bool_alg) :=
+  (func : A → B)
+
+  (on_inter (X Y : A) : func (X ∩ Y) = (func X) ∩ (func Y))
+  (on_union (X Y : A) : func (X ∪ Y) = (func X) ∪ (func Y))
+  (on_size (X Y : A) : size X - size Y = size (func X) - size (func Y))
+
+end /- section -/ embedding
+
 def fin_bool_alg.canonical (size : ℤ) :
   (0 ≤ size) → fin_bool_alg := sorry
 
@@ -585,8 +596,15 @@ def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg :
 }
 
 -- Algebra of all sets containing S and contained in T
+structure interval_alg := 
+  (big : fin_bool_alg)
+  (S T : big) 
+  (hST : S ⊆ T)
 
-def interval_alg (A : fin_bool_alg) (S T : A) (hST : S ⊆ T): fin_bool_alg := {
+def interval_alg.as_fin_bool_alg (small : interval_alg) : fin_bool_alg := 
+let A := small.big, S := small.S, T := small.T, hST := small.hST in
+{
+
 
   subset := {X: A | (S ⊆ X) ∧ (X ⊆ T)},
 
@@ -631,6 +649,19 @@ def interval_alg (A : fin_bool_alg) (S T : A) (hST : S ⊆ T): fin_bool_alg := {
   end,
 }
 
+def interval_alg.embedding (small : interval_alg) : small.as_fin_bool_alg.embedding small.big :=
+{
+  func := (λ X, X.val),
+  on_inter := (λ X Y, rfl), 
+  on_union := (λ X Y, rfl), 
+  on_size := 
+  begin
+     intros X Y, 
+     calc size X - size Y = (size X.val - size small.S) - (size Y.val - size small.S) : by refl
+     ... = size X.val - size Y.val : by linarith, 
+  end,
+} 
+
 @[simp] lemma interval_alg_inter {A : fin_bool_alg} {S T : A} (hST : S ⊆ T) (X Y : interval_alg A S T hST):
   (X ∩ Y).val = X.val ∩ Y.val := rfl 
 
@@ -652,7 +683,7 @@ lemma interval_alg_injective {A : fin_bool_alg} {S T S' T' : A} {hST : S ⊆ T} 
     intros hA, 
     split,
     injections_and_clear,
-    
+
     have : (interval_alg A S T hST).subset = (interval_alg A S' T' hST').subset := by rw ←hA,
     have : S == S' := begin
       apply eq_rec_heq,
@@ -670,8 +701,8 @@ lemma interval_alg_injective {A : fin_bool_alg} {S T S' T' : A} {hST : S ⊆ T} 
   end
 
 
-def sub_alg (A : fin_bool_alg) (T : A) : fin_bool_alg := 
-  interval_alg A (⊥ : A) T (sorry : (⊥ :A ) ⊆ T)
+def sub_alg (A : fin_bool_alg) (new_top : A) : fin_bool_alg :=
+  interval_alg A (⊥ : A) new_top (sorry : (⊥ :A ) ⊆ new_top)
 
 @[simp] lemma sub_alg_size {A : fin_bool_alg} {T : A} (X : sub_alg A T) : 
   size X = size X.val :=

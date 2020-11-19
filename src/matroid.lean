@@ -312,13 +312,29 @@ lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
   (m₁.as_matroid = m₂.as_matroid) → m₁ = m₂ :=
   begin
     intros hmm, 
-    ext, 
+    ext,
+    let bla := m₁.ground,
+    {
+      calc
+      m₁.ground = m₁.as_matroid.subset.top.val : rfl
+      ...       = m₂.as_matroid.subset.top.val : sorry
+      ...       = m₂.ground                    : rfl
+    }
+    --let get_top := λ (M: matroid), M.subset.top.val, 
+    -- let bla : m₁.ground = m₁.as_matroid.subset.top.val := rfl,
+    -- m₁.ground === m₁.as_matroid.top.val
     have h : m₁.as_matroid.subset = m₂.as_matroid.subset := by rw hmm, 
+    
     have h1: sub_alg M.subset m₁.ground = sub_alg M.subset m₂.ground := sorry, 
     sorry, 
   end
+/-
+@subtype.val M.subset (fun (X : M.subset), (⊥ ⊆ X) ∧ (X ⊆ m₁.ground))
+(fin_bool_alg.top (matroid.subset (@minor.as_matroid M m₁)))
 
-
+-- interval_??.subset := {X : A | (S ⊆ X) ∧ (X ⊆ T)}
+-/
+#check @subtype.val
 end fin_bool_alg
 
 
