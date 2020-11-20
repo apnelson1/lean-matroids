@@ -172,10 +172,10 @@ lemma size_nonneg (X : A) : 0 ≤ size X :=
 lemma subset_refl (X : A) : X ⊆ X :=
   by unfold has_subset.subset; rw inter_idem 
 
-lemma inter_subset_iff (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
+@[simp] lemma inter_subset_iff (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   by split; apply eq.symm; tidy; rw a; tidy 
 
-lemma union_subset_iff (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
+@[simp] lemma union_subset_iff (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
 begin
   split, 
   intros hXY,
@@ -451,19 +451,19 @@ lemma union_of_supsets (X Y Z : A) : (X ⊆ Y) → (X ⊆ Y ∪ Z) :=
   by intros h; exact subset_trans h (subset_union_left Y Z)
 
 lemma subset_inter_subset_left (X Y Z : A) : (X ⊆ Y) → (X ∩ Z) ⊆ (Y ∩ Z) := 
-begin
-  unfold has_subset.subset, 
-  intro hXY, 
-  rw [←inter_distrib_inter_left, ←hXY],
-end
+  begin
+    unfold has_subset.subset, 
+    intro hXY, 
+    rw [←inter_distrib_inter_left, ←hXY],
+  end
 
 lemma subset_union_subset_left (X Y Z : A) : (X ⊆ Y) → (X ∪ Z) ⊆ (Y ∪ Z) := 
-begin
-  rw union_subset_iff _ _, 
-  rw union_subset_iff _ _, 
-  intros hXY, 
-  rw [←union_distrib_union_left, hXY], 
-end
+  begin
+    rw union_subset_iff _ _, 
+    rw union_subset_iff _ _, 
+    intros hXY, 
+    rw [←union_distrib_union_left, hXY], 
+  end
 
 lemma in_between {X Y : A} : (X ⊆ Y) ∧ (X ≠ Y) → (∀ Z, (X ⊆ Z ∧ Z ⊆ Y) → (Z = X ∨ Z = Y)) → size Y - size X = 1 := 
   begin
@@ -480,6 +480,20 @@ structure fin_bool_alg.embedding (A B : fin_bool_alg) :=
   (on_inter (X Y : A) : func (X ∩ Y) = (func X) ∩ (func Y))
   (on_union (X Y : A) : func (X ∪ Y) = (func X) ∪ (func Y))
   (on_size (X Y : A) : size X - size Y = size (func X) - size (func Y))
+
+lemma fin_bool_alg.bot_to_bot_embedding_size {A B : fin_bool_alg} {emb : fin_bool_alg.embedding A B} (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
+  size X = size (emb.func X) :=  
+  begin
+    have := emb.on_size X ⊥,
+    rw [@size_bot A, h_bot, @size_bot B] at this, 
+    linarith, 
+  end
+
+lemma fin_bool_alg.on_subset {A B : fin_bool_alg} {emb : fin_bool_alg.embedding A B} {X Y : A} (hXY : X ⊆ Y) : 
+  emb.func X ⊆ emb.func Y := 
+  begin
+    sorry, 
+  end
 
 end /- section -/ embedding
 

@@ -266,31 +266,35 @@ end
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
 @[ext] structure minor (M : matroid) :=
-  (ground : M.subset)
-  (rank   : (sub_alg M.subset ground) → ℤ)
-  (kernel : exists (C : M.subset),
-    (ground ∩ C = ⊥) ∧
-    (forall X, rank X = M.rank (X.val ∪ C) - M.rank C))
+  (ground : fin_bool_alg)
+  (rank   : ground → ℤ)
+  (kernel : exists (C : M.subset) (emb : fin_bool_alg.embedding ground M.subset),
+    (emb.func (⊥ : ground) = ⊥) ∧ 
+    (emb.func (⊤ : ground) ∩ C = ⊥) ∧
+    (forall X, rank X = M.rank (emb.func X ∪ C) - M.rank C))
 
 
 -- A matroid minor is a matroid in its own right.
-def minor.as_matroid {M : matroid} (m : minor M) : matroid := {
-  subset := (sub_alg M.subset m.ground),
-  rank := (λ X, m.rank X),  
+def minor.as_matroid {M : matroid} (m : minor M) : matroid := 
+{
+  subset := m.ground, 
+  rank := m.rank, 
 
-  R0 := by intros X; rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩; linarith [M.R2 (subset_union_right X.val C), hCr X], 
+  R0 := by intros X; rcases m.kernel with ⟨C,emb,⟨h0,hC,hr⟩⟩; linarith [M.R2 (subset_union_right (emb.func X) C), hr X], 
+
   R1 := 
   begin
-    intros X,
-    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
-    have : size X = size X.val := by simp only [sub_alg_size],
-    linarith [M.R0 (X.val ∩ C), M.R3 X.val C, M.R1 X.val, hCr X],
+    intros X, rcases m.kernel with ⟨C,emb,⟨h0,hC,hr⟩⟩,
+    linarith [fin_bool_alg.bot_to_bot_embedding_size h0 X, M.R0 (emb.func X ∩ C), M.R3 (emb.func X) C, M.R1 (emb.func X), hr X],
   end,
   R2 := 
   begin
+    
     intros X Y hXY, 
-    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
-    have hXY' : X.val ⊆ Y.val := by rw ←interval_alg_subset; exact hXY, 
+    rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,
+    let X' := emb.func X, 
+    let Y' := emb.func Y
+    have hXY' : X' ⊆ Y' := 
     linarith [M.R2 (subset_union_subset_left X.val Y.val C hXY'), hCr X, hCr Y],
   end, 
   R3 := 
