@@ -298,18 +298,6 @@ lemma cast_eq_of_heq (α β : Sort*) (a : α) (b : β) :
   β b
   h (type_eq_of_heq h)
 
-lemma cast_func_eq_of_heq (α β γ: Sort*) (a : α → γ) (b : β → γ) :
-  forall (h_type : α = β) (h : a == b),
-  let cast : (α → γ) → (β → γ) := fun x, (@eq.rec _ α (fun δ, δ → γ) x β h_type) in
-  (cast a) = b
-:=
-  fun h_type h, @heq.rec
-  (α → γ) a
-  (fun argh x, forall (hγ : (α → γ) = argh), (@eq.rec _ (α → γ) id a argh hγ) = x)
-  (fun _, eq.refl a)
-  (β → γ) b
-  h (sorry : (α → γ) = (β → γ))
-
 -- the type-cast isn't needed when the types are defeq
 #check @eq_of_heq
 example (α : Sort*) (a b : α) :
@@ -333,7 +321,38 @@ congr :
 (f₁ a₁ = f₂ a₂)
 -/
 
-example
+#check @congr_arg_heq
+/-
+congr_arg_heq :
+∀ {α : Sort*}
+  {β : α → Sort*}
+  (f : Π (a : α), β a)
+  {a₁ a₂ : α},
+  (a₁ = a₂) →
+(f a₁ == f a₂)
+-/
+
+def ccast {α : Sort*} {lhs rhs : α} (h : lhs = rhs) (C : α → Sort*) :
+  (C lhs) → (C rhs) :=
+    fun val, @eq.rec α lhs C val rhs h
+
+lemma ccast_heq {α : Sort*} {lhs rhs : α} (h : lhs = rhs) (C : α → Sort*) (val : C lhs) :
+  (ccast h C val) == val :=
+    @eq.rec α lhs
+    (fun a, forall (ha : lhs = a), (ccast ha C val) == val)
+    (fun _, heq.refl val)
+    rhs h h
+
+lemma ccast_apply {α : Sort*} {lhs rhs : α} (h : lhs = rhs)
+  (C : α → Sort*) (val : C lhs)
+  {β : Sort*} (f : (C lhs) → β) :
+  f val = (ccast h (fun a, (C a) → β) f) (ccast h C val) :=
+    @eq.rec α lhs
+    (fun a', forall (ha' : lhs = a'), f val = (ccast ha' (fun a, (C a) → β) f) (ccast ha' C val))
+    (fun _, eq.refl (f val))
+    rhs h h
+
+lemma congr_heq
   (α₁ α₂ β : Sort*)
   (f₁ : α₁ → β)
   (f₂ : α₂ → β)
@@ -345,23 +364,14 @@ example
 :=
   fun hf ha, let
     hα : α₁ = α₂ := type_eq_of_heq ha,
-    cast_a : α₁ → α₂ := fun a, (@eq.rec _ α₁ id a α₂ hα),
-    cast_f : (α₁ → β) → (α₂ → β) := fun f, (@eq.rec _ α₁ (fun α, α → β) f α₂ hα),
-    h₁ : (cast_f f₁) = f₂ := sorry,
-    h₂ : (cast_a a₁) = a₂ := cast_eq_of_heq _ _ _ _ _,
-    h₃ : (cast_f f₁) (cast_a a₁) = f₁ a₁ := cast_func_apply_eq _ _ _ _ _ _,
-    kernel : ((cast_f f₁) (cast_a a₁) = f₂ a₂) := by rw [h₁, h₂]
-  in h₃.symm.trans kernel
-
-
-
-#check @congr_arg_heq
-/-
-congr_arg_heq :
-∀ {α : Sort*}
-  {β : α → Sort*}
-  (f : Π (a : α), β a)
-  {a₁ a₂ : α},
-  (a₁ = a₂) →
-(f a₁ == f a₂)
--/
+    hf' : (ccast hα (fun α, α → β) f₁) = f₂ :=
+      eq_of_heq (
+      calc (ccast hα (fun α, α → β) f₁) == f₁ : ccast_heq _ _ _
+      ...                               == f₂ : hf),
+    ha' : (ccast hα (fun α, α) a₁) = a₂ :=
+      eq_of_heq (
+      calc (ccast hα (fun α, α) a₁) == a₁ : ccast_heq _ _ _
+      ...                           == a₂ : ha)
+  in
+  calc f₁ a₁ = (ccast hα (fun α, α → β) f₁) (ccast hα (fun α, α) a₁) : ccast_apply hα _ _ _
+  ...        = f₂ a₂                                                 : congr hf' ha'
