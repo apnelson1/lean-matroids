@@ -23,6 +23,7 @@ import tactic.linarith
 -- The API for finite boolean algebras (now moved)
 
 import fin_bool_alg
+import func_heq 
 
 
 /-
@@ -153,16 +154,16 @@ end API
 namespace fin_bool_alg 
 -- The rank-function definition of a matroid, as a packed structure.
 @[ext] structure matroid :=
-  (subset : fin_bool_alg)
-  (rank : subset → ℤ)
+  (A : fin_bool_alg)
+  (rank : A → ℤ)
 
-  (R0 : forall (X : subset),
+  (R0 : forall (X : A),
     0 ≤ rank X)
-  (R1 : forall (X : subset),
+  (R1 : forall (X : A),
     rank X ≤ size X)
-  (R2 : forall {X Y : subset},
+  (R2 : forall {X Y : A},
     X ⊆ Y → rank X ≤ rank Y)
-  (R3 : forall (X Y : subset),
+  (R3 : forall (X Y : A),
     rank (X ∩ Y) + rank (X ∪ Y) ≤ rank X + rank Y)
 
 -- An example: uniform matroids, with rank `k` and size `n`.
@@ -170,7 +171,7 @@ def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
   fun (h0k : 0 ≤ k) (hkn : k ≤ n), let
     A : fin_bool_alg := fin_bool_alg.canonical n (le_trans h0k hkn)
   in {
-    subset := A,
+    A := A,
     rank := (fun (X : A), min k (size X)),
 
     R0 := (fun X, le_min h0k (size_nonneg X)),
@@ -209,13 +210,13 @@ def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
 -- The empty set always has rank zero.
 lemma matroid.rank_empty (M : matroid) :
   M.rank ⊥ = 0
-    := le_antisymm (calc M.rank ⊥ ≤ size (⊥ : M.subset) : M.R1 ⊥ ... = 0 : size_bot M.subset) (M.R0 ⊥)
+    := le_antisymm (calc M.rank ⊥ ≤ size (⊥ : M.A) : M.R1 ⊥ ... = 0 : size_bot M.A) (M.R0 ⊥)
 
 -- The definition of the dual matroid. R2 is the trickier axiom to prove.
 def matroid.dual (M : matroid) : matroid := 
 {
-  subset := M.subset,
-  rank := (fun (X : M.subset), M.rank Xᶜ + (size X) - M.rank ⊤),
+  A := M.A,
+  rank := (fun (X : M.A), M.rank Xᶜ + (size X) - M.rank ⊤),
 
   R0 := (fun X, calc
     0   ≤ M.rank Xᶜ + M.rank X - M.rank (X ∪ Xᶜ) - M.rank (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
@@ -249,7 +250,7 @@ def matroid.dual (M : matroid) : matroid :=
 
 lemma rank_bot (M : matroid) : 
   M.rank ⊥ = 0 := 
-  by linarith[M.R0 ⊥, M.R1 ⊥, size_bot M.subset]
+  by linarith[M.R0 ⊥, M.R1 ⊥, size_bot M.A]
 
 lemma dual_dual (M : matroid) : M.dual.dual = M := 
 begin
@@ -257,88 +258,72 @@ begin
     intros X X' hXX',
     apply heq_of_eq, rw ←(eq_of_heq hXX'),
 
-    calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤                                                    : rfl
-    ...                     = (M.rank Xᶜᶜ + size Xᶜ - M.rank ⊤) + size X - (M.rank ⊤ᶜ + size (⊤ : M.subset) - M.rank ⊤) : rfl  
-    ...                     = M.rank Xᶜᶜ + (size X + size Xᶜ - size (⊤ : M.subset)) - (M.rank ⊤ᶜ)                        : by linarith 
-    ...                     = M.rank X + (size (⊤ : M.subset) - size (⊤ : M.subset)) - M.rank ⊥                          : by rw [compl_compl, size_compl_sum, compl_top]
-    ...                     = M.rank X                                                                                    : by linarith [rank_bot M]   
+    calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤                                                 : rfl
+    ...                     = (M.rank Xᶜᶜ + size Xᶜ - M.rank ⊤) + size X - (M.rank ⊤ᶜ + size (⊤ : M.A) - M.rank ⊤)   : rfl  
+    ...                     = M.rank Xᶜᶜ + (size X + size Xᶜ - size (⊤ : M.A)) - (M.rank ⊤ᶜ)                          : by linarith 
+    ...                     = M.rank X + (size (⊤ : M.A) - size (⊤ : M.A)) - M.rank ⊥                                 : by rw [compl_compl, size_compl_sum, compl_top]
+    ...                     = M.rank X                                                                                 : by linarith [rank_bot M]   
 end
 
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
 @[ext] structure minor (M : matroid) :=
-  (ground : fin_bool_alg)
-  (rank   : ground → ℤ)
-  (kernel : exists (C : M.subset) (emb : fin_bool_alg.embedding ground M.subset),
-    (emb.func (⊥ : ground) = ⊥) ∧ 
-    (emb.func (⊤ : ground) ∩ C = ⊥) ∧
-    (forall X, rank X = M.rank (emb.func X ∪ C) - M.rank C))
+  (m_A : fin_bool_alg)
+  (m_rank   : m_A → ℤ)
+  (kernel : exists (C : M.A) (emb : fin_bool_alg.embedding m_A M.A),
+    (emb.func (⊥ : m_A) = ⊥) ∧ 
+    (emb.func (⊤ : m_A) ∩ C = ⊥) ∧
+    (forall X, m_rank X = M.rank (emb.func X ∪ C) - M.rank C))
 
 
 -- A matroid minor is a matroid in its own right.
 def minor.as_matroid {M : matroid} (m : minor M) : matroid := 
 {
-  subset := m.ground, 
-  rank := m.rank, 
+  A := m.m_A, 
+  rank := m.m_rank, 
 
   R0 := by intros X; rcases m.kernel with ⟨C,emb,⟨h0,hC,hr⟩⟩; linarith [M.R2 (subset_union_right (emb.func X) C), hr X], 
 
   R1 := 
   begin
     intros X, rcases m.kernel with ⟨C,emb,⟨h0,hC,hr⟩⟩,
-    linarith [fin_bool_alg.bot_to_bot_embedding_size h0 X, M.R0 (emb.func X ∩ C), M.R3 (emb.func X) C, M.R1 (emb.func X), hr X],
+    linarith [bot_to_bot_embedding_size emb h0 X, M.R0 (emb.func X ∩ C), M.R3 (emb.func X) C, M.R1 (emb.func X), hr X],
   end,
   R2 := 
   begin
-    
-    intros X Y hXY, 
-    rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,
-    let X' := emb.func X, 
-    let Y' := emb.func Y
-    have hXY' : X' ⊆ Y' := 
-    linarith [M.R2 (subset_union_subset_left X.val Y.val C hXY'), hCr X, hCr Y],
+    intros X Y hXY, rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,    
+    linarith [M.R2 (subset_union_subset_left (emb.func X) (emb.func Y) C (embedding_on_subset emb hXY )), hCr X, hCr Y],
   end, 
   R3 := 
   begin
-    intros X Y, 
-    rcases m.kernel with ⟨C,⟨hC,hCr⟩⟩,
-    have hu : (X.val ∪ C) ∪ (Y.val ∪ C) = (X ∪ Y).val ∪ C := by rw ←union_distrib_union_left; simp only [interval_alg_union],
-    have hi : (X.val ∪ C) ∩ (Y.val ∪ C) = (X ∩ Y).val ∪ C := by rw ←union_distrib_left; simp only [interval_alg_inter],
-    have hR3 := M.R3 (X.val ∪ C) (Y.val ∪ C), 
+    intros X Y, rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,
+    let f := emb.func, 
+    have hu : (f X ∪ C) ∪ (f Y ∪ C) = f (X ∪ Y) ∪ C := by rw ←union_distrib_union_left; rw ←emb.on_union,
+    have hi : (f X ∪ C) ∩ (f Y ∪ C) = f (X ∩ Y) ∪ C := by rw ←union_distrib_left; rw ←emb.on_inter, 
+    have hR3 := M.R3 (f X ∪ C) (f Y ∪ C), 
     rw [hu, hi] at hR3, 
     linarith [hCr X, hCr Y, hCr (X ∪ Y), hCr (X ∩ Y), hR3],
   end, 
 }
 
 
-
 -- Is this possible to prove? Mathematically it should be.
+
+-- Yes, it is! I'm not happy with the proof, though...
 lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
   (m₁.as_matroid = m₂.as_matroid) → m₁ = m₂ :=
   begin
     intros hmm, 
-    ext,
-    let bla := m₁.ground,
-    {
-      calc
-      m₁.ground = m₁.as_matroid.subset.top.val : rfl
-      ...       = m₂.as_matroid.subset.top.val : sorry
-      ...       = m₂.ground                    : rfl
-    }
-    --let get_top := λ (M: matroid), M.subset.top.val, 
-    -- let bla : m₁.ground = m₁.as_matroid.subset.top.val := rfl,
-    -- m₁.ground === m₁.as_matroid.top.val
-    have h : m₁.as_matroid.subset = m₂.as_matroid.subset := by rw hmm, 
-    
-    have h1: sub_alg M.subset m₁.ground = sub_alg M.subset m₂.ground := sorry, 
-    sorry, 
-  end
-/-
-@subtype.val M.subset (fun (X : M.subset), (⊥ ⊆ X) ∧ (X ⊆ m₁.ground))
-(fin_bool_alg.top (matroid.subset (@minor.as_matroid M m₁)))
 
--- interval_??.subset := {X : A | (S ⊆ X) ∧ (X ⊆ T)}
--/
-#check @subtype.val
+    have h : m₁.m_A = m₂.m_A := 
+      by calc m₁.m_A = m₁.as_matroid.A : rfl 
+               ...   = m₂.as_matroid.A : by rw hmm 
+               ...   = m₂.m_A            : rfl,
+
+    injections_and_clear, 
+    ext, exact h, rw h, intros a a' haa', apply heq_of_eq, 
+    apply congr_heq, exact h_2, exact haa', 
+  end
+
 end fin_bool_alg
 
 

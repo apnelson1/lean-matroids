@@ -23,7 +23,8 @@ structure fin_bool_alg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: subset) : 0 ≤ size X) 
   (size_modular_ax (X Y: subset) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (size_singleton_ax (X : subset) : (1 < size X) → (∃ (Y : subset), (inter X Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)))
+  (size_singleton_ax (X : subset) : (∀(Y Z : subset), (X = inter X (union Y Z)) → ((X = inter X Y) ∨ (X = inter X Z))) → size X = 1 )
+  --(1 < size X) → (∃ (Y : subset), (inter X Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)))
 
   (inter_comm_ax (X Y : subset) : inter X Y = inter Y X)
   (union_comm_ax (X Y : subset) : union X Y = union Y X)
@@ -46,14 +47,14 @@ structure fin_bool_alg :=
 variables {A : fin_bool_alg}
 
 
-instance i1  : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
-instance i2  : has_bot A := {bot := A.bot}
-instance i3  : has_top A := {top := A.top}
-instance i4  : has_inter A := {inter := A.inter}
-instance i5  : has_union A := {union := A.union}
-instance i6  : has_compl A := {compl := A.compl}
-instance i7  : has_subset A := {subset := λ (X Y), (X = X ∩ Y)} 
-instance i8  : has_sub A := {sub := λ (X Y), X ∩ Yᶜ}
+@[simp] instance i1  : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
+@[simp] instance i2  : has_bot A := {bot := A.bot}
+@[simp] instance i3  : has_top A := {top := A.top}
+@[simp] instance i4  : has_inter A := {inter := A.inter}
+@[simp] instance i5  : has_union A := {union := A.union}
+@[simp] instance i6  : has_compl A := {compl := A.compl}
+@[simp] instance i7  : has_subset A := {subset := λ (X Y), (X = X ∩ Y)} 
+@[simp] instance i8  : has_sub A := {sub := λ (X Y), X ∩ Yᶜ}
 
 def size  (X : A) : ℤ := A.size X
 def sdiff  (X Y : A) : A := (X - Y) ∪ (Y - X)
@@ -161,8 +162,6 @@ lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size
 lemma size_bot (A : fin_bool_alg) : size (⊥ : A) = 0 := 
   A.size_bot_ax
 
-lemma size_singleton (X : A) : (1 < size X) → (∃ (Y : A), (X ∩ Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)) := 
-  A.size_singleton_ax X 
 
 lemma size_nonneg (X : A) : 0 ≤ size X := 
   A.size_nonneg_ax X 
@@ -305,6 +304,18 @@ lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) :
   X ∪ (Xᶜ ∩ Y) = Y := 
   by nth_rewrite 0 ←(inter_subset hXY); exact compl_partition X Y
   
+
+
+
+lemma size_singleton (X : A) : (∀(Y Z : A), (X ⊆ Y ∪ Z) → (X ⊆ Y ∨ X ⊆ Z)) → size X = 1 := 
+  begin
+    intros h, apply A.size_singleton_ax, intros Y Z hYZ,
+    have := h Y Z ((inter_subset_iff X (Y ∪ Z)).mpr hYZ.symm), 
+    rw inter_subset_iff at this, rw inter_subset_iff at this,
+    cases this, 
+    left, exact this.symm, 
+    right, exact this.symm,  -- this proof is terrible; probably should be one-liner. 
+  end
 
 
 -- Associativity (In fact, this can be discarded eventually : WIP)
@@ -481,7 +492,7 @@ structure fin_bool_alg.embedding (A B : fin_bool_alg) :=
   (on_union (X Y : A) : func (X ∪ Y) = (func X) ∪ (func Y))
   (on_size (X Y : A) : size X - size Y = size (func X) - size (func Y))
 
-lemma fin_bool_alg.bot_to_bot_embedding_size {A B : fin_bool_alg} {emb : fin_bool_alg.embedding A B} (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
+lemma bot_to_bot_embedding_size {A B : fin_bool_alg} (emb : fin_bool_alg.embedding A B) (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
   size X = size (emb.func X) :=  
   begin
     have := emb.on_size X ⊥,
@@ -489,11 +500,9 @@ lemma fin_bool_alg.bot_to_bot_embedding_size {A B : fin_bool_alg} {emb : fin_boo
     linarith, 
   end
 
-lemma fin_bool_alg.on_subset {A B : fin_bool_alg} {emb : fin_bool_alg.embedding A B} {X Y : A} (hXY : X ⊆ Y) : 
+lemma embedding_on_subset {A B : fin_bool_alg} (emb : fin_bool_alg.embedding A B) {X Y : A} (hXY : X ⊆ Y) : 
   emb.func X ⊆ emb.func Y := 
-  begin
-    sorry, 
-  end
+  by rw inter_subset_iff at *; rw [←emb.on_inter, hXY]
 
 end /- section -/ embedding
 
@@ -518,11 +527,7 @@ def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg :
   size_modular_ax := by tidy; apply finset.card_union_add_card_inter,
   size_singleton_ax := 
   begin
-    intros X hX, 
-    have X_nonempty : X.val.nonempty, by apply (finset.card_pos).mp; linarith,  
-    cases finset.nonempty.bex X_nonempty with x hx, 
-    use {x},
-    tidy, 
+    sorry, 
   end, 
 
   inter_comm_ax := by tidy, 
@@ -546,8 +551,6 @@ structure interval_alg :=
 def interval_alg.as_fin_bool_alg (small : interval_alg) : fin_bool_alg := 
 let A := small.big, S := small.S, T := small.T, hST := small.hST in
 {
-
-
   subset := {X: A | (S ⊆ X) ∧ (X ⊆ T)},
 
   bot := ⟨S, ⟨subset_refl S, hST⟩⟩,
@@ -603,6 +606,8 @@ def interval_alg.embedding (small : interval_alg) : small.as_fin_bool_alg.embedd
      ... = size X.val - size Y.val : by linarith, 
   end,
 } 
+
+def sub_alg (R : A) : interval_alg := ⟨A, ⊥, R, (bot_subset R : ⊥ ⊆ R)⟩ 
 
 /-@[simp] lemma interval_alg_inter  {S T : A} (hST : S ⊆ T) (X Y : interval_alg A S T hST):
   (X ∩ Y).val = X.val ∩ Y.val := rfl 
