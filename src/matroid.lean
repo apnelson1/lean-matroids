@@ -265,7 +265,18 @@ begin
     ...                     = M.rank X                                                                                 : by linarith [rank_bot M]   
 end
 
+
+
+
 -- The definition of a minor is weird-looking, but should correctly capture the notion of equality of minors.
+
+/- This definition works in the sense that proofs below are sorry-free, but the problem is now that 
+it doesn't capture equality correctly; it allows multiple 'versions' of the same minor of M to be 
+propositionally distinct, both before and after as_matroid is applied. Changing the data in the minor 
+back to just including ground set and rank function solves this problem, but causes ugliness elsewhere. I 
+want to be able to insist that the embedding is the inclusion map, but I don't see how to make the inclusion
+map canonical in type theory -/
+
 @[ext] structure minor (M : matroid) :=
   (m_A : fin_bool_alg)
   (m_rank   : m_A → ℤ)
