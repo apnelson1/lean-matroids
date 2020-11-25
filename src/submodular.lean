@@ -18,7 +18,7 @@ structure rankfun (b : boolalg.boolalg) extends submod b :=
   (monotone : forall (X Y : b), X ⊆ Y → f(X) ≤ f(Y))
 instance rankfun.coe_to_fun {b : boolalg.boolalg} : has_coe_to_fun (rankfun b) := ⟨_, fun (r : rankfun b), r.f⟩
 
-structure boolalg.embed (b b' : boolalg.boolalg) :=
+structure boolalg.embed_ (b b' : boolalg.boolalg) :=
   (f : b → b')
   (on_bot : f ⊥ = ⊥)
   -- note : top is not respected by embedding
@@ -27,37 +27,37 @@ structure boolalg.embed (b b' : boolalg.boolalg) :=
   -- note : compl is not respected by embedding
   (on_size (X : b) : boolalg.size X = boolalg.size (f X))
 
-lemma boolalg.embed.on_subset {b b' : boolalg.boolalg} (emb : boolalg.embed b b') {X Y : b} :
+lemma boolalg.embed.on_subset_ {b b' : boolalg.boolalg} (emb : boolalg.embed b b') {X Y : b} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := sorry 
 
-def powersetalg : Type → boolalg.boolalg := sorry
-def subalg {b : boolalg.boolalg} (E : b) : boolalg.boolalg := sorry
-instance boolalg.embed.coe_to_fun {b b' : boolalg.boolalg} : has_coe_to_fun (boolalg.embed b b') := {
+def powersetalg_ : Type → boolalg.boolalg := sorry
+def subalg_ {b : boolalg.boolalg} (E : b) : boolalg.boolalg := sorry
+instance boolalg.embed.coe_to_fun_ {b b' : boolalg.boolalg} : has_coe_to_fun (boolalg.embed b b') := {
   F := (fun _, b → b'),
   coe := sorry,
 }
-def subalg.embed {b : boolalg.boolalg} {E : b} : boolalg.embed (subalg E) b := sorry
+def subalg_.embed_ {b : boolalg.boolalg} {E : b} : boolalg.embed (subalg_ E) b := sorry
 
 
 structure matroid :=
   (E : Type)
-  (r : rankfun (powersetalg E))
-def matroid.alg (M : matroid) := powersetalg M.E
+  (r : rankfun (powersetalg_ E))
+def matroid.alg_ (M : matroid) := powersetalg_ M.E
 
 structure preminor (M : matroid) :=
-  (E : M.alg)
-  (C : M.alg)
+  (E : M.alg_)
+  (C : M.alg_)
   (disjoint : C ∩ E = ⊥)
 
-def preminor.r {M : matroid} (N : preminor M) : rankfun (subalg N.E) :=
-let emb := @subalg.embed M.alg N.E, ef := emb.f, C := N.C in 
+def preminor.r {M : matroid} (N : preminor M) : rankfun (subalg_ N.E) :=
+let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in 
 {
-  f := (fun (X : subalg N.E), M.r (ef X ∪ N.C) - M.r N.C),
+  f := (fun (X : subalg_ N.E), M.r (ef X ∪ N.C) - M.r N.C),
   s := 
   begin
     intros X Y,
     have hu : (ef X ∪ C) ∪ (ef Y ∪ C) = ef (X ∪ Y) ∪ C := by rw ←boolalg.union_distrib_union_left; rw ←emb.on_union,
-    have hi : (ef X ∪ C) ∩ (ef Y ∪ C) = ef (X ∩ Y) ∪ C := by rw ←boolalg.union_distrib_left; rw ←emb.on_inter, 
+    have hi : (ef X ∪ C) ∩ (ef Y ∪ C) = ef (X ∩ Y) ∪ C := by sorry, --rw ←boolalg.union_distrib_left; rw ←emb.on_inter, 
     have hs := M.r.s (ef X ∪ C) (ef Y ∪ C), 
     rw [hu, hi] at hs, unfold_coes,
     linarith [hs],      
@@ -86,13 +86,13 @@ begin
 -/
 
 def minor (M : matroid) : Type* :=
-  quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r)
+  quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r) 
 
 --def minor.alg {M: matroid} (N : minor M) : 
 
 structure protominor (M : matroid) :=
-  (E : M.alg)
-  (r : rankfun (subalg E))
+  (E : M.alg_)
+  (r : rankfun (subalg_ E))
 
 def preminor_to_protominor {M : matroid} (N : preminor M) : protominor M := {
   E := N.E,
