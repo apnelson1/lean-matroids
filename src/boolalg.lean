@@ -10,9 +10,9 @@ local attribute [instance] classical.prop_decidable
 
 section API
 
-namespace fin_bool_alg 
+namespace boolalg 
 
-structure fin_bool_alg :=
+structure boolalg :=
   (subset : Type)
   --(contained : subset → subset → Prop)
   (bot top : subset)
@@ -44,10 +44,10 @@ structure fin_bool_alg :=
 
 -- Instances to enable ⊆ , ∩ , ∪ , ᶜ , ⊤, ⊥ , - (set diff)
 
-variables {A : fin_bool_alg}
+variables {A : boolalg}
 
 
-@[simp] instance i1  : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
+@[simp] instance i1  : has_coe_to_sort boolalg := {S := Type, coe := boolalg.subset}
 @[simp] instance i2  : has_bot A := {bot := A.bot}
 @[simp] instance i3  : has_top A := {top := A.top}
 @[simp] instance i4  : has_inter A := {inter := A.inter}
@@ -77,35 +77,35 @@ lemma inter_top (X : A) : X ∩ ⊤ = X := A.inter_top_ax X
 lemma top_inter  (X : A) : ⊤ ∩ X = X := 
   eq.trans (inter_comm ⊤ X) (inter_top  X) 
 
-lemma union_bot {A : fin_bool_alg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
+lemma union_bot {A : boolalg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
 
-lemma bot_union {A : fin_bool_alg} (X : A) : 
+lemma bot_union {A : boolalg} (X : A) : 
   ⊥ ∪ X = X := 
   eq.trans (union_comm ⊥ X) (union_bot X)
 
 
 -- Complements
 
-lemma union_compl {A: fin_bool_alg} (X: A) : 
+lemma union_compl {A: boolalg} (X: A) : 
   X ∪ Xᶜ = ⊤ := 
   A.union_compl_ax X 
 
-lemma inter_compl {A: fin_bool_alg} (X: A) : X ∩ Xᶜ = ⊥ := A.inter_compl_ax X 
+lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ := A.inter_compl_ax X 
 
 
 
 -- Distributivity
 
-lemma union_distrib_left {A : fin_bool_alg} (X Y Z : A) : (X ∩ Y) ∪ Z = (X ∪ Z) ∩ (Y ∪ Z) := A.union_distrib_left_ax X Y Z
+lemma union_distrib_left {A : boolalg} (X Y Z : A) : (X ∩ Y) ∪ Z = (X ∪ Z) ∩ (Y ∪ Z) := A.union_distrib_left_ax X Y Z
 
-lemma union_distrib_right {A : fin_bool_alg} (X Y Z : A) : X ∪ (Y ∩ Z) = (X ∪ Y) ∩ (X ∪ Z) := 
+lemma union_distrib_right {A : boolalg} (X Y Z : A) : X ∪ (Y ∩ Z) = (X ∪ Y) ∩ (X ∪ Z) := 
   by calc X ∪ (Y ∩ Z) = (Y ∩ Z) ∪ X       : union_comm X (Y ∩ Z) 
                   ... = (Y ∪ X) ∩ (Z ∪ X) : union_distrib_left Y Z X  
                   ... = (X ∪ Y) ∩ (X ∪ Z) : by rw [union_comm X Y, union_comm X Z]
 
-lemma inter_distrib_left {A : fin_bool_alg} (X Y Z : A) : (X ∪ Y) ∩ Z = (X ∩ Z) ∪ (Y ∩ Z) := A.inter_distrib_left_ax X Y Z
+lemma inter_distrib_left {A : boolalg} (X Y Z : A) : (X ∪ Y) ∩ Z = (X ∩ Z) ∪ (Y ∩ Z) := A.inter_distrib_left_ax X Y Z
 
-lemma inter_distrib_right {A : fin_bool_alg} (X Y Z : A) : X ∩ (Y ∪ Z) = (X ∩ Y) ∪ (X ∩ Z) := 
+lemma inter_distrib_right {A : boolalg} (X Y Z : A) : X ∩ (Y ∪ Z) = (X ∩ Y) ∪ (X ∩ Z) := 
   by calc X ∩ (Y ∪ Z) = (Y ∪ Z) ∩ X       : inter_comm X (Y ∪ Z) 
       ...             = (Y ∩ X) ∪ (Z ∩ X) : inter_distrib_left Y Z X
       ...             = (X ∩ Y) ∪ (X ∩ Z) : by rw [inter_comm X Y, inter_comm X Z]
@@ -159,7 +159,7 @@ lemma bot_inter  (X : A) : ⊥ ∩ X = ⊥ :=
 
 lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size Y := A.size_modular_ax X Y
 
-lemma size_bot (A : fin_bool_alg) : size (⊥ : A) = 0 := 
+lemma size_bot (A : boolalg) : size (⊥ : A) = 0 := 
   A.size_bot_ax
 
 
@@ -199,7 +199,7 @@ lemma union_subset  {X Y : A} (hXY : X ⊆ Y) : X ∪ Y = Y :=
 lemma ss_antisymm  {X Y : A} (hXY : X ⊆ Y) (hYX : Y ⊆ X) : X = Y := 
   by unfold has_subset.subset at hXY hYX; calc X = X ∩ Y : hXY ... = Y ∩ X : inter_comm X Y ... = Y : by rw ← hYX
 
-lemma inter_subset_left {A: fin_bool_alg} (X Y : A) : (X ∩ Y) ⊆ X := 
+lemma inter_subset_left {A: boolalg} (X Y : A) : (X ∩ Y) ⊆ X := 
   by apply (union_subset_iff (X ∩ Y) X).mpr; rw union_comm (X ∩ Y) X; apply absorb_union_inter
 
 lemma inter_subset_right (X Y : A) : (X ∩ Y) ⊆ Y := 
@@ -234,7 +234,7 @@ begin
           ... = X                  : inter_top  X, 
 end
 
-lemma cover_compl_subset {A: fin_bool_alg} {X Y : A} (hXY: X ∪ Y = ⊤) : Xᶜ ⊆ Y  := 
+lemma cover_compl_subset {A: boolalg} {X Y : A} (hXY: X ∪ Y = ⊤) : Xᶜ ⊆ Y  := 
 begin
   apply (union_subset_iff Xᶜ Y).mpr, 
   calc Xᶜ ∪ Y = ⊤ ∩ (Xᶜ ∪ Y)        : (top_inter _).symm 
@@ -261,10 +261,10 @@ begin
 end
 
 
-lemma compl_top (A : fin_bool_alg) : (⊤ : A)ᶜ = ⊥ := 
+lemma compl_top (A : boolalg) : (⊤ : A)ᶜ = ⊥ := 
   eq.symm (compl_unique (top_union ⊥) (inter_bot ⊤))
 
-lemma compl_bot (A : fin_bool_alg) : (⊥ : A)ᶜ = ⊤ := 
+lemma compl_bot (A : boolalg) : (⊥ : A)ᶜ = ⊤ := 
   eq.symm (compl_unique (union_top ⊥) (bot_inter ⊤)) 
   
 lemma union_compl_union  (X Y : A) : X ∪ (Xᶜ ∪ Y) = ⊤ :=  
@@ -304,9 +304,6 @@ lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) :
   X ∪ (Xᶜ ∩ Y) = Y := 
   by nth_rewrite 0 ←(inter_subset hXY); exact compl_partition X Y
   
-
-
-
 lemma size_singleton (X : A) : (∀(Y Z : A), (X ⊆ Y ∪ Z) → (X ⊆ Y ∨ X ⊆ Z)) → size X = 1 := 
   begin
     intros h, apply A.size_singleton_ax, intros Y Z hYZ,
@@ -485,14 +482,14 @@ lemma in_between {X Y : A} : (X ⊆ Y) ∧ (X ≠ Y) → (∀ Z, (X ⊆ Z ∧ Z 
 
 section embedding
 
-structure fin_bool_alg.embedding (A B : fin_bool_alg) :=
+structure boolalg.embedding (A B : boolalg) :=
   (func : A → B)
 
   (on_inter (X Y : A) : func (X ∩ Y) = (func X) ∩ (func Y))
   (on_union (X Y : A) : func (X ∪ Y) = (func X) ∪ (func Y))
   (on_size (X Y : A) : size X - size Y = size (func X) - size (func Y))
 
-lemma bot_to_bot_embedding_size {A B : fin_bool_alg} (emb : fin_bool_alg.embedding A B) (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
+lemma bot_to_bot_embedding_size {A B : boolalg} (emb : boolalg.embedding A B) (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
   size X = size (emb.func X) :=  
   begin
     have := emb.on_size X ⊥,
@@ -500,18 +497,18 @@ lemma bot_to_bot_embedding_size {A B : fin_bool_alg} (emb : fin_bool_alg.embeddi
     linarith, 
   end
 
-lemma embedding_on_subset {A B : fin_bool_alg} (emb : fin_bool_alg.embedding A B) {X Y : A} (hXY : X ⊆ Y) : 
+lemma embedding_on_subset {A B : boolalg} (emb : boolalg.embedding A B) {X Y : A} (hXY : X ⊆ Y) : 
   emb.func X ⊆ emb.func Y := 
   by rw inter_subset_iff at *; rw [←emb.on_inter, hXY]
 
 end /- section -/ embedding
 
-def fin_bool_alg.canonical (size : ℤ) :
-  (0 ≤ size) → fin_bool_alg := sorry
+def boolalg.canonical (size : ℤ) :
+  (0 ≤ size) → boolalg := sorry
 
--- Construct a fin_bool_alg from a finite set S 
+-- Construct a boolalg from a finite set S 
 
-def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg := {
+def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : boolalg := {
 
   subset := {X: finset γ | X ⊆ S},
 
@@ -544,11 +541,11 @@ def power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : fin_bool_alg :
 
 -- Algebra of all sets containing S and contained in T
 structure interval_alg := 
-  (big : fin_bool_alg)
+  (big : boolalg)
   (S T : big) 
   (hST : S ⊆ T)
 
-def interval_alg.as_fin_bool_alg (small : interval_alg) : fin_bool_alg := 
+def interval_alg.as_boolalg (small : interval_alg) : boolalg := 
 let A := small.big, S := small.S, T := small.T, hST := small.hST in
 {
   subset := {X: A | (S ⊆ X) ∧ (X ⊆ T)},
@@ -594,7 +591,7 @@ let A := small.big, S := small.S, T := small.T, hST := small.hST in
   end,
 }
 
-def interval_alg.embedding (small : interval_alg) : small.as_fin_bool_alg.embedding small.big :=
+def interval_alg.embedding (small : interval_alg) : small.as_boolalg.embedding small.big :=
 {
   func := (λ X, X.val),
   on_inter := (λ X Y, rfl), 
@@ -648,7 +645,7 @@ lemma interval_alg_injective  {S T S' T' : A} {hST : S ⊆ T} {hST' : S' ⊆ T'}
   end
 
 
-def sub_alg (A : fin_bool_alg) (new_top : A) : fin_bool_alg :=
+def sub_alg (A : boolalg) (new_top : A) : boolalg :=
   interval_alg A (⊥ : A) new_top (sorry : (⊥ :A ) ⊆ new_top)
 
 @[simp] lemma sub_alg_size  {T : A} (X : sub_alg A T) : 
@@ -665,5 +662,5 @@ def sub_alg (A : fin_bool_alg) (new_top : A) : fin_bool_alg :=
 
 
 
-end fin_bool_alg
+end boolalg
 end API 

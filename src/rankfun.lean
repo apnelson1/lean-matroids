@@ -1,0 +1,6 @@
+/-
+
+Goals:
+* defining matroids, minors, 
+
+-/

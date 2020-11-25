@@ -22,7 +22,7 @@ import tactic.linarith
 
 -- The API for finite boolean algebras (now moved)
 
-import fin_bool_alg
+import boolalg
 import func_heq 
 
 
@@ -32,8 +32,8 @@ import func_heq
   --(inter_subset_right (X Y : subset) : contained (inter X Y) Y)
 
 
-lemma fin_bool_alg.inter_subset_right {A: fin_bool_alg} (X Y : A) : (X ∩ Y) ⊆ Y := sorry
-lemma fin_bool_alg.inter_is_lb {A: fin_bool_alg} (X Y Z : A) : (Z ⊆ X) → (Z ⊆ Y) → ((X ∩ Y) ⊆ Z) := sorry
+lemma boolalg.inter_subset_right {A: boolalg} (X Y : A) : (X ∩ Y) ⊆ Y := sorry
+lemma boolalg.inter_is_lb {A: boolalg} (X Y Z : A) : (Z ⊆ X) → (Z ⊆ Y) → ((X ∩ Y) ⊆ Z) := sorry
 
 
 def finite_set : Type := sorry
@@ -151,10 +151,10 @@ lemma finite_set.subset.subset_bot {γ : finite_set} (X : γ.subset) :
 end API
 
 -/
-namespace fin_bool_alg 
+namespace boolalg 
 -- The rank-function definition of a matroid, as a packed structure.
 @[ext] structure matroid :=
-  (A : fin_bool_alg)
+  (A : boolalg)
   (rank : A → ℤ)
 
   (R0 : forall (X : A),
@@ -169,7 +169,7 @@ namespace fin_bool_alg
 -- An example: uniform matroids, with rank `k` and size `n`.
 def uniform_matroid (k n : ℤ) : (0 ≤ k) → (k ≤ n) → matroid :=
   fun (h0k : 0 ≤ k) (hkn : k ≤ n), let
-    A : fin_bool_alg := fin_bool_alg.canonical n (le_trans h0k hkn)
+    A : boolalg := boolalg.canonical n (le_trans h0k hkn)
   in {
     A := A,
     rank := (fun (X : A), min k (size X)),
@@ -278,9 +278,9 @@ want to be able to insist that the embedding is the inclusion map, but I don't s
 map canonical in type theory -/
 
 @[ext] structure minor (M : matroid) :=
-  (m_A : fin_bool_alg)
+  (m_A : boolalg)
   (m_rank   : m_A → ℤ)
-  (kernel : exists (C : M.A) (emb : fin_bool_alg.embedding m_A M.A),
+  (kernel : exists (C : M.A) (emb : boolalg.embedding m_A M.A),
     (emb.func (⊥ : m_A) = ⊥) ∧ 
     (emb.func (⊤ : m_A) ∩ C = ⊥) ∧
     (forall X, m_rank X = M.rank (emb.func X ∪ C) - M.rank C))
@@ -335,7 +335,7 @@ lemma minor.as_matroid.injective {M : matroid} (m₁ m₂ : minor M) :
     apply congr_heq, exact h_2, exact haa', 
   end
 
-end fin_bool_alg
+end boolalg
 
 
 /-def minor.delete {M : matroid} (m : minor M) (D : M.ground.subset) :
