@@ -475,14 +475,6 @@ lemma subset_union_subset_left (X Y Z : A) : (X ⊆ Y) → (X ∪ Z) ⊆ (Y ∪ 
     intros hXY, 
     rw [←union_distrib_union_left, hXY], 
   end
-
-lemma in_between {X Y : A} : (X ⊆ Y) ∧ (X ≠ Y) → (∀ Z, (X ⊆ Z ∧ Z ⊆ Y) → (Z = X ∨ Z = Y)) → size Y - size X = 1 := 
-  begin
-    intros hZ,
-    let S := Y-X, 
-    sorry, 
-  end
-
 --- Embeddings of interval algebras (probably deprecated)
 
 structure interval_embedding (A B : boolalg) :=
@@ -507,7 +499,7 @@ lemma interval_embedding_on_subset {A B : boolalg} (emb : interval_embedding A B
 -- Embedding and subalgebras 
 
 
-structure embed (A B : boolalg) :=
+@[ext] structure embed (A B : boolalg) :=
   (f : A → B)
   (on_bot : f ⊥ = ⊥)
   -- note : top is not respected by embedding
@@ -520,7 +512,28 @@ lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := 
   λ hXY, by rw inter_subset_iff at *; rw [←emb.on_inter, hXY]
 
-def subalg (ground : A) : boolalg := --sorry 
+def embed.id : embed A A := 
+{ 
+  f        := id,
+  on_bot   := rfl,
+  on_inter := by intros X Y; refl,
+  on_union := by intros X Y; refl,
+  on_size  := by intros X; refl,
+}
+
+def embed.compose {A B C: boolalg} : (embed A B) → (embed B C) → (embed A C) := λ e1 e2,
+{ 
+  f        := e2.f ∘ e1.f,
+  on_bot   := by simp only [function.comp_app]; rw [e1.on_bot, e2.on_bot],
+  on_inter := λ X Y, by simp only [function.comp_app]; rw [e1.on_inter, e2.on_inter],
+  on_union := λ X Y, by simp only [function.comp_app]; rw [e1.on_union, e2.on_union],
+  on_size  := λ X, (e1.on_size X).trans (e2.on_size (e1.f X)),
+}
+
+
+
+
+def subalg {A : boolalg}(ground : A) : boolalg :=  
 { 
   subset := {X : A | X ⊆ ground},
   bot := ⟨⊥, bot_subset ground⟩,
@@ -545,12 +558,32 @@ def subalg (ground : A) : boolalg := --sorry
   union_assoc_ax := sorry
 }
 
-instance embed.coe_to_fun {A B : boolalg.boolalg} : has_coe_to_fun (boolalg.embed A B) := {
+def embed.from_subset (X : A) : embed (subalg X) A := 
+⟨(λ X,X.val),rfl,(λ X Y,rfl),(λ X Y,rfl),(λ X,rfl)⟩ 
+
+def embed.from_nested_pair {X₁ X₂ : A} : (X₁ ⊆ X₂) → embed (subalg X₁) (subalg X₂) := fun hX₁X₂, 
+⟨λ X, ⟨X.val, subset_trans X.property hX₁X₂⟩,rfl, (λ X Y, rfl), (λ X Y, rfl), (λ X, rfl)⟩ 
+
+lemma embed.compose_subset_nested_pair (X₁ X₂ : A) (hX₁X₂ : X₁ ⊆ X₂) :
+  (embed.compose (embed.from_nested_pair hX₁X₂) (embed.from_subset X₂)) = embed.from_subset X₁ := rfl 
+
+lemma embed.compose_nested_triple (X₁ X₂ X₃ : A) (h₁₂ : X₁ ⊆ X₂) (h₂₃ : X₂ ⊆ X₃) :
+  (embed.compose (embed.from_nested_pair h₁₂) (embed.from_nested_pair h₂₃)) = embed.from_nested_pair (subset_trans h₁₂ h₂₃) :=
+rfl
+
+/-instance embed.coe_to_fun {A B : boolalg.boolalg} : has_coe_to_fun (boolalg.embed A B) := {
   F := (λ _, A → B),
-  coe := sorry,
-}
+  coe := λ emb, emb.f,
+}-/
 def subalg.embed {E : A} : boolalg.embed (subalg E) A := sorry
 
+---- Isomorphisms 
+
+structure iso (A B : boolalg) := 
+  (fwd : embed A B)
+  (bwd : embed B A)
+  (fwd_then_bwd : embed.compose fwd bwd = embed.id)
+  (bwd_then_fwd : embed.compose bwd fwd = embed.id)
 
 def boolalg.canonical (size : ℤ) :
   (0 ≤ size) → boolalg := sorry

@@ -59,7 +59,7 @@ let emb := @subalg.embed M.alg N.E, f := emb.f, C := N.C in
 -- This problem is fixed by changing the definition of subalg in boolalg.lean to 'sorry'. This is very not nice. 
 
 def minor (M : matroid) : Type* :=
-  quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r)
+  quot (fun (N₁ N₂ : preminor M), N₁.r.r = N₂.r.r)
 
 
 
