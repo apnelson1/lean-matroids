@@ -520,7 +520,7 @@ lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := 
   λ hXY, by rw inter_subset_iff at *; rw [←emb.on_inter, hXY]
 
-def subalg (ground : A) : boolalg := 
+def subalg (ground : A) : boolalg := --sorry 
 { 
   subset := {X : A | X ⊆ ground},
   bot := ⟨⊥, bot_subset ground⟩,
@@ -545,19 +545,11 @@ def subalg (ground : A) : boolalg :=
   union_assoc_ax := sorry
 }
 
-
-
 instance embed.coe_to_fun {A B : boolalg.boolalg} : has_coe_to_fun (boolalg.embed A B) := {
   F := (λ _, A → B),
   coe := sorry,
 }
 def subalg.embed {E : A} : boolalg.embed (subalg E) A := sorry
-
-
-
-
-
-
 
 
 def boolalg.canonical (size : ℤ) :
@@ -594,162 +586,6 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   inter_assoc_ax := finset.inter_assoc,
   union_assoc_ax := finset.union_assoc,
 }
-
-
-
-def power_set_subset_alg {γ : Type} [decidable_eq γ] (S : finset γ) : boolalg := 
-{
-  subset := {X: finset γ | X ⊆ S},
-
-  bot := ⟨∅, finset.empty_subset S⟩,
-  top := ⟨S, finset.subset.refl S⟩,
-  inter := λ (X Y : _), ⟨X.val ∩ Y.val, finset.subset.trans (X.val.inter_subset_left Y) X.property⟩, 
-  union := λ (X Y : _), ⟨X.val ∪ Y.val, finset.union_subset X.property Y.property⟩,
-  size  := λ X, (finset.card (X.val) : ℤ), 
-  compl := λ X, ⟨S \ X.val, finset.sdiff_subset_self⟩,
-
-  size_bot_ax := by tidy, 
-  size_nonneg_ax := by tidy, 
-  size_modular_ax := by tidy; apply finset.card_union_add_card_inter,
-  size_singleton_ax := 
-  begin
-    sorry, 
-  end, 
-
-  inter_comm_ax := by tidy, 
-  union_comm_ax := by intros X Y; simp_rw finset.union_comm; trivial, 
-  inter_assoc_ax := by intros X Y Z; cases Z; cases Y; cases X; dsimp at *; simp at *, 
-  union_assoc_ax := by intros X Y Z; cases Z; cases Y; cases X; dsimp at *; simp at *,
-  union_distrib_right_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.union_distrib_right; exact finset.union_distrib_left _ _ _,
-  inter_distrib_right_ax := by intros _ _ _; apply subtype.eq; simp_rw finset.inter_distrib_right; exact finset.inter_distrib_left _ _ _,  
-  inter_top_ax := by tidy, 
-  union_bot_ax := by tidy, 
-  union_compl_ax := by tidy, 
-  inter_compl_ax := by tidy, 
-}
-
--- Algebra of all sets containing S and contained in T (again, probably deprecated)
-structure interval_alg := 
-  (big : boolalg)
-  (S T : big) 
-  (hST : S ⊆ T)
-
-def interval_alg.as_boolalg (small : interval_alg) : boolalg := 
-let A := small.big, S := small.S, T := small.T, hST := small.hST in
-{
-  subset := {X: A | (S ⊆ X) ∧ (X ⊆ T)},
-
-  bot := ⟨S, ⟨subset_refl S, hST⟩⟩,
-  top := ⟨T, ⟨hST, subset_refl T⟩⟩,
-  inter := λ (X Y : _), ⟨X.1 ∩ Y.1, ⟨inter_of_supsets S X Y X.2.1 Y.2.1, inter_of_subsets X Y T X.2.2⟩ ⟩, 
-  union := λ (X Y : _), ⟨X.1 ∪ Y.1, ⟨union_of_supsets S X Y X.2.1, union_of_subsets X Y T X.2.2 Y.2.2⟩ ⟩,
-  size  := λ X, (size (X.1) - size S),
-  compl := λ X, ⟨S ∪ (T ∩ (X.1)ᶜ), ⟨by apply subset_union_left S, begin apply union_of_subsets S, exact hST, apply inter_subset_left, end ⟩ ⟩,
-
-  size_bot_ax := by simp only [sub_self],
-  size_nonneg_ax := by intros X; linarith [size_monotone (X.2.1)],
-
-  size_modular_ax := by intros X Y; linarith[size_modular X.1 Y.1],
-  size_singleton_ax := 
-  begin
-    sorry,
-  end,
-
-  inter_comm_ax := by intros X Y; apply subtype.eq; simp_rw [inter_comm X.1 Y.1], 
-  union_comm_ax := by intros X Y; apply subtype.eq; simp_rw [union_comm X.1 Y.1],
-  inter_assoc_ax := by tidy; apply inter_assoc,
-  union_assoc_ax := by tidy; apply union_assoc,
-  union_distrib_right_ax := by tidy; apply union_distrib_right,
-  inter_distrib_right_ax := by tidy; apply inter_distrib_right,
-  inter_top_ax := by intros X; cases X; cases X_property; simp only [subtype.mk_eq_mk]; solve_by_elim,
-  union_bot_ax := by intros X; cases X; cases X_property; simp only [subtype.mk_eq_mk]; unfold has_subset.subset at *; rw [X_property_left, inter_comm S, absorb_union_inter],
-  union_compl_ax := 
-  begin
-     intros X, 
-     cases X, cases X_property, simp only [subtype.mk_eq_mk],
-     have := union_subset X_property_left,
-     rw union_comm at this, 
-     rw [←union_assoc, this, inter_comm, compl_partition_subset X_property_right],
-  end,
-  inter_compl_ax := 
-  begin
-    intros X, cases X, cases X_property, simp only [subtype.mk_eq_mk], 
-    have hi := inter_subset X_property_left,
-    rw inter_comm at hi,
-    rw [inter_distrib_left, hi, inter_comm T, ←inter_assoc, inter_compl, bot_inter, union_bot], 
-  end,
-}
-
-def interval_alg.embedding (small : interval_alg) : small.as_boolalg.embedding small.big :=
-{
-  func := (λ X, X.val),
-  on_inter := (λ X Y, rfl), 
-  on_union := (λ X Y, rfl), 
-  on_size := 
-  begin
-     intros X Y, 
-     calc size X - size Y = (size X.val - size small.S) - (size Y.val - size small.S) : by refl
-     ... = size X.val - size Y.val : by linarith, 
-  end,
-} 
-
---def sub_alg (R : A) : interval_alg := ⟨A, ⊥, R, (bot_subset R : ⊥ ⊆ R)⟩ 
-
-/-@[simp] lemma interval_alg_inter  {S T : A} (hST : S ⊆ T) (X Y : interval_alg A S T hST):
-  (X ∩ Y).val = X.val ∩ Y.val := rfl 
-
-@[simp] lemma interval_alg_union  {S T : A} (hST : S ⊆ T) (X Y : interval_alg A S T hST):
-  (X ∪ Y).val = X.val ∪ Y.val := rfl 
-
-@[simp] lemma interval_alg_subset  {S T : A} (hST : S ⊆ T) (X Y : interval_alg A S T hST): 
-  X ⊆ Y ↔ X.val ⊆ Y.val := 
-  begin
-    unfold has_subset.subset,
-    split, 
-    intros hXY, nth_rewrite 0 hXY, apply interval_alg_inter, 
-    intros hXY, rw ←interval_alg_inter at hXY, exact subtype.eq hXY,   
-  end 
-
-lemma interval_alg_injective  {S T S' T' : A} {hST : S ⊆ T} {hST' : S' ⊆ T'} :
-  (interval_alg A S T hST = interval_alg A S' T' hST') → (S = S' ∧ T = T')  := 
-  begin
-    intros hA, 
-    split,
-    injections_and_clear,
-
-    have : (interval_alg A S T hST).subset = (interval_alg A S' T' hST').subset := by rw ←hA,
-    have : S == S' := begin
-      apply eq_rec_heq,
-
-    end,
-    have : (interval_alg A S T hST).bot.val = (interval_alg A S' T' hST').bot.val := begin 
-      congr,
-      funext,
-      apply propext,
-      
-      sorry,
-      exact hA
-    end
-
-  end
-
-
-def sub_alg (A : boolalg) (new_top : A) : boolalg :=
-  interval_alg A (⊥ : A) new_top (sorry : (⊥ :A ) ⊆ new_top)
-
-@[simp] lemma sub_alg_size  {T : A} (X : sub_alg A T) : 
-  size X = size X.val :=
-  begin
-    unfold size, 
-    have : A.size ⊥ = 0 := A.size_bot_ax,
-    exact ( by linarith : A.size X.val - A.size ⊥ =  A.size X.val), 
-  end
-
-@[simp] lemma sub_alg_subset  {T : A} {X Y : sub_alg A T} : 
-  X ⊆ Y ↔ X.val ⊆ Y.val := 
-  by simp only [interval_alg_subset]-/
-
-
 
 end boolalg
 end API 

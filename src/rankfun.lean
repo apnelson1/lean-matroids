@@ -56,6 +56,8 @@ let emb := @subalg.embed M.alg N.E, f := emb.f, C := N.C in
 
 -- Why doesn't this typecheck? I don't see why it's not isomorphic to submodular.lean. 
 
+-- This problem is fixed by changing the definition of subalg in boolalg.lean to 'sorry'. This is very not nice. 
+
 def minor (M : matroid) : Type* :=
   quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r)
 
@@ -76,3 +78,5 @@ def preminor_to_protominor_respects_support {M : matroid} (N₁ N₂ : preminor 
     := sorry
 #check quot.lift 
 -- power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : boolalg
+
+end boolalg 
