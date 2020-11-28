@@ -4,12 +4,16 @@ import boolalg
 
 namespace boolalg
 
-structure rankfun (B : boolalg) :=
+@[ext] structure rankfun (B : boolalg) :=
   (r : B → ℤ)
   (R0 : ∀ (X : B), 0 ≤ r X)
   (R1 : ∀ (X : B), r X ≤ size X)
   (R2 : ∀ (X Y : B), X ⊆ Y → r X ≤ r Y)
   (R3 : ∀ (X Y : B), r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y)
+
+lemma rank_bot {B : boolalg} (M : rankfun B) :
+  M.r ⊥ = 0 :=
+le_antisymm (calc M.r ⊥ ≤ size (⊥ : B) : M.R1 ⊥ ... = 0 : size_bot B) (M.R0 ⊥)
 
 instance rankfun.coe_to_fun {B : boolalg} : has_coe_to_fun (rankfun B) := ⟨_, rankfun.r⟩
 
@@ -53,30 +57,5 @@ let emb := @subalg.embed M.alg N.E, f := emb.f, C := N.C in
     linarith [hs],      
   end,
 }
-
--- Why doesn't this typecheck? I don't see why it's not isomorphic to submodular.lean. 
-
--- This problem is fixed by changing the definition of subalg in boolalg.lean to 'sorry'. This is very not nice. 
-
-def minor (M : matroid) : Type* :=
-  quot (fun (N₁ N₂ : preminor M), N₁.r.r = N₂.r.r)
-
-
-
---def minor.alg {M: matroid} (N : minor M) : 
-
-structure protominor (M : matroid) :=
-  (E : M.alg)
-  (r : rankfun (subalg E))
-
-def preminor_to_protominor {M : matroid} (N : preminor M) : protominor M := {
-  E := N.E,
-  r := N.r,
-}
-
-def preminor_to_protominor_respects_support {M : matroid} (N₁ N₂ : preminor M) (h : N₁.r = N₂.r) : preminor_to_protominor N₁ = preminor_to_protominor N₂
-    := sorry
-#check quot.lift 
--- power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : boolalg
 
 end boolalg 

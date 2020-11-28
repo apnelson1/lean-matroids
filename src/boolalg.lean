@@ -165,6 +165,10 @@ lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size
 lemma size_bot (A : boolalg) : size (⊥ : A) = 0 := 
   A.size_bot_ax
 
+lemma size_compl (X : A) : size Xᶜ = size (⊤ : A) - size X :=
+  calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
+  ...          = size (⊤ : A)  + size (⊥ : A)  - size X : by rw [union_compl X, inter_compl X]
+  ...          = size (⊤ : A) - size X                  : by linarith [size_bot A]
 
 lemma size_nonneg (X : A) : 0 ≤ size X := 
   A.size_nonneg_ax X 
