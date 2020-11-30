@@ -115,6 +115,8 @@ end /-section-/ dual
 def subalg.delete {U : boolalg} {E : U} (D : subalg E) :
   subalg E → subalg (E - D.val) :=
 subtype.map (fun X, X - D.val) (fun X (h : X ⊆ E), subset_inter_subset_left _ _ _ h)
+-- Note that \setminus is not backslash.
+notation X `∖` D := subalg.delete D X
 
 ----------------------------------------------------------------
 
@@ -133,16 +135,14 @@ in {
   R3 := (fun X Y,   by rw [emb.on_inter X Y, emb.on_union X Y] ; apply M.R3),
 }
 
-lemma delete_delete (M : matroid_on E) {D₁ D₂ : U}
-  (h₁₂ : D₁ ∩ D₂ = ⊥) (h₁E : D₁ ⊆ E) (h₂E : D₂ ⊆ E) :
-  delete (delete M
-    D₁ (calc D₁ ⊆ E       : h₁E))
-    D₂ (calc D₂ ⊆ E ∩ D₁ᶜ : inter_is_lb _ _ _ h₂E (disjoint_compl_subset ((inter_comm _ _).trans h₁₂)))
-  ≅ delete M
-    (D₁ ∪ D₂) (calc D₁ ∪ D₂ ⊆ E : union_is_ub _ _ _ h₁E h₂E)
+lemma delete_delete (D₁ D₂ : subalg E) (M : matroid_on E) :
+  delete (D₂∖D₁) (delete D₁ M) ≅ delete (D₁ ∪ D₂) M
 := ⟨
-  (calc E ∩ D₁ᶜ ∩ D₂ᶜ = E ∩ (D₁ᶜ ∩ D₂ᶜ) : by apply inter_assoc
-  ...                 = E ∩ (D₁ ∪ D₂)ᶜ  : by rw [compl_union D₁ D₂]),
+  (calc E - D₁.val - (D₂∖D₁).val
+      = (E ∩ D₁.valᶜ) ∩ (D₂.val ∩ D₁.valᶜ)ᶜ : rfl
+  ... = E ∩ (D₁.val ∪ (D₂.val ∩ D₁.valᶜ))ᶜ  : by simp only [inter_assoc, compl_union]
+  ... = E ∩ (D₁.val ∪ D₂.val)ᶜ              : by simp only [union_distrib_left, union_compl, inter_top]
+  ... = E - (D₁ ∪ D₂).val                   : rfl),
   (fun X h₁ h₂, rfl),
 ⟩
 
@@ -152,6 +152,45 @@ end /-section-/ delete
 
 section contract
 variables {U : boolalg} {E : U}
+
+def contract (C : subalg E) :
+  matroid_on E → matroid_on (E - C.val) :=
+fun M, let
+  emb : embed (subalg (E - C.val)) (subalg E) := embed.from_nested_pair (inter_subset_left _ _)
+in {
+  r := (fun X, M.r (emb.f X ∪ C) - M.r C),
+  R0 := sorry,
+  R1 := sorry,
+  R2 := sorry,
+  R3 := sorry,
+}
+
+lemma contract_contract (C₁ C₂ : subalg E) (M : matroid_on E) :
+  contract (C₂∖C₁) (contract C₁ M) ≅ contract (C₁ ∪ C₂) M
+:= ⟨
+  (calc E - C₁.val - (C₂∖C₁).val
+      = (E ∩ C₁.valᶜ) ∩ (C₂.val ∩ C₁.valᶜ)ᶜ : rfl
+  ... = E ∩ (C₁.val ∪ (C₂.val ∩ C₁.valᶜ))ᶜ  : by simp only [inter_assoc, compl_union]
+  ... = E ∩ (C₁.val ∪ C₂.val)ᶜ              : by simp only [union_distrib_left, union_compl, inter_top]
+  ... = E - (C₁ ∪ C₂).val                   : rfl),
+  (fun X h₁ h₂, let
+  h₃ := calc (C₂.val ∩ C₁.valᶜ) ∪ C₁.val
+           = C₁.val ∪ (C₁.valᶜ ∩ C₂.val)            : by simp only [inter_comm, union_comm]
+       ... = (C₁.val ∪ C₁.valᶜ) ∩ (C₁.val ∪ C₂.val) : by apply union_distrib_left
+       ... = C₁.val ∪ C₂.val                        : by simp only [union_compl, top_inter],
+  h₄ := calc X ∪ (C₂.val ∩ C₁.valᶜ) ∪ C₁.val
+           = X ∪ ((C₂.val ∩ C₁.valᶜ) ∪ C₁.val) : by apply union_assoc
+       ... = X ∪ (C₁.val ∪ C₂.val)             : by rw [h₃],
+  h₅ : (C₁.val ∪ C₂.val) ⊆ E := sorry,
+  h₆ : X ∪ (C₁.val ∪ C₂.val) ⊆ E := sorry,
+  h₇ (a b c : ℤ) : (a - c) - (b - c) = a - b := by linarith
+  in calc (contract (C₂∖C₁) (contract C₁ M)).r ⟨X, h₁⟩
+        = (contract C₁ M).r (⟨X, _⟩ ∪ (C₂∖C₁)) - (contract C₁ M).r (C₂∖C₁) : rfl
+    ... = (M.r ⟨X ∪ (C₂.val ∩ C₁.valᶜ) ∪ C₁.val, _⟩ - M.r C₁)
+        - (M.r ⟨    (C₂.val ∩ C₁.valᶜ) ∪ C₁.val, _⟩ - M.r C₁) : rfl
+    ... = M.r ⟨X ∪ (C₂.val ∩ C₁.valᶜ) ∪ C₁.val, _⟩ - M.r ⟨(C₂.val ∩ C₁.valᶜ) ∪ C₁.val, _⟩ : h₇ _ _ _
+    ... = (contract (C₁ ∪ C₂) M).r ⟨X, h₂⟩ : sorry),
+⟩
 
 end /-section-/ contract
 
