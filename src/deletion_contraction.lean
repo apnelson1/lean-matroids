@@ -5,7 +5,9 @@ Existence of a normal form:
   expressions of the form M/C\D are closed under deletion and contraction,
   and together with M*/C\D they are closed under duality.
 
-Current idea: define boolalg deletion map from (subalg E) to (subalg E-D).
+Current idea: define restriction and corestriction from U to subalg E
+Then deletion and contraction are instances of these maps
+And a sequence of deletions and contractions with disjoint arguments can be composed
 -/
 
 import boolalg rankfun
@@ -56,11 +58,11 @@ end /-section-/ matroid_heq
 ----------------------------------------------------------------
 
 section dual
-variables {U : boolalg} {E : U}
+variables {U : boolalg}
 
 -- Every matroid has a dual.
 def dual :
-  matroid_on E → matroid_on E :=
+  rankfun U → rankfun U :=
 fun M, {
   r := (fun X, size X + M.r Xᶜ - M.r ⊤),
   R0 := (fun X,
@@ -96,74 +98,181 @@ fun M, {
 }
 
 -- The double dual of a matroid is itself.
-lemma dual_dual (M : matroid_on E) :
-  dual (dual M) ≅ M :=
-⟨rfl, fun X h₁ h₂, let
-  X₁ : ↥(subalg E) := ⟨X, h₁⟩,
-  X₂ : ↥(subalg E) := ⟨X, h₂⟩
-in calc
-  (dual (dual M)).r X₁ = size X₁ + (size X₁ᶜ + M.r X₁ᶜᶜ - M.r ⊤) - (size (⊤ : subalg E) + M.r ⊤ᶜ - M.r ⊤) : rfl
-  ...                  = size X₁ + (size X₁ᶜ + M.r X₁ - M.r ⊤) - (size (⊤ : subalg E) + M.r ⊥ - M.r ⊤) : by simp only [compl_compl, boolalg.compl_top]
-  ...                  = M.r X₁ : by linarith [size_compl X₁, rank_bot M]
-  ...                  = M.r X₂ : rfl⟩
+lemma dual_dual (M : rankfun U) :
+  dual (dual M) = M :=
+begin
+  apply rankfun.ext, apply funext, intro X, calc
+  (dual (dual M)).r X = size X + (size Xᶜ + M.r Xᶜᶜ - M.r ⊤) - (size (⊤ : U) + M.r ⊤ᶜ - M.r ⊤) : rfl
+  ...                 = size X + (size Xᶜ + M.r X   - M.r ⊤) - (size (⊤ : U) + M.r ⊥  - M.r ⊤) : by rw [compl_compl, boolalg.compl_top]
+  ...                 = M.r X                                                                  : by linarith [size_compl X, rank_bot M]
+end
 
 end /-section-/ dual
 
 ----------------------------------------------------------------
 
--- Deletion map between subalg's.
-def subalg.delete {U : boolalg} {E : U} (D : subalg E) :
-  subalg E → subalg (E - D.val) :=
-subtype.map (fun X, X - D.val) (fun X (h : X ⊆ E), subset_inter_subset_left _ _ _ h)
--- Note that \setminus is not backslash.
-notation X `∖` D := subalg.delete D X
+section restrict
+variables {U : boolalg}
 
-----------------------------------------------------------------
-
-section delete
-variables {U : boolalg} {E : U}
-
-def delete (D : subalg E) :
-  matroid_on E → matroid_on (E - D.val) :=
-fun M, let
-  emb : embed (subalg (E - D.val)) (subalg E) := embed.from_nested_pair (inter_subset_left _ _)
-in {
-  r := (fun X, M.r (emb.f X)),
-  R0 := (fun X,     by apply M.R0),
-  R1 := (fun X,     by apply M.R1),
-  R2 := (fun X Y h, by apply M.R2 ; apply emb.on_subset ; assumption),
-  R3 := (fun X Y,   by rw [emb.on_inter X Y, emb.on_union X Y] ; apply M.R3),
+-- The restriction of a rankfun to a subalg is still a rankfun.
+-- This is the same as deleting Eᶜ.
+def restrict (E : U) :
+  rankfun U → matroid_on E :=
+fun M, {
+  r := (fun X, M.r X.val),
+  R0 := (by intro X;      apply M.R0),
+  R1 := (by intro X;      apply M.R1),
+  R2 := (by intros X Y h; apply M.R2; exact congr_arg subtype.val h),
+  R3 := (by intros X Y;   apply M.R3),
 }
 
-lemma delete_delete (D₁ D₂ : subalg E) (M : matroid_on E) :
-  delete (D₂∖D₁) (delete D₁ M) ≅ delete (D₁ ∪ D₂) M
-:= ⟨
-  (calc E - D₁.val - (D₂∖D₁).val
-      = (E ∩ D₁.valᶜ) ∩ (D₂.val ∩ D₁.valᶜ)ᶜ : rfl
-  ... = E ∩ (D₁.val ∪ (D₂.val ∩ D₁.valᶜ))ᶜ  : by simp only [inter_assoc, compl_union]
-  ... = E ∩ (D₁.val ∪ D₂.val)ᶜ              : by simp only [union_distrib_left, union_compl, inter_top]
-  ... = E - (D₁ ∪ D₂).val                   : rfl),
-  (fun X h₁ h₂, rfl),
-⟩
-
-end /-section-/ delete
+end /-section-/ restrict
 
 ----------------------------------------------------------------
 
-section contract
-variables {U : boolalg} {E : U}
+section corestrict
+variables {U : boolalg}
 
-def contract (C : subalg E) :
-  matroid_on E → matroid_on (E - C.val) :=
-fun M, let
-  emb : embed (subalg (E - C.val)) (subalg E) := embed.from_nested_pair (inter_subset_left _ _)
-in {
-  r := (fun X, M.r (emb.f X ∪ C) - M.r C),
-  R0 := sorry,
+-- The corestriction is the same as contracting Eᶜ.
+def corestrict (E : U) :
+  rankfun U → matroid_on E :=
+fun M, {
+  r := (fun X, M.r (X.val ∪ Eᶜ) - M.r Eᶜ),
+  R0 := (by intro X; linarith [M.R2 _ _ (subset_union_right X.val Eᶜ)]),
   R1 := sorry,
-  R2 := sorry,
+  R2 := (by intros X Y h; linarith [M.R2 _ _ (subset_union_subset_left X.val Y.val Eᶜ (congr_arg subtype.val h))]),
   R3 := sorry,
 }
+
+end /-section-/ corestrict
+
+----------------------------------------------------------------
+
+-- Restriction and corestriction (so, deletion and contraction) are duals
+lemma dual_restrict {U : boolalg} (E : U) (M : rankfun U) :
+  dual (restrict E M) = corestrict E (dual M) :=
+begin
+  apply rankfun.ext, apply funext, intro X,
+  have h₁ : size (X.val ∪ Eᶜ) = size X.val + size Eᶜ := size_disjoint_sum (calc
+    X.val ∩ Eᶜ = (X.val ∩ E) ∩ Eᶜ : by rw [(eq.symm X.prop : X.val ∩ E = X.val)]
+    ...        = X.val ∩ (E ∩ Eᶜ) : by apply inter_assoc
+    ...        = X.val ∩ ⊥        : by rw [inter_compl]
+    ...        = ⊥                : by apply inter_bot),
+  have h₂ : Eᶜᶜ = E := compl_compl E,
+  have h₃ := (calc
+    (X.val ∪ Eᶜ)ᶜ = X.valᶜ ∩ Eᶜᶜ : by apply compl_union
+    ...           = X.valᶜ ∩ E   : by rw [compl_compl]
+    ...           = E ∩ X.valᶜ   : by apply inter_comm),
+  calc
+  (dual (restrict E M)).r X = size X.val + M.r (E ∩ X.valᶜ) - M.r E           : rfl
+  ...                       = (size (X.val ∪ Eᶜ) + M.r (E ∩ X.valᶜ) - M.r ⊤)
+                            - (size          Eᶜ  + M.r  E           - M.r ⊤)  : by linarith [h₁]
+  ...                       = (size (X.val ∪ Eᶜ) + M.r (X.val ∪ Eᶜ)ᶜ - M.r ⊤)
+                            - (size          Eᶜ  + M.r          Eᶜ ᶜ - M.r ⊤) : by rw [h₂, h₃]
+  ...                       = (corestrict E (dual M)).r X                     : rfl
+end
+
+lemma restrict_dual {U : boolalg} (E : U) (M : rankfun U) :
+  restrict E (dual M) = dual (corestrict E M) :=
+begin
+  apply rankfun.ext, apply funext, intro X,
+  have h₁ : E ∪ Eᶜ = ⊤ := by apply union_compl,
+  have h₂ := (calc
+    (E ∩ X.valᶜ) ∪ Eᶜ = (E ∪ Eᶜ) ∩ (X.valᶜ ∪ Eᶜ) : by apply union_distrib_right
+    ...               = X.valᶜ ∪ Eᶜ              : by simp only [union_compl, top_inter]
+    ...               = (X.val ∩ E)ᶜ             : by apply eq.symm; apply compl_inter
+    ...               = X.valᶜ                   : by rw [(eq.symm X.prop : X.val ∩ E = X.val)]),
+  calc
+  (restrict E (dual M)).r X = size X.val + M.r X.valᶜ - M.r ⊤                 : rfl
+  ...                       = size X.val + (M.r X.valᶜ - M.r Eᶜ)
+                                         - (M.r ⊤      - M.r Eᶜ)              : by linarith
+  ...                       = size X.val + (M.r ((E ∩ X.valᶜ) ∪ Eᶜ) - M.r Eᶜ)
+                                         - (M.r ( E           ∪ Eᶜ) - M.r Eᶜ) : by rw [h₁, h₂]
+  ...                       = (dual (corestrict E M)).r X                     : rfl
+  
+end
+
+----------------------------------------------------------------
+
+def unnest {U : boolalg} {E : U} {F : subalg E} :
+  subalg F → subalg (F.val) :=
+fun X, ⟨X.val.val, congr_arg subtype.val X.prop⟩
+
+def nest {U : boolalg} {E : U} (F : subalg E) :
+  subalg (F.val) → subalg F :=
+fun X, ⟨⟨X.val, subset_trans X.prop F.prop⟩, subtype.ext X.prop⟩
+
+-- Deletion and contraction commute.
+
+def delete_then_contract {U : boolalg} (C D : U) (h_disjoint : C ∩ D = ⊥) :
+  rankfun U → matroid_on (Cᶜ ∩ Dᶜ) :=
+fun M, let
+  M_del     : matroid_on Dᶜ := restrict Dᶜ M,
+  E         : ↥(subalg Dᶜ)  := ⟨Cᶜ ∩ Dᶜ, by apply inter_subset_right⟩,
+  M_del_con : matroid_on E  := corestrict E M_del
+in {
+  r := (fun X, M_del_con.r (nest E X)),
+  R0 := (by intro X; apply M_del_con.R0),
+  R1 := (by intro X; apply M_del_con.R1),
+  R2 := (begin
+    intros X Y h,
+    apply M_del_con.R2,
+    apply subtype.ext,
+    apply subtype.ext,
+    show X.val = X.val ∩ Y.val,
+    exact congr_arg subtype.val h
+  end),
+  R3 := (by intros X Y; apply M_del_con.R3),
+}
+
+def contract_then_delete {U : boolalg} (C D : U) (h_disjoint : C ∩ D = ⊥) :
+  rankfun U → matroid_on (Cᶜ ∩ Dᶜ) :=
+fun M, let
+  M_con     : matroid_on Cᶜ := corestrict Cᶜ M,
+  E         : ↥(subalg Cᶜ)  := ⟨Cᶜ ∩ Dᶜ, by apply inter_subset_left⟩,
+  M_con_del : matroid_on E  := restrict E M_con
+in {
+  r := (fun X, M_con_del.r (nest E X)),
+  R0 := (by intro X; apply M_con_del.R0),
+  R1 := (by intro X; apply M_con_del.R1),
+  R2 := (begin
+    intros X Y h,
+    apply M_con_del.R2,
+    apply subtype.ext,
+    apply subtype.ext,
+    show X.val = X.val ∩ Y.val,
+    exact congr_arg subtype.val h
+  end),
+  R3 := (by intros X Y; apply M_con_del.R3),
+}
+
+lemma same_same {U : boolalg} (C D : U) (h_disjoint : C ∩ D = ⊥) (M : rankfun U) :
+  (delete_then_contract C D h_disjoint M) = (contract_then_delete C D h_disjoint M) :=
+begin
+  apply rankfun.ext, apply funext, intro X,
+  unfold delete_then_contract contract_then_delete,
+  simp,
+  unfold restrict corestrict,
+  simp,
+  
+
+
+end
+
+/-
+lemma del_con {U : boolalg} (C D : U) (h_disjoint : C ∩ D = ⊥) (M : rankfun U) :
+  let
+    E₁ : ↥(subalg Dᶜ) := ⟨Cᶜ ∩ Dᶜ, by apply inter_subset_right⟩,
+    E₂ : ↥(subalg Cᶜ) := ⟨Cᶜ ∩ Dᶜ, by apply inter_subset_left⟩
+  in
+    corestrict E₁ (restrict Dᶜ M) = restrict E₂ (corestrict Cᶜ M) :=
+sorry
+-/
+----------------------------------------------------------------
+/-
+
+----------------------------------------------------------------
+
 
 lemma contract_contract (C₁ C₂ : subalg E) (M : matroid_on E) :
   contract (C₂∖C₁) (contract C₁ M) ≅ contract (C₁ ∪ C₂) M
@@ -231,3 +340,4 @@ in {
     linarith [hs],      
   end,
 }
+-/
