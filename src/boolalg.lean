@@ -2,6 +2,7 @@ import tactic.ext
 --import tactic.ring 
 import tactic.linarith
 import tactic.tidy 
+import tactic 
 
 -- The API I would like to use for various basic objects.
 -- This probably belongs in its own file by this point. 
@@ -25,8 +26,9 @@ structure boolalg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: member) : 0 ≤ size X) 
   (size_modular_ax (X Y: member) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (size_singleton_ax (X : member) : (X ≠ bot) → (∀(Y Z : member), (X = inter X (union Y Z)) → ((X = inter X Y) ∨ (X = inter X Z))) → size X = 1 )
+  --(size_singleton_ax (X : member) : (X ≠ bot) → (∀(Y Z : member), (X = inter X (union Y Z)) → ((X = inter X Y) ∨ (X = inter X Z))) → size X = 1 )
   --(1 < size X) → (∃ (Y : member), (inter X Y = Y) ∧ (0 < size Y) ∧ (size Y < size X)))
+  (singleton_subset_ax (X : member) : X = bot ∨ ∃ Y Z, inter Y Z = bot ∧ union Y Z = X ∧ size Y = 1)
 
   (inter_comm_ax (X Y : member) : inter X Y = inter Y X)
   (union_comm_ax (X Y : member) : union X Y = union Y X)
@@ -61,6 +63,7 @@ variables {A : boolalg}
 @[simp] instance i6  : has_compl A := {compl := A.compl}
 @[simp] instance i7  : has_subset A := {subset := A.subset} 
 @[simp] instance i8  : has_sub A := {sub := λ (X Y), X ∩ Yᶜ}
+@[simp] instance i9  : has_ssubset A := {ssubset := λ X Y, X ⊆ Y ∧ X ≠ Y}
 
 def size  (X : A) : ℤ := A.size X
 def sdiff  (X Y : A) : A := (X - Y) ∪ (Y - X)
@@ -176,10 +179,15 @@ lemma size_compl (X : A) : size Xᶜ = size (⊤ : A) - size X :=
 lemma size_nonneg (X : A) : 0 ≤ size X := 
   A.size_nonneg_ax X 
 
+lemma singleton_subset (X : A) : X = ⊥ ∨ (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+  sorry --A.singleton_subset_ax X, 
+
 -- Subsets 
 
 lemma subset_refl (X : A) : X ⊆ X :=
   begin unfold has_subset.subset, apply (A.inter_subset_ax X X).mpr, apply inter_idem end 
+
+lemma ssubset_bot (X : A) : ¬ X ⊂ ⊥ := sorry 
 
 @[simp] lemma inter_subset (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   A.inter_subset_ax X Y 
@@ -255,21 +263,10 @@ begin
 end
  
 lemma compl_unique {X Y : A} (hU : X ∪ Y = ⊤) (hI : X ∩ Y = ⊥) : Y = Xᶜ := 
-begin
-  apply subset_antisymm,
-  exact disjoint_compl_subset (eq.trans (inter_comm Y X) hI),
-  exact cover_compl_subset hU, 
-end 
-
+  begin apply subset_antisymm, exact disjoint_compl_subset (eq.trans (inter_comm Y X) hI), exact cover_compl_subset hU, end 
 
 @[simp] lemma compl_compl  (X : A) : Xᶜᶜ = X := 
-begin
-  apply subset_antisymm,
-  apply cover_compl_subset, 
-  exact eq.trans (union_comm Xᶜ X) (union_compl X), 
-  exact disjoint_compl_subset (inter_compl X),
-end
-
+  begin apply subset_antisymm, apply cover_compl_subset, exact eq.trans (union_comm Xᶜ X) (union_compl X), exact disjoint_compl_subset (inter_compl X) end
 
 lemma compl_top (A : boolalg) : (⊤ : A)ᶜ = ⊥ := 
   eq.symm (compl_unique (top_union ⊥) (inter_bot ⊤))
@@ -310,21 +307,9 @@ lemma compl_union (X Y : A) : (X ∪ Y)ᶜ = Xᶜ ∩ Yᶜ :=
 lemma compl_partition (X Y : A) : (X ∩ Y) ∪ (Xᶜ ∩ Y) = Y := 
   by rw [←inter_distrib_right, union_compl, top_inter]
 
-lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) :
-  X ∪ (Xᶜ ∩ Y) = Y := 
-  by nth_rewrite 0 ←(inter_subset_mp hXY); exact compl_partition X Y
+lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) : X ∪ (Xᶜ ∩ Y) = Y := 
+  begin nth_rewrite 0 ←(inter_subset_mp hXY), exact compl_partition X Y end 
   
-lemma size_singleton (X : A) : (∀(Y Z : A), (X ⊆ Y ∪ Z) → (X ⊆ Y ∨ X ⊆ Z)) → size X = 1 := 
-  begin
-    sorry 
-    /-intros h, apply A.size_singleton_ax, intros Y Z hYZ,
-    have := h Y Z ((inter_subset_iff X (Y ∪ Z)).mpr hYZ.symm), 
-    rw inter_subset_iff at this, rw inter_subset_iff at this,
-    cases this, 
-    left, exact this.symm, 
-    right, exact this.symm,  -- this proof is terrible; probably should be one-liner. -/
-  end
-
 
 -- Associativity (In fact, this can be discarded eventually : WIP)
 
@@ -335,12 +320,7 @@ lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) :=
   A.union_assoc_ax X Y Z 
 
 lemma compl_subset {X Y : A} (hXY : X ⊆ Y) : Yᶜ ⊆ Xᶜ := 
-begin
-  --apply eq.symm, 
-  rw inter_subset at hXY, 
-  rw [←hXY, compl_inter, union_comm], 
-  apply subset_union_left,
-end 
+  begin rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left end 
 
 -- Self-Distributivity
 
@@ -353,10 +333,6 @@ lemma union_distrib_union_left (X Y Z : A) : (X ∪ Y) ∪ Z = (X ∪ Z) ∪ (Y 
 
 lemma union_distrib_union_right (X Y Z : A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X ∪ Z) := 
   by rw [union_comm X, union_distrib_union_left Y Z X, union_comm X, union_comm X]   
-
-
-
-
 
 lemma inter_is_lb  (X Y Z : A) : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
 begin intros hZX hZY, rw inter_subset at *, rw [←inter_assoc, hZX, hZY] end 
@@ -371,63 +347,34 @@ lemma diff_union (X Y : A): (X ∩ Y) ∪ (Y - X) = Y :=
   by unfold has_sub.sub; rw [inter_comm Y Xᶜ, compl_partition]
 
 lemma diff_union_subset {X Y : A} (hXY : X ⊆ Y) : X ∪ (Y - X) = Y := 
-begin
-  rw inter_subset at hXY, 
-  have := diff_union X Y, 
-  rw hXY at this, 
-  exact this, 
-end
-
-
+  begin rw inter_subset at hXY, have := diff_union X Y, rw hXY at this, exact this end
 
 lemma diff_inter (X Y : A) : X ∩ (Y - X) = ⊥ := 
-begin
-  unfold has_sub.sub, 
-  rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot],
-end
+  begin  unfold has_sub.sub, rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot] end
 
 lemma size_monotone {X Y: A} (hXY : X ⊆ Y) : size X ≤ size Y := 
-begin
-  have := size_modular X (Y-X), 
-  rw diff_union_subset hXY at this, 
-  rw diff_inter at this, 
-  linarith [size_nonneg(Y-X), size_bot A],
-end
+  begin have := size_modular X (Y-X), rw diff_union_subset hXY at this, rw diff_inter at this, linarith [size_nonneg(Y-X), size_bot A] end
 
 lemma size_subadditive {X Y : A} : size (X ∪ Y) ≤ size X + size Y :=
   by linarith [size_modular X Y, size_nonneg (X ∩ Y)] 
 
 lemma size_disjoint_sum {X Y : A} (hXY: X ∩ Y = ⊥) : size (X ∪ Y) = size X + size Y := 
-begin
-  have := size_modular X Y, 
-  rw [hXY, size_bot] at this, 
-  linarith, -- for some reason 'ring' doesn't work here. I don't know why.  
-end
+  begin have := size_modular X Y, rw [hXY, size_bot] at this, linarith end
 
 lemma size_compl_sum (X : A) : size X + size Xᶜ = size (⊤ : A) := 
-begin
-  have := size_disjoint_sum (inter_compl X),
-  rw (union_compl X) at this, 
-  linarith, 
-end 
+  begin have := size_disjoint_sum (inter_compl X), rw (union_compl X) at this, linarith end 
 
 lemma compl_inter_size (X Y : A) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
-    by rw [←size_modular, ←inter_distrib_right, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
-
+  by rw [←size_modular, ←inter_distrib_right, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
 
 lemma compl_inter_size_subset {X Y : A} (hXY : X ⊆ Y) : size (Xᶜ ∩ Y) = size Y - size X := 
-begin
-    have := compl_inter_size X Y, 
-    rw inter_subset_mp hXY at this, 
-    linarith, 
-end
+  begin have := compl_inter_size X Y, rw inter_subset_mp hXY at this, linarith end
 
 lemma diff_size {X Y : A} (hXY : X ⊆ Y) : size (Y - X) = size Y - size X :=  
-begin 
-    unfold has_sub.sub, 
-    rw inter_comm, 
-    exact compl_inter_size_subset hXY, 
-end  
+  begin unfold has_sub.sub, rw inter_comm, exact compl_inter_size_subset hXY end  
+
+lemma size_zero_bot {X : A} : (size X = 0) → X = ⊥ := sorry
+
 
 -- more subsets 
 
@@ -523,7 +470,7 @@ def subalg {A : boolalg}(ground : A) : boolalg :=
   size_bot_ax := @size_bot A, 
   size_nonneg_ax := λ X, size_nonneg X.val,
   size_modular_ax := λ X Y, size_modular X.val Y.val, 
-  size_singleton_ax := sorry,
+  singleton_subset_ax := sorry,
   inter_comm_ax := λ X Y, subtype.eq (inter_comm X.val Y.val), 
   union_comm_ax := λ X Y, subtype.eq (union_comm X.val Y.val),
   union_distrib_right_ax := λ X Y Z, subtype.eq (union_distrib_right X Y Z),
@@ -582,9 +529,9 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   size_bot_ax := by simp only [finset.card_empty, int.coe_nat_zero],
   size_nonneg_ax := by simp only [forall_const, int.coe_nat_nonneg],
   size_modular_ax := λ X Y, by linarith [finset.card_union_add_card_inter X Y],
-  size_singleton_ax := 
+  singleton_subset_ax := 
   begin
-    intros X hbot hX, unfold_coes, 
+    --intros X hbot hX, unfold_coes, 
     sorry, 
     --finset.card_eq_one, 
   end,
@@ -601,5 +548,97 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   union_assoc_ax := finset.union_assoc,
 }
 
+-- Induction stuff 
+
+lemma induction_prop (P : A → Prop) : P ⊥ ∧ (∀ X Y, size Y = 1 ∧ P X -> P (Y ∪ X)) → ∀ S, P S := 
+begin
+  rintros ⟨hBot, hAug⟩ ,
+  suffices h : ∀(S' : A) (n : ℕ), (size S' = n) → P S', 
+  intros S, 
+  apply h S (size S).to_nat,  
+  exact (int.to_nat_of_nonneg (size_nonneg S)).symm, 
+  intros S' n,
+  induction n with N IH generalizing S',
+  intros hS'bot,
+  rw [size_zero_bot hS'bot], assumption, 
+  intros hS', 
+  have S_decomp := singleton_subset S', 
+  cases S_decomp with bot_case aug_case, 
+  rw bot_case, assumption, 
+  rcases aug_case with ⟨Y,Z,hInter,hUnion,hSize⟩,
+  specialize hAug Z Y, 
+  specialize IH Z, 
+  change size S' = N+1 at hS', 
+  have := size_disjoint_sum hInter, 
+  have sizeS : size Z = N := by rw hUnion at this; linarith , 
+  rw ←hUnion, 
+  apply hAug, 
+  exact ⟨hSize, IH sizeS⟩, 
+end
+
+lemma strong_induction_prop (P : A → Prop) : (∀ W, (∀ U, U ⊂ W → P U) → P W) → ∀ S, P S :=
+begin
+  intros hP, 
+  set Q : A → Prop := λ S, ∀ X, X ⊆ S → P X with hQ, 
+  have hBot : Q ⊥ := 
+  begin 
+    rw hQ, intros X hX, rw (subset_bot hX), 
+    apply hP, intros Y hY, exfalso, exact ssubset_bot Y hY, 
+  end,
+
+  suffices : ∀ S, Q S, {intros S, exact this S S (subset_refl S)},
+  apply induction_prop Q, split, exact hBot, 
+  rintros X Y ⟨hSize, hQX⟩ Z hZ, 
+  have : Z ⊆ X ∨ (Y ⊆ Z) ∧ (Z-Y ⊆ X) := sorry, 
+  cases this, 
+  exact hQX Z this, 
+  have := hQX (Z-Y) this.2, 
+  
+  have : P Y := 
+  begin
+    
+  end,
+  sorry,  
+end
+
+
+lemma min_counterexample_bot (Y : A)(P : A → Prop) : ¬P Y → ∃ Z, Z ⊆ Y ∧ ¬P Z ∧ (∀ Z', Z' ⊂ Z → P Z') := 
+begin
+  intros hY, 
+  set minProp : A → Prop := λ Y, ¬P Y → ∃ Z, Z ⊆ Y ∧ ¬P Z ∧ (∀ Z', Z' ⊂ Z → P Z') with hMP,  /- fill this in -/
+  suffices : ∀ Y', minProp Y', 
+  specialize this Y hY, exact this, 
+  apply induction_prop minProp, split, 
+  intros h, use ⊥, 
+  refine ⟨subset_refl ⊥, h,_⟩,  
+  intros Z' hZ', exfalso, apply ssubset_bot Z', exact hZ',
+
+  rintros X Y ⟨hSize, hMP'⟩ hYX ,  
+  rw hMP at hMP',
+  have : (P X ∨ ¬ P X) := em (P X),
+  cases this, 
+  {
+    
+    sorry,
+  },
+  {
+    specialize hMP' this,
+    cases hMP' with Z, use Z, 
+    exact ⟨(subset_trans hMP'_h.1 (subset_union_right Y X)), hMP'_h.2⟩, 
+  },
+  --by_contradiction, push_neg, 
+  --subst minProp,
+end
+
+
+lemma min_counterexample {X Y : A} {hXY : X ⊆ Y} (P : A → Prop) : P X → ¬P Y → ∃ Z, (X ⊆ Z) ∧ (Z ⊆ Y) ∧ (¬P Z) ∧ (∀ Z', X ⊆ Z ∧ Z' ⊂ Z → P Z) := 
+begin
+  sorry 
+end
+
+
 end boolalg
+
+
+
 end API 
