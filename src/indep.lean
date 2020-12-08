@@ -157,19 +157,7 @@ end
 lemma I3' (M : rankfun U) (X Y : U) : is_indep M X → is_indep M Y → size X < size Y → 
   (∃ X': U, X ⊆ X' ∧ X' ⊆ X ∪ Y ∧ is_indep M X' ∧ size X' = size X +1 ) := sorry 
 
-lemma I3'' (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
-  ∃ z: boolalg_singleton, z.1 ⊆ Z ∧ M.r X < M.r (X ∪ z.1) := 
-begin
-  revert Z, 
-  set P : U → Prop := λ Z', M.r X < M.r Z' → ∃ z' : boolalg_singleton, z'.1 ⊆ Z' ∧ M.r X < M.r (X ∪ z'.1) with hP, 
-  apply strong_induction P, rw hP at *, clear hP P,
-  intros Z hBelow hRankDiff, 
-  by_contradiction, push_neg at a, 
-  --specialize
-  sorry, 
-
-end
-
+-- Sets containing only loops have rank zero. 
 
 lemma loopy_rank_zero (M : rankfun U) (X : U) : (∀ e : boolalg_singleton, e.1 ⊆ X → M.r e.1 = 0) → (M.r X = 0) :=
 begin
@@ -186,7 +174,17 @@ begin
   exact hSing ⟨X, by linarith [int.add_one_le_of_lt (lt_of_le_of_ne (size_nonneg X) (ne.symm h))]⟩ (subset_refl X),    
 end 
 
- 
+
+-- A larger-rank set can be used to augment a smaller-rank one. 
+
+lemma rank_augment (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
+  ∃ z: boolalg_singleton, z.1 ⊆ Z ∧ M.r X < M.r (X ∪ z.1) := 
+begin
+  sorry,   
+end
+
+
+
 
 def is_coindep (M : rankfun U) : U → Prop :=
   is_indep (dual M)
@@ -198,7 +196,7 @@ begin
 end
 
 inductive minor_expression {U : boolalg} : U → Type
-| univ : minor_expression ⊤
+| self                       : minor_expression ⊤
 | restrict   (X : U) {E : U} : (X ⊆ E) → minor_expression E → minor_expression X
 | corestrict (X : U) {E : U} : (X ⊆ E) → minor_expression E → minor_expression X
 open minor_expression
@@ -208,9 +206,9 @@ def to_minor {U : boolalg} {E : U} :
 begin
   intros min_expr rfun, 
   induction min_expr with X E₀ hXE₀ min_expr₀ M₀ X E₀ hXE₀ min_expr₀ M₀,
-  exact restrict rfun ⊤, 
-  exact restrict_subalg hXE₀ M₀,
-  exact corestrict_subalg hXE₀ M₀,  
+  exact restrict_subset ⊤ rfun, 
+  exact restrict_nested_pair hXE₀ M₀,
+  exact corestrict_nested_pair hXE₀ M₀,  
 end
 
 lemma to_minor.delete_delete {U : boolalg} {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
@@ -220,47 +218,95 @@ let
   h₃ : (D₁ ∪ D₂)ᶜ ⊆ ⊤   := sorry
 in
   to_minor (restrict (D₁ ∪ D₂)ᶜ h₁
-           (restrict  D₁ᶜ       h₂ univ)) =
-  to_minor (restrict (D₁ ∪ D₂)ᶜ h₃ univ) :=
+           (restrict  D₁ᶜ       h₂ self)) =
+  to_minor (restrict (D₁ ∪ D₂)ᶜ h₃ self) :=
 begin
   sorry
 end
 
-def contract_delete {U : boolalg} (C D : U) :
+
+
+@[simp] def contract_delete {U : boolalg} (C D : U) :
   (C ∩ D = ⊥) → minor_expression (C ∪ D)ᶜ :=
 fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ _ ... ⊆ Cᶜ : inter_subset_left _ _ ) (corestrict Cᶜ (subset_top _) univ)
 
-structure minor {U : boolalg} :=
-  (r : rankfun U)
-  {E : U}
-  (exp : minor_expression E)
+--simplified minor expression - corestrict to Z, then restrict to E 
 
+@[simp] def reduced_expr {U : boolalg} (E Z : U) (hEZ : E ⊆ Z) : minor_expression E := 
+  restrict E hEZ ((corestrict Z (subset_top Z)) self)
+
+lemma reduced_restrict {U : boolalg} {M : rankfun U} (E Z E' : U) (hE'E : E' ⊆ E) (hEZ : E ⊆ Z) : 
+  to_minor (restrict (reduced_expr E Z hEZ)) M 
+
+
+-- Every minor expression is equivalent to a reduced one. 
+
+lemma has_reduced_expr {M : rankfun U} {E : U} (expr : minor_expression E) :
+  ∃ (Z : U) (hZ : E ⊆ Z), 
+  to_minor (reduced_expr E Z hZ) M ≅ to_minor expr M := 
+  begin
+    induction expr with X₁ E₁ hX₁E₁ minor_expr IH 
+                      X₁ E₁ hX₁E₁ minor_expr IH,
+    use ⊤,  use subset_refl ⊤, unfold matroid_heq, 
+    refine ⟨rfl, _⟩, intros X h₁ h₂, 
+    unfold reduced_expr, 
+    {
+      let M₁ := restrict_subset ⊤ M, 
+      calc _ = (corestrict_nested_pair _ (restrict_subset ⊤ M)).r ⟨X, _⟩   : rfl 
+        ...  = M₁.r (⟨X, subset_top X⟩ ∪ ⊤ᶜ) - M₁.r (⊤ᶜ)                   : rfl 
+        ...  = M₁.r (⟨X, subset_top X⟩) - M₁.r (⊥)                         : by rw [boolalg.compl_top, @union_bot (subalg ⊤) _]
+        ...  = M.r X - M.r ⊥                                               : rfl  
+        ...  = M.r X                                                        : by linarith [rank_bot M]
+        ...  = _                                                            : rfl,
+    },
+    { rcases IH with ⟨Z, ⟨hE₁Z, ⟨_, h₄⟩⟩⟩,  
+    --specialize h₄ X₁ hXE hXE, 
+    use Z, use subset_trans hX₁E₁ hE₁Z, 
+    unfold matroid_heq, refine ⟨rfl, _⟩, intros X h₁ h₂, 
+    have hXE₁ := subset_trans h₁ hX₁E₁, 
+    specialize h₄ X hXE₁ hXE₁, 
+    calc _ = 1 : sorry 
+    ...    = _ : sorry, 
+  }, 
+    {sorry},
+  end
 
 lemma has_representation {M : rankfun U} {E : U} (expr : minor_expression E) :
   (∃ (C D : U) (hCD : C ∩ D = ⊥),  
     (C ∪ D)ᶜ = E 
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) :=
 begin
-  intros,
-  induction expr with X₁ E₁ hXE minor_expr IH 
+  sorry, 
+  /-induction expr with X₁ E₁ hXE minor_expr IH 
                       X₁ E₁ hXE minor_expr IH,
   {
     use ⊥, use ⊥, use (inter_idem ⊥), split, 
     rw [union_idem, boolalg.compl_bot],
-    sorry, /- until we fill in to_minor -/
+    unfold matroid_heq, 
+    refine ⟨by rw [union_idem, boolalg.compl_bot], _⟩, 
+    intros X h₁ h₂,
+    --have : (to_minor (contract_delete ⊥ ⊥ _) M).r ⟨X, h₁⟩ = (to_minor univ M).r ⟨X, h₂⟩:=  sorry, 
+    calc _  = 1  : sorry 
+        ... = (to_minor self M).r ⟨X, h₂⟩ : sorry, 
+    
   },
   {
     rcases IH with ⟨C,D,⟨hCD,⟨h₁,h₂⟩⟩⟩,  
-    use C, use D ∪ (E₁ - X₁), use (sorry : C ∩ (D ∪ (E₁ - X₁)) = ⊥), split,  
-    sorry, -- some boolalg stuff
-    sorry,
+    let D' := D ∪ (E - X₁),
+    have CDU : (C ∪ D')ᶜ = X₁ := by {sorry}, 
+    have CDI : C ∩ D' = ⊥ := sorry, 
+    use C, use D', use CDI, split,  exact CDU,
+    
+    unfold matroid_heq at *, split, exact CDU, intros X h₁ h₂,
+    calc _ = (to_minor (restrict X₁ hXE minor_expr) M).r ⟨X, h₂⟩ : sorry, 
+    
   },
   {
     rcases IH with ⟨C,D,⟨hCD,⟨h₁,h₂⟩⟩⟩,  
     use C ∪ (E₁ - X₁), use D, use (sorry : (C ∪ (E₁ - X₁)) ∩ D = ⊥), split,  
     sorry, -- some boolalg stuff
     sorry, -- until we fill in to_minor
-  }
+  }-/
 end
 
 
