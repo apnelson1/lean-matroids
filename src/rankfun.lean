@@ -57,7 +57,7 @@ let f := (embed.from_subset R).f in
 ⟩ 
 
 @[simp] def corestrict_nested_pair {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (rfun : rankfun (subalg R)) : rankfun (subalg R₀)  := 
-let r := rfun.r, f := (embed.from_nested_pair h).f, C := (embed.to_subalg R₀ h)ᶜ in 
+let r := rfun.r, f := (embed.from_nested_pair h).f, C := (embed.to_subalg R₀ R h)ᶜ in 
 ⟨
   λ X, r (f X ∪ C) - r C, 
   λ X, begin simp only [sub_nonneg], exact rfun.R2 C (f X ∪ C) (subset_union_right (f X) C) end, 
@@ -65,6 +65,7 @@ let r := rfun.r, f := (embed.from_nested_pair h).f, C := (embed.to_subalg R₀ h
   λ X Y, sorry, 
   λ X Y, sorry, 
 ⟩
+
 
 --@[simp] lemma restrict_restrict {B : boolalg} (R₁ R₀ R : B)
 

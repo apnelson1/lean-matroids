@@ -322,6 +322,11 @@ lemma compl_partition (X Y : A) : (X ∩ Y) ∪ (Xᶜ ∩ Y) = Y :=
 
 lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) : X ∪ (Xᶜ ∩ Y) = Y := 
   begin nth_rewrite 0 ←(inter_subset_mp hXY), exact compl_partition X Y end 
+
+lemma compl_pair {X Y : A} : (Xᶜ = Y) → (X = Yᶜ) := by {sorry}
+
+lemma compl_diff (X Y : A) : (X - Y)ᶜ = Xᶜ ∪ Y := 
+  by {dunfold has_sub.sub, rw [compl_inter, compl_compl]}
   
 
 -- Associativity (In fact, this can be discarded eventually : WIP)
@@ -356,14 +361,22 @@ begin intros hXZ hYZ, rw union_subset at *, rw [union_assoc, hYZ, hXZ] end
 lemma diff_subset  (X Y : A) : X - Y ⊆ X := 
   inter_subset_left X Yᶜ
 
+@[simp] lemma top_diff (X : A) : ⊤ - X = Xᶜ := 
+  by {unfold has_sub.sub, apply top_inter}
+
 lemma diff_union (X Y : A): (X ∩ Y) ∪ (Y - X) = Y := 
-  by unfold has_sub.sub; rw [inter_comm Y Xᶜ, compl_partition]
+  by {unfold has_sub.sub, rw [inter_comm Y Xᶜ, compl_partition]}
 
 lemma diff_union_subset {X Y : A} (hXY : X ⊆ Y) : X ∪ (Y - X) = Y := 
-  begin rw inter_subset at hXY, have := diff_union X Y, rw hXY at this, exact this end
+  by {rw inter_subset at hXY, have := diff_union X Y, rw hXY at this, exact this}
 
 lemma diff_inter (X Y : A) : X ∩ (Y - X) = ⊥ := 
-  begin  unfold has_sub.sub, rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot] end
+  by {unfold has_sub.sub, rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot]} 
+
+lemma diff_def (X Y : A) : X - Y = X ∩ Yᶜ := rfl 
+
+lemma diff_bot (X : A) : X - ⊥ = X := 
+  by {rw [diff_def, compl_bot, inter_top]} 
 
 lemma size_monotone {X Y: A} (hXY : X ⊆ Y) : size X ≤ size Y := 
   begin have := size_modular X (Y-X), rw diff_union_subset hXY at this, rw diff_inter at this, linarith [size_nonneg(Y-X), size_bot A] end
@@ -534,7 +547,7 @@ lemma embed.compose_subset_nested_pair (X₁ X₂ : A) (hX₁X₂ : X₁ ⊆ X�
 lemma embed.compose_nested_triple (X₁ X₂ X₃ : A) (h₁₂ : X₁ ⊆ X₂) (h₂₃ : X₂ ⊆ X₃) :
   (embed.compose (embed.from_nested_pair h₁₂) (embed.from_nested_pair h₂₃)) = embed.from_nested_pair (subset_trans h₁₂ h₂₃) := rfl
 
-def embed.to_subalg {X : A} (Y : A) (h: Y ⊆ X) : subalg X := ⟨Y,h⟩ 
+def embed.to_subalg (X Y : A) (h: X ⊆ Y) : subalg Y := ⟨X,h⟩ 
 
 /-instance embed.coe_to_fun {A B : boolalg.boolalg} : has_coe_to_fun (boolalg.embed A B) := {
   F := (λ _, A → B),
