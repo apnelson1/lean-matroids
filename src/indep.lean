@@ -128,6 +128,7 @@ inductive minor_expression  : U → Type
 | corestrict (X : U) {E : U} : (X ⊆ E) → minor_expression E → minor_expression X
 open minor_expression
 
+/-
 def to_minor {E : U} :
   minor_expression E → rankfun U → matroid_on E :=
 begin
@@ -137,13 +138,15 @@ begin
   exact restrict_nested_pair hXE₀ M₀,
   exact corestrict_nested_pair hXE₀ M₀,  
 end
+-/
 
 /-- term for above -/
-def to_minor_alg : Π {E : U}, minor_expression E → rankfun U → matroid_on E
+def to_minor : Π {E : U}, minor_expression E → rankfun U → matroid_on E
 | _ self r := restrict_subset _ r
-| _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor_alg expr r)
-| _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor_alg expr r)
+| _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor expr r)
+| _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor expr r)
 
+/-
 example (E : U) (expr : minor_expression E) (r : rankfun U) :
    to_minor_alg expr r = to_minor expr r :=
 begin
@@ -160,6 +163,7 @@ begin
     refl,
   }
 end
+-/
 
 lemma to_minor.delete_delete {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
 let
@@ -185,27 +189,6 @@ fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ 
 --simplified minor expression - corestrict to Z, then restrict to A 
 
 
-lemma restrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
-  to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
-  let f := (embed.from_nested_pair (subset_refl A)).f in 
-begin
-  ext X,
-  cases X,
-  refl,
-end
-
-lemma corestrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
-  to_minor_alg (corestrict A (subset_refl A) expr) M = to_minor_alg expr M :=
-begin
-  unfold to_minor_alg,
-  simp,
-  set mat := to_minor_alg expr M,
-  apply rankfun.ext,
-  ext X,
-  simp,
-  /- some matroid calculations here now -/
-  sorry,
-end
 
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_top Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_top (A ∪ Zᶜ))) self)) M :=
@@ -217,8 +200,6 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
     rw set_eq at RHS, 
     exact RHS.symm, 
   end
-#check subset_inter_subset_left
-
 
 
 lemma dual_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
@@ -239,12 +220,33 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
        ... = size X + (M.r ((A- (f X)) ∪ (⊤ - Z)) - M.r (⊤ - Z)) - (M.r (A ∪ (⊤ - Z)) - M.r (⊤ - Z))         : by linarith 
        ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_top Z) self)) M)).r X                      : rfl 
        ... = _ : by rw switch_restrict_corestrict,             
-
   end
 
 lemma dual_corestrict_restrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   dual (to_minor (corestrict A hAZ (restrict Z (subset_top Z) self)) M) = to_minor (restrict A hAZ (corestrict Z (subset_top Z) self)) (dual M) := 
   by {nth_rewrite 0 ←(dual_dual M), rw [←dual_restrict_corestrict, dual_dual]}
+
+
+lemma restrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
+  to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
+  by {ext X,cases X,refl}
+
+lemma corestrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
+  to_minor (corestrict A (subset_refl A) expr) M = to_minor expr M :=
+begin
+  simp [to_minor],
+  set M' := to_minor expr M,
+  apply rankfun.ext,
+  ext X, 
+  simp,
+  set f := (embed.from_nested_pair (subset_refl A)).f,
+  have : (embed.to_subalg A A _) = ⊤ := rfl,
+  rw this,  
+  rw [boolalg.compl_top, union_bot], 
+  rw [rank_bot M'],
+  have : (f X) = X := by cases X; refl,
+  rw this, linarith,
+end
 
 lemma dual_restrict {M: rankfun U} (A : U) : 
   dual (to_minor (restrict A (subset_top A) self) M) = to_minor (corestrict A (subset_top A) self) (dual M) := 
@@ -254,10 +256,10 @@ lemma dual_corestrict {M: rankfun U} (A : U) :
   dual (to_minor (corestrict A (subset_top A) self) M) = to_minor (restrict A (subset_top A) self) (dual M) := 
     by rw [←(restrict_top (corestrict A (subset_top A) self)), dual_restrict_corestrict, corestrict_top]
 
-
 lemma switch_corestrict_restrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (corestrict A hAZ ((restrict Z (subset_top Z)) self)) M = to_minor (restrict A (subset_union_left A Zᶜ) ((corestrict (A ∪ Zᶜ) (subset_top (A ∪ Zᶜ))) self)) M :=
   by {nth_rewrite 0 ←(dual_dual M), rw [←dual_restrict_corestrict, switch_restrict_corestrict, dual_corestrict_restrict, dual_dual]}
+
 
 lemma restrict_restrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ (restrict Z (subset_top Z) self)) M = to_minor (restrict A (subset_top A) self) M :=
@@ -267,11 +269,8 @@ lemma restrict_restrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
 lemma corestrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (corestrict A hAZ (corestrict Z (subset_top Z) self)) M = to_minor (corestrict A (subset_top A) self) M :=   
 
-
 @[simp] def reduced_expr  (A Z : U) (hAZ : A ⊆ Z) : minor_expression A := 
   restrict A hAZ ((corestrict Z (subset_top Z)) self)
-
-
 
 lemma restriction_of_reduced  {M : rankfun U} (A Z A' : U) (hA'A : A' ⊆ A) (hAZ : A ⊆ Z) : 
   to_minor (restrict A' hA'A (reduced_expr A Z hAZ)) M = to_minor (reduced_expr A' Z (subset_trans hA'A hAZ)) M := rfl
@@ -316,36 +315,28 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : U) (hZ'A : Z' ⊆ A) (h
 lemma has_reduced_expr {M : rankfun U} {E : U} (expr : minor_expression E) :
   ∃ (Z : U) (hZ : E ⊆ Z), 
   to_minor (reduced_expr E Z hZ) M = to_minor expr M := 
-  begin
-    induction expr with X₁ E₁ hX₁E₁ minor_expr IH 
-                      X₁ E₁ hX₁E₁ minor_expr IH,
-    use ⊤,  use subset_refl ⊤, sorry , --unfold matroid_heq, 
-    /-refine ⟨rfl, _⟩, intros X h₁ h₂, 
-    unfold reduced_expr, 
-    {
-      let M₁ := restrict_subset ⊤ M, 
-      calc _ = (corestrict_nested_pair _ (restrict_subset ⊤ M)).r ⟨X, _⟩   : rfl 
-        ...  = M₁.r (⟨X, subset_top X⟩ ∪ ⊤ᶜ) - M₁.r (⊤ᶜ)                   : rfl 
-        ...  = M₁.r (⟨X, subset_top X⟩) - M₁.r (⊥)                         : by rw [boolalg.compl_top, @union_bot (subalg ⊤) _]
-        ...  = M.r X - M.r ⊥                                               : rfl  
-        ...  = M.r X                                                        : by linarith [rank_bot M]
-        ...  = _                                                            : rfl,
-    },-/
-    { 
-    rcases IH with ⟨Z, ⟨hE₁Z, h⟩⟩,  
+begin
+  induction expr with X₁ E₁ hX₁E₁ minor_expr IH 
+                    X₁ A₁ hX₁A₁ minor_expr IH,
+  /- self -/                  
+  { use ⊤,  use subset_refl ⊤, simp [reduced_expr], rw [restrict_top, corestrict_top] },
+  /-restrict-/
+  {
+    rcases IH with ⟨Z, ⟨hE₁Z, h⟩⟩,
     use Z, use subset_trans hX₁E₁ hE₁Z, 
-    rw ←(restriction_of_reduced _ _ _ _ _),
-    calc to_minor (restrict X₁ hX₁E₁ (reduced_expr E₁ Z hE₁Z)) M = restrict_nested_pair _ (to_minor (reduced_expr E₁ Z hE₁Z) M)  : rfl 
-                                                             ... = restrict_nested_pair _ (to_minor minor_expr M)  : by rw h
-                                                             ... = _ : rfl, 
-    }, 
-    {
-      rcases IH with ⟨Z, ⟨hE₁Z, h⟩⟩, 
-      use Z, use subset_trans hX₁E₁ hE₁Z,-- apply eq.symm, 
-      sorry, 
-      --rw ←(corestriction_of_reduced _ _ _ _ _),
-    },
-  end
+    rw ← restriction_of_reduced,
+    dunfold to_minor,
+    rw h,
+  },
+  /-corestrict-/
+  {
+    rcases IH with ⟨Z, ⟨hA₁Z, h⟩⟩,
+    use X₁ ∪ (Z - A₁), use subset_union_left X₁ _,
+    rw ←corestriction_of_reduced _ _ _ hX₁A₁ hA₁Z,
+    dunfold to_minor,
+    rw h, 
+  }
+end
 
 lemma has_representation {M : rankfun U} {E : U} (expr : minor_expression E) :
   (∃ (C D : U) (hCD : C ∩ D = ⊥),  
@@ -453,13 +444,36 @@ begin
   exact hSing ⟨X, by linarith [int.add_one_le_of_lt (lt_of_le_of_ne (size_nonneg X) (ne.symm h))]⟩ (subset_refl X),    
 end 
 
+set_option pp.proofs true
+open minor_expression
 
 -- A larger-rank set can be used to augment a smaller-rank one. 
-
 lemma rank_augment (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
   ∃ z: boolalg_singleton, z.1 ⊆ Z ∧ M.r X < M.r (X ∪ z.1) := 
+let M' := to_minor (corestrict (Z - X) (sorry : Z - X ⊆ X ∪ Z) (restrict (X ∪ Z) (subset_top (X ∪ Z)) self)) M in
 begin
-  sorry,   
+  
+  intros hrXrZ,
+  by_contradiction h, push_neg at h, 
+  let emb := embed.from_subset (Z-X),
+  let hrM' : ∀ (J : subalg (Z-X)), M'.r J = M.r ((emb.f J) ∪ X) - M.r (X) := sorry, 
+  have : M'.r ⊤ ≠ 0 := 
+  begin
+    have :=  
+    calc M'.r ⊤ = M.r ((Z-X) ∪ ((X ∪ Z)-(Z-X)))- M.r ((X ∪ Z)-(Z-X))  :  rfl
+            ... = M.r (X ∪ Z) - M.r X                                 : sorry 
+            ... ≥ M.r Z - M.r X                                       : by linarith[M.R2 Z (X ∪ Z) (sorry: Z ⊆ X ∪ Z)],
+    linarith,
+  end,
+  apply this, apply loopy_rank_zero, intros e he,
+  cases e, 
+  let e' : @boolalg_singleton U := ⟨emb.f e_val, eq.trans (emb.on_size e_val) e_property⟩, 
+  specialize h e' (subset_trans (sorry : e'.val ⊆ Z - X) (sorry: Z-X ⊆ Z)),
+  have :=
+    calc M'.r (e_val) = M.r (e'.val ∪ ((X ∪ Z)-(Z-X))) - M.r ((X ∪ Z)-(Z-X)) : rfl
+                  ... = M.r (X ∪ e'.val) - M.r X : by rw [(sorry: (X ∪ Z) - (Z-X) = X), union_comm]
+                  ... ≤ 0                        : by linarith [h],
+  simp, linarith [M'.R0 e_val],
 end
 
 
