@@ -188,20 +188,24 @@ fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ 
 lemma restrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
   to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
   let f := (embed.from_nested_pair (subset_refl A)).f in 
-  begin
+begin
   ext X,
-  have := 
-  calc (to_minor (restrict A _ expr) M).r X = (restrict_nested_pair (subset_refl A) (to_minor expr M)).r X : rfl 
-     ... = (to_minor expr M).r ⟨X.val, _⟩                                    : rfl
-     ... = (to_minor expr M).r (f X) : rfl
-     ... = _ : rfl, 
-  
-  sorry, 
-  end
+  cases X,
+  refl,
+end
 
 lemma corestrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
-  to_minor (corestrict A (subset_refl A) expr) M = to_minor expr M := 
-  sorry
+  to_minor_alg (corestrict A (subset_refl A) expr) M = to_minor_alg expr M :=
+begin
+  unfold to_minor_alg,
+  simp,
+  set mat := to_minor_alg expr M,
+  apply rankfun.ext,
+  ext X,
+  simp,
+  /- some matroid calculations here now -/
+  sorry,
+end
 
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_top Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_top (A ∪ Zᶜ))) self)) M :=
