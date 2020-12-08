@@ -171,7 +171,9 @@ in
            (restrict  D₁ᶜ       h₂ self)) =
   to_minor (restrict (D₁ ∪ D₂)ᶜ h₃ self) :=
 begin
-  sorry
+  intros,
+  delta to_minor,
+  refl,
 end
 
 
