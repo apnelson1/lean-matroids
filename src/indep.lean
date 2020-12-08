@@ -10,8 +10,11 @@ Then deletion and contraction are instances of these maps
 And a sequence of deletions and contractions with disjoint arguments can be composed
 -/
 
-import boolalg rankfun
-open boolalg
+import rankfun boolalg boolalg_induction 
+open boolalg 
+--open boolalg_induction 
+
+local attribute [instance] classical.prop_decidable
 
 ----------------------------------------------------------------
 
@@ -77,7 +80,7 @@ fun M, {
       ...         = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : by apply union_distrib_right
       ...         = (X ∩ Y)ᶜ ∩ ⊤         : by rw [compl_inter X Y, union_compl Y]
       ...         = (X ∩ Y)ᶜ             : by apply inter_top
-      ...         = Xᶜ                   : by rw [inter_subset h],
+      ...         = Xᶜ                   : by rw [inter_subset_mp h],
     h₂ :=
       calc Yᶜ ∩ Z = (Xᶜ ∩ Y) ∩ Yᶜ : by apply inter_comm
       ...         = Xᶜ ∩ (Y ∩ Yᶜ) : by apply inter_assoc
@@ -120,6 +123,9 @@ def is_indep (M : rankfun U) : U → Prop :=
 
 def boolalg_singleton : Type := {X : U // size X = 1}
 
+notation x ` ∈ ` X := x.1 ⊆ X
+
+
 lemma I1 (M : rankfun U) : is_indep M ⊥ := 
   calc M.r (⊥ : U) = 0 : rank_bot M ... = size (⊥ : U) : (@size_bot U).symm
 
@@ -136,10 +142,51 @@ begin
 end
 
 lemma I3 (M : rankfun U) (X Y : U) : is_indep M X → is_indep M Y → size X < size Y → 
-  (∃ e : boolalg_singleton, e.val ⊆ Y ∧ ¬(e.val ⊆ X) ∧ is_indep M (X ∪ e.val)) := sorry 
+  (∃ e : boolalg_singleton, e.val ⊆ Y ∧ ¬(e.val ⊆ X) ∧ is_indep M (X ∪ e.val)) := 
+begin
+  intros hIX,
+  set P : U → Prop := λ Z, ((X ∩ Z = ⊥) → (M.r (X ∪ Z) > M.r X) → ∃ z : boolalg_singleton, (z.val ⊆ Z) ∧ (M.r (X ∪ z.val) > M.r X)) with hP,  
+  suffices h : ∀ Z, P Z, 
+  sorry, 
+  --specialize h (Y-X) (sorry : X ∩ (Y - X) = ⊥), 
+
+  --apply strong_induction, 
+  sorry, 
+end
 
 lemma I3' (M : rankfun U) (X Y : U) : is_indep M X → is_indep M Y → size X < size Y → 
   (∃ X': U, X ⊆ X' ∧ X' ⊆ X ∪ Y ∧ is_indep M X' ∧ size X' = size X +1 ) := sorry 
+
+lemma I3'' (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
+  ∃ z: boolalg_singleton, z.1 ⊆ Z ∧ M.r X < M.r (X ∪ z.1) := 
+begin
+  revert Z, 
+  set P : U → Prop := λ Z', M.r X < M.r Z' → ∃ z' : boolalg_singleton, z'.1 ⊆ Z' ∧ M.r X < M.r (X ∪ z'.1) with hP, 
+  apply strong_induction P, rw hP at *, clear hP P,
+  intros Z hBelow hRankDiff, 
+  by_contradiction, push_neg at a, 
+  --specialize
+  sorry, 
+
+end
+
+
+lemma loopy_rank_zero (M : rankfun U) (X : U) : (∀ e : boolalg_singleton, e.1 ⊆ X → M.r e.1 = 0) → (M.r X = 0) :=
+begin
+  revert X, refine strong_induction _ _,
+  intros X hX hSing,  
+  by_cases hSize : (size X > 1),
+  rcases (union_ssubsets X hSize) with ⟨Y, ⟨Z, ⟨hY, hZ, hI, hU⟩⟩⟩, 
+  have := M.R3 Y Z,
+  rw [hU,hI,rank_bot] at this, 
+  have := hX Y hY (λ (e : boolalg_singleton) (he : e.val ⊆ Y), hSing e (subset_trans he hY.1)), 
+  have := hX Z hZ (λ (e : boolalg_singleton) (he : e.val ⊆ Z), hSing e (subset_trans he hZ.1)), 
+  linarith [M.R0 X], 
+  by_cases (size X = 0), rw size_zero_bot h, exact rank_bot M, 
+  exact hSing ⟨X, by linarith [int.add_one_le_of_lt (lt_of_le_of_ne (size_nonneg X) (ne.symm h))]⟩ (subset_refl X),    
+end 
+
+ 
 
 def is_coindep (M : rankfun U) : U → Prop :=
   is_indep (dual M)
@@ -158,7 +205,13 @@ open minor_expression
 
 def to_minor {U : boolalg} {E : U} :
   minor_expression E → rankfun U → matroid_on E :=
-sorry
+begin
+  intros min_expr rfun, 
+  induction min_expr with X E₀ hXE₀ min_expr₀ M₀ X E₀ hXE₀ min_expr₀ M₀,
+  exact restrict rfun ⊤, 
+  exact restrict_subalg hXE₀ M₀,
+  exact corestrict_subalg hXE₀ M₀,  
+end
 
 lemma to_minor.delete_delete {U : boolalg} {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
 let

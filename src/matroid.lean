@@ -230,9 +230,9 @@ def matroid.dual (M : matroid) : matroid :=
       ...           = ⊥             : inter_bot Xᶜ,
     h₂ : (Xᶜ ∪ Yᶜ) = Xᶜ := calc
       (Xᶜ ∪ Yᶜ) = (X ∩ Y)ᶜ : (compl_inter X Y).symm
-      ...       = Xᶜ       : by rw [inter_subset hXY],
+      ...       = Xᶜ       : by rw [inter_subset_mp hXY],
     h₃ : (Xᶜ ∩ Y) ∪ Yᶜ = Xᶜ := calc
-      (Xᶜ ∩ Y) ∪ Yᶜ = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : union_distrib_left Xᶜ Y Yᶜ --Xᶜ.union_distrib_inter_left Y Yᶜ
+      (Xᶜ ∩ Y) ∪ Yᶜ = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : union_distrib_right Xᶜ Y Yᶜ --Xᶜ.union_distrib_inter_left Y Yᶜ
       ...           = Xᶜ ∩ ⊤               : by rw [h₂, union_compl Y]
       ...           = Xᶜ                   : inter_top Xᶜ,
     h₄ : M.rank Xᶜ ≤ size Y - size X + M.rank Yᶜ := calc

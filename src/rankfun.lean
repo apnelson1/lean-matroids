@@ -36,6 +36,35 @@ def matroid.R3 (M : matroid) : ∀ X Y, M.r (X ∪ Y) + M.r (X ∩ Y) ≤ M.r X 
 
 -----
 
+def restrict {B : boolalg} (rfun : rankfun B) (R : B) : rankfun (subalg R) := 
+let f := (embed.from_subset R).f in 
+⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
+
+def restrict_subalg {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (rfun : rankfun (subalg R)) : rankfun (subalg R₀)  := 
+let f := (embed.from_nested_pair h).f in 
+⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
+
+def corestrict {B : boolalg} (rfun : rankfun B) (R : B) : rankfun (subalg R) := 
+let f := (embed.from_subset R).f in 
+⟨ 
+  λ X, rfun.r (f X ∪ Rᶜ),
+  sorry, 
+  sorry, 
+  sorry, 
+  sorry, 
+⟩ 
+
+def corestrict_subalg {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (rfun : rankfun (subalg R)) : rankfun (subalg R₀)  := 
+let r := rfun.r, f := (embed.from_nested_pair h).f, C := (embed.to_subalg R₀ h)ᶜ in 
+⟨
+  λ X, r (f X ∪ C) - rfun.r C, 
+  λ X, begin simp only [sub_nonneg], exact rfun.R2 C (f X ∪ C) (subset_union_right (f X) C) end, 
+  λ X, sorry, 
+  λ X Y, sorry, 
+  λ X Y, sorry, 
+⟩
+
+
 structure preminor (M : matroid) :=
   (E : M.alg)
   (C : M.alg)
