@@ -138,6 +138,29 @@ begin
   exact corestrict_nested_pair hXE₀ M₀,  
 end
 
+/-- term for above -/
+def to_minor_alg : Π {E : U}, minor_expression E → rankfun U → matroid_on E
+| _ self r := restrict_subset _ r
+| _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor_alg expr r)
+| _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor_alg expr r)
+
+example (E : U) (expr : minor_expression E) (r : rankfun U) :
+   to_minor_alg expr r = to_minor expr r :=
+begin
+  induction expr,
+  { refl, },
+  {
+    unfold to_minor_alg,
+    rewrite expr_ih,
+    refl,
+  },
+  {
+    unfold to_minor_alg,
+    rewrite expr_ih,
+    refl,
+  }
+end
+
 lemma to_minor.delete_delete {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
 let
   h₁ : (D₁ ∪ D₂)ᶜ ⊆ D₁ᶜ := sorry,
