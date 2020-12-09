@@ -358,6 +358,8 @@ begin intros hZX hZY, rw inter_subset at *, rw [←inter_assoc, hZX, hZY] end
 lemma union_is_ub  (X Y Z : A) : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
 begin intros hXZ hYZ, rw union_subset at *, rw [union_assoc, hYZ, hXZ] end
 
+lemma diff_def (X Y : A) : X - Y = X ∩ Yᶜ := rfl 
+
 lemma diff_subset  (X Y : A) : X - Y ⊆ X := 
   inter_subset_left X Yᶜ
 
@@ -370,16 +372,23 @@ lemma diff_union (X Y : A): (X ∩ Y) ∪ (Y - X) = Y :=
 lemma diff_union_subset {X Y : A} (hXY : X ⊆ Y) : X ∪ (Y - X) = Y := 
   by {rw inter_subset at hXY, have := diff_union X Y, rw hXY at this, exact this}
 
-lemma diff_inter (X Y : A) : X ∩ (Y - X) = ⊥ := 
+lemma inter_diff (X Y : A) : X ∩ (Y - X) = ⊥ := 
   by {unfold has_sub.sub, rw [←inter_assoc, inter_comm X Y, inter_assoc, inter_compl ,inter_bot]} 
 
-lemma diff_def (X Y : A) : X - Y = X ∩ Yᶜ := rfl 
+lemma union_diff (X Y : A) : X ∪ (Y -X) = X ∪ Y := 
+  by {rw [diff_def, union_distrib_left, union_compl, inter_top]}
+
+lemma union_diff_diff (X Y : A) : (X ∪ Y) - (Y-X) = X := 
+  by rw [diff_def, diff_def, compl_inter,compl_compl,union_comm, ←union_distrib_right, inter_compl, bot_union]
+
+
+ 
 
 lemma diff_bot (X : A) : X - ⊥ = X := 
   by {rw [diff_def, compl_bot, inter_top]} 
 
 lemma size_monotone {X Y: A} (hXY : X ⊆ Y) : size X ≤ size Y := 
-  begin have := size_modular X (Y-X), rw diff_union_subset hXY at this, rw diff_inter at this, linarith [size_nonneg(Y-X), size_bot A] end
+  by {have := size_modular X (Y-X), rw diff_union_subset hXY at this, rw inter_diff at this, linarith [size_nonneg(Y-X), size_bot A]}
 
 lemma size_strict_monotone {X Y : A} (hXY : X ⊂ Y) : size X < size Y := 
   by {sorry}
@@ -450,26 +459,12 @@ lemma ssubset_subset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊆ Z) : X ⊂ Z
 lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   subset_ssubset_trans hXY.1 hYZ
 
+-- Singletons
 
---- Embeddings of interval algebras (probably deprecated)
+def singleton (A : boolalg): Type := {X : A // size X = 1}
 
-structure interval_embedding (A B : boolalg) :=
-  (func : A → B)
-  (on_inter (X Y : A) : func (X ∩ Y) = (func X) ∩ (func Y))
-  (on_union (X Y : A) : func (X ∪ Y) = (func X) ∪ (func Y))
-  (on_size (X Y : A) : size X - size Y = size (func X) - size (func Y))
+instance coe_singleton {A : boolalg} : has_coe (singleton A) A := ⟨λ e, e.val⟩  
 
-lemma bot_to_bot_interval_embedding_size {A B : boolalg} (emb : interval_embedding A B) (h_bot : emb.func (⊥ : A) = (⊥ : B)) (X : A) : 
-  size X = size (emb.func X) :=  
-  begin
-    have := emb.on_size X ⊥,
-    rw [@size_bot A, h_bot, @size_bot B] at this, 
-    linarith, 
-  end
-
-lemma interval_embedding_on_subset {A B : boolalg} (emb : interval_embedding A B) {X Y : A} (hXY : X ⊆ Y) : 
-  emb.func X ⊆ emb.func Y := 
-  by rw inter_subset at *; rw [←emb.on_inter, hXY]
 
 -- Embedding and subalgebras 
 
@@ -486,6 +481,10 @@ lemma interval_embedding_on_subset {A B : boolalg} (emb : interval_embedding A B
 lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := 
   begin intros h, rw inter_subset at *, rw [←emb.on_inter, h] end 
+
+def embed.singleton_emb {A B : boolalg} (emb : embed A B) : @singleton A → @singleton B := 
+  λ e, ⟨emb.f e.val, (eq.trans (emb.on_size e.val).symm e.property :size (emb.f e.val) = 1 )⟩  
+  
 
 def embed.id : embed A A := 
 { 
@@ -504,9 +503,6 @@ def embed.compose {A B C: boolalg} : (embed A B) → (embed B C) → (embed A C)
   on_union := λ X Y, by simp only [function.comp_app]; rw [e1.on_union, e2.on_union],
   on_size  := λ X, (e1.on_size X).trans (e2.on_size (e1.f X)),
 }
-
-
-
 
 def subalg {A : boolalg}(ground : A) : boolalg :=  
 { 
@@ -549,11 +545,33 @@ lemma embed.compose_nested_triple (X₁ X₂ X₃ : A) (h₁₂ : X₁ ⊆ X₂)
 
 def embed.to_subalg (X Y : A) (h: X ⊆ Y) : subalg Y := ⟨X,h⟩ 
 
+--Subalgebra coercion 
+
+instance coe_set_from_subalg {A : boolalg} {S : A} : has_coe (subalg S) A := ⟨(embed.from_subset S).f⟩ 
+
+instance coe_singleton_from_subalg {A : boolalg} {S : A} : has_coe (singleton (subalg S)) (singleton A) := ⟨(embed.from_subset S).singleton_emb⟩ 
+
+lemma subalg_coe_size {A : boolalg} {S : A} (X : subalg S) : size (X : A) = size X := 
+  (embed.from_subset S).on_size X
+
+lemma subalg_coe_subset {A : boolalg} {S : A} {X Y : subalg S}: (X ⊆ Y) → ((X:A) ⊆ (Y:A)) :=
+  (embed.from_subset S).on_subset 
+
+lemma subalg_coe_union {A : boolalg} {S : A} {X Y : subalg S}: ((X ∪ Y) : A) = ((X:A) ∪ (Y:A)) := rfl 
+lemma subalg_coe_inter {A : boolalg} {S : A} {X Y : subalg S}: ((X ∩ Y) : A) = ((X:A) ∩ (Y:A)) := rfl 
+  
+  --λ X Y, (embed.from_subset S).on_union X Y
+
+
+-- This next coe doesn't seem to work in practice, even when a P ⊆ Q proof term is in the local context 
+instance coe_from_nested_pair {A : boolalg} {P Q: A} {hPQ : P ⊆ Q} : has_coe (subalg P) (subalg Q) := ⟨(embed.from_nested_pair hPQ).f⟩ 
+
+
 /-instance embed.coe_to_fun {A B : boolalg.boolalg} : has_coe_to_fun (boolalg.embed A B) := {
   F := (λ _, A → B),
   coe := λ emb, emb.f,
 }-/
-def subalg.embed {E : A} : boolalg.embed (subalg E) A := sorry
+--def subalg.embed {E : A} : boolalg.embed (subalg E) A := sorry
 
 
 
@@ -601,94 +619,6 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   inter_assoc_ax := finset.inter_assoc,
   union_assoc_ax := finset.union_assoc,
 }
-
--- Induction stuff 
-
-lemma induction_prop (P : A → Prop) : P ⊥ ∧ (∀ X Y, size Y = 1 ∧ P X -> P (Y ∪ X)) → ∀ S, P S := 
-begin
-  rintros ⟨hBot, hAug⟩ ,
-  suffices h : ∀(S' : A) (n : ℕ), (size S' = n) → P S', 
-  intros S, 
-  apply h S (size S).to_nat,  
-  exact (int.to_nat_of_nonneg (size_nonneg S)).symm, 
-  intros S' n,
-  induction n with N IH generalizing S',
-  intros hS'bot,
-  rw [size_zero_bot hS'bot], assumption, 
-  intros hS', 
-  have S_decomp := singleton_subset S', 
-  cases S_decomp with bot_case aug_case, 
-  rw bot_case, assumption, 
-  rcases aug_case with ⟨Y,Z,hInter,hUnion,hSize⟩,
-  specialize hAug Z Y, 
-  specialize IH Z, 
-  change size S' = N+1 at hS', 
-  have := size_disjoint_sum hInter, 
-  have sizeS : size Z = N := by rw hUnion at this; linarith , 
-  rw ←hUnion, 
-  apply hAug, 
-  exact ⟨hSize, IH sizeS⟩, 
-end
-
-lemma strong_induction_prop (P : A → Prop) : (∀ W, (∀ U, U ⊂ W → P U) → P W) → ∀ S, P S :=
-begin
-  intros hP, 
-  set Q : A → Prop := λ S, ∀ X, X ⊆ S → P X with hQ, 
-  have hBot : Q ⊥ := 
-  begin 
-    rw hQ, intros X hX, rw (subset_bot hX), 
-    apply hP, intros Y hY, exfalso, exact ssubset_bot Y hY, 
-  end,
-
-  suffices : ∀ S, Q S, {intros S, exact this S S (subset_refl S)},
-  apply induction_prop Q, split, exact hBot, 
-  rintros X Y ⟨hSize, hQX⟩ Z hZ, 
-  have : Z ⊆ X ∨ (Y ⊆ Z) ∧ (Z-Y ⊆ X) := sorry, 
-  cases this, 
-  exact hQX Z this, 
-  have := hQX (Z-Y) this.2, 
-  
-  have : P Y := 
-  begin
-    
-  end,
-  sorry,  
-end
-
-
-lemma min_counterexample_bot (Y : A)(P : A → Prop) : ¬P Y → ∃ Z, Z ⊆ Y ∧ ¬P Z ∧ (∀ Z', Z' ⊂ Z → P Z') := 
-begin
-  intros hY, 
-  set minProp : A → Prop := λ Y, ¬P Y → ∃ Z, Z ⊆ Y ∧ ¬P Z ∧ (∀ Z', Z' ⊂ Z → P Z') with hMP,  /- fill this in -/
-  suffices : ∀ Y', minProp Y', 
-  specialize this Y hY, exact this, 
-  apply induction_prop minProp, split, 
-  intros h, use ⊥, 
-  refine ⟨subset_refl ⊥, h,_⟩,  
-  intros Z' hZ', exfalso, apply ssubset_bot Z', exact hZ',
-
-  rintros X Y ⟨hSize, hMP'⟩ hYX ,  
-  rw hMP at hMP',
-  have : (P X ∨ ¬ P X) := em (P X),
-  cases this, 
-  {
-    
-    sorry,
-  },
-  {
-    specialize hMP' this,
-    cases hMP' with Z, use Z, 
-    exact ⟨(subset_trans hMP'_h.1 (subset_union_right Y X)), hMP'_h.2⟩, 
-  },
-  --by_contradiction, push_neg, 
-  --subst minProp,
-end
-
-
-lemma min_counterexample {X Y : A} {hXY : X ⊆ Y} (P : A → Prop) : P X → ¬P Y → ∃ Z, (X ⊆ Z) ∧ (Z ⊆ Y) ∧ (¬P Z) ∧ (∀ Z', X ⊆ Z ∧ Z' ⊂ Z → P Z) := 
-begin
-  sorry 
-end
 
 
 end boolalg
