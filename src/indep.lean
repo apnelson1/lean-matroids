@@ -397,12 +397,14 @@ lemma rank_subadditive (M : rankfun U)(X Y : U) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
   by linarith [M.R3 X Y, M.R0 (X ∩ Y)]
 
-lemma rank_diff_le_size_diff (M : rankfun U)(X Y : U)(hXY : X ⊆ Y) :
+lemma rank_diff_subadditive (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
+  M.r Y ≤ M.r X + M.r (Y - X) := 
+  by {nth_rewrite 0 (by apply diff_union_subset hXY : Y = X ∪ (Y-X)), apply rank_subadditive}
+
+lemma rank_diff_le_size_diff (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r Y - M.r X ≤ size Y - size X := 
-  begin
-    have h := (dual M).R2 _ _ (subset_to_compl hXY), 
-    rw [dual_r M Xᶜ, dual_r M Yᶜ, compl_compl,compl_compl,compl_size,compl_size] at h, linarith, 
-  end 
+  by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.R1 (Y-X)]
+     
 
 end rank 
 
@@ -462,33 +464,41 @@ lemma dep_nonbot {M : rankfun U} {X : U} (hdep : is_dep M X ):
 lemma I1 (M : rankfun U) : is_indep M ⊥ := 
   calc M.r (⊥ : U) = 0 : rank_bot M ... = size (⊥ : U) : (@size_bot U).symm
 
-lemma I2 (M : rankfun U) (X Y : U) : is_indep M Y → (X ⊆ Y) → is_indep M X := 
-begin
-    intros hY hXY,
-    have h0 : M.r Y ≤ M.r X + M.r (Y - X) := sorry, 
-    have h1 : size X  + size (Y - X) = size Y := sorry, 
-    have h2 : M.r (Y-X)  ≤ size (Y-X) := sorry, 
-    have h3 : M.r X ≤ size X := sorry,
-    have h4 : size Y = M.r Y := sorry, 
-    have h5 : size X = M.r X := by linarith, 
-    exact h5.symm,   
-end
+lemma I1_r (M : rankfun U) : M.r ⊥ = size (⊥ : U) :=
+  (I1 M)
 
-lemma I3 (M : rankfun U) (X Y : U) : is_indep M X → is_indep M Y → size X < size Y → 
+lemma I2 (M : rankfun U) {X Y : U} (hXY: X ⊆ Y) : is_indep M Y → is_indep M X := 
+  begin 
+    simp_rw indep_iff_r, intro hY, 
+    linarith [M.R1 X, M.R1 (Y-X), diff_size hXY, rank_diff_subadditive M hXY]
+  end 
+
+lemma I2_r (M : rankfun U) {X Y : U} (hXY: X ⊆ Y) : M.r Y = size Y → M.r X = size X := 
+  by {have := I2 M hXY, rw [indep_iff_r, indep_iff_r] at this, assumption} 
+
+lemma I3 (M : rankfun U) (X Y : U) : 
+  is_indep M X → is_indep M Y → size X < size Y → 
   (∃ e : boolalg.singleton U, (e : U) ⊆ Y ∧ ¬((e: U) ⊆ X) ∧ is_indep M (X ∪ e)) := 
 begin
-  intros hIX,
-  set P : U → Prop := λ Z, ((X ∩ Z = ⊥) → (M.r (X ∪ Z) > M.r X) → ∃ z : boolalg.singleton U, (z.val ⊆ Z) ∧ (M.r (X ∪ z.val) > M.r X)) with hP,  
-  suffices h : ∀ Z, P Z, 
-  sorry, 
-  --specialize h (Y-X) (sorry : X ∩ (Y - X) = ⊥), 
+  simp_rw indep_iff_r, intros hIX hIY hXY,
+  rcases rank_augment M X Y (by linarith) with ⟨e,⟨h₁, h₂⟩⟩, 
+  have hx := (λ he, by {rw [union_comm, union_subset_mp he] at h₂, linarith}: ¬((e:U) ⊆ X)), 
+  refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
+  have hI := eq.trans (inter_comm X (e: U)) (nonelement_disjoint hx), 
+  have h_cap_I := (eq.subst hI.symm (I1_r M) : M.r (X ∩ e) = size (X ∩ e)),
+  have h_e_I := I2_r M h₁ hIY, 
+  have hs := (size_modular X e),
+  have hr :=  M.R3 X e, 
+  
+  
+  
+  --rw [hI, size_bot, size_coe_singleton] at hs, 
+  --rw [hI, rank_bot, hIX] at hr, 
+  
 
-  --apply strong_induction, 
-  sorry, 
+
+  
 end
-
-lemma I3' (M : rankfun U) (X Y : U) : is_indep M X → is_indep M Y → size X < size Y → 
-  (∃ X': U, X ⊆ X' ∧ X' ⊆ X ∪ Y ∧ is_indep M X' ∧ size X' = size X +1 ) := sorry 
 
 
 
@@ -528,7 +538,7 @@ lemma cocircuit_iff_r {M : rankfun U} (X : U):
     rcases (nonbot_single_removal h_nonbot) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
     specialize h₂ _ hY₁,  
     rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
-    linarith[rank_diff_le_size_diff M _ _ (subset_to_compl hY₁.1)], 
+    linarith[rank_diff_le_size_diff M (subset_to_compl hY₁.1)], 
     exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
   }
 

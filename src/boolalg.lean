@@ -450,7 +450,10 @@ lemma eq_of_eq_size_subset {X Y : A} : (X ⊆ Y) → (size X = size Y) → X = Y
 
 lemma subset_trans {X Y Z : A} (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) : X ⊆ Z :=
   begin rw inter_subset at *, rw [←hXY, inter_assoc, hYZ] end 
-  
+
+lemma subset_of_inter {X Y Z : A} (h: X ⊆ Y ∩ Z) : X ⊆ Y ∧ X ⊆ Z := 
+  sorry 
+
 lemma union_of_subsets (X Y Z : A) : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
   begin intros hXZ hYZ, rw inter_subset at *, rw [inter_distrib_right, hXZ, hYZ] end
 
@@ -510,8 +513,23 @@ instance coe_singleton {A : boolalg} : has_coe (singleton A) A := ⟨λ e, e.val
 
 @[simp] lemma size_coe_singleton {A : boolalg} (e : singleton A) : size (e : A) = 1 := e.2 
 
+
+
 lemma nonbot_contains_singleton (X : A) (hX : X ≠ ⊥) : ∃ (e : singleton A), (e :A) ⊆ X := 
   by {rcases singleton_subset_nonempty hX with ⟨Y,Z ,⟨hI,hU,h1⟩⟩, use ⟨Y,h1⟩, rw ←hU, exact subset_union_left Y Z}
+
+lemma nested_singletons_eq {e f: singleton A} (hef : (e: A) ⊆ (f :A)) : e = f :=
+  begin
+    ext, refine eq_of_eq_size_subset hef _,
+    calc _ = 1 :size_coe_singleton e ... = _: (size_coe_singleton f).symm, 
+  end
+
+lemma nonelement_disjoint {e : singleton A} {X : A} (heX : ¬((e:A) ⊆ X)): (e:A) ∩ X = ⊥ :=
+  begin
+    by_contra, rcases nonbot_contains_singleton _ a with ⟨f,hf⟩, 
+    rcases subset_of_inter hf with ⟨hfe, hfx⟩, 
+    rw nested_singletons_eq hfe at hfx, exact heX hfx, 
+  end
 
 lemma augment_singleton_ssubset (X : A) (e : singleton A) (hXe : (e :A ) ⊆ Xᶜ) : X ⊂ X ∪ e := 
   begin
