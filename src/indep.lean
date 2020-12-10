@@ -126,15 +126,15 @@ section minor
 
 variables {U : boolalg}
 
-inductive minor_expression  : U → Type
-| self                       : minor_expression ⊤
-| restrict   (X : U) {E : U} : (X ⊆ E) → minor_expression E → minor_expression X
-| corestrict (X : U) {E : U} : (X ⊆ E) → minor_expression E → minor_expression X
-open minor_expression
+inductive minor_on  : U → Type
+| self                       : minor_on ⊤
+| restrict   (X : U) {E : U} : (X ⊆ E) → minor_on E → minor_on X
+| corestrict (X : U) {E : U} : (X ⊆ E) → minor_on E → minor_on X
+open minor_on
 
 
 
-def to_minor : Π {E : U}, minor_expression E → rankfun U → matroid_on E
+def to_minor : Π {E : U}, minor_on E → rankfun U → matroid_on E
 | _ self r := restrict_subset _ r
 | _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor expr r)
 | _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor expr r)
@@ -158,7 +158,7 @@ end
 
 
 @[simp] def contract_delete  (C D : U) :
-  (C ∩ D = ⊥) → minor_expression (C ∪ D)ᶜ :=
+  (C ∩ D = ⊥) → minor_on (C ∪ D)ᶜ :=
 fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ _ ... ⊆ Cᶜ : inter_subset_left _ _ ) (corestrict Cᶜ (subset_top _) self)
 
 --simplified minor expression - corestrict to Z, then restrict to A 
@@ -202,11 +202,11 @@ lemma dual_corestrict_restrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
   by {nth_rewrite 0 ←(dual_dual M), rw [←dual_restrict_corestrict, dual_dual]}
 
 
-lemma restrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
+lemma restrict_top {M : rankfun U}{A : U} (expr: minor_on A) : 
   to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
   by {ext X,cases X,refl}
 
-lemma corestrict_top {M : rankfun U}{A : U} (expr: minor_expression A) : 
+lemma corestrict_top {M : rankfun U}{A : U} (expr: minor_on A) : 
   to_minor (corestrict A (subset_refl A) expr) M = to_minor expr M :=
 begin
   simp [to_minor],
@@ -250,7 +250,7 @@ lemma corestrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
     sorry, 
   end
 
-@[simp] def reduced_expr  (A Z : U) (hAZ : A ⊆ Z) : minor_expression A := 
+@[simp] def reduced_expr  (A Z : U) (hAZ : A ⊆ Z) : minor_on A := 
   restrict A hAZ ((corestrict Z (subset_top Z)) self)
 
 lemma restriction_of_reduced  {M : rankfun U} (A Z A' : U) (hA'A : A' ⊆ A) (hAZ : A ⊆ Z) : 
@@ -291,7 +291,7 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : U) (hZ'A : Z' ⊆ A) (h
 
 -- Every minor expression is equivalent to a reduced one. 
 
-lemma has_reduced_expr {M : rankfun U} {E : U} (expr : minor_expression E) :
+lemma has_reduced_expr {M : rankfun U} {E : U} (expr : minor_on E) :
   ∃ (Z : U) (hZ : E ⊆ Z), 
   to_minor (reduced_expr E Z hZ) M = to_minor expr M := 
 begin
@@ -317,7 +317,7 @@ begin
   }
 end
 
-lemma has_representation {M : rankfun U} {E : U} (expr : minor_expression E) :
+lemma has_representation {M : rankfun U} {E : U} (expr : minor_on E) :
   (∃ (C D : U) (hCD : C ∩ D = ⊥),  
     (C ∪ D)ᶜ = E 
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) :=
@@ -326,7 +326,7 @@ begin
 end
 
 
-/-lemma has_good_representation {M : rankfun U} {E : U} (expr : minor_expression E) :
+/-lemma has_good_representation {M : rankfun U} {E : U} (expr : minor_on E) :
   (∃ (C D : U) (hCD : C ∩ D = ⊥),  
     (C ∪ D)ᶜ = E ∧
     is_indep M C ∧ is_coindep M D 
@@ -358,7 +358,7 @@ begin
 end 
 
 --set_option pp.proofs true
-open minor_expression
+open minor_on
 
 -- A larger-rank set can be used to augment a smaller-rank one. 
 lemma rank_augment (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
@@ -557,8 +557,7 @@ lemma dep_iff_contains_circuit {M : rankfun U} (X : U) :
     refine ⟨Z, ⟨⟨h₂Z, (λ Y hY, _)⟩, h₁Z⟩⟩, 
     rw indep_iff_not_dep, exact h₃Z Y hY,  
     cases h with C hC, exact dep_subset_dep M hC.2 hC.1.1, 
-  end
-
+  end 
 
 lemma C1 (M : rankfun U): 
   ¬is_circuit M ⊥ := 
@@ -734,18 +733,36 @@ lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
 
 
 def nonloop (M : rankfun U) : Type := { e : single U // is_nonloop M e}
-def noncoloop (M : rankfun U) : Type := { e : single U // is_noncoloop M e}
+--def noncoloop (M : rankfun U) : Type := { e : single U // is_nonloop (dual M) e}
 
-def parallel (M : rankfun U) : single U → single U → Prop := 
-  λ e f, (is_nonloop M e ∧ is_nonloop M f) ∧ M.r (e ∪ f) = 1 
+def parallel (M : rankfun U) : nonloop M → nonloop M → Prop := 
+  λ e f, M.r (e.val ∪ f.val) = 1 
 
-def series (M : rankfun U) : single U → single U → Prop := 
+def series (M : rankfun U) : nonloop (dual M) → nonloop (dual M) → Prop := 
   λ e f, parallel (dual M) e f 
 
+lemma parallel_refl {M : rankfun U} (e : nonloop M) : 
+  parallel M e e := 
+  by {unfold parallel, rw union_idem, exact e.property}
 
--- parallel pairs (and series pairs) are equivalence relations, but only on the set of non(co)loops
--- of the matroid. I don't know if it's worth defining new types for these objects with the appropriate
--- coercions, or not. 
+lemma parallel_symm {M : rankfun U} {e f : nonloop M} :
+  parallel M e f → parallel M f e :=
+  by {unfold parallel, intro h, rw union_comm, exact h}
 
+lemma parallel_trans {M : rankfun U} {e f g : nonloop M} :
+  parallel M e f → parallel M f g → parallel M e g :=
+  begin
+    unfold parallel, intros hef hfg, 
+    have submod := M.R3 (e.1 ∪ f.1) (f.1 ∪ g.1), 
+    have h := calc M.r((e.1 ∪ f.1) ∩ (f.1 ∪ g.1)) = _               : by rw union_comm (e.1 :U) (f.1 :U)
+                                            ...   = _               : by rw ←union_distrib_left
+                                            ...   ≤ M.r (f.1 ∪ e.1) : R2' M (sorry: (f.1 ∪ (e.1 ∩ g.1) : U) ⊆ f.1 ∪ e.1)
+                                            ...   = 1               : by rw [ union_comm, hef],
+    have h' := R2' M (sorry: (e.1 ∪ g.1 : U) ⊆ ((e.1 ∪ f.1) ∪ (f.1 ∪ g.1) : U)), 
+   
+    have := R2' M (sorry: (e.1 : U) ⊆ (e.1 ∪ g.1 : U)), 
+    have := e.property, unfold is_nonloop at this,   
+    sorry ,                                         
+  end
 
 end series_parallel

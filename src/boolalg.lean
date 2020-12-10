@@ -26,7 +26,7 @@ structure boolalg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: member) : 0 ≤ size X) 
   (size_modular_ax (X Y: member) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (single_subset_ax (X : member) : X = bot ∨ ∃ Y Z, inter Y Z = bot ∧ union Y Z = X ∧ size Y = 1)
+  (single_subset_ax (X : member) : X ≠  bot → ∃ Y Z, inter Y Z = bot ∧ union Y Z = X ∧ size Y = 1)
 
   (inter_comm_ax (X Y : member) : inter X Y = inter Y X)
   (union_comm_ax (X Y : member) : union X Y = union Y X)
@@ -180,11 +180,11 @@ lemma size_compl (X : A) : size X = size (⊤ : A) - size(Xᶜ) :=
 lemma size_nonneg (X : A) : 0 ≤ size X := 
   A.size_nonneg_ax X 
 
-lemma single_subset (X : A) : X = ⊥ ∨ (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+lemma single_subset (X : A) : X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
   by apply A.single_subset_ax X
 
 lemma single_subset_nonempty {X : A} (hX : X ≠ ⊥) : (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
-  by {cases single_subset X with h h', exfalso, exact hX h, exact h'}
+  single_subset X hX 
   
 
 -- Subsets 
@@ -497,14 +497,15 @@ lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z :=
 
 lemma union_ssubsets (X : A) : 1 < size X  → ∃ Y Z : A, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
 begin
-  intros hX, 
+  sorry, 
+  /-intros hX, 
   cases single_subset X, rw h at hX, linarith [@size_bot A], 
   rcases h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, refine ⟨⟨by {rw ←hU, apply subset_union_left},_⟩,⟨by {rw ←hU, apply subset_union_right},_⟩,hI,hU⟩, 
   intros hYX, rw hYX at h1, linarith, 
   intros hZX, 
   have := size_modular Y Z, 
   rw [hU, hI, @size_bot A, h1,hZX] at this, 
-  linarith
+  linarith-/
 end
 
 lemma ssubset_to_compl {X Y : A} (hXY : X ⊂ Y) : Yᶜ ⊂ Xᶜ := 
@@ -741,21 +742,20 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   size_modular_ax := λ X Y, by linarith [finset.card_union_add_card_inter X Y],
   single_subset_ax := 
   begin
-    --intros X hbot hX, unfold_coes, 
+    intros X hne,
+    rcases finset.exists_smaller_set X 1 (sorry: 1 ≤ X.card) with ⟨B, ⟨hsub, hsize⟩⟩ , 
+    refine ⟨B, X \ B, ⟨_, _, _⟩ ⟩ ,  
     sorry, 
-    --finset.card_eq_one, 
+    sorry, 
+    sorry,
   end,
   inter_comm_ax := finset.inter_comm,
   union_comm_ax := finset.union_comm,
   inter_distrib_right_ax := finset.inter_distrib_right,
-  union_distrib_right_ax := finset.union_distrib_right,
-  inter_top_ax := finset.inter_univ, 
-  union_bot_ax := finset.union_empty, 
-  union_compl_ax := by intros X; rw finset.compl_eq_univ_sdiff; simp only [finset.union_eq_right_iff_subset, finset.union_sdiff_self_eq_union]; intros a a_1; simp only [finset.mem_univ],  
-  inter_compl_ax := by intros X; ext1; simp only [finset.not_mem_empty, finset.mem_compl, and_not_self, finset.mem_inter],
-  inter_subset_ax := sorry, 
+  union_distrib_right_ax := finset.union_distrib_right, 
   inter_assoc_ax := finset.inter_assoc,
   union_assoc_ax := finset.union_assoc,
+
 }
 
 
