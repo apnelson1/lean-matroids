@@ -114,6 +114,10 @@ begin
   ...                 = M.r X                                                                  : by linarith [size_compl X, rank_bot M]
 end
 
+lemma dual_r (M : rankfun U)(X : U):
+   (dual M).r X = size X + M.r Xᶜ - M.r ⊤ := 
+   rfl 
+
 end /-section-/ dual
 
 ----------------------------------------------------------------
@@ -334,8 +338,6 @@ section /- rank -/ rank
 variables {U : boolalg}
 -- Loops 
 
-@[simp] def is_loop (M : rankfun U) : boolalg.singleton U → Prop := 
-  λ e, size (e : U) = 0 
 
 -- Sets containing only loops have rank zero. 
 
@@ -395,6 +397,13 @@ lemma rank_subadditive (M : rankfun U)(X Y : U) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
   by linarith [M.R3 X Y, M.R0 (X ∩ Y)]
 
+lemma rank_diff_le_size_diff (M : rankfun U)(X Y : U)(hXY : X ⊆ Y) :
+  M.r Y - M.r X ≤ size Y - size X := 
+  begin
+    have h := (dual M).R2 _ _ (subset_to_compl hXY), 
+    rw [dual_r M Xᶜ, dual_r M Yᶜ, compl_compl,compl_compl,compl_size,compl_size] at h, linarith, 
+  end 
+
 end rank 
 
 -- Independence 
@@ -406,28 +415,49 @@ def is_indep (M : rankfun U) : U → Prop :=
   λ X, M.r X = size X
 
 def is_dep (M : rankfun U) : U → Prop := 
-  λ X, ¬is_indep M X 
+   λ X, ¬(is_indep M X)
+
+lemma indep_iff_r {M : rankfun U} (X : U): 
+  is_indep M X ↔ M.r X = size X := 
+  by refl 
+
+lemma dep_iff_r {M : rankfun U} (X : U):
+  is_dep M X ↔ M.r X < size X := 
+  by {unfold is_dep, rw indep_iff_r, exact ⟨λ h, (ne.le_iff_lt h).mp (M.R1 X), λ h, by linarith⟩}
 
 def is_coindep (M : rankfun U) : U → Prop :=
   is_indep (dual M)
 
 def is_codep (M : rankfun U) : U → Prop := 
-  λ X, ¬is_coindep M X 
+  is_dep (dual M)
 
-lemma dep_iff_rank_deficient {M : rankfun U} (X : U) : 
-  is_dep M X ↔ M.r X < size X :=
-  by { unfold is_dep is_indep, split, intro h, exact lt_of_le_of_ne (M.R1 X) h, intro h, linarith}
+lemma indep_or_dep (M : rankfun U) (X : U): 
+  is_indep M X ∨ is_dep M X := 
+  by {rw [dep_iff_r, indep_iff_r], exact eq_or_lt_of_le (M.R1 X)}
 
-lemma coindep_iff_complement_fullrank {M : rankfun U} (X : U) :
-  is_coindep M X ↔ (M.r Xᶜ = M.r ⊤) := 
+lemma dep_iff_not_indep {M : rankfun U} (X : U): 
+  is_dep M X ↔ ¬is_indep M X := 
+  by {rw [indep_iff_r, dep_iff_r], exact ⟨λ h, by linarith, λ h, (ne.le_iff_lt h).mp (M.R1 X)⟩}
+
+lemma indep_iff_not_dep {M : rankfun U} (X : U): 
+  is_indep M X ↔ ¬is_dep M X := 
+  by {rw dep_iff_not_indep, simp}
+
+lemma coindep_iff_r {M : rankfun U} (X : U) :
+  is_indep (dual M) X ↔ (M.r Xᶜ = M.r ⊤) := 
   by {unfold is_coindep is_indep dual, simp only [], split; {intros h, linarith}}
 
-lemma codep_iff_complement_rank_deficient {M : rankfun U} (X : U) : 
-  is_codep M X ↔ (M.r Xᶜ < M.r ⊤) := 
-  by {unfold is_codep, rw coindep_iff_complement_fullrank, split, intro h, exact lt_of_le_of_ne (M.R2 _ ⊤ (subset_top Xᶜ)) h, intro h, linarith}
+lemma codep_iff_r {M : rankfun U} (X : U) : 
+  is_dep (dual M) X ↔ (M.r Xᶜ < M.r ⊤) := 
+  by {rw [dep_iff_not_indep, coindep_iff_r], exact ⟨λ h, (ne.le_iff_lt h).mp (rank_le_top M Xᶜ), λ h, by linarith⟩}
+    
+lemma bot_indep {M : rankfun U} :
+  is_indep M ⊥ :=  
+  by rw [indep_iff_r, size_bot, rank_bot]
 
-
-
+lemma dep_nonbot {M : rankfun U} {X : U} (hdep : is_dep M X ):
+  X ≠ ⊥ := 
+  λ h, by {have := @bot_indep _ M, rw ←h at this, exact hdep this}
 
 lemma I1 (M : rankfun U) : is_indep M ⊥ := 
   calc M.r (⊥ : U) = 0 : rank_bot M ... = size (⊥ : U) : (@size_bot U).symm
@@ -471,34 +501,88 @@ section /-Circuits-/ circuit
 variables {U : boolalg}
 
 def is_circuit (M : rankfun U) : U → Prop := 
-  λ X, (M.r X = size X ∧ ∀ Y: U, Y ⊂ X → M.r Y < size Y)
+  λ X, (is_dep M X ∧  ∀ Y: U, Y ⊂ X → is_indep M Y)
 
 def is_cocircuit (M : rankfun U) : U → Prop := 
   is_circuit (dual M)
 
+lemma circuit_iff_r {M : rankfun U} (X : U) :
+  is_circuit M X ↔ (M.r X = size X-1) ∧ (∀ Y:U, Y ⊂ X → M.r Y = size Y) := 
+  begin
+    unfold is_circuit,
+    simp_rw indep_iff_r, 
+    split, rintros ⟨hr, hmin⟩,
+    split, rcases nonbot_single_removal (dep_nonbot hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
+    rw dep_iff_r at hr, linarith [M.R2 _ _ hY₁.1],  
+    intros Y hY, exact hmin _ hY, 
+    rintros ⟨h₁, h₂⟩, rw dep_iff_r, refine ⟨by linarith, λ Y hY, _ ⟩,  exact h₂ _ hY, 
+  end 
+  
+lemma cocircuit_iff_r {M : rankfun U} (X : U):
+  is_cocircuit M X ↔ (M.r Xᶜ = M.r ⊤ - 1) ∧ (∀ Y: U, Y ⊂ X → M.r Yᶜ = M.r ⊤) := 
+  by 
+  {
+    unfold is_cocircuit is_circuit, simp_rw [codep_iff_r, coindep_iff_r],
+    split, rintros ⟨h₁, h₂⟩, split, 
+    have h_nonbot : X ≠ ⊥ := by {intros h, rw [h,boolalg.compl_bot] at h₁, exact int.lt_irrefl _ h₁}, 
+    rcases (nonbot_single_removal h_nonbot) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
+    specialize h₂ _ hY₁,  
+    rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
+    linarith[rank_diff_le_size_diff M _ _ (subset_to_compl hY₁.1)], 
+    exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
+  }
 
 end circuit 
 
 section /-Flats-/ flat
-variables {U : boolalg} (M: rankfun U)
+variables {U : boolalg} 
 
 def is_flat (M : rankfun U) : U → Prop := 
-  λ F, ∀ (X : U), F ⊂ X → M.r F + 1 ≤ M.r X
+  λ F, ∀ (X : U), F ⊂ X → M.r F < M.r X
 
 def is_hyperplane (M : rankfun U) : U → Prop := 
   λ H, (is_flat M H) ∧ M.r H = M.r ⊤ - 1
+
+def is_rank_k_flat (M : rankfun U) (k : ℤ) : U → Prop := 
+  λ F, is_flat M F ∧ M.r F = 1 
+
+def is_loops (M : rankfun U) : U → Prop := 
+  λ F, is_rank_k_flat M 0 F
+
+def is_point (M : rankfun U) : U → Prop := 
+  λ F, is_rank_k_flat M 1 F
+
+def is_line (M : rankfun U) : U → Prop := 
+  λ F, is_rank_k_flat M 2 F
+
+def is_plane (M : rankfun U) : U → Prop := 
+  λ F, is_rank_k_flat M 3 F
 
 @[simp] def is_spanning (M : rankfun U) : U → Prop := 
   λ X, M.r X = M.r ⊤ 
 
 @[simp] def is_nonspanning (M : rankfun U) : U → Prop := 
-  λ X, M.r X ≤ M.r ⊤ -1 
+  λ X, M.r X < M.r ⊤ 
+
+
+lemma flat_iff_r {M : rankfun U} (X : U) :
+  is_flat M X ↔ ∀ Y, X ⊂ Y → M.r X < M.r Y := 
+  by refl 
+
+lemma hyperplane_iff_r {M : rankfun U} (X : U) :
+  is_hyperplane M X ↔ M.r X = M.r ⊤ -1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
+  begin
+    unfold is_hyperplane, rw flat_iff_r, 
+    refine ⟨λ h, ⟨h.2, λ Y hXY, _ ⟩, λ h, ⟨λ Y hXY, _, h.1⟩ ⟩,
+    have := h.1 Y hXY, rw h.2 at this, linarith [rank_le_top M Y],  
+    rw [h.1,h.2 Y hXY], exact sub_one_lt _,   
+  end
 
 lemma spanning_or_nonspanning (M : rankfun U) (X : U) :
   is_spanning M X ∨ is_nonspanning M X := 
   by { sorry }
 
-lemma hyperplane_iff_maximal_nonspanning (M : rankfun U) (X : U): 
+lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U): 
   is_hyperplane M X ↔ is_nonspanning M X ∧ ∀ (Y: U), X ⊂ Y → is_spanning M Y :=
   begin
     split, 
@@ -507,9 +591,78 @@ lemma hyperplane_iff_maximal_nonspanning (M : rankfun U) (X : U):
     rintros ⟨h1,h2⟩, simp at h1 h2, split, 
     intros Z hZ, specialize h2 Z hZ, linarith [rank_le_top M Z], 
     by_cases X = ⊤, rw h at h1, linarith, 
-    rcases nonempty_contains_singleton Xᶜ ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
+    rcases nonbot_contains_singleton Xᶜ ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
     specialize h2 (X ∪ e) (augment_singleton_ssubset _ _ he), 
     linarith [rank_subadditive M X e, M.R1 e, (by {cases e, assumption} : size (e:U) = 1)],
   end 
 
+lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U): 
+  is_cocircuit M X ↔ is_hyperplane M Xᶜ := 
+  begin
+    rw [cocircuit_iff_r, hyperplane_iff_r], 
+    refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (ssubset_to_compl hXY)⟩⟩, 
+    rw [←(h.2 _ (ssubset_compl_left hXY)), compl_compl], 
+  end
+
+
 end flat
+
+section /- Series and Parallel -/ series_parallel 
+
+variables {U : boolalg}
+notation `single` := boolalg.singleton 
+
+def is_loop (M : rankfun U) : single U → Prop := 
+  λ e, M.r e = 0 
+
+def is_nonloop (M : rankfun U) : single U → Prop := 
+  λ e, M.r e = 1 
+
+def is_coloop (M : rankfun U) : single U → Prop := 
+  λ e, is_loop (dual M) e  
+
+def is_noncoloop (M : rankfun U) : single U → Prop := 
+  λ e, is_coloop (dual M) e
+
+lemma nonloop_iff_not_loop {M : rankfun U} (e : single U) : 
+  is_nonloop M e ↔ ¬ is_loop M e := 
+  begin 
+    unfold is_loop is_nonloop, refine ⟨λ h, _ ,λ h, _⟩,rw h ,
+    simp only [not_false_iff, one_ne_zero], 
+    have := M.R1 e, rw size_coe_singleton at this,       
+    linarith [(ne.le_iff_lt (ne.symm h)).mp (M.R0 e)],  
+  end
+
+lemma coloop_iff_r {M : rankfun U} (e : single U) :
+  is_coloop M e ↔ M.r eᶜ = M.r ⊤ - 1 := 
+  begin
+    unfold is_coloop is_loop, rw [dual_r,size_coe_singleton],
+    exact ⟨λh,by linarith,λ h, by linarith⟩,   
+  end
+
+lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
+  is_coloop M e ↔ M.r eᶜ < M.r ⊤ := 
+  begin
+    unfold is_coloop is_loop, rw [dual_r,size_coe_singleton],
+    refine ⟨λh,by linarith,λ h,_⟩, 
+    sorry -- this is a bit annoying, and it's almost midnight. 
+  end
+
+
+
+def nonloop (M : rankfun U) : Type := { e : single U // is_nonloop M e}
+def noncoloop (M : rankfun U) : Type := { e : single U // is_noncoloop M e}
+
+def parallel (M : rankfun U) : single U → single U → Prop := 
+  λ e f, (is_nonloop M e ∧ is_nonloop M f) ∧ M.r (e ∪ f) = 1 
+
+def series (M : rankfun U) : single U → single U → Prop := 
+  λ e f, parallel (dual M) e f 
+
+
+-- parallel pairs (and series pairs) are equivalence relations, but only on the set of non(co)loops
+-- of the matroid. I don't know if it's worth defining new types for these objects with the appropriate
+-- coercions, or not. 
+
+
+end series_parallel

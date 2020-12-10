@@ -169,10 +169,13 @@ lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size
 lemma size_bot (A : boolalg) : size (⊥ : A) = 0 := 
   A.size_bot_ax
 
-lemma size_compl (X : A) : size Xᶜ = size (⊤ : A) - size X :=
+lemma compl_size (X : A) : size Xᶜ = size (⊤ : A) - size X :=
   calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
   ...          = size (⊤ : A)  + size (⊥ : A)  - size X : by rw [union_compl X, inter_compl X]
   ...          = size (⊤ : A) - size X                  : by linarith [size_bot A]
+
+lemma size_compl (X : A) : size X = size (⊤ : A) - size(Xᶜ) := 
+  by linarith [compl_size X]
 
 lemma size_nonneg (X : A) : 0 ≤ size X := 
   A.size_nonneg_ax X 
@@ -262,6 +265,9 @@ lemma compl_unique {X Y : A} (hU : X ∪ Y = ⊤) (hI : X ∩ Y = ⊥) : Y = X�
 @[simp] lemma compl_compl  (X : A) : Xᶜᶜ = X := 
   by {apply subset_antisymm, apply cover_compl_subset, exact eq.trans (union_comm Xᶜ X) (union_compl X), exact disjoint_compl_subset (inter_compl X)}
 
+lemma compl_inj {X Y : A} (hXY : Xᶜ = Yᶜ) : X = Y := 
+  by rw [←compl_compl X, ←compl_compl Y, hXY]
+
 
 lemma compl_top (A : boolalg) : (⊤ : A)ᶜ = ⊥ := 
   eq.symm (compl_unique (top_union ⊥) (inter_bot ⊤))
@@ -311,7 +317,7 @@ lemma compl_partition (X Y : A) : (X ∩ Y) ∪ (Xᶜ ∩ Y) = Y :=
   by rw [←inter_distrib_right, union_compl, top_inter]
 
 lemma compl_partition_subset  {X Y : A} (hXY : X ⊆ Y) : X ∪ (Xᶜ ∩ Y) = Y := 
-  begin nth_rewrite 0 ←(inter_subset_mp hXY), exact compl_partition X Y end 
+  by {nth_rewrite 0 ←(inter_subset_mp hXY), exact compl_partition X Y}
 
 lemma compl_pair {X Y : A} : (Xᶜ = Y) → (X = Yᶜ) := 
   by {intro h, rw [←h, compl_compl]}
@@ -327,8 +333,17 @@ lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) :=
 lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
   A.union_assoc_ax X Y Z 
 
-lemma compl_subset {X Y : A} (hXY : X ⊆ Y) : Yᶜ ⊆ Xᶜ := 
-  begin rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left end 
+lemma subset_to_compl {X Y : A} (hXY : X ⊆ Y) : Yᶜ ⊆ Xᶜ := 
+  by {rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
+
+lemma compl_to_subset {X Y : A} (hXY : Xᶜ ⊆ Yᶜ) : Y ⊆ X := 
+  by {have := subset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
+
+lemma subset_compl_right {X Y : A} (hXY : X ⊆ Yᶜ) : Y ⊆ Xᶜ := 
+  by {rw [←compl_compl X] at hXY, exact compl_to_subset hXY}
+
+lemma subset_compl_left {X Y : A} (hXY : Xᶜ ⊆ Y) : Yᶜ ⊆ X := 
+  by {rw [←compl_compl Y] at hXY, exact compl_to_subset hXY}
 
 -- Self-Distributivity
 
@@ -345,12 +360,13 @@ lemma union_distrib_union_right (X Y Z : A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X
   by rw [union_comm X, union_distrib_union_left Y Z X, union_comm X, union_comm X]   
 
 lemma inter_is_lb  (X Y Z : A) : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
-begin intros hZX hZY, rw inter_subset at *, rw [←inter_assoc, hZX, hZY] end 
+  by {intros hZX hZY, rw inter_subset at *, rw [←inter_assoc, hZX, hZY]}
 
 lemma union_is_ub  (X Y Z : A) : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
-begin intros hXZ hYZ, rw union_subset at *, rw [union_assoc, hYZ, hXZ] end
+  by {intros hXZ hYZ, rw union_subset at *, rw [union_assoc, hYZ, hXZ]}
 
-lemma diff_def (X Y : A) : X - Y = X ∩ Yᶜ := rfl 
+lemma diff_def (X Y : A) : X - Y = X ∩ Yᶜ := 
+  rfl 
 
 lemma diff_subset  (X Y : A) : X - Y ⊆ X := 
   inter_subset_left X Yᶜ
@@ -410,10 +426,10 @@ lemma compl_inter_size (X Y : A) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y :
   by rw [←size_modular, ←inter_distrib_right, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
 
 lemma compl_inter_size_subset {X Y : A} (hXY : X ⊆ Y) : size (Xᶜ ∩ Y) = size Y - size X := 
-  begin have := compl_inter_size X Y, rw inter_subset_mp hXY at this, linarith end
+  by {have := compl_inter_size X Y, rw inter_subset_mp hXY at this, linarith} 
 
 lemma diff_size {X Y : A} (hXY : X ⊆ Y) : size (Y - X) = size Y - size X :=  
-  begin unfold has_sub.sub, rw inter_comm, exact compl_inter_size_subset hXY end  
+  by rw [diff_def, inter_comm, compl_inter_size_subset hXY]
 
 lemma size_zero_bot {X : A} ( hX : size X = 0) : X = ⊥ := 
   by {by_contra h, rcases singleton_subset_nonempty h with ⟨Y,Z,⟨_,hU,_⟩⟩, linarith [size_monotone (by calc Y ⊆ Y ∪ Z: subset_union_left _ _ ... = X : hU)]}
@@ -474,6 +490,18 @@ begin
   linarith
 end
 
+lemma ssubset_to_compl {X Y : A} (hXY : X ⊂ Y) : Yᶜ ⊂ Xᶜ := 
+  ⟨subset_to_compl (hXY.1), λ h, hXY.2 (compl_inj h).symm⟩
+
+lemma compl_to_ssubset {X Y : A} (hXY : Xᶜ ⊂ Yᶜ) : Y ⊂ X := 
+  by {have := ssubset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
+
+lemma ssubset_compl_right {X Y : A} (hXY : X ⊂ Yᶜ) : Y ⊂ Xᶜ := 
+  by {rw [←compl_compl X] at hXY, exact compl_to_ssubset hXY}
+
+lemma ssubset_compl_left {X Y : A} (hXY : Xᶜ ⊂ Y) : Yᶜ ⊂ X := 
+  by {rw [←compl_compl Y] at hXY, exact compl_to_ssubset hXY}
+
 -- Singletons
 
 def singleton (A : boolalg): Type := {X : A // size X = 1}
@@ -482,7 +510,7 @@ instance coe_singleton {A : boolalg} : has_coe (singleton A) A := ⟨λ e, e.val
 
 @[simp] lemma size_coe_singleton {A : boolalg} (e : singleton A) : size (e : A) = 1 := e.2 
 
-lemma nonempty_contains_singleton (X : A) (hX : X ≠ ⊥) : ∃ (e : singleton A), (e :A) ⊆ X := 
+lemma nonbot_contains_singleton (X : A) (hX : X ≠ ⊥) : ∃ (e : singleton A), (e :A) ⊆ X := 
   by {rcases singleton_subset_nonempty hX with ⟨Y,Z ,⟨hI,hU,h1⟩⟩, use ⟨Y,h1⟩, rw ←hU, exact subset_union_left Y Z}
 
 lemma augment_singleton_ssubset (X : A) (e : singleton A) (hXe : (e :A ) ⊆ Xᶜ) : X ⊂ X ∪ e := 
@@ -494,6 +522,8 @@ lemma augment_singleton_ssubset (X : A) (e : singleton A) (hXe : (e :A ) ⊆ X�
   end
 
 lemma augment_singleton_size (X : A) (e : singleton A) (hXe : (e :A ) ⊆ Xᶜ) : size (X ∪ e) = size X + 1 := sorry  
+
+lemma nonbot_single_removal {X : A} (hX : X ≠ ⊥) : ∃ Y :A, Y ⊂ X ∧ size Y = size X - 1 := sorry 
 
 
 
