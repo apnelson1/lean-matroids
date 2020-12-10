@@ -6,6 +6,7 @@ Answer: yes!
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
 import boolalg 
 ----------------------------------------------------------------
+local attribute [instance] classical.prop_decidable
 
 
 
@@ -158,6 +159,19 @@ lemma strong_induction (P : A → Prop) :
   (augment P) →
   (forall (Z : A), P Z) :=
 fun h_augment Z, weak_induction strong_at strong_base strong_step Z P h_augment
+
+lemma minimal_example (P : A → Prop)(X : A): 
+  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
+  begin
+    revert X, refine strong_induction _ _, unfold augment, intros Y hY hPY,  by_contra, push_neg at a, specialize a _ (subset_refl Y), 
+    --rcases a with ⟨Z,⟨hZ₁,hZ₂⟩⟩, 
+    --specialize hY Z hZ₁ hZ₂,  
+    sorry, -- argh 
+  end
+
+
+--def below (P : A → Prop) (Y : A) : Prop :=
+--forall (X : A), (X ⊂ Y) → (P X)
 
 end /-section-/ strong_induction
 end boolalg 

@@ -342,7 +342,7 @@ variables {U : boolalg}
 -- Sets containing only loops have rank zero. 
 
 
-lemma loopy_rank_zero (M : rankfun U) (X : U) : (∀ e : boolalg.singleton U, (e : U) ⊆ X → M.r e = 0) → (M.r X = 0) :=
+lemma loopy_rank_zero (M : rankfun U) (X : U) : (∀ e : boolalg.single U, (e : U) ⊆ X → M.r e = 0) → (M.r X = 0) :=
 begin
   revert X, refine strong_induction _ _,
   intros X hX hSing,  
@@ -350,8 +350,8 @@ begin
   rcases (union_ssubsets X hSize) with ⟨Y, ⟨Z, ⟨hY, hZ, hI, hU⟩⟩⟩, 
   have := M.R3 Y Z,
   rw [hU,hI,rank_bot] at this, 
-  have := hX Y hY (λ (e : boolalg.singleton U) (he : (e:U) ⊆ Y), hSing e (subset_trans he hY.1)), 
-  have := hX Z hZ (λ (e : boolalg.singleton U) (he : (e:U) ⊆ Z), hSing e (subset_trans he hZ.1)), 
+  have := hX Y hY (λ (e : boolalg.single U) (he : (e:U) ⊆ Y), hSing e (subset_trans he hY.1)), 
+  have := hX Z hZ (λ (e : boolalg.single U) (he : (e:U) ⊆ Z), hSing e (subset_trans he hZ.1)), 
   linarith [M.R0 X], 
   by_cases (size X = 0), rw size_zero_bot h, exact rank_bot M, 
   exact hSing ⟨X, by linarith [int.add_one_le_of_lt (lt_of_le_of_ne (size_nonneg X) (ne.symm h))]⟩ (subset_refl X),    
@@ -362,7 +362,7 @@ open minor_expression
 
 -- A larger-rank set can be used to augment a smaller-rank one. 
 lemma rank_augment (M : rankfun U) (X Z : U) : (M.r X < M.r Z) → 
-  ∃ z: boolalg.singleton U, (z:U) ⊆ Z ∧ M.r X < M.r (X ∪ z) := 
+  ∃ z: boolalg.single U, (z:U) ⊆ Z ∧ M.r X < M.r (X ∪ z) := 
 let 
     hcr    : Z-X ⊆ X ∪ Z         := subset_trans (diff_subset Z X) (subset_union_right X Z),
     hr     : X ∪ Z ⊆ ⊤           :=  subset_top (X ∪ Z),  
@@ -384,14 +384,19 @@ begin
 
   apply this, apply loopy_rank_zero, intros e he,
   specialize h e (subset_trans ((e: subalg (Z-X)).property) (diff_subset _ _ )), 
-  rw coe_singleton_subalg_compose at h, 
-  rw [hrM' e, union_comm, coe_subalg_singleton_compose],
+  rw coe_single_subalg_compose at h, 
+  rw [hrM' e, union_comm, coe_subalg_single_compose],
   linarith [M.R2 _ _ (subset_union_left X e)],
 end
 
+-- same as R2 but with implicit X Y
+lemma R2' (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
+  M.r X ≤ M.r Y := 
+  M.R2 X Y hXY
+
 lemma rank_le_top (M : rankfun U)(X : U) : 
   M.r X ≤ M.r ⊤ := 
-  M.R2 _ _ (subset_top X)
+  R2' M (subset_top X)
 
 lemma rank_subadditive (M : rankfun U)(X Y : U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
@@ -464,12 +469,14 @@ lemma dep_nonbot {M : rankfun U} {X : U} (hdep : is_dep M X ):
 lemma I1 (M : rankfun U) : is_indep M ⊥ := 
   calc M.r (⊥ : U) = 0 : rank_bot M ... = size (⊥ : U) : (@size_bot U).symm
 
-lemma I1_r (M : rankfun U) : M.r ⊥ = size (⊥ : U) :=
+lemma I1_r (M : rankfun U) :
+   M.r ⊥ = size (⊥ : U) :=
   (I1 M)
 
-lemma I2 (M : rankfun U) {X Y : U} (hXY: X ⊆ Y) : is_indep M Y → is_indep M X := 
+lemma I2 (M : rankfun U) {X Y : U}: 
+  X ⊆ Y → is_indep M Y → is_indep M X := 
   begin 
-    simp_rw indep_iff_r, intro hY, 
+    intro hXY, simp_rw indep_iff_r, intro hY, 
     linarith [M.R1 X, M.R1 (Y-X), diff_size hXY, rank_diff_subadditive M hXY]
   end 
 
@@ -478,28 +485,20 @@ lemma I2_r (M : rankfun U) {X Y : U} (hXY: X ⊆ Y) : M.r Y = size Y → M.r X =
 
 lemma I3 (M : rankfun U) (X Y : U) : 
   is_indep M X → is_indep M Y → size X < size Y → 
-  (∃ e : boolalg.singleton U, (e : U) ⊆ Y ∧ ¬((e: U) ⊆ X) ∧ is_indep M (X ∪ e)) := 
+  (∃ e : boolalg.single U, (e : U) ⊆ Y ∧ ¬((e: U) ⊆ X) ∧ is_indep M (X ∪ e)) := 
 begin
   simp_rw indep_iff_r, intros hIX hIY hXY,
   rcases rank_augment M X Y (by linarith) with ⟨e,⟨h₁, h₂⟩⟩, 
   have hx := (λ he, by {rw [union_comm, union_subset_mp he] at h₂, linarith}: ¬((e:U) ⊆ X)), 
   refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
-  have hI := eq.trans (inter_comm X (e: U)) (nonelement_disjoint hx), 
-  have h_cap_I := (eq.subst hI.symm (I1_r M) : M.r (X ∩ e) = size (X ∩ e)),
-  have h_e_I := I2_r M h₁ hIY, 
   have hs := (size_modular X e),
-  have hr :=  M.R3 X e, 
-  
-  
-  
-  --rw [hI, size_bot, size_coe_singleton] at hs, 
-  --rw [hI, rank_bot, hIX] at hr, 
-  
-
-
-  
+  rw [ eq.trans (inter_comm X (e: U)) (nonelement_disjoint hx), size_bot] at hs, 
+  linarith [size_coe_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
 end
 
+lemma dep_subset_dep (M : rankfun U){X Y : U}: 
+  X ⊆ Y → is_dep M X → is_dep M Y := 
+  by {intro hXY, repeat {rw dep_iff_not_indep}, contrapose!, exact I2 M hXY}
 
 
 
@@ -526,8 +525,16 @@ lemma circuit_iff_r {M : rankfun U} (X : U) :
     rw dep_iff_r at hr, linarith [M.R2 _ _ hY₁.1],  
     intros Y hY, exact hmin _ hY, 
     rintros ⟨h₁, h₂⟩, rw dep_iff_r, refine ⟨by linarith, λ Y hY, _ ⟩,  exact h₂ _ hY, 
-  end 
+  end
+
+lemma r_cct {M : rankfun U} {C : U} :
+  is_circuit M C → M.r C = size C - 1 := 
+  λ hC, ((circuit_iff_r C).mp hC).1
   
+lemma r_cct_ssub {M : rankfun U} {C Y : U} : 
+  is_circuit M C → (Y ⊂ C) → M.r Y = size Y :=
+  λ hC hYC, (((circuit_iff_r C).mp hC).2 Y hYC)
+
 lemma cocircuit_iff_r {M : rankfun U} (X : U):
   is_cocircuit M X ↔ (M.r Xᶜ = M.r ⊤ - 1) ∧ (∀ Y: U, Y ⊂ X → M.r Yᶜ = M.r ⊤) := 
   by 
@@ -542,7 +549,74 @@ lemma cocircuit_iff_r {M : rankfun U} (X : U):
     exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
   }
 
-end circuit 
+lemma dep_iff_contains_circuit {M : rankfun U} (X : U) :
+  is_dep M X ↔ ∃ C, is_circuit M C ∧ C ⊆ X := 
+  begin
+    refine ⟨λ h, _, λ h, _ ⟩, 
+    rcases (minimal_example _ X h) with ⟨Z,⟨h₁Z,h₂Z, h₃Z⟩⟩, 
+    refine ⟨Z, ⟨⟨h₂Z, (λ Y hY, _)⟩, h₁Z⟩⟩, 
+    rw indep_iff_not_dep, exact h₃Z Y hY,  
+    cases h with C hC, exact dep_subset_dep M hC.2 hC.1.1, 
+  end
+
+
+lemma C1 (M : rankfun U): 
+  ¬is_circuit M ⊥ := 
+  by {rw circuit_iff_r, intros h, have := h.1, linarith [rank_bot M, size_bot U]}
+
+lemma C2 (M : rankfun U) {C₁ C₂ : U}: 
+  C₁ ⊆ C₂ → is_circuit M C₁ → is_circuit M C₂ → C₁ = C₂ := 
+  by {intros hC₁C₂, repeat {rw circuit_iff_r}, rintros ⟨h₁l,_⟩ ⟨_,h₂r⟩, by_contra, linarith [h₁l, h₂r _ ⟨hC₁C₂,a⟩]}
+
+
+lemma inter_circuits_ssubset {M : rankfun U}{C₁ C₂ : U}:
+  is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → C₁ ∩ C₂ ⊂ C₁ := 
+  λ hC₁ hC₂ hC₁C₂, by {refine ⟨inter_subset_left _ _,λ h, _⟩, rw ←inter_subset at h, exact hC₁C₂ (C2 M h hC₁ hC₂ )}
+
+lemma C3 (M : rankfun U) {C₁ C₂ : U} {e : single U}: 
+  is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ C, is_circuit M C ∧ C ⊆ (C₁ ∪ C₂ - e) := 
+  begin
+    intros hC₁ hC₂ hC₁C₂ he, rw [←dep_iff_contains_circuit, dep_iff_r], 
+    have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
+    have heU : (e : U) ⊆ C₁ ∪ C₂ := subset_trans he (subset_trans hI.1 (subset_union_left C₁ _)),
+    have hcalc : M.r (C₁ ∪ C₂ - e) ≤ size (C₁ ∪ C₂ -e) -1 := by linarith [R2' M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
+      r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
+    exact int.le_sub_one_iff.mp hcalc,
+  --More verbosely: 
+  /-have := calc M.r (C₁ ∪ C₂ - e) ≤ M.r (C₁ ∪ C₂)                                : R2' M (diff_subset (C₁ ∪ C₂) e ) 
+                              ...  ≤ M.r C₁ + M.r C₂ - M.r (C₁ ∩ C₂)              : by linarith [M.R3 C₁ C₂]
+                              ...  = (size C₁ -1 ) + (size C₂-1) - size (C₁ ∩ C₂) : by rw [rank_of_circuit hC₁, rank_of_circuit hC₂, rank_of_circuit_ssubset hC₁ hI]
+                              ...  = size (C₁ ∪ C₂) -2                            : by linarith [size_modular C₁ C₂]
+                              ...  = size (C₁ ∪ C₂ - e) - 1                       : by linarith [remove_single_size heU], -/
+  end 
+
+end circuit
+
+section /-Bases-/ basis
+
+variables {U : boolalg}
+
+def is_basis (M : rankfun U): U → Prop := 
+  λ B, is_indep M B ∧ ∀ X, B ⊂ X → ¬is_indep M X
+
+def is_cobasis (M : rankfun U): U → Prop := 
+  λ B, is_basis (dual M) B 
+
+lemma basis_iff_r {M : rankfun U} (B : U) :
+  is_basis M B ↔ M.r B = size B ∧ ∀ X, B ⊂ X → M.r X < size X :=
+  by {unfold is_basis, simp_rw ←dep_iff_not_indep, rw indep_iff_r, simp_rw dep_iff_r}
+
+lemma cobasis_iff_r {M : rankfun U} (B : U): 
+  is_cobasis M B ↔ M.r Bᶜ = M.r ⊤ ∧ ∀ Y, B ⊂ Y → M.r Yᶜ < M.r ⊤ :=
+  by {unfold is_cobasis is_basis, rw coindep_iff_r, simp_rw ←dep_iff_not_indep, simp_rw codep_iff_r}
+
+lemma cobasis_iff_compl_basis {M : rankfun U}(B : U):
+  is_cobasis M B ↔ is_basis M Bᶜ :=
+begin
+  rw [basis_iff_r, cobasis_iff_r], refine ⟨ ⟩ 
+end
+
+end basis
 
 section /-Flats-/ flat
 variables {U : boolalg} 
@@ -601,8 +675,8 @@ lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U):
     rintros ⟨h1,h2⟩, simp at h1 h2, split, 
     intros Z hZ, specialize h2 Z hZ, linarith [rank_le_top M Z], 
     by_cases X = ⊤, rw h at h1, linarith, 
-    rcases nonbot_contains_singleton Xᶜ ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
-    specialize h2 (X ∪ e) (augment_singleton_ssubset _ _ he), 
+    rcases nonbot_contains_single ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
+    specialize h2 (X ∪ e) (augment_single_ssubset _ _ he), 
     linarith [rank_subadditive M X e, M.R1 e, (by {cases e, assumption} : size (e:U) = 1)],
   end 
 
@@ -620,7 +694,6 @@ end flat
 section /- Series and Parallel -/ series_parallel 
 
 variables {U : boolalg}
-notation `single` := boolalg.singleton 
 
 def is_loop (M : rankfun U) : single U → Prop := 
   λ e, M.r e = 0 
@@ -639,21 +712,21 @@ lemma nonloop_iff_not_loop {M : rankfun U} (e : single U) :
   begin 
     unfold is_loop is_nonloop, refine ⟨λ h, _ ,λ h, _⟩,rw h ,
     simp only [not_false_iff, one_ne_zero], 
-    have := M.R1 e, rw size_coe_singleton at this,       
+    have := M.R1 e, rw size_coe_single at this,       
     linarith [(ne.le_iff_lt (ne.symm h)).mp (M.R0 e)],  
   end
 
 lemma coloop_iff_r {M : rankfun U} (e : single U) :
   is_coloop M e ↔ M.r eᶜ = M.r ⊤ - 1 := 
   begin
-    unfold is_coloop is_loop, rw [dual_r,size_coe_singleton],
+    unfold is_coloop is_loop, rw [dual_r,size_coe_single],
     exact ⟨λh,by linarith,λ h, by linarith⟩,   
   end
 
 lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
   is_coloop M e ↔ M.r eᶜ < M.r ⊤ := 
   begin
-    unfold is_coloop is_loop, rw [dual_r,size_coe_singleton],
+    unfold is_coloop is_loop, rw [dual_r,size_coe_single],
     refine ⟨λh,by linarith,λ h,_⟩, 
     sorry -- this is a bit annoying, and it's almost midnight. 
   end
