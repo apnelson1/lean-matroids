@@ -394,6 +394,10 @@ lemma R2' (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r X ≤ M.r Y := 
   M.R2 X Y hXY
 
+lemma R2_u (M : rankfun U)(X Y : U) : 
+  M.r X ≤ M.r (X ∪ Y) := 
+  R2' M (subset_union_left X Y)
+
 lemma rank_le_top (M : rankfun U)(X : U) : 
   M.r X ≤ M.r ⊤ := 
   R2' M (subset_top X)
@@ -572,7 +576,7 @@ lemma inter_circuits_ssubset {M : rankfun U}{C₁ C₂ : U}:
   is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → C₁ ∩ C₂ ⊂ C₁ := 
   λ hC₁ hC₂ hC₁C₂, by {refine ⟨inter_subset_left _ _,λ h, _⟩, rw ←inter_subset at h, exact hC₁C₂ (C2 M h hC₁ hC₂ )}
 
-lemma C3 (M : rankfun U) {C₁ C₂ : U} {e : single U}: 
+lemma C3 {M : rankfun U} {C₁ C₂ : U} {e : single U}: 
   is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ C, is_circuit M C ∧ C ⊆ (C₁ ∪ C₂ - e) := 
   begin
     intros hC₁ hC₂ hC₁C₂ he, rw [←dep_iff_contains_circuit, dep_iff_r], 
@@ -612,7 +616,7 @@ lemma cobasis_iff_r {M : rankfun U} (B : U):
 lemma cobasis_iff_compl_basis {M : rankfun U}(B : U):
   is_cobasis M B ↔ is_basis M Bᶜ :=
 begin
-  rw [basis_iff_r, cobasis_iff_r], refine ⟨ ⟩ 
+  rw [basis_iff_r, cobasis_iff_r], sorry, 
 end
 
 end basis
@@ -727,16 +731,29 @@ lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
   begin
     unfold is_coloop is_loop, rw [dual_r,size_coe_single],
     refine ⟨λh,by linarith,λ h,_⟩, 
-    sorry -- this is a bit annoying, and it's almost midnight. 
+    have := rank_diff_le_size_diff M (subset_top (eᶜ : U)), 
+    rw [←size_compl (e :U),size_coe_single] at this, 
+    linarith [int.le_sub_one_iff.mpr h],
   end
 
 
 
 def nonloop (M : rankfun U) : Type := { e : single U // is_nonloop M e}
+
+instance coe_nonloop {M : rankfun U} : has_coe (nonloop M) (single U) := ⟨λ e, e.val⟩  
 --def noncoloop (M : rankfun U) : Type := { e : single U // is_nonloop (dual M) e}
 
+lemma rank_union_nonloops_lb {M : rankfun U} (e f : nonloop M) :
+  1 ≤ M.r (e ∪ f) := 
+  by {have : M.r e = 1 := e.property, have := R2_u M e f, linarith}
+
+lemma rank_union_nonloops_ub {M : rankfun U} (e f : nonloop M) : 
+  M.r (e ∪ f) ≤ 2 := 
+  by {have : M.r e = 1 := e.property, have : M.r f = 1 := f.property, linarith [M.R0 (e ∩ f), M.R3 e f]}
+
+
 def parallel (M : rankfun U) : nonloop M → nonloop M → Prop := 
-  λ e f, M.r (e.val ∪ f.val) = 1 
+  λ e f, M.r (e ∪ f) = 1 
 
 def series (M : rankfun U) : nonloop (dual M) → nonloop (dual M) → Prop := 
   λ e f, parallel (dual M) e f 
@@ -749,20 +766,42 @@ lemma parallel_symm {M : rankfun U} {e f : nonloop M} :
   parallel M e f → parallel M f e :=
   by {unfold parallel, intro h, rw union_comm, exact h}
 
+lemma parallel_iff_dep {M: rankfun U}{e f : nonloop M} : 
+  parallel M e f ↔ (e = f ∨ is_dep M (e ∪ f)) :=
+  begin
+    unfold parallel, rw dep_iff_r,  refine ⟨λ h, ((or_iff_not_imp_left.mpr (λ hne, _))), λ h, _ ⟩,
+    have := size_union_distinct_singles (λ h', hne (subtype.ext h')) , 
+    rw h, unfold_coes at *, linarith,  
+    cases h, rw [h, union_idem], exact f.property, 
+    have := rank_union_nonloops_lb e f, 
+    have := size_union_singles_ub e.1 f.1,
+    unfold_coes at *, rw ←int.le_sub_one_iff at h, linarith, 
+  end
+
+lemma parallel_iff_cct {M: rankfun U}{e f : nonloop M} : 
+  parallel M e f ↔ (e = f ∨ is_circuit M (e ∪ f)) :=
+  begin
+    refine ⟨λ h, _, λ h, (parallel_iff_dep.mpr (or.imp_right _ h : (e = f) ∨ is_dep M (e ∪ f)))⟩, 
+    replace h := parallel_iff_dep.mp h, cases h, exact or.inl h, apply or_iff_not_imp_left.mpr, intro h', 
+    refine ⟨h,λ Y hY, _⟩, rcases ssubset_pair hY, 
+    rw h_1, exact bot_indep, unfold_coes at h_1,  cases h_1, 
+    rw [h_1, indep_iff_r], have := e.property, unfold is_nonloop at this, erw this, exact e.val.property.symm,
+    rw [h_1, indep_iff_r], have := f.property, unfold is_nonloop at this, erw this, exact f.val.property.symm,  
+    exact λ h, h.1, 
+  end
+
 lemma parallel_trans {M : rankfun U} {e f g : nonloop M} :
   parallel M e f → parallel M f g → parallel M e g :=
   begin
     unfold parallel, intros hef hfg, 
-    have submod := M.R3 (e.1 ∪ f.1) (f.1 ∪ g.1), 
-    have h := calc M.r((e.1 ∪ f.1) ∩ (f.1 ∪ g.1)) = _               : by rw union_comm (e.1 :U) (f.1 :U)
-                                            ...   = _               : by rw ←union_distrib_left
-                                            ...   ≤ M.r (f.1 ∪ e.1) : R2' M (sorry: (f.1 ∪ (e.1 ∩ g.1) : U) ⊆ f.1 ∪ e.1)
-                                            ...   = 1               : by rw [ union_comm, hef],
-    have h' := R2' M (sorry: (e.1 ∪ g.1 : U) ⊆ ((e.1 ∪ f.1) ∪ (f.1 ∪ g.1) : U)), 
-   
-    have := R2' M (sorry: (e.1 : U) ⊆ (e.1 ∪ g.1 : U)), 
-    have := e.property, unfold is_nonloop at this,   
-    sorry ,                                         
+    have := M.R3 (e ∪ f) (f ∪ g), rw [hef, hfg] at this, 
+    have : 1 ≤ M.r ((e ∪ f) ∩ (f ∪ g)) := _, 
+    have := R2' M (_ : (e ∪ g : U) ⊆ ((e ∪ f) ∪ (f ∪ g) : U)), 
+    linarith [(rank_union_nonloops_lb e g)],  
+    rw [union_comm (e:U) f, ←union_distrib_union_right], apply subset_union_right,  
+    calc _ = M.r f : f.property.symm ... ≤ _ : R2' M (inter_of_supsets (subset_union_right (e:U) f) (subset_union_left (f:U) g)), 
   end
 
-end series_parallel
+
+
+end series_parallel 

@@ -40,7 +40,7 @@ structure boolalg :=
   (union_compl_ax (X : member) : union X (compl X) = top)
   (inter_compl_ax (X : member) : inter X (compl X) = bot)
 
-  (inter_subset_ax (X Y : member) : subset X Y ↔ inter X Y = X)
+  (union_subset_ax (X Y : member) : subset X Y ↔ union X Y = Y)
 
 -- associativity axioms can be removed - WIP
   (inter_assoc_ax (X Y Z : member) : inter (inter X Y) Z = inter X (inter Y Z))
@@ -189,21 +189,15 @@ lemma single_subset_nonempty {X : A} (hX : X ≠ ⊥) : (∃ Y Z, Y ∩ Z = ⊥ 
 
 -- Subsets 
 
-lemma subset_refl (X : A) : X ⊆ X :=
-  begin unfold has_subset.subset, apply (A.inter_subset_ax X X).mpr, apply inter_idem end 
-
-
-@[simp] lemma inter_subset (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
-  A.inter_subset_ax X Y 
 
 @[simp] lemma union_subset (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
-begin
-  rw inter_subset at *, 
-  split, intros h, 
-  rw [←h, union_comm, inter_comm X, absorb_union_inter],
-  intros h, 
-  rw [←h, absorb_inter_union], 
-end
+  A.union_subset_ax X Y 
+
+@[simp] lemma inter_subset (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
+  by {rw union_subset, exact ⟨λ h, by rw [←h, absorb_inter_union], λ h, by rw[←h, union_comm, inter_comm, absorb_union_inter]⟩} 
+
+lemma subset_refl (X : A) : X ⊆ X :=
+  begin unfold has_subset.subset, apply (inter_subset X X).mpr, apply inter_idem end 
 
 lemma inter_subset_mp  {X Y : A} : X ⊆ Y → X ∩ Y = X := 
   (inter_subset X Y).mp 
@@ -358,6 +352,10 @@ lemma subset_of_compl_iff_disjoint {X Y: A} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ :=
         rw [←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_comm, union_compl, inter_top] 
   end
 
+-- Misc 
+
+--lemma _ (X Y Z: A) : (X ∪ Y) ∩ (X ∪ Z) =   
+
 
 -- Self-Distributivity
 
@@ -466,12 +464,12 @@ lemma subset_trans {X Y Z : A} (hXY : X ⊆ Y) (hYZ : Y ⊆ Z) : X ⊆ Z :=
   begin rw inter_subset at *, rw [←hXY, inter_assoc, hYZ] end 
 
 lemma subset_of_inter {X Y Z : A} (h: X ⊆ Y ∩ Z) : X ⊆ Y ∧ X ⊆ Z := 
-  sorry 
+  ⟨subset_trans h (inter_subset_left _ _), subset_trans h (inter_subset_right _ _)⟩  
 
-lemma union_of_subsets (X Y Z : A) : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
+lemma union_of_subsets {X Y Z : A} : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
   begin intros hXZ hYZ, rw inter_subset at *, rw [inter_distrib_right, hXZ, hYZ] end
 
-lemma inter_of_supsets (X Y Z : A) : (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
+lemma inter_of_supsets {X Y Z : A} : (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
   begin intros hXY hXZ, rw inter_subset at *, rw [←inter_assoc, hXY, hXZ]  end 
 
 lemma inter_of_subsets (X Y Z : A) : (X ⊆ Z) → (X ∩ Y ⊆ Z) := 
@@ -497,15 +495,15 @@ lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z :=
 
 lemma union_ssubsets (X : A) : 1 < size X  → ∃ Y Z : A, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
 begin
-  sorry, 
-  /-intros hX, 
-  cases single_subset X, rw h at hX, linarith [@size_bot A], 
-  rcases h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, refine ⟨⟨by {rw ←hU, apply subset_union_left},_⟩,⟨by {rw ←hU, apply subset_union_right},_⟩,hI,hU⟩, 
+  intros hX, 
+  have h := (λ h', by {rw [h', @size_bot A] at hX, linarith }: X ≠ ⊥), 
+  rcases single_subset X h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, 
+  refine ⟨⟨by {rw ←hU, apply subset_union_left},_⟩,⟨by {rw ←hU, apply subset_union_right},_⟩,hI,hU⟩, 
   intros hYX, rw hYX at h1, linarith, 
   intros hZX, 
   have := size_modular Y Z, 
   rw [hU, hI, @size_bot A, h1,hZX] at this, 
-  linarith-/
+  linarith
 end
 
 lemma ssubset_to_compl {X Y : A} (hXY : X ⊂ Y) : Yᶜ ⊂ Xᶜ := 
@@ -555,22 +553,25 @@ lemma augment_single_ssubset (X : A) (e : single A) (hXe : (e :A ) ⊆ Xᶜ) : X
      have := size_coe_single e, rw ←ebot at this, linarith [size_bot A], 
   end
 
-lemma single_contained_compl_iff (X : A)(e : single A) : (e : A) ⊆ Xᶜ ↔ ¬ (e : A) ⊆ X := 
+lemma single_contained_compl_iff {X : A}{e : single A} : (e : A) ⊆ Xᶜ ↔ ¬ (e : A) ⊆ X := 
   begin
     refine ⟨λ h, λ he, _, λ h, _⟩, 
     have := inter_of_supsets _ _ _ he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
     have := nonelement_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
   end
 
-lemma single_contained_iff (X : A)(e : single A) : (e : A) ⊆ X ↔ ¬ (e : A) ⊆ Xᶜ := 
+lemma single_contained_iff {X : A}{e : single A} : (e : A) ⊆ X ↔ ¬ (e : A) ⊆ Xᶜ := 
   by {rw single_contained_compl_iff, simp,}
     
-lemma augment_single_size {X : A} {e : single A} (hXe : (e :A ) ⊆ Xᶜ) : size (X ∪ e) = size X + 1 := 
+lemma augment_compl_single_size {X : A} {e : single A} (hXe : (e :A ) ⊆ Xᶜ) : size (X ∪ e) = size X + 1 := 
 begin
   have := size_modular X e, 
-  rw [inter_comm X, nonelement_disjoint ((single_contained_compl_iff X e).mp hXe), size_coe_single, size_bot] at this, 
+  rw [inter_comm X, nonelement_disjoint (single_contained_compl_iff.mp hXe), size_coe_single, size_bot] at this, 
   linarith, 
 end
+
+lemma augment_disjoint_single_size {X : A} {e : single A} (hXe : ¬(e :A ) ⊆ X) : size (X ∪ e) = size X + 1 := 
+by {apply augment_compl_single_size, exact single_contained_compl_iff.mpr hXe}
 
 lemma compl_single_remove {X : A} {e : single A} (heX : (e : A) ⊆ X) : (X - e)ᶜ = Xᶜ ∪ e := 
   by rw [diff_def, compl_inter, compl_compl]
@@ -578,12 +579,11 @@ lemma compl_single_remove {X : A} {e : single A} (heX : (e : A) ⊆ X) : (X - e)
 lemma remove_add_single {X : A} {e : single A} (heX : (e: A) ⊆ X) : (X-e) ∪ e = X := 
   by {rw [union_subset, union_comm] at heX, rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
    
-
 lemma remove_single_size {X :A}{e : single A} (heX : (e : A) ⊆ X) : size (X - e) = size X - 1 := 
 begin
   have h: (e:A) ⊆ (X-e)ᶜ := by {rw compl_single_remove heX, apply subset_union_right}, 
   nth_rewrite 1 ←remove_add_single heX,
-  linarith [augment_single_size h], 
+  linarith [augment_compl_single_size h], 
 end
 
 lemma remove_single_ssubset {X : A} {e : single A} (heX : (e : A) ⊆ X) : X - e ⊂ X := 
@@ -599,7 +599,43 @@ lemma nontop_single_addition {X : A} (hX : X ≠ ⊤) : ∃ Y, X ⊂ Y ∧ size 
     exact hX (top_of_compl_bot h), 
   end
 
+lemma size_union_distinct_singles {e f : single A}: 
+  e ≠ f → size (e ∪ f :A) = 2 :=
+  begin
+    intros hef, 
+    have : ¬((e:A) ⊆ (f:A)) := λ h, hef (nested_singles_eq h), 
+    have := augment_disjoint_single_size this, 
+    rw [union_comm, size_coe_single] at this, 
+    linarith, 
+  end 
 
+lemma size_union_singles_lb (e f : single A): 
+  1 ≤ size (e ∪ f : A) := 
+  by {linarith [size_monotone (subset_union_left (e:A) f), size_coe_single e]}
+
+lemma size_union_singles_ub (e f : single A):
+  size (e ∪ f :A) ≤ 2 := 
+  by {by_cases e = f, rw [h, union_idem, size_coe_single], linarith, linarith [size_union_distinct_singles h]}
+
+lemma subset_single {e : single A}{X : A} :
+  X ⊆ e → X = ⊥ ∨ X = e := 
+  begin
+    intro h, cases lt_or_ge 0 (size X), 
+    apply or.inr, exact eq_of_eq_size_subset h (by linarith [size_coe_single e, size_monotone h]), 
+    apply or.inl, exact (size_zero_bot (by linarith [size_nonneg X])),
+  end
+
+lemma ssubset_pair {e f : single A}{X : A}:
+  X ⊂ (e ∪ f : A) → X = ⊥ ∨ (X = e) ∨ (X = f) :=
+  begin
+    intro h, cases h with hs hne, rw [inter_subset, inter_distrib_left] at hs,
+    cases subset_single (inter_subset_right X e),
+    rw [h, bot_union, ←inter_subset] at hs, cases subset_single hs, exact or.inl h_1, apply or.inr, exact or.inr h_1,
+    rw [inter_comm, ←inter_subset] at h, apply or.inr, cases subset_single (inter_subset_right X f),
+    rw [h_1, union_bot, ←inter_subset] at hs,  exact or.inl (subset_antisymm hs h), 
+    rw [inter_subset, inter_comm] at h,
+    rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
+  end
 
 -- Embedding and subalgebras
 
@@ -656,7 +692,7 @@ def subalg {A : boolalg}(ground : A) : boolalg :=
   union_comm_ax := λ X Y, subtype.eq (union_comm X.val Y.val),
   union_distrib_right_ax := λ X Y Z, subtype.eq (union_distrib_right X Y Z),
   inter_distrib_right_ax := λ X Y Z, subtype.eq (inter_distrib_right X Y Z),
-  inter_subset_ax:= begin sorry end,
+  union_subset_ax:= begin sorry end,
   inter_top_ax := by intros X; cases X; simp only [subtype.mk_eq_mk]; exact inter_subset_mp X_property,
   union_bot_ax := by intros X; cases X; simp only [subtype.mk_eq_mk]; apply union_bot, 
   union_compl_ax := sorry,
@@ -743,11 +779,12 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   single_subset_ax := 
   begin
     intros X hne,
-    rcases finset.exists_smaller_set X 1 (sorry: 1 ≤ X.card) with ⟨B, ⟨hsub, hsize⟩⟩ , 
+    rcases finset.exists_smaller_set X 1 (_: 1 ≤ X.card) with ⟨B, ⟨hsub, hsize⟩⟩ , 
     refine ⟨B, X \ B, ⟨_, _, _⟩ ⟩ ,  
-    sorry, 
-    sorry, 
-    sorry,
+    rw ←finset.disjoint_iff_inter_eq_empty, apply finset.disjoint_sdiff, 
+    apply finset.union_sdiff_of_subset hsub, 
+    solve_by_elim, 
+    have := finset.nonempty_of_ne_empty hne, rw ←finset.card_pos at this, exact nat.succ_le_iff.mpr this
   end,
   inter_comm_ax := finset.inter_comm,
   union_comm_ax := finset.union_comm,
@@ -755,6 +792,11 @@ def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg :=
   union_distrib_right_ax := finset.union_distrib_right, 
   inter_assoc_ax := finset.inter_assoc,
   union_assoc_ax := finset.union_assoc,
+  inter_top_ax := finset.inter_univ, 
+  union_bot_ax := finset.union_empty, 
+  union_compl_ax := by intros X; rw finset.compl_eq_univ_sdiff; simp only [finset.union_eq_right_iff_subset, finset.union_sdiff_self_eq_union]; intros a a_1; simp only [finset.mem_univ],  
+  inter_compl_ax := by intros X; ext1; simp only [finset.not_mem_empty, finset.mem_compl, and_not_self, finset.mem_inter],
+  union_subset_ax := λ X Y, finset.union_eq_right_iff_subset.symm
 
 }
 
