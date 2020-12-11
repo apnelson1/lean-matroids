@@ -425,8 +425,15 @@ variables {U : boolalg}
 def is_indep (M : rankfun U) : U → Prop :=
   λ X, M.r X = size X
 
+
+def indep (M : rankfun U) : Type := { I : U // is_indep M I}
+
+instance coe_indep {M : rankfun U} : has_coe (indep M) U := coe_subtype   
+
 def is_dep (M : rankfun U) : U → Prop := 
    λ X, ¬(is_indep M X)
+
+
 
 lemma indep_iff_r {M : rankfun U} (X : U): 
   is_indep M X ↔ M.r X = size X := 
@@ -441,6 +448,8 @@ def is_coindep (M : rankfun U) : U → Prop :=
 
 def is_codep (M : rankfun U) : U → Prop := 
   is_dep (dual M)
+
+--instance coe_coindep {M : rankfun U} : has_coe (coindep M) U := ⟨λ I, I.val⟩  
 
 lemma indep_or_dep (M : rankfun U) (X : U): 
   is_indep M X ∨ is_dep M X := 
@@ -513,11 +522,18 @@ end indep
 section /-Circuits-/ circuit
 variables {U : boolalg}
 
+
 def is_circuit (M : rankfun U) : U → Prop := 
   λ X, (is_dep M X ∧  ∀ Y: U, Y ⊂ X → is_indep M Y)
 
 def is_cocircuit (M : rankfun U) : U → Prop := 
   is_circuit (dual M)
+
+def circuit (M : rankfun U) : Type := { C : U // is_circuit M C }
+
+instance coe_circuit {M : rankfun U} : has_coe (circuit M) U := coe_subtype   
+
+
 
 lemma circuit_iff_r {M : rankfun U} (X : U) :
   is_circuit M X ↔ (M.r X = size X-1) ∧ (∀ Y:U, Y ⊂ X → M.r Y = size Y) := 
@@ -593,6 +609,10 @@ lemma C3 {M : rankfun U} {C₁ C₂ : U} {e : single U}:
                               ...  = size (C₁ ∪ C₂ - e) - 1                       : by linarith [remove_single_size heU], -/
   end 
 
+lemma C3_subtype {M : rankfun U} {C₁ C₂ : circuit M} {e : single U}: 
+  C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ (C : circuit M), (C :U) ⊆ (C₁ ∪ C₂ - e) := 
+  by{intros hne he, cases C3 C₁.2 C₂.2 _ he with C hC, use ⟨C, hC.1⟩, exact hC.2, exact λ h, hne (subtype.eq h)}
+
 end circuit
 
 section /-Bases-/ basis
@@ -644,6 +664,9 @@ def is_line (M : rankfun U) : U → Prop :=
 
 def is_plane (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 3 F
+
+def cl (M : rankfun U) : U → U :=
+  λ X, X ∪
 
 @[simp] def is_spanning (M : rankfun U) : U → Prop := 
   λ X, M.r X = M.r ⊤ 
@@ -762,7 +785,7 @@ lemma parallel_refl {M : rankfun U} (e : nonloop M) :
   parallel M e e := 
   by {unfold parallel, rw union_idem, exact e.property}
 
-lemma parallel_symm {M : rankfun U} {e f : nonloop M} :
+lemma parallel_symm {M : rankfun U} ⦃e f : nonloop M⦄ :
   parallel M e f → parallel M f e :=
   by {unfold parallel, intro h, rw union_comm, exact h}
 
@@ -790,7 +813,7 @@ lemma parallel_iff_cct {M: rankfun U}{e f : nonloop M} :
     exact λ h, h.1, 
   end
 
-lemma parallel_trans {M : rankfun U} {e f g : nonloop M} :
+lemma parallel_trans {M : rankfun U} ⦃e f g : nonloop M⦄ :
   parallel M e f → parallel M f g → parallel M e g :=
   begin
     unfold parallel, intros hef hfg, 
@@ -801,6 +824,38 @@ lemma parallel_trans {M : rankfun U} {e f g : nonloop M} :
     rw [union_comm (e:U) f, ←union_distrib_union_right], apply subset_union_right,  
     calc _ = M.r f : f.property.symm ... ≤ _ : R2' M (inter_of_supsets (subset_union_right (e:U) f) (subset_union_left (f:U) g)), 
   end
+
+lemma parallel_equiv (M : rankfun U) : equivalence (parallel M) := 
+    ⟨parallel_refl, ⟨parallel_symm,parallel_trans⟩⟩
+  
+lemma series_refl {M : rankfun U} (e : nonloop (dual M)) :
+  series M e e :=
+  parallel_refl e
+
+lemma series_symm {M : rankfun U} ⦃e f : nonloop (dual M)⦄ :
+  series M e f → series M f e :=
+  @parallel_symm _ _ e f
+
+lemma series_trans {M : rankfun U} ⦃e f g : nonloop (dual M)⦄ :
+  series M e f → series M f g → series M e g :=
+  @parallel_trans _ _ e f g
+
+lemma series_equiv (M : rankfun U): 
+  equivalence (series M) :=
+  parallel_equiv _ 
+
+def parallel_classes_setoid (M : rankfun U) : setoid (nonloop M) := 
+  ⟨parallel M, parallel_equiv M⟩ 
+
+def parallel_classes_quot (M : rankfun U) := quotient (parallel_classes_setoid M)
+
+#check parallel_classes_quot 
+  
+/-lemma point_iff_parallel_class_and_loops {M : rankfun U} {P: U} : 
+  is_point M P ↔ ∃  :=
+  begin
+     
+  end-/
 
 
 

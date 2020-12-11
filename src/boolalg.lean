@@ -493,6 +493,10 @@ lemma ssubset_subset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊆ Z) : X ⊂ Z
 lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   subset_ssubset_trans hXY.1 hYZ
 
+lemma ssubset_inter {X Y : A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
+  by {intro h, by_contra, push_neg at a, cases a, erw [not_and', not_imp_not] at a_left a_right, 
+  exact h (eq.trans (a_left (inter_subset_left X Y)).symm (a_right (inter_subset_right X Y)) )}
+
 lemma union_ssubsets (X : A) : 1 < size X  → ∃ Y Z : A, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
 begin
   intros hX, 
@@ -556,7 +560,7 @@ lemma augment_single_ssubset (X : A) (e : single A) (hXe : (e :A ) ⊆ Xᶜ) : X
 lemma single_contained_compl_iff {X : A}{e : single A} : (e : A) ⊆ Xᶜ ↔ ¬ (e : A) ⊆ X := 
   begin
     refine ⟨λ h, λ he, _, λ h, _⟩, 
-    have := inter_of_supsets _ _ _ he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
+    have := inter_of_supsets he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
     have := nonelement_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
   end
 
@@ -637,6 +641,7 @@ lemma ssubset_pair {e f : single A}{X : A}:
     rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
   end
 
+
 -- Embedding and subalgebras
 
 @[ext] structure embed (A B : boolalg) :=
@@ -681,7 +686,7 @@ def subalg {A : boolalg}(ground : A) : boolalg :=
   top := ⟨ground, subset_refl ground⟩,
   subset := λ X Y, X.val ⊆ Y.val,  
   inter := λ X Y, ⟨X.val ∩ Y.val, inter_of_subsets X.val Y.val ground X.property⟩,
-  union := λ X Y, ⟨X.val ∪ Y.val, union_of_subsets X.val Y.val ground X.property Y.property⟩,
+  union := λ X Y, ⟨X.val ∪ Y.val, union_of_subsets X.property Y.property⟩,
   compl := λ X, ⟨ground - X.val, diff_subset ground X.val⟩,
   size := λ X, size X.val, 
   size_bot_ax := @size_bot A, 
