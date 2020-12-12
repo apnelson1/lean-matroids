@@ -190,10 +190,10 @@ lemma single_subset_nonempty {X : A} (hX : X ≠ ⊥) : (∃ Y Z, Y ∩ Z = ⊥ 
 -- Subsets 
 
 
-@[simp] lemma union_subset (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
+lemma union_subset (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
   A.union_subset_ax X Y 
 
-@[simp] lemma inter_subset (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
+lemma inter_subset (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   by {rw union_subset, exact ⟨λ h, by rw [←h, absorb_inter_union], λ h, by rw[←h, union_comm, inter_comm, absorb_union_inter]⟩} 
 
 lemma subset_refl (X : A) : X ⊆ X :=
@@ -269,7 +269,6 @@ lemma compl_top (A : boolalg) : (⊤ : A)ᶜ = ⊥ :=
 lemma compl_bot (A : boolalg) : (⊥ : A)ᶜ = ⊤ := 
   eq.symm (compl_unique (union_top ⊥) (bot_inter ⊤)) 
 
-
 lemma bot_of_compl_top {X : A} (hX : Xᶜ = ⊤) : X = ⊥  := 
   by rw [←compl_compl X, hX, compl_top]
 
@@ -281,7 +280,6 @@ lemma inter_compl_left {X : A} : Xᶜ ∩ X = ⊥ :=
 
 lemma union_compl_left {X : A} : Xᶜ ∪ X = ⊤ := 
   by rw [union_comm, union_compl]
-
 
 lemma union_compl_union  (X Y : A) : X ∪ (Xᶜ ∪ Y) = ⊤ :=  
   by rw [←top_inter(X ∪ (Xᶜ ∪ Y)), ←union_compl, ←union_distrib_left, absorb_inter_union] 
@@ -481,14 +479,35 @@ lemma union_of_supsets (X Y Z : A) : (X ⊆ Y) → (X ⊆ Y ∪ Z) :=
 lemma subset_inter_subset_left (X Y Z : A) : (X ⊆ Y) → (X ∩ Z) ⊆ (Y ∩ Z) := 
   begin intro hXY, rw inter_subset at *, rw [←inter_distrib_inter_left, hXY] end 
 
+lemma subset_inter_subset_right (X Y Z : A) : (X ⊆ Y) → (Z ∩ X) ⊆ (Z ∩ Y) := 
+  by {rw [inter_comm _ X, inter_comm _ Y], apply subset_inter_subset_left }
+
 lemma subset_union_subset_left (X Y Z : A) : (X ⊆ Y) → (X ∪ Z) ⊆ (Y ∪ Z) := 
   begin intros hXY, rw union_subset at *, rw [←union_distrib_union_left, hXY] end
+
+lemma subset_union_subset_right (X Y Z : A) : (X ⊆ Y) → (Z ∪ X) ⊆ (Z ∪ Y) := 
+  by {rw [union_comm _ X, union_comm _ Y], apply subset_union_subset_left }
 
 lemma subset_ssubset_trans {X Y Z : A} (hXY : X ⊆ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   ⟨subset_trans hXY hYZ.1, λ h, by {rw ←h at hYZ, exact hYZ.2 (subset_antisymm hYZ.1 hXY)}⟩ 
 
 lemma ssubset_subset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊆ Z) : X ⊂ Z := 
   ⟨subset_trans hXY.1 hYZ, λ h, by {rw h at hXY, exact hXY.2 (subset_antisymm hXY.1 hYZ)}⟩ 
+
+@[simp] lemma ssubset_iff {X Y : A} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
+  by unfold has_ssubset.ssubset
+
+lemma ssubset_irrefl (X : A) : ¬ (X ⊂ X) :=
+  λ h, h.2 rfl
+
+lemma ssubset_not_supset {X Y : A} : X ⊂ Y → ¬(Y ⊆ X) :=
+  λ h h', ssubset_irrefl _ (ssubset_subset_trans h h') 
+
+lemma subset_not_ssupset {X Y : A} : X ⊆ Y → ¬(Y ⊂ X) := 
+  λ h h', ssubset_irrefl _ (subset_ssubset_trans h h')
+
+lemma eq_of_ssubset {X Y: A} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
+  λ h h', by {simp only [not_and, not_not, ssubset_iff] at h', exact h' h}
 
 lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   subset_ssubset_trans hXY.1 hYZ

@@ -10,12 +10,12 @@ Then deletion and contraction are instances of these maps
 And a sequence of deletions and contractions with disjoint arguments can be composed
 -/
 
-import rankfun boolalg boolalg_induction 
+import rankfun boolalg boolalg_induction  boolalg_collections
 open boolalg 
 --open boolalg_induction 
 
 local attribute [instance] classical.prop_decidable
-
+noncomputable theory 
 ----------------------------------------------------------------
 
 -- For this file, we'll define matroids as living inside a common universe U.
@@ -414,6 +414,16 @@ lemma rank_diff_le_size_diff (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r Y - M.r X ≤ size Y - size X := 
   by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.R1 (Y-X)]
      
+lemma submod_three_sets (M : rankfun U)(X Y Y' :U) :
+  M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
+  by {have := M.R3 (X ∪ Y) (X ∪ Y'), rw [←union_distrib_left, ←union_distrib_union_right] at this, exact this}
+
+lemma submod_three_sets_disj (M : rankfun U)(X Y Y' :U)(hYY' : Y ∩ Y' = ⊥) :
+  M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
+  by {have := submod_three_sets M X Y Y', rw [hYY', union_bot] at this, exact this}
+
+
+
 
 end rank 
 
@@ -641,6 +651,86 @@ end
 
 end basis
 
+section closure
+
+variables {U : boolalg}
+
+
+def spans (M : rankfun U) : U → U → Prop := 
+  λ X Y, M.r (X ∪ Y) = M.r X 
+
+lemma spanned_union (M : rankfun U){X Y Y' : U} :
+  spans M X Y → spans M X Y' → spans M X (Y ∪ Y') := 
+  begin
+    unfold spans, intros h h', 
+    have := submod_three_sets M X Y Y', 
+    have := R2' M (subset_union_left X (Y ∩ Y')), 
+    have := R2' M (subset_union_left X (Y ∪ Y')), 
+    linarith, 
+  end
+
+lemma spanned_union_closed (M : rankfun U)(X : U):
+   union_closed (λ Y, spans M X Y) :=
+  begin
+    refine ⟨_, λ Y Y' hY hY', spanned_union M hY hY'⟩, 
+    have : M.r (X ∪ ⊥) = M.r X := by rw union_bot, assumption, 
+  end
+
+lemma spans_refl (M : rankfun U) (X : U): 
+  spans M X X :=
+  by {unfold spans, rw [union_idem]} 
+
+lemma spans_subset (M : rankfun U){X Y Y' :U} : 
+  Y ⊆ Y' → spans M X Y' → spans M X Y :=
+  begin
+    unfold spans, intros hYY' hXY, 
+    linarith [R2' M (subset_union_left X Y),  R2' M (subset_union_subset_right _ _ X hYY')], 
+  end
+
+def cl (M : rankfun U) : U → U :=
+  λ X, max_of_union_closed (spanned_union_closed M X)
+
+-- cl X is the (unique) maximal set that is spanned by X
+lemma cl_iff_max (M : rankfun U)(X F : U) : 
+  F = cl M X ↔ spans M X F ∧ ∀ Y, F ⊂ Y→ ¬spans M X Y :=
+  let huc := spanned_union_closed M X,
+      h_eq := (union_closed_max_iff_in_and_ub huc F) in 
+  by {dsimp at h_eq, unfold is_maximal at h_eq, rw h_eq, unfold cl, rw [←is_max_of_union_closed_iff huc]}
+  
+-- cl X is also the set spanned by X that contains all sets spanned by X
+lemma cl_iff_ub (M : rankfun U)(X F : U):
+   F = cl M X ↔ spans M X F ∧ ∀ Y, spans M X Y → Y ⊆ F := 
+   by {unfold cl, rw is_max_of_union_closed_iff, refl}
+  
+lemma subset_cl (M : rankfun U)(X : U) : 
+  X ⊆ cl M X := 
+  ((cl_iff_ub M X (cl M X)).mp rfl).2 _ (spans_refl M X)
+
+lemma spans_cl (M : rankfun U)(X : U) :
+  spans M X (cl M X) := 
+  ((cl_iff_max M X (cl M X)).mp rfl).1 
+
+lemma spanned_subset_cl (M : rankfun U){X Y : U}: 
+  spans M X Y → Y ⊆ cl M X := 
+  λ h, ((cl_iff_ub M X (cl M X)).mp rfl).2 Y h 
+
+lemma subset_cl_iff (M : rankfun U)(X Y: U) :
+  Y ⊆ cl M X ↔ spans M X Y := 
+  ⟨λ h, spans_subset M h (spans_cl _ _ ), λ h, spanned_subset_cl M h⟩ 
+    
+  
+lemma cl_rank (M : rankfun U)(X : U) : 
+  M.r (cl M X) = M.r X := 
+  begin
+    have : M.r (X ∪ cl M X) = M.r X := spans_cl M X,
+    linarith [R2' M (subset_union_right X (cl M X)), R2' M (subset_cl M X)], 
+  end 
+
+
+
+end closure 
+
+
 section /-Flats-/ flat
 variables {U : boolalg} 
 
@@ -665,8 +755,6 @@ def is_line (M : rankfun U) : U → Prop :=
 def is_plane (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 3 F
 
-def cl (M : rankfun U) : U → U :=
-  λ X, X ∪
 
 @[simp] def is_spanning (M : rankfun U) : U → Prop := 
   λ X, M.r X = M.r ⊤ 
@@ -714,6 +802,18 @@ lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U):
     rw [←(h.2 _ (ssubset_compl_left hXY)), compl_compl], 
   end
 
+lemma cl_same_rank (M : rankfun U) (X : U) : 
+  M.r (cl M X) = M.r X :=
+  begin
+    have := inter_all_iff 
+  end
+
+lemma inter_flats_is_flat (M : rankfun U) (F₁ F₂ : U) :
+  is_flat M F₁ ∧ is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
+  begin
+    --repeat {rw flat_iff_r}, rintros ⟨h₁, h₂⟩ Y ⟨hss, hne⟩, 
+
+  end
 
 end flat
 

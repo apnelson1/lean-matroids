@@ -157,23 +157,27 @@ and.right (h_strong Q (pair_up P e h_singlet h_augment))
 So weak induction implies strong induction at every position.
 -/
 lemma strong_induction (P : A → Prop) :
-  (augment P) →
-  (forall (Z : A), P Z) :=
+  (augment P) → (forall (Z : A), P Z) :=
 fun h_augment Z, weak_induction strong_at strong_base strong_step Z P h_augment
 
 lemma minimal_example (P : A → Prop)(X : A): 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
   begin
-    revert X, refine strong_induction _ _, unfold augment, intros Y hY hPY,  by_contra, push_neg at a, specialize a _ (subset_refl Y), 
-    --rcases a with ⟨Z,⟨hZ₁,hZ₂⟩⟩, 
-    --specialize hY Z hZ₁ hZ₂,  
-    sorry, -- argh 
+    set minimal_P := λ (Y : A), P Y ∧ ∀ (Z : A), Z ⊂ Y → ¬ P Z with hmin, 
+    revert X, refine strong_induction _ _, intros T hT hPT, 
+    by_cases ∀ Z, Z ⊂ T → ¬P Z, use T, exact ⟨subset_refl T, ⟨hPT, h⟩⟩, 
+    push_neg at h, rcases h with ⟨Z, ⟨hZT, hPZ⟩⟩, 
+    specialize hT Z hZT hPZ, rcases hT with ⟨Y, ⟨hYZ, hQY⟩⟩, 
+    use Y, exact ⟨subset_trans hYZ hZT.1, hQY⟩, 
   end
 
 lemma maximal_example (P : A → Prop)(X : A): 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   begin
-    sorry 
+    have := minimal_example (λ S, P Sᶜ) Xᶜ, intro h, rw ←compl_compl X at h, 
+    rcases this h with ⟨Y,⟨hY₁, hY₂, hY₃⟩ ⟩, 
+    use Yᶜ, refine ⟨subset_compl_right hY₁, hY₂,λ Z hZ, _⟩,  
+    rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
 --def below (P : A → Prop) (Y : A) : Prop :=
@@ -182,50 +186,6 @@ lemma maximal_example (P : A → Prop)(X : A):
 end /-section-/ strong_induction
 
 
-section /- Unions/Intersections of collections -/ collections 
-
---def dual_ops : (A → A → A) → (A → A → A) → Prop := 
---  λ op1 op2, (op1 = (λ X Y, X ∪ Y) ∧ op2 = (λ X Y, X ∩ Y)) ∨ (op1 = (λ X Y, X ∩ Y) ∧ op2 = ∪)
-
-def inter_sets : (A → Prop) → A := sorry 
-
-def union_sets : (A → Prop) → A := sorry 
-
-def subset_all (P : A → Prop) (Z : A) : Prop := ∀ X, P X → Z ⊆ X 
-def maximal_subset_all (P : A → Prop) (Z : A) : Prop := subset_all P Z ∧ ∀ Y , (subset_all P Y) → Y ⊆ Z 
-
-def down_closed (P : A → Prop) : Prop := ∀ X Y, X ⊆ Y → P Y → P X
-def up_closed (P : A → Prop) : Prop := ∀ X Y, X ⊆ Y → P X → P Y
-
-def is_minimal (P : A → Prop) (X : A) : Prop := P X ∧ ∀ Y, (Y ⊂ X → ¬ P Y)
-def is_maximal (P : A → Prop) (X : A) : Prop := P X ∧ ∀ Y, (X ⊂ Y → ¬ P X)
-
-def union_closed (P : A → Prop) : Prop := P ⊥ ∧ ∀ X Y, P X → P Y → P (X ∪ Y)
-def inter_closed (P : A → Prop) : Prop := P ⊤ ∧ ∀ X Y, P X → P Y → P (X ∩ Y)
-
-
-lemma down_closed_iff_compl_up_closed (P : A → Prop) : down_closed P ↔ up_closed (λ X, ¬P X) := 
-  by {unfold down_closed up_closed, simp_rw not_imp_not}
-
-lemma union_closed_iff_compl_inter_closed (P : A → Prop) : union_closed P ↔ inter_closed (λ X, ¬P X) := sorry 
-
-lemma union_closed_exists_max (P : A → Prop) : union_closed P → ∃ X, is_maximal P X :=  sorry 
-lemma union_closed_max_unique (P : A → Prop) : union_closed P → ∀ X₁ X₂, is_maximal P X₁ → is_maximal P X₂ → X₁ = X₂ := sorry 
-
-lemma inter_closed_exists_min (P : A → Prop) : inter_closed P → ∃ X, is_minimal P X :=  
-  by {rintros ⟨htop, hU⟩, rcases minimal_example P ⊤ htop with ⟨Y, ⟨_, hPY, hmin⟩ ⟩, exact ⟨Y, ⟨hPY, hmin⟩⟩}  
-
-lemma inter_closed_min_unique (P : A → Prop) : inter_closed P → ∀ X₁ X₂, is_minimal P X₁ → is_minimal P X₂ → X₁ = X₂ := 
-  by {intros hP _ _ h₁ h₂, replace hP := hP.2 _ _ h₁.1 h₂.1, by_contra, cases ssubset_inter a, exact (h₁.2 _ h) hP, exact (h₂.2 _ h) hP} 
-    
-def min_of_inter_closed (P : A → Prop) (h : inter_closed P) : A := classical.some (inter_closed_exists_min P h) 
-
-
-#check classical.some
-
-lemma exists_maximal_subset_all (P : A → Prop) : ∃ X, maximal_subset_all P X  := sorry 
-
-lemma maximal_subset_all_unique (P : A → Prop) : ∀ X₁ X₂, maximal_subset_all P X₁ → maximal_subset_all P X₂ → X₁ = X₂ := sorry 
 
 
 
@@ -234,18 +194,5 @@ lemma maximal_subset_all_unique (P : A → Prop) : ∀ X₁ X₂, maximal_subset
 
 
 
-
-
-
-
-
-
-def union_singles : (single A → Prop) → A := sorry 
-
--- this lemma should be enough of an interface to the set in question ...
-lemma union_singles_contained_iff (e : single A) (P : single A → Prop) : (e :A) ⊆ union_singles P ↔ P e  := sorry 
-  
-
-end collections 
 
 end boolalg 
