@@ -656,8 +656,19 @@ section closure
 variables {U : boolalg}
 
 
+@[simp] def is_spanning (M : rankfun U) : U → Prop := 
+  λ X, M.r X = M.r ⊤ 
+
+@[simp] def is_nonspanning (M : rankfun U) : U → Prop := 
+  λ X, M.r X < M.r ⊤ 
+
 def spans (M : rankfun U) : U → U → Prop := 
   λ X Y, M.r (X ∪ Y) = M.r X 
+
+
+lemma spanning_or_nonspanning (M : rankfun U) (X : U) :
+  is_spanning M X ∨ is_nonspanning M X := 
+  by { sorry }
 
 lemma spanned_union (M : rankfun U){X Y Y' : U} :
   spans M X Y → spans M X Y' → spans M X (Y ∪ Y') := 
@@ -692,15 +703,16 @@ def cl (M : rankfun U) : U → U :=
 
 -- cl X is the (unique) maximal set that is spanned by X
 lemma cl_iff_max (M : rankfun U)(X F : U) : 
-  F = cl M X ↔ spans M X F ∧ ∀ Y, F ⊂ Y→ ¬spans M X Y :=
+  cl M X = F ↔ spans M X F ∧ ∀ Y, F ⊂ Y → ¬spans M X Y :=
   let huc := spanned_union_closed M X,
       h_eq := (union_closed_max_iff_in_and_ub huc F) in 
-  by {dsimp at h_eq, unfold is_maximal at h_eq, rw h_eq, unfold cl, rw [←is_max_of_union_closed_iff huc]}
+  by {dsimp at h_eq, unfold is_maximal at h_eq, rw [h_eq], 
+        unfold cl, rw [eq_comm, ←is_max_of_union_closed_iff huc]}
   
 -- cl X is also the set spanned by X that contains all sets spanned by X
 lemma cl_iff_ub (M : rankfun U)(X F : U):
-   F = cl M X ↔ spans M X F ∧ ∀ Y, spans M X Y → Y ⊆ F := 
-   by {unfold cl, rw is_max_of_union_closed_iff, refl}
+   cl M X = F ↔ spans M X F ∧ ∀ Y, spans M X Y → Y ⊆ F := 
+   by {unfold cl, rw [eq_comm, is_max_of_union_closed_iff], refl}
   
 lemma subset_cl (M : rankfun U)(X : U) : 
   X ⊆ cl M X := 
@@ -710,6 +722,10 @@ lemma spans_cl (M : rankfun U)(X : U) :
   spans M X (cl M X) := 
   ((cl_iff_max M X (cl M X)).mp rfl).1 
 
+lemma supset_cl (M : rankfun U)(X : U) :
+  ∀ Y, (cl M X ⊂ Y) → ¬spans M X Y := 
+  ((cl_iff_max M X (cl M X)).mp rfl).2
+
 lemma spanned_subset_cl (M : rankfun U){X Y : U}: 
   spans M X Y → Y ⊆ cl M X := 
   λ h, ((cl_iff_ub M X (cl M X)).mp rfl).2 Y h 
@@ -717,16 +733,25 @@ lemma spanned_subset_cl (M : rankfun U){X Y : U}:
 lemma subset_cl_iff (M : rankfun U)(X Y: U) :
   Y ⊆ cl M X ↔ spans M X Y := 
   ⟨λ h, spans_subset M h (spans_cl _ _ ), λ h, spanned_subset_cl M h⟩ 
-    
+
+lemma spanning_iff_cl_top (M : rankfun U) (X : U):
+  is_spanning M X ↔ cl M X = ⊤ :=
+  begin
+    rw cl_iff_ub, unfold spans is_spanning, refine ⟨λ h, ⟨_,λ Y hY, _⟩, λ h, _⟩, 
+    rw [h, union_top], apply subset_top, rw [←h.1, union_top], 
+  end   
   
+lemma cl_top (M : rankfun U):
+  cl M ⊤ = ⊤ := 
+  by {rw ←spanning_iff_cl_top M, obviously}
+
+
 lemma cl_rank (M : rankfun U)(X : U) : 
   M.r (cl M X) = M.r X := 
   begin
     have : M.r (X ∪ cl M X) = M.r X := spans_cl M X,
     linarith [R2' M (subset_union_right X (cl M X)), R2' M (subset_cl M X)], 
   end 
-
-
 
 end closure 
 
@@ -755,17 +780,13 @@ def is_line (M : rankfun U) : U → Prop :=
 def is_plane (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 3 F
 
-
-@[simp] def is_spanning (M : rankfun U) : U → Prop := 
-  λ X, M.r X = M.r ⊤ 
-
-@[simp] def is_nonspanning (M : rankfun U) : U → Prop := 
-  λ X, M.r X < M.r ⊤ 
-
-
 lemma flat_iff_r {M : rankfun U} (X : U) :
   is_flat M X ↔ ∀ Y, X ⊂ Y → M.r X < M.r Y := 
   by refl 
+
+/-lemma closure_is_flat {M : rankfun U} (X : U): 
+  is_flat M (cl M X) := -/
+
 
 lemma hyperplane_iff_r {M : rankfun U} (X : U) :
   is_hyperplane M X ↔ M.r X = M.r ⊤ -1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
@@ -776,22 +797,22 @@ lemma hyperplane_iff_r {M : rankfun U} (X : U) :
     rw [h.1,h.2 Y hXY], exact sub_one_lt _,   
   end
 
-lemma spanning_or_nonspanning (M : rankfun U) (X : U) :
-  is_spanning M X ∨ is_nonspanning M X := 
-  by { sorry }
 
 lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U): 
   is_hyperplane M X ↔ is_nonspanning M X ∧ ∀ (Y: U), X ⊂ Y → is_spanning M Y :=
   begin
     split, 
     intro h, simp, split, linarith [h.2],
-    intros Y hXY, linarith [h.1 Y hXY, h.2, rank_le_top M Y],
+    intros Y hXY hne, linarith [h.1 Y ⟨hXY,hne⟩, h.2, rank_le_top M Y],
     rintros ⟨h1,h2⟩, simp at h1 h2, split, 
-    intros Z hZ, specialize h2 Z hZ, linarith [rank_le_top M Z], 
+    intros Z hZ, specialize h2 Z hZ.1 hZ.2, linarith, 
     by_cases X = ⊤, rw h at h1, linarith, 
     rcases nonbot_contains_single ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
-    specialize h2 (X ∪ e) (augment_single_ssubset _ _ he), 
-    linarith [rank_subadditive M X e, M.R1 e, (by {cases e, assumption} : size (e:U) = 1)],
+    specialize h2 (X ∪ e) (augment_single_ssubset he).1 (λ h_ne, _), 
+    have := rank_subadditive M X e, 
+    linarith [rank_subadditive M X e, M.R1 e, size_coe_single e],
+    rw [union_comm, eq_comm, ←union_subset] at h_ne, rw single_contained_compl_iff at he, 
+    exact he h_ne, 
   end 
 
 lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U): 
@@ -802,17 +823,11 @@ lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U):
     rw [←(h.2 _ (ssubset_compl_left hXY)), compl_compl], 
   end
 
-lemma cl_same_rank (M : rankfun U) (X : U) : 
-  M.r (cl M X) = M.r X :=
-  begin
-    have := inter_all_iff 
-  end
-
 lemma inter_flats_is_flat (M : rankfun U) (F₁ F₂ : U) :
   is_flat M F₁ ∧ is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
   begin
     --repeat {rw flat_iff_r}, rintros ⟨h₁, h₂⟩ Y ⟨hss, hne⟩, 
-
+    sorry 
   end
 
 end flat

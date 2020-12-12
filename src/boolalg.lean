@@ -550,9 +550,21 @@ def single (A : boolalg): Type := {X : A // size X = 1}
 
 instance coe_single {A : boolalg} : has_coe (single A) A := ⟨λ e, e.val⟩  
 
+def elem : (single A) → A → Prop := λ e X, (e:A) ⊆ X 
+def notelem : (single A) → A → Prop := λ e X, ¬ (e : A) ⊆ X 
+
+infix ∈ := elem 
+infix ∉ := notelem 
+
+@[simp] lemma elem_iff (e : single A)(X : A) : e ∈ X ↔ (e:A) ⊆ X := 
+  by unfold elem
+
+@[simp] lemma not_elem_iff (e : single A)(X : A) : e ∉ X ↔ ¬(e:A) ⊆ X := 
+  by unfold notelem
+
 @[simp] lemma size_coe_single {A : boolalg} (e : single A) : size (e : A) = 1 := e.2 
 
-lemma nonbot_contains_single {X : A} (hX : X ≠ ⊥) : ∃ (e : single A), (e :A) ⊆ X := 
+lemma nonbot_contains_single {X : A} (hX : X ≠ ⊥) : ∃ (e : single A), e ∈ X := 
   by {rcases single_subset_nonempty hX with ⟨Y,Z ,⟨hI,hU,h1⟩⟩, use ⟨Y,h1⟩, rw ←hU, exact subset_union_left Y Z}
 
 lemma nested_singles_eq {e f: single A} (hef : (e: A) ⊆ (f :A)) : e = f :=
@@ -561,14 +573,14 @@ lemma nested_singles_eq {e f: single A} (hef : (e: A) ⊆ (f :A)) : e = f :=
     calc _ = 1 :size_coe_single e ... = _: (size_coe_single f).symm, 
   end
 
-lemma nonelement_disjoint {e : single A} {X : A} (heX : ¬((e:A) ⊆ X)): (e:A) ∩ X = ⊥ :=
+lemma nonelement_disjoint {e : single A} {X : A} (heX : e ∉ X) : (e:A) ∩ X = ⊥ :=
   begin
     by_contra, rcases nonbot_contains_single a with ⟨f,hf⟩, 
     rcases subset_of_inter hf with ⟨hfe, hfx⟩, 
     rw nested_singles_eq hfe at hfx, exact heX hfx, 
   end
 
-lemma augment_single_ssubset (X : A) (e : single A) (hXe : (e :A ) ⊆ Xᶜ) : X ⊂ X ∪ e := 
+lemma augment_single_ssubset {X : A} {e : single A} (hXe : e ∈ Xᶜ) : X ⊂ X ∪ e := 
   begin
      refine ⟨subset_union_left _ _, _⟩, intro h, rw [h, compl_union] at hXe, 
      have ebot := subset_trans hXe (inter_subset_right Xᶜ _), 
@@ -576,40 +588,41 @@ lemma augment_single_ssubset (X : A) (e : single A) (hXe : (e :A ) ⊆ Xᶜ) : X
      have := size_coe_single e, rw ←ebot at this, linarith [size_bot A], 
   end
 
-lemma single_contained_compl_iff {X : A}{e : single A} : (e : A) ⊆ Xᶜ ↔ ¬ (e : A) ⊆ X := 
+lemma single_contained_compl_iff {X : A}{e : single A} : e ∈ Xᶜ ↔ e ∉ X := 
   begin
     refine ⟨λ h, λ he, _, λ h, _⟩, 
     have := inter_of_supsets he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
     have := nonelement_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
   end
 
-lemma single_contained_iff {X : A}{e : single A} : (e : A) ⊆ X ↔ ¬ (e : A) ⊆ Xᶜ := 
-  by {rw single_contained_compl_iff, simp,}
+lemma single_contained_iff {X : A}{e : single A} : e ∈ X ↔ e ∉ Xᶜ := 
+  by {rw ←single_contained_compl_iff, simp,}
     
-lemma augment_compl_single_size {X : A} {e : single A} (hXe : (e :A ) ⊆ Xᶜ) : size (X ∪ e) = size X + 1 := 
+lemma augment_compl_single_size {X : A} {e : single A} (hXe : e ∈ Xᶜ) : size (X ∪ e) = size X + 1 := 
 begin
   have := size_modular X e, 
   rw [inter_comm X, nonelement_disjoint (single_contained_compl_iff.mp hXe), size_coe_single, size_bot] at this, 
   linarith, 
 end
 
-lemma augment_disjoint_single_size {X : A} {e : single A} (hXe : ¬(e :A ) ⊆ X) : size (X ∪ e) = size X + 1 := 
+lemma augment_disjoint_single_size {X : A} {e : single A} (hXe : e ∉ X) : size (X ∪ e) = size X + 1 := 
 by {apply augment_compl_single_size, exact single_contained_compl_iff.mpr hXe}
 
-lemma compl_single_remove {X : A} {e : single A} (heX : (e : A) ⊆ X) : (X - e)ᶜ = Xᶜ ∪ e := 
+lemma compl_single_remove {X : A} {e : single A} (heX : e ∈ X) : (X - e)ᶜ = Xᶜ ∪ e := 
   by rw [diff_def, compl_inter, compl_compl]
 
-lemma remove_add_single {X : A} {e : single A} (heX : (e: A) ⊆ X) : (X-e) ∪ e = X := 
-  by {rw [union_subset, union_comm] at heX, rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
+lemma remove_add_single {X : A} {e : single A} (heX : e ∈ X) : (X-e) ∪ e = X := 
+  by {rw [elem_iff, union_subset,union_comm] at heX, 
+      rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
    
-lemma remove_single_size {X :A}{e : single A} (heX : (e : A) ⊆ X) : size (X - e) = size X - 1 := 
+lemma remove_single_size {X :A}{e : single A} (heX : e ∈ X) : size (X - e) = size X - 1 := 
 begin
-  have h: (e:A) ⊆ (X-e)ᶜ := by {rw compl_single_remove heX, apply subset_union_right}, 
+  have h: e ∈ (X-e)ᶜ := by {rw compl_single_remove heX, apply subset_union_right}, 
   nth_rewrite 1 ←remove_add_single heX,
   linarith [augment_compl_single_size h], 
 end
 
-lemma remove_single_ssubset {X : A} {e : single A} (heX : (e : A) ⊆ X) : X - e ⊂ X := 
+lemma remove_single_ssubset {X : A} {e : single A} (heX : e ∈ X) : X - e ⊂ X := 
   by {refine ⟨diff_subset _ _, λ h, _⟩, have := remove_single_size heX, rw h at this, linarith }
 
 lemma nonbot_single_removal {X : A} (hX : X ≠ ⊥) : ∃ Y :A, Y ⊂ X ∧ size Y = size X - 1 := 
@@ -617,7 +630,8 @@ lemma nonbot_single_removal {X : A} (hX : X ≠ ⊥) : ∃ Y :A, Y ⊂ X ∧ siz
 
 lemma nontop_single_addition {X : A} (hX : X ≠ ⊤) : ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
   begin
-    have := nonbot_single_removal (λ h, _ : Xᶜ ≠ ⊥), rcases this with ⟨Y, ⟨h₁,h₂⟩ ⟩, refine ⟨Yᶜ , ⟨ssubset_compl_right h₁, _⟩⟩,
+    have := nonbot_single_removal (λ h, _ : Xᶜ ≠ ⊥), rcases this with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
+    refine ⟨Yᶜ , ⟨ssubset_compl_right h₁, _⟩⟩,
     linarith [size_compl X, size_compl Y], 
     exact hX (top_of_compl_bot h), 
   end
