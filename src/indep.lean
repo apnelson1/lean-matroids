@@ -826,7 +826,7 @@ lemma spans_iff_cl_spans {M : rankfun U}{X Y : U}:
     apply subset_cl, exact (rank_cl _ _).symm,  
   }
 
-lemma subset_cl_of_subset (M : rankfun U){X Y : U}:
+lemma cl_monotone (M : rankfun U){X Y : U}:
   X ⊆ Y → cl M X ⊆ cl M Y :=
   λ h, by {rw subset_cl_iff_r, apply rank_eq_of_union, rw [union_cl_rank_right, union_comm, union_subset_mp h]}
   
@@ -855,7 +855,7 @@ lemma cl4 (M : rankfun U)(X : U)(e f : single U) :
   e ∈ cl M (X ∪ f) - cl M X  → f ∈ cl M (X ∪ e) - cl M X := 
   begin 
     repeat {rw [elem_diff_iff, nonelem_cl_iff_r, elem_cl_iff_r]}, 
-    rw union_perm_23, refine λ h, ⟨_,_⟩, 
+    rw union_right_comm, refine λ h, ⟨_,_⟩, 
     apply rank_eq_of_union, linarith [rank_add_single_ub M X f],  
     cases h with h1 h2, 
     linarith [h2, rank_add_single_ub M X f, R2_u M (X ∪ e) f],  
@@ -979,12 +979,12 @@ lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U):
   end
 
 lemma inter_flats_is_flat (M : rankfun U) (F₁ F₂ : U) :
-  is_flat M F₁ ∧ is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
+  is_flat M F₁ → is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
   begin 
-    repeat {rw [flat_iff_augment]}, simp_rw ←nonelem_cl_iff_nonspans, rintros ⟨h₁, h₂⟩ e he,
-    rw nonelem_inter_iff at he, cases he, 
-    exact λ h, (h₁ e he) (subset_trans h (subset_cl_of_subset M (inter_subset_left F₁ F₂))), 
-    exact λ h, (h₂ e he) (subset_trans h (subset_cl_of_subset M (inter_subset_right F₁ F₂))), 
+    repeat {rw [flat_iff_augment]}, simp_rw ←nonelem_cl_iff_nonspans, 
+    intros h₁ h₂ e he, rw nonelem_inter_iff at he, cases he, 
+    exact λ h, (h₁ e he) (subset_trans h (cl_monotone M (inter_subset_left F₁ F₂))), 
+    exact λ h, (h₂ e he) (subset_trans h (cl_monotone M (inter_subset_right F₁ F₂))), 
   end
 
 end flat
