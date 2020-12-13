@@ -390,21 +390,46 @@ begin
 end
 
 -- same as R2 but with implicit X Y
-lemma R2' (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
+lemma R2 (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r X ≤ M.r Y := 
   M.R2 X Y hXY
 
 lemma R2_u (M : rankfun U)(X Y : U) : 
   M.r X ≤ M.r (X ∪ Y) := 
-  R2' M (subset_union_left X Y)
+  R2 M (subset_union_left X Y)
+
+lemma rank_single_ub (M : rankfun U)(e : single U):
+  M.r e ≤ 1 := 
+  by {rw ←(size_coe_single e), exact M.R1 e}
 
 lemma rank_le_top (M : rankfun U)(X : U) : 
   M.r X ≤ M.r ⊤ := 
-  R2' M (subset_top X)
+  R2 M (subset_top X)
+
+lemma rank_eq_of_supset {M : rankfun U}{X Y : U}:
+  X ⊆ Y → (M.r Y ≤ M.r X) → M.r X = M.r Y :=
+  λ h h', (le_antisymm (R2 M h) h') 
+
+lemma rank_eq_of_union {M : rankfun U}{X Y : U}:
+  M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
+  λ h, ((rank_eq_of_supset ((subset_union_left X Y))) h).symm
+
+lemma rank_eq_of_union_supset {M : rankfun U}(X Y Z: U):
+  X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
+  begin
+    intros hXY hr, apply rank_eq_of_supset (subset_union_subset_left X Y Z hXY), 
+    have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, inter_subset_mp hXY],
+    have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, union_subset_mp hXY ],
+    linarith [M.R3 (X ∪ Z) Y , R2_u M X (Z ∩ Y) ], 
+  end 
 
 lemma rank_subadditive (M : rankfun U)(X Y : U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
   by linarith [M.R3 X Y, M.R0 (X ∩ Y)]
+
+lemma rank_add_single_ub (M : rankfun U)(X : U)(e : single U): 
+  M.r (X ∪ e) ≤ M.r X + 1 := 
+  by linarith [rank_subadditive M X e, rank_single_ub M e]
 
 lemma rank_diff_subadditive (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r Y ≤ M.r X + M.r (Y - X) := 
@@ -423,8 +448,7 @@ lemma submod_three_sets_disj (M : rankfun U)(X Y Y' :U)(hYY' : Y ∩ Y' = ⊥) :
   by {have := submod_three_sets M X Y Y', rw [hYY', union_bot] at this, exact this}
 
 
-
-
+  
 end rank 
 
 -- Independence 
@@ -608,11 +632,11 @@ lemma C3 {M : rankfun U} {C₁ C₂ : U} {e : single U}:
     intros hC₁ hC₂ hC₁C₂ he, rw [←dep_iff_contains_circuit, dep_iff_r], 
     have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
     have heU : (e : U) ⊆ C₁ ∪ C₂ := subset_trans he (subset_trans hI.1 (subset_union_left C₁ _)),
-    have hcalc : M.r (C₁ ∪ C₂ - e) ≤ size (C₁ ∪ C₂ -e) -1 := by linarith [R2' M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
+    have hcalc : M.r (C₁ ∪ C₂ - e) ≤ size (C₁ ∪ C₂ -e) -1 := by linarith [R2 M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
       r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
     exact int.le_sub_one_iff.mp hcalc,
   --More verbosely: 
-  /-have := calc M.r (C₁ ∪ C₂ - e) ≤ M.r (C₁ ∪ C₂)                                : R2' M (diff_subset (C₁ ∪ C₂) e ) 
+  /-have := calc M.r (C₁ ∪ C₂ - e) ≤ M.r (C₁ ∪ C₂)                                : R2 M (diff_subset (C₁ ∪ C₂) e ) 
                               ...  ≤ M.r C₁ + M.r C₂ - M.r (C₁ ∩ C₂)              : by linarith [M.R3 C₁ C₂]
                               ...  = (size C₁ -1 ) + (size C₂-1) - size (C₁ ∩ C₂) : by rw [rank_of_circuit hC₁, rank_of_circuit hC₂, rank_of_circuit_ssubset hC₁ hI]
                               ...  = size (C₁ ∪ C₂) -2                            : by linarith [size_modular C₁ C₂]
@@ -665,6 +689,13 @@ variables {U : boolalg}
 def spans (M : rankfun U) : U → U → Prop := 
   λ X Y, M.r (X ∪ Y) = M.r X 
 
+lemma spans_iff_r {M : rankfun U} {X Y :U} :
+  spans M X Y ↔ M.r (X ∪ Y) = M.r X :=
+  by refl 
+
+lemma not_spans_iff_r {M : rankfun U}{X Y : U}: 
+  ¬spans M X Y ↔ M.r X < M.r (X ∪ Y) :=
+  by {rw [spans_iff_r, eq_comm], exact ⟨λ h, lt_of_le_of_ne (R2_u M _ _) h, λ h, ne_of_lt h⟩}
 
 lemma spanning_or_nonspanning (M : rankfun U) (X : U) :
   is_spanning M X ∨ is_nonspanning M X := 
@@ -675,8 +706,8 @@ lemma spanned_union (M : rankfun U){X Y Y' : U} :
   begin
     unfold spans, intros h h', 
     have := submod_three_sets M X Y Y', 
-    have := R2' M (subset_union_left X (Y ∩ Y')), 
-    have := R2' M (subset_union_left X (Y ∪ Y')), 
+    have := R2 M (subset_union_left X (Y ∩ Y')), 
+    have := R2 M (subset_union_left X (Y ∪ Y')), 
     linarith, 
   end
 
@@ -695,14 +726,14 @@ lemma spans_subset (M : rankfun U){X Y Y' :U} :
   Y ⊆ Y' → spans M X Y' → spans M X Y :=
   begin
     unfold spans, intros hYY' hXY, 
-    linarith [R2' M (subset_union_left X Y),  R2' M (subset_union_subset_right _ _ X hYY')], 
+    linarith [R2 M (subset_union_left X Y),  R2 M (subset_union_subset_right _ _ X hYY')], 
   end
 
 def cl (M : rankfun U) : U → U :=
   λ X, max_of_union_closed (spanned_union_closed M X)
 
 -- cl X is the (unique) maximal set that is spanned by X
-lemma cl_iff_max (M : rankfun U)(X F : U) : 
+lemma cl_iff_max {M : rankfun U}{X F : U} : 
   cl M X = F ↔ spans M X F ∧ ∀ Y, F ⊂ Y → ¬spans M X Y :=
   let huc := spanned_union_closed M X,
       h_eq := (union_closed_max_iff_in_and_ub huc F) in 
@@ -710,48 +741,126 @@ lemma cl_iff_max (M : rankfun U)(X F : U) :
         unfold cl, rw [eq_comm, ←is_max_of_union_closed_iff huc]}
   
 -- cl X is also the set spanned by X that contains all sets spanned by X
-lemma cl_iff_ub (M : rankfun U)(X F : U):
+lemma cl_iff_spanned_ub {M : rankfun U}{X F : U}:
    cl M X = F ↔ spans M X F ∧ ∀ Y, spans M X Y → Y ⊆ F := 
    by {unfold cl, rw [eq_comm, is_max_of_union_closed_iff], refl}
-  
+
+lemma cl_iff_spanned_ub_r {M : rankfun U}{X F : U}:
+   cl M X = F ↔ M.r (X ∪ F) = M.r X ∧ ∀ Y, (M.r (X ∪ Y) = M.r X) → Y ⊆ F := 
+   by {unfold cl, rw [eq_comm, is_max_of_union_closed_iff], refl}
+
+lemma cl_is_max {M : rankfun U}{X : U}:
+  spans M X (cl M X) ∧ ∀ Y, (cl M X) ⊂ Y → ¬spans M X Y :=
+  cl_iff_max.mp rfl
+
+lemma cl_is_ub {M : rankfun U}{X : U}:
+  ∀ Y, spans M X Y → Y ⊆ (cl M X) := 
+  (cl_iff_spanned_ub.mp rfl).2 
+
 lemma subset_cl (M : rankfun U)(X : U) : 
   X ⊆ cl M X := 
-  ((cl_iff_ub M X (cl M X)).mp rfl).2 _ (spans_refl M X)
+  (cl_iff_spanned_ub.mp rfl).2 _ (spans_refl M X)
 
 lemma spans_cl (M : rankfun U)(X : U) :
   spans M X (cl M X) := 
-  ((cl_iff_max M X (cl M X)).mp rfl).1 
+  (cl_iff_max.mp rfl).1 
 
-lemma supset_cl (M : rankfun U)(X : U) :
+lemma supset_cl {M : rankfun U}(X : U) :
   ∀ Y, (cl M X ⊂ Y) → ¬spans M X Y := 
-  ((cl_iff_max M X (cl M X)).mp rfl).2
+  (cl_iff_max.mp rfl).2
 
-lemma spanned_subset_cl (M : rankfun U){X Y : U}: 
+lemma spanned_subset_cl {M : rankfun U}{X Y : U}: 
   spans M X Y → Y ⊆ cl M X := 
-  λ h, ((cl_iff_ub M X (cl M X)).mp rfl).2 Y h 
+  λ h, cl_is_ub Y h 
 
-lemma subset_cl_iff (M : rankfun U)(X Y: U) :
+lemma subset_cl_iff {M : rankfun U}(X Y: U) :
   Y ⊆ cl M X ↔ spans M X Y := 
-  ⟨λ h, spans_subset M h (spans_cl _ _ ), λ h, spanned_subset_cl M h⟩ 
+  ⟨λ h, spans_subset M h (spans_cl _ _ ), λ h, spanned_subset_cl h⟩ 
 
-lemma spanning_iff_cl_top (M : rankfun U) (X : U):
+lemma subset_cl_iff_r {M : rankfun U}(X Y : U) :
+  Y ⊆ cl M X ↔ M.r (X ∪ Y) = M.r X :=
+  by {rw subset_cl_iff, refl}
+
+lemma spanning_iff_cl_top {M : rankfun U}(X : U):
   is_spanning M X ↔ cl M X = ⊤ :=
   begin
-    rw cl_iff_ub, unfold spans is_spanning, refine ⟨λ h, ⟨_,λ Y hY, _⟩, λ h, _⟩, 
+    rw cl_iff_spanned_ub, unfold spans is_spanning, refine ⟨λ h, ⟨_,λ Y hY, _⟩, λ h, _⟩, 
     rw [h, union_top], apply subset_top, rw [←h.1, union_top], 
   end   
   
 lemma cl_top (M : rankfun U):
   cl M ⊤ = ⊤ := 
-  by {rw ←spanning_iff_cl_top M, obviously}
+  by {rw ←spanning_iff_cl_top, obviously}
 
-
-lemma cl_rank (M : rankfun U)(X : U) : 
+lemma rank_cl (M : rankfun U)(X : U) : 
   M.r (cl M X) = M.r X := 
   begin
     have : M.r (X ∪ cl M X) = M.r X := spans_cl M X,
-    linarith [R2' M (subset_union_right X (cl M X)), R2' M (subset_cl M X)], 
+    linarith [R2 M (subset_union_right X (cl M X)), R2 M (subset_cl M X)], 
   end 
+
+lemma union_cl_rank_left (M : rankfun U)(X Y : U) :
+  M.r ((cl M X) ∪ Y) = M.r (X ∪ Y) := 
+  by {rw eq_comm, exact rank_eq_of_union_supset _ _ _ (subset_cl _ _) (rank_cl _ _).symm}
+  
+lemma union_cl_rank_right (M : rankfun U)(X Y : U) :
+  M.r (X ∪ (cl M Y)) = M.r (X ∪ Y) :=
+  by {rw [union_comm, union_comm _ Y], apply union_cl_rank_left} 
+
+
+lemma cl_idem (M : rankfun U)(X : U) :
+  cl M (cl M X) = cl M X := 
+  begin
+    rw cl_iff_spanned_ub, refine ⟨by apply spans_refl, λ Y hY, _⟩,  
+    rw subset_cl_iff, unfold spans, unfold spans at hY, 
+    apply rank_eq_of_union, 
+    linarith [rank_cl M X, union_cl_rank_left M X Y], 
+  end
+
+
+lemma spans_iff_cl_spans {M : rankfun U}{X Y : U}:
+  spans M X Y ↔ spans M (cl M X) Y :=
+  by{
+    repeat {rw spans_iff_r}, 
+    rw [rank_eq_of_union_supset X (cl M X), rank_cl],  
+    apply subset_cl, exact (rank_cl _ _).symm,  
+  }
+
+lemma subset_cl_of_subset (M : rankfun U){X Y : U}:
+  X ⊆ Y → cl M X ⊆ cl M Y :=
+  λ h, by {rw subset_cl_iff_r, apply rank_eq_of_union, rw [union_cl_rank_right, union_comm, union_subset_mp h]}
+  
+  
+
+lemma nonelem_cl_iff_r {M : rankfun U}{X : U}{e : single U} :
+  e ∉ cl M X ↔ M.r (X ∪ e) = M.r X + 1 :=
+  begin
+    rw [notelem_iff, subset_cl_iff_r], refine ⟨λ h, _, λ _, λ _, by linarith⟩, 
+    linarith [rank_add_single_ub M X e, int.add_one_le_iff.mpr ((ne.symm h).le_iff_lt.mp (R2_u M X e))]
+  end
+
+lemma elem_cl_iff_r {M : rankfun U}{X : U}{e : single U} : 
+  e ∈ cl M X ↔ M.r (X ∪ e) = M.r X := 
+  by rw [elem_iff, subset_cl_iff_r]
+
+lemma elem_cl_iff_spans {M : rankfun U}{X : U}{e : single U}:
+  e ∈ cl M X ↔ spans M X e :=
+  by rw [spans_iff_r,elem_cl_iff_r]
+
+lemma nonelem_cl_iff_nonspans {M : rankfun U}{X : U}{e : single U}:
+  e ∉ cl M X ↔ ¬spans M X e :=
+  ⟨λ h, λ hn, h (elem_cl_iff_spans.mpr hn), λ h, λ hn, h (elem_cl_iff_spans.mp hn)⟩
+
+lemma cl4 (M : rankfun U)(X : U)(e f : single U) : 
+  e ∈ cl M (X ∪ f) - cl M X  → f ∈ cl M (X ∪ e) - cl M X := 
+  begin 
+    repeat {rw [elem_diff_iff, nonelem_cl_iff_r, elem_cl_iff_r]}, 
+    rw union_perm_23, refine λ h, ⟨_,_⟩, 
+    apply rank_eq_of_union, linarith [rank_add_single_ub M X f],  
+    cases h with h1 h2, 
+    linarith [h2, rank_add_single_ub M X f, R2_u M (X ∪ e) f],  
+  end
+
 
 end closure 
 
@@ -766,7 +875,7 @@ def is_hyperplane (M : rankfun U) : U → Prop :=
   λ H, (is_flat M H) ∧ M.r H = M.r ⊤ - 1
 
 def is_rank_k_flat (M : rankfun U) (k : ℤ) : U → Prop := 
-  λ F, is_flat M F ∧ M.r F = 1 
+  λ F, is_flat M F ∧ M.r F = k 
 
 def is_loops (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 0 F
@@ -784,9 +893,57 @@ lemma flat_iff_r {M : rankfun U} (X : U) :
   is_flat M X ↔ ∀ Y, X ⊂ Y → M.r X < M.r Y := 
   by refl 
 
-/-lemma closure_is_flat {M : rankfun U} (X : U): 
-  is_flat M (cl M X) := -/
+lemma cl_is_flat {M : rankfun U} (X : U): 
+  is_flat M (cl M X) := 
+  begin
+    rw flat_iff_r, intros Y hY, have hne := cl_is_max.2 _ hY, 
+    rw [spans_iff_cl_spans, spans_iff_r] at hne, 
+    rw ←union_subset_mp hY.1, 
+    exact lt_of_le_of_ne (R2 M (subset_union_left (cl M X) Y)) (ne.symm hne), 
+  end
 
+lemma flat_iff_own_cl {M : rankfun U}{F : U}:
+  is_flat M F ↔ cl M F = F :=
+  begin
+    refine ⟨λ h, _, λ h, by {have := cl_is_flat F, rw h at this, exact this}⟩,
+    rw [cl_iff_max, spans_iff_r], simp_rw not_spans_iff_r,  
+    exact ⟨by rw union_idem, λ Y hFY, lt_of_lt_of_le (h Y hFY) (by {rw union_comm, apply R2_u})⟩,
+  end 
+
+lemma flat_iff_is_cl {M : rankfun U}{F : U}: 
+  is_flat M F ↔ ∃ X : U, cl M X = F := 
+  ⟨λ h, ⟨F, flat_iff_own_cl.mp h⟩, λ h, by {cases h with X hX, rw flat_iff_own_cl, rw ←hX, apply cl_idem}⟩
+
+lemma flat_iff_augment_r {M : rankfun U}{F : U}:
+  is_flat M F ↔ ∀ e, e ∉ F → M.r F < M.r (F ∪ e) :=
+  begin
+    rw flat_iff_r, 
+    refine ⟨λ h, λ e he, h _ (augment_nonelem_ssubset he), λ h, λ Y hY, _⟩,
+    cases augment_from_nonempty_diff.mp hY with e he, 
+    exact lt_of_lt_of_le (h e he.1) (R2 M he.2), 
+  end
+
+lemma flat_iff_augment {M : rankfun U}{F : U}:
+  is_flat M F ↔ ∀ (e : single U), e ∉ F → ¬spans M F e := 
+  by {rw [flat_iff_augment_r], simp_rw not_spans_iff_r}
+
+lemma is_loops_cl_bot (M : rankfun U):
+  is_loops M (cl M ⊥) := 
+  by {unfold is_loops is_rank_k_flat, refine ⟨cl_is_flat ⊥, by {rw [rank_cl, rank_bot] }⟩} 
+
+lemma is_loops_iff_cl_bot {M : rankfun U}{L : U}:
+  is_loops M L ↔ L = cl M ⊥ := 
+  begin
+    refine ⟨λ h, _, λ h, by {rw h, exact is_loops_cl_bot M}⟩, 
+    cases h with hF h0, rw flat_iff_is_cl at hF, cases hF with X hX, rw ←hX, 
+    have := calc M.r X ≤ M.r (cl M X) : R2 M (subset_cl M X) ... = M.r L : by rw hX ...= 0 : h0, 
+    replace this : M.r (cl M X) = 0 := by linarith [rank_cl M X, M.R0 (cl M X)], 
+    rw [eq_comm, cl_iff_spanned_ub_r ], refine ⟨_,λ Y hY, _⟩,
+    rw [bot_union, rank_bot], exact this, 
+    rw subset_cl_iff_r, apply rank_eq_of_union,
+    rw [bot_union, rank_bot] at hY, 
+    linarith [rank_subadditive M X Y], 
+  end
 
 lemma hyperplane_iff_r {M : rankfun U} (X : U) :
   is_hyperplane M X ↔ M.r X = M.r ⊤ -1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
@@ -797,7 +954,6 @@ lemma hyperplane_iff_r {M : rankfun U} (X : U) :
     rw [h.1,h.2 Y hXY], exact sub_one_lt _,   
   end
 
-
 lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U): 
   is_hyperplane M X ↔ is_nonspanning M X ∧ ∀ (Y: U), X ⊂ Y → is_spanning M Y :=
   begin
@@ -807,11 +963,10 @@ lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U):
     rintros ⟨h1,h2⟩, simp at h1 h2, split, 
     intros Z hZ, specialize h2 Z hZ.1 hZ.2, linarith, 
     by_cases X = ⊤, rw h at h1, linarith, 
-    rcases nonbot_contains_single ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
-    specialize h2 (X ∪ e) (augment_single_ssubset he).1 (λ h_ne, _), 
-    have := rank_subadditive M X e, 
+    rcases nonempty_contains_single ((λ hX, h (top_of_compl_bot hX)) : Xᶜ ≠ ⊥) with ⟨e, he⟩,
+    specialize h2 (X ∪ e) (augment_from_compl_ssubset he).1 (λ h_ne, _), 
     linarith [rank_subadditive M X e, M.R1 e, size_coe_single e],
-    rw [union_comm, eq_comm, ←union_subset] at h_ne, rw single_contained_compl_iff at he, 
+    rw [union_comm, eq_comm, ←union_subset] at h_ne, rw elem_compl_iff at he, 
     exact he h_ne, 
   end 
 
@@ -825,9 +980,11 @@ lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U):
 
 lemma inter_flats_is_flat (M : rankfun U) (F₁ F₂ : U) :
   is_flat M F₁ ∧ is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
-  begin
-    --repeat {rw flat_iff_r}, rintros ⟨h₁, h₂⟩ Y ⟨hss, hne⟩, 
-    sorry 
+  begin 
+    repeat {rw [flat_iff_augment]}, simp_rw ←nonelem_cl_iff_nonspans, rintros ⟨h₁, h₂⟩ e he,
+    rw nonelem_inter_iff at he, cases he, 
+    exact λ h, (h₁ e he) (subset_trans h (subset_cl_of_subset M (inter_subset_left F₁ F₂))), 
+    exact λ h, (h₂ e he) (subset_trans h (subset_cl_of_subset M (inter_subset_right F₁ F₂))), 
   end
 
 end flat
@@ -861,7 +1018,7 @@ lemma coloop_iff_r {M : rankfun U} (e : single U) :
   is_coloop M e ↔ M.r eᶜ = M.r ⊤ - 1 := 
   begin
     unfold is_coloop is_loop, rw [dual_r,size_coe_single],
-    exact ⟨λh,by linarith,λ h, by linarith⟩,   
+    exact ⟨λh, by linarith,λ h, by linarith⟩,   
   end
 
 lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
@@ -934,10 +1091,10 @@ lemma parallel_trans {M : rankfun U} ⦃e f g : nonloop M⦄ :
     unfold parallel, intros hef hfg, 
     have := M.R3 (e ∪ f) (f ∪ g), rw [hef, hfg] at this, 
     have : 1 ≤ M.r ((e ∪ f) ∩ (f ∪ g)) := _, 
-    have := R2' M (_ : (e ∪ g : U) ⊆ ((e ∪ f) ∪ (f ∪ g) : U)), 
+    have := R2 M (_ : (e ∪ g : U) ⊆ ((e ∪ f) ∪ (f ∪ g) : U)), 
     linarith [(rank_union_nonloops_lb e g)],  
     rw [union_comm (e:U) f, ←union_distrib_union_right], apply subset_union_right,  
-    calc _ = M.r f : f.property.symm ... ≤ _ : R2' M (inter_of_supsets (subset_union_right (e:U) f) (subset_union_left (f:U) g)), 
+    calc _ = M.r f : f.property.symm ... ≤ _ : R2 M (inter_of_supsets (subset_union_right (e:U) f) (subset_union_left (f:U) g)), 
   end
 
 lemma parallel_equiv (M : rankfun U) : equivalence (parallel M) := 
@@ -964,7 +1121,6 @@ def parallel_classes_setoid (M : rankfun U) : setoid (nonloop M) :=
 
 def parallel_classes_quot (M : rankfun U) := quotient (parallel_classes_setoid M)
 
-#check parallel_classes_quot 
   
 /-lemma point_iff_parallel_class_and_loops {M : rankfun U} {P: U} : 
   is_point M P ↔ ∃  :=
