@@ -160,7 +160,7 @@ lemma strong_induction (P : A → Prop) :
   (augment P) → (forall (Z : A), P Z) :=
 fun h_augment Z, weak_induction strong_at strong_base strong_step Z P h_augment
 
-lemma minimal_example (P : A → Prop)(X : A): 
+lemma minimal_example (P : A → Prop){X : A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
   begin
     set minimal_P := λ (Y : A), P Y ∧ ∀ (Z : A), Z ⊂ Y → ¬ P Z with hmin, 
@@ -171,11 +171,11 @@ lemma minimal_example (P : A → Prop)(X : A):
     use Y, exact ⟨subset_trans hYZ hZT.1, hQY⟩, 
   end
 
-lemma maximal_example (P : A → Prop)(X : A): 
+lemma maximal_example (P : A → Prop){X : A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   begin
-    have := minimal_example (λ S, P Sᶜ) Xᶜ, intro h, rw ←compl_compl X at h, 
-    rcases this h with ⟨Y,⟨hY₁, hY₂, hY₃⟩ ⟩, 
+    intro h, rw ←compl_compl X at h, 
+    rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩ ⟩, 
     use Yᶜ, refine ⟨subset_compl_right hY₁, hY₂,λ Z hZ, _⟩,  
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end

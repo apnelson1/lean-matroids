@@ -396,6 +396,10 @@ lemma le_sub_one_of_le_of_ne {x y : ℤ} :
   x ≤ y → x ≠ y → x ≤ y - 1 :=
   λ h h', int.le_sub_one_of_lt (lt_of_le_of_ne h h')
 
+lemma le_of_not_gt' {x y : ℤ} : 
+  ¬ (y < x) → x ≤ y := 
+  not_lt.mp
+
 -------------------------------------------------------------------------------
 
 
@@ -416,18 +420,27 @@ lemma rank_le_top (M : rankfun U)(X : U) :
   M.r X ≤ M.r ⊤ := 
   R2 M (subset_top X)
 
-lemma rank_eq_of_supset {M : rankfun U}{X Y : U}:
+lemma rank_eq_of_le_supset {M : rankfun U}{X Y : U}:
   X ⊆ Y → (M.r Y ≤ M.r X) → M.r X = M.r Y :=
   λ h h', (le_antisymm (R2 M h) h') 
 
-lemma rank_eq_of_union {M : rankfun U}{X Y : U}:
+lemma rank_eq_of_le_union {M : rankfun U}{X Y : U}:
   M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
-  λ h, ((rank_eq_of_supset ((subset_union_left X Y))) h).symm
+  λ h, ((rank_eq_of_le_supset ((subset_union_left X Y))) h).symm
 
-lemma rank_eq_of_union_supset {M : rankfun U}(X Y Z: U):
+lemma rank_eq_of_not_lt_supset {M : rankfun U}{X Y : U}:
+  X ⊆ Y → ¬(M.r X < M.r Y) → M.r X = M.r Y :=
+  λ h h', rank_eq_of_le_supset h (le_of_not_gt' h')
+
+lemma rank_eq_of_not_lt_union {M : rankfun U}{X Y : U}:
+  ¬ (M.r X < M.r (X ∪ Y)) → M.r (X ∪ Y) = M.r X :=
+  λ h', rank_eq_of_le_union (le_of_not_gt' h')
+
+
+lemma rank_eq_of_le_union_supset {M : rankfun U}(X Y Z: U):
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
   begin
-    intros hXY hr, apply rank_eq_of_supset (subset_union_subset_left X Y Z hXY), 
+    intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
     have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, inter_subset_mp hXY],
     have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, union_subset_mp hXY ],
     linarith [M.R3 (X ∪ Z) Y , R2_u M X (Z ∩ Y) ], 
@@ -537,20 +550,20 @@ lemma subset_indep {M : rankfun U} {X Y : U}:
   end 
 
 lemma indep_aug {M : rankfun U}{X Y : U} : 
-  is_indep M X → is_indep M Y → size X < size Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
+  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
 begin
-  simp_rw indep_iff_r, intros hIX hIY hXY,
+  simp_rw indep_iff_r, intros hXY hIX hIY,
   rcases rank_augment (by linarith : M.r X < M.r Y) with ⟨e,⟨h₁, h₂⟩⟩, 
   have hx := (λ he, by {rw [union_comm, union_subset_mp he] at h₂, linarith}: ¬((e:U) ⊆ X)), 
   refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
   have hs := (size_modular X e),
-  rw [ eq.trans (inter_comm X (e: U)) (nonelement_disjoint hx), size_bot] at hs, 
+  rw [ eq.trans (inter_comm X (e: U)) (nonelem_disjoint hx), size_bot] at hs, 
   linarith [size_coe_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
 end
 
 lemma indep_aug_diff {M : rankfun U}{X Y : U} : 
-  is_indep M X → is_indep M Y → size X < size Y → (∃ e, e ∈ Y-X ∧ is_indep M (X ∪ e)) := 
-λ h₁ h₂ h₃, by {simp_rw elem_diff_iff, simp_rw and_assoc, exact indep_aug h₁ h₂ h₃}
+  size X < size Y → is_indep M X → is_indep M Y  → (∃ e, e ∈ Y-X ∧ is_indep M (X ∪ e)) := 
+  λ h₁ h₂ h₃, by {simp_rw elem_diff_iff, simp_rw and_assoc, exact indep_aug h₁ h₂ h₃}
 
 lemma dep_subset {M : rankfun U}{X Y : U}: 
   X ⊆ Y → is_dep M X → is_dep M Y := 
@@ -577,7 +590,7 @@ lemma I2 {M : rankfun U} {X Y : U}:
   end 
 
 lemma I3 {M : rankfun U}{X Y : U}: 
-  is_indep M X → is_indep M Y → size X < size Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
+  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
   indep_aug
 
 
@@ -805,7 +818,7 @@ lemma rank_cl (M : rankfun U)(X : U) :
 
 lemma union_cl_rank_left (M : rankfun U)(X Y : U) :
   M.r ((cl M X) ∪ Y) = M.r (X ∪ Y) := 
-  by {rw eq_comm, exact rank_eq_of_union_supset _ _ _ (subset_cl _ _) (rank_cl _ _).symm}
+  by {rw eq_comm, exact rank_eq_of_le_union_supset _ _ _ (subset_cl _ _) (rank_cl _ _).symm}
   
 lemma union_cl_rank_right (M : rankfun U)(X Y : U) :
   M.r (X ∪ (cl M Y)) = M.r (X ∪ Y) :=
@@ -817,7 +830,7 @@ lemma cl_idem (M : rankfun U)(X : U) :
   begin
     rw cl_iff_spanned_ub, refine ⟨by apply spans_refl, λ Y hY, _⟩,  
     rw subset_cl_iff, unfold spans, unfold spans at hY, 
-    apply rank_eq_of_union, 
+    apply rank_eq_of_le_union, 
     linarith [rank_cl M X, union_cl_rank_left M X Y], 
   end
 
@@ -826,13 +839,13 @@ lemma spans_iff_cl_spans {M : rankfun U}{X Y : U}:
   spans M X Y ↔ spans M (cl M X) Y :=
   by{
     repeat {rw spans_iff_r}, 
-    rw [rank_eq_of_union_supset X (cl M X), rank_cl],  
+    rw [rank_eq_of_le_union_supset X (cl M X), rank_cl],  
     apply subset_cl, exact (rank_cl _ _).symm,  
   }
 
 lemma cl_monotone (M : rankfun U){X Y : U}:
   X ⊆ Y → cl M X ⊆ cl M Y :=
-  λ h, by {rw subset_cl_iff_r, apply rank_eq_of_union, rw [union_cl_rank_right, union_comm, union_subset_mp h]}
+  λ h, by {rw subset_cl_iff_r, apply rank_eq_of_le_union, rw [union_cl_rank_right, union_comm, union_subset_mp h]}
   
   
 
@@ -860,7 +873,7 @@ lemma cl4 (M : rankfun U)(X : U)(e f : single U) :
   begin 
     repeat {rw [elem_diff_iff, nonelem_cl_iff_r, elem_cl_iff_r]}, 
     rw union_right_comm, refine λ h, ⟨_,_⟩, 
-    apply rank_eq_of_union, linarith [rank_augment_single_ub M X f],  
+    apply rank_eq_of_le_union, linarith [rank_augment_single_ub M X f],  
     cases h with h1 h2, 
     linarith [h2, rank_augment_single_ub M X f, R2_u M (X ∪ e) f],  
   end
@@ -944,7 +957,7 @@ lemma is_loops_iff_cl_bot {M : rankfun U}{L : U}:
     replace this : M.r (cl M X) = 0 := by linarith [rank_cl M X, M.R0 (cl M X)], 
     rw [eq_comm, cl_iff_spanned_ub_r ], refine ⟨_,λ Y hY, _⟩,
     rw [bot_union, rank_bot], exact this, 
-    rw subset_cl_iff_r, apply rank_eq_of_union,
+    rw subset_cl_iff_r, apply rank_eq_of_le_union,
     rw [bot_union, rank_bot] at hY, 
     linarith [rank_subadditive M X Y], 
   end
@@ -1165,7 +1178,7 @@ lemma basis_iff_no_add_r {M : rankfun U} (B : U) :
   is_basis M B ↔ M.r B = size B ∧ ∀ (e : single U), M.r (B ∪ e) = M.r B := 
   begin
     rw basis_iff_r, refine ⟨λ h, ⟨h.1, λ e, _⟩, λ h,⟨h.1,λ Y hY, _⟩⟩, 
-    apply rank_eq_of_union, by_cases he: e ∈ B, rw [union_comm, union_subset_mp he], 
+    apply rank_eq_of_le_union, by_cases he: e ∈ B, rw [union_comm, union_subset_mp he], 
     have := int.le_sub_one_of_lt (h.2 _ (ssub_of_add_nonelem he)), 
     linarith [add_nonelem_size he], 
     cases elem_only_larger_ssubset hY with e he, cases he with heY heB, 
@@ -1190,13 +1203,14 @@ lemma is_basis_of_iff_r {M : rankfun U} {B X : U} :
 lemma basis_iff_min_spanning {M : rankfun U}{B : U} :
   is_basis M B ↔ is_spanning M B ∧ ∀ X, X ⊂ B → ¬is_spanning M X :=
   begin
-    rw [basis_iff_r, spanning_iff_r], refine ⟨λ h, ⟨_,_⟩, λ h, ⟨_,_⟩⟩, 
+    rw [basis_iff_r, spanning_iff_r], refine ⟨λ h, ⟨_,λ X hX, _⟩, λ h, ⟨_,λ X hX, _⟩⟩, 
+    apply rank_eq_of_not_lt_supset (subset_top _), intros hB, sorry, sorry, sorry, sorry, 
   end
 
 lemma size_basis {M : rankfun U}{B : U} :
   is_basis M B → size B = M.r ⊤ := 
   begin
-    intro h, rw basis_iff_no_add_r at h, rw ←h.1, apply rank_eq_of_supset (subset_top B), by_contra h', 
+    intro h, rw basis_iff_no_add_r at h, rw ←h.1, apply rank_eq_of_le_supset (subset_top B), by_contra h', 
     rcases rank_augment (lt_of_not_ge' h') with ⟨z,⟨h₁z, h₂z⟩⟩, have := h.2 z, linarith, 
   end
 
@@ -1218,25 +1232,15 @@ lemma basis_iff_rank_eq_size_eq_rank_top {M : rankfun U}{B : U} :
 lemma basis_exchange (M : rankfun U){B₁ B₂ : U}{e : single U}:
   is_basis M B₁ → is_basis M B₂ → e ∈ B₁ - B₂ → ∃ f, f ∈ (B₂ - B₁) ∧ is_basis M ((B₁ - e) ∪ f) :=
   begin
-    intros hB₁ hB₂ he, rw basis_iff_i at *, 
+    intros hB₁ hB₂ he, rw basis_iff_indep_full_rank at hB₁ hB₂, simp_rw basis_iff_indep_full_rank,   
     cases elem_diff_iff.mp he with he₁ he₂, 
     have h' : is_indep M (B₁ - e) := subset_indep _ hB₁.1, 
-    rcases indep_aug_diff h' hB₂.1 _ with ⟨f,⟨hf, hf_aug⟩⟩,  
-    have : B₂ - (B₁ -e) = B₂ - B₁ := by
-    {
-      repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left],  
-    }
-    
-    have hef : e ≠ f := λ h, by 
-    {
-        rw ← h at hf, 
-        have := subset_of_inter_mpr hf he, 
-    },
-    use f, rw basis_iff_indep_full_rank, refine ⟨_, ⟨hf_aug, _⟩ ⟩ , 
-    --rw elem_diff_iff at ⊢ hf_diff, exact ⟨hf.1, 
-
-
-    sorry, 
+    rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
+    have h'' : B₂ - (B₁ -e) = B₂ - B₁ := by
+      {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e:U), nonelem_disjoint_iff.mp he₂, union_bot]},
+    rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
+    use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 
+    rw remove_single_size he₁, linarith, apply remove_single_subset, 
   end 
 
 end basis

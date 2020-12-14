@@ -633,7 +633,7 @@ lemma nonelem_disjoint {e : single A} {X : A}:
 
 lemma nonelem_disjoint_iff {e : single A} {X : A}: 
   e ∉ X ↔ (e ∩ X : A) = ⊥ := 
-  by {refine ⟨λ h, nonelem_disjoint h, λ h he, _⟩, rw [elem_iff, inter_subset] at he,  }
+  by {refine ⟨λ h, nonelem_disjoint h, λ h he, _⟩, rw [elem_iff, inter_subset, h, eq_comm] at he, exact single_ne_bot _ he}
 
 lemma inter_distinct_singles {e f : single A}: 
   e ≠ f → (e ∩ f : A) = ⊥ := 
