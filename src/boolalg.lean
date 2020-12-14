@@ -27,8 +27,7 @@ structure boolalg :=
   (size_bot_ax : size bot = 0)
   (size_nonneg_ax (X: member) : 0 ≤ size X) 
   (size_modular_ax (X Y: member) : size (union X Y) + size (inter X Y) = size X + size Y)
-  --(single_subset_ax (X : member) : X ≠  bot → ∃ Y Z, inter Y Z = bot ∧ union Y Z = X ∧ size Y = 1)
-  (contains_single_ax (X : member) : X ≠  bot → ∃ Y, subset Y X ∧ size Y = 1)
+  (contains_single_ax (X : member) : X ≠ bot → ∃ Y, subset Y X ∧ size Y = 1)
 
 
   (inter_comm_ax (X Y : member) : inter X Y = inter Y X)
@@ -50,8 +49,6 @@ structure boolalg :=
   (union_assoc_ax (X Y Z : member) : union (union X Y) Z = union X (union Y Z))
 
 -- Instances to enable ⊆ , ∩ , ∪ , ᶜ , ⊤, ⊥ , - (set diff)
-
-
 
 variables {A : boolalg}
 
@@ -101,8 +98,6 @@ lemma union_compl {A: boolalg} (X: A) :
   A.union_compl_ax X 
 
 lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ := A.inter_compl_ax X 
-
-
 
 -- Distributivity
 
@@ -336,17 +331,17 @@ lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) :=
 lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
   A.union_assoc_ax X Y Z 
 
-lemma subset_to_compl {X Y : A} (hXY : X ⊆ Y) : Yᶜ ⊆ Xᶜ := 
-  by {rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
+lemma subset_to_compl {X Y : A} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
+  λ hXY, by {rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
 
-lemma compl_to_subset {X Y : A} (hXY : Xᶜ ⊆ Yᶜ) : Y ⊆ X := 
-  by {have := subset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
+lemma compl_to_subset {X Y : A}: Xᶜ ⊆ Yᶜ → Y ⊆ X := 
+  λ hXY, by {have := subset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
 
-lemma subset_compl_right {X Y : A} (hXY : X ⊆ Yᶜ) : Y ⊆ Xᶜ := 
-  by {rw [←compl_compl X] at hXY, exact compl_to_subset hXY}
+lemma subset_compl_right {X Y : A}: X ⊆ Yᶜ → Y ⊆ Xᶜ := 
+  λ hXY, by {rw [←compl_compl X] at hXY, exact compl_to_subset hXY}
 
-lemma subset_compl_left {X Y : A} (hXY : Xᶜ ⊆ Y) : Yᶜ ⊆ X := 
-  by {rw [←compl_compl Y] at hXY, exact compl_to_subset hXY}
+lemma subset_compl_left {X Y : A} : Xᶜ ⊆ Y → Yᶜ ⊆ X := 
+  λ hXY, by {rw [←compl_compl Y] at hXY, exact compl_to_subset hXY}
 
 lemma subset_of_compl_iff_disjoint {X Y: A} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ := 
   begin 
@@ -467,8 +462,9 @@ lemma size_zero_iff_bot {X : A} : (size X = 0) ↔ (X = ⊥) :=
 lemma size_nonempty {X : A} : X ≠ ⊥ → 0 < size X  := 
   λ hX, lt_of_le_of_ne (size_nonneg X) (λ h, hX (size_zero_bot h.symm))
 
-lemma size_strict_monotone {X Y : A} (hXY : X ⊂ Y) : size X < size Y := 
-  by {rw [size_induced_partition Y X, inter_comm, inter_subset_mp hXY.1], linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
+lemma size_strict_monotone {X Y : A} : X ⊂ Y → size X < size Y := 
+  λ hXY, by {rw [size_induced_partition Y X, inter_comm, inter_subset_mp hXY.1], 
+                linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
 
 lemma eq_of_eq_size_subset {X Y : A} : (X ⊆ Y) → (size X = size Y) → X = Y :=
   λ hXY, by {cases subset_ssubset_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, exact λ h', h}
@@ -565,20 +561,17 @@ lemma union_ssubsets (X : A) : 1 < size X  → ∃ Y Z : A, Y ⊂ X ∧ Z ⊂ X 
     linarith
   end
 
-lemma ssubset_to_compl {X Y : A} (hXY : X ⊂ Y) : Yᶜ ⊂ Xᶜ := 
-  ⟨subset_to_compl (hXY.1), λ h, hXY.2 (compl_inj h).symm⟩
+lemma ssubset_to_compl {X Y : A} : X ⊂ Y → Yᶜ ⊂ Xᶜ := 
+  λ h, ⟨subset_to_compl h.1, λ h', h.2 (compl_inj h').symm⟩
 
-lemma compl_to_ssubset {X Y : A} (hXY : Xᶜ ⊂ Yᶜ) : Y ⊂ X := 
-  by {have := ssubset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
+lemma compl_to_ssubset {X Y : A} : Xᶜ ⊂ Yᶜ → Y ⊂ X := 
+  λ h, by {have := ssubset_to_compl h, repeat {rw compl_compl at this}, exact this }
 
-lemma ssubset_compl_right {X Y : A} (hXY : X ⊂ Yᶜ) : Y ⊂ Xᶜ := 
-  by {rw [←compl_compl X] at hXY, exact compl_to_ssubset hXY}
+lemma ssubset_compl_right {X Y : A} : X ⊂ Yᶜ → Y ⊂ Xᶜ := 
+  λ h, by {rw [←compl_compl X] at h, exact compl_to_ssubset h}
 
-lemma ssubset_compl_left {X Y : A} (hXY : Xᶜ ⊂ Y) : Yᶜ ⊂ X := 
-  by {rw [←compl_compl Y] at hXY, exact compl_to_ssubset hXY}
-
---lemma ssubset_of_comp {X Y : A} (hXY : X ⊂ Yᶜ) : Y ⊂ X := 
-
+lemma ssubset_compl_left {X Y : A} : Xᶜ ⊂ Y → Yᶜ ⊂ X := 
+  λ h, by {rw [←compl_compl Y] at h, exact compl_to_ssubset h}
 
 -- Singles
 
@@ -587,67 +580,82 @@ def single (A : boolalg): Type := {X : A // size X = 1}
 instance coe_single {A : boolalg} : has_coe (single A) A := ⟨λ e, e.val⟩  
 
 def elem : (single A) → A → Prop := λ e X, (e:A) ⊆ X 
-def notelem : (single A) → A → Prop := λ e X, ¬elem e X 
+def nonelem : (single A) → A → Prop := λ e X, ¬elem e X 
 
 infix ∈ := elem 
-infix ∉ := notelem 
+infix ∉ := nonelem 
 
-@[simp] lemma notelem_simp {e : single A}{X : A}: ¬ (e ∈ X) ↔ e ∉ X := by refl  
+@[simp] lemma nonelem_simp {e : single A}{X : A}: 
+  ¬(e ∈ X) ↔ e ∉ X := by refl  
 
-lemma elem_iff (e : single A)(X : A) : e ∈ X ↔ (e:A) ⊆ X := 
+lemma elem_iff {e : single A}{X : A} :
+   e ∈ X ↔ (e:A) ⊆ X := 
   by unfold elem
 
-lemma notelem_iff (e : single A)(X : A) : e ∉ X ↔ ¬(e:A) ⊆ X := 
+lemma nonelem_iff {e : single A}{X : A} : 
+  e ∉ X ↔ ¬(e:A) ⊆ X := 
   by trivial 
 
-@[simp] lemma size_coe_single {A : boolalg} (e : single A) : size (e : A) = 1 := e.2 
+@[simp] lemma size_coe_single {A : boolalg} (e : single A) :
+   size (e : A) = 1 := e.2 
 
-lemma single_ne_bot (e : single A) : (e:A) ≠ ⊥ := 
+lemma single_ne_bot (e : single A) : 
+  (e:A) ≠ ⊥ := 
   λ h, by {have := size_coe_single e, rw [h,size_bot] at this, linarith}
 
-lemma single_nonelem_bot (e : single A) : e ∉ (⊥:A) := 
-  by {rw notelem_iff, intro h, replace h := size_monotone h, simp at h, linarith}
+lemma single_nonelem_bot (e : single A) : 
+  e ∉ (⊥:A) := 
+  by {rw nonelem_iff, intro h, replace h := size_monotone h, simp at h, linarith}
 
-lemma nonempty_has_elem {X : A}  : X ≠ ⊥ → ∃ e, e ∈ X := 
+lemma nonempty_has_elem {X : A}  : 
+  X ≠ ⊥ → ∃ e, e ∈ X := 
   λ hX, by {rcases single_subset_nonempty hX with ⟨Y,Z ,⟨hI,hU,h1⟩⟩, use ⟨Y,h1⟩, 
                 rw ←hU, exact subset_union_left Y Z}
 
-lemma nonempty_iff_has_elem {X : A} : X ≠ ⊥ ↔ ∃ e, e ∈ X :=
+lemma nonempty_iff_has_elem {X : A} : 
+  X ≠ ⊥ ↔ ∃ e, e ∈ X :=
   ⟨λ h, nonempty_has_elem h, λ h, λ hb, by {cases h with e he, rw hb at he, exact single_nonelem_bot e he}⟩ 
 
-
-
-lemma nested_singles_eq {e f: single A} (hef : (e: A) ⊆ (f :A)) : e = f :=
+lemma nested_singles_eq {e f: single A} :
+  (e: A) ⊆ (f :A) → e = f :=
   begin
-    ext, refine eq_of_eq_size_subset hef _,
+    intro hef, ext, refine eq_of_eq_size_subset hef _,
     calc _ = 1 :size_coe_single e ... = _: (size_coe_single f).symm, 
   end
 
-lemma nonelement_disjoint {e : single A} {X : A} (heX : e ∉ X) : (e:A) ∩ X = ⊥ :=
+lemma nonelem_disjoint {e : single A} {X : A}: 
+  e ∉ X → (e ∩ X :A) = ⊥ :=
   begin
-    by_contra, rcases nonempty_has_elem a with ⟨f,hf⟩, 
+    intro heX, by_contra, rcases nonempty_has_elem a with ⟨f,hf⟩, 
     rcases subset_of_inter_mp hf with ⟨hfe, hfx⟩, 
     rw nested_singles_eq hfe at hfx, exact heX hfx, 
   end
 
-lemma inter_distinct_singles {e f : single A} (hef : e ≠ f) : (e ∩ f :A) = ⊥ := 
-  by {apply nonelement_disjoint, exact λ h, hef (nested_singles_eq h)} 
+lemma nonelem_disjoint_iff {e : single A} {X : A}: 
+  e ∉ X ↔ (e ∩ X : A) = ⊥ := 
+  by {refine ⟨λ h, nonelem_disjoint h, λ h he, _⟩, rw [elem_iff, inter_subset] at he,  }
 
-lemma elem_compl_iff {X : A}{e : single A} : e ∈ Xᶜ ↔ e ∉ X := 
+lemma inter_distinct_singles {e f : single A}: 
+  e ≠ f → (e ∩ f : A) = ⊥ := 
+  λ hef, by {apply nonelem_disjoint, exact λ h, hef (nested_singles_eq h)} 
+
+lemma elem_compl_iff {X : A}{e : single A} :
+  e ∈ Xᶜ ↔ e ∉ X := 
   begin
     refine ⟨λ h, λ he, _, λ h, _⟩, 
     have := subset_of_inter_mpr  he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
-    have := nonelement_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
+    have := nonelem_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
   end
 
-
-lemma nonelem_compl_iff {X : A}{e : single A} : e ∉ Xᶜ ↔ e ∈ X  := 
+lemma nonelem_compl_iff {X : A}{e : single A} :
+   e ∉ Xᶜ ↔ e ∈ X  := 
   by {rw ←elem_compl_iff, rw [compl_compl]}
 
-lemma elem_union_iff {e : single A} {X Y : A} : e ∈ X ∪ Y ↔ e ∈ X ∨ e ∈ Y :=
+lemma elem_union_iff {e : single A} {X Y : A} : 
+  e ∈ X ∪ Y ↔ e ∈ X ∨ e ∈ Y :=
    begin 
      refine ⟨λ h, _, λ h, _⟩, by_contra, push_neg at a, 
-     repeat {rw [notelem_simp] at a, rw ←elem_compl_iff at a}, 
+     repeat {rw [nonelem_simp] at a, rw ←elem_compl_iff at a}, 
      have h' := subset_of_inter_mpr a.1 h, nth_rewrite 1 ←(compl_compl X) at h', 
      rw [inter_compl_union, inter_comm] at h', 
      exact single_ne_bot _ (subset_of_set_and_compl (subset_trans h' (inter_subset_left Y Xᶜ)) a.2),
@@ -655,10 +663,9 @@ lemma elem_union_iff {e : single A} {X Y : A} : e ∈ X ∪ Y ↔ e ∈ X ∨ e 
      exact subset_trans h (subset_union_right X Y)
    end
 
-
-lemma nonelem_inter_iff {e : single A} {X Y : A} : e ∉ X ∩ Y ↔ e ∉ X ∨ e ∉ Y := 
+lemma nonelem_inter_iff {e : single A} {X Y : A} :
+   e ∉ X ∩ Y ↔ e ∉ X ∨ e ∉ Y := 
   by rw [←elem_compl_iff, compl_inter, elem_union_iff, elem_compl_iff, elem_compl_iff] 
-
 
 lemma elem_diff_iff {e : single A}{X Y : A} : 
   e ∈ X - Y ↔ e ∈ X ∧ e ∉ Y :=
@@ -670,6 +677,8 @@ lemma elem_diff_iff {e : single A}{X Y : A} :
     rw [ ←elem_compl_iff, elem_iff, elem_iff] at h, exact h
   end
 
+ 
+ 
 
 lemma subset_iff_elems_contained {X Y : A} :
   X ⊆ Y ↔ ∀ e, e ∈ X → e ∈ Y := 
@@ -677,6 +686,23 @@ lemma subset_iff_elems_contained {X Y : A} :
     rw [←diff_bot_iff_subset, ←not_iff_not, (_: ¬(X - Y) = ⊥ ↔ X-Y ≠ ⊥),nonempty_iff_has_elem],
     simp_rw elem_diff_iff, rw not_forall, simp_rw not_imp, exact iff.rfl, exact iff.rfl, 
   end
+
+
+lemma elem_subset {X Y: A}{e : single A}:
+  X ⊆ Y → e ∈ X → e ∈ Y := 
+  λ h he, subset_iff_elems_contained.mp h e he 
+
+
+lemma nonelem_of_nonelem_diff {X Y : A}{e : single A} :
+  e ∉ X - Y → e ∉ Y → e ∉ X := 
+  λ hXY hY hX, by {rw ←elem_compl_iff at hY, have := subset_of_inter_mpr hX hY, 
+                                            rw ←diff_def at this,  exact hXY this }
+
+
+lemma nonelem_diff_of_nonelem {X : A}(Y : A){e : single A}: 
+  e ∉ X → e ∉ X-Y :=
+  by {repeat {rw nonelem_iff}, rw not_imp_not, exact elem_subset (diff_subset X Y)}
+
 
 lemma eq_iff_same_elems {X Y : A} :
   X = Y ↔ ∀ e, e ∈ X ↔ e ∈ Y :=
@@ -686,7 +712,10 @@ lemma eq_iff_same_elems {X Y : A} :
     rw subset_iff_elems_contained, exact λ e, (h e).mpr
   end
 
-lemma add_from_compl_ssubset {X : A} {e : single A} : e ∈ Xᶜ → X ⊂ X ∪ e := 
+
+
+lemma ssub_of_add_compl {X : A} {e : single A} : 
+  e ∈ Xᶜ → X ⊂ X ∪ e := 
   begin
      refine λ hXe, ⟨subset_union_left _ _, _⟩, intro h, rw [h, compl_union] at hXe, 
      have ebot := subset_trans hXe (inter_subset_right Xᶜ _), 
@@ -694,48 +723,63 @@ lemma add_from_compl_ssubset {X : A} {e : single A} : e ∈ Xᶜ → X ⊂ X ∪
      have := size_coe_single e, rw ←ebot at this, linarith [size_bot A], 
   end
 
-lemma add_nonelem_ssubset {X : A} {e : single A}: e ∉ X → X ⊂ X ∪ e := 
-  λ hXe, add_from_compl_ssubset (elem_compl_iff.mpr hXe)
+lemma ssub_of_add_nonelem {X : A} {e : single A}: 
+  e ∉ X → X ⊂ X ∪ e := 
+  λ hXe, ssub_of_add_compl (elem_compl_iff.mpr hXe)
 
-lemma elem_diff_ssubset {X Y : A} : X ⊂ Y → ∃ e, e ∈ Y - X :=
+lemma elem_diff_ssubset {X Y : A} : 
+  X ⊂ Y → ∃ e, e ∈ Y - X :=
   λ h, by {have := ssubset_diff_nonempty h, rw ←nonempty_iff_has_elem, assumption}
 
-lemma elem_only_larger_ssubset {X Y : A} : X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
+lemma elem_only_larger_ssubset {X Y : A} :
+  X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
   λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
 
-
-lemma add_compl_single_size {X : A} {e : single A} (hXe : e ∈ Xᶜ) : size (X ∪ e) = size X + 1 := 
+lemma add_compl_single_size {X : A} {e : single A} :
+  e ∈ Xᶜ → size (X ∪ e) = size X + 1 := 
 begin
-  have := size_modular X e, 
-  rw [inter_comm X, nonelement_disjoint (elem_compl_iff.mp hXe), size_coe_single, size_bot] at this, 
+  intro hXe, have := size_modular X e, 
+  rw [inter_comm X, nonelem_disjoint (elem_compl_iff.mp hXe), size_coe_single, size_bot] at this, 
   linarith, 
 end
 
-lemma add_nonelem_size {X : A} {e : single A}: e ∉ X →  size (X ∪ e) = size X + 1 := 
+lemma add_nonelem_size {X : A} {e : single A}: 
+  e ∉ X →  size (X ∪ e) = size X + 1 := 
   λ hXe, by {apply add_compl_single_size, exact elem_compl_iff.mpr hXe}
 
-lemma compl_single_remove {X : A} {e : single A} (heX : e ∈ X) : (X - e)ᶜ = Xᶜ ∪ e := 
-  by rw [diff_def, compl_inter, compl_compl]
+lemma compl_single_remove {X : A} {e : single A} : 
+  e ∈ X → (X - e)ᶜ = Xᶜ ∪ e := 
+  λ _, by rw [diff_def, compl_inter, compl_compl]
 
-lemma remove_add_single {X : A} {e : single A} (heX : e ∈ X) : (X-e) ∪ e = X := 
-  by {rw [elem_iff, union_subset,union_comm] at heX, 
-      rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
+lemma remove_add_single {X : A} {e : single A}: 
+  e ∈ X → (X-e) ∪ e = X := 
+  λ heX, by {rw [elem_iff, union_subset,union_comm] at heX, 
+             rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
    
-lemma remove_single_size {X :A}{e : single A} (heX : e ∈ X) : size (X - e) = size X - 1 := 
+lemma remove_single_size {X :A}{e : single A} :
+  e ∈ X → size (X - e) = size X - 1 := 
 begin
+  intro heX, 
   have h: e ∈ (X-e)ᶜ := by {rw compl_single_remove heX, apply subset_union_right}, 
   nth_rewrite 1 ←remove_add_single heX, linarith [add_compl_single_size h], 
 end
 
-lemma remove_single_ssubset {X : A} {e : single A} (heX : e ∈ X) : X - e ⊂ X := 
-  ⟨diff_subset _ _, λ h, by {have := remove_single_size heX, rw h at this, linarith }⟩
+lemma remove_single_subset (X : A) (e : single A) : 
+  X - e ⊆ X := 
+  diff_subset X e 
 
-lemma nonbot_single_removal {X : A} (hX : X ≠ ⊥) : ∃ Y :A, Y ⊂ X ∧ size Y = size X - 1 := 
-  by {cases nonempty_has_elem hX with e he, exact ⟨X-e, ⟨remove_single_ssubset he,remove_single_size he⟩ ⟩}
+lemma remove_single_ssubset {X : A} {e : single A} :
+  e ∈ X → X - e ⊂ X := 
+  λ heX, ⟨diff_subset _ _, λ h, by {have := remove_single_size heX, rw h at this, linarith}⟩
 
-lemma nontop_single_addition {X : A} (hX : X ≠ ⊤) : ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
+lemma nonbot_single_removal {X : A}:
+  X ≠ ⊥ → ∃ Y :A, Y ⊂ X ∧ size Y = size X - 1 := 
+  λ hX, by {cases nonempty_has_elem hX with e he, exact ⟨X-e, ⟨remove_single_ssubset he,remove_single_size he⟩ ⟩}
+
+lemma nontop_single_addition {X : A}:
+  X ≠ ⊤ → ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
   begin
-    rcases nonbot_single_removal (λ h, _ : Xᶜ ≠ ⊥) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
+    intro hX, rcases nonbot_single_removal (λ h, _ : Xᶜ ≠ ⊥) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
     refine ⟨Yᶜ , ⟨ssubset_compl_right h₁, _⟩⟩,
     linarith [size_compl X, size_compl Y], 
     exact hX (top_of_compl_bot h), 
@@ -748,9 +792,17 @@ lemma add_from_nonempty_diff {X Y : A} :
     cases nonempty_has_elem (ssubset_diff_nonempty h) with e he, use e, 
     exact ⟨(elem_diff_iff.mp he).2, union_of_subsets h.1 (subset_trans he (diff_subset _ _))⟩ ,  
     rcases h with ⟨e,⟨he1,he2⟩⟩, 
-    exact ssubset_subset_trans (add_nonelem_ssubset he1) he2,
+    exact ssubset_subset_trans (ssub_of_add_nonelem he1) he2,
   end
 
+
+lemma exchange_size {X : A}{e f : single A} : 
+  e ∈ X → f ∉ X → size ((X - e) ∪ f) = size X := 
+  λ he hf, by linarith [add_nonelem_size (nonelem_diff_of_nonelem (e:A) hf),remove_single_size he]
+
+lemma exchange_pair_sizes {X Y : A}{e f : single A}: 
+  size X = size Y → e ∈ X-Y → f ∈ Y-X → size ((X-e) ∪ f) = size ((Y-f) ∪ e) :=
+  λ h he hf, by {rw elem_diff_iff at he hf, rw [exchange_size hf.1 he.2, exchange_size he.1 hf.2], exact h}
 
 lemma size_union_distinct_singles {e f : single A}: 
   e ≠ f → size (e ∪ f :A) = 2 :=
@@ -922,7 +974,6 @@ structure iso (A B : boolalg) :=
 --  (0 ≤ size) → boolalg := sorry
 
 -- Construct a boolalg from a finite set S 
-
 def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg := 
 { 
   member := finset γ,
