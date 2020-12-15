@@ -64,7 +64,7 @@ variables {A : boolalg}
 @[simp] instance i9  : has_ssubset A := {ssubset := λ X Y, X ⊆ Y ∧ X ≠ Y}
 
 def size  (X : A) : ℤ := A.size X
-def sdiff  (X Y : A) : A := (X - Y) ∪ (Y - X)
+def symm_diff  (X Y : A) : A := (X - Y) ∪ (Y - X)
 
 
 -- Lemmas (some are just the axioms rewritten in terms of the notation to make linarith etc behave more nicely)
@@ -181,6 +181,18 @@ lemma size_nonneg (X : A) : 0 ≤ size X :=
 lemma contains_single (X : A) : X ≠ ⊥ → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
   A.contains_single_ax X 
   
+
+
+-- Associativity (In fact, this can be discarded eventually, but why bother?)
+
+lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
+  A.inter_assoc_ax X Y Z 
+
+lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
+  A.union_assoc_ax X Y Z 
+
+
+
 
 -- Subsets 
 
@@ -325,13 +337,32 @@ lemma compl_pair {X Y : A} : (Xᶜ = Y) → (X = Yᶜ) :=
 lemma compl_diff (X Y : A) : (X - Y)ᶜ = Xᶜ ∪ Y := 
   by {dunfold has_sub.sub, rw [compl_inter, compl_compl]}
   
--- Associativity (In fact, this can be discarded eventually, but why bother?)
 
-lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
-  A.inter_assoc_ax X Y Z 
+----------------------------------------------
 
-lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
-  A.union_assoc_ax X Y Z 
+
+lemma symm_diff_three (X Y Z : A) : symm_diff (symm_diff X Y) Z = X ∩ Yᶜ ∩ Zᶜ ∪ Y ∩ Xᶜ ∩ Zᶜ ∪ (Z ∩ (Xᶜ ∩ Yᶜ) ∪ Z ∩ (Y ∩ X)) :=
+begin
+  unfold symm_diff has_sub.sub, 
+  repeat {rw inter_distrib_right},
+  rw [compl_union, compl_inter, compl_inter, compl_compl, compl_compl], 
+  repeat {rw inter_distrib_left},
+  repeat {rw inter_distrib_right},
+  rw [inter_compl Y, inter_comm Xᶜ X, inter_compl X, bot_union, union_bot]
+end
+
+lemma symm_diff_comm (X Y : A) : symm_diff X Y = symm_diff Y X := 
+  by {unfold symm_diff, rw union_comm}
+
+
+lemma symm_diff_assoc (X Y Z : A) : symm_diff (symm_diff X Y) Z = symm_diff X (symm_diff Y Z) := 
+begin
+  rw [symm_diff_three, symm_diff_comm, symm_diff_three],
+  rw [inter_comm Y Xᶜ, inter_comm Z, inter_comm Z, inter_comm Y X], 
+end
+
+-----------------------------------------------
+
 
 lemma subset_to_compl {X Y : A} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
   λ hXY, by {rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
