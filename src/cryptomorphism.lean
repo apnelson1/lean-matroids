@@ -219,7 +219,7 @@ lemma C_to_I2 (M : cct_family U) :
 
 lemma new_circuit_contains_new_elem_C {M : cct_family U}{I C : U}{e : single U}:
   C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
-  λ hI hCIe hC, by {by_contra he, exact hI C (subset_of_subset_addition hCIe he) hC}
+  λ hI hCIe hC, by {by_contra he, exact hI C (subset_add_nonelem_imp_subset hCIe he) hC}
 
 lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
   C_to_I M I → ¬C_to_I M (I ∪ e) → ∃! C, M.cct C ∧ C ⊆ I ∪ e :=
@@ -230,29 +230,68 @@ lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
                                 (new_circuit_contains_new_elem_C hI hC'.2 hC'.1),
     by_contra hCC', 
     cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
-    have : C ∪ C' - e ⊆ I := by {refine subset_of_subset_addition  (_ : e ∉ C ∪ C') (_ : C ∪ C' ⊆ I ∪ e), }
-
-
+    exact hI _ (subset_trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
   end 
+
+lemma add_elem_le_one_circuit_C {M : cct_family U} {I C C': U} (e : single U):
+  C_to_I M I → (M.cct C ∧ C ⊆ I ∪ e) → (M.cct C' ∧ C' ⊆ I ∪ e) → C = C' :=
+  begin
+    intros hI hC hC', 
+    by_cases h': C_to_I M (I ∪ e), 
+    exfalso, exact h' _ hC.2 hC.1,
+    rcases (add_elem_unique_circuit_C hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
+    exact eq.trans (hC₀ _ hC) (hC₀ _ hC').symm, 
+  end
 
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
   begin
+    -- I3 states that there are no bad pairs 
+    let bad_pair : U → U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ e, e ∈ J-I → ¬C_to_I M (I ∪ e), 
+    suffices : ∀ I J, ¬bad_pair I J, 
+      push_neg at this, exact λ I J hIJ hI hJ, this I J hIJ hI hJ,
+    by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
     
-    intros I J hIJ hI hJ, by_contra h, push_neg at h, 
-    let P_counterex : U → Prop := λ K, C_to_I M K ∧ ∀ e, e ∈ K-I → ¬C_to_I M (I ∪ e), 
+    --choose a bad pair with D = I-J minimal
+    let bad_pair_diff : U → Prop := λ D, ∃ I J, bad_pair I J ∧ I-J = D, 
+    have hD₀ : bad_pair_diff (I₀ - J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
+    rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
+    rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
+    rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
+    ------------------
+    have hJI_nonbot : size (J - I) > 0 := by 
+      {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I-J), hsIJ, size_induced_partition J I]},
+    
+    have hIJ_nonbot : I - J ≠ ⊥ := by 
+    {
+      intro h, rw diff_bot_iff_subset at h, 
+      cases size_gt_zero_has_elem hJI_nonbot with e he,
+      refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
+      exact union_of_subsets h (subset_trans he (diff_subset _ _)), 
+    },
 
-    rcases maximal_example P_counterex ⟨hJ, h⟩ with ⟨J₁, hJJ₁, ⟨hJ₁, hJ₁max⟩⟩, 
-    clear h hJ, 
-    have J_max_ind : ∀ e, e ∈ I - J → ∃ C, M.cct C ∧ C ⊆ J ∪ e :=
-    begin
-      by_contra hc, push_neg at hc, rcases hc with ⟨e, ⟨heIJ, heJind⟩⟩ , 
-      
-    end
-    --unfold C_to_I at h, 
-    --have : ∀ e, e ∈ J-I → ∃ C f, f ∈ I-J ∧ M.cct C ∧ e ∈ C ∧ f ∈ C
+    cases nonempty_has_elem hIJ_nonbot with e he, -- choose e from I -J
+
+    have : ∃ f, f ∈ J-I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
+    {
+        have := add_elem_le_one_circuit_C e hJ, 
+
+
+        by_cases hJe : C_to_I M (J ∪ e) ,
+        
+        cases size_gt_zero_has_elem hJI_nonbot with f hf, 
+        refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
+        exact (hJe _ hCJe) hC,
+
+
+    },
+
+
+
+
     
-    
+
+
   end 
 
   --  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)

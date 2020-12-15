@@ -3,7 +3,6 @@ namespace boolalg
 -- Singles
 local attribute [instance] classical.prop_decidable
 
-
 variables {A : boolalg}
 
 def single (A : boolalg): Type := {X : A // size X = 1}
@@ -38,6 +37,10 @@ lemma single_nonelem_bot (e : single A) :
   e ∉ (⊥:A) := 
   by {rw nonelem_iff, intro h, replace h := size_monotone h, simp at h, linarith}
 
+lemma single_nonelem_compl (e : single A) :
+  e ∉ (e:A)ᶜ := 
+  λ h, single_ne_bot e (subset_own_compl h)
+
 lemma nonempty_has_elem {X : A}  : 
   X ≠ ⊥ → ∃ e, e ∈ X := 
   λ hX, by {rcases single_subset_nonempty hX with ⟨Y,Z ,⟨hI,hU,h1⟩⟩, use ⟨Y,h1⟩, 
@@ -46,6 +49,14 @@ lemma nonempty_has_elem {X : A}  :
 lemma nonempty_iff_has_elem {X : A} : 
   X ≠ ⊥ ↔ ∃ e, e ∈ X :=
   ⟨λ h, nonempty_has_elem h, λ h, λ hb, by {cases h with e he, rw hb at he, exact single_nonelem_bot e he}⟩ 
+
+lemma size_gt_zero_has_elem {X : A}: 
+  0 < size X → ∃ e, e ∈ X := 
+  sorry
+
+lemma size_gt_zero_iff_has_elem {X : A}: 
+  0 < size X ↔ ∃ e, e ∈ X := 
+  sorry
 
 lemma nested_singles_eq {e f: single A} :
   (e: A) ⊆ (f :A) → e = f :=
@@ -245,7 +256,6 @@ lemma add_from_nonempty_diff {X Y : A} :
     rcases h with ⟨e,⟨he1,he2⟩⟩, 
     exact ssubset_subset_trans (ssub_of_add_nonelem he1) he2,
   end
-
 
 lemma exchange_size {X : A}{e f : single A} : 
   e ∈ X → f ∉ X → size ((X - e) ∪ f) = size X := 
