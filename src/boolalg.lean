@@ -680,9 +680,6 @@ lemma elem_diff_iff {e : single A}{X Y : A} :
     rw [ ←elem_compl_iff, elem_iff, elem_iff] at h, exact h
   end
 
- 
- 
-
 lemma subset_iff_elems_contained {X Y : A} :
   X ⊆ Y ↔ ∀ e, e ∈ X → e ∈ Y := 
   begin
@@ -715,7 +712,26 @@ lemma eq_iff_same_elems {X Y : A} :
     rw subset_iff_elems_contained, exact λ e, (h e).mpr
   end
 
+lemma nonelem_removal (X : A)(e : single A) :
+  e ∉ X - e := 
+  λ h, by {rw [diff_def] at h, }
 
+lemma subset_of_removal {X Y : A}{e : single A} :
+  X ⊆ Y → e ∉ X → X ⊆ Y - e :=
+  λ hXY heX, by {rw [diff_def], rw [←elem_compl_iff] at heX, exact subset_of_inter_mpr hXY (subset_compl_right heX)}
+
+
+--lemma removal_subset_of {X Y : A}{e : single A} :
+--  X ⊆ Y → 
+
+lemma subset_add_nonelem_imp_subset {X Y: A}{e : single A} :
+  X ⊆ Y ∪ e → e ∉ X → X ⊆ Y :=
+  λ hXY heX, by {sorry }
+
+
+lemma removal_subset_of {X Y : A}{e : single A} :
+  X ⊆ Y ∪ e → X-e ⊆ Y :=
+  λ h, by {have := subset_add_nonelem_imp_subset h (), }
 
 lemma ssub_of_add_compl {X : A} {e : single A} : 
   e ∈ Xᶜ → X ⊂ X ∪ e := 
@@ -754,17 +770,21 @@ lemma compl_single_remove {X : A} {e : single A} :
   e ∈ X → (X - e)ᶜ = Xᶜ ∪ e := 
   λ _, by rw [diff_def, compl_inter, compl_compl]
 
-lemma remove_add_single {X : A} {e : single A}: 
+lemma remove_add_elem {X : A} {e : single A}: 
   e ∈ X → (X-e) ∪ e = X := 
   λ heX, by {rw [elem_iff, union_subset,union_comm] at heX, 
              rw [diff_def, union_distrib_right, union_compl_left, inter_top, heX]}
    
+lemma add_remove_nonelem {X : A} {e : single A}: 
+  e ∉ X → (X ∪ e) - e = X := 
+  λ heX, by {sorry}
+
 lemma remove_single_size {X :A}{e : single A} :
   e ∈ X → size (X - e) = size X - 1 := 
 begin
   intro heX, 
   have h: e ∈ (X-e)ᶜ := by {rw compl_single_remove heX, apply subset_union_right}, 
-  nth_rewrite 1 ←remove_add_single heX, linarith [add_compl_single_size h], 
+  nth_rewrite 1 ←remove_add_elem  heX, linarith [add_compl_single_size h], 
 end
 
 lemma remove_single_subset (X : A) (e : single A) : 

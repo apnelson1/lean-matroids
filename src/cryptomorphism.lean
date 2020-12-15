@@ -198,7 +198,7 @@ def satisfies_C2 : (U → Prop) → Prop :=
   λ is_cct, ∀ C₁ C₂, is_cct C₁ → is_cct C₂ → ¬(C₁ ⊂ C₂)
 
 def satisfies_C3 : (U → Prop) → Prop := 
-  λ is_cct, ∀ C₁ C₂ e, is_cct C₁ → is_cct C₂ → e ∈ (C₁ ∩ C₂) → ∃ C₀ , is_cct C₀ ∧ C₀ ⊆ (C₁ ∪ C₂ - e)
+  λ is_cct, ∀ C₁ C₂ e, C₁ ≠ C₂ → is_cct C₁ → is_cct C₂ → e ∈ (C₁ ∩ C₂) → ∃ C₀ , is_cct C₀ ∧ C₀ ⊆ (C₁ ∪ C₂ - e)
 
 @[ext] structure cct_family (U : boolalg) :=
   (cct : U → Prop)
@@ -216,6 +216,25 @@ lemma C_to_I1 (M : cct_family U) :
 lemma C_to_I2 (M : cct_family U) :
   satisfies_I2 (C_to_I M) :=
   λ I J hIJ hJ X hXI, hJ _ (subset_trans hXI hIJ)
+
+lemma new_circuit_contains_new_elem_C {M : cct_family U}{I C : U}{e : single U}:
+  C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
+  λ hI hCIe hC, by {by_contra he, exact hI C (subset_of_subset_addition hCIe he) hC}
+
+lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
+  C_to_I M I → ¬C_to_I M (I ∪ e) → ∃! C, M.cct C ∧ C ⊆ I ∪ e :=
+  begin
+    intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
+    rcases hIe with ⟨C, ⟨hCI, hC⟩⟩, refine ⟨C,⟨⟨hC,hCI⟩,λ C' hC', _⟩⟩,
+    have := subset_of_inter_mpr (new_circuit_contains_new_elem_C hI hCI hC) 
+                                (new_circuit_contains_new_elem_C hI hC'.2 hC'.1),
+    by_contra hCC', 
+    cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
+    have : C ∪ C' - e ⊆ I := by {refine subset_of_subset_addition  (_ : e ∉ C ∪ C') (_ : C ∪ C' ⊆ I ∪ e), }
+
+
+  end 
+
 
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=

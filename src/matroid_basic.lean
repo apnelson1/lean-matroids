@@ -525,7 +525,6 @@ lemma not_indep_iff_r {M : rankfun U} {X : U}:
   ¬is_indep M X ↔ M.r X < size X := 
   by rw [←dep_iff_not_indep, dep_iff_r]
 
-
 lemma coindep_iff_r {M : rankfun U} {X : U} :
   is_indep (dual M) X ↔ (M.r Xᶜ = M.r ⊤) := 
   by {unfold is_coindep is_indep dual, simp only [], split; {intros h, linarith}}
