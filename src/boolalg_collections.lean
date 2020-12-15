@@ -35,11 +35,11 @@ lemma down_closed_iff_negation_up_closed (P : A → Prop) :
 
 lemma contains_min {P : A → Prop} {X : A}:
   P X → ∃ Y, Y ⊆ X ∧ is_minimal P Y := 
-  minimal_example P X 
+  minimal_example P 
 
 lemma max_contains {P : A → Prop} {X : A}:
   P X → ∃ Y, X ⊆ Y ∧ is_maximal P Y :=  
-  maximal_example P X
+  maximal_example P
 
 -- Union/Intersection-closed collections of sets
 
@@ -107,7 +107,7 @@ lemma min_of_inter_closed_is_lb {P : A → Prop}(h : inter_closed P):
   is_lb P (min_of_inter_closed h) :=
   begin
     intros X hX, rcases contains_min hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,  
-    rw inter_closed_min_unique P h _ _  hY₂ ((classical.some_spec (inter_closed_exists_min P h))) at hY₁, exact hY₁, , 
+    rw inter_closed_min_unique P h _ _  hY₂ ((classical.some_spec (inter_closed_exists_min P h))) at hY₁, exact hY₁, 
   end
 
 lemma is_min_of_inter_closed {P : A → Prop}(h : inter_closed P) {X : A}:
@@ -168,7 +168,7 @@ lemma lb_union_closed (P : A → Prop) :
 
 lemma ub_inter_closed (P : A → Prop) : 
   inter_closed (λ X, is_ub P X) := 
-  ⟨λ Z hZ, subset_top Z, λ X Y hX hY, λ Z hZ, inter_of_supsets (hX Z hZ) (hY Z hZ)⟩
+  ⟨λ Z hZ, subset_top Z, λ X Y hX hY, λ Z hZ, subset_of_inter_mpr (hX Z hZ) (hY Z hZ)⟩
 
 
 def inter_all (P : A → Prop) : A := max_of_union_closed (lb_union_closed P)

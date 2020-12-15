@@ -234,8 +234,7 @@ lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
 
 
   end 
-
-
+  
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
   begin
