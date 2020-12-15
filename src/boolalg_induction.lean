@@ -175,7 +175,7 @@ lemma maximal_example (P : A → Prop){X : A}:
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   begin
     intro h, rw ←compl_compl X at h, 
-    rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩ ⟩, 
+    rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩, 
     use Yᶜ, refine ⟨subset_compl_right hY₁, hY₂,λ Z hZ, _⟩,  
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
@@ -185,10 +185,16 @@ lemma maximal_example (P : A → Prop){X : A}:
 
 end /-section-/ strong_induction
 
+section pigeonhole 
+
+variables {U : boolalg}
+
+lemma pigeonhole {A B : U}(φ : {x : single U // x ∈ A } → {x : single U // x ∈ B}) : 
+  size B < size A → ∃ (a a' : {x : single U // x ∈ A}), φ a = φ a' := sorry 
 
 
 
-
+end pigeonhole
 
 
 

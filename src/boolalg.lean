@@ -469,6 +469,9 @@ lemma size_strict_monotone {X Y : A} : X ⊂ Y → size X < size Y :=
 lemma eq_of_eq_size_subset {X Y : A} : (X ⊆ Y) → (size X = size Y) → X = Y :=
   λ hXY, by {cases subset_ssubset_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, exact λ h', h}
 
+lemma eq_of_ge_size_subset {X Y : A} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
+  λ hXY hXY', by {apply eq_of_eq_size_subset hXY, exact le_antisymm (size_monotone hXY) hXY'}
+
 lemma size_eq_of_supset {X Y : A} : (X ⊆ Y) → (size Y ≤ size X) → size X = size Y := 
   λ hss hs, by linarith[size_monotone hss]
 
