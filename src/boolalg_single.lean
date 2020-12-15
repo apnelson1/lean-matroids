@@ -293,4 +293,8 @@ lemma ssubset_pair {e f : single A}{X : A}:
     rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
   end
 
+lemma equal_or_singleton_in_diff {X Y : A} :
+  size X = size Y → X = Y ∨ ∃ e, e ∈ X - Y :=
+  sorry
+
 end boolalg 
