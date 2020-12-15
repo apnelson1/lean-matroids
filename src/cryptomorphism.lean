@@ -1,5 +1,5 @@
 
-import rankfun boolalg boolalg_induction  boolalg_collections tactic.wlog matroid_basic
+import rankfun boolalg boolalg_induction boolalg_single boolalg_collections tactic.wlog matroid_basic
 open boolalg 
 
 local attribute [instance] classical.prop_decidable
@@ -234,7 +234,7 @@ lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
 
 
   end 
-  
+
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
   begin

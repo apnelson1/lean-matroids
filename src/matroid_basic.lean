@@ -10,7 +10,7 @@ Then deletion and contraction are instances of these maps
 And a sequence of deletions and contractions with disjoint arguments can be composed
 -/
 
-import rankfun boolalg boolalg_induction  boolalg_collections tactic.wlog
+import rankfun boolalg boolalg_single boolalg_examples boolalg_induction boolalg_collections tactic.wlog
 open boolalg 
 --open boolalg_induction 
 
@@ -171,7 +171,7 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
   begin
     ext X, 
     have set_eq : A ∪ Zᶜ - A = ⊤ - Z := by {simp, unfold has_sub.sub, rw [inter_distrib_right, inter_compl,bot_union, ←compl_union, union_comm, union_subset_mp hAZ]}, 
-    have RHS : (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_top self)) M).r X = M.r (f X ∪ (A ∪ Zᶜ - A)) - M.r (A ∪ Zᶜ - A) := rfl, 
+    have RHS : (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_top self)) M).r X = M.r (f X ∪ (A ∪ Zᶜ - A)) - M.r (A ∪ Zᶜ - A) := by refl, 
     rw set_eq at RHS, 
     exact RHS.symm, 
   end
@@ -652,7 +652,7 @@ lemma dep_iff_contains_circuit {M : rankfun U} (X : U) :
   is_dep M X ↔ ∃ C, is_circuit M C ∧ C ⊆ X := 
   begin
     refine ⟨λ h, _, λ h, _ ⟩, 
-    rcases (minimal_example _ X h) with ⟨Z,⟨h₁Z,h₂Z, h₃Z⟩⟩, 
+    rcases (minimal_example _ h) with ⟨Z,⟨h₁Z,h₂Z, h₃Z⟩⟩, 
     refine ⟨Z, ⟨⟨h₂Z, (λ Y hY, _)⟩, h₁Z⟩⟩, 
     rw indep_iff_not_dep, exact h₃Z Y hY,  
     cases h with C hC, exact dep_subset hC.2 hC.1.1, 

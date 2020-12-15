@@ -1,6 +1,6 @@
 
 
-import boolalg
+import boolalg boolalg_examples 
 
 namespace boolalg
 
