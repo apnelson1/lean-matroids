@@ -88,7 +88,6 @@ lemma bot_to_boolalg : (⊥ : A) = (0 : A)
 lemma symm_diff_to_boolalg {X Y : A} :  (X - Y) ∪ (Y-X) = X + Y :=
   rfl 
 
-
 lemma inter_to_boolalg {X Y : A} : X ∩ Y = X * Y := 
   rfl 
 

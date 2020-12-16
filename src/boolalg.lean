@@ -71,7 +71,7 @@ def symm_diff  (X Y : A) : A := (X - Y) ∪ (Y - X)
 
 -- Commutativity
 
-lemma inter_comm (X Y : A) : (X ∩ Y = Y ∩ X) := 
+@[simp] lemma inter_comm (X Y : A) : (X ∩ Y = Y ∩ X) := 
   A.inter_comm_ax X Y
 
 lemma union_comm (X Y : A) : (X ∪ Y = Y ∪ X) := 
@@ -184,7 +184,7 @@ lemma contains_single (X : A) : X ≠ ⊥ → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
 
 -- Associativity (In fact, this can be discarded eventually, but why bother?)
 
-lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
+@[simp] lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
   A.inter_assoc_ax X Y Z 
 
 lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
@@ -348,11 +348,6 @@ lemma compl_diff (X Y : A) : (X - Y)ᶜ = Xᶜ ∪ Y :=
 @[simp] lemma inter_union_compl (X Y : A) : X ∩ (Y ∪ Yᶜ) = X :=
   by rw [union_compl, inter_top]
 
-
-
-  
-
-
 lemma subset_to_compl {X Y : A} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
   λ hXY, by {rw inter_subset at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
 
@@ -374,6 +369,10 @@ lemma subset_of_compl_iff_disjoint {X Y: A} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ :=
 
 lemma subset_own_compl {X : A} : X ⊆ Xᶜ → X = ⊥ := 
   λ h, by {rw [union_subset,union_compl, ←compl_bot, compl_inj_iff] at h, rw ←h }
+----
+
+lemma foo {X Y: A} : Xᶜ ∩ Y ∩ X = ⊥ :=
+  by {simp}
 
 -- Unions/Inters of triples 
 
@@ -480,7 +479,7 @@ lemma size_disjoint_sum {X Y : A} (hXY: X ∩ Y = ⊥) : size (X ∪ Y) = size X
   by {have := size_modular X Y, rw [hXY, size_bot] at this, linarith}
 
 lemma size_induced_partition (X Y : A) : size X = size (X ∩ Y) + size (X-Y) := 
-  by {nth_rewrite 0 diff_union X Y,refine size_disjoint_sum _, apply partition_inter}
+  by {nth_rewrite 0 ←diff_union X Y, refine size_disjoint_sum _, apply partition_inter}
 
 lemma size_compl_sum (X : A) : size X + size Xᶜ = size (⊤ : A) := 
   by {have := size_disjoint_sum (inter_compl X), rw (union_compl X) at this, linarith}
