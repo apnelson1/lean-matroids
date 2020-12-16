@@ -71,7 +71,7 @@ def symm_diff  (X Y : A) : A := (X - Y) ∪ (Y - X)
 
 -- Commutativity
 
-@[simp] lemma inter_comm (X Y : A) : (X ∩ Y = Y ∩ X) := 
+lemma inter_comm (X Y : A) : (X ∩ Y = Y ∩ X) := 
   A.inter_comm_ax X Y
 
 lemma union_comm (X Y : A) : (X ∪ Y = Y ∪ X) := 
@@ -184,7 +184,7 @@ lemma contains_single (X : A) : X ≠ ⊥ → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
 
 -- Associativity (In fact, this can be discarded eventually, but why bother?)
 
-@[simp] lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
+lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
   A.inter_assoc_ax X Y Z 
 
 lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 

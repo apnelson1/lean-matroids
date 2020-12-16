@@ -79,11 +79,11 @@ lemma one_plus (X : A) : 1 + X = Xᶜ :=
 lemma plus_one (X : A) : X + 1 = Xᶜ := 
   by {rw add_comm, from one_plus X} 
 
-lemma top_to_boolalg : (⊤ : A) = (1 : A) 
-  := rfl
+lemma top_to_boolalg : (⊤ : A) = (1 : A) := 
+  rfl
 
-lemma bot_to_boolalg : (⊥ : A) = (0 : A) 
-  := rfl
+lemma bot_to_boolalg : (⊥ : A) = (0 : A):= 
+  rfl
 
 lemma symm_diff_to_boolalg {X Y : A} :  (X - Y) ∪ (Y-X) = X + Y :=
   rfl 
@@ -91,14 +91,12 @@ lemma symm_diff_to_boolalg {X Y : A} :  (X - Y) ∪ (Y-X) = X + Y :=
 lemma inter_to_boolalg {X Y : A} : X ∩ Y = X * Y := 
   rfl 
 
-
-
 lemma union_to_boolalg {X Y : A} : X ∪ Y = (X + Y) + X*Y := 
   begin 
     rw [add_assoc], 
     nth_rewrite 1 ←one_mul Y, 
     rw [←right_distrib, one_plus, ←symm_diff_to_boolalg, ←inter_to_boolalg, diff_def, diff_def, inter_right_comm, compl_inter],
-    simp
+    simp,
   end 
 
 lemma compl_to_boolalg {X : A} : Xᶜ = X + 1 := 
@@ -110,26 +108,34 @@ lemma subset_to_boolalg {X Y : A} : X ⊆ Y ↔ X*Y = X :=
 lemma diff_to_boolalg {X Y : A} : X - Y = X*(Y + 1) := 
   by rw [plus_one, ←inter_to_boolalg, diff_def]
 
-lemma two_eq_zero_boolalg : (2 : A) = (0 : A) := 
+@[simp] lemma two_eq_zero_boolalg : (2 : A) = (0 : A) := 
   begin
     have : (1:A) + (1:A) = (2:A) := rfl, rw ←this,
-    rw one_plus, unfold has_one.one,  
+    rw [one_plus, ←top_to_boolalg, ←bot_to_boolalg],
+    simp, 
   end
 
-lemma mult_idem_boolalg (X : A): X*X = X := sorry
+@[simp] lemma mult_idem_boolalg (X : A): X*X = X := 
+  inter_idem X
 -- X ⊆ Y ↔ (X ∩ Y = X)
+
+@[simp] lemma mult_comm (X Y : A): X*Y = Y*X := mul_comm X Y
+@[simp] lemma mult_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
+@[simp] lemma plus_comm (X Y : A): X+Y=Y+X := add_comm X Y
+@[simp] lemma plus_assoc (X Y Z : A): X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
+
+@[simp] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := sorry 
+@[simp] lemma plus_self (X : A): X + X = 0 := sorry 
+@[simp] lemma plus_self_left (X Y : A): X + (X + Y )= Y := sorry 
+lemma one_side (X Y : A) : X = Y ↔ X + Y = 0 := sorry 
 
 
 lemma blah {X Y : A} : X ⊆ Y → X ∪ (Y - X) = Y  := 
   begin
-     repeat {try {rw union_to_boolalg} , try {rw subset_to_boolalg}, rw diff_to_boolalg }, 
-     intro h, 
-     have := two_eq_zero_boolalg, 
-     have := mult_idem_boolalg X, 
-     --intro h, 
-     ring SOP, 
-     rw [h,this],
-     ring SOP,  
      
+     simp only [top_to_boolalg, bot_to_boolalg, symm_diff_to_boolalg, inter_to_boolalg, union_to_boolalg, 
+                diff_to_boolalg, compl_to_boolalg, subset_to_boolalg],
+     intro h,  rw one_side, 
+     ring SOP, simp, rw h, simp,   
      --repeat {rw this, rw h, ring_exp}, 
   end
