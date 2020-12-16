@@ -1,4 +1,5 @@
 import boolalg
+import init.meta.interactive_base
 
 open boolalg 
 
@@ -72,7 +73,6 @@ lemma top_symm_diff (X : A) :
 }
 
 
-
 lemma one_plus (X : A) : 1 + X = Xᶜ := 
   top_symm_diff X 
 
@@ -108,6 +108,7 @@ lemma subset_to_boolalg {X Y : A} : X ⊆ Y ↔ X*Y = X :=
 lemma diff_to_boolalg {X Y : A} : X - Y = X*(Y + 1) := 
   by rw [plus_one, ←inter_to_boolalg, diff_def]
 
+
 @[simp] lemma two_eq_zero_boolalg : (2 : A) = (0 : A) := 
   begin
     have : (1:A) + (1:A) = (2:A) := rfl, rw ←this,
@@ -115,27 +116,57 @@ lemma diff_to_boolalg {X Y : A} : X - Y = X*(Y + 1) :=
     simp, 
   end
 
-@[simp] lemma mult_idem_boolalg (X : A): X*X = X := 
-  inter_idem X
--- X ⊆ Y ↔ (X ∩ Y = X)
+mk_simp_attribute bla "blalg"
 
-@[simp] lemma mult_comm (X Y : A): X*Y = Y*X := mul_comm X Y
-@[simp] lemma mult_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
-@[simp] lemma plus_comm (X Y : A): X+Y=Y+X := add_comm X Y
-@[simp] lemma plus_assoc (X Y Z : A): X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
+@[simp, bla] lemma plus_zero (X : A): X+0 = X := add_zero X 
+@[simp, bla] lemma zero_plus (X : A): 0+X = X := zero_add X   
+@[simp, bla] lemma times_zero (X : A): X*0 = 0 := inter_bot X 
+@[simp, bla] lemma zero_times (X : A): 0*X = 0 := bot_inter X
+@[simp, bla] lemma times_one (X : A): X*1 = X := inter_top X 
+@[simp, bla] lemma one_times (X : A): 1*X = X := top_inter X 
+@[simp, bla] lemma mult_comm (X Y : A): X*Y = Y*X := mul_comm X Y
+@[simp, bla] lemma mult_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
+@[simp, bla] lemma plus_comm (X Y : A): X+Y=Y+X := add_comm X Y
+@[simp, bla] lemma plus_assoc (X Y Z : A): X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
 
-@[simp] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := sorry 
-@[simp] lemma plus_self (X : A): X + X = 0 := sorry 
-@[simp] lemma plus_self_left (X Y : A): X + (X + Y )= Y := sorry 
-lemma one_side (X Y : A) : X = Y ↔ X + Y = 0 := sorry 
+@[simp, bla] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := 
+  by rw [←mul_assoc, mult_idem_boolalg]
+@[simp, bla] lemma plus_self (X : A): X + X = 0 := 
+  by {rw [←mul_one X], sorry}
+@[simp, bla] lemma plus_self_left (X Y : A): X + (X + Y )= Y := sorry 
+@[simp, bla] lemma power_cancel (X : A) (n : nat) : X^(n.succ) = X := sorry
 
+
+@[simp, bla] lemma plus_cancel (n : nat) : (n.succ.succ : A) = (n:A) := sorry 
+
+@[simp, bla] lemma one_sandwich (X : A): 1 + (X+1) = X := sorry 
+
+
+@[simp, bla] lemma mult_idem_boolalg (X : A): X*X = X := inter_idem X 
+
+
+lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 := sorry 
+
+meta def set_to_ring_eqn : tactic unit := do
+`[try {simp only
+    [top_to_boolalg, bot_to_boolalg, symm_diff_to_boolalg, inter_to_boolalg, union_to_boolalg, 
+      diff_to_boolalg, compl_to_boolalg, subset_to_boolalg] at *}]
+
+meta def normalize_boolalg_eqns : tactic unit := do
+  `[set_to_ring_eqn,
+    try {apply one_side.mpr},
+    ring SOP]
+meta def simp_only_bla : tactic unit :=
+  do `[simp only with bla]
+meta def simp_bla : tactic unit :=
+  do `[simp with bla]
+meta def simp_bla_hyp : tactic unit :=
 
 lemma blah {X Y : A} : X ⊆ Y → X ∪ (Y - X) = Y  := 
   begin
-     
-     simp only [top_to_boolalg, bot_to_boolalg, symm_diff_to_boolalg, inter_to_boolalg, union_to_boolalg, 
-                diff_to_boolalg, compl_to_boolalg, subset_to_boolalg],
-     intro h,  rw one_side, 
-     ring SOP, simp, rw h, simp,   
+    intro h,
+    normalize_boolalg_eqns, 
+    simp_bla,
+    normalize_boolalg_eqns,
      --repeat {rw this, rw h, ring_exp}, 
   end
