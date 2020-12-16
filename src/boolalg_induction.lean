@@ -189,9 +189,6 @@ section pigeonhole
 
 variables {U : boolalg}
 
-lemma pigeonhole {A B : U}(φ : {x : single U // x ∈ A } → {x : single U // x ∈ B}) : 
-  size B < size A → ∃ (a a' : {x : single U // x ∈ A}), φ a = φ a' := sorry 
-
 
 
 end pigeonhole

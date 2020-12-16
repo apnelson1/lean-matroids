@@ -307,6 +307,9 @@ lemma inter_union_compl_inter (X Y : A) : (X ∪ Y) ∩ (Xᶜ ∩ Yᶜ) = ⊥ :=
 lemma union_inter_compl_union  (X Y : A) : (X ∩ Y) ∪ (Xᶜ ∪ Yᶜ) = ⊤ := 
   by rw [union_distrib_right X Y, union_compl_union, union_comm Xᶜ, union_compl_union, inter_idem]
 
+lemma union_subset_pairs {X₁ X₂ Y₁ Y₂ : A} : X₁ ⊆ X₂ → Y₁ ⊆ Y₂ → X₁ ∪ X₂ ⊆ Y₁ ∪ Y₂ :=
+  sorry 
+
 lemma compl_inter (X Y : A) : (X ∩ Y)ᶜ = Xᶜ ∪ Yᶜ := 
   eq.symm (compl_unique (union_inter_compl_union X Y) (inter_union_compl_union X Y))
 
@@ -410,8 +413,8 @@ lemma partition_inter (X Y : A) : (X ∩ Y) ∩ (X - Y) = ⊥ :=
 lemma diff_bot_subset (X Y : A) (hXY : X-Y = ⊥) : X ⊆ Y := 
   by {rw [diff_union X Y, hXY, union_bot], apply inter_subset_right}
 
-lemma subset_diff_bot (X Y : A) (hXY : X ⊆ Y) : X-Y = ⊥ := 
-  by {rw diff_def, rw inter_subset at hXY, rw [←hXY, inter_assoc, inter_compl, inter_bot]}
+lemma subset_diff_bot (X Y : A) : X ⊆ Y → X-Y = ⊥ := 
+  λ hXY, by {rw diff_def, rw inter_subset at hXY, rw [←hXY, inter_assoc, inter_compl, inter_bot]}
 
 lemma diff_bot_iff_subset (X Y : A) : X-Y = ⊥ ↔ X ⊆ Y := 
   by {split, apply diff_bot_subset, apply subset_diff_bot}
