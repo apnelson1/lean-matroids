@@ -4,7 +4,7 @@ Answer: yes!
 -/
 
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
-import boolalg 
+
 ----------------------------------------------------------------
 
 section API
