@@ -33,11 +33,11 @@ lemma single_ne_bot (e : single A) :
   (e:A) ≠ ⊥ := 
   λ h, by {have := size_coe_single e, rw [h,size_bot] at this, linarith}
 
-lemma single_nonelem_bot (e : single A) : 
+lemma nonelem_bot (e : single A) : 
   e ∉ (⊥:A) := 
   by {rw nonelem_iff, intro h, replace h := size_monotone h, simp at h, linarith}
 
-lemma single_nonelem_compl (e : single A) :
+lemma nonelem_compl (e : single A) :
   e ∉ (e:A)ᶜ := 
   λ h, single_ne_bot e (subset_own_compl h)
 
@@ -48,7 +48,7 @@ lemma nonempty_has_elem {X : A}  :
 
 lemma nonempty_iff_has_elem {X : A} : 
   X ≠ ⊥ ↔ ∃ e, e ∈ X :=
-  ⟨λ h, nonempty_has_elem h, λ h, λ hb, by {cases h with e he, rw hb at he, exact single_nonelem_bot e he}⟩ 
+  ⟨λ h, nonempty_has_elem h, λ h, λ hb, by {cases h with e he, rw hb at he, exact nonelem_bot e he}⟩ 
 
 lemma size_gt_zero_has_elem {X : A}: 
   0 < size X → ∃ e, e ∈ X := 

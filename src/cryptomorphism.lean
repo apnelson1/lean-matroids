@@ -272,28 +272,45 @@ lemma C_to_I3 (M : cct_family U) :
 
     cases nonempty_has_elem hIJ_nonbot with e he, -- choose e from I -J
 
+    --There exists f ∈ J-I contained in all ccts of J ∪ e 
     have : ∃ f, f ∈ J-I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
     {
-        have := add_elem_le_one_circuit_C e hJ, 
-
-
-        by_cases hJe : C_to_I M (J ∪ e) ,
+        by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
         
         cases size_gt_zero_has_elem hJI_nonbot with f hf, 
         refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
-        exact (hJe _ hCJe) hC,
+        from (hJe _ hCJe) hC,
         unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
-        
 
-
+        have : Ce ∩ (J-I) ≠ ⊥ := λ h,  sorry ,
+        cases nonempty_has_elem this with f hf,
+        refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
+        apply subset_trans hf (inter_subset_right _ _), 
+        rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
+        from subset_trans hf (inter_subset_left _ _), 
     },
-
-
-
-
+    rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
+    set J' := (J ∪ e) - f with hdefJ', 
     
+    have hJ'₀: J'-I ⊆ (J ∪ I) := sorry, 
+    have hJ' : C_to_I M (J') := sorry,
+    have hJ's : size I < size J' := sorry, 
+    have hJ'ssu : I-J' ⊂ I-J := sorry, 
 
+    have hIJ' : ¬bad_pair I J' := 
+      λ hIJ', hDmin (I-J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩, 
+    push_neg at hIJ', rcases hIJ' hJ's hI hJ' with ⟨g,⟨hg₁,hg₂⟩⟩ ,
 
+    by_cases g ∈ J - I,
+    from h_non_aug g h hg₂, 
+    rw [nonelem_simp, ←elem_compl_iff] at h,  
+    have := subset_of_inter_mpr hg₁ h, 
+    rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
+        inter_assoc _ I _ ,inter_compl, inter_bot, union_bot, hdefJ', diff_def, inter_assoc, inter_right_comm, 
+        inter_distrib_right, ←inter_assoc, inter_compl, bot_inter, bot_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
+    have := subset_trans this (inter_subset_right _ _),
+    have := (subset_of_inter_mpr (subset_trans hg₁ hJ'₀) this),
+    rw inter_compl at this, exact nonelem_bot g this, 
   end 
 
   --  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)
