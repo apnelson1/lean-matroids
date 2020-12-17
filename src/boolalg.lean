@@ -84,23 +84,30 @@ lemma union_comm (X Y : A) : (X ∪ Y = Y ∪ X) :=
 
 @[simp] lemma inter_top (X : A) : X ∩ ⊤ = X := A.inter_top_ax X
 
-lemma top_inter  (X : A) : ⊤ ∩ X = X := 
+@[simp] lemma top_inter  (X : A) : ⊤ ∩ X = X := 
   eq.trans (inter_comm ⊤ X) (inter_top  X) 
 
 @[simp] lemma union_bot {A : boolalg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
 
-lemma bot_union {A : boolalg} (X : A) : 
+@[simp] lemma bot_union {A : boolalg} (X : A) : 
   ⊥ ∪ X = X := 
   eq.trans (union_comm ⊥ X) (union_bot X)
 
 
 -- Complements
 
-lemma union_compl {A: boolalg} (X: A) : 
+@[simp] lemma union_compl {A: boolalg} (X: A) : 
   X ∪ Xᶜ = ⊤ := 
   A.union_compl_ax X 
 
-lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ := A.inter_compl_ax X 
+@[simp] lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ 
+  := A.inter_compl_ax X 
+
+@[simp] lemma union_compl_rev {A: boolalg} (X: A) : Xᶜ ∪ X = ⊤ := 
+  by rw [union_comm, union_compl]
+
+@[simp] lemma inter_compl_rev {A: boolalg} (X: A) : Xᶜ ∩ X = ⊥ := 
+  by rw [inter_comm, inter_compl]
 
 -- Distributivity
 
@@ -454,6 +461,7 @@ lemma inter_distrib_diff (X Y Z : A) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) :=
 --lemma union_distrib_diff (X Y Z : A) : X ∪ (Y \ Z) = X ∪ 
 
 
+
 @[simp] lemma diff_bot (X : A) : X \ ⊥ = X := 
   by {rw [diff_def, compl_bot, inter_top]} 
 
@@ -465,6 +473,12 @@ lemma inter_distrib_diff (X Y Z : A) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) :=
 
 @[simp] lemma diff_top (X : A) : X \ ⊤ = ⊥ := 
   by rw [diff_def, compl_top, inter_bot]
+
+@[simp] lemma diff_self (X : A) : X \ X = ⊥ := 
+  inter_compl X 
+
+@[simp] lemma symm_diff_self (X : A) : symm_diff X X = ⊥ :=
+  by {unfold symm_diff, rw [diff_self, bot_union]}
 
 lemma size_monotone {X Y: A} (hXY : X ⊆ Y) : size X ≤ size Y := 
   by {have := size_modular X (Y \ X), rw union_diff_of_subset  hXY at this      , 
