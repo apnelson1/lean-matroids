@@ -132,17 +132,46 @@ begin
 end
 end /-namespace-/ freealg
 
-
 open interactive
+open interactive.types
 open lean.parser
+open tactic
+open tactic.interactive 
+#check vector 
+
 meta def ids_list : lean.parser (list name) := types.list_of ident
+meta def list_size {A : Type} : list A → nat
+| []       := 0
+| (a :: l) := list_size l + 1
+#print expr 
+meta def build : list pexpr -> pexpr
+| [] := ``(vector.nil)
+| (v :: vs) := ``(vector.cons %%v %%(build vs)) --(expr.app (expr.app lcons v) (build vs))
+meta def list_with_idx {T : Type} : (list T) → nat -> list (nat × T)
+| [] n := []
+| (v :: vs) n := (n, v) :: list_with_idx vs (n + 1)
+meta def prod_first {S T :Type} : (S × T) → S
+| (s, t) := s
+meta def prod_second {S T :Type} : (S × T) → T
+| (s, t) := t
 
-  
-meta def tactic.interactive.introduce_varmap (vars : parse ids_list) : tactic unit := do
-  tactic.trace vars
 
-lemma baz (A : boolalg) : false := begin
-  introduce_varmap [a,b,c],
-  --have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
+meta def tactic.interactive.introduce_varmap (v : parse ident) (vars : parse ids_list) : tactic unit :=
+  let l := list_size vars in
+  do    
+    names <- vars.mmap (fun name, get_local name),
+    let pv := build (list.map to_pexpr names) in
+    do  `[set v := %%pv],
+        mmap (λ (pair : (nat × expr)),
+          let name := prod.snd pair in
+          let idx := prod.fst pair in
+          do v <- get_local ``v, 
+            («have» none ``(vector.nth %%v %%idx = %%name) ``(by refl))) (list_with_idx names 0),
+        return ()
+
+lemma baz (a b c: nat) : a = a := begin
+  introduce_varmap v [a,b,c],
+
+  refl,
 end
 
