@@ -135,6 +135,8 @@ mk_simp_attribute bla "blalg"
   by {rw [←mul_one X], sorry}
 @[simp, bla] lemma plus_self_left (X Y : A): X + (X + Y )= Y := sorry 
 @[simp, bla] lemma power_cancel (X : A) (n : nat) : X^(n.succ) = X := sorry
+@[simp, bla] lemma distrib_cancel (X Y : A) : X*Y + X*(Y+1) = X := 
+  by {rw[←left_distrib], simp only [plus_self_left, times_one]} 
 
 
 @[simp, bla] lemma plus_cancel (n : nat) : (n.succ.succ : A) = (n:A) := sorry 
@@ -145,7 +147,18 @@ mk_simp_attribute bla "blalg"
 @[simp, bla] lemma mult_idem_boolalg (X : A): X*X = X := inter_idem X 
 
 
-lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 := sorry 
+--@[simp, bla] lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 := sorry 
+
+@[simp, bla] lemma prod_comp_cancel (X : A) : X*(X+1) = 0 := 
+  by {rw[left_distrib, mult_idem_boolalg, times_one, plus_self]  }
+
+lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
+by 
+{
+  rw [left_distrib, right_distrib], sorry, 
+} 
+
+
 
 meta def set_to_ring_eqn : tactic unit := do
 `[try {simp only
