@@ -68,24 +68,27 @@ V.nth ⟨i, Hi⟩ = map V (var i Hi)
       ...                       = _                                           : (plus_self_left (tail_var * V.head) _).symm
       ...                       = tail_var * V.head + tail_var * (V.head + 1) : by ring
 
+lemma on_plus : forall {n : nat} (V : vector A n) (a b : freealg n),
+(map V a) + (map V b) = map V (plus a b)
+  | 0 V a b :=
+      begin
+        cases a; cases b; unfold map plus bxor; ring,
+        exact two_eq_zero_boolalg,
+      end
+  | (n+1) V a b :=
+      begin
+        unfold map plus,
+        rw [←on_plus V.tail a.1 b.1, ←on_plus V.tail a.2 b.2],
+        ring,
+      end
 
-/-
-structure map {n : nat} (V : vector A n) :=
-  (f : freealg n → A)
-  (on_zero : 0 = f zero)
-  (on_one : 1 = f one)
-  (on_var (i : nat) (Hi : i < n) : V.nth ⟨i, Hi⟩ = f (var i Hi))
-  (on_plus (a b : freealg n) : (f a) + (f b) = f (plus a b))
-  (on_times (a b : freealg n) : (f a) * (f b) = f (times a b))
-
-def map.from_vector {n : nat} (V : vector A n) : map V := {
-  f := (fun a, _),
-  on_zero := _,
-  on_one := _,
-  on_var := _,
-  on_plus := _,
-  on_times := _,
-}
--/
+lemma on_times : forall {n : nat} (V : vector A n) (a b : freealg n),
+(map V a) * (map V b) = map V (times a b)
+  | 0 V a b := by cases a; cases b; unfold map plus band; ring
+  | (n+1) V a b :=
+      begin
+        unfold map times,
+        rw [←on_times V.tail a.1 b.1, ←on_times V.tail a.2 b.2, ←expand_product],
+      end
 
 end /-namespace-/ freealg

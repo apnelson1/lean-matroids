@@ -1,127 +1,9 @@
 import boolalg  
 import boolalg_ring
+import init.meta.interactive_base
 
 open boolalg
 variables {A : boolalg} (X : A)
-
-inductive freealg0 : Type
-| zero 
-| one
-
-namespace freealg0
-
-def plus : freealg0 → freealg0 → freealg0
-| zero X := X
-| one zero := one
-| one one := zero 
-
-def times : freealg0 → freealg0 → freealg0
-| zero X := zero 
-| one X := X
-
-def map (A : boolalg) : freealg0 → A
-| zero := 0
-| one := 1
-
-lemma on_zero : 0 = map A zero := rfl
-lemma on_one : 1 = map A one := rfl
-
-lemma on_plus (X Y : freealg0) :
-  (map A X) + (map A Y) = map A (plus X Y) :=
-begin
-  cases X; cases Y;
-  try {rw <- on_zero}; 
-  try {rw <- on_one}; 
-  simp only [plus] with bla; 
-  refl,
-end
-
-lemma on_times (X Y : freealg0) :
-  (map A X) * (map A Y) = map A (times X Y) :=
-begin
-  cases X; cases Y;
-  try {rw <- on_zero}; 
-  try {rw <- on_one}; 
-  simp only [times] with bla;
-  refl,
-end
-
-lemma foo : (⊥ : A)ᶜ = ⊤ :=
-begin
-  set_to_ring_eqn,
-  simp only [on_zero, on_one, on_plus, on_times],
-  refl,
-end
-
-end /-namespace-/ freealg0
-
-----------------------------------------------------------------
-
-def freealg1 : Type := bool × bool
-
-namespace freealg1
-
-def zero : freealg1 := (ff, ff)
-def one : freealg1 := (tt, tt)
-
-def plus : freealg1 → freealg1 → freealg1 :=
-fun a b, (bxor a.1 b.1, bxor a.2 b.2)
-
-def times : freealg1 → freealg1 → freealg1 :=
-fun a b, (band a.1 b.1, band a.2 b.2)
-
-def map : freealg1 → A
-| (ff, ff) := 0
-| (ff, tt) := X + 1
-| (tt, ff) := X
-| (tt, tt) := 1
-
-def map2 : freealg1 → A :=
-fun a, (if a.1 then X else 0) + (if a.2 then X+1 else 0)
-
-lemma on_zero : 0 = map X zero := rfl
-lemma on_one : 1 = map X one := rfl
-
-lemma on_var : X = map X (tt, ff) := rfl
-
-lemma on_plus (a b : freealg1) :
-  (map X a) + (map X b) = map X (plus a b) :=
-begin
-  cases a; cases b; cases a_fst; cases b_fst; cases a_snd; cases b_snd;
-  try {rw <- on_zero}; 
-  try {rw <- on_one}; 
-  simp only [map, plus] with bla; 
-  try {refl}; simp with bla,
-end
-
-lemma on_times (a b : freealg1) :
-  (map X a) * (map X b) = map X (times a b) :=
-begin
-  cases a; cases b; cases a_fst; cases b_fst; cases a_snd; cases b_snd;
-  try {rw <- on_zero}; 
-  try {rw <- on_one}; 
-  simp only [map, times] with bla;
-  simp with bla; try {refl}; ring SOP; simp only with bla; refl,
-end
-
-lemma foo : Xᶜᶜᶜᶜ = X :=
-begin
-  set_to_ring_eqn,
-  rw on_var X,
-  simp only [on_zero X, on_one X, on_plus X, on_times X],
-  refl,
-end
-
-
-lemma bar : (Xᶜ ∪ Xᶜᶜ)ᶜ ∪ (X - (Xᶜ ∩ Xᶜᶜ)) ∩ X = X :=
-begin
-  set_to_ring_eqn,
-  rw on_var X,
-  simp only [on_zero X, on_one X, on_plus X, on_times X],
-  refl,
-end
-
-end /-namespace-/ freealg1
 
 namespace freealg
 --variables (n : nat)
@@ -158,13 +40,13 @@ def map : forall (n : nat), (nat → A) → (freealg n) → A
 | 0 vars tt := 1
 | (n+1) vars a := (map n vars a.1)*(vars n) + (map n vars a.2)*(vars n + 1)
 
-lemma on_zero {n : nat}(vars : nat → A) : 0 = map n vars zero :=
+lemma on_zero (n : nat)(vars : nat → A) : 0 = map n vars zero :=
   by {apply eq.symm, induction n with n IH IH, refl, unfold map zero, rw IH, simp}
   
-lemma on_one {n : nat}(vars : nat → A) : 1 = map n vars one :=
+lemma on_one (n : nat)(vars : nat → A) : 1 = map n vars one :=
   by {apply eq.symm, induction n with n IH IH, refl, unfold map one, rw IH, simp}
 
-lemma on_var {n i : nat}(vars : nat → A)(hi : i < n) : vars i = map n vars (var hi) :=
+lemma on_var (n i : nat)(vars : nat → A)(hi : i < n) : vars i = map n vars (var hi) :=
 begin
   apply eq.symm, induction n with n IH,  
   --base case
@@ -177,18 +59,18 @@ begin
   {specialize IH (nat.lt_of_le_and_ne (nat.le_of_lt_succ hi) h),  split_ifs, rw IH, simp only [distrib_cancel]}
 end
 
-lemma on_plus {n : nat}(vars : nat → A)(a b : freealg n) : map n vars (plus a b) = map n vars a + map n vars b := 
+lemma on_plus (n : nat)(vars : nat → A)(a b : freealg n) :map n vars a + map n vars b = map n vars (plus a b)  := 
 begin
-  induction n with n IH, 
+  apply eq.symm, induction n with n IH, 
   --base case
   {unfold plus, cases a; cases b; unfold map; simp; refl },
   -- successor case 
   {unfold map plus, rw [IH a.1 b.1, IH a.2 b.2], ring SOP}
 end
 
-lemma on_times {n : nat}(vars : nat → A)(a b : freealg n) : map n vars (times a b) = map n vars a * map n vars b := 
+lemma on_times (n : nat)(vars : nat → A)(a b : freealg n) :  map n vars a * map n vars b = map n vars (times a b) := 
 begin
-  induction n with n IH, 
+  apply eq.symm, induction n with n IH, 
   {unfold times, cases a; cases b; unfold map; simp; refl},
   {unfold map times, rw [IH a.1 b.1, IH a.2 b.2, ←expand_product]}
 end
@@ -197,10 +79,50 @@ lemma foo (X : A):  Xᶜᶜᶜᶜ = X :=
 begin
   let vars := λ n : nat, X, 
   set_to_ring_eqn,
+  have := on_zero 1 vars,
+  have : X = _ := on_var 1 0 vars zero_lt_one,
+  rw this, 
   --erw [(rfl : X = vars 1)], --, on_var vars (one_lt_two)],
-  simp only [on_zero vars , on_one vars, on_plus vars, on_times vars, on_var vars (one_lt_two)],
-  refl,
+  simp only [on_zero 1 vars , on_one 1 vars, on_plus 1 vars, on_times 1 vars],
+  refl, 
+  
 end
 
 
+lemma bar (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
+begin
+  let vars := λ n : nat, if (n = 0) then X 
+                         else if (n = 1) then Y 
+                         else if (n = 2) then Z
+                         else if (n = 3) then P
+                         else if (n = 4) then W
+                         else Q, 
+  set_to_ring_eqn, 
+  
+  have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
+  have hy : Y = _ := on_var _ _ vars (by norm_num : 1 < 6),
+  have hz : Z = _ := on_var _ _ vars (by norm_num : 2 < 6),
+  have hp : P = _ := on_var _ _ vars (by norm_num : 3 < 6),
+  have hw : W = _ := on_var _ _ vars (by norm_num : 4 < 6),
+  have hq : Q = _ := on_var _ _ vars (by norm_num : 5 < 6),
+
+  rw [hx, hy, hz, hw, hp, hq],
+  
+  simp only [on_zero 6 vars , on_one 6 vars, on_plus 6 vars, on_times 6 vars],
+  refl, 
+end
 end freealg
+
+open interactive
+open lean.parser
+meta def ids_list : lean.parser (list name) := types.list_of ident
+
+  
+meta def tactic.interactive.introduce_varmap (vars : parse ids_list) : tactic unit := do
+  tactic.trace vars
+
+lemma baz (A : boolalg) : false := begin
+  introduce_varmap [a,b,c],
+  --have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
+end
+
