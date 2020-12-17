@@ -6,7 +6,7 @@ open boolalg
 ----------------------------------------------------------------
 
 namespace freealg
-variables {A : boolalg} -- {n : nat}
+variables {A : boolalg}
 
 def freealg : nat → Type
 | 0 := bool

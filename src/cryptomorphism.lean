@@ -34,7 +34,7 @@ def satisfies_I2 : (U → Prop) → Prop :=
   λ indep, ∀ I J: U, I ⊆ J → indep J → indep I
 
 def satisfies_I3 : (U → Prop) → Prop := 
-  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)
+  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J \ I ∧ indep (I ∪ e)
 
 @[ext] structure indep_family (U : boolalg):= 
   (indep : U → Prop)
@@ -198,7 +198,7 @@ def satisfies_C2 : (U → Prop) → Prop :=
   λ is_cct, ∀ C₁ C₂, is_cct C₁ → is_cct C₂ → ¬(C₁ ⊂ C₂)
 
 def satisfies_C3 : (U → Prop) → Prop := 
-  λ is_cct, ∀ C₁ C₂ e, C₁ ≠ C₂ → is_cct C₁ → is_cct C₂ → e ∈ (C₁ ∩ C₂) → ∃ C₀ , is_cct C₀ ∧ C₀ ⊆ (C₁ ∪ C₂ - e)
+  λ is_cct, ∀ C₁ C₂ e, C₁ ≠ C₂ → is_cct C₁ → is_cct C₂ → e ∈ (C₁ ∩ C₂) → ∃ C₀ , is_cct C₀ ∧ C₀ ⊆ (C₁ ∪ C₂) \ e
 
 @[ext] structure cct_family (U : boolalg) :=
   (cct : U → Prop)
@@ -247,22 +247,22 @@ lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
   begin
     -- I3 states that there are no bad pairs 
-    let bad_pair : U → U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ e, e ∈ J-I → ¬C_to_I M (I ∪ e), 
+    let bad_pair : U → U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ e, e ∈ J \ I → ¬C_to_I M (I ∪ e), 
     suffices : ∀ I J, ¬bad_pair I J, 
       push_neg at this, exact λ I J hIJ hI hJ, this I J hIJ hI hJ,
     by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
     
     --choose a bad pair with D = I-J minimal
-    let bad_pair_diff : U → Prop := λ D, ∃ I J, bad_pair I J ∧ I-J = D, 
-    have hD₀ : bad_pair_diff (I₀ - J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
+    let bad_pair_diff : U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
+    have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
     rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
     rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
     rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
     ------------------
-    have hJI_nonbot : size (J - I) > 0 := by 
-      {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I-J), hsIJ, size_induced_partition J I]},
+    have hJI_nonbot : size (J \ I) > 0 := by 
+      {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
     
-    have hIJ_nonbot : I - J ≠ ⊥ := by 
+    have hIJ_nonbot : I \ J ≠ ⊥ := by 
     {
       intro h, rw diff_bot_iff_subset at h, 
       cases size_gt_zero_has_elem hJI_nonbot with e he,
@@ -273,7 +273,7 @@ lemma C_to_I3 (M : cct_family U) :
     cases nonempty_has_elem hIJ_nonbot with e he, -- choose e from I -J
 
     --There exists f ∈ J-I contained in all ccts of J ∪ e 
-    have : ∃ f, f ∈ J-I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
+    have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
     {
         by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
         
@@ -282,7 +282,7 @@ lemma C_to_I3 (M : cct_family U) :
         from (hJe _ hCJe) hC,
         unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
 
-        have : Ce ∩ (J-I) ≠ ⊥ := λ h,  sorry ,
+        have : Ce ∩ (J \ I) ≠ ⊥ := λ h,  sorry ,
         cases nonempty_has_elem this with f hf,
         refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
         apply subset_trans hf (inter_subset_right _ _), 
@@ -290,18 +290,18 @@ lemma C_to_I3 (M : cct_family U) :
         from subset_trans hf (inter_subset_left _ _), 
     },
     rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
-    set J' := (J ∪ e) - f with hdefJ', 
+    set J' := (J ∪ e) \ f with hdefJ', 
     
-    have hJ'₀: J'-I ⊆ (J ∪ I) := sorry, 
+    have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
     have hJ' : C_to_I M (J') := sorry,
     have hJ's : size I < size J' := sorry, 
-    have hJ'ssu : I-J' ⊂ I-J := sorry, 
+    have hJ'ssu : I \ J' ⊂ I \ J := sorry, 
 
     have hIJ' : ¬bad_pair I J' := 
-      λ hIJ', hDmin (I-J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩, 
+      λ hIJ', hDmin (I \ J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩, 
     push_neg at hIJ', rcases hIJ' hJ's hI hJ' with ⟨g,⟨hg₁,hg₂⟩⟩ ,
 
-    by_cases g ∈ J - I,
+    by_cases g ∈ J \ I,
     from h_non_aug g h hg₂, 
     rw [nonelem_simp, ←elem_compl_iff] at h,  
     have := subset_of_inter_mpr hg₁ h, 
@@ -334,8 +334,8 @@ def satisfies_B1 (basis : collection U) :=
   ∃ B, basis B.
 def satisfies_B2 (basis : collection U) :=
   ∀ B₁ B₂, basis B₁ → basis B₂ →
-    ∀ b₁, b₁ ∈ B₁ - B₂ →
-          ∃ b₂, (b₂ ∈ B₂ - B₁) ∧ basis (B₁ - b₁ ∪ b₂) 
+    ∀ b₁, b₁ ∈ B₁ \ B₂ →
+          ∃ b₂, (b₂ ∈ B₂ \ B₁) ∧ basis (B₁ \ b₁ ∪ b₂) 
 
 @[ext] structure basis_family (U : boolalg) :=
   (basis : collection U)
@@ -379,7 +379,7 @@ begin
     {
       -- Here I and J are part of the same basis B, so we can add any element
       -- from J into I and still be contained in B,
-      have Hb: ∃ b, b ∈ I₂ - I₁,
+      have Hb: ∃ b, b ∈ I₂ \ I₁,
       {
         -- |I| < |J|, so there is such an element.
         sorry,
@@ -402,14 +402,14 @@ begin
     {
       -- so I₁  ⊆ B1,
       -- so I₂  ⊆ B2,
-      have Hcase1 : (I₂ - B₁ = I₂ - I₁ ∨ ¬ I₂ - B₁ = I₂ - I₁), apply em,
+      have Hcase1 : (I₂ \ B₁ = I₂ \ I₁ ∨ ¬ I₂ \ B₁ = I₂ \ I₁), apply em,
       -- equal
       cases Hcase1,
       {
         have Hminimaldiff := @minimal_example U
           (fun (X : U), 
-            ∃ B : U, M.basis B ∧ I₂ ⊆ B ∧ X = B - (I₂ ∪ B₁))
-          (B₂ - (I₂ ∪ B₁))
+            ∃ B : U, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
+          (B₂ \ (I₂ ∪ B₁))
           (begin
             use B₂, split,
               assumption,
@@ -423,7 +423,7 @@ begin
           ⟨X, ⟨_, ⟨⟨B₂', ⟨HB₂', ⟨HB₂'I₂, HX⟩⟩⟩, 
                     Hminimal⟩⟩⟩,
         -- Two cases: B₂ - (I₂ ∪ B₁) = ⊥ or not
-        have Hcase2 : (B₂ - (I₂ ∪ B₁) = ⊥ ∨ ¬ B₂ - (I₂ ∪ B₁) = ⊥), apply em,
+        have Hcase2 : (B₂ \ (I₂ ∪ B₁) = ⊥ ∨ ¬ B₂ \ (I₂ ∪ B₁) = ⊥), apply em,
         cases Hcase2,
         {
           -- empty
@@ -432,20 +432,20 @@ begin
           -- so everything in B₂ is in I₂ or in B₁,
           -- so the stuff not in B₁ (B₂ - B₁) is just
           -- I₂ - B₁, which from above (Hcase1) is I₂ - I₁
-          have HB₂B₁ : B₂ - B₁ = I₂ - I₁ := sorry,
+          have HB₂B₁ : B₂ \ B₁ = I₂ \ I₁ := sorry,
 
           -- Two cases:
           -- either B₁ - (I₁ ∪ B₂) = ⊥ or not
-          have Hcase3 : (B₁ - (I₁ ∪ B₂) = ⊥ ∨ ¬ B₁ - (I₁ ∪ B₂) = ⊥), apply em,
+          have Hcase3 : (B₁ \ (I₁ ∪ B₂) = ⊥ ∨ ¬ B₁ \ (I₁ ∪ B₂) = ⊥), apply em,
           cases Hcase3,
           {
             -- empty, derive a contradiction.
             -- symmetrically, as B₁ - I₁ ∪ B₂ is empty,
             -- B₁ - B₂ = I₁ - B₂
-            have HB₁B₂ : B₁ - B₂ = I₁ - B₂ := sorry,
+            have HB₁B₂ : B₁ \ B₂ = I₁ \ B₂ := sorry,
             have Hsize := basis_have_same_size M B₁ B₂ HB₁ HB₂,
             -- set difference fact : |B₁| = |B₂| → |B₁ - B₂| = |B₂ - B₁| = |B_x| - |B₁ ∩ B₂|
-            have Hsizeeq : size (B₁ - B₂) = size (B₂ - B₁) := sorry,
+            have Hsizeeq : size (B₁ \ B₂) = size (B₂ \ B₁) := sorry,
             -- now, as B₁ - B₂ ⊆ I₁ - B₂ ⊆ I₁ - I₂,
             -- |I₁ - I₂| ≥ |B₁ - B₂| = |B₂ - B₁| = |I₂ - I₁|,
             -- hence |I₁| ≥ |I₂|
@@ -454,16 +454,16 @@ begin
           },
           {
             -- not empty, get goal.
-            have Hx : (∃ x, x ∈ B₁ - (I₁ ∪ B₂)) := sorry,
+            have Hx : (∃ x, x ∈ B₁ \ (I₁ ∪ B₂)) := sorry,
             cases Hx with x Hx,        
             -- again, tactic...
-            have HB₁x : x ∈ B₁ - B₂ := sorry,
+            have HB₁x : x ∈ B₁ \ B₂ := sorry,
             have := M.B2 B₁ B₂ HB₁ HB₂ x HB₁x,
             rcases this with ⟨y, ⟨_, H⟩⟩,
             use y,
             split,
               rewrite <- HB₂B₁, assumption,
-              use B₁ - x ∪ y, split,
+              use B₁ \ x ∪ y, split,
                 assumption,
                 -- x ∉ I₁, so just set facts here now.
                 sorry,
@@ -471,13 +471,13 @@ begin
         },
         {
           -- not empty, so there exists x it (probably a boolalg axiom)
-          have Hx : (∃ x, x ∈ B₂ - (I₂ ∪ B₁)) := sorry,
+          have Hx : (∃ x, x ∈ B₂ \ (I₂ ∪ B₁)) := sorry,
           cases Hx with x Hx,
           -- nice to have a tactic here
-          have HB₂x : x ∈ B₂ - B₁ := sorry,
+          have HB₂x : x ∈ B₂ \ B₁ := sorry,
           have := M.B2 B₂ B₁ HB₂ HB₁ x HB₂x,
           rcases this with ⟨y, ⟨_, H⟩⟩,
-          set Z := ((B₂ - x) ∪ y) - (I₂ ∪ B₁),
+          set Z := ((B₂ \ x) ∪ y) \ (I₂ ∪ B₁),
           -- derive contradiction of minimality
           exfalso,
           apply (Hminimal Z), -- 5 goals
@@ -497,7 +497,7 @@ begin
       -- not equal
       {
         -- I₂ - B₁ ≠ I₂ - I₁, as I₁ ⊆ I₂ we have b ∈ I₂ - I₁ ∩ B₁
-        have Hb : (∃ e, e ∈ (I₂ - I₁) ∩ B₁) := sorry,
+        have Hb : (∃ e, e ∈ (I₂ \ I₁) ∩ B₁) := sorry,
         cases Hb with b Hb,
         use b,
         split,

@@ -161,7 +161,7 @@ end
   (C ∩ D = ⊥) → minor_on (C ∪ D)ᶜ :=
 fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ _ ... ⊆ Cᶜ : inter_subset_left _ _ ) (corestrict Cᶜ (subset_top _) self)
 
---simplified minor expression - corestrict to Z, then restrict to A 
+--simplified minor expression \ corestrict to Z, then restrict to A 
 
 
 
@@ -170,8 +170,9 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
   let f := (embed.from_subset A).f, hAZc := subset_union_left A Zᶜ, hAZc_top := subset_top (A ∪ Zᶜ) in 
   begin
     ext X, 
-    have set_eq : A ∪ Zᶜ - A = ⊤ - Z := by {simp, unfold has_sub.sub, rw [inter_distrib_right, inter_compl,bot_union, ←compl_union, union_comm, union_subset_mp hAZ]}, 
-    have RHS : (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_top self)) M).r X = M.r (f X ∪ (A ∪ Zᶜ - A)) - M.r (A ∪ Zᶜ - A) := by refl, 
+    have set_eq : (A ∪ Zᶜ) \ A = ⊤ \ Z := by {simp only [union_diff, top_diff], sorry},
+    let M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_top self)) M), 
+    have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := by refl, 
     rw set_eq at RHS, 
     exact RHS.symm, 
   end
@@ -182,17 +183,17 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
   let emb := embed.from_subset A in 
   begin
     rw switch_restrict_corestrict, ext X, apply eq.symm, 
-    have hJ : ∀ (J : U) (hJ : J ⊆ A), (J ∪ (Z-A))ᶜ = (A - J) ∪ (⊤ - Z) := 
+    have hJ : ∀ (J : U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (⊤ \ Z) := 
       λ J hJ, by rw [compl_union, top_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, union_subset_mp (subset_trans hJ hAZ), inter_comm, union_comm], 
-    have hset : size ((X:U) ∩ (Z - A)) = 0 := 
-      by {suffices : ((X:U) ∩ (Z-A)) = ⊥, rw this, exact size_bot U, apply subset_bot, refine subset_trans (subset_inter_subset_left (X :U ) A (Z-A) X.2) _, rw inter_diff, apply subset_refl},
-    have hbot : (Z-A)ᶜ = A ∪ (⊤ - Z) := 
-      by {rw [←bot_union (Z-A), hJ ⊥ (bot_subset _), diff_bot]},
+    have hset : size ((X:U) ∩ (Z \ A)) = 0 := 
+      by {suffices : ((X:U) ∩ (Z \ A)) = ⊥, rw this, exact size_bot U, apply subset_bot, refine subset_trans (subset_inter_subset_left (X :U ) A (Z\A) X.2) _, rw inter_diff, apply subset_refl},
+    have hbot : (Z\A)ᶜ = A ∪ (⊤ \ Z) := 
+      by {rw [←bot_union (Z\A), hJ ⊥ (bot_subset _), diff_bot]},
 
-    calc _ = (size ((X:U) ∪ (Z-A)) + M.r ((X ∪ (Z-A))ᶜ) - M.r ⊤) - (size (Z-A) + M.r (Z-A)ᶜ - M.r ⊤ )       : rfl 
-       ... = size (X:U) + M.r ((X ∪ (Z-A))ᶜ) - M.r  (Z-A)ᶜ                                                   : by linarith [size_modular (X :U) (Z -A), hset, emb.on_size X]
-       ... = size (X:U) + M.r ((A- X) ∪ (⊤ - Z)) - M.r (A ∪ (⊤ - Z))                                        : by rw [(hJ X X.2 : ((X:U) ∪ (Z-A))ᶜ = (A- X) ∪ (⊤ - Z)), hbot]
-       ... = size (X:U) + (M.r ((A- X) ∪ (⊤ - Z)) - M.r (⊤ - Z)) - (M.r (A ∪ (⊤ - Z)) - M.r (⊤ - Z))        : by linarith 
+    calc _ = (size ((X:U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r ⊤) - (size (Z\A) + M.r (Z\A)ᶜ - M.r ⊤ )       : rfl 
+       ... = size (X:U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ                                                   : by linarith [size_modular (X :U) (Z\A), hset, emb.on_size X]
+       ... = size (X:U) + M.r ((A \ X) ∪ (⊤ \ Z)) - M.r (A ∪ (⊤ \ Z))                                        : by rw [(hJ X X.2 : ((X:U) ∪ (Z\A))ᶜ = (A\X) ∪ (⊤ \ Z)), hbot]
+       ... = size (X:U) + (M.r ((A \ X) ∪ (⊤ \ Z)) - M.r (⊤ \ Z)) - (M.r (A ∪ (⊤ \ Z)) - M.r (⊤ \ Z))        : by linarith 
        ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_top Z) self)) M)).r X                     : rfl 
        ... = _ : by rw switch_restrict_corestrict,             
   end
@@ -257,33 +258,32 @@ lemma restriction_of_reduced  {M : rankfun U} (A Z A' : U) (hA'A : A' ⊆ A) (hA
   to_minor (restrict A' hA'A (reduced_expr A Z hAZ)) M = to_minor (reduced_expr A' Z (subset_trans hA'A hAZ)) M := rfl
 
 lemma corestriction_of_reduced' {M : rankfun U} (A Z Z' : U) (hZ'A : Z' ⊆ A) (hAZ : A ⊆ Z) : 
-  to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z - A)) (subset_union_left Z' _)) M := 
+  to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z \ A)) (subset_union_left Z' _)) M := 
   begin
     unfold reduced_expr, 
 
     calc to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M : rfl 
-                                                             ... = to_minor (reduced_expr Z' (Z' ∪ (Z - A)) (subset_union_left Z' _)) M :sorry, 
+                                                             ... = to_minor (reduced_expr Z' (Z' ∪ (Z \ A)) (subset_union_left Z' _)) M :sorry, 
   end 
 
 lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : U) (hZ'A : Z' ⊆ A) (hAZ : A ⊆ Z) : 
-  to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z - A)) (subset_union_left Z' _)) M := 
-  let  J  := Z' ∪ (Z - A),
+  to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z \ A)) (subset_union_left Z' _)) M := 
+  let  J  := Z' ∪ (Z \ A),
        M' := to_minor (reduced_expr A Z hAZ) M, 
        N  := (to_minor (reduced_expr Z' J (subset_union_left _ _)) M) in 
   begin
     ext, rename x X, 
-    have equiv : (A - Z') ∪ (⊤ - Z) = (⊤ - J) := by 
+    have equiv : (A \ Z') ∪ (⊤ \ Z) = (⊤ \ J) := by 
     {
-      simp only [J], unfold has_sub.sub, 
-      rw [top_inter, top_inter, compl_union, compl_inter, compl_compl, union_distrib_right, 
-            ←compl_inter, inter_subset_mp (subset_trans hZ'A hAZ : Z' ⊆ Z), inter_comm, union_comm],
+      simp only [J], rw diff_def, simp, 
+      sorry
     }, 
     have LHS := 
     calc     (to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ)) M).r X
            = (corestrict_nested_pair hZ'A M').r X                                                 : rfl 
-      ...  = M.r (X ∪ (A - Z') ∪ (⊤-Z)) - M.r (⊤ - Z)  - (M.r ((A - Z') ∪ (⊤ - Z)) - M.r (⊤ -Z)) : rfl  
-      ...  = M.r (X ∪ (A - Z') ∪ (⊤-Z)) - M.r ((A - Z') ∪ (⊤ - Z))                               : by linarith
-      ...  = M.r (X ∪ (⊤ - J)) - M.r (⊤ - J)                                                     : by rw [union_assoc, equiv],
+      ...  = M.r (X ∪ (A \ Z') ∪ (⊤ \ Z)) - M.r (⊤ \ Z) - (M.r ((A \ Z') ∪ (⊤ \ Z)) - M.r (⊤ \ Z)) : rfl  
+      ...  = M.r (X ∪ (A \ Z') ∪ (⊤ \ Z)) - M.r ((A \ Z') ∪ (⊤ \ Z))                               : by linarith
+      ...  = M.r (X ∪ (⊤ \ J)) - M.r (⊤ \ J)                                                     : by rw [union_assoc, equiv],
 
     rw LHS, apply eq.symm, clear LHS, calc N.r X = _ : rfl, 
   end
@@ -310,7 +310,7 @@ begin
   /-corestrict-/
   {
     rcases IH with ⟨Z, ⟨hA₁Z, h⟩⟩,
-    use X₁ ∪ (Z - A₁), use subset_union_left X₁ _,
+    use X₁ ∪ (Z \ A₁), use subset_union_left X₁ _,
     rw ←corestriction_of_reduced _ _ _ hX₁A₁ hA₁Z,
     dunfold to_minor,
     rw h, 
@@ -364,26 +364,26 @@ open minor_on
 lemma rank_augment {M : rankfun U} {X Z : U} : (M.r X < M.r Z) → 
   ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
 let 
-    hcr    : Z-X ⊆ X ∪ Z         := subset_trans (diff_subset Z X) (subset_union_right X Z),
+    hcr    : Z \ X ⊆ X ∪ Z         := subset_trans (diff_subset Z X) (subset_union_right X Z),
     hr     : X ∪ Z ⊆ ⊤           :=  subset_top (X ∪ Z),  
-    hdiff  : (X ∪ Z) - (Z-X) = X := union_diff_diff _ _,
-    hunion : (Z-X) ∪ X = X ∪ Z   := by rw [union_comm _ X, union_diff] 
+    hdiff  : (X ∪ Z) \ (Z \ X) = X := union_diff_diff _ _,
+    hunion : (Z \ X) ∪ X = X ∪ Z   := by rw [union_comm _ X, union_diff] 
 in 
 begin
   intros hrXrZ, by_contradiction h, push_neg at h, 
   --pertinent minor M' : restrict to X ∪ Z then corestrict to Z-X
-  let M' := to_minor (corestrict (Z - X) hcr (restrict (X ∪ Z) hr self)) M, 
+  let M' := to_minor (corestrict (Z \ X) hcr (restrict (X ∪ Z) hr self)) M, 
   -- simplified rank function of M' 
-  have hrM' : ∀ (J : subalg (Z-X)), M'.r J = M.r (J ∪ X) - M.r (X) := 
-    by {intros J, calc _  = M.r (J ∪ ((X ∪ Z) - (Z-X))) - M.r ((X ∪ Z) - (Z-X)) : rfl ... = _ : by rw hdiff}, 
+  have hrM' : ∀ (J : subalg (Z \ X)), M'.r J = M.r (J ∪ X) - M.r (X) := 
+    by {intros J, calc _  = M.r (J ∪ ((X ∪ Z) \ (Z \ X))) - M.r ((X ∪ Z) \ (Z \ X)) : rfl ... = _ : by rw hdiff}, 
 
   have hr'top := hrM' ⊤, 
-  rw [coe_top (Z-X), hunion] at hr'top, 
+  rw [coe_top (Z \ X), hunion] at hr'top, 
 
   have : M'.r ⊤ ≠ 0 := by linarith [by calc M'.r ⊤ = _ : hr'top ... ≥ M.r Z - M.r X : by linarith [M.R2 Z (X ∪ Z) (subset_union_right X Z)]],
 
   apply this, apply loopy_rank_zero, intros e he,
-  specialize h e (subset_trans ((e: subalg (Z-X)).property) (diff_subset _ _ )), 
+  specialize h e (subset_trans ((e: subalg (Z \ X)).property) (diff_subset _ _ )), 
   rw coe_single_subalg_compose at h, 
   rw [hrM' e, union_comm, coe_subalg_single_compose],
   linarith [M.R2 _ _ (subset_union_left X e)],
@@ -455,12 +455,12 @@ lemma rank_augment_single_ub (M : rankfun U)(X : U)(e : single U):
   by linarith [rank_subadditive M X e, rank_single_ub M e]
 
 lemma rank_diff_subadditive (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
-  M.r Y ≤ M.r X + M.r (Y - X) := 
+  M.r Y ≤ M.r X + M.r (Y \ X) := 
   by {nth_rewrite 0 ((union_diff_of_subset hXY).symm), apply rank_subadditive}
 
 lemma rank_diff_le_size_diff (M : rankfun U){X Y : U}(hXY : X ⊆ Y) :
   M.r Y - M.r X ≤ size Y - size X := 
-  by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.R1 (Y-X)]
+  by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.R1 (Y \ X )]
      
 lemma submod_three_sets (M : rankfun U)(X Y Y' :U) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
@@ -545,7 +545,7 @@ lemma subset_indep {M : rankfun U} {X Y : U}:
   X ⊆ Y → is_indep M Y → is_indep M X := 
   begin 
     intro hXY, simp_rw indep_iff_r, intro hY, 
-    linarith [M.R1 X, M.R1 (Y-X), diff_size hXY, rank_diff_subadditive M hXY]
+    linarith [M.R1 X, M.R1 (Y \ X ), diff_size hXY, rank_diff_subadditive M hXY]
   end 
 
 lemma indep_aug {M : rankfun U}{X Y : U} : 
@@ -561,7 +561,7 @@ begin
 end
 
 lemma indep_aug_diff {M : rankfun U}{X Y : U} : 
-  size X < size Y → is_indep M X → is_indep M Y  → (∃ e, e ∈ Y-X ∧ is_indep M (X ∪ e)) := 
+  size X < size Y → is_indep M X → is_indep M Y  → (∃ e, e ∈ Y \ X  ∧ is_indep M (X ∪ e)) := 
   λ h₁ h₂ h₃, by {simp_rw elem_diff_iff, simp_rw and_assoc, exact indep_aug h₁ h₂ h₃}
 
 lemma dep_subset {M : rankfun U}{X Y : U}: 
@@ -585,7 +585,7 @@ lemma I2 {M : rankfun U} {X Y : U}:
   X ⊆ Y → is_indep M Y → is_indep M X := 
   begin 
     intro hXY, simp_rw indep_iff_r, intro hY, 
-    linarith [M.R1 X, M.R1 (Y-X), diff_size hXY, rank_diff_subadditive M hXY]
+    linarith [M.R1 X, M.R1 (Y \ X ), diff_size hXY, rank_diff_subadditive M hXY]
   end 
 
 lemma I3 {M : rankfun U}{X Y : U}: 
@@ -615,7 +615,7 @@ instance coe_circuit {M : rankfun U} : has_coe (circuit M) U := coe_subtype
 
 
 lemma circuit_iff_r {M : rankfun U} (X : U) :
-  is_circuit M X ↔ (M.r X = size X-1) ∧ (∀ Y:U, Y ⊂ X → M.r Y = size Y) := 
+  is_circuit M X ↔ (M.r X = size X - 1) ∧ (∀ Y:U, Y ⊂ X → M.r Y = size Y) := 
   begin
     unfold is_circuit,
     simp_rw indep_iff_r, 
@@ -672,24 +672,24 @@ lemma inter_circuits_ssubset {M : rankfun U}{C₁ C₂ : U}:
   λ hC₁ hC₂ hC₁C₂, by {refine ⟨inter_subset_left _ _,λ h, _⟩, rw ←inter_subset at h, exact hC₁C₂ (C2 M h hC₁ hC₂ )}
 
 lemma C3 {M : rankfun U} {C₁ C₂ : U} {e : single U}: 
-  is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ C, is_circuit M C ∧ C ⊆ (C₁ ∪ C₂ - e) := 
+  is_circuit M C₁ → is_circuit M C₂ → C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ C, is_circuit M C ∧ C ⊆ ((C₁ ∪ C₂) \ e) := 
   begin
     intros hC₁ hC₂ hC₁C₂ he, rw [←dep_iff_contains_circuit, dep_iff_r], 
     have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
     have heU : (e : U) ⊆ C₁ ∪ C₂ := subset_trans he (subset_trans hI.1 (subset_union_left C₁ _)),
-    have hcalc : M.r (C₁ ∪ C₂ - e) ≤ size (C₁ ∪ C₂ -e) -1 := by linarith [R2 M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
+    have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := by linarith [R2 M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
       r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
     exact int.le_sub_one_iff.mp hcalc,
   --More verbosely: 
-  /-have := calc M.r (C₁ ∪ C₂ - e) ≤ M.r (C₁ ∪ C₂)                                : R2 M (diff_subset (C₁ ∪ C₂) e ) 
+  /-have := calc M.r (C₁ ∪ C₂ \ e) ≤ M.r (C₁ ∪ C₂)                                : R2 M (diff_subset (C₁ ∪ C₂) e ) 
                               ...  ≤ M.r C₁ + M.r C₂ - M.r (C₁ ∩ C₂)              : by linarith [M.R3 C₁ C₂]
-                              ...  = (size C₁ -1 ) + (size C₂-1) - size (C₁ ∩ C₂) : by rw [rank_of_circuit hC₁, rank_of_circuit hC₂, rank_of_circuit_ssubset hC₁ hI]
+                              ...  = (size C₁ -1 ) + (size C₂-1) \ size (C₁ ∩ C₂) : by rw [rank_of_circuit hC₁, rank_of_circuit hC₂, rank_of_circuit_ssubset hC₁ hI]
                               ...  = size (C₁ ∪ C₂) -2                            : by linarith [size_modular C₁ C₂]
-                              ...  = size (C₁ ∪ C₂ - e) - 1                       : by linarith [remove_single_size heU], -/
+                              ...  = size (C₁ ∪ C₂ \ e) - 1                       : by linarith [remove_single_size heU], -/
   end 
 
 lemma C3_subtype {M : rankfun U} {C₁ C₂ : circuit M} {e : single U}: 
-  C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ (C : circuit M), (C :U) ⊆ (C₁ ∪ C₂ - e) := 
+  C₁ ≠ C₂ → (e : U) ⊆ C₁ ∩ C₂ → ∃ (C : circuit M), (C :U) ⊆ (C₁ ∪ C₂) \ e := 
   by{intros hne he, cases C3 C₁.2 C₂.2 _ he with C hC, use ⟨C, hC.1⟩, exact hC.2, exact λ h, hne (subtype.eq h)}
 
 end circuit
@@ -868,7 +868,7 @@ lemma nonelem_cl_iff_nonspans {M : rankfun U}{X : U}{e : single U}:
   ⟨λ h, λ hn, h (elem_cl_iff_spans.mpr hn), λ h, λ hn, h (elem_cl_iff_spans.mp hn)⟩
 
 lemma cl4 (M : rankfun U)(X : U)(e f : single U) : 
-  e ∈ cl M (X ∪ f) - cl M X  → f ∈ cl M (X ∪ e) - cl M X := 
+  e ∈ cl M (X ∪ f) \ cl M X  → f ∈ cl M (X ∪ e) \ cl M X := 
   begin 
     repeat {rw [elem_diff_iff, nonelem_cl_iff_r, elem_cl_iff_r]}, 
     rw union_right_comm, refine λ h, ⟨_,_⟩, 
@@ -1229,13 +1229,13 @@ lemma basis_iff_rank_eq_size_eq_rank_top {M : rankfun U}{B : U} :
   by {rw basis_iff_indep_full_rank, refl}
 
 lemma basis_exchange (M : rankfun U){B₁ B₂ : U}{e : single U}:
-  is_basis M B₁ → is_basis M B₂ → e ∈ B₁ - B₂ → ∃ f, f ∈ (B₂ - B₁) ∧ is_basis M ((B₁ - e) ∪ f) :=
+  is_basis M B₁ → is_basis M B₂ → e ∈ B₁ \ B₂ → ∃ f, f ∈ (B₂ \ B₁) ∧ is_basis M ((B₁ \ e) ∪ f) :=
   begin
     intros hB₁ hB₂ he, rw basis_iff_indep_full_rank at hB₁ hB₂, simp_rw basis_iff_indep_full_rank,   
     cases elem_diff_iff.mp he with he₁ he₂, 
-    have h' : is_indep M (B₁ - e) := subset_indep _ hB₁.1, 
+    have h' : is_indep M (B₁ \ e) := subset_indep _ hB₁.1, 
     rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
-    have h'' : B₂ - (B₁ -e) = B₂ - B₁ := by
+    have h'' : B₂ \ (B₁ \ e) = B₂ \ B₁ := by
       {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e:U), nonelem_disjoint_iff.mp he₂, union_bot]},
     rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
     use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 

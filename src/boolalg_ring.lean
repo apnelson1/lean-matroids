@@ -52,26 +52,25 @@ lemma top_symm_diff (X : A) :
 
 
 
-@[simp] instance to_ring  : comm_semiring A  := 
+@[simp] instance to_comm_ring  : comm_ring A  := 
 { 
   add := λ X Y, symm_diff X Y, 
   add_assoc := λ X Y Z, symm_diff_assoc X Y Z, --by {simp only [has_add.add], exact } 
   zero := ⊥,
   zero_add := λ X, by {simp only [has_add.add], unfold symm_diff, rw [bot_diff, diff_bot, bot_union]},--rw [bot_union, boolalg.compl_bot, top_union, inter_top]},
   add_zero := λ X, by {simp only [has_add.add], unfold symm_diff, rw [bot_diff, diff_bot, union_bot]},
+  neg := λ X, X, 
+  add_left_neg := sorry,
   add_comm := λ X Y, symm_diff_comm X Y, 
   mul := λ X Y, X ∩ Y,
   mul_assoc := λ X Y Z, inter_assoc X Y Z,
   one := ⊤,
   one_mul := λ X, top_inter X,
   mul_one := λ X, inter_top X,
-  zero_mul := λ X, by {simp only [has_mul.mul], rw bot_inter},
-  mul_zero := λ X, by {simp only [has_mul.mul], rw inter_bot},
-  mul_comm := λ X Y, inter_comm X Y, 
   left_distrib := λ X Y Z, symm_diff_distrib_inter_left X Y Z,
   right_distrib := λ X Y Z, symm_diff_distrib_inter_right X Y Z, 
+  mul_comm := λ X Y, inter_comm X Y, 
 }
-
 
 lemma one_plus (X : A) : 1 + X = Xᶜ := 
   top_symm_diff X 
@@ -118,47 +117,49 @@ lemma diff_to_boolalg {X Y : A} : X - Y = X*(Y + 1) :=
 
 mk_simp_attribute bla "blalg"
 
+@[simp, bla] lemma times_idem (X : A): X*X = X := inter_idem X 
 @[simp, bla] lemma plus_zero (X : A): X+0 = X := add_zero X 
 @[simp, bla] lemma zero_plus (X : A): 0+X = X := zero_add X   
 @[simp, bla] lemma times_zero (X : A): X*0 = 0 := inter_bot X 
 @[simp, bla] lemma zero_times (X : A): 0*X = 0 := bot_inter X
 @[simp, bla] lemma times_one (X : A): X*1 = X := inter_top X 
 @[simp, bla] lemma one_times (X : A): 1*X = X := top_inter X 
-@[simp, bla] lemma mult_comm (X Y : A): X*Y = Y*X := mul_comm X Y
-@[simp, bla] lemma mult_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
+@[simp, bla] lemma times_comm (X Y : A): X*Y = Y*X := begin have := mul_comm X Y, end 
+@[simp, bla] lemma times_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
 @[simp, bla] lemma plus_comm (X Y : A): X+Y=Y+X := add_comm X Y
 @[simp, bla] lemma plus_assoc (X Y Z : A): X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
 
 @[simp, bla] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := 
-  by rw [←mul_assoc, mult_idem_boolalg]
+  by rw [←mul_assoc, times_idem]
+
 @[simp, bla] lemma plus_self (X : A): X + X = 0 := 
-  by {rw [←mul_one X], sorry}
-@[simp, bla] lemma plus_self_left (X Y : A): X + (X + Y )= Y := sorry 
-@[simp, bla] lemma power_cancel (X : A) (n : nat) : X^(n.succ) = X := sorry
+  by {ring SOP, rw two_eq_zero_boolalg, ring}
+
+@[simp, bla] lemma plus_self_left (X Y : A): X + (X + Y )= Y := 
+  by {ring, rw two_eq_zero_boolalg, ring}
+
+@[simp, bla] lemma power_cancel (X : A) (n : nat) : X^(n.succ) = X := 
+  by {induction n with n IH, ring, rw [pow_succ' X (nat.succ n), IH, times_idem] }
+
 @[simp, bla] lemma distrib_cancel (X Y : A) : X*Y + X*(Y+1) = X := 
   by {rw[←left_distrib], simp only [plus_self_left, times_one]} 
 
 
-@[simp, bla] lemma plus_cancel (n : nat) : (n.succ.succ : A) = (n:A) := sorry 
-
 @[simp, bla] lemma one_sandwich (X : A): 1 + (X+1) = X := sorry 
 
 
-@[simp, bla] lemma mult_idem_boolalg (X : A): X*X = X := inter_idem X 
+@[simp, bla] lemma mul_cancel_left (S X: A) : S*(S*X) = S*X := sorry 
 
-
---@[simp, bla] lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 := sorry 
+lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 := 
+  by {refine ⟨λ h, by{rw h, simp}, λ h, _⟩, have : X = 0 - Y := by ring,  }
 
 @[simp, bla] lemma prod_comp_cancel (X : A) : X*(X+1) = 0 := 
-  by {rw[left_distrib, mult_idem_boolalg, times_one, plus_self]  }
+  by {rw[left_distrib, times_idem, times_one, plus_self]  }
 
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
-by 
-{
-  rw [left_distrib, right_distrib], sorry, 
-} 
+  by {apply one_side.mpr, ring, ring SOP, simp only with bla, ring, simp}
 
-
+/-
 
 meta def set_to_ring_eqn : tactic unit := do
 `[try {simp only
@@ -174,12 +175,4 @@ meta def simp_only_bla : tactic unit :=
 meta def simp_bla : tactic unit :=
   do `[simp with bla]
 meta def simp_bla_hyp : tactic unit :=
-
-lemma blah {X Y : A} : X ⊆ Y → X ∪ (Y - X) = Y  := 
-  begin
-    intro h,
-    normalize_boolalg_eqns, 
-    simp_bla,
-    normalize_boolalg_eqns,
-     --repeat {rw this, rw h, ring_exp}, 
-  end
+-/
