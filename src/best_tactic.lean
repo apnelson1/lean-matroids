@@ -74,7 +74,7 @@ lemma on_plus : forall {n : nat} (V : vector A n) (a b : freealg n),
   | 0 V a b :=
       begin
         cases a; cases b; unfold map plus bxor; ring,
-        exact two_eq_zero_boolalg,
+        exact two_eq_zero,
       end
   | (n+1) V a b :=
       begin
@@ -89,47 +89,23 @@ lemma on_times : forall {n : nat} (V : vector A n) (a b : freealg n),
   | (n+1) V a b :=
       begin
         unfold map times,
-        rw [←on_times V.tail a.1 b.1, ←on_times V.tail a.2 b.2, ←expand_product],
+        rw [←on_times V.tail a.1 b.1, ←on_times V.tail a.2 b.2,←expand_product],
       end
 
 ----------------------------------------------------------------
 
 lemma foo (X : A):  Xᶜᶜᶜᶜ = X :=
 begin
-  let vars := λ n : nat, X, 
+  let vars := vector.cons X (vector.nil),
   set_to_ring_eqn,
-  have := on_zero 1 vars,
-  have : X = _ := on_var 1 0 vars zero_lt_one,
+  have := on_zero vars,
+  have : X = _ := on_var vars 0 zero_lt_one,
   rw this, 
   --erw [(rfl : X = vars 1)], --, on_var vars (one_lt_two)],
-  simp only [on_zero 1 vars , on_one 1 vars, on_plus 1 vars, on_times 1 vars],
-  refl, 
-  
-end
-
-
-lemma bar (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
-begin
-  let vars := λ n : nat, if (n = 0) then X 
-                         else if (n = 1) then Y 
-                         else if (n = 2) then Z
-                         else if (n = 3) then P
-                         else if (n = 4) then W
-                         else Q, 
-  set_to_ring_eqn, 
-  
-  have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
-  have hy : Y = _ := on_var _ _ vars (by norm_num : 1 < 6),
-  have hz : Z = _ := on_var _ _ vars (by norm_num : 2 < 6),
-  have hp : P = _ := on_var _ _ vars (by norm_num : 3 < 6),
-  have hw : W = _ := on_var _ _ vars (by norm_num : 4 < 6),
-  have hq : Q = _ := on_var _ _ vars (by norm_num : 5 < 6),
-
-  rw [hx, hy, hz, hw, hp, hq],
-  
-  simp only [on_zero 6 vars , on_one 6 vars, on_plus 6 vars, on_times 6 vars],
+  simp only [on_zero vars , on_one vars, on_plus vars, on_times vars],
   refl, 
 end
+
 end /-namespace-/ freealg
 
 
@@ -144,5 +120,65 @@ meta def tactic.interactive.introduce_varmap (vars : parse ids_list) : tactic un
 lemma baz (A : boolalg) : false := begin
   introduce_varmap [a,b,c],
   --have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
+open tactic
+open tactic.interactive 
+open freealg
+
+meta def ids_list : lean.parser (list name) := types.list_of ident
+meta def meta_build_vector : list pexpr -> pexpr
+| [] := ``(vector.nil)
+| (v :: vs) := ``(vector.cons %%v %%(meta_build_vector vs))
+meta def list_with_idx {T : Type} : (list T) → nat -> list (nat × T)
+| [] n := []
+| (v :: vs) n := (n, v) :: list_with_idx vs (n + 1)
+
+
+meta def tactic.interactive.introduce_varmap_rewrite (vname : parse ident) (vars : parse ids_list) : tactic unit :=
+  do
+    names <- vars.mmap (fun name, get_local name),
+    («let» vname ``(vector _ %%(vars.length)) $ meta_build_vector (names.map to_pexpr)),
+    mmap 
+      (λ (pair : (nat × expr)),
+        let name := prod.snd pair in
+        let idx := prod.fst pair in
+        do 
+          vname_expr <- get_local vname,
+          hname <- get_unused_name `Hv,
+          («have» hname ``(%%name = _) ``(on_var %%vname_expr %%idx (by norm_num))),
+          hname_expr <- get_local hname,
+          tactic.try (rewrite_target hname_expr),
+          return ())
+      (list_with_idx names 0),
+    return ()
+
+meta def tactic.interactive.simplify_sets (sets : parse ids_list): tactic unit :=
+  do
+    -- TODO: actually check the goal is of the form of some boolalg equation
+    --       also -- do something about hypotheses...
+    vname <- get_unused_name `V,
+    tactic.interactive.introduce_varmap_rewrite vname sets,
+    vname_expr <- get_local vname,
+    set_to_ring_eqn,
+    simp none tt ([``(freealg.on_one %%vname_expr),
+                   ``(freealg.on_plus %%vname_expr),
+                   ``(freealg.on_times %%vname_expr),
+                   ``(freealg.on_zero %%vname_expr),
+                   ``(freealg.on_var %%vname_expr)].map simp_arg_type.expr)
+                    list.nil loc.wildcard,
+    refl
+
+#print tactic.interactive.simplify_sets 
+
+lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
+  introduce_varmap_rewrite V [X, Y, Z],
+  refl,
 end
 
+--set_option pp.notation false
+--set_option pp.implicit false
+
+
+lemma bar {A : boolalg} (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
+begin
+  simplify_sets [X, Y, Z, P, Q, W],
+end

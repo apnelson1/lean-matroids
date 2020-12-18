@@ -140,7 +140,7 @@ def to_minor : Π {E : U}, minor_on E → rankfun U → matroid_on E
 | _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor expr r)
 
 
-lemma to_minor.delete_delete {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
+/-lemma to_minor.delete_delete {D₁ D₂ : U} (h : D₁ ∩ D₂ = ⊥) :
 let
   h₁ : (D₁ ∪ D₂)ᶜ ⊆ D₁ᶜ := sorry,
   h₂ :  D₁ᶜ       ⊆ ⊤   := sorry,
@@ -153,24 +153,26 @@ begin
   intros,
   delta to_minor,
   refl,
-end
+end-
 
 
 
 @[simp] def contract_delete  (C D : U) :
   (C ∩ D = ⊥) → minor_on (C ∪ D)ᶜ :=
 fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ _ ... ⊆ Cᶜ : inter_subset_left _ _ ) (corestrict Cᶜ (subset_top _) self)
+-/
+
 
 --simplified minor expression \ corestrict to Z, then restrict to A 
-
-
 
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_top Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_top (A ∪ Zᶜ))) self)) M :=
   let f := (embed.from_subset A).f, hAZc := subset_union_left A Zᶜ, hAZc_top := subset_top (A ∪ Zᶜ) in 
   begin
     ext X, 
-    have set_eq : (A ∪ Zᶜ) \ A = ⊤ \ Z := by {simp only [union_diff, top_diff], sorry},
+    have set_eq : (A ∪ Zᶜ) \ A = ⊤ \ Z 
+      := by {rw [diff_def, inter_distrib_right, ←compl_union, union_comm Z, 
+                union_subset_mp hAZ], simp},
     let M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_top self)) M), 
     have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := by refl, 
     rw set_eq at RHS, 
@@ -275,8 +277,9 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : U) (hZ'A : Z' ⊆ A) (h
     ext, rename x X, 
     have equiv : (A \ Z') ∪ (⊤ \ Z) = (⊤ \ J) := by 
     {
-      simp only [J], rw diff_def, simp, 
-      sorry
+      simp only [top_diff, J, diff_def, top_inter],
+      rw [compl_union, compl_inter, inter_distrib_left, ←compl_union Z', 
+          (union_subset_mp (subset_trans hZ'A hAZ)), compl_compl, union_comm Zᶜ, inter_comm A], 
     }, 
     have LHS := 
     calc     (to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ)) M).r X
@@ -317,13 +320,13 @@ begin
   }
 end
 
-lemma has_representation {M : rankfun U} {E : U} (expr : minor_on E) :
+/-lemma has_representation {M : rankfun U} {E : U} (expr : minor_on E) :
   (∃ (C D : U) (hCD : C ∩ D = ⊥),  
     (C ∪ D)ᶜ = E 
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) :=
 begin
   sorry, 
-end
+end-/
 
 
 /-lemma has_good_representation {M : rankfun U} {E : U} (expr : minor_on E) :
