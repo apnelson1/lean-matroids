@@ -124,9 +124,8 @@ meta def list_with_idx {T : Type} : (list T) → nat -> list (nat × T)
 | (v :: vs) n := (n, v) :: list_with_idx vs (n + 1)
 
 
-meta def tactic.interactive.introduce_varmap_rewrite (vars : parse ids_list) : tactic unit :=
+meta def tactic.interactive.introduce_varmap_rewrite (vname : parse ident) (vars : parse ids_list) : tactic unit :=
   do
-    vname <- get_unused_name `V,
     names <- vars.mmap (fun name, get_local name),
     («let» vname ``(vector _ %%(vars.length)) $ meta_build_vector (names.map to_pexpr)),
     mmap 
@@ -143,8 +142,26 @@ meta def tactic.interactive.introduce_varmap_rewrite (vars : parse ids_list) : t
       (list_with_idx names 0),
     return ()
 
+meta def tactic.interactive.simplify_sets (sets : parse ids_list): tactic unit :=
+  do
+    -- TODO: actually check the goal is of the form of some boolalg equation
+    --       also -- do something about hypotheses...
+    vname <- get_unused_name `V,
+    tactic.interactive.introduce_varmap_rewrite vname sets,
+    vname_expr <- get_local vname,
+    set_to_ring_eqn,
+    simp none tt ([``(freealg.on_one %%vname_expr),
+                   ``(freealg.on_plus %%vname_expr),
+                   ``(freealg.on_times %%vname_expr),
+                   ``(freealg.on_zero %%vname_expr),
+                   ``(freealg.on_var %%vname_expr)].map simp_arg_type.expr)
+                    list.nil loc.wildcard,
+    refl
+
+#print tactic.interactive.simplify_sets 
+
 lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
-  introduce_varmap_rewrite [X, Y, Z],
+  introduce_varmap_rewrite V [X, Y, Z],
   refl,
 end
 
@@ -154,8 +171,5 @@ end
 
 lemma bar {A : boolalg} (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
 begin
-  introduce_varmap_rewrite [X, Y, Z, P, Q, W],
-  set_to_ring_eqn,
-  simp only [on_zero V, on_one V, on_plus V, on_times V],
-  refl,
+  simplify_sets [X, Y, Z, P, Q, W],
 end
