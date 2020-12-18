@@ -74,7 +74,7 @@ lemma on_plus : forall {n : nat} (V : vector A n) (a b : freealg n),
   | 0 V a b :=
       begin
         cases a; cases b; unfold map plus bxor; ring,
-        exact two_eq_zero_boolalg,
+        exact two_eq_zero,
       end
   | (n+1) V a b :=
       begin
@@ -89,7 +89,7 @@ lemma on_times : forall {n : nat} (V : vector A n) (a b : freealg n),
   | (n+1) V a b :=
       begin
         unfold map times,
-        rw [←on_times V.tail a.1 b.1, ←on_times V.tail a.2 b.2, ←expand_product],
+        rw [←on_times V.tail a.1 b.1, ←on_times V.tail a.2 b.2,←expand_product],
       end
 
 ----------------------------------------------------------------
@@ -104,33 +104,8 @@ begin
   --erw [(rfl : X = vars 1)], --, on_var vars (one_lt_two)],
   simp only [on_zero vars , on_one vars, on_plus vars, on_times vars],
   refl, 
-  
 end
 
-/-
-lemma bar (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
-begin
-  let vars := λ n : nat, if (n = 0) then X 
-                         else if (n = 1) then Y 
-                         else if (n = 2) then Z
-                         else if (n = 3) then P
-                         else if (n = 4) then W
-                         else Q, 
-  set_to_ring_eqn, 
-  
-  have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
-  have hy : Y = _ := on_var _ _ vars (by norm_num : 1 < 6),
-  have hz : Z = _ := on_var _ _ vars (by norm_num : 2 < 6),
-  have hp : P = _ := on_var _ _ vars (by norm_num : 3 < 6),
-  have hw : W = _ := on_var _ _ vars (by norm_num : 4 < 6),
-  have hq : Q = _ := on_var _ _ vars (by norm_num : 5 < 6),
-
-  rw [hx, hy, hz, hw, hp, hq],
-  
-  simp only [on_zero 6 vars , on_one 6 vars, on_plus 6 vars, on_times 6 vars],
-  refl, 
-end
--/
 end /-namespace-/ freealg
 
 open interactive
@@ -191,4 +166,3 @@ begin
   simp only [on_zero V, on_one V, on_plus V, on_times V],
   refl,
 end
-

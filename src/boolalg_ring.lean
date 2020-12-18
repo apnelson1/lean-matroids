@@ -7,14 +7,6 @@ variables {A : boolalg}
 
 ----------------------------------------------
 
-lemma symm_diff_alt (X Y : A) : symm_diff X Y = (X ∪ Y) \ (X ∩ Y) := 
-begin
-   unfold symm_diff, 
-   repeat {rw [diff_def]}, 
-   rw [compl_inter, inter_distrib_right, inter_distrib_left, inter_distrib_left],
-   simp,   
-end  
-
 lemma symm_diff_three (X Y Z : A) : symm_diff (symm_diff X Y) Z = X ∩ Yᶜ ∩ Zᶜ ∪ Y ∩ Xᶜ ∩ Zᶜ ∪ (Z ∩ (Xᶜ ∩ Yᶜ) ∪ Z ∩ (Y ∩ X)) :=
 begin
   unfold symm_diff,
@@ -62,7 +54,7 @@ lemma top_symm_diff (X : A) :
 @[simp] instance to_comm_ring  : comm_ring A  := 
 { 
   add := λ X Y, symm_diff X Y, 
-  add_assoc := λ X Y Z, symm_diff_assoc X Y Z, --by {simp only [has_add.add], exact } 
+  add_assoc := λ X Y Z, symm_diff_assoc X Y Z,
   zero := ⊥,
   zero_add := λ X, by {simp only [has_add.add], unfold symm_diff, rw [bot_diff, diff_bot, bot_union]},--rw [bot_union, boolalg.compl_bot, top_union, inter_top]},
   add_zero := λ X, by {simp only [has_add.add], unfold symm_diff, rw [bot_diff, diff_bot, union_bot]},
@@ -86,18 +78,13 @@ lemma one_plus (X : A) : 1 + X = Xᶜ :=
 lemma plus_one (X : A) : X + 1 = Xᶜ := 
   by {rw add_comm, from one_plus X} 
 
+lemma top_to_boolalg : (⊤ : A) = (1 : A) := rfl
 
-lemma top_to_boolalg : (⊤ : A) = (1 : A) := 
-  rfl
+lemma bot_to_boolalg : (⊥ : A) = (0 : A):= rfl
 
-lemma bot_to_boolalg : (⊥ : A) = (0 : A):= 
-  rfl
+lemma symm_diff_to_boolalg {X Y : A} :  (X \ Y) ∪ (Y \ X) = X + Y := rfl 
 
-lemma symm_diff_to_boolalg {X Y : A} :  (X \ Y) ∪ (Y \ X) = X + Y :=
-  rfl 
-
-lemma inter_to_boolalg {X Y : A} : X ∩ Y = X * Y := 
-  rfl 
+lemma inter_to_boolalg {X Y : A} : X ∩ Y = X * Y := rfl 
 
 lemma union_to_boolalg {X Y : A} : X ∪ Y = (X + Y) + X*Y := 
   begin 
@@ -118,17 +105,6 @@ lemma diff_to_boolalg {X Y : A} : X \ Y = X*(Y + 1) :=
 
 
 
-@[simp] lemma two_eq_zero : (2 : A) = (0 : A) := 
-  begin
-    have : (1:A) + (1:A) = (2:A) := rfl, rw ←this,
-    rw [one_plus, ←top_to_boolalg, ←bot_to_boolalg],
-    simp, 
-  end
-
-lemma neg_self (X : A) : X = -X := 
-  by {have := calc X + X = X*2 : by ring ... = X*0 : by rw [two_eq_zero] ... = 0 : by ring, ring, }
-
-
 
 mk_simp_attribute ba_simp "ba_simplg"
 
@@ -146,6 +122,23 @@ mk_simp_attribute ba_simp "ba_simplg"
 
 @[simp, ba_simp] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := 
   by rw [←mul_assoc, times_idem]
+
+
+@[simp] lemma two_eq_zero : (2 : A) = (0 : A) := 
+  begin
+    have : (1:A) + (1:A) = (2:A) := rfl, rw ←this,
+    rw [one_plus, ←top_to_boolalg, ←bot_to_boolalg],
+    simp, 
+  end
+
+
+@[simp, ba_simp] lemma two_times (X : A): 2*X = 0 := by simp
+
+@[simp, ba_simp] lemma times_two (X : A): X*2 = 0 := by simp
+
+
+lemma neg_self (X : A) : X = -X := 
+  by {have := calc X + X = X*2 : by ring ... = 0 : by simp, ring, }
 
 @[simp, ba_simp] lemma plus_self (X : A): X + X = 0 := 
   by {ring SOP, rw two_eq_zero, ring}
@@ -171,8 +164,8 @@ lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 :=
   by {refine ⟨λ h, by{rw h, simp}, λ h, _⟩, rw (eq_neg_of_add_eq_zero h), exact (neg_self Y).symm }
 
 @[simp, ba_simp] lemma prod_comp_cancel (X : A) : X*(X+1) = 0 := 
-  by {rw[left_distrib, times_idem, times_one, plus_self]  }
-
+  by {ring SOP, simp }
+  
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 
