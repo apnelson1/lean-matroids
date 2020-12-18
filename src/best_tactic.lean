@@ -111,14 +111,8 @@ end /-namespace-/ freealg
 
 open interactive
 open lean.parser
-meta def ids_list : lean.parser (list name) := types.list_of ident
 
-  
-meta def tactic.interactive.introduce_varmap (vars : parse ids_list) : tactic unit := do
-  tactic.trace vars
 
-lemma baz (A : boolalg) : false := begin
-  introduce_varmap [a,b,c],
   --have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
 open tactic
 open tactic.interactive 
@@ -167,7 +161,7 @@ meta def tactic.interactive.simplify_sets (sets : parse ids_list): tactic unit :
                     list.nil loc.wildcard,
     refl
 
-#print tactic.interactive.simplify_sets 
+--#print tactic.interactive.simplify_sets 
 
 lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
   introduce_varmap_rewrite V [X, Y, Z],

@@ -43,19 +43,18 @@ def satisfies_I3 : (U → Prop) → Prop :=
   (I3 : satisfies_I3 indep)
 
 def satisfies_weak_I2 : (U → Prop) → Prop :=
-  λ indep, ∀ I (e : single U), indep (I ∪ e) → indep I 
+  λ indep, ∀ I (e : single U), e ∉ I → indep (I ∪ e) → indep I 
 
 lemma weak_I2_to_I2 (indep : U → Prop):  
   satisfies_weak_I2 indep → satisfies_I2  indep :=
   begin
-    intros h I J hIJ hJ, 
+    intros hwI2 I J hIJ hJ, 
     rcases minimal_example (λ K, I ⊆ K ∧ indep K) ⟨hIJ, hJ⟩ with ⟨K,⟨hKs,⟨⟨hIK,hKind⟩,hmin⟩⟩⟩,
     by_cases I = K, rw ←h at hKind, assumption, 
-    rcases aug_of_ssubset ⟨hIK, h⟩ with ⟨K',⟨e,⟨_,⟨_,_⟩⟩⟩⟩, 
-
+    rcases aug_of_ssubset ⟨hIK, h⟩ with ⟨K',⟨e,⟨hIK',⟨hK'K,hK'e⟩⟩⟩⟩,
+    have heK' : e ∉ K' := by {rw ssubset_of_add_nonelem_iff, rw hK'e, from hK'K },
+    from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwI2 _ _ heK' hKind}⟩ )
   end
-
-
 
 def indep.is_set_basis (M : indep_family U) := 
   λ B X, B ⊆ X ∧ M.indep B ∧ ∀ J, B ⊂ J → J ⊆ X → ¬M.indep J
@@ -180,7 +179,7 @@ lemma I_to_r_eq_rank_basis_union {M : indep_family U}{B X: U}(Y : U):
       rw [indep.I_to_r_of_set_basis h] at this, 
       from eq_of_ge_size_subset (subset_of_inter_mpr hUs h.1) this, 
     },
-    have h' := inter_subset_mp hUb.1, rw [inter_distrib_left, ←this] at h', 
+    have h' := subset_def_inter_mp hUb.1, rw [inter_distrib_left, ←this] at h', 
     rw ←h', from subset_union_subset_right _ _ _ (inter_subset_right BU Y),
   end
 
@@ -566,7 +565,7 @@ lemma cl.subset_union (M : clfun U)(X Y : U) :
   union_is_ub (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
   
 
-lemma cl.cl_union (M : clfun U)(X Y : U) :
+lemma cl.cl_union_both (M : clfun U)(X Y : U) :
   M.cl (X ∪ Y) = M.cl(M.cl X ∪ M.cl Y) :=
   begin
     apply subset_antisymm, 
@@ -576,25 +575,38 @@ lemma cl.cl_union (M : clfun U)(X Y : U) :
   end
 
 
-lemma cl.union_pair (M : clfun U)(X Y Z: U): 
+lemma cl.union_pair {M : clfun U}{X Y : U} (Z: U): 
   M.cl X = M.cl Y → M.cl (X ∪ Z) = M.cl (Y ∪ Z) :=
-  λ h, by rw [cl.cl_union _ X, cl.cl_union _ Y, h]
+  λ h, by rw [cl.cl_union_both _ X, cl.cl_union_both _ Y, h]
 
+lemma cl.cl_union_left (M : clfun U)(X Y : U) :
+  M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y)  :=
+  cl.union_pair Y (M.cl2 X)
 
 def cl.is_indep (M : clfun U) : U → Prop := 
-  λ I, ∀ X, X ⊂ I → M.cl X ⊂ I 
+  λ I, ∀ e, e ∈ I → M.cl (I \ e) ≠ M.cl I 
 
 lemma cl.satisfies_I1 (M : clfun U) : 
   satisfies_I1 (cl.is_indep M) :=
-  λ X h, false.elim (ssubset_bot X h)
+  λ e h, false.elim (nonelem_bot e h)
   
 lemma cl.satisfies_I2 (M : clfun U) : 
   satisfies_I2 (cl.is_indep M) :=
-  λ I J hIJ hJ X hX, by {have := hJ _ (ssubset_subset_trans hX hIJ), }
+  begin
+    apply weak_I2_to_I2 (λ X, cl.is_indep M X), 
+    intros I e heI hIe,
+    by_contra h, unfold cl.is_indep at h, push_neg at h, 
+    rcases h with ⟨f, ⟨hfI, hIfcl⟩⟩, 
+    have := cl.union_pair (e:U) hIfcl, 
+    rw exchange_comm hfI heI at this, 
+    from hIe f (subset_trans hfI (subset_union_left I e)) this, 
+  end 
 
 lemma cl.satisfies_I3 (M : clfun U) : 
   satisfies_I3 (cl.is_indep M) :=
-  sorry 
+  begin
+    
+  end
 
 def clfun_to_indep_family (M : clfun U) : indep_family U := 
 ⟨cl.is_indep M, cl.satisfies_I1 M, cl.satisfies_I2 M, cl.satisfies_I3 M⟩

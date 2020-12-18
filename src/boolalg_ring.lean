@@ -98,7 +98,7 @@ lemma compl_to_boolalg {X : A} : Xᶜ = X + 1 :=
   (plus_one X).symm 
 
 lemma subset_to_boolalg {X Y : A} : X ⊆ Y ↔ X*Y = X := 
-  by {rw ←inter_to_boolalg, exact inter_subset X Y} 
+  by {rw ←inter_to_boolalg, exact subset_def_inter X Y} 
 
 lemma diff_to_boolalg {X Y : A} : X \ Y = X*(Y + 1) := 
   by rw [plus_one, ←inter_to_boolalg, diff_def]
@@ -170,7 +170,6 @@ lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 
 
-
 meta def set_to_ring_eqn : tactic unit := do
 `[try {simp only
     [top_to_boolalg, bot_to_boolalg, symm_diff_to_boolalg, inter_to_boolalg, union_to_boolalg, 
@@ -186,3 +185,4 @@ meta def simp_only_ba_simp : tactic unit :=
 meta def simp_ba_simp : tactic unit :=
   do `[simp with ba_simp]
 --meta def simp_ba_simp_hyp : tactic unit :=
+-/

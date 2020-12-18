@@ -1,5 +1,5 @@
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
-import boolalg boolalg_induction
+import boolalg boolalg_induction boolalg_single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
 
@@ -67,8 +67,8 @@ lemma inter_closed_min_iff_in_and_lb {P : A → Prop}(hP : inter_closed P) (X : 
   is_minimal P X ↔ P X ∧ is_lb P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra, rw union_subset at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
-    rw [←union_subset, inter_subset, inter_comm] at a, 
+    by_contra, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    rw [←subset_def_union, subset_def_inter, inter_comm] at a, 
     exact ⟨inter_subset_right _ _, a⟩, 
     exact ssubset_not_supset hY (h.2 _ hPY), 
   end
@@ -88,7 +88,7 @@ lemma union_closed_max_iff_in_and_ub {P : A → Prop}(hP : union_closed P) (X : 
   is_maximal P X ↔ P X ∧ is_ub P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra, rw union_subset at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    by_contra, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
     exact ⟨subset_union_right _ _, ne.symm a⟩, 
     exact ssubset_not_supset hY (h.2 _ hPY), 
   end
@@ -107,8 +107,12 @@ lemma min_of_inter_closed_is_lb {P : A → Prop}(h : inter_closed P):
   is_lb P (min_of_inter_closed h) :=
   begin
     intros X hX, rcases contains_min hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,  
-    rw inter_closed_min_unique P h _ _  hY₂ ((classical.some_spec (inter_closed_exists_min P h))) at hY₁, exact hY₁, 
+    rw inter_closed_min_unique P h _ _  hY₂ ((classical.some_spec (inter_closed_exists_min P h))) at hY₁, exact hY₁,
   end
+
+/-lemma min_of_inter_closed_is_min {P : A → Prop}(h : inter_closed P) : 
+  is_minimal P (min_of_inter_closed h) :=
+  (classical.some_spec (inter_closed_exists_min P h))-/
 
 lemma is_min_of_inter_closed {P : A → Prop}(h : inter_closed P) {X : A}:
   P X → is_lb P X → X = min_of_inter_closed h := 
@@ -160,8 +164,6 @@ lemma is_max_of_union_closed_iff {P : A → Prop}(huc : union_closed P) (X : A):
 
 
 --- Unions/Intersections of collections
-
-
 lemma lb_union_closed (P : A → Prop) : 
   union_closed (λ X, is_lb P X) := 
   ⟨λ Z hZ, bot_subset Z, λ X Y hX hY, λ Z hZ, union_of_subsets (hX Z hZ) (hY Z hZ)⟩
@@ -175,18 +177,52 @@ def inter_all (P : A → Prop) : A := max_of_union_closed (lb_union_closed P)
 
 def union_all (P : A → Prop) : A := min_of_inter_closed (ub_inter_closed P)
 
-lemma inter_all_iff (P : A → Prop) (X : A):
+lemma subset_inter_all_iff (P : A → Prop) (X : A):
   X ⊆ inter_all P ↔ is_lb P X :=
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, max_of_union_closed_is_ub (lb_union_closed P) _ h ⟩,
     exact subset_trans h (max_of_union_closed_in (lb_union_closed P) Y hY), 
   end
 
-lemma union_all_iff (P : A → Prop) (X : A): 
+lemma union_all_subset_iff (P : A → Prop) (X : A): 
   union_all P ⊆ X ↔ is_ub P X := 
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, min_of_inter_closed_is_lb (ub_inter_closed P) _ h ⟩,
     exact subset_trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h,  
   end
+
+lemma union_all_ub (P : A → Prop):
+  is_ub P (union_all P) :=
+  (union_all_subset_iff P _).mp (subset_refl _ )
+  
+
+lemma union_all_minimal (P : A → Prop):
+  ∀ X, X ⊂ union_all P → ∃ Y, P Y ∧ ¬Y ⊆ X :=
+  begin
+    have := 
+  end
+
+
+def union_singles (P : single A → Prop) : A := 
+  union_all (λ X, if h : (size X = 1)  then P ⟨X,h⟩ else false) 
+
+def union_singles_elem_iff (P : single A → Prop)(e : single A) : 
+  e ∈ (union_singles P) ↔ P e :=
+  begin
+    let Q := (λ X, if h : (size X = 1)  then P ⟨X,h⟩ else false),
+    set X := union_all Q with hX, 
+    have := (is_min_of_inter_closed_iff (ub_inter_closed Q) _ ).mp hX, 
+    --have := (union_all_subset_iff Q (union_all Q)).mp (subset_refl _), 
+    refine ⟨λ h, _, λ h, _⟩, 
+    sorry, 
+    have : Q e := by {}
+    have := this e, 
+
+
+    --have := is_min_of_inter_closed_iff.mp X,  
+    
+    --have := union_all_iff 
+  end
+
 
 end boolalg 
