@@ -96,18 +96,18 @@ lemma on_times : forall {n : nat} (V : vector A n) (a b : freealg n),
 
 lemma foo (X : A):  Xᶜᶜᶜᶜ = X :=
 begin
-  let vars := λ n : nat, X, 
+  let vars := vector.cons X (vector.nil),
   set_to_ring_eqn,
-  have := on_zero 1 vars,
-  have : X = _ := on_var 1 0 vars zero_lt_one,
+  have := on_zero vars,
+  have : X = _ := on_var vars 0 zero_lt_one,
   rw this, 
   --erw [(rfl : X = vars 1)], --, on_var vars (one_lt_two)],
-  simp only [on_zero 1 vars , on_one 1 vars, on_plus 1 vars, on_times 1 vars],
+  simp only [on_zero vars , on_one vars, on_plus vars, on_times vars],
   refl, 
   
 end
 
-
+/-
 lemma bar (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
 begin
   let vars := λ n : nat, if (n = 0) then X 
@@ -130,6 +130,7 @@ begin
   simp only [on_zero 6 vars , on_one 6 vars, on_plus 6 vars, on_times 6 vars],
   refl, 
 end
+-/
 end /-namespace-/ freealg
 
 open interactive
@@ -137,6 +138,7 @@ open interactive.types
 open lean.parser
 open tactic
 open tactic.interactive 
+open freealg
 #check vector 
 
 meta def ids_list : lean.parser (list name) := types.list_of ident
@@ -156,22 +158,37 @@ meta def prod_second {S T :Type} : (S × T) → T
 | (s, t) := t
 
 
-meta def tactic.interactive.introduce_varmap (v : parse ident) (vars : parse ids_list) : tactic unit :=
+meta def tactic.interactive.introduce_varmap_rewrite (vars : parse ids_list) : tactic unit :=
   let l := list_size vars in
-  do    
+  do
+    vname <- get_unused_name `V,
     names <- vars.mmap (fun name, get_local name),
     let pv := build (list.map to_pexpr names) in
-    do  `[set v := %%pv],
-        mmap (λ (pair : (nat × expr)),
-          let name := prod.snd pair in
-          let idx := prod.fst pair in
-          do v <- get_local ``v, 
-            («have» none ``(vector.nth %%v %%idx = %%name) ``(by refl))) (list_with_idx names 0),
+    do  («let» vname none ``(%%pv)),
+        mmap 
+          (λ (pair : (nat × expr)),
+            let name := prod.snd pair in
+            let idx := prod.fst pair in
+            do 
+              vname <- get_local vname,
+              hname <- get_unused_name `Hv,
+              («have» hname ``(%%name = _) ``(on_var %%vname %%idx (by norm_num))),
+              nameexpr <- get_local hname,
+              tactic.try (rewrite_target nameexpr),
+              return ())
+          (list_with_idx names 0),
         return ()
 
-lemma baz (a b c: nat) : a = a := begin
-  introduce_varmap v [a,b,c],
+lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
+  introduce_varmap_rewrite [X, Y, Z],
+  refl,
+end
 
+lemma bar {A : boolalg} (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
+begin
+  introduce_varmap_rewrite [X, Y, Z, P, Q, W],
+  set_to_ring_eqn,
+  simp only [on_zero V, on_one V, on_plus V, on_times V],
   refl,
 end
 
