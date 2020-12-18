@@ -42,6 +42,21 @@ def satisfies_I3 : (U → Prop) → Prop :=
   (I2 : satisfies_I2 indep)
   (I3 : satisfies_I3 indep)
 
+def satisfies_weak_I2 : (U → Prop) → Prop :=
+  λ indep, ∀ I (e : single U), indep (I ∪ e) → indep I 
+
+lemma weak_I2_to_I2 (indep : U → Prop):  
+  satisfies_weak_I2 indep → satisfies_I2  indep :=
+  begin
+    intros h I J hIJ hJ, 
+    rcases minimal_example (λ K, I ⊆ K ∧ indep K) ⟨hIJ, hJ⟩ with ⟨K,⟨hKs,⟨⟨hIK,hKind⟩,hmin⟩⟩⟩,
+    by_cases I = K, rw ←h at hKind, assumption, 
+    rcases aug_of_ssubset ⟨hIK, h⟩ with ⟨K',⟨e,⟨_,⟨_,_⟩⟩⟩⟩, 
+
+  end
+
+
+
 def indep.is_set_basis (M : indep_family U) := 
   λ B X, B ⊆ X ∧ M.indep B ∧ ∀ J, B ⊂ J → J ⊆ X → ¬M.indep J
 
@@ -527,7 +542,7 @@ def satisfies_cl1 : (U → U) → Prop :=
   λ cl, ∀ X, X ⊆ cl X
 
 def satisfies_cl2 : (U → U) → Prop := 
-  λ cl, ∀ X, cl X = cl (cl X) 
+  λ cl, ∀ X, cl (cl X) = cl X
 
 def satisfies_cl3 : (U → U) → Prop := 
   λ cl, ∀ X Y, X ⊆ Y → cl X ⊆ cl Y 
@@ -542,11 +557,29 @@ structure clfun (U : boolalg) :=
   (cl3 : satisfies_cl3 cl)
   (cl4 : satisfies_cl4 cl)
 
-lemma cl.union (M : clfun U)(X Y Z: U): 
-  M.cl X = M.cl Y → M.cl (X ∪ Z) = M.cl (Y ∪ Z) :=
+lemma cl.monotone (M : clfun U){X Y : U} :
+  X ⊆ Y → M.cl X ⊆ M.cl Y :=
+  λ h, M.cl3 _ _ h
+
+lemma cl.subset_union (M : clfun U)(X Y : U) :
+  M.cl X ∪ M.cl Y ⊆ M.cl (X ∪ Y) :=
+  union_is_ub (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
+  
+
+lemma cl.cl_union (M : clfun U)(X Y : U) :
+  M.cl (X ∪ Y) = M.cl(M.cl X ∪ M.cl Y) :=
   begin
-    have calc 
+    apply subset_antisymm, 
+    from cl.monotone M (union_subset_pairs (M.cl1 X) (M.cl1 Y)),
+    have := cl.monotone M (cl.subset_union M X Y),
+    rw M.cl2 at this, assumption
   end
+
+
+lemma cl.union_pair (M : clfun U)(X Y Z: U): 
+  M.cl X = M.cl Y → M.cl (X ∪ Z) = M.cl (Y ∪ Z) :=
+  λ h, by rw [cl.cl_union _ X, cl.cl_union _ Y, h]
+
 
 def cl.is_indep (M : clfun U) : U → Prop := 
   λ I, ∀ X, X ⊂ I → M.cl X ⊂ I 

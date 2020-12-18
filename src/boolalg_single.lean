@@ -213,6 +213,7 @@ lemma elem_only_larger_ssubset {X Y : A} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
   λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
 
+
 lemma add_compl_single_size {X : A} {e : single A} :
   e ∈ Xᶜ → size (X ∪ e) = size X + 1 := 
 begin
@@ -283,6 +284,17 @@ lemma add_from_nonempty_diff {X Y : A} :
     rcases h with ⟨e,⟨he1,he2⟩⟩, 
     exact ssubset_subset_trans (ssub_of_add_nonelem he1) he2,
   end
+
+ 
+lemma aug_of_ssubset {X Y : A} : 
+  X ⊂ Y → ∃ Z (e : single A), X ⊆ Z ∧ Z ⊂ Y ∧ Z ∪ e = Y :=
+  begin
+    intro hXY, 
+    rcases elem_only_larger_ssubset hXY with ⟨e, ⟨heY, heX⟩⟩, 
+    refine ⟨Y \ e, e, ⟨subset_of_removal hXY.1 heX ,⟨ _, _⟩ ⟩⟩,
+    from remove_single_ssubset heY, 
+    from remove_add_elem heY, 
+  end 
 
 lemma exchange_size {X : A}{e f : single A} : 
   e ∈ X → f ∉ X → size ((X \ e) ∪ f) = size X := 
