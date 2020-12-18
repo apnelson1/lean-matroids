@@ -176,7 +176,7 @@ lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 :=
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 
-/-
+
 
 meta def set_to_ring_eqn : tactic unit := do
 `[try {simp only
@@ -191,5 +191,4 @@ meta def simp_only_ba_simp : tactic unit :=
   do `[simp only with ba_simp]
 meta def simp_ba_simp : tactic unit :=
   do `[simp with ba_simp]
-meta def simp_ba_simp_hyp : tactic unit :=
--/
+--meta def simp_ba_simp_hyp : tactic unit :=
