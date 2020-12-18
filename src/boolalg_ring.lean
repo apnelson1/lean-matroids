@@ -176,13 +176,14 @@ lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 :=
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 
-/-
+
 
 meta def set_to_ring_eqn : tactic unit := do
 `[try {simp only
     [top_to_boolalg, bot_to_boolalg, symm_diff_to_boolalg, inter_to_boolalg, union_to_boolalg, 
       diff_to_boolalg, compl_to_boolalg, subset_to_boolalg] at *}]
 
+/-
 meta def normalize_boolalg_eqns : tactic unit := do
   `[set_to_ring_eqn,
     try {apply one_side.mpr},
