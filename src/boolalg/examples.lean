@@ -1,5 +1,5 @@
 
-import boolalg boolalg_single
+import .basic .single
 namespace boolalg 
 -- Embedding and subalgebras
 
@@ -18,7 +18,7 @@ variables {A : boolalg}
 
 lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := 
-  λ h, by {rw inter_subset at *, rw [←emb.on_inter, h]}
+  λ h, by {rw subset_def_inter at *, rw [←emb.on_inter, h]}
 
 def embed.single_emb {A B : boolalg} (emb : embed A B) : single A → single B := 
   λ e, ⟨emb.f e.val, (eq.trans (emb.on_size e.val).symm e.property :size (emb.f e.val) = 1 )⟩  
@@ -63,10 +63,10 @@ def subalg {A : boolalg}(ground : A) : boolalg :=
   union_comm_ax := λ X Y, subtype.eq (union_comm X.val Y.val),
   union_distrib_right_ax := λ X Y Z, subtype.eq (union_distrib_right X Y Z),
   inter_distrib_right_ax := λ X Y Z, subtype.eq (inter_distrib_right X Y Z),
-  union_subset_ax := λ X Y, by {refine ⟨ λ h, _,λ h, _⟩, rw union_subset at h, simp_rw h, 
-                                simp only [subtype.coe_eta, subtype.val_eq_coe], rw union_subset,  
+  union_subset_ax := λ X Y, by {refine ⟨ λ h, _,λ h, _⟩, rw subset_def_union at h, simp_rw h, 
+                                simp only [subtype.coe_eta, subtype.val_eq_coe], rw subset_def_union,  
                                 cases Y, cases X, simp only [subtype.mk_eq_mk] at *, assumption},
-  inter_top_ax := λ X, by {cases X, simp only [subtype.mk_eq_mk], exact inter_subset_mp X_property},
+  inter_top_ax := λ X, by {cases X, simp only [subtype.mk_eq_mk], exact subset_def_inter_mp X_property},
   union_bot_ax := λ X, by {cases X, simp only [subtype.mk_eq_mk], apply union_bot},
   union_compl_ax := λ X, by {simp only [subtype.mk_eq_mk, subtype.val_eq_coe], 
                                 exact union_diff_of_subset X.property},

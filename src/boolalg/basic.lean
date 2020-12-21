@@ -3,7 +3,7 @@ import tactic.ext
 import tactic.linarith
 import tactic.tidy 
 import tactic 
- 
+
 
 -- The API I would like to use for various basic objects.
 -- This probably belongs in its own file by this point. 
@@ -673,6 +673,9 @@ lemma ssubset_compl_right {X Y : A} : X ⊂ Yᶜ → Y ⊂ Xᶜ :=
 
 lemma ssubset_compl_left {X Y : A} : Xᶜ ⊂ Y → Yᶜ ⊂ X := 
   λ h, by {rw [←compl_compl Y] at h, exact compl_to_ssubset h}
+
+
+
 
 
 end boolalg

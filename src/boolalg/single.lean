@@ -1,4 +1,4 @@
-import boolalg 
+import .basic
 namespace boolalg 
 -- Singles
 local attribute [instance] classical.prop_decidable
@@ -26,12 +26,12 @@ lemma nonelem_iff {e : single A}{X : A} :
   e ∉ X ↔ ¬(e:A) ⊆ X := 
   by trivial 
 
-@[simp] lemma size_coe_single {A : boolalg} (e : single A) :
+@[simp] lemma size_single {A : boolalg} (e : single A) :
    size (e : A) = 1 := e.2 
 
 @[simp] lemma single_ne_bot (e : single A) : 
   (e:A) ≠ ⊥ := 
-  λ h, by {have := size_coe_single e, rw [h,size_bot] at this, linarith}
+  λ h, by {have := size_single e, rw [h,size_bot] at this, linarith}
 
 @[simp] lemma nonelem_bot (e : single A) : 
   e ∉ (⊥:A) := 
@@ -56,7 +56,7 @@ lemma size_pos_has_elem {X : A}:
 
 lemma size_pos_iff_has_elem {X : A}: 
   0 < size X ↔ ∃ e, e ∈ X := 
-  ⟨λ h, size_pos_has_elem h, λ h, by {cases h with e he, have := size_monotone he, rw size_coe_single at this, linarith}⟩ 
+  ⟨λ h, size_pos_has_elem h, λ h, by {cases h with e he, have := size_monotone he, rw size_single at this, linarith}⟩ 
 
 lemma size_zero_iff_has_no_elem {X : A}:
   size X = 0 ↔ ¬ ∃ e, e ∈ X := 
@@ -70,7 +70,7 @@ lemma nested_singles_eq {e f: single A} :
   (e: A) ⊆ (f :A) → e = f :=
   begin
     intro hef, ext, refine eq_of_eq_size_subset hef _,
-    calc _ = 1 :size_coe_single e ... = _: (size_coe_single f).symm, 
+    calc _ = 1 :size_single e ... = _: (size_single f).symm, 
   end
 
 lemma nonelem_disjoint {e : single A} {X : A}: 
@@ -93,7 +93,7 @@ lemma elem_compl_iff {X : A}{e : single A} :
   e ∈ Xᶜ ↔ e ∉ X := 
   begin
     refine ⟨λ h, λ he, _, λ h, _⟩, 
-    have := subset_of_inter_mpr  he h, rw inter_compl at this, have := size_monotone this, linarith [size_coe_single e, size_bot A],   
+    have := subset_of_inter_mpr  he h, rw inter_compl at this, have := size_monotone this, linarith [size_single e, size_bot A],   
     have := nonelem_disjoint h, rw ← subset_of_compl_iff_disjoint at this, assumption,  
   end
 
@@ -122,7 +122,7 @@ lemma elem_diff_iff {e : single A}{X Y : A} :
   begin
     refine ⟨λ h ,⟨subset_trans h (diff_subset _ _),λ heY,_⟩, λ h, _⟩, 
     have := subset_of_inter_mpr  h heY, rw diff_inter at this, 
-    linarith [size_monotone this, size_bot A, size_coe_single e], 
+    linarith [size_monotone this, size_bot A, size_single e], 
     rw [diff_def, elem_iff, subset_of_inter_iff], 
     rw [ ←elem_compl_iff, elem_iff, elem_iff] at h, exact h
   end
@@ -198,7 +198,7 @@ lemma ssub_of_add_compl {X : A} {e : single A} :
      refine λ hXe, ⟨subset_union_left _ _, _⟩, intro h, rw [h, compl_union] at hXe, 
      have ebot := subset_trans hXe (inter_subset_right Xᶜ _), 
      rw [subset_def_inter, inter_compl] at ebot,  
-     have := size_coe_single e, rw ←ebot at this, linarith [size_bot A], 
+     have := size_single e, rw ←ebot at this, linarith [size_bot A], 
   end
 
 lemma ssub_of_add_nonelem {X : A} {e : single A}: 
@@ -222,7 +222,7 @@ lemma add_compl_single_size {X : A} {e : single A} :
   e ∈ Xᶜ → size (X ∪ e) = size X + 1 := 
 begin
   intro hXe, have := size_modular X e, 
-  rw [inter_comm X, nonelem_disjoint (elem_compl_iff.mp hXe), size_coe_single, size_bot] at this, 
+  rw [inter_comm X, nonelem_disjoint (elem_compl_iff.mp hXe), size_single, size_bot] at this, 
   linarith, 
 end
 
@@ -261,6 +261,10 @@ end
 lemma remove_single_subset (X : A) (e : single A) : 
   X \ e ⊆ X := 
   diff_subset X e 
+
+lemma nonelem_of_subset_remove_single (X : A) (e : single A):
+  X ⊆ X \ e → e ∉ X :=
+  λ h h', nonelem_removal _ e (subset_trans h' h)
 
 lemma remove_single_ssubset {X : A} {e : single A} :
   e ∈ X → X \ e ⊂ X := 
@@ -324,23 +328,23 @@ lemma size_union_distinct_singles {e f : single A}:
     intros hef, 
     have : ¬((e:A) ⊆ (f:A)) := λ h, hef (nested_singles_eq h), 
     have := add_nonelem_size this, 
-    rw [union_comm, size_coe_single] at this, 
+    rw [union_comm, size_single] at this, 
     linarith, 
   end 
 
 lemma size_union_singles_lb (e f : single A): 
   1 ≤ size (e ∪ f : A) := 
-  by {linarith [size_monotone (subset_union_left (e:A) f), size_coe_single e]}
+  by {linarith [size_monotone (subset_union_left (e:A) f), size_single e]}
 
 lemma size_union_singles_ub (e f : single A):
   size (e ∪ f :A) ≤ 2 := 
-  by {by_cases e = f, rw [h, union_idem, size_coe_single], linarith, linarith [size_union_distinct_singles h]}
+  by {by_cases e = f, rw [h, union_idem, size_single], linarith, linarith [size_union_distinct_singles h]}
 
 lemma subset_single {e : single A}{X : A} :
   X ⊆ e → X = ⊥ ∨ X = e := 
   begin
     intro h, cases lt_or_ge 0 (size X), 
-    apply or.inr, exact eq_of_eq_size_subset h (by linarith [size_coe_single e, size_monotone h]), 
+    apply or.inr, exact eq_of_eq_size_subset h (by linarith [size_single e, size_monotone h]), 
     apply or.inl, exact (size_zero_bot (by linarith [size_nonneg X])),
   end
 

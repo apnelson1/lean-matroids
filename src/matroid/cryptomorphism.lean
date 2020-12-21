@@ -1,5 +1,6 @@
 
-import rankfun boolalg boolalg_induction  boolalg_collections tactic.wlog matroid_basic
+import .rankfun 
+import boolalg.basic boolalg.induction boolalg.collections .basic 
 open boolalg 
 
 local attribute [instance] classical.prop_decidable
@@ -605,7 +606,7 @@ lemma cl.satisfies_I2 (M : clfun U) :
 lemma cl.satisfies_I3 (M : clfun U) : 
   satisfies_I3 (cl.is_indep M) :=
   begin
-    
+    sorry 
   end
 
 def clfun_to_indep_family (M : clfun U) : indep_family U := 

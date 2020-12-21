@@ -1,8 +1,7 @@
-
-
-import boolalg boolalg_examples 
+import boolalg.basic boolalg.examples
 
 namespace boolalg
+
 
 @[ext] structure rankfun (B : boolalg) :=
   (r : B → ℤ)
@@ -16,7 +15,6 @@ lemma rank_bot {B : boolalg} (M : rankfun B) :
 le_antisymm (calc M.r ⊥ ≤ size (⊥ : B) : M.R1 ⊥ ... = 0 : size_bot B) (M.R0 ⊥)
 
 instance rankfun.coe_to_fun {B : boolalg} : has_coe_to_fun (rankfun B) := ⟨_, rankfun.r⟩
-
 
 structure matroid :=
   (E : Type)
@@ -35,8 +33,6 @@ def matroid.R2 (M : matroid) : ∀ X Y, X ⊆ Y → M.r X ≤ M.r Y := M.r_fun.R
 def matroid.R3 (M : matroid) : ∀ X Y, M.r (X ∪ Y) + M.r (X ∩ Y) ≤ M.r X + M.r Y := M.r_fun.R3
 
 -----
-
-
 
 @[simp] def restrict_subset {B : boolalg} (R : B) (rfun : rankfun B)  : rankfun (subalg R) := 
 let f := (embed.from_subset R).f in 

@@ -1,5 +1,5 @@
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
-import boolalg boolalg_induction boolalg_single 
+import .basic .induction .single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
 
@@ -195,14 +195,6 @@ lemma union_all_ub (P : A → Prop):
   is_ub P (union_all P) :=
   (union_all_subset_iff P _).mp (subset_refl _ )
   
-
-lemma union_all_minimal (P : A → Prop):
-  ∀ X, X ⊂ union_all P → ∃ Y, P Y ∧ ¬Y ⊆ X :=
-  begin
-    have := 
-  end
-
-
 def union_singles (P : single A → Prop) : A := 
   union_all (λ X, if h : (size X = 1)  then P ⟨X,h⟩ else false) 
 
@@ -210,18 +202,24 @@ def union_singles_elem_iff (P : single A → Prop)(e : single A) :
   e ∈ (union_singles P) ↔ P e :=
   begin
     let Q := (λ X, if h : (size X = 1)  then P ⟨X,h⟩ else false),
-    set X := union_all Q with hX, 
-    have := (is_min_of_inter_closed_iff (ub_inter_closed Q) _ ).mp hX, 
-    --have := (union_all_subset_iff Q (union_all Q)).mp (subset_refl _), 
-    refine ⟨λ h, _, λ h, _⟩, 
-    sorry, 
-    have : Q e := by {}
-    have := this e, 
-
-
-    --have := is_min_of_inter_closed_iff.mp X,  
-    
-    --have := union_all_iff 
+    set X := union_all Q with hdefX, 
+    have hX := (is_min_of_inter_closed_iff (ub_inter_closed Q) _ ).mp hdefX, 
+    refine ⟨λ h, _, λ h, _⟩, by_contra h_contr,
+    have : is_ub (λ Y, Q Y) (X \ e) := λ Z hZ, by 
+    {
+      simp only [Q] at hZ, split_ifs at hZ,
+      
+      show (⟨Z, h_1⟩ : single A) ∈ X \ e,
+      rw elem_diff_iff, split, 
+      have := hX.1 Z, simp only [Q] at this,  
+      split_ifs at this, 
+      from this hZ, 
+      refine λ h', by {rw [←nested_singles_eq h'] at h_contr, from h_contr hZ }, 
+      from false.elim hZ, 
+    },
+    from (nonelem_of_subset_remove_single _ _ (hX.2 _ this)) h, 
+    have : Q e := by {simp only [Q], split_ifs, simp only [subtype.coe_eta], from h, from h_1 (size_single e)},
+    from hX.1 _ this,  
   end
 
 

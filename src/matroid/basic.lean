@@ -10,13 +10,17 @@ Then deletion and contraction are instances of these maps
 And a sequence of deletions and contractions with disjoint arguments can be composed
 -/
 
-import rankfun boolalg boolalg_single boolalg_examples boolalg_induction boolalg_collections tactic.wlog
+import matroid.rankfun 
+import boolalg.basic boolalg.single boolalg.examples boolalg.induction boolalg.collections 
+import tactic.wlog
 open boolalg 
 --open boolalg_induction 
 
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 ----------------------------------------------------------------
+
+
 
 -- For this file, we'll define matroids as living inside a common universe U.
 def matroid_on {U : boolalg} (E : U) : Type :=
@@ -368,6 +372,20 @@ end
 --set_option pp.proofs true
 open minor_on
 
+
+
+lemma rank_augment' {M : rankfun U} {X Z : U} : (M.r X < M.r Z) → 
+  ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
+let P : U → Prop := λ X', (X' ⊆ X ∪ Z) ∧ (∀ e, e ∈ Z → M.r (X' ∪ e) ≤ M.r X') in  
+begin
+  intro hXZ, 
+  by_contra h_con, push_neg at h_con, 
+  rcases maximal_example P ⟨subset_union_left X Z, h_con⟩ with ⟨Y, ⟨hXY,⟨⟨hYXZ, hYe⟩ , hYmax⟩⟩⟩, 
+  sorry 
+  --have : Y ⊂ X ∪ Z := by {refine ⟨hYXZ, λ heq, by linarith [M.R2 _ _ hYXZ]⟩ } 
+
+end
+
 -- A larger-rank set can be used to add a smaller-rank one. 
 lemma rank_augment {M : rankfun U} {X Z : U} : (M.r X < M.r Z) → 
   ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
@@ -422,7 +440,7 @@ lemma R2_u (M : rankfun U)(X Y : U) :
 
 lemma rank_single_ub (M : rankfun U)(e : single U):
   M.r e ≤ 1 := 
-  by {rw ←(size_coe_single e), exact M.R1 e}
+  by {rw ←(size_single e), exact M.R1 e}
 
 lemma rank_le_top (M : rankfun U)(X : U) : 
   M.r X ≤ M.r ⊤ := 
@@ -565,7 +583,7 @@ begin
   refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
   have hs := (size_modular X e),
   rw [ eq.trans (inter_comm X (e: U)) (nonelem_disjoint hx), size_bot] at hs, 
-  linarith [size_coe_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
+  linarith [size_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
 end
 
 lemma indep_aug_diff {M : rankfun U}{X Y : U} : 
@@ -1035,24 +1053,24 @@ lemma nonloop_iff_not_loop {M : rankfun U} (e : single U) :
   begin 
     unfold is_loop is_nonloop, refine ⟨λ h, _ ,λ h, _⟩,rw h ,
     simp only [not_false_iff, one_ne_zero], 
-    have := M.R1 e, rw size_coe_single at this,       
+    have := M.R1 e, rw size_single at this,       
     linarith [(ne.le_iff_lt (ne.symm h)).mp (M.R0 e)],  
   end
 
 lemma coloop_iff_r {M : rankfun U} (e : single U) :
   is_coloop M e ↔ M.r eᶜ = M.r ⊤ - 1 := 
   begin
-    unfold is_coloop is_loop, rw [dual_r,size_coe_single],
+    unfold is_coloop is_loop, rw [dual_r,size_single],
     exact ⟨λh, by linarith,λ h, by linarith⟩,   
   end
 
 lemma coloop_iff_r_less {M : rankfun U} (e : single U) :
   is_coloop M e ↔ M.r eᶜ < M.r ⊤ := 
   begin
-    unfold is_coloop is_loop, rw [dual_r,size_coe_single],
+    unfold is_coloop is_loop, rw [dual_r,size_single],
     refine ⟨λh,by linarith,λ h,_⟩, 
     have := rank_diff_le_size_diff M (subset_top (eᶜ : U)), 
-    rw [←size_compl (e :U),size_coe_single] at this, 
+    rw [←size_compl (e :U),size_single] at this, 
     linarith [int.le_sub_one_iff.mpr h],
   end
 
@@ -1146,14 +1164,16 @@ instance parallel_classes_setoid (M : rankfun U) : setoid (nonloop M) :=
 
 def parallel_quot (M : rankfun U) := quotient (parallel_classes_setoid M)
 
-def quot_to_alg {M : rankfun U} : parallel_quot M → U 
 
-lemma blah (M : rankfun U)(a b : parallel_class M)(x y : nonloop M): 0 = 0:=
+
+
+end series_parallel 
+/-lemma blah (M : rankfun U)(a b : parallel_class M)(x y : nonloop M): 0 = 0:=
 begin
   have : x ≈ y := sorry, 
   have : ⟦x⟧ = ⟦y⟧ := sorry , 
   let P := (⟦x⟧ : set (nonloop M)), 
-end
+end-/
 
 
 
@@ -1166,8 +1186,6 @@ end
   begin
      
   end-/
-
-end series_parallel 
 
 section /-Bases-/ basis
 

@@ -4,7 +4,7 @@ Answer: yes!
 -/
 
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
-import boolalg 
+import .basic 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
 
@@ -102,7 +102,7 @@ There are three cases to consider:
 (h_augment (e ∪ Y) (fun X h_ssu,
 -- Break up X ⊆ (e ∪ Y) into the part under e and the part under Y.
 let h_union :=
-  calc X = X ∩ (e ∪ Y)       : (inter_subset_mp h_ssu.1).symm 
+  calc X = X ∩ (e ∪ Y)       : (subset_def_inter_mp h_ssu.1).symm 
   ...    = (X ∩ e) ∪ (X ∩ Y) : by rw ←inter_distrib_left
 in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
 (or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
@@ -125,7 +125,7 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
       calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
       ...    = ⊥ ∪ (X ∩ Y)       : by rw [h₁]
       ...    = X ∩ Y             : bot_union (X ∩ Y)
-    in and.left (h_below X ⟨(inter_subset_mpr h₃.symm),(by {rw h₃, exact h₂} : X ≠ Y)⟩))
+    in and.left (h_below X ⟨(subset_def_inter_mpr h₃.symm),(by {rw h₃, exact h₂} : X ≠ Y)⟩))
   -- Case 3 described above: X = e ∪ X' with X' ⊂ Y.
   (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y ≠ Y),
     @eq.rec A (e ∪ (X ∩ Y)) P

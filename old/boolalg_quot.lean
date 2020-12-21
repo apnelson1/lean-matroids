@@ -4,9 +4,6 @@ import tactic.linarith
 import tactic.tidy 
 import tactic 
 import boolalg 
--- The API I would like to use for various basic objects.
--- This probably belongs in its own file by this point. 
-
 local attribute [instance] classical.prop_decidable
 
 
