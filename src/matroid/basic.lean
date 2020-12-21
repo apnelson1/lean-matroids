@@ -125,9 +125,6 @@ lemma submod_three_sets_disj (M : rankfun U)(X Y Y' :U)(hYY' : Y ∩ Y' = ⊥) :
 
 --set_option pp.proofs true
 
-
-
-
 lemma rank_augment {M : rankfun U} {X Z : U} : (M.r X < M.r Z) → 
   ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
 let P : U → Prop := λ X', 
@@ -171,7 +168,9 @@ begin
   intros he, by_contra h, 
   replace h := rank_gt_zero_of_ne h, 
   cases rank_augment (by linarith [rank_bot M] : M.r ⊥ < M.r X) with f hf,
-   
+  specialize he f hf.1, 
+  rw [bot_union, rank_bot] at hf, 
+  linarith, 
 end 
 
 end rank 
