@@ -163,7 +163,7 @@ meta def tactic.interactive.simplify_sets (sets : parse ids_list): tactic unit :
 
 --#print tactic.interactive.simplify_sets 
 
-lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
+lemma baz {A : boolalg} (X Y Z : A) : X ∪ X = X := begin
   introduce_varmap_rewrite V [X, Y, Z],
   refl,
 end
