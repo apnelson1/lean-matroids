@@ -4,7 +4,7 @@ Answer: yes!
 -/
 
 import order.bounded_lattice  -- For the has_bot / has_top notation classes.
-import .basic 
+import .basic .single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
 
@@ -180,8 +180,21 @@ lemma maximal_example (P : A → Prop){X : A}:
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
---def below (P : A → Prop) (Y : A) : Prop :=
---forall (X : A), (X ⊂ Y) → (P X)
+lemma maximal_example_aug (P : A → Prop){X : A}: 
+  (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ e, e ∉ Y → ¬P (Y ∪ e) := 
+  begin
+    intro hPX, 
+    rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
+    from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
+  end 
+
+lemma minimal_example_remove (P : A → Prop){X : A}: 
+  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ e, e ∈ Y → ¬P (Y \ e) := 
+  begin
+    intro hPX, 
+    rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
+    from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
+  end 
 
 end /-section-/ strong_induction
 

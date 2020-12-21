@@ -209,6 +209,10 @@ lemma ssubset_of_add_nonelem_iff {X : A} {e : single A} :
   e ∉ X ↔ X ⊂ X ∪ e :=
   by {refine ⟨λ h, ssub_of_add_nonelem h, λ h, λ hex, _⟩, rw [elem_iff, subset_def_union, union_comm] at hex, rw hex at h, from ssubset_irrefl _ h}
 
+lemma add_elem {X : A} {e : single A}: 
+  e ∈ X → X ∪ e = X := 
+  λ h, by {have := subset_def_union_mp h, rw union_comm at this, assumption}
+
 lemma elem_diff_ssubset {X Y : A} : 
   X ⊂ Y → ∃ e, e ∈ Y \ X :=
   λ h, by {have := ssubset_diff_nonempty h, rw ←nonempty_iff_has_elem, assumption}
