@@ -22,18 +22,22 @@ class boolalg α extends boolean_algebra α :=
 (contains_single_ax (X : α) : X ≠ ⊥ → ∃ Y, Y ≤ X ∧ size Y = 1)
 
 variables {α : Type}[boolalg α]
+namespace boolalg 
+
+
 
 infix ∪ := has_sup.sup 
 infix ∩ := has_inf.inf 
 infix ⊆ := has_le.le 
-infix ⊂ := has_lt.lt 
 
-namespace boolalg 
 
---def size : (α → ℤ) := λ X, boolalg.size X 
+def sss (X Y: α) := (X ⊆ Y ∧ X ≠ Y) 
+infix ⊂ := sss 
 
 def symm_diff  (X Y : α) : α := (X \ Y) ∪ (Y \ X)
+
 lemma diff_def (X Y : α) : X \ Y = X ∩ Yᶜ := sdiff_eq
+
 
 -----------------------------------------------------------
 
@@ -115,75 +119,44 @@ lemma union_distrib_union_right (X Y Z : α) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (
 
 
 
--- Subsets 
+-- sss 
 
 
-lemma subset_def_union (X Y : α) : (X ⊆ Y) ↔ (X ∪ Y = Y) := sup_eq_right.symm
-lemma subset_def_inter (X Y: α) : (X ⊆ Y) ↔ (X ∩ Y = X) := inf_eq_left.symm   
+lemma ss_def_union (X Y : α) : (X ⊆ Y) ↔ (X ∪ Y = Y) := sup_eq_right.symm
+lemma ss_def_inter (X Y: α) : (X ⊆ Y) ↔ (X ∩ Y = X) := inf_eq_left.symm   
 
+lemma ss_refl (X : α) : X ⊆ X := rfl.ge
 
-lemma subset_refl (X : α) : X ⊆ X :=
-  by rw [subset_def_inter, inter_idem]
+lemma ss_def_inter_mp  {X Y : α} : X ⊆ Y → X ∩ Y = X := (le_iff_inf X Y).mp
+lemma ss_def_inter_mpr  {X Y : α} : X ∩ Y = X → X ⊆ Y  := (le_iff_inf X Y).mpr
+lemma ss_def_union_mp  {X Y : α} : X ⊆ Y → X ∪ Y = Y := sup_eq_right.mpr
+lemma ss_def_union_mpr {X Y : α} : X ∪ Y = Y → X ⊆ Y := sup_eq_right.mp 
+  
+lemma ss_antisymm  {X Y : α} : X ⊆ Y → Y ⊆ X → X = Y := antisymm
+lemma inter_ss_left (X Y : α) : (X ∩ Y) ⊆ X := inf_le_left
+  
 
-lemma subset_def_inter_mp  {X Y : α} : X ⊆ Y → X ∩ Y = X := 
-  (subset_def_inter X Y).mp 
-
-lemma subset_def_inter_mpr  {X Y : α} : X ∩ Y = X → X ⊆ Y  := 
-  (subset_def_inter X Y).mpr 
-
-lemma subset_def_union_mp  {X Y : α} : X ⊆ Y → X ∪ Y = Y :=
-  (subset_def_union X Y).mp
-
-lemma subset_def_union_mpr {X Y : α} : X ∪ Y = Y → X ⊆ Y := 
-  (subset_def_union X Y).mpr 
-
-lemma subset_ssubset_or_eq {X Y : α} : (X ⊆ Y) → (X ⊂ Y) ∨ X =Y :=
-  λ hXY, by {by_cases X = Y, from or.inr h, from or.inl ⟨hXY, h⟩}
-
-lemma ssubset_size {X Y : α} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y) := 
-  λ hXY hS, ⟨hXY, by {intros heq, rw heq at hS, linarith}⟩
-
-lemma subset_antisymm  {X Y : α} : X ⊆ Y → Y ⊆ X → X = Y := 
-  λ hXY hYX, by {rw subset_def_inter at *, rw inter_comm at hXY, from (rfl.congr hYX).mp (eq.symm hXY)}
-
-lemma inter_subset_left (X Y : α) : (X ∩ Y) ⊆ X := 
-  by {apply subset_def_union_mpr; rw union_comm; apply absorb_union_inter}
-
-lemma inter_subset_right (X Y : α) : (X ∩ Y) ⊆ Y := 
-  by {rw inter_comm, apply inter_subset_left}
-
-lemma subset_union_left (X Y : α) : X ⊆ X ∪ Y := 
-  by {apply subset_def_inter_mpr, rw absorb_inter_union}
-
-lemma subset_union_right (X Y : α) : Y ⊆ X ∪ Y := 
-  by {rw union_comm, from subset_union_left Y X} 
+lemma inter_ss_right (X Y : α) : (X ∩ Y) ⊆ Y := inf_le_right 
+lemma ss_union_left (X Y : α) : X ⊆ X ∪ Y := le_sup_left
+lemma ss_union_right (X Y : α) : Y ⊆ X ∪ Y := le_sup_right
    
-lemma subset_top (X : α) : X ⊆ ⊤ := 
-  by {apply subset_def_inter_mpr; from (inter_top X)}
+lemma ss_top (X : α) : X ⊆ ⊤ := le_top 
+lemma top_ss  {X : α} : ⊤ ⊆ X → X = ⊤ := top_le_iff.mp 
+lemma bot_ss  (X : α) : ⊥ ⊆ X := bot_le 
+lemma ss_bot  {X : α} : X ⊆ ⊥ → X = ⊥ := eq_bot_iff.mpr
 
-lemma top_subset  {X : α} : ⊤ ⊆ X → X = ⊤ := 
-  λ h, subset_antisymm (subset_top X) h
 
-lemma bot_subset  (X : α) : ⊥ ⊆ X := 
-  by {apply subset_def_inter_mpr, from (bot_inter X)}
+lemma disjoint_compl_ss {X Y : α} : X ∩ Y = ⊥ → X ⊆ Yᶜ := inf_eq_bot_iff_le_compl
+  λ h, by rw [ss_def_inter, ← bot_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_top]
 
-lemma subset_bot  {X : α} (hX : X ⊆ ⊥) : X = ⊥ := 
-  subset_antisymm hX (bot_subset X)  
-
-lemma ssubset_bot (X : α) : ¬ X ⊂ ⊥ := 
-  λ h, h.2 (subset_bot h.1) 
-
-lemma disjoint_compl_subset {X Y : α} : X ∩ Y = ⊥ → X ⊆ Yᶜ := 
-  λ h, by rw [subset_def_inter, ← bot_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_top]
-
-lemma cover_compl_subset {X Y : α} :  X ∪ Y = ⊤ → Xᶜ ⊆ Y  := 
-  λ h, by rw [subset_def_union, ←top_inter (Xᶜ ∪ Y), ←h, ←union_distrib_right, inter_compl, bot_union]
+lemma cover_compl_ss {X Y : α} :  X ∪ Y = ⊤ → Xᶜ ⊆ Y  := 
+  λ h, by rw [ss_def_union, ←top_inter (Xᶜ ∪ Y), ←h, ←union_distrib_right, inter_compl, bot_union]
 
 lemma compl_unique {X Y : α} : X ∪ Y = ⊤ → X ∩ Y = ⊥ → Y = Xᶜ := 
-  λ hU hI, by {apply subset_antisymm, from disjoint_compl_subset (eq.trans (inter_comm Y X) hI), from cover_compl_subset hU}
+  λ hU hI, by {apply ss_antisymm, from disjoint_compl_ss (eq.trans (inter_comm Y X) hI), from cover_compl_ss hU}
 
 @[simp] lemma compl_compl  (X : α) : Xᶜᶜ = X := 
-  by {apply subset_antisymm, apply cover_compl_subset, from eq.trans (union_comm Xᶜ X) (union_compl X), from disjoint_compl_subset (inter_compl X)}
+  by {apply ss_antisymm, apply cover_compl_ss, from eq.trans (union_comm Xᶜ X) (union_compl X), from disjoint_compl_ss (inter_compl X)}
 
 lemma compl_inj {X Y : α} : Xᶜ = Yᶜ → X = Y := 
   λ h, by rw [←compl_compl X, ←compl_compl Y, h]
@@ -191,10 +164,10 @@ lemma compl_inj {X Y : α} : Xᶜ = Yᶜ → X = Y :=
 lemma compl_inj_iff {X Y : α} : Xᶜ = Yᶜ ↔ X = Y := 
   ⟨λ h, compl_inj h, λ h, by rw h⟩ 
 
-@[simp] lemma compl_top (A : boolalg) : (⊤ : α)ᶜ = ⊥ := 
+@[simp] lemma compl_top : (⊤ : α)ᶜ = ⊥ := 
   eq.symm (compl_unique (top_union ⊥) (inter_bot ⊤))
 
-@[simp] lemma compl_bot (A : boolalg) : (⊥ : α)ᶜ = ⊤ := 
+@[simp] lemma compl_bot : (⊥ : α)ᶜ = ⊤ := 
   eq.symm (compl_unique (union_top ⊥) (bot_inter ⊤)) 
 
 lemma bot_of_compl_top {X : α} (hX : Xᶜ = ⊤) : X = ⊥  := 
@@ -258,8 +231,8 @@ lemma compl_compl_union_right (X Y : α) : (X ∪ Yᶜ)ᶜ = Xᶜ ∩ Y :=
 lemma compl_partition (X Y : α) : (X ∩ Y) ∪ (Xᶜ ∩ Y) = Y := 
   by rw [←inter_distrib_right, union_compl, top_inter]
 
-lemma compl_partition_subset  {X Y : α}: X ⊆ Y → X ∪ (Xᶜ ∩ Y) = Y := 
-  λ h, by {nth_rewrite 0 ←(subset_def_inter_mp h), from compl_partition X Y}
+lemma compl_partition_ss  {X Y : α}: X ⊆ Y → X ∪ (Xᶜ ∩ Y) = Y := 
+  λ h, by {nth_rewrite 0 ←(ss_def_inter_mp h), from compl_partition X Y}
 
 lemma compl_pair {X Y : α} : (Xᶜ = Y) → (X = Yᶜ) := 
   λ h, by rw [←h, compl_compl]
@@ -279,117 +252,142 @@ lemma compl_diff (X Y : α) : (X \ Y)ᶜ = Xᶜ ∪ Y :=
 @[simp] lemma inter_union_compl (X Y : α) : X ∩ (Y ∪ Yᶜ) = X :=
   by rw [union_compl, inter_top]
 
-lemma subset_to_compl {X Y : α} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
-  λ hXY, by {rw subset_def_inter at hXY, rw [←hXY, compl_inter, union_comm], apply subset_union_left} 
+lemma ss_to_compl {X Y : α} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
+  λ hXY, by {rw ss_def_inter at hXY, rw [←hXY, compl_inter, union_comm], apply ss_union_left} 
 
-lemma compl_to_subset {X Y : α}: Xᶜ ⊆ Yᶜ → Y ⊆ X := 
-  λ hXY, by {have := subset_to_compl hXY, repeat {rw compl_compl at this}, from this }
+lemma compl_to_ss {X Y : α}: Xᶜ ⊆ Yᶜ → Y ⊆ X := 
+  λ hXY, by {have := ss_to_compl hXY, repeat {rw compl_compl at this}, from this }
 
-lemma subset_compl_right {X Y : α}: X ⊆ Yᶜ → Y ⊆ Xᶜ := 
-  λ hXY, by {rw [←compl_compl X] at hXY, from compl_to_subset hXY}
+lemma ss_compl_right {X Y : α}: X ⊆ Yᶜ → Y ⊆ Xᶜ := 
+  λ hXY, by {rw [←compl_compl X] at hXY, from compl_to_ss hXY}
 
-lemma subset_compl_left {X Y : α} : Xᶜ ⊆ Y → Yᶜ ⊆ X := 
-  λ hXY, by {rw [←compl_compl Y] at hXY, from compl_to_subset hXY}
+lemma ss_compl_left {X Y : α} : Xᶜ ⊆ Y → Yᶜ ⊆ X := 
+  λ hXY, by {rw [←compl_compl Y] at hXY, from compl_to_ss hXY}
 
-lemma subset_of_compl_iff_disjoint {X Y: α} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ := 
+lemma ss_of_compl_iff_disjoint {X Y: α} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ := 
   begin 
-        rw subset_def_inter,  refine ⟨λ h, _, λ h, _⟩, 
+        rw ss_def_inter,  refine ⟨λ h, _, λ h, _⟩, 
         rw [←h, inter_assoc, inter_comm _ Y, inter_compl, inter_bot], 
         rw [←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_comm, union_compl, inter_top] 
   end
 
-lemma subset_own_compl {X : α} : X ⊆ Xᶜ → X = ⊥ := 
-  λ h, by {rw [subset_def_union,union_compl, ←compl_bot, compl_inj_iff] at h, rw ←h }
+lemma ss_own_compl {X : α} : X ⊆ Xᶜ → X = ⊥ := 
+  λ h, by {rw [ss_def_union,union_compl, ←compl_bot, compl_inj_iff] at h, rw ←h }
 ----
+lemma ss_sss_or_eq {X Y : α} : (X ⊆ Y) → (X ⊂ Y) ∨ X =Y := sorry 
+  
 
--- more subsets 
-lemma disjoint_iff_subset_compl {X Y : α} : X ∩ Y = ⊥ ↔ X ⊆ Yᶜ := 
-  by {refine ⟨λ h, _, λ h, _⟩, rw [subset_def_inter, ←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left], simp, 
-    rw [subset_def_inter] at h, rw [←h, inter_assoc], simp } 
+-- strict sss 
 
-lemma subset_trans {X Y Z : α} : X ⊆ Y → Y ⊆ Z →  X ⊆ Z :=
-  λ hXY hYZ, by {rw subset_def_inter at *, rw [←hXY, inter_assoc, hYZ]}
 
-lemma inter_subset_union (X Y : α) : X ∩ Y ⊆ X ∪ Y := 
-  subset_trans (inter_subset_left X Y) (subset_union_left X Y)
+lemma sss_iff (X Y : α) : X ⊂ Y ↔ X < Y := 
+begin
+  rw lt_iff_le_not_le, 
+  refine ⟨λ h, ⟨h.1,λ h', h.2 (ss_antisymm h.1 h'), ⟩, λ h, ⟨h.1,λ h', _⟩⟩, 
+  cases h with hl hr, 
+  rw h' at hr, 
+  from hr (ss_refl _),   
+end
 
-lemma subset_of_inter_mp {X Y Z : α} : X ⊆ Y ∩ Z → X ⊆ Y ∧ X ⊆ Z := 
-  λ h, ⟨subset_trans h (inter_subset_left _ _), subset_trans h (inter_subset_right _ _)⟩  
+lemma sss_size {X Y : α} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y) := 
+  λ hXY hS, ⟨hXY, by {intros heq, rw heq at hS, linarith}⟩
 
-lemma union_of_subsets {X Y Z : α} : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
-  λ hXZ hYZ, by {rw subset_def_inter at *, rw [inter_distrib_right, hXZ, hYZ]}
+ 
+lemma sss_bot (X : α) : ¬ X ⊂ ⊥ := 
+  λ h, h.2 (ss_bot h.1) 
+ 
 
-lemma subset_of_inter_mpr  {X Y Z : α} : (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
-  λ hXY hXZ, by {rw subset_def_inter at *, rw [←inter_assoc, hXY, hXZ]}
 
-lemma subset_of_inter_iff {X Y Z :A} : X ⊆ (Y ∩ Z) ↔ (X ⊆ Y ∧ X ⊆ Z) := 
-  ⟨λ h, subset_of_inter_mp h, λ h, subset_of_inter_mpr  h.1 h.2⟩
+-- more sss 
 
-lemma inter_of_subsets (X Y Z : α) : (X ⊆ Z) → (X ∩ Y ⊆ Z) := 
-  λ h, subset_trans (inter_subset_left X Y) h
+
+lemma disjoint_iff_ss_compl {X Y : α} : X ∩ Y = ⊥ ↔ X ⊆ Yᶜ := 
+  by {refine ⟨λ h, _, λ h, _⟩, rw [ss_def_inter, ←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left], simp, 
+    rw [ss_def_inter] at h, rw [←h, inter_assoc], simp } 
+
+lemma ss_trans {X Y Z : α} : X ⊆ Y → Y ⊆ Z →  X ⊆ Z :=
+  λ hXY hYZ, by {rw ss_def_inter at *, rw [←hXY, inter_assoc, hYZ]}
+
+lemma inter_ss_union (X Y : α) : X ∩ Y ⊆ X ∪ Y := 
+  ss_trans (inter_ss_left X Y) (ss_union_left X Y)
+
+lemma ss_of_inter_mp {X Y Z : α} : X ⊆ Y ∩ Z → X ⊆ Y ∧ X ⊆ Z := 
+  λ h, ⟨ss_trans h (inter_ss_left _ _), ss_trans h (inter_ss_right _ _)⟩  
+
+lemma union_of_sss {X Y Z : α} : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) := 
+  λ hXZ hYZ, by {rw ss_def_inter at *, rw [inter_distrib_right, hXZ, hYZ]}
+
+lemma ss_of_inter_mpr  {X Y Z : α} : (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
+  λ hXY hXZ, by {rw ss_def_inter at *, rw [←inter_assoc, hXY, hXZ]}
+
+lemma ss_of_inter_iff {X Y Z :A} : X ⊆ (Y ∩ Z) ↔ (X ⊆ Y ∧ X ⊆ Z) := 
+  ⟨λ h, ss_of_inter_mp h, λ h, ss_of_inter_mpr  h.1 h.2⟩
+
+lemma inter_of_sss (X Y Z : α) : (X ⊆ Z) → (X ∩ Y ⊆ Z) := 
+  λ h, ss_trans (inter_ss_left X Y) h
 
 lemma union_of_supsets (X Y Z : α) : (X ⊆ Y) → (X ⊆ Y ∪ Z) := 
-  λ h, subset_trans h (subset_union_left Y Z)
+  λ h, ss_trans h (ss_union_left Y Z)
 
-lemma subset_inter_subset_left (X Y Z : α) : (X ⊆ Y) → (X ∩ Z) ⊆ (Y ∩ Z) := 
-  λ hXY, by {rw subset_def_inter at *, rw [←inter_distrib_inter_left, hXY]}
+lemma ss_inter_ss_left (X Y Z : α) : (X ⊆ Y) → (X ∩ Z) ⊆ (Y ∩ Z) := 
+  λ hXY, by {rw ss_def_inter at *, rw [←inter_distrib_inter_left, hXY]}
 
-lemma subset_inter_subset_right (X Y Z : α) : (X ⊆ Y) → (Z ∩ X) ⊆ (Z ∩ Y) := 
-  by {rw [inter_comm _ X, inter_comm _ Y], apply subset_inter_subset_left }
+lemma ss_inter_ss_right (X Y Z : α) : (X ⊆ Y) → (Z ∩ X) ⊆ (Z ∩ Y) := 
+  by {rw [inter_comm _ X, inter_comm _ Y], apply ss_inter_ss_left }
 
-lemma subset_union_subset_left (X Y Z : α) : (X ⊆ Y) → (X ∪ Z) ⊆ (Y ∪ Z) := 
-  λ hXY, by {rw subset_def_union at *, rw [←union_distrib_union_left, hXY]}
+lemma ss_union_ss_left (X Y Z : α) : (X ⊆ Y) → (X ∪ Z) ⊆ (Y ∪ Z) := 
+  λ hXY, by {rw ss_def_union at *, rw [←union_distrib_union_left, hXY]}
 
-lemma subset_union_subset_right (X Y Z : α) : (X ⊆ Y) → (Z ∪ X) ⊆ (Z ∪ Y) := 
-  by {rw [union_comm _ X, union_comm _ Y], apply subset_union_subset_left }
+lemma ss_union_ss_right (X Y Z : α) : (X ⊆ Y) → (Z ∪ X) ⊆ (Z ∪ Y) := 
+  by {rw [union_comm _ X, union_comm _ Y], apply ss_union_ss_left }
 
-lemma union_subset_pairs {X₁ X₂ Y₁ Y₂ : α} : X₁ ⊆ Y₁ → X₂ ⊆ Y₂ → X₁ ∪ X₂ ⊆ Y₁ ∪ Y₂ :=
-  λ h₁ h₂, subset_trans (subset_union_subset_left X₁ Y₁ X₂ h₁) (subset_union_subset_right X₂ Y₂ Y₁ h₂) 
+lemma union_ss_pairs {X₁ X₂ Y₁ Y₂ : α} : X₁ ⊆ Y₁ → X₂ ⊆ Y₂ → X₁ ∪ X₂ ⊆ Y₁ ∪ Y₂ :=
+  λ h₁ h₂, ss_trans (ss_union_ss_left X₁ Y₁ X₂ h₁) (ss_union_ss_right X₂ Y₂ Y₁ h₂) 
 
-lemma subset_of_set_and_compl {X Y: α} : X ⊆ Y → X ⊆ Yᶜ → X = ⊥ :=
-  λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl at this, from subset_bot this}
+lemma ss_of_set_and_compl {X Y: α} : X ⊆ Y → X ⊆ Yᶜ → X = ⊥ :=
+  λ h1 h2, by {have := ss_of_inter_mpr h1 h2, rw inter_compl at this, from ss_bot this}
 
-lemma subset_ssubset_trans {X Y Z : α} : X ⊆ Y → Y ⊂ Z → X ⊂ Z := 
-  λ hXY hYZ, ⟨subset_trans hXY hYZ.1, λ h, by {rw ←h at hYZ, from hYZ.2 (subset_antisymm hYZ.1 hXY)}⟩ 
+lemma ss_sss_trans {X Y Z : α} : X ⊆ Y → Y ⊂ Z → X ⊂ Z := 
+  λ hXY hYZ, ⟨ss_trans hXY hYZ.1, λ h, by {rw ←h at hYZ, from hYZ.2 (ss_antisymm hYZ.1 hXY)}⟩ 
 
-lemma ssubset_subset_trans {X Y Z : α} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
-  λ hXY hYZ, ⟨subset_trans hXY.1 hYZ, λ h, by {rw h at hXY, from hXY.2 (subset_antisymm hXY.1 hYZ)}⟩ 
+lemma sss_ss_trans {X Y Z : α} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
+  λ hXY hYZ, ⟨ss_trans hXY.1 hYZ, λ h, by {rw h at hXY, from hXY.2 (ss_antisymm hXY.1 hYZ)}⟩ 
 
-@[simp] lemma ssubset_iff {X Y : α} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
-  by unfold has_ssubset.ssubset
+@[simp] lemma sss_iff {X Y : α} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
+  by unfold has_sss.sss
 
-lemma ssubset_irrefl (X : α) : ¬ (X ⊂ X) :=
+lemma sss_irrefl (X : α) : ¬ (X ⊂ X) :=
   λ h, h.2 rfl
 
-lemma ssubset_not_supset {X Y : α} : X ⊂ Y → ¬(Y ⊆ X) :=
-  λ h h', ssubset_irrefl _ (ssubset_subset_trans h h') 
+lemma sss_not_supset {X Y : α} : X ⊂ Y → ¬(Y ⊆ X) :=
+  λ h h', sss_irrefl _ (sss_ss_trans h h') 
 
-lemma subset_not_ssupset {X Y : α} : X ⊆ Y → ¬(Y ⊂ X) := 
-  λ h h', ssubset_irrefl _ (subset_ssubset_trans h h')
+lemma ss_not_ssupset {X Y : α} : X ⊆ Y → ¬(Y ⊂ X) := 
+  λ h h', sss_irrefl _ (ss_sss_trans h h')
 
-lemma eq_of_ssubset {X Y: α} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
-  λ h h', by {simp only [not_and, not_not, ssubset_iff] at h', from h' h}
+lemma eq_of_sss {X Y: α} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
+  λ h h', by {simp only [not_and, not_not, sss_iff] at h', from h' h}
 
-lemma ssubset_trans {X Y Z : α}: X ⊂ Y → Y ⊂ Z → X ⊂ Z := 
-  λ hXY hYZ, subset_ssubset_trans hXY.1 hYZ
+lemma sss_trans {X Y Z : α}: X ⊂ Y → Y ⊂ Z → X ⊂ Z := 
+  λ hXY hYZ, ss_sss_trans hXY.1 hYZ
 
-lemma ssubset_inter {X Y : α} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
+lemma sss_inter {X Y : α} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
   λ h, by {by_contra, push_neg at a, cases a, erw [not_and', not_imp_not] at a_left a_right, 
-  from h (eq.trans (a_left (inter_subset_left X Y)).symm (a_right (inter_subset_right X Y)) )}
+  from h (eq.trans (a_left (inter_ss_left X Y)).symm (a_right (inter_ss_right X Y)) )}
 
 -- Misc
 
 lemma inter_is_lb  {X Y Z : α} : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
-  λ hZX hZY, by {rw subset_def_inter at *, rw [←inter_assoc, hZX, hZY]}
+  λ hZX hZY, by {rw ss_def_inter at *, rw [←inter_assoc, hZX, hZY]}
 
 lemma union_is_ub  {X Y Z : α} : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
-  λ hXZ hYZ, by {rw subset_def_union at *, rw [union_assoc, hYZ, hXZ]}
+  λ hXZ hYZ, by {rw ss_def_union at *, rw [union_assoc, hYZ, hXZ]}
 
 lemma union_of_disjoint {X Y Z : α} : X ∩ Y = ⊥ → X ∩ Z = ⊥ → X ∩ (Y ∪ Z) = ⊥ :=
   λ hY hZ, by {rw [inter_distrib_left, hY, hZ], simp }
 
-lemma diff_subset  (X Y : α) : X \ Y ⊆ X := 
-  inter_subset_left X Yᶜ
+lemma diff_ss  (X Y : α) : X \ Y ⊆ X := 
+  inter_ss_left X Yᶜ
 
 @[simp] lemma diff_union (X Y : α): (X ∩ Y) ∪ (X \ Y) = X  := 
   by rw [diff_def, ←inter_distrib_left, union_compl, inter_top]
@@ -403,24 +401,24 @@ lemma diff_subset  (X Y : α) : X \ Y ⊆ X :=
 @[simp] lemma diffs_disj (X Y : α) : (X \ Y) ∩ (Y \ X) = ⊥ := 
   by {simp only [diff_def], rw [inter_assoc, ←inter_assoc Yᶜ], simp}
 
-lemma diff_bot_subset (X Y : α) : X \ Y = ⊥ → X ⊆ Y := 
-  λ hXY, by {rw [←diff_union X Y, hXY, union_bot], apply inter_subset_right}
+lemma diff_bot_ss (X Y : α) : X \ Y = ⊥ → X ⊆ Y := 
+  λ hXY, by {rw [←diff_union X Y, hXY, union_bot], apply inter_ss_right}
 
-lemma subset_diff_bot (X Y : α) : X ⊆ Y → X \ Y = ⊥ := 
-  λ hXY, by {rw diff_def, rw subset_def_inter at hXY, rw [←hXY, inter_assoc, inter_compl, inter_bot]}
+lemma ss_diff_bot (X Y : α) : X ⊆ Y → X \ Y = ⊥ := 
+  λ hXY, by {rw diff_def, rw ss_def_inter at hXY, rw [←hXY, inter_assoc, inter_compl, inter_bot]}
 
-lemma diff_bot_iff_subset (X Y : α) : X \ Y = ⊥ ↔ X ⊆ Y := 
-  by {split, apply diff_bot_subset, apply subset_diff_bot}
+lemma diff_bot_iff_ss (X Y : α) : X \ Y = ⊥ ↔ X ⊆ Y := 
+  by {split, apply diff_bot_ss, apply ss_diff_bot}
 
-lemma subset_diff_disjoint (X Y Z: α) : X ⊆ Y → X ∩ Z = ⊥ → X ⊆ Y \ Z := 
-  λ hXY hXZ, by {rw [disjoint_iff_subset_compl, subset_def_inter] at hXZ, 
-                rw [diff_def, subset_def_inter, inter_comm Y, ←inter_assoc, hXZ, subset_def_inter_mp hXY], }
+lemma ss_diff_disjoint (X Y Z: α) : X ⊆ Y → X ∩ Z = ⊥ → X ⊆ Y \ Z := 
+  λ hXY hXZ, by {rw [disjoint_iff_ss_compl, ss_def_inter] at hXZ, 
+                rw [diff_def, ss_def_inter, inter_comm Y, ←inter_assoc, hXZ, ss_def_inter_mp hXY], }
 
-lemma ssubset_diff_nonempty {X Y : α} : X ⊂ Y → Y \ X ≠ ⊥ :=
-  λ hXY, by {intros hYX, rw diff_bot_iff_subset at hYX, from hXY.2 (subset_antisymm hXY.1 hYX)}
+lemma sss_diff_nonempty {X Y : α} : X ⊂ Y → Y \ X ≠ ⊥ :=
+  λ hXY, by {intros hYX, rw diff_bot_iff_ss at hYX, from hXY.2 (ss_antisymm hXY.1 hYX)}
 
-lemma union_diff_of_subset  {X Y : α} : X ⊆ Y → X ∪ (Y \ X) = Y := 
-  λ h, by {rw [subset_def_inter, inter_comm] at h, have := diff_union Y X, rw h at this, from this}
+lemma union_diff_of_ss  {X Y : α} : X ⊆ Y → X ∪ (Y \ X) = Y := 
+  λ h, by {rw [ss_def_inter, inter_comm] at h, have := diff_union Y X, rw h at this, from this}
 
 @[simp] lemma diff_inter (X Y : α) : (Y \ X) ∩ X = ⊥ := 
   by rw [inter_comm, inter_diff]
@@ -461,7 +459,7 @@ begin
 end  
 
 lemma size_monotone {X Y: α} (hXY : X ⊆ Y) : size X ≤ size Y := 
-  by {have := size_modular X (Y \ X), rw union_diff_of_subset  hXY at this      , 
+  by {have := size_modular X (Y \ X), rw union_diff_of_ss  hXY at this      , 
         rw inter_diff at this, linarith [size_nonneg(Y \ X), size_bot A]}
 
 lemma size_subadditive {X Y : α} : size (X ∪ Y) ≤ size X + size Y :=
@@ -470,18 +468,18 @@ lemma size_subadditive {X Y : α} : size (X ∪ Y) ≤ size X + size Y :=
 lemma compl_inter_size (X Y : α) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
   by rw [←size_modular, ←inter_distrib_right, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
 
-lemma compl_inter_size_subset {X Y : α} : X ⊆ Y → size (Xᶜ ∩ Y) = size Y - size X := 
-  λ hXY, by {have := compl_inter_size X Y, rw subset_def_inter_mp hXY at this, linarith} 
+lemma compl_inter_size_ss {X Y : α} : X ⊆ Y → size (Xᶜ ∩ Y) = size Y - size X := 
+  λ hXY, by {have := compl_inter_size X Y, rw ss_def_inter_mp hXY at this, linarith} 
 
 lemma diff_size {X Y : α} : X ⊆ Y → size (Y \ X) = size Y - size X :=  
-  λ hXY, by rw [diff_def, inter_comm, compl_inter_size_subset hXY]
+  λ hXY, by rw [diff_def, inter_comm, compl_inter_size_ss hXY]
 
 lemma size_disjoint_sum {X Y : α}: X ∩ Y = ⊥ → size (X ∪ Y) = size X + size Y := 
   λ hXY, by {have := size_modular X Y, rw [hXY, size_bot] at this, linarith}
 
 lemma size_modular_diff (X Y : α) : size (X ∪ Y) = size (X \ Y) + size (Y \ X) + size (X ∩ Y) :=
   by {rw [←size_disjoint_sum (diffs_disj X Y)], have := (symm_diff_alt X Y), 
-        unfold symm_diff at this,rw this, linarith [diff_size (inter_subset_union X Y)]  }
+        unfold symm_diff at this,rw this, linarith [diff_size (inter_ss_union X Y)]  }
 
 
 lemma size_induced_partition (X Y : α) : size X = size (X ∩ Y) + size (X \ Y) := 
@@ -500,33 +498,33 @@ lemma size_nonempty {X : α} : X ≠ ⊥ → 0 < size X  :=
   λ hX, lt_of_le_of_ne (size_nonneg X) (λ h, hX (size_zero_bot h.symm))
 
 lemma size_strict_monotone {X Y : α} : X ⊂ Y → size X < size Y := 
-  λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_def_inter_mp hXY.1], 
-                linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
+  λ hXY, by {rw [size_induced_partition Y X, inter_comm, ss_def_inter_mp hXY.1], 
+                linarith [size_nonempty (sss_diff_nonempty hXY)]} 
 
-lemma eq_of_eq_size_subset {X Y : α} : (X ⊆ Y) → (size X = size Y) → X = Y :=
-  λ hXY, by {cases subset_ssubset_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, from λ h', h}
+lemma eq_of_eq_size_ss {X Y : α} : (X ⊆ Y) → (size X = size Y) → X = Y :=
+  λ hXY, by {cases ss_sss_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, from λ h', h}
 
-lemma eq_of_ge_size_subset {X Y : α} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
-  λ hXY hXY', by {apply eq_of_eq_size_subset hXY, from le_antisymm (size_monotone hXY) hXY'}
+lemma eq_of_ge_size_ss {X Y : α} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
+  λ hXY hXY', by {apply eq_of_eq_size_ss hXY, from le_antisymm (size_monotone hXY) hXY'}
 
 lemma size_eq_of_supset {X Y : α} : (X ⊆ Y) → (size Y ≤ size X) → size X = size Y := 
   λ hss hs, by linarith[size_monotone hss]
 
-lemma single_subset (X : α) : X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+lemma single_ss (X : α) : X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
   begin
     intro h, cases contains_single X h with Y hY, use Y, use X \ Y, 
-    from ⟨inter_diff _ _,⟨union_diff_of_subset  hY.1,hY.2⟩⟩,
+    from ⟨inter_diff _ _,⟨union_diff_of_ss  hY.1,hY.2⟩⟩,
   end
 
-lemma single_subset_nonempty {X : α}: X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
-  λ hX, single_subset X hX 
+lemma single_ss_nonempty {X : α}: X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+  λ hX, single_ss X hX 
 
-lemma union_ssubsets (X : α) : 1 < size X  → ∃ Y Z : α, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
+lemma union_ssss (X : α) : 1 < size X  → ∃ Y Z : α, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
   begin
     intros hX, 
     have h := (λ h', by {rw [h', @size_bot A] at hX, linarith }: X ≠ ⊥), 
-    rcases single_subset X h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, 
-    refine ⟨⟨by {rw ←hU, apply subset_union_left},_⟩,⟨by {rw ←hU, apply subset_union_right},_⟩,hI,hU⟩, 
+    rcases single_ss X h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, 
+    refine ⟨⟨by {rw ←hU, apply ss_union_left},_⟩,⟨by {rw ←hU, apply ss_union_right},_⟩,hI,hU⟩, 
     intros hYX, rw hYX at h1, linarith, 
     intros hZX, 
     have := size_modular Y Z, 
@@ -534,17 +532,17 @@ lemma union_ssubsets (X : α) : 1 < size X  → ∃ Y Z : α, Y ⊂ X ∧ Z ⊂ 
     linarith
   end
 
-lemma ssubset_to_compl {X Y : α} : X ⊂ Y → Yᶜ ⊂ Xᶜ := 
-  λ h, ⟨subset_to_compl h.1, λ h', h.2 (compl_inj h').symm⟩
+lemma sss_to_compl {X Y : α} : X ⊂ Y → Yᶜ ⊂ Xᶜ := 
+  λ h, ⟨ss_to_compl h.1, λ h', h.2 (compl_inj h').symm⟩
 
-lemma compl_to_ssubset {X Y : α} : Xᶜ ⊂ Yᶜ → Y ⊂ X := 
-  λ h, by {have := ssubset_to_compl h, repeat {rw compl_compl at this}, from this }
+lemma compl_to_sss {X Y : α} : Xᶜ ⊂ Yᶜ → Y ⊂ X := 
+  λ h, by {have := sss_to_compl h, repeat {rw compl_compl at this}, from this }
 
-lemma ssubset_compl_right {X Y : α} : X ⊂ Yᶜ → Y ⊂ Xᶜ := 
-  λ h, by {rw [←compl_compl X] at h, from compl_to_ssubset h}
+lemma sss_compl_right {X Y : α} : X ⊂ Yᶜ → Y ⊂ Xᶜ := 
+  λ h, by {rw [←compl_compl X] at h, from compl_to_sss h}
 
-lemma ssubset_compl_left {X Y : α} : Xᶜ ⊂ Y → Yᶜ ⊂ X := 
-  λ h, by {rw [←compl_compl Y] at h, from compl_to_ssubset h}
+lemma sss_compl_left {X Y : α} : Xᶜ ⊂ Y → Yᶜ ⊂ X := 
+  λ h, by {rw [←compl_compl Y] at h, from compl_to_sss h}
 
 
 end boolalg
