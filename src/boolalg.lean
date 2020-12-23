@@ -10,9 +10,6 @@ import order.boolean_algebra
 
 local attribute [instance] classical.prop_decidable
 
-section API
-
-namespace boolalg 
 
 class boolalg α extends boolean_algebra α :=
 (size : α → ℤ)
@@ -22,8 +19,9 @@ class boolalg α extends boolean_algebra α :=
 (contains_single_ax (X : α) : X ≠ ⊥ → ∃ Y, Y ≤ X ∧ size Y = 1)
 
 variables {α : Type}[boolalg α]
-namespace boolalg 
 
+
+namespace boolalg 
 
 
 infix ∪ := has_sup.sup 
@@ -146,17 +144,16 @@ lemma bot_ss  (X : α) : ⊥ ⊆ X := bot_le
 lemma ss_bot  {X : α} : X ⊆ ⊥ → X = ⊥ := eq_bot_iff.mpr
 
 
-lemma disjoint_compl_ss {X Y : α} : X ∩ Y = ⊥ → X ⊆ Yᶜ := inf_eq_bot_iff_le_compl
-  λ h, by rw [ss_def_inter, ← bot_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_top]
+lemma disj_iff_ss_compl {X Y : α} : X ∩ Y = ⊥ ↔ X ⊆ Yᶜ := inf_eq_bot_iff_le_compl (union_compl Y) (inter_compl Y)
 
 lemma cover_compl_ss {X Y : α} :  X ∪ Y = ⊤ → Xᶜ ⊆ Y  := 
   λ h, by rw [ss_def_union, ←top_inter (Xᶜ ∪ Y), ←h, ←union_distrib_right, inter_compl, bot_union]
 
 lemma compl_unique {X Y : α} : X ∪ Y = ⊤ → X ∩ Y = ⊥ → Y = Xᶜ := 
-  λ hU hI, by {apply ss_antisymm, from disjoint_compl_ss (eq.trans (inter_comm Y X) hI), from cover_compl_ss hU}
+  λ hU hI, by {apply ss_antisymm, rw inter_comm at hI, from disj_iff_ss_compl.mp hI, from cover_compl_ss hU}
 
 @[simp] lemma compl_compl  (X : α) : Xᶜᶜ = X := 
-  by {apply ss_antisymm, apply cover_compl_ss, from eq.trans (union_comm Xᶜ X) (union_compl X), from disjoint_compl_ss (inter_compl X)}
+  by {apply ss_antisymm, apply cover_compl_ss, from eq.trans (union_comm Xᶜ X) (union_compl X), from disj_iff_ss_compl.mp (inter_compl X)}
 
 lemma compl_inj {X Y : α} : Xᶜ = Yᶜ → X = Y := 
   λ h, by rw [←compl_compl X, ←compl_compl Y, h]
@@ -195,20 +192,16 @@ lemma top_of_compl_bot {X : α} (hX : Xᶜ = ⊥) : X = ⊤  :=
   by rw [union_distrib_left, union_compl, top_inter]
 
 @[simp] lemma union_inter_compl_inter (X Y : α) : (X ∪ Y) ∪ (Xᶜ ∩ Yᶜ)  = ⊤ := 
-  by rw [union_distrib_left, union_comm _ Xᶜ, union_comm X Y, union_comm _ Yᶜ,
-      ←(compl_compl Y),  compl_compl Yᶜ, union_compl_union Yᶜ, union_comm _ X, 
-      ←(compl_compl X),    compl_compl Xᶜ, union_compl_union Xᶜ, inter_idem]
+  by simplify_sets [X,Y]
 
 @[simp] lemma inter_union_compl_union (X Y : α) : (X ∩ Y) ∩ (Xᶜ ∪ Yᶜ)  = ⊥ := 
-  by rw [inter_distrib_left, inter_comm _ Xᶜ, inter_comm X Y, inter_comm _ Yᶜ, 
-        ←(compl_compl Y), compl_compl Yᶜ, inter_compl_inter Yᶜ, inter_comm _ X, 
-        ←(compl_compl X), compl_compl Xᶜ, inter_compl_inter Xᶜ, union_idem]
+  by simplify_sets [X,Y]
   
 @[simp] lemma inter_union_compl_inter (X Y : α) : (X ∪ Y) ∩ (Xᶜ ∩ Yᶜ) = ⊥ := 
-  by rw [inter_distrib_right X Y, inter_compl_inter, inter_comm Xᶜ, inter_compl_inter, union_idem]
+  by simplify_sets [X,Y]
   
 @[simp] lemma union_inter_compl_union  (X Y : α) : (X ∩ Y) ∪ (Xᶜ ∪ Yᶜ) = ⊤ := 
-  by rw [union_distrib_right X Y, union_compl_union, union_comm Xᶜ, union_compl_union, inter_idem]
+  by simplify_sets [X,Y]
 
 lemma compl_inter (X Y : α) : (X ∩ Y)ᶜ = Xᶜ ∪ Yᶜ := 
   eq.symm (compl_unique (union_inter_compl_union X Y) (inter_union_compl_union X Y))
@@ -238,7 +231,7 @@ lemma compl_pair {X Y : α} : (Xᶜ = Y) → (X = Yᶜ) :=
   λ h, by rw [←h, compl_compl]
 
 lemma compl_diff (X Y : α) : (X \ Y)ᶜ = Xᶜ ∪ Y := 
-  by {dunfold has_sdiff.sdiff, rw [compl_inter, compl_compl]}
+  by rw [diff_def, compl_inter, compl_compl]
 
 @[simp] lemma union_union_compl (X Y : α) : X ∪ (Y ∪ Yᶜ) = ⊤ := 
   by rw[union_compl, union_top]
@@ -265,19 +258,19 @@ lemma ss_compl_left {X Y : α} : Xᶜ ⊆ Y → Yᶜ ⊆ X :=
   λ hXY, by {rw [←compl_compl Y] at hXY, from compl_to_ss hXY}
 
 lemma ss_of_compl_iff_disjoint {X Y: α} : X ⊆ Yᶜ ↔ X ∩ Y = ⊥ := 
-  begin 
-        rw ss_def_inter,  refine ⟨λ h, _, λ h, _⟩, 
-        rw [←h, inter_assoc, inter_comm _ Y, inter_compl, inter_bot], 
-        rw [←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_comm, union_compl, inter_top] 
-  end
+begin 
+  rw ss_def_inter,  refine ⟨λ h, _, λ h, _⟩, 
+  rw [←h, inter_assoc, inter_comm _ Y, inter_compl, inter_bot], 
+  rw [←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_comm, union_compl, inter_top] 
+end
 
 lemma ss_own_compl {X : α} : X ⊆ Xᶜ → X = ⊥ := 
   λ h, by {rw [ss_def_union,union_compl, ←compl_bot, compl_inj_iff] at h, rw ←h }
 ----
-lemma ss_sss_or_eq {X Y : α} : (X ⊆ Y) → (X ⊂ Y) ∨ X =Y := sorry 
-  
+lemma ss_sss_or_eq {X Y : α} : (X ⊆ Y) → (X ⊂ Y) ∨ X = Y :=    
+  λ h, by {unfold sss, by_cases h' : X = Y; tauto} 
 
--- strict sss 
+-- strict subset
 
 
 lemma sss_iff (X Y : α) : X ⊂ Y ↔ X < Y := 
@@ -320,7 +313,7 @@ lemma union_of_sss {X Y Z : α} : (X ⊆ Z) → (Y ⊆ Z) → (X ∪ Y ⊆ Z) :=
 lemma ss_of_inter_mpr  {X Y Z : α} : (X ⊆ Y) → (X ⊆ Z) → (X ⊆ Y ∩ Z) := 
   λ hXY hXZ, by {rw ss_def_inter at *, rw [←inter_assoc, hXY, hXZ]}
 
-lemma ss_of_inter_iff {X Y Z :A} : X ⊆ (Y ∩ Z) ↔ (X ⊆ Y ∧ X ⊆ Z) := 
+lemma ss_of_inter_iff {X Y Z : α} : X ⊆ (Y ∩ Z) ↔ (X ⊆ Y ∧ X ⊆ Z) := 
   ⟨λ h, ss_of_inter_mp h, λ h, ss_of_inter_mpr  h.1 h.2⟩
 
 lemma inter_of_sss (X Y Z : α) : (X ⊆ Z) → (X ∩ Y ⊆ Z) := 
@@ -353,9 +346,6 @@ lemma ss_sss_trans {X Y Z : α} : X ⊆ Y → Y ⊂ Z → X ⊂ Z :=
 lemma sss_ss_trans {X Y Z : α} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
   λ hXY hYZ, ⟨ss_trans hXY.1 hYZ, λ h, by {rw h at hXY, from hXY.2 (ss_antisymm hXY.1 hYZ)}⟩ 
 
-@[simp] lemma sss_iff {X Y : α} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
-  by unfold has_sss.sss
-
 lemma sss_irrefl (X : α) : ¬ (X ⊂ X) :=
   λ h, h.2 rfl
 
@@ -366,7 +356,7 @@ lemma ss_not_ssupset {X Y : α} : X ⊆ Y → ¬(Y ⊂ X) :=
   λ h h', sss_irrefl _ (ss_sss_trans h h')
 
 lemma eq_of_sss {X Y: α} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
-  λ h h', by {simp only [not_and, not_not, sss_iff] at h', from h' h}
+  λ h h', by {simp only [not_and, not_not, sss] at h', from h' h}
 
 lemma sss_trans {X Y Z : α}: X ⊂ Y → Y ⊂ Z → X ⊂ Z := 
   λ hXY hYZ, ss_sss_trans hXY.1 hYZ
@@ -387,7 +377,7 @@ lemma union_of_disjoint {X Y Z : α} : X ∩ Y = ⊥ → X ∩ Z = ⊥ → X ∩
   λ hY hZ, by {rw [inter_distrib_left, hY, hZ], simp }
 
 lemma diff_ss  (X Y : α) : X \ Y ⊆ X := 
-  inter_ss_left X Yᶜ
+  by {rw diff_def, from inter_ss_left X Yᶜ} 
 
 @[simp] lemma diff_union (X Y : α): (X ∩ Y) ∪ (X \ Y) = X  := 
   by rw [diff_def, ←inter_distrib_left, union_compl, inter_top]
@@ -445,7 +435,7 @@ lemma inter_distrib_diff (X Y Z : α) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) :=
   by rw [diff_def, compl_top, inter_bot]
 
 @[simp] lemma diff_self (X : α) : X \ X = ⊥ := 
-  inter_compl X 
+  by rw [diff_def, inter_compl X ]
 
 @[simp] lemma symm_diff_self (X : α) : symm_diff X X = ⊥ :=
   by {unfold symm_diff, rw [diff_self, bot_union]}
@@ -460,10 +450,10 @@ end
 
 lemma size_monotone {X Y: α} (hXY : X ⊆ Y) : size X ≤ size Y := 
   by {have := size_modular X (Y \ X), rw union_diff_of_ss  hXY at this      , 
-        rw inter_diff at this, linarith [size_nonneg(Y \ X), size_bot A]}
+        rw [inter_diff, size_bot] at this, linarith [size_nonneg(Y \ X)]}
 
 lemma size_subadditive {X Y : α} : size (X ∪ Y) ≤ size X + size Y :=
-  by linarith [size_modular X Y, size_nonneg (X ∩ Y)] 
+  by {linarith [size_modular X Y, size_nonneg (X ∩ Y)] }
 
 lemma compl_inter_size (X Y : α) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
   by rw [←size_modular, ←inter_distrib_right, union_compl, top_inter, ←inter_distrib_inter_left, inter_compl, bot_inter, size_bot]; ring
@@ -492,7 +482,7 @@ lemma size_zero_bot {X : α} : (size X = 0) →  X = ⊥ :=
   λ h, by {by_contra h', cases contains_single X h' with Y hY, cases hY, linarith [size_monotone hY_left] }
     
 lemma size_zero_iff_bot {X : α} : (size X = 0) ↔ (X = ⊥) := 
-  by {split, apply size_zero_bot, intros h, rw h, from size_bot A}
+  by {split, apply size_zero_bot, intros h, rw h, from size_bot}
 
 lemma size_nonempty {X : α} : X ≠ ⊥ → 0 < size X  := 
   λ hX, lt_of_le_of_ne (size_nonneg X) (λ h, hX (size_zero_bot h.symm))
@@ -510,25 +500,25 @@ lemma eq_of_ge_size_ss {X Y : α} : (X ⊆ Y) → (size Y ≤ size X) → X = Y 
 lemma size_eq_of_supset {X Y : α} : (X ⊆ Y) → (size Y ≤ size X) → size X = size Y := 
   λ hss hs, by linarith[size_monotone hss]
 
-lemma single_ss (X : α) : X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+lemma single_ss (X : α) : X ≠ ⊥ → (∃ (Y Z : α), Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
   begin
     intro h, cases contains_single X h with Y hY, use Y, use X \ Y, 
     from ⟨inter_diff _ _,⟨union_diff_of_ss  hY.1,hY.2⟩⟩,
   end
 
-lemma single_ss_nonempty {X : α}: X ≠ ⊥ → (∃ Y Z, Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
+lemma single_ss_nonempty {X : α}: X ≠ ⊥ → (∃ (Y Z : α), Y ∩ Z = ⊥ ∧ Y ∪ Z = X ∧ size Y = 1) := 
   λ hX, single_ss X hX 
 
 lemma union_ssss (X : α) : 1 < size X  → ∃ Y Z : α, Y ⊂ X ∧ Z ⊂ X ∧ Y ∩ Z = ⊥ ∧ Y ∪ Z = X := 
   begin
     intros hX, 
-    have h := (λ h', by {rw [h', @size_bot A] at hX, linarith }: X ≠ ⊥), 
+    have h := (λ h', by {rw [h', size_bot] at hX, linarith }: X ≠ ⊥), 
     rcases single_ss X h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, 
     refine ⟨⟨by {rw ←hU, apply ss_union_left},_⟩,⟨by {rw ←hU, apply ss_union_right},_⟩,hI,hU⟩, 
     intros hYX, rw hYX at h1, linarith, 
     intros hZX, 
     have := size_modular Y Z, 
-    rw [hU, hI, @size_bot A, h1,hZX] at this, 
+    rw [hU, hI, size_bot, h1,hZX] at this, 
     linarith
   end
 
@@ -548,5 +538,3 @@ lemma sss_compl_left {X Y : α} : Xᶜ ⊂ Y → Yᶜ ⊂ X :=
 end boolalg
 
 
-
-end API 
