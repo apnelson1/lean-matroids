@@ -139,7 +139,8 @@ lemma indep.I_to_r_of_set_basis {M : indep_family U}{B X : U}:
 
 lemma indep.has_nested_basis_pair (M : indep_family U){X Y : U}:
   X ⊆ Y → ∃ BX BY, BX ⊆ BY ∧ indep.is_set_basis M BX X ∧ indep.is_set_basis M BY Y :=
-  by{
+  by
+  {
     intro hXY, rcases indep.has_basis M X with ⟨BX,hBX⟩, 
     rcases indep.has_ext_to_basis M (subset_trans hBX.1 hXY) hBX.2.1 with ⟨BY, hBY⟩, 
     use BX, use BY, from ⟨hBY.1,⟨hBX, hBY.2⟩⟩, 
@@ -201,6 +202,15 @@ lemma indep.I_to_R3 (M : indep_family U):
 
 def indep_family_to_rankfun (M : indep_family U) : rankfun U := 
   ⟨indep.I_to_r M, indep.I_to_R0 M, indep.I_to_R1 M, indep.I_to_R2 M, indep.I_to_R3 M⟩  
+
+def rankfun_to_indep_family (M : rankfun U) : indep_family U := 
+{ 
+  indep := is_indep M,
+  I1 := I1 M,
+  I2 := @I2 _ M,
+  I3 := @I3 _ M 
+}
+
 
 end indep 
 

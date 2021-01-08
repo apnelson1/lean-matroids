@@ -250,15 +250,16 @@ lemma subset_indep {M : rankfun U} {X Y : U}:
   end 
 
 lemma indep_aug {M : rankfun U}{X Y : U} : 
-  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
+  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y \ X ∧ is_indep M (X ∪ e)) := 
 begin
-  simp_rw indep_iff_r, intros hXY hIX hIY,
+  simp_rw indep_iff_r,
+  intros hXY hIX hIY,
   rcases rank_augment (by linarith : M.r X < M.r Y) with ⟨e,⟨h₁, h₂⟩⟩, 
   have hx := (λ he, by {rw [union_comm, subset_def_union_mp he] at h₂, linarith}: ¬((e:U) ⊆ X)), 
-  refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
-  have hs := (size_modular X e),
-  rw [ eq.trans (inter_comm X (e: U)) (nonelem_disjoint hx), size_bot] at hs, 
-  linarith [size_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
+  sorry, -- refine ⟨e,⟨h₁,_,_⟩⟩, exact hx, 
+  --have hs := (size_modular X e),
+  --rw [ eq.trans (inter_comm X (e: U)) (nonelem_disjoint hx), size_bot] at hs, 
+  --linarith [size_single e, M.R1 (X ∪ e), int.add_one_le_iff.mpr h₂],  
 end
 
 lemma indep_aug_diff {M : rankfun U}{X Y : U} : 
@@ -277,7 +278,6 @@ lemma subset_indep_r {M : rankfun U}{X Y : U}:
   X ⊆ Y → M.r Y = size Y → M.r X = size X := 
   λ h, by {have := subset_indep h, rw [indep_iff_r, indep_iff_r] at this, assumption} 
 
-
 lemma I1 (M : rankfun U) : 
   is_indep M ⊥ := 
   bot_indep M 
@@ -290,7 +290,7 @@ lemma I2 {M : rankfun U} {X Y : U}:
   end 
 
 lemma I3 {M : rankfun U}{X Y : U}: 
-  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y ∧ e ∉ X ∧ is_indep M (X ∪ e)) := 
+  size X < size Y → is_indep M X → is_indep M Y → (∃ e, e ∈ Y \ X ∧ is_indep M (X ∪ e)) := 
   indep_aug
 
 
@@ -376,9 +376,10 @@ lemma C3 {M : rankfun U} {C₁ C₂ : U} {e : single U}:
     intros hC₁ hC₂ hC₁C₂ he, rw [←dep_iff_contains_circuit, dep_iff_r], 
     have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
     have heU : (e : U) ⊆ C₁ ∪ C₂ := subset_trans he (subset_trans hI.1 (subset_union_left C₁ _)),
-    have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := by linarith [R2 M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
-      r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
-    exact int.le_sub_one_iff.mp hcalc,
+    have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := 
+      by linarith [R2 M (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
+          r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
+    from int.le_sub_one_iff.mp hcalc,
   --More verbosely: 
   /-have := calc M.r (C₁ ∪ C₂ \ e) ≤ M.r (C₁ ∪ C₂)                                : R2 M (diff_subset (C₁ ∪ C₂) e ) 
                               ...  ≤ M.r C₁ + M.r C₂ - M.r (C₁ ∩ C₂)              : by linarith [M.R3 C₁ C₂]

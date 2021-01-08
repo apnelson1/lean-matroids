@@ -7,6 +7,8 @@ namespace cryptomorphism
 
 section free
 
+noncomputable theory 
+
 variables {U : boolalg}
 
   def free_matroid_on (X : U) : rankfun (subalg X) := 
@@ -56,10 +58,16 @@ lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n):
     linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
   end
 
-
-def truncate (M : rankfun U){n : ℤ} : rankfun U := 
+def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U := 
+  let M_ind := rankfun_to_indep_family M in 
+  indep_family_to_rankfun ⟨trunc.indep M_ind hn, trunc.I1 M_ind hn, trunc.I2 M_ind hn, trunc.I3 M_ind hn⟩
+  
+lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : U) :
+  (truncate M hn).r X = min n (M.r X) :=
   sorry 
 
-end trucation 
 
+
+end truncation 
+end cryptomorphism
 end boolalg 
