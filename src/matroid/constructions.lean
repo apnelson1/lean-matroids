@@ -49,14 +49,14 @@ lemma trunc.I2 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) :
 
 lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
-  begin
-    intros I J hIJ hI hJ, 
-    cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
-    refine ⟨e, ⟨he.1, ⟨he.2,_ ⟩ ⟩⟩, 
-    by_contra h_con, push_neg at h_con, 
-    rw [(add_nonelem_size (elem_diff_iff.mp he.1).2)] at h_con, 
-    linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
-  end
+begin
+  intros I J hIJ hI hJ, 
+  cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
+  refine ⟨e, ⟨he.1, ⟨he.2,_ ⟩ ⟩⟩, 
+  by_contra h_con, push_neg at h_con, 
+  rw [(add_nonelem_size (elem_diff_iff.mp he.1).2)] at h_con, 
+  linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
+end
 
 def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U := 
   let M_ind := rankfun_to_indep_family M in 
@@ -64,7 +64,13 @@ def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U :=
   
 lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : U) :
   (truncate M hn).r X = min n (M.r X) :=
-  sorry 
+begin
+  unfold truncate,
+  dunfold indep_family_to_rankfun indep.I_to_r indep.choose_set_basis,
+  simp,  
+
+
+end
 
 
 

@@ -146,6 +146,22 @@ lemma indep.has_nested_basis_pair (M : indep_family U){X Y : U}:
     use BX, use BY, from ⟨hBY.1,⟨hBX, hBY.2⟩⟩, 
   }
 
+
+lemma indep.rank_eq_iff (M : indep_family U) (X : U)(n : ℤ) :
+  indep.I_to_r M X = n ↔ ∃ I, (I ⊆ X ∧ M.indep I ∧ size I = n) ∧ (∀ J, I ⊂ J → J ⊆ X → ¬M.indep J) :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, 
+  cases indep.I_to_r_max M X with B hB,
+  rw h at hB, 
+  refine ⟨B, ⟨hB,λ J hIJ hJX, _⟩⟩,
+  --have := indep.I_to_r_ub hJ hJM, 
+  --rw [h, ←(hB.2.2)] at this,  assumption, 
+  --unfold indep.I_to_r indep.choose_set_basis indep.choose_extension_to_basis, 
+
+   
+end 
+  
+
 -----------------------------------------------------------------------
 
 lemma indep.I_to_R0 (M : indep_family U): 
@@ -204,12 +220,12 @@ def indep_family_to_rankfun (M : indep_family U) : rankfun U :=
   ⟨indep.I_to_r M, indep.I_to_R0 M, indep.I_to_R1 M, indep.I_to_R2 M, indep.I_to_R3 M⟩  
 
 def rankfun_to_indep_family (M : rankfun U) : indep_family U := 
-{ 
-  indep := is_indep M,
-  I1 := I1 M,
-  I2 := @I2 _ M,
-  I3 := @I3 _ M 
-}
+  ⟨is_indep M, I1 M, @I2 _ M, @I3 _ M⟩
+
+
+
+
+
 
 
 end indep 
