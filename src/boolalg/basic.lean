@@ -17,6 +17,8 @@ namespace boolalg
 
 structure boolalg :=
   (member : Type)
+  -- [alg : boolean_algebra member]
+  -- [finite : fintype member]
   --(contained : subset → subset → Prop)
   (bot top : member)
   (inter union : member → member → member)
@@ -49,11 +51,43 @@ structure boolalg :=
   (union_assoc_ax (X Y Z : member) : union (union X Y) Z = union X (union Y Z))
 
 -- Instances to enable ⊆ , ∩ , ∪ , ᶜ , ⊤, ⊥ , - (set diff)
-
+#check fin 2
+#check (finset (fin 2))
+#check boolalg.mk (set (fin 2))
 variables {A : boolalg}
+
+/-
+meta def add_instances :=
+`[letI := A.alg,
+  letI := A.finite]
+  -/
+
+
+lemma foo1 (A : Type) [boolean_algebra A] (X Y : A) : X ⊔ Y = Y ⊔ X :=
+begin
+  apply sup_comm
+end
 
 
 @[simp] instance i1  : has_coe_to_sort boolalg := {S := Type, coe := boolalg.member}
+--@[simp] instance i5  : has_union A := {union := A.alg.sup}
+#check @sup_comm
+#check boolean_algebra.to_bounded_distrib_lattice 
+#check bounded_distrib_lattice.to_distrib_lattice
+#check distrib_lattice.to_lattice
+#check lattice.to_semilattice_sup
+/-
+lemma foo (X Y : A) : X ∪ Y = Y ∪ X :=
+begin
+  add_instances,
+ -- let ba := A.alg,
+ -- let bdl := @boolean_algebra.to_bounded_distrib_lattice A.member ba,
+ -- let dl := bdl.to_distrib_lattice,
+ -- let l := dl.to_lattice,
+ -- let sls := lattice.to_semilattice_sup,
+  apply sup_comm,
+end
+-/
 @[simp] instance i2  : has_bot A := {bot := A.bot}
 @[simp] instance i3  : has_top A := {top := A.top}
 @[simp] instance i4  : has_inter A := {inter := A.inter}
@@ -65,7 +99,6 @@ variables {A : boolalg}
 
 def size  (X : A) : ℤ := A.size X
 def symm_diff  (X Y : A) : A := (X \ Y) ∪ (Y \ X)
-
 
 @[simp] lemma diff_def (X Y : A) : X \ Y = X ∩ Yᶜ := 
   rfl 
