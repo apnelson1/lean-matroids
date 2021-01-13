@@ -3,6 +3,46 @@ import .basic .dual
 
 namespace boolalg 
 
+@[simp] def restrict_subset {B : boolalg} (R : B) (rfun : rankfun B)  : rankfun (subalg R) := 
+let f := (embed.from_subset R).f in 
+⟨λ X, rfun.r X, λ X, rfun.R0 X, λ X, rfun.R1 X, λ X Y, rfun.R2 X Y, λ X Y, rfun.R3 X Y⟩ 
+
+@[simp] def restrict_nested_pair {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (rfun : rankfun (subalg R)) : rankfun (subalg R₀)  := 
+let f := (embed.from_nested_pair h).f in 
+⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
+
+@[simp] def corestrict_subset {U : boolalg} (R : U) (M : rankfun U)  : rankfun (subalg R) := 
+let C := Rᶜ, emb := embed.from_subset R in 
+⟨ 
+  λ X, M.r (X ∪ C) - M.r C,
+  λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
+  λ X, by {simp only, linarith [R0 M (X ∩ C), R3 M X C, R1 M X, subalg_coe_size X]},
+  λ X Y hXY, by {simp only, linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left X Y C hXY)]}, 
+  λ X Y, by
+  {
+    simp only, 
+    suffices : M.r (coe (X ∪ Y) ∪ C) + M.r (coe (X ∩ Y) ∪ C) ≤ M.r (X ∪ C) + M.r (Y ∪ C), by linarith, 
+    have h := M.R3 (X ∪ C) (Y ∪ C), 
+    rw [←union_distrib_right, ←union_distrib_union_left] at h, assumption,
+  },
+⟩ 
+
+@[simp] def corestrict_nested_pair {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (M : rankfun (subalg R)) : rankfun (subalg R₀)  := 
+let r := M.r, emb := (embed.from_nested_pair h), f := emb.f, C := (embed.to_subalg R₀ R h)ᶜ in 
+⟨
+  λ X, r (f X ∪ C) - r C, 
+  λ X, by {rw sub_nonneg, exact M.R2 C (f X ∪ C) (subset_union_right (f X) C)}, 
+  λ X, by {simp only, linarith [emb.on_size X, M.R0 ((f X) ∩ C), M.R3 (f X) C, M.R1 (f X)]}, 
+  λ X Y hXY, by {simp only, linarith [M.R2 ((f X) ∪ C) ((f Y) ∪ C) (subset_union_subset_left _ _ C (emb.on_subset hXY))]}, 
+  λ X Y, by {
+    simp only, 
+    suffices : M.r (f (X ∪ Y) ∪ C) + M.r (f (X ∩ Y) ∪ C) ≤ M.r ((f X) ∪ C) + M.r ((f Y) ∪ C), by linarith, 
+    have h := M.R3 ((f X) ∪ C) ((f Y) ∪ C), 
+    rw [←union_distrib_right, ←union_distrib_union_left] at h, refine h,
+  },
+⟩
+
+
 -- For this file, we'll define matroids as living inside a common universe U.
 def matroid_on {U : boolalg} (E : U) : Type :=
   rankfun (subalg E)

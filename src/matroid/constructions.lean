@@ -1,6 +1,6 @@
 
 import boolalg.basic boolalg.induction boolalg.collections boolalg.examples 
-import .basic .cryptomorphism
+import .rankfun .indep 
 
 namespace boolalg 
 namespace cryptomorphism 

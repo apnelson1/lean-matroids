@@ -1,4 +1,4 @@
-import .rankfun 
+import matroid.axioms  
 import boolalg.basic boolalg.collections boolalg.examples
 
 ----------------------------------------------------------------
@@ -7,6 +7,10 @@ namespace boolalg
 
 section dual
 variables {U : boolalg}
+
+lemma rank_bot {B : boolalg} (M : rankfun B) :
+  M.r ⊥ = 0 :=
+le_antisymm (calc M.r ⊥ ≤ size (⊥ : B) : M.R1 ⊥ ... = 0 : size_bot B) (M.R0 ⊥)
 
 -- Every matroid has a dual.
 def dual :
@@ -17,7 +21,7 @@ fun M, {
     calc 0 ≤ M.r X  + M.r Xᶜ - M.r (X ∪ Xᶜ) - M.r (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
     ...    = M.r X  + M.r Xᶜ - M.r ⊤        - M.r ⊥        : by rw [union_compl X, inter_compl X]
     ...    ≤ size X + M.r Xᶜ - M.r ⊤                       : by linarith [M.R1 X, rank_bot M]),
-  R1 := (fun X, by linarith [M.R2 _ _ (subset_top Xᶜ)]),
+  R1 := (fun X, by {simp only, linarith [M.R2 _ _ (subset_top Xᶜ)]}),
   R2 := (fun X Y h, let
     Z := Xᶜ ∩ Y,
     h₁ :=
@@ -38,7 +42,7 @@ fun M, {
       ...         ≤ M.r Yᶜ + size Z             : by linarith [M.R1 Z]
       ...         = M.r Yᶜ + size (Xᶜ ∩ Y)      : by refl
       ...         = M.r Yᶜ + size Y - size X    : by linarith [compl_inter_size_subset h]
-    in by linarith),
+    in by {simp only, linarith}),
   R3 := (fun X Y,
     calc  size (X ∪ Y) + M.r (X ∪ Y)ᶜ  - M.r ⊤ + (size (X ∩ Y) + M.r (X ∩ Y)ᶜ  - M.r ⊤)
         = size (X ∪ Y) + M.r (Xᶜ ∩ Yᶜ) - M.r ⊤ + (size (X ∩ Y) + M.r (Xᶜ ∪ Yᶜ) - M.r ⊤) : by rw [compl_union X Y, compl_inter X Y]
