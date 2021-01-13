@@ -82,7 +82,7 @@ lemma indep.choice_of_extension_to_basis_is_valid (M : indep_family U) {I X : U}
   classical.some_spec (indep.extends_to_basis hIX hInd)
 
 lemma indep.choice_of_set_basis_is_valid (M : indep_family U) (X : U) : 
-  indep.is_set_basis M (indep.choose_extension_to_basis M (bot_subset X) (M.I1)) X :=
+  indep.is_set_basis M (indep.choose_set_basis M X) X :=
   (indep.choice_of_extension_to_basis_is_valid M (bot_subset X) (M.I1)).2 
 
 def indep.has_ext_to_basis (M : indep_family U) {I X : U}: 
@@ -106,11 +106,11 @@ lemma indep.size_ind_le_size_set_basis {M : indep_family U}{I B X : U}:
 
 lemma indep.set_bases_equicardinal {M : indep_family U}{X B₁ B₂ :U} :
   indep.is_set_basis M B₁ X → indep.is_set_basis M B₂ X → size B₁ = size B₂ :=
-  begin
-    intros h₁ h₂, apply le_antisymm, 
-    from indep.size_ind_le_size_set_basis h₁.1 h₁.2.1 h₂, 
-    from indep.size_ind_le_size_set_basis h₂.1 h₂.2.1 h₁, 
-  end 
+begin
+  intros h₁ h₂, apply le_antisymm, 
+  from indep.size_ind_le_size_set_basis h₁.1 h₁.2.1 h₂, 
+  from indep.size_ind_le_size_set_basis h₂.1 h₂.2.1 h₁, 
+end 
 
 --lemma basis_ext_inter_set {M : indep_family U}{X B₁ }
 
@@ -124,14 +124,30 @@ lemma indep.I_to_r_max (M : indep_family U)(X : U):
     
 lemma indep.I_to_r_ub {M : indep_family U}{I X : U}: 
   I ⊆ X → M.indep I → size I ≤ indep.I_to_r M X := 
-  begin
-    intros hI hInd, by_contra a, push_neg at a, 
-    let J := indep.choose_set_basis M X, 
-    have : indep.is_set_basis M J X := indep.choice_of_set_basis_is_valid M X, 
-    have := indep.size_ind_le_size_set_basis hI hInd this, 
-    have : indep.I_to_r M X = size J := rfl, 
-    linarith, 
-  end 
+begin
+  intros hI hInd, by_contra a, push_neg at a, 
+  let J := indep.choose_set_basis M X, 
+  have : indep.is_set_basis M J X := indep.choice_of_set_basis_is_valid M X, 
+  have := indep.size_ind_le_size_set_basis hI hInd this, 
+  have : indep.I_to_r M X = size J := rfl, 
+  linarith, 
+end 
+
+lemma indep.I_to_r_eq_iff {U : boolalg}{M : indep_family U}{X : U}{n : ℤ} :
+  indep.I_to_r M X = n ↔ ∃ B, indep.is_set_basis M B X ∧ size B = n :=
+  let B₀ := indep.choose_set_basis M X, hB₀ := indep.choice_of_set_basis_is_valid M X in 
+begin
+  refine ⟨λ h, ⟨B₀, ⟨hB₀,by {rw ←h, refl}⟩⟩, λ h,_⟩, 
+  rcases h with ⟨B, ⟨hB, hBsize⟩⟩, 
+  from (rfl.congr hBsize).mp (eq.symm (indep.set_bases_equicardinal hB hB₀)), 
+end
+
+lemma indep.has_set_basis_with_size {U : boolalg}(M : indep_family U)(X : U) : 
+  ∃ B, indep.is_set_basis M B X ∧ size B = indep.I_to_r M X :=
+  indep.I_to_r_eq_iff.mp (rfl : indep.I_to_r M X = indep.I_to_r M X)
+ 
+
+
 
 lemma indep.I_to_r_of_set_basis {M : indep_family U}{B X : U}:
   indep.is_set_basis M B X → indep.I_to_r M X = size B := 
@@ -147,20 +163,6 @@ lemma indep.has_nested_basis_pair (M : indep_family U){X Y : U}:
   }
 
 
-lemma indep.rank_eq_iff (M : indep_family U) (X : U)(n : ℤ) :
-  indep.I_to_r M X = n ↔ ∃ I, (I ⊆ X ∧ M.indep I ∧ size I = n) ∧ (∀ J, I ⊂ J → J ⊆ X → ¬M.indep J) :=
-begin
-  refine ⟨λ h, _, λ h, _⟩, 
-  cases indep.I_to_r_max M X with B hB,
-  rw h at hB, 
-  refine ⟨B, ⟨hB,λ J hIJ hJX, _⟩⟩,
-  --have := indep.I_to_r_ub hJ hJM, 
-  --rw [h, ←(hB.2.2)] at this,  assumption, 
-  --unfold indep.I_to_r indep.choose_set_basis indep.choose_extension_to_basis, 
-
-   
-end 
-  
 
 -----------------------------------------------------------------------
 

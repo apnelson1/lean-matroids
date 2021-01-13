@@ -1,4 +1,4 @@
-import boolalg.basic
+import boolalg.basic boolalg.examples
 import .basic .dual 
 
 namespace boolalg 
@@ -58,7 +58,6 @@ inductive minor_on : U → Type
 | restrict   (X : U) {E : U} : (X ⊆ E) → minor_on E → minor_on X
 | corestrict (X : U) {E : U} : (X ⊆ E) → minor_on E → minor_on X
 open minor_on
-
 
 
 def to_minor : Π {E : U}, minor_on E → rankfun U → matroid_on E

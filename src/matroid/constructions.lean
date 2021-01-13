@@ -65,9 +65,21 @@ def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U :=
 lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : U) :
   (truncate M hn).r X = min n (M.r X) :=
 begin
-  unfold truncate,
-  dunfold indep_family_to_rankfun indep.I_to_r indep.choose_set_basis,
-  simp,  
+  apply indep.I_to_r_eq_iff.mpr, 
+  unfold indep.is_set_basis trunc.indep rankfun_to_indep_family, 
+  simp only [and_imp, not_and, not_le, ne.def, ssubset_iff], 
+  by_cases n ≤ M.r X, 
+  sorry, 
+  cases exists_basis_of M X with B hB, 
+  
+  rcases hB with ⟨hBi, ⟨hBX,hBr⟩⟩, 
+  refine ⟨B, ⟨⟨hBX,⟨⟨hBi,_⟩,λ J hBJ hBne hJX hJi, _⟩⟩,_⟩⟩ , 
+  rw indep_iff_r at hBi, linarith, 
+   
+
+  --have := indep.has_set_basis_with_size M X, 
+  --unfold truncate,
+  
 
 
 end

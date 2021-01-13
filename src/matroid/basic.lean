@@ -872,11 +872,28 @@ def is_cobasis (M : rankfun U): U → Prop :=
   λ B, is_basis (dual M) B 
 
 def is_basis_of (M : rankfun U): U → U → Prop :=
-  λ B X, is_indep M B ∧ B ⊆ X ∧ M.r B = M.r X  
+  λ B X, B ⊆ X ∧ is_indep M B ∧ M.r B = M.r X  
 
-lemma basis_iff_i (M : rankfun U){B : U} : 
+lemma basis_iff_i {M : rankfun U}{B : U} : 
   is_basis M B ↔ is_indep M B ∧ ∀ X, B ⊂ X → ¬is_indep M X := 
   by unfold is_basis 
+
+lemma basis_of_iff_i {M : rankfun U}{B X : U}
+  is_basis_of M B X ↔ B ⊆ X ∧ is_indep M B ∧ ∀ Y, X ⊂ Y → Y ⊆ B → ¬i
+
+lemma basis_of_iff_no_add_r {M : rankfun U}{B X : U} :
+  is_basis_of M B X ↔ B ⊆ X ∧ M.r B = size B ∧ ∀ (e : single U), e ∈ X → M.r (B ∪ e) = M.r B := 
+begin
+  refine ⟨λ h,⟨h.1,⟨_,λ e he, _⟩⟩,λ h,_⟩, 
+  --refine ⟨λ h,⟨h.1, ⟨h.2.1,λ J hBJ hJX hJi, _ ⟩⟩, λ h, _⟩ ,
+  --linarith [R2 M hJX, h.2.2, indep_iff_r.mp h.2.1, indep_iff_r.mp hJi, size_strict_monotone hBJ],  
+  --rcases h with ⟨hBX,⟨hBi, hJ⟩⟩,
+  --refine ⟨hBX,⟨hBi,_⟩⟩,  
+  --have := R2 M hBJ.1, 
+  --linarith [R2 M hJX], 
+end
+
+
 
 lemma basis_iff_r {M : rankfun U} {B : U} :
   is_basis M B ↔ M.r B = size B ∧ ∀ X, B ⊂ X → M.r X < size X :=
@@ -902,6 +919,7 @@ lemma basis_iff_no_add_r {M : rankfun U} (B : U) :
   end
 
 
+
 lemma cobasis_iff_compl_basis {M : rankfun U}(B : U):
   is_cobasis M B ↔ is_basis M Bᶜ :=
 begin
@@ -911,6 +929,16 @@ end
 lemma is_basis_of_iff_r {M : rankfun U} {B X : U} :
   is_basis_of M B X ↔ M.r B = size B ∧ B ⊆ X ∧ M.r B = M.r X :=
   by {unfold is_basis_of, rw indep_iff_r}
+
+
+
+
+lemma exists_basis_of (M : rankfun U)(X : U) : 
+  ∃ B, is_basis_of M B X :=
+begin
+  sorry 
+end
+
 
 lemma basis_iff_min_spanning {M : rankfun U}{B : U} :
   is_basis M B ↔ is_spanning M B ∧ ∀ X, X ⊂ B → ¬is_spanning M X :=
