@@ -3,6 +3,7 @@ import tactic.ext
 import tactic.linarith
 import tactic.tidy 
 import tactic 
+import .int_lemmas 
 
 
 -- The API I would like to use for various basic objects.
@@ -56,6 +57,8 @@ structure boolalg :=
 --#check boolalg.mk (set (fin 2))
 variables {A : boolalg}
 
+
+
 /-
 meta def add_instances :=
 `[letI := A.alg,
@@ -94,10 +97,18 @@ end
 @[simp] instance i9  : has_ssubset A := {ssubset := λ X Y, X ⊆ Y ∧ X ≠ Y}
 
 def size  (X : A) : ℤ := A.size X
+
 def symm_diff  (X Y : A) : A := (X \ Y) ∪ (Y \ X)
+
+
+@[simp] def top_size (A : boolalg) := size (⊤ : A)
 
 @[simp] lemma diff_def (X Y : A) : X \ Y = X ∩ Yᶜ := 
   rfl 
+
+def nontrivial (A : boolalg) := (⊥ : A) ≠ ⊤
+
+ 
 
 -- Lemmas (some are just the axioms rewritten in terms of the notation to make linarith etc behave more nicely)
 
@@ -556,6 +567,9 @@ lemma union_of_disjoint {X Y Z : A} : X ∩ Y = ⊥ → X ∩ Z = ⊥ → X ∩ 
 lemma diff_subset  (X Y : A) : X \ Y ⊆ X := 
   inter_subset_left X Yᶜ
 
+lemma diff_subset_diff {X Y : A} (Z : A) : X ⊆ Y → X \ Z ⊆ Y \ Z := 
+  λ h, subset_inter_subset_left _ _ _ h
+
 @[simp] lemma diff_union (X Y : A): (X ∩ Y) ∪ (X \ Y) = X  := 
   by rw [diff_def, ←inter_distrib_left, union_compl, inter_top]
 
@@ -650,6 +664,9 @@ lemma compl_inter_size_subset {X Y : A} : X ⊆ Y → size (Xᶜ ∩ Y) = size Y
 lemma diff_size {X Y : A} : X ⊆ Y → size (Y \ X) = size Y - size X :=  
   λ hXY, by rw [diff_def, inter_comm, compl_inter_size_subset hXY]
 
+lemma size_diff_le_size (X Y : A) : size (X \ Y) ≤ size X := 
+  size_monotone (diff_subset _ _) 
+
 lemma size_disjoint_sum {X Y : A}: X ∩ Y = ⊥ → size (X ∪ Y) = size X + size Y := 
   λ hXY, by {have := size_modular X Y, rw [hXY, size_bot] at this, linarith}
 
@@ -669,6 +686,10 @@ lemma size_zero_bot {X : A} : (size X = 0) →  X = ⊥ :=
     
 lemma size_zero_iff_bot {X : A} : (size X = 0) ↔ (X = ⊥) := 
   by {split, apply size_zero_bot, intros h, rw h, exact size_bot A}
+
+lemma nontrivial_size : 
+  nontrivial A → 1 ≤ top_size A := 
+  λ h, by {by_contra a, unfold top_size at a, from h (size_zero_bot (by linarith [size_nonneg (⊤ :A)]: size (⊤ : A) = 0)).symm}
 
 lemma size_nonempty {X : A} : X ≠ ⊥ → 0 < size X  := 
   λ hX, lt_of_le_of_ne (size_nonneg X) (λ h, hX (size_zero_bot h.symm))

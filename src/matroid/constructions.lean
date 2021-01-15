@@ -4,33 +4,10 @@ import .rankfun .indep
 
 namespace boolalg 
 
-section free
-
-noncomputable theory 
-
-
-  def free_matroid_on (U : boolalg): rankfun U := 
-  { 
-    r := size,
-    R0 := size_nonneg,
-    R1 := λ X, le_refl (size X),
-    R2 := λ X Y hXY, size_monotone hXY,
-    R3 := λ X Y, le_of_eq (size_modular X Y),  
-  } 
-
-  def loopy_matroid_on (U : boolalg) : rankfun U := 
-  {
-    r := λ X, 0, 
-    R0 := λ X, le_refl 0, 
-    R1 := λ X, size_nonneg X, 
-    R2 := λ X Y hXY, le_refl 0, 
-    R3 := λ X Y, rfl.ge
-  }
-
-end free 
-
 
 section truncation 
+
+noncomputable theory 
 
 variables {U : boolalg}
 
@@ -90,12 +67,89 @@ end
 section uniform
 
 
+def free_matroid_on (U : boolalg): rankfun U := 
+  { 
+    r := size,
+    R0 := size_nonneg,
+    R1 := λ X, le_refl (size X),
+    R2 := λ X Y hXY, size_monotone hXY,
+    R3 := λ X Y, le_of_eq (size_modular X Y),  
+  } 
+
+lemma free_matroid_indep {U : boolalg}(X : U) :
+  is_indep (free_matroid_on U) X  := 
+  by rw [free_matroid_on, indep_iff_r]
+
+lemma free_iff_top_indep {U : boolalg}{M : rankfun U}: 
+   M = free_matroid_on U ↔ is_indep M ⊤ := 
+begin
+  refine ⟨λ h, _, λ h,_⟩, 
+  rw [indep_iff_r,h], finish,  
+  ext X, simp_rw [free_matroid_on, ←indep_iff_r, I2 (subset_top X) h], 
+end
+
+
+def loopy_matroid_on (U : boolalg) : rankfun U := 
+  {
+    r := λ X, 0, 
+    R0 := λ X, le_refl 0, 
+    R1 := λ X, size_nonneg X, 
+    R2 := λ X Y hXY, le_refl 0, 
+    R3 := λ X Y, rfl.ge
+  }
+
+def loopy_iff_top_rank_zero {U : boolalg}{M : rankfun U}:
+  M = loopy_matroid_on U ↔ M.r ⊤ = 0 := 
+begin
+  refine ⟨λ h, by finish, λ h,_⟩,  
+  ext X, simp_rw [loopy_matroid_on], 
+  have := R2 M (subset_top X), 
+  rw h at this, 
+  linarith [R0 M X], 
+end
+
+
 def uniform_matroid_on (U : boolalg){r : ℤ}(hr : 0 ≤ r) : rankfun U := 
   truncate (free_matroid_on U) hr 
 
-lemma uniform_matroid_rank (U : boolalg)(X : U){r : ℤ}(hr : 0 ≤ r) :
+@[simp] lemma uniform_matroid_rank (U : boolalg)(X : U){r : ℤ}(hr : 0 ≤ r) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
   by apply truncate_rank
+
+lemma uniform_matroid_indep (U : boolalg)(X : U){r : ℤ}{hr : 0 ≤ r}  : 
+  is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
+  by {rw [indep_iff_r, uniform_matroid_rank], finish}
+
+lemma uniform_dual (U : boolalg){r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (⊤ : U)): 
+  dual (uniform_matroid_on U hr) = uniform_matroid_on U (by linarith : 0 ≤ size (⊤ : U) - r) :=
+begin
+  ext X, 
+  simp_rw [dual, uniform_matroid_rank, compl_size, min_eq_left hrn], 
+  rw [←min_add_add_left, ←(min_sub_sub_right), min_comm], simp, 
+end
+
+def circuit_matroid_on {U : boolalg} (hU : nontrivial U) : rankfun U := 
+  uniform_matroid_on U (by linarith [nontrivial_size hU] : 0 ≤ top_size U - 1)
+
+@[simp] lemma circuit_matroid_rank {U : boolalg}(hU : nontrivial U)(X : U):
+  (circuit_matroid_on hU).r X = min (size (⊤ : U) - 1) (size X) := 
+  uniform_matroid_rank _ _ _ 
+
+lemma circuit_matroid_iff_top_circuit {U : boolalg} (hU : nontrivial U){M : rankfun U}:
+  M = circuit_matroid_on hU ↔ is_circuit M ⊤ := 
+begin
+  refine ⟨λ h, _, λ h, _⟩, 
+  rw [circuit_iff_r, h], 
+  simp_rw circuit_matroid_rank, 
+  from ⟨min_eq_left (by linarith), λ Y hY, min_eq_right (by linarith [size_strict_monotone hY])⟩, 
+  ext X, rw circuit_matroid_rank, 
+  rw circuit_iff_r at h, 
+  have h' : X ⊂ ⊤ ∨ X = ⊤ := _ , 
+  cases h', 
+  rw [h.2 X h', eq_comm], from min_eq_right (by linarith [size_strict_monotone h']), 
+  rw [h', h.1, eq_comm], from min_eq_left (by linarith), 
+  from subset_ssubset_or_eq (subset_top _), 
+end
 
 
 end uniform
@@ -220,22 +274,73 @@ begin
   rw relax.r_of_not_C hC hCtop,  
 end
 
-
 theorem single_rank_disagreement_is_relaxation {M₁ M₂ : rankfun U}{X : U}: 
-  M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
+  M₁.r ⊤ = M₂.r ⊤ → M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
 begin
-  intros hX h_other, 
+  intros hr hX h_other, 
   have hne : M₁ ≠ M₂ := λ h, by {rw h at hX, from lt_irrefl _ hX },
-  have hBadB : ∃ B, (is_basis M₁ B ↔ ¬is_basis M₂ B) := sorry,
-  have hBadC : ∃ C, (is_circuit M₁ C ↔ ¬is_circuit M₂ C) := by 
-  {by_contra a, push_neg at a, simp_rw [not_iff, not_iff_not] at a, 
-    apply hne, apply circuit_determines_rankfun, ext C, from a C},
-  have hBadH : ∃ H, (is_hyperplane M₁ H ↔ ¬is_hyperplane M₂ H) := sorry, 
-  sorry, 
+  cases circuit_ind_of_distinct hne with X' hX', 
+  have hXX' : X' = X := by
+  {
+    by_contra hXX', 
+    simp_rw [circuit_iff_r, indep_iff_r] at hX', 
+    cases hX';
+    linarith [h_other _ hXX'], 
+  },
+  simp_rw hXX' at hX', 
+  have : is_circuit M₁ X ∧ is_indep M₂ X := by 
+  {
+    cases hX', assumption, 
+    simp_rw [circuit_iff_r, indep_iff_r] at hX', 
+    linarith, 
+  },
+  cases this with hXcct hXind, 
+  have hdne : dual M₁ ≠ dual M₂ := λ heq, hne (dual_inj heq), 
+  cases circuit_ind_of_distinct hdne with Z hZ, 
+  have hXZ : Zᶜ = X := by 
+  {
+    by_contra hXZ, 
+    repeat {rw [←is_cocircuit] at hZ}, 
+    simp_rw [cocircuit_iff_r, coindep_iff_r] at hZ,
+    cases hZ;
+    linarith [h_other _ hXZ], 
+  },
+  have : is_circuit (dual M₁) Z ∧ is_indep (dual M₂) Z := by 
+  {
+    cases hZ, 
+    assumption, 
+    rw [←is_cocircuit, cocircuit_iff_r, coindep_iff_r, hXZ] at hZ, 
+    linarith,   
+  },
+  rw (compl_pair hXZ) at this, 
+  cases this with hXhp _, 
+  rw [←is_cocircuit, cocircuit_iff_compl_hyperplane, compl_compl] at hXhp,
+  let hch : is_circuit_hyperplane M₁ X := ⟨hXcct, hXhp⟩, 
+  use hch,
+  ext Y,
+  by_cases hYX : Y = X,   
+  simp_rw [hYX, relax, relax.r_of_C hch],   
+  linarith [r_cct hXcct, r_indep hXind], 
+  simp_rw [relax, relax.r_of_not_C hch hYX, eq_comm],
+  from h_other Y hYX,  
+end
 
+lemma single_rank_disagreement_top (hU : nontrivial U){M₁ M₂ : rankfun U}:
+   M₁.r ⊤ < M₂.r ⊤ → (∀ X, X ≠ ⊤ → M₁.r X = M₂.r X) → M₁ = circuit_matroid_on hU ∧ M₂ = free_matroid_on U  := 
+begin
+  intros htop hother, 
+  rw [circuit_matroid_iff_top_circuit, free_iff_top_indep], 
+  have hM₁M₂ : M₁ ≠ M₂ := λ h, by {rw h at htop, from lt_irrefl _ htop}, 
+  cases circuit_ind_of_distinct hM₁M₂ with Z hZ, 
+  by_cases Z = ⊤; cases hZ, 
+  rw h at hZ, assumption, 
+  rw [h,circuit_iff_r, indep_iff_r] at hZ, linarith,
+  rw [circuit_iff_r, indep_iff_r] at hZ, linarith [hother Z h], 
+  rw [circuit_iff_r, indep_iff_r] at hZ, linarith [hother Z h], 
 end
 
 end relax 
+
 
 
 end boolalg 

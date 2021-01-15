@@ -35,18 +35,6 @@ lemma R3 {U : boolalg}(M : rankfun U)(X Y : U) :
   M.R3 X Y 
 
 
---some number stuff
-
-lemma le_sub_one_of_le_of_ne {x y : ℤ} : 
-  x ≤ y → x ≠ y → x ≤ y - 1 :=
-  λ h h', int.le_sub_one_of_lt (lt_of_le_of_ne h h')
-
-lemma le_of_not_gt' {x y : ℤ} : 
-  ¬ (y < x) → x ≤ y := 
-  not_lt.mp
-
--------------------------------------------------------------------------------
-
 
 lemma R2_u (M : rankfun U)(X Y : U) : 
   M.r X ≤ M.r (X ∪ Y) := 
@@ -205,6 +193,10 @@ def is_dep (M : rankfun U) : U → Prop :=
 lemma indep_iff_r {M : rankfun U} {X : U}: 
   is_indep M X ↔ M.r X = size X := 
   by refl 
+
+lemma r_indep {M : rankfun U}{X : U}:
+  is_indep M X → M.r X = size X :=
+  indep_iff_r.mp 
 
 lemma dep_iff_r {M : rankfun U} {X : U}:
   is_dep M X ↔ M.r X < size X := 
@@ -1135,7 +1127,19 @@ lemma circuit_ind_of_distinct {M₁ M₂ : rankfun U}:
   M₁ ≠ M₂ → ∃ X, (is_circuit M₁ X ∧ is_indep M₂ X) ∨ (is_circuit M₂ X ∧ is_indep M₁ X) := 
 begin
   intro hM₁M₂, by_contra h, push_neg at h, 
-  refine hM₁M₂ (indep_determines_rankfun _), 
+  refine hM₁M₂ (indep_determines_rankfun _), ext Y,
+  simp_rw [indep_iff_contains_no_circuit, not_iff_not],
+  refine ⟨λ h₁, _, λ h₂, _⟩, 
+  rcases h₁ with ⟨C, ⟨hC, hCY⟩⟩, 
+  have := (h C).1 hC, 
+  simp_rw [←dep_iff_not_indep, dep_iff_contains_circuit] at this, 
+  rcases this with ⟨C₂, ⟨hC₂, hC₂C⟩⟩, 
+  from ⟨C₂, ⟨hC₂, subset_trans hC₂C hCY⟩⟩, 
+  rcases h₂ with ⟨C, ⟨hC, hCY⟩⟩, 
+  have := (h C).2 hC, 
+  simp_rw [←dep_iff_not_indep, dep_iff_contains_circuit] at this, 
+  rcases this with ⟨C₂, ⟨hC₂, hC₂C⟩⟩, 
+  from ⟨C₂, ⟨hC₂, subset_trans hC₂C hCY⟩⟩, 
 end
 
 

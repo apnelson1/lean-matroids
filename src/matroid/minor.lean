@@ -1,5 +1,5 @@
 import boolalg.basic boolalg.examples
-import .basic .dual 
+import .rankfun .dual 
 
 namespace boolalg 
 
@@ -16,7 +16,7 @@ let C := Rᶜ, emb := embed.from_subset R in
 ⟨ 
   λ X, M.r (X ∪ C) - M.r C,
   λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
-  λ X, by {simp only, linarith [R0 M (X ∩ C), R3 M X C, R1 M X, subalg_coe_size X]},
+  λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X, subalg_coe_size X]},
   λ X Y hXY, by {simp only, linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left X Y C hXY)]}, 
   λ X Y, by
   {

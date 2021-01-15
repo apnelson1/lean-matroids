@@ -180,6 +180,10 @@ lemma maximal_example (P : A → Prop){X : A}:
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
+lemma maximal_example_from_bot (P : A → Prop): 
+  P ⊥ → ∃ Y, P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
+  λ h, by {rcases maximal_example P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩  }
+
 lemma maximal_example_aug (P : A → Prop){X : A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ e, e ∉ Y → ¬P (Y ∪ e) := 
   begin
@@ -187,6 +191,10 @@ lemma maximal_example_aug (P : A → Prop){X : A}:
     rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
   end 
+
+lemma maximal_example_aug_from_bot (P : A → Prop): 
+  P ⊥ → ∃ Y, P Y ∧ ∀ e, e ∉ Y → ¬P (Y ∪ e) := 
+  λ h, by {rcases maximal_example_aug P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩}
 
 lemma minimal_example_remove (P : A → Prop){X : A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ e, e ∈ Y → ¬P (Y \ e) := 
@@ -199,7 +207,18 @@ lemma minimal_example_remove (P : A → Prop){X : A}:
 end /-section-/ strong_induction
 
 
+section int_induction
 
+lemma int_induction_strong (P : ℤ → Prop) : 
+  P 0 → (∀ k, 0 ≤ k → (∀ k', 0 ≤ k' → k' < k → P k') → P k) → (∀ n, n ≥ 0 → P n) := 
+begin
+  intros h0 hk n hn, 
+  set Q: ℕ → Prop := λ n, P n with hQ,
+  suffices hQn : Q (n.to_nat), sorry, 
+   
+end
+
+end int_induction
 
 
 
