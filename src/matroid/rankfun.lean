@@ -1131,6 +1131,12 @@ begin
   simp_rw [indep_iff_contained_in_basis, h], 
 end
 
+lemma circuit_ind_of_distinct {M₁ M₂ : rankfun U}:
+  M₁ ≠ M₂ → ∃ X, (is_circuit M₁ X ∧ is_indep M₂ X) ∨ (is_circuit M₂ X ∧ is_indep M₁ X) := 
+begin
+  intro hM₁M₂, by_contra h, push_neg at h, 
+  refine hM₁M₂ (indep_determines_rankfun _), 
+end
 
 
 

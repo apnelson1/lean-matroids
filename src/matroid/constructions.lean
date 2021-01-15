@@ -8,9 +8,8 @@ section free
 
 noncomputable theory 
 
-variables {U : boolalg}
 
-  def free_matroid_on (X : U) : rankfun (subalg X) := 
+  def free_matroid_on (U : boolalg): rankfun U := 
   { 
     r := size,
     R0 := size_nonneg,
@@ -19,7 +18,7 @@ variables {U : boolalg}
     R3 := λ X Y, le_of_eq (size_modular X Y),  
   } 
 
-  def loopy_matroid_on (X : U) : rankfun (subalg X) := 
+  def loopy_matroid_on (U : boolalg) : rankfun U := 
   {
     r := λ X, 0, 
     R0 := λ X, le_refl 0, 
@@ -74,12 +73,9 @@ begin
   by_cases n ≤ size B,
   rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
   rw hBS at h, 
-  refine ⟨B₀, ⟨⟨_,⟨⟨_,_⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
+  refine ⟨B₀, ⟨⟨_,⟨⟨I2 hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
   from subset_trans hB₀ hBX, 
-  from I2 hB₀ hBI,
-  from (eq.symm hB₀s).ge,
   linarith [size_strict_monotone ⟨hBJ1, hBJ2⟩], 
-  finish, 
   push_neg at h, 
   rw hBS at h, 
   refine ⟨B, ⟨⟨hBX,⟨⟨hBI,by linarith⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
@@ -90,6 +86,19 @@ begin
   finish, 
 end
 
+
+section uniform
+
+
+def uniform_matroid_on (U : boolalg){r : ℤ}(hr : 0 ≤ r) : rankfun U := 
+  truncate (free_matroid_on U) hr 
+
+lemma uniform_matroid_rank (U : boolalg)(X : U){r : ℤ}(hr : 0 ≤ r) :
+  (uniform_matroid_on U hr).r X = min r (size X) := 
+  by apply truncate_rank
+
+
+end uniform
 
 
 
@@ -209,6 +218,21 @@ begin
   have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish}, 
   simp_rw [relax, dual_r, relax.r_of_not_C hCc h, relax.r_of_not_C hC h', dual_r],
   rw relax.r_of_not_C hC hCtop,  
+end
+
+
+theorem single_rank_disagreement_is_relaxation {M₁ M₂ : rankfun U}{X : U}: 
+  M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
+begin
+  intros hX h_other, 
+  have hne : M₁ ≠ M₂ := λ h, by {rw h at hX, from lt_irrefl _ hX },
+  have hBadB : ∃ B, (is_basis M₁ B ↔ ¬is_basis M₂ B) := sorry,
+  have hBadC : ∃ C, (is_circuit M₁ C ↔ ¬is_circuit M₂ C) := by 
+  {by_contra a, push_neg at a, simp_rw [not_iff, not_iff_not] at a, 
+    apply hne, apply circuit_determines_rankfun, ext C, from a C},
+  have hBadH : ∃ H, (is_hyperplane M₁ H ↔ ¬is_hyperplane M₂ H) := sorry, 
+  sorry, 
+
 end
 
 end relax 
