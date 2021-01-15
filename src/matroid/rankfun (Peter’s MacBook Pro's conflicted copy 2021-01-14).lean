@@ -305,6 +305,8 @@ lemma I3 {M : rankfun U}{X Y : U}:
 def rankfun_to_indep_family (M : rankfun U) : indep_family U := 
   ⟨is_indep M, I1 M, @I2 _ M, @I3 _ M⟩
 
+
+
 end indep 
 
 section /-Circuits-/ circuit
@@ -356,7 +358,7 @@ lemma cocircuit_iff_r {M : rankfun U} (X : U):
     exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
   }
 
-lemma dep_iff_contains_circuit {M : rankfun U} {X : U} :
+lemma dep_iff_contains_circuit {M : rankfun U} (X : U) :
   is_dep M X ↔ ∃ C, is_circuit M C ∧ C ⊆ X := 
   begin
     refine ⟨λ h, _, λ h, _ ⟩, 
@@ -365,11 +367,6 @@ lemma dep_iff_contains_circuit {M : rankfun U} {X : U} :
     rw indep_iff_not_dep, exact h₃Z Y hY,  
     cases h with C hC, exact dep_subset hC.2 hC.1.1, 
   end 
-
-lemma indep_iff_contains_no_circuit {M : rankfun U}{X : U} : 
-  is_indep M X ↔ ¬∃ C, is_circuit M C ∧ C ⊆ X :=
-  by rw [←not_iff_not, ←dep_iff_not_indep, dep_iff_contains_circuit, not_not]
-
 
 lemma C1 (M : rankfun U): 
   ¬is_circuit M ⊥ := 
@@ -684,7 +681,7 @@ lemma is_loops_iff_cl_bot {M : rankfun U}{L : U}:
   end
 
 lemma hyperplane_iff_r {M : rankfun U} (X : U) :
-  is_hyperplane M X ↔ M.r X = M.r ⊤ - 1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
+  is_hyperplane M X ↔ M.r X = M.r ⊤ -1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
   begin
     unfold is_hyperplane, rw flat_iff_r, 
     refine ⟨λ h, ⟨h.2, λ Y hXY, _ ⟩, λ h, ⟨λ Y hXY, _, h.1⟩ ⟩,
@@ -708,18 +705,6 @@ lemma hyperplane_iff_maximal_nonspanning {M : rankfun U} (X : U):
     rw [union_comm, eq_comm, ←subset_def_union]at h_ne, rw elem_compl_iff at he, 
     exact he h_ne, 
   end 
-
-lemma hyperplane_iff_maximal_subflat {M : rankfun U} (H : U):
-  is_hyperplane M H ↔ H ≠ ⊤ ∧ is_flat M H ∧ (∀ X, is_flat M X → H ⊂ X → X = ⊤) := 
-begin
-  refine ⟨λ h, ⟨λ hH, _,⟨h.1, λ X hX hHX, _⟩⟩, λ h, ⟨h.2.1,_⟩⟩,  
-  rw [hH, is_hyperplane] at h, linarith, 
-  cases h with hHf hHr, 
-  rw flat_iff_r at hHf, 
-  rw [←(flat_iff_own_cl.mp hX), ←spanning_iff_cl_top, is_spanning], 
-  linarith [hHf _ hHX, rank_le_top M X],   
-  sorry, 
-end
 
 lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U): 
   is_cocircuit M X ↔ is_hyperplane M Xᶜ := 
@@ -754,6 +739,8 @@ lemma circuit_hyperplane_rank_size {M : rankfun U}{C : U}(hC : is_circuit_hyperp
   M.r C = size C - 1 := 
   by linarith [circuit_hyperplane_size hC, circuit_hyperplane_rank hC]
 
+
+
 lemma circuit_hyperplane_ssubset_rank {M : rankfun U}{C X : U}(hC : is_circuit_hyperplane M C):
   X ⊂ C → M.r X = size X := 
   λ hXC, by {simp_rw [is_circuit_hyperplane, circuit_iff_r] at hC, from hC.1.2 _ hXC,}
@@ -762,16 +749,24 @@ lemma circuit_hyperplane_ssupset_rank {M : rankfun U}{C X : U}(hC : is_circuit_h
   C ⊂ X → M.r X = M.r ⊤ := 
   λ hXC, by {simp_rw [is_circuit_hyperplane, hyperplane_iff_r] at hC, from hC.2.2 _ hXC,}
 
-lemma circuit_hyperplane_dual {M : rankfun U}{C : U}:
-  is_circuit_hyperplane M C ↔ is_circuit_hyperplane (dual M) Cᶜ := 
+
+
+/-lemma circuit_hyperplane_iff_rank {M : rankfun U}{C : U} :
+  is_circuit_hyperplane M C ↔ size C = M.r ⊤ ∧ ∀ X,  X ⊂ C → M.r X = size X ∧ ∀ X, C ⊂ X → M.r X = M.r ⊤ := 
 begin
-  simp_rw [is_circuit_hyperplane, ←cocircuit_iff_compl_hyperplane, is_cocircuit],  
-  rw [dual_dual, ←is_cocircuit, cocircuit_iff_compl_hyperplane, compl_compl, and_comm], 
-end
+  simp_rw [is_circuit_hyperplane, circuit_iff_r, hyperplane_iff_r], 
+  refine ⟨λ h, ⟨_, λ X hXC, ⟨h.1.2 X hXC, λ Y hCY, h.2.2 _ hCY⟩⟩, λ h, ⟨⟨_,_⟩,_⟩⟩, 
+  
+  have h2 := h.1.1, 
+  have h3 := int.le_sub_one_of_lt (size_strict_monotone hXC), 
+  have h4 := h.2.1, 
+  apply int.lt_of_le_sub_one, 
+  rw [h1, ← h4, h2], 
+end-/
 
-
---lemma closure_eq_iff_flat {M : rankfun U} {X F : U} : 
---  cl M X = F ↔ X ⊆ F ∧ is_flat M F ∧ ∀ F', is_flat 
+--lemma circuit_hyperplane_iff_rank {M : rankfun U}{C : U} :
+--  is_circuit_hyperplane M C ↔ (M.r C = M.r ⊤ - 1) ∧ (∀ e, e ∈ C → M.r (C \ e) < M.r ⊤ - 1) ∧ (∀ e, e ∉ C → M.r (C ∪ e) = M.r ⊤) := 
+--sorry 
 
 end flat
 
@@ -1021,10 +1016,6 @@ begin
   linarith, 
 end
 
-lemma basis_is_indep {M : rankfun U}{B : U}: 
-  is_basis M B → is_indep M B := 
-  λ h, (basis_iff_indep_full_rank.mp h).1 
-
 lemma cobasis_iff_r {M : rankfun U}{B : U}:
   is_cobasis M B ↔ M.r Bᶜ = size Bᶜ ∧ M.r Bᶜ = M.r ⊤ := 
 begin
@@ -1051,91 +1042,23 @@ begin
   rw remove_single_size he₁, linarith, apply remove_single_subset, 
 end 
 
-lemma extends_to_basis_of {M : rankfun U}{I X : U}:
-  I ⊆ X → is_indep M I → ∃ B, I ⊆ B ∧ is_basis_of M B X := 
-let P := λ J, I ⊆ J ∧ is_indep M J ∧ J ⊆ X in 
+lemma exists_basis_of (M : rankfun U)(X : U) : 
+  ∃ B, is_basis_of M B X := 
 begin
-  intros hIX hIi, 
-  rcases maximal_example_aug P ⟨subset_refl I,⟨hIi,hIX⟩⟩ with ⟨B, ⟨_, ⟨hPB,hBmax⟩⟩⟩ , 
+  let P := λ I, is_indep M I ∧ I ⊆ X, 
+  rcases maximal_example_aug P ⟨bot_indep M, bot_subset X⟩ with ⟨B, ⟨_, ⟨hPB,hBmax⟩⟩⟩ , 
   simp_rw basis_of_iff_augment_i, 
-  refine ⟨B, ⟨hPB.1,⟨hPB.2.2,⟨hPB.2.1,λ e he hecon,_⟩⟩ ⟩⟩, 
+  refine ⟨B, ⟨hPB.2, ⟨hPB.1,λ e he hecon,_⟩⟩⟩, 
   rw elem_diff_iff at he, 
   have := hBmax _ he.2, 
   push_neg at this, 
-  from this (subset_trans h_left (subset_union_left _ _)) hecon (union_is_ub hPB.2.2 he.1), 
-end 
-
-lemma exists_basis_of (M : rankfun U)(X : U) : 
-  ∃ B, is_basis_of M B X := 
-  by {cases extends_to_basis_of (bot_subset X) (bot_indep M) with B hB, from ⟨B,hB.2⟩}
-
-lemma extends_to_basis {M : rankfun U}{I : U}:
-  is_indep M I → ∃ B, I ⊆ B ∧ is_basis M B := 
-  λ h, extends_to_basis_of (subset_top I) h 
-
-lemma indep_iff_contained_in_basis {M : rankfun U}{X : U}:
-  is_indep M X ↔ ∃ B, X ⊆ B ∧ is_basis M B := 
-begin
-  refine ⟨λ h, extends_to_basis h,  λ h, _⟩, 
-  cases h with B hB, 
-  from I2 hB.1 (basis_is_indep hB.2),  
+  from this hecon (union_is_ub hPB.2 he.1), 
 end
 
 end basis 
-
 section characterizations 
 
 variables {U : boolalg}
-
-lemma indep_determines_rankfun {M₁ M₂ : rankfun U}:
-  is_indep M₁ = is_indep M₂ → M₁ = M₂ := 
-begin
-  intro h, ext X,
-  cases exists_basis_of M₁ X with B hB, 
-  rw ←size_basis_of hB, 
-  rw basis_of_iff_augment_i at hB, 
-  simp_rw h at hB, 
-  rw ←basis_of_iff_augment_i at hB, 
-  rw ←size_basis_of hB, 
-end
-
-lemma circuit_determines_rankfun {M₁ M₂ : rankfun U}: 
-  is_circuit M₁ = is_circuit M₂ → M₁ = M₂ :=
-begin
-  intro h, apply indep_determines_rankfun, ext X,
-  simp_rw [indep_iff_contains_no_circuit, h], 
-end
-
-lemma cocircuit_determines_rankfun {M₁ M₂ : rankfun U}:
-  is_cocircuit M₁ = is_cocircuit M₂ → M₁ = M₂ := 
-  λ h, dual_inj (circuit_determines_rankfun h)
-
-lemma hyperplane_determines_rankfun {M₁ M₂ : rankfun U}:
-  is_hyperplane M₁ = is_hyperplane M₂ → M₁ = M₂ := 
-begin
-  intro h, apply cocircuit_determines_rankfun, ext X,
-  simp_rw [cocircuit_iff_compl_hyperplane, h], 
-end
-
-lemma flat_determines_rankfun {M₁ M₂ : rankfun U}: 
-  is_flat M₁ = is_flat M₂ → M₁ = M₂ := 
-begin
-  intro h, apply hyperplane_determines_rankfun, ext X, 
-  simp_rw [hyperplane_iff_maximal_subflat, h], 
-end
-
-lemma basis_determines_rankfun {M₁ M₂ : rankfun U}: 
-  is_basis M₁ = is_basis M₂ → M₁ = M₂ := 
-begin
-  intro h, apply indep_determines_rankfun, ext X, 
-  simp_rw [indep_iff_contained_in_basis, h], 
-end
-
-
-
-
-
-
 
 end characterizations
 

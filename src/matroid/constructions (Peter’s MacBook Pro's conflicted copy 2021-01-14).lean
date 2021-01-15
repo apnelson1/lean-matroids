@@ -8,9 +8,8 @@ section free
 
 noncomputable theory 
 
-variables {U : boolalg}
 
-  def free_matroid_on (X : U) : rankfun (subalg X) := 
+  def free_matroid_on (U : boolalg): rankfun U := 
   { 
     r := size,
     R0 := size_nonneg,
@@ -19,7 +18,7 @@ variables {U : boolalg}
     R3 := λ X Y, le_of_eq (size_modular X Y),  
   } 
 
-  def loopy_matroid_on (X : U) : rankfun (subalg X) := 
+  def loopy_matroid_on (U : boolalg) : rankfun U := 
   {
     r := λ X, 0, 
     R0 := λ X, le_refl 0, 
@@ -90,10 +89,20 @@ begin
   finish, 
 end
 
-
-
-
 end truncation 
+
+section uniform
+
+
+def uniform_matroid_on (U : boolalg){r : ℤ}(hr : 0 ≤ r) : rankfun U := 
+  truncate (free_matroid_on U) hr 
+
+lemma uniform_matroid_rank (U : boolalg)(X : U){r : ℤ}(hr : 0 ≤ r) :
+  (uniform_matroid_on U hr).r X = min r (size X) := 
+  by apply truncate_rank
+
+
+end uniform
 
 section relax
 variables {U : boolalg}[decidable_eq U] 
@@ -129,8 +138,7 @@ begin
   rw [relax.r_of_not_C hC h], apply rank_le_top, 
 end 
 
-
-lemma relax.R0 (M : rankfun U)(C : U) : 
+def relax.R0 (M : rankfun U)(C : U) : 
   satisfies_R0 (relax.r M C) := 
   λ X, le_trans (M.R0 X) (r_le_relax_r M C X)
 
@@ -193,23 +201,17 @@ begin
   linarith [r_le_relax_r M C X, r_le_relax_r M C Y, M.R3 X Y], 
 end
 
-def relax (M : rankfun U)(C : U)(hC : is_circuit_hyperplane M C) : rankfun U := 
-  ⟨relax.r M C, relax.R0 M C, relax.R1 hC, relax.R2 hC, relax.R3 hC⟩ 
-
-theorem relax.dual {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
-  dual (relax M C hC) = relax (dual M) Cᶜ (circuit_hyperplane_dual.mp hC) := 
-let hCc := circuit_hyperplane_dual.mp hC in 
+def relaxation [decidable_eq U](M : rankfun U){C : U}(hC : is_circuit_hyperplane M C) : rankfun U:=
+  ⟨relax.r M C, relax.R0 M C, relax.R1 hC, relax.R2 hC, relax.R3 hC⟩
+  
+theorem single_rank_disagreement_is_relaxation [decidable_eq U]{M₁ M₂ : rankfun U}{X : U}: 
+  M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relaxation M₁ h :=
 begin
-  ext X, 
-  have hCtop : ⊤ ≠ C := λ h, 
-    by {have := circuit_hyperplane_rank hC, rw ←h at this, linarith}, 
-  by_cases h : X = Cᶜ,   
-  simp_rw [dual_r, h, compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc],
-  rw [dual_r, compl_compl, relax.r_of_not_C hC hCtop], linarith, 
-  have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish}, 
-  simp_rw [relax, dual_r, relax.r_of_not_C hCc h, relax.r_of_not_C hC h', dual_r],
-  rw relax.r_of_not_C hC hCtop,  
+  intros hX h_other, 
+  sorry, 
+
 end
+
 
 end relax 
 

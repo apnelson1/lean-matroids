@@ -59,6 +59,10 @@ begin
   ...                 = M.r X                                                                  : by linarith [size_compl X, rank_bot M]
 end
 
+lemma dual_inj {M₁ M₂ : rankfun U} :
+  dual M₁ = dual M₂ → M₁ = M₂ := 
+  λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
+
 lemma dual_r (M : rankfun U)(X : U):
    (dual M).r X = size X + M.r Xᶜ - M.r ⊤ := 
    rfl 
