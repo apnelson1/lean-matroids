@@ -198,14 +198,6 @@ lemma minimal_example_remove (P : A → Prop){X : A}:
 
 end /-section-/ strong_induction
 
-section pigeonhole 
-
-variables {U : boolalg}
-
-
-
-end pigeonhole
-
 
 
 

@@ -3,7 +3,6 @@ import boolalg.basic boolalg.induction boolalg.collections boolalg.examples
 import .rankfun .indep 
 
 namespace boolalg 
-namespace cryptomorphism 
 
 section free
 
@@ -34,7 +33,7 @@ end free
 
 section truncation 
 
-variables {U : boolalg}{M : indep_family U}
+variables {U : boolalg}
 
 def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
@@ -61,31 +60,141 @@ end
 def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U := 
   let M_ind := rankfun_to_indep_family M in 
   indep_family_to_rankfun ⟨trunc.indep M_ind hn, trunc.I1 M_ind hn, trunc.I2 M_ind hn, trunc.I3 M_ind hn⟩
-  
+
+-- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
 lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : U) :
   (truncate M hn).r X = min n (M.r X) :=
 begin
   apply indep.I_to_r_eq_iff.mpr, 
   unfold indep.is_set_basis trunc.indep rankfun_to_indep_family, 
   simp only [and_imp, not_and, not_le, ne.def, ssubset_iff], 
-  by_cases n ≤ M.r X, 
-  sorry, 
   cases exists_basis_of M X with B hB, 
-  
-  rcases hB with ⟨hBi, ⟨hBX,hBr⟩⟩, 
-  refine ⟨B, ⟨⟨hBX,⟨⟨hBi,_⟩,λ J hBJ hBne hJX hJi, _⟩⟩,_⟩⟩ , 
-  rw indep_iff_r at hBi, linarith, 
-   
-
-  --have := indep.has_set_basis_with_size M X, 
-  --unfold truncate,
-  
-
-
+  rw basis_of_iff_indep_full_rank at hB, 
+  rcases hB with ⟨hBX, ⟨hBI, hBS⟩⟩, 
+  by_cases n ≤ size B,
+  rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
+  rw hBS at h, 
+  refine ⟨B₀, ⟨⟨_,⟨⟨_,_⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
+  from subset_trans hB₀ hBX, 
+  from I2 hB₀ hBI,
+  from (eq.symm hB₀s).ge,
+  linarith [size_strict_monotone ⟨hBJ1, hBJ2⟩], 
+  finish, 
+  push_neg at h, 
+  rw hBS at h, 
+  refine ⟨B, ⟨⟨hBX,⟨⟨hBI,by linarith⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
+  rw indep_iff_r at hBI hJind, 
+  linarith [R2 M hJX, R2 M hBJ1, size_strict_monotone ⟨hBJ1, hBJ2⟩], 
+  have := le_of_lt h, 
+  rw min_comm, 
+  finish, 
 end
 
 
 
+
 end truncation 
-end cryptomorphism
+
+section relax
+variables {U : boolalg}[decidable_eq U] 
+
+def relax.r (M : rankfun U)(C : U) : U → ℤ := 
+  λ X, ite (X = C) (M.r X + 1) (M.r X)
+
+lemma relax.r_of_C_eq_top {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+  relax.r M C C = M.r ⊤ := 
+  by {simp_rw [relax.r, if_pos rfl], linarith [circuit_hyperplane_rank hC]}
+
+lemma relax.r_of_C {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+  relax.r M C C = M.r C + 1 := 
+  by {simp_rw [relax.r, if_pos rfl]}
+
+lemma relax.r_of_not_C {M : rankfun U}{C X: U}(hC : is_circuit_hyperplane M C)(hXC : X ≠ C):
+  relax.r M C X = M.r X := 
+  by {unfold relax.r, finish}
+
+lemma r_le_relax_r (M : rankfun U)(C X : U) :
+  M.r X ≤ relax.r M C X := 
+begin
+  unfold relax.r, by_cases X = C, 
+  rw if_pos h, linarith, 
+  rw if_neg h,
+end
+
+lemma relax.r_le_top {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C)(X : U):
+  relax.r M C X ≤ M.r ⊤ := 
+begin
+  by_cases h : X = C, 
+  rw [h, relax.r_of_C hC, circuit_hyperplane_rank hC], linarith, 
+  rw [relax.r_of_not_C hC h], apply rank_le_top, 
+end 
+
+
+def relax.R0 (M : rankfun U)(C : U) : 
+  satisfies_R0 (relax.r M C) := 
+  λ X, le_trans (M.R0 X) (r_le_relax_r M C X)
+
+def relax.R1 (M : rankfun U)(C : U)(hC : is_circuit_hyperplane M C) : 
+  satisfies_R1 (relax.r M C) := 
+begin
+  intro X, unfold relax.r, by_cases h : X = C, 
+  rw if_pos h, 
+  rcases hC with ⟨h₁,h₂⟩, 
+  rw circuit_iff_r at h₁, 
+  rw h, linarith,  
+  rw if_neg h, 
+  from M.R1 X, 
+end
+
+def relax.R2 {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) : 
+  satisfies_R2 (relax.r M C) :=
+begin
+  intros X Y hXY,
+  by_cases h: X = C, 
+  rw [h, relax.r_of_C_eq_top hC], 
+  rw h at hXY, 
+  cases subset_ssubset_or_eq hXY with h' h',
+  linarith [circuit_hyperplane_ssupset_rank hC h', relax.r_of_not_C hC (h'.2.symm)],
+  rw [←h', relax.r_of_C_eq_top], from hC, 
+  linarith [relax.r_of_not_C hC h, r_le_relax_r M C Y, R2 M hXY],  
+end
+
+def relax.R3 (M : rankfun U)(C : U)(hC : is_circuit_hyperplane M C) : 
+  satisfies_R3 (relax.r M C) :=
+begin
+  intros X Y, 
+  by_cases hi : X ∩ Y = C;
+  by_cases hu : X ∪ Y = C, 
+  simp only [ eq_of_union_eq_inter (eq.trans hu hi.symm), inter_idem, union_idem], 
+  rw hi, 
+  have hCY : C ⊆ Y := by {rw ← hi, apply inter_subset_right},
+  have hCX : C ⊆ X := by {rw ← hi, apply inter_subset_left},
+  by_cases hX: X = C; by_cases hY: Y = C, 
+  rw [hX, hY, union_idem] at hu, 
+  from false.elim (hu rfl), 
+  rw [relax.r_of_not_C hC hu, relax.r_of_not_C hC hY, hX],
+  linarith [rank_le_top M (C ∪ Y), circuit_hyperplane_ssupset_rank hC ⟨hCY, ne.symm hY⟩], 
+  rw [relax.r_of_not_C hC hu, relax.r_of_not_C hC hX, hY],
+  linarith [rank_le_top M (X ∪ C), circuit_hyperplane_ssupset_rank hC ⟨hCX, ne.symm hX⟩], 
+  rw [relax.r_of_not_C hC hX, relax.r_of_not_C hC hY, 
+        circuit_hyperplane_ssupset_rank hC ⟨hCX, ne.symm hX⟩, circuit_hyperplane_ssupset_rank hC ⟨hCY, ne.symm hY⟩] ,
+  linarith [relax.r_le_top hC (X ∪ Y), relax.r_le_top hC C], 
+  by_cases hX : X = C; by_cases hY : Y = C, 
+  rw [hu, hX, hY, inter_idem], 
+  rw [hu, hX], linarith [relax.R2 hC _ _ (inter_subset_right C Y)], 
+  rw [hu, hY], linarith [relax.R2 hC _ _ (inter_subset_left X C)], 
+  have hXC : X ⊂ C := ⟨by {rw ←hu, apply subset_union_left},hX⟩,
+  have hYC : Y ⊂ C := ⟨by {rw ←hu, apply subset_union_right},hY⟩,
+  have hXY : X ∩ Y ⊂ C := inter_of_ssubsets _ _ _ hXC , 
+  rw [relax.r_of_not_C hC hX, relax.r_of_not_C hC hY, relax.r_of_not_C hC hi, hu, relax.r_of_C hC, circuit_hyperplane_rank_size hC],
+  rw [← hu, circuit_hyperplane_ssubset_rank hC hXC, circuit_hyperplane_ssubset_rank hC hYC, circuit_hyperplane_ssubset_rank hC hXY],
+  linarith [size_modular X Y],
+  rw [relax.r_of_not_C hC hi, relax.r_of_not_C hC hu], 
+  linarith [r_le_relax_r M C X, r_le_relax_r M C Y, M.R3 X Y], 
+end
+
+
+end relax 
+
+
 end boolalg 

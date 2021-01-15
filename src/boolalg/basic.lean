@@ -51,9 +51,9 @@ structure boolalg :=
   (union_assoc_ax (X Y Z : member) : union (union X Y) Z = union X (union Y Z))
 
 -- Instances to enable ⊆ , ∩ , ∪ , ᶜ , ⊤, ⊥ , - (set diff)
-#check fin 2
-#check (finset (fin 2))
-#check boolalg.mk (set (fin 2))
+--check fin 2
+--#check (finset (fin 2))
+--#check boolalg.mk (set (fin 2))
 variables {A : boolalg}
 
 /-
@@ -71,11 +71,7 @@ end
 
 @[simp] instance i1  : has_coe_to_sort boolalg := {S := Type, coe := boolalg.member}
 --@[simp] instance i5  : has_union A := {union := A.alg.sup}
-#check @sup_comm
-#check boolean_algebra.to_bounded_distrib_lattice 
-#check bounded_distrib_lattice.to_distrib_lattice
-#check distrib_lattice.to_lattice
-#check lattice.to_semilattice_sup
+
 /-
 lemma foo (X Y : A) : X ∪ Y = Y ∪ X :=
 begin
@@ -259,6 +255,7 @@ lemma union_distrib_union_left (X Y Z : A) : (X ∪ Y) ∪ Z = (X ∪ Z) ∪ (Y 
 
 lemma union_distrib_union_right (X Y Z : A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X ∪ Z) := 
   by rw [union_comm X, union_distrib_union_left Y Z X, union_comm X, union_comm X]   
+
 
 
 
@@ -461,8 +458,10 @@ lemma disjoint_iff_subset_compl {X Y : A} : X ∩ Y = ⊥ ↔ X ⊆ Yᶜ :=
   by {refine ⟨λ h, _, λ h, _⟩, rw [subset_def_inter, ←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left], simp, 
     rw [subset_def_inter] at h, rw [←h, inter_assoc], simp } 
 
-lemma subset_trans {X Y Z : A} : X ⊆ Y → Y ⊆ Z →  X ⊆ Z :=
+@[trans] lemma subset_trans {X Y Z : A} : X ⊆ Y → Y ⊆ Z →  X ⊆ Z :=
   λ hXY hYZ, by {rw subset_def_inter at *, rw [←hXY, inter_assoc, hYZ]}
+
+--instance i_subset_trans : is_trans A (λ X Y : A ,X ⊆ Y) := { trans := λ X Y Z, @subset_trans _ X Y Z }
 
 lemma inter_subset_union (X Y : A) : X ∩ Y ⊆ X ∪ Y := 
   subset_trans (inter_subset_left X Y) (subset_union_left X Y)
@@ -524,11 +523,15 @@ lemma subset_not_ssupset {X Y : A} : X ⊆ Y → ¬(Y ⊂ X) :=
 lemma eq_of_ssubset {X Y: A} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
   λ h h', by {simp only [not_and, not_not, ssubset_iff] at h', exact h' h}
 
+lemma inter_of_ssubsets (X Y Z : A) : (X ⊂ Z) → (X ∩ Y ⊂ Z) := 
+  λ h, ⟨inter_of_subsets X Y Z h.1, λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) }⟩
+
+
 lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   subset_ssubset_trans hXY.1 hYZ
 
 lemma ssubset_inter {X Y : A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
-  λ h, by {by_contra, push_neg at a, cases a, erw [not_and', not_imp_not] at a_left a_right, 
+  λ h, by {by_contra a, push_neg at a, cases a, erw [not_and', not_imp_not] at a_left a_right, 
   exact h (eq.trans (a_left (inter_subset_left X Y)).symm (a_right (inter_subset_right X Y)) )}
 
 -- Misc
@@ -538,6 +541,14 @@ lemma inter_is_lb  {X Y Z : A} : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) :=
 
 lemma union_is_ub  {X Y Z : A} : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
   λ hXZ hYZ, by {rw subset_def_union at *, rw [union_assoc, hYZ, hXZ]}
+
+
+lemma eq_of_union_eq_inter {X Y : A} : X ∪ Y = X ∩ Y → X = Y := 
+begin
+  intro h, apply subset_antisymm, 
+  calc X ⊆ (X ∪ Y) : subset_union_left _ _ ... = X ∩ Y : h ... ⊆ Y : inter_subset_right _ _,  
+  calc Y ⊆ (X ∪ Y) : subset_union_right _ _ ... = X ∩ Y : h ... ⊆ X : inter_subset_left _ _,  
+end 
 
 lemma union_of_disjoint {X Y Z : A} : X ∩ Y = ⊥ → X ∩ Z = ⊥ → X ∩ (Y ∪ Z) = ⊥ :=
   λ hY hZ, by {rw [inter_distrib_left, hY, hZ], simp }
@@ -588,6 +599,9 @@ lemma union_diff_of_subset  {X Y : A} : X ⊆ Y → X ∪ (Y \ X) = Y :=
 
 lemma inter_distrib_diff (X Y Z : A) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) := 
   by {rw [diff_def, diff_def, compl_inter, inter_distrib_left, inter_right_comm, inter_compl, bot_inter, bot_union, ←inter_assoc]}
+
+
+
 
 
 --lemma union_distrib_diff (X Y Z : A) : X ∪ (Y \ Z) = X ∪ 

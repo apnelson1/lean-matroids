@@ -63,6 +63,10 @@ lemma rank_le_top (M : rankfun U)(X : U) :
   M.r X ≤ M.r ⊤ := 
   R2 M (subset_top X)
 
+lemma rank_compl_top (M : rankfun U): 
+  M.r (⊤ᶜ) = 0 := 
+  by rw [boolalg.compl_top, rank_bot]
+
 lemma rank_gt_zero_of_ne {M : rankfun U}{X : U}:
   M.r X ≠ 0 → 0 < M.r X := 
   sorry 
@@ -368,7 +372,7 @@ lemma C1 (M : rankfun U):
 
 lemma C2' (M : rankfun U) {C₁ C₂ : U}: 
   C₁ ⊆ C₂ → is_circuit M C₁ → is_circuit M C₂ → C₁ = C₂ := 
-  by {intros hC₁C₂, repeat {rw circuit_iff_r}, rintros ⟨h₁l,_⟩ ⟨_,h₂r⟩, by_contra, linarith [h₁l, h₂r _ ⟨hC₁C₂,a⟩]}
+  by {intros hC₁C₂, repeat {rw circuit_iff_r}, rintros ⟨h₁l,_⟩ ⟨_,h₂r⟩, by_contra a, linarith [h₁l, h₂r _ ⟨hC₁C₂,a⟩]}
 
 lemma C2 (M : rankfun U){C₁ C₂ : U}:
   is_circuit M C₁ → is_circuit M C₂ → ¬(C₁ ⊂ C₂) :=
@@ -710,12 +714,57 @@ lemma cocircuit_iff_compl_hyperplane {M : rankfun U} (X : U):
 
 lemma inter_flats_is_flat (M : rankfun U) (F₁ F₂ : U) :
   is_flat M F₁ → is_flat M F₂ → is_flat M (F₁ ∩ F₂) := 
-  begin 
-    repeat {rw [flat_iff_add]}, simp_rw ←nonelem_cl_iff_nonspans, 
-    intros h₁ h₂ e he, rw nonelem_inter_iff at he, cases he, 
-    exact λ h, (h₁ e he) (subset_trans h (cl_monotone M (inter_subset_left F₁ F₂))), 
-    exact λ h, (h₂ e he) (subset_trans h (cl_monotone M (inter_subset_right F₁ F₂))), 
-  end
+begin 
+  repeat {rw [flat_iff_add]}, simp_rw ←nonelem_cl_iff_nonspans, 
+  intros h₁ h₂ e he, rw nonelem_inter_iff at he, cases he, 
+  exact λ h, (h₁ e he) (subset_trans h (cl_monotone M (inter_subset_left F₁ F₂))), 
+  exact λ h, (h₂ e he) (subset_trans h (cl_monotone M (inter_subset_right F₁ F₂))), 
+end
+
+
+def is_circuit_hyperplane (M : rankfun U)(C : U) := 
+  is_circuit M C ∧ is_hyperplane M C 
+
+lemma circuit_hyperplane_rank {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+  M.r C = M.r ⊤ - 1 := 
+  by {simp_rw [is_circuit_hyperplane, hyperplane_iff_r] at hC, from hC.2.1}
+
+lemma circuit_hyperplane_size {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+  size C = M.r ⊤ := 
+  by {have := circuit_hyperplane_rank hC, simp_rw [is_circuit_hyperplane, circuit_iff_r] at hC, linarith [hC.1.1]}
+
+lemma circuit_hyperplane_rank_size {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+  M.r C = size C - 1 := 
+  by linarith [circuit_hyperplane_size hC, circuit_hyperplane_rank hC]
+
+
+
+lemma circuit_hyperplane_ssubset_rank {M : rankfun U}{C X : U}(hC : is_circuit_hyperplane M C):
+  X ⊂ C → M.r X = size X := 
+  λ hXC, by {simp_rw [is_circuit_hyperplane, circuit_iff_r] at hC, from hC.1.2 _ hXC,}
+
+lemma circuit_hyperplane_ssupset_rank {M : rankfun U}{C X : U}(hC : is_circuit_hyperplane M C) :
+  C ⊂ X → M.r X = M.r ⊤ := 
+  λ hXC, by {simp_rw [is_circuit_hyperplane, hyperplane_iff_r] at hC, from hC.2.2 _ hXC,}
+
+
+
+/-lemma circuit_hyperplane_iff_rank {M : rankfun U}{C : U} :
+  is_circuit_hyperplane M C ↔ size C = M.r ⊤ ∧ ∀ X,  X ⊂ C → M.r X = size X ∧ ∀ X, C ⊂ X → M.r X = M.r ⊤ := 
+begin
+  simp_rw [is_circuit_hyperplane, circuit_iff_r, hyperplane_iff_r], 
+  refine ⟨λ h, ⟨_, λ X hXC, ⟨h.1.2 X hXC, λ Y hCY, h.2.2 _ hCY⟩⟩, λ h, ⟨⟨_,_⟩,_⟩⟩, 
+  
+  have h2 := h.1.1, 
+  have h3 := int.le_sub_one_of_lt (size_strict_monotone hXC), 
+  have h4 := h.2.1, 
+  apply int.lt_of_le_sub_one, 
+  rw [h1, ← h4, h2], 
+end-/
+
+--lemma circuit_hyperplane_iff_rank {M : rankfun U}{C : U} :
+--  is_circuit_hyperplane M C ↔ (M.r C = M.r ⊤ - 1) ∧ (∀ e, e ∈ C → M.r (C \ e) < M.r ⊤ - 1) ∧ (∀ e, e ∉ C → M.r (C ∪ e) = M.r ⊤) := 
+--sorry 
 
 end flat
 
@@ -885,6 +934,26 @@ def is_basis_of (M : rankfun U) : U → U → Prop :=
 def is_basis (M : rankfun U) : U → Prop := 
   λ B, is_basis_of M B ⊤ 
 
+lemma size_basis_of {M : rankfun U} {B X : U}:
+  is_basis_of M B X → size B = M.r X :=
+  λ h, by {rw is_basis_of at h, linarith}
+
+lemma size_basis {M : rankfun U}{B : U} :
+  is_basis M B → size B = M.r ⊤ := 
+  size_basis_of 
+
+lemma bases_of_equicardinal (M : rankfun U){B₁ B₂ X: U}:
+  is_basis_of M B₁ X → is_basis_of M B₂ X → size B₁ = size B₂ := 
+  λ h₁ h₂, by rw[size_basis_of h₁, size_basis_of h₂]
+
+lemma bases_equicardinal (M : rankfun U){B₁ B₂ : U}:
+  is_basis M B₁ → is_basis M B₂ → size B₁ = size B₂ := 
+  bases_of_equicardinal M 
+
+lemma basis_iff_r {M : rankfun U} {B : U} :
+  is_basis M B ↔ M.r B = size B ∧ M.r B = M.r ⊤ :=
+  ⟨λ h, h.2, λ h, ⟨subset_top B,h⟩⟩
+
 def is_cobasis (M : rankfun U): U → Prop := 
   λ B, is_basis (dual M) B 
 
@@ -895,12 +964,10 @@ begin
   linarith [h.2.2, R2 M (union_is_ub h.1 he), R2 M (subset_union_left B e)], 
   refine rank_eq_of_not_lt_supset h.1 (λ hBX, _), 
   cases rank_augment hBX with e he, 
-  have := h.2.2 e he.1,
-  have := he.2, 
-  linarith,   
+  linarith [h.2.2 e he.1, he.2],   
 end
 
-lemma basis_iff_no_augment {M : rankfun U}{B : U}:
+lemma basis_iff_augment {M : rankfun U}{B : U}:
   is_basis M B ↔ M.r B = size B ∧ ∀ e : single U, M.r (B ∪ e) = M.r B := 
 begin
   unfold is_basis, rw basis_of_iff_augment, 
@@ -914,135 +981,82 @@ begin
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he hi, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩ ⟩⟩, 
   rw indep_iff_r at hi, 
   rw elem_diff_iff at he, 
-  have := add_nonelem_size he.2, 
-  have := h.2.2 e he.1, 
-  linarith, 
-
+  linarith [h.2.2 e he.1, add_nonelem_size he.2], 
+  by_cases heB: e ∈ B, 
+  rw (add_elem heB), 
+  have : e ∈ X \ B := by {rw elem_diff_iff, from ⟨he,heB⟩},
+  have := h.2.2 _ this, 
+  rw not_indep_iff_r at this, 
+  have hi := h.2.1, rw indep_iff_r at hi, 
+  linarith [add_nonelem_size heB, R2 M (subset_union_left B e)], 
 end 
 
-
-lemma basis_iff_i {M : rankfun U}{B : U} : 
-  is_basis M B ↔ is_indep M B ∧ ∀ X, B ⊂ X → ¬is_indep M X := 
-
-/--/
-
-def is_basis (M : rankfun U): U → Prop := 
-  λ B, is_indep M B ∧ ∀ X, B ⊂ X → ¬is_indep M X
-
-def is_cobasis (M : rankfun U): U → Prop := 
-  λ B, is_basis (dual M) B 
-
-def is_basis_of (M : rankfun U): U → U → Prop :=
-  λ B X, B ⊆ X ∧ is_indep M B ∧ M.r B = M.r X  
-
-lemma basis_iff_i {M : rankfun U}{B : U} : 
-  is_basis M B ↔ is_indep M B ∧ ∀ X, B ⊂ X → ¬is_indep M X := 
-  by unfold is_basis 
-
---lemma basis_of_iff_i {M : rankfun U}{B X : U}
- -- is_basis_of M B X ↔ B ⊆ X ∧ is_indep M B ∧ ∀ Y, X ⊂ Y → Y ⊆ B → ¬i
-
-lemma basis_of_iff_no_add_r {M : rankfun U}{B X : U} :
-  is_basis_of M B X ↔ B ⊆ X ∧ M.r B = size B ∧ ∀ (e : single U), e ∈ X → M.r (B ∪ e) = M.r B := 
+lemma basis_iff_augment_i {M : rankfun U}{B : U} : 
+  is_basis M B ↔ is_indep M B ∧ ∀ e, e ∉ B → ¬is_indep M (B ∪ e) := 
 begin
-  refine ⟨λ h,⟨h.1,⟨_,λ e he, _⟩⟩,λ h,_⟩, 
-  sorry, sorry, sorry, 
-  --refine ⟨λ h,⟨h.1, ⟨h.2.1,λ J hBJ hJX hJi, _ ⟩⟩, λ h, _⟩ ,
-  --linarith [R2 M hJX, h.2.2, indep_iff_r.mp h.2.1, indep_iff_r.mp hJi, size_strict_monotone hBJ],  
-  --rcases h with ⟨hBX,⟨hBi, hJ⟩⟩,
-  --refine ⟨hBX,⟨hBi,_⟩⟩,  
-  --have := R2 M hBJ.1, 
-  --linarith [R2 M hJX], 
+  simp_rw [is_basis, basis_of_iff_augment_i, ←elem_compl_iff, top_diff], 
+  from ⟨λ h, ⟨h.2.1,λ e he, h.2.2 _ he⟩, λ h, ⟨subset_top B, h⟩⟩, 
 end
 
-
-
-lemma basis_iff_r {M : rankfun U} {B : U} :
-  is_basis M B ↔ M.r B = size B ∧ ∀ X, B ⊂ X → M.r X < size X :=
-  by {unfold is_basis, simp_rw ←dep_iff_not_indep, rw indep_iff_r, simp_rw dep_iff_r}
-
-lemma cobasis_iff_r {M : rankfun U} {B : U}: 
-  is_cobasis M B ↔ M.r Bᶜ = M.r ⊤ ∧ ∀ Y, B ⊂ Y → M.r Yᶜ < M.r ⊤ :=
-  by {unfold is_cobasis is_basis, rw coindep_iff_r, simp_rw ←dep_iff_not_indep, simp_rw codep_iff_r}
-
-lemma basis_iff_no_add_r {M : rankfun U} (B : U) :
-  is_basis M B ↔ M.r B = size B ∧ ∀ (e : single U), M.r (B ∪ e) = M.r B := 
-  begin
-    rw basis_iff_r, refine ⟨λ h, ⟨h.1, λ e, _⟩, λ h,⟨h.1,λ Y hY, _⟩⟩, 
-    apply rank_eq_of_le_union, by_cases he: e ∈ B, rw [union_comm, subset_def_union_mp he], 
-    have := int.le_sub_one_of_lt (h.2 _ (ssub_of_add_nonelem he)), 
-    linarith [add_nonelem_size he], 
-    cases elem_only_larger_ssubset hY with e he, cases he with heY heB, 
-    have := calc M.r (B ∪ e) = M.r B : h.2 e
-                         ... = size B : h.1 
-                         ... < size (B ∪ e) : by linarith [add_nonelem_size heB],
-    rw [←dep_iff_r] at ⊢ this,
-    exact dep_subset (union_of_subsets hY.1 heY) this, 
-  end
-
-
-
-lemma cobasis_iff_compl_basis {M : rankfun U}(B : U):
-  is_cobasis M B ↔ is_basis M Bᶜ :=
+lemma basis_of_iff_indep_full_rank {M : rankfun U}{B X : U} :
+  is_basis_of M B  X ↔ B ⊆ X ∧ is_indep M B ∧ size B = M.r X := 
 begin
-  rw [basis_iff_r, cobasis_iff_r], sorry, 
+  simp_rw [is_basis_of, indep_iff_r], 
+  refine ⟨λ h, ⟨h.1, ⟨_,_⟩⟩, λ h, ⟨h.1,⟨_,_⟩⟩⟩; 
+  linarith, 
 end
-
---lemma is_basis_of_iff_r {M : rankfun U} {B X : U} :
---  is_basis_of M B X ↔ M.r B = size B ∧ B ⊆ X ∧ M.r B = M.r X :=
---  by {unfold is_basis_of, rw indep_iff_r}
-
-
-
-
-lemma exists_basis_of (M : rankfun U)(X : U) : 
-  ∃ B, is_basis_of M B X :=
-begin
-  sorry 
-end
-
-
-lemma basis_iff_min_spanning {M : rankfun U}{B : U} :
-  is_basis M B ↔ is_spanning M B ∧ ∀ X, X ⊂ B → ¬is_spanning M X :=
-  begin
-    rw [basis_iff_r, spanning_iff_r], refine ⟨λ h, ⟨_,λ X hX, _⟩, λ h, ⟨_,λ X hX, _⟩⟩, 
-    apply rank_eq_of_not_lt_supset (subset_top _), intros hB, sorry, sorry, sorry, sorry, 
-  end
-
-lemma size_basis {M : rankfun U}{B : U} :
-  is_basis M B → size B = M.r ⊤ := 
-  begin
-    intro h, rw basis_iff_no_add_r at h, rw ←h.1, apply rank_eq_of_le_supset (subset_top B), by_contra h', 
-    rcases rank_augment (lt_of_not_ge' h') with ⟨z,⟨h₁z, h₂z⟩⟩, have := h.2 z, linarith, 
-  end
-
-lemma bases_equicardinal (M : rankfun U){B₁ B₂ : U}:
-  is_basis M B₁ → is_basis M B₂ → size B₁ = size B₂ := 
-  λ h₁ h₂, by {rw[size_basis h₁, size_basis h₂]}
 
 lemma basis_iff_indep_full_rank {M : rankfun U}{B :U} :
   is_basis M B ↔ is_indep M B ∧ size B = M.r ⊤ :=
-  begin
-    refine ⟨λ h, ⟨h.1, size_basis h⟩, λ h, ⟨h.1, λ X hX, _⟩ ⟩,  rw not_indep_iff_r, 
-    calc _ ≤ _ : rank_le_top M X ... = _ : by rw [←h.2] ... < _ : size_strict_monotone hX                        
-  end
+begin
+  simp_rw [basis_iff_r, indep_iff_r], 
+  refine ⟨λ h, ⟨h.1, _⟩, λ h, ⟨h.1,_⟩⟩;
+  linarith, 
+end
 
-lemma basis_iff_rank_eq_size_eq_rank_top {M : rankfun U}{B : U} :
-  is_basis M B ↔ M.r B = size B ∧ size B = M.r ⊤ :=
-  by {rw basis_iff_indep_full_rank, refl}
+lemma cobasis_iff_r {M : rankfun U}{B : U}:
+  is_cobasis M B ↔ M.r Bᶜ = size Bᶜ ∧ M.r Bᶜ = M.r ⊤ := 
+begin
+  simp_rw [is_cobasis, basis_iff_r, dual],
+  refine ⟨λ _, ⟨_,_⟩, λ _, ⟨_,_⟩⟩;
+  linarith [size_compl B, rank_compl_top M], 
+end
+
+lemma cobasis_iff_compl_basis {M : rankfun U}{B : U} :
+  is_cobasis M B ↔ is_basis M Bᶜ := 
+  by rw [cobasis_iff_r, basis_iff_r] 
 
 lemma basis_exchange (M : rankfun U){B₁ B₂ : U}{e : single U}:
   is_basis M B₁ → is_basis M B₂ → e ∈ B₁ \ B₂ → ∃ f, f ∈ (B₂ \ B₁) ∧ is_basis M ((B₁ \ e) ∪ f) :=
-  begin
-    intros hB₁ hB₂ he, rw basis_iff_indep_full_rank at hB₁ hB₂, simp_rw basis_iff_indep_full_rank,   
-    cases elem_diff_iff.mp he with he₁ he₂, 
-    have h' : is_indep M (B₁ \ e) := subset_indep _ hB₁.1, 
-    rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
-    have h'' : B₂ \ (B₁ \ e) = B₂ \ B₁ := by
-      {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e:U), nonelem_disjoint_iff.mp he₂, union_bot]},
-    rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
-    use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 
-    rw remove_single_size he₁, linarith, apply remove_single_subset, 
-  end 
+begin
+  intros hB₁ hB₂ he, rw basis_iff_indep_full_rank at hB₁ hB₂, simp_rw basis_iff_indep_full_rank,   
+  cases elem_diff_iff.mp he with he₁ he₂, 
+  have h' : is_indep M (B₁ \ e) := subset_indep _ hB₁.1, 
+  rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
+  have h'' : B₂ \ (B₁ \ e) = B₂ \ B₁ := by
+    {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e:U), nonelem_disjoint_iff.mp he₂, union_bot]},
+  rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
+  use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 
+  rw remove_single_size he₁, linarith, apply remove_single_subset, 
+end 
 
-end basis-/
+lemma exists_basis_of (M : rankfun U)(X : U) : 
+  ∃ B, is_basis_of M B X := 
+begin
+  let P := λ I, is_indep M I ∧ I ⊆ X, 
+  rcases maximal_example_aug P ⟨bot_indep M, bot_subset X⟩ with ⟨B, ⟨_, ⟨hPB,hBmax⟩⟩⟩ , 
+  simp_rw basis_of_iff_augment_i, 
+  refine ⟨B, ⟨hPB.2, ⟨hPB.1,λ e he hecon,_⟩⟩⟩, 
+  rw elem_diff_iff at he, 
+  have := hBmax _ he.2, 
+  push_neg at this, 
+  from this hecon (union_is_ub hPB.2 he.1), 
+end
+
+
+
+
+
+end basis 
+
+

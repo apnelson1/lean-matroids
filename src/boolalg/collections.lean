@@ -60,14 +60,14 @@ lemma inter_closed_exists_min (P : A → Prop) :
 
 lemma inter_closed_min_unique (P : A → Prop) : 
   inter_closed P → ∀ X₁ X₂, is_minimal P X₁ → is_minimal P X₂ → X₁ = X₂ := 
-  by {intros hP _ _ h₁ h₂, replace hP := hP.2 _ _ h₁.1 h₂.1, by_contra, 
+  by {intros hP _ _ h₁ h₂, replace hP := hP.2 _ _ h₁.1 h₂.1, by_contra a, 
       cases ssubset_inter a, exact (h₁.2 _ h) hP, exact (h₂.2 _ h) hP} 
 
 lemma inter_closed_min_iff_in_and_lb {P : A → Prop}(hP : inter_closed P) (X : A):
   is_minimal P X ↔ P X ∧ is_lb P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    by_contra a, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
     rw [←subset_def_union, subset_def_inter, inter_comm] at a, 
     exact ⟨inter_subset_right _ _, a⟩, 
     exact ssubset_not_supset hY (h.2 _ hPY), 
@@ -88,7 +88,7 @@ lemma union_closed_max_iff_in_and_ub {P : A → Prop}(hP : union_closed P) (X : 
   is_maximal P X ↔ P X ∧ is_ub P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    by_contra a, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
     exact ⟨subset_union_right _ _, ne.symm a⟩, 
     exact ssubset_not_supset hY (h.2 _ hPY), 
   end
@@ -221,6 +221,27 @@ def union_singles_elem_iff (P : single A → Prop)(e : single A) :
     have : Q e := by {simp only [Q], split_ifs, simp only [subtype.coe_eta], from h, from h_1 (size_single e)},
     from hX.1 _ this,  
   end
+
+section size 
+
+lemma has_subset_of_size {U : boolalg}{X : U}{n : ℤ}:
+  0 ≤ n → n ≤ size X → ∃ Y, Y ⊆ X ∧ size Y = n :=
+let P := λ Y, Y ⊆ X ∧ size Y ≤ n in 
+begin
+  intros hn hnX, 
+  rcases maximal_example_aug P (⟨bot_subset X, by linarith [size_bot U]⟩ : P ⊥) with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
+  refine ⟨Y, ⟨h₁,_⟩⟩, 
+  cases subset_ssubset_or_eq h₁, 
+  by_contra a, 
+  rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
+  push_neg at h₃, 
+  from a (by linarith [add_nonelem_size h₂e, h₃ e h₂e (union_is_ub h₁ h₁e)]), 
+  rw h at h₂ ⊢, 
+  linarith, 
+end
+
+
+end size 
 
 
 end boolalg 
