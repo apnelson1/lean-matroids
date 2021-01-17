@@ -8,71 +8,40 @@ local attribute [instance] classical.prop_decidable
 variables {A : boolalg}
 
 @[ext] structure embed (A B : boolalg) :=
-  (f : A → B)
-  (on_bot : f ⊥ = ⊥)
-  -- note : top is not respected by embedding
-  (on_inter (X Y) : f (X ∩ Y) = (f X) ∩ (f Y))
-  (on_union (X Y) : f (X ∪ Y) = (f X) ∪ (f Y))
-  -- note : compl is not respected by embedding
-  (on_size (X : A) : size X = size (f X))
-
-lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
+  (f     : A.E → B.E )
+  (f_inj : ∀ {x x' : A.E}, f x = f x' → x = x')
+  
+/-lemma embed.on_subset {A B : boolalg} (emb : embed A B) {X Y : A} :
   (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := 
   λ h, by {rw subset_def_inter at *, rw [←emb.on_inter, h]}
 
 def embed.single_emb {A B : boolalg} (emb : embed A B) : single A → single B := 
   λ e, ⟨emb.f e.val, (eq.trans (emb.on_size e.val).symm e.property :size (emb.f e.val) = 1 )⟩  
-  
+-/
 
 def embed.id : embed A A := 
 { 
-  f        := id,
-  on_bot   := rfl,
-  on_inter := by intros X Y; refl,
-  on_union := by intros X Y; refl,
-  on_size  := by intros X; refl,
+  f        := λ x, x,
+  f_inj    := by simp only [imp_self, forall_2_true_iff],
 }
 
 def embed.compose {A B C: boolalg} : (embed A B) → (embed B C) → (embed A C) := λ e1 e2,
 { 
   f        := e2.f ∘ e1.f,
-  on_bot   := by simp only [function.comp_app]; rw [e1.on_bot, e2.on_bot],
-  on_inter := λ X Y, by simp only [function.comp_app]; rw [e1.on_inter, e2.on_inter],
-  on_union := λ X Y, by simp only [function.comp_app]; rw [e1.on_union, e2.on_union],
-  on_size  := λ X, (e1.on_size X).trans (e2.on_size (e1.f X)),
+  f_inj    := λ x x' h, e1.f_inj (e2.f_inj h), 
 }
 
 def subalg {A : boolalg}(ground : A) : boolalg :=  
+let new_E  := {x : A.E // x ∈ ground} in  
+   --img     := λ (X : set (new_E)) (u : A.E), ∃ (h : u ∈ ground), (⟨u,h⟩ : new_E) ∈ X  in 
 { 
-  member := {X : A | X ⊆ ground},
-  bot := ⟨⊥, bot_subset ground⟩,
-  top := ⟨ground, subset_refl ground⟩,
-  subset := λ X Y, X.val ⊆ Y.val,  
-  inter := λ X Y, ⟨X.val ∩ Y.val, inter_of_subsets X.val Y.val ground X.property⟩,
-  union := λ X Y, ⟨X.val ∪ Y.val, union_of_subsets X.property Y.property⟩,
-  compl := λ X, ⟨ground \ X.val, diff_subset ground X.val⟩,
-  size := λ X, size X.val, 
-  size_bot_ax := @size_bot A, 
-  size_nonneg_ax := λ X, size_nonneg X.val,
-  size_modular_ax := λ X Y, size_modular X.val Y.val, 
-  contains_single_ax := λ X hX, by {rcases contains_single X.val _ with ⟨Y,⟨hs,h1⟩⟩, 
-                                    use ⟨Y, subset_trans hs X.property⟩, exact ⟨hs,h1⟩, 
-                                      exact λ hne, by {cases X, apply hX, simp only [subtype.mk_eq_mk] at *, 
-                                      assumption}},
-  inter_comm_ax := λ X Y, subtype.eq (inter_comm X.val Y.val), 
-  union_comm_ax := λ X Y, subtype.eq (union_comm X.val Y.val),
-  union_distrib_right_ax := λ X Y Z, subtype.eq (union_distrib_right X Y Z),
-  inter_distrib_right_ax := λ X Y Z, subtype.eq (inter_distrib_right X Y Z),
-  union_subset_ax := λ X Y, by {refine ⟨ λ h, _,λ h, _⟩, rw subset_def_union at h, simp_rw h, 
-                                simp only [subtype.coe_eta, subtype.val_eq_coe], rw subset_def_union,  
-                                cases Y, cases X, simp only [subtype.mk_eq_mk] at *, assumption},
-  inter_top_ax := λ X, by {cases X, simp only [subtype.mk_eq_mk], exact subset_def_inter_mp X_property},
-  union_bot_ax := λ X, by {cases X, simp only [subtype.mk_eq_mk], apply union_bot},
-  union_compl_ax := λ X, by {simp only [subtype.mk_eq_mk, subtype.val_eq_coe], 
-                                exact union_diff_of_subset X.property},
-  inter_compl_ax := λ X, by {simp only [subtype.mk_eq_mk, subtype.val_eq_coe], apply inter_diff},
-  inter_assoc_ax := λ X Y Z, subtype.eq (inter_assoc X.1 Y.1 Z.1),
-  union_assoc_ax := λ X Y Z, subtype.eq (union_assoc X.1 Y.1 Z.1),
+  E := new_E, 
+  is_fin := 
+  begin
+    let ft := as_finset A ground, 
+    refine ⟨⟨_,_⟩,trivial⟩,
+    from finset.subtype.fintype ft, 
+  end, 
 }
 
 def embed.from_subset (X : A) : embed (subalg X) A := 

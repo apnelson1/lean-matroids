@@ -10,6 +10,7 @@ import .int_lemmas
 -- This probably belongs in its own file by this point. 
 
 local attribute [instance] classical.prop_decidable
+noncomputable theory 
 
 section API
 
@@ -17,96 +18,78 @@ section API
 namespace boolalg 
 
 structure boolalg :=
-  (member : Type)
-  -- [alg : boolean_algebra member]
-  -- [finite : fintype member]
-  --(contained : subset → subset → Prop)
-  (bot top : member)
-  (inter union : member → member → member)
-  (compl : member → member)
-  (size : member → ℤ)
-  (subset : member → member → Prop)
-
-  (size_bot_ax : size bot = 0)
-  (size_nonneg_ax (X: member) : 0 ≤ size X) 
-  (size_modular_ax (X Y: member) : size (union X Y) + size (inter X Y) = size X + size Y)
-  (contains_single_ax (X : member) : X ≠ bot → ∃ Y, subset Y X ∧ size Y = 1)
+  (E : Type)
+  (is_fin : ∃ (fin : fintype E), true )
 
 
-  (inter_comm_ax (X Y : member) : inter X Y = inter Y X)
-  (union_comm_ax (X Y : member) : union X Y = union Y X)
+def fintype_of (U : boolalg) : fintype (U.E) := classical.some U.is_fin 
+
+def as_finset_top (U : boolalg) := (fintype_of U).elems 
+
+def as_finset (U : boolalg)(X : set U.E) : finset U.E := 
+  @set.to_finset _ X (@fintype.subtype_of_fintype _ (fintype_of U) X) 
+
+def size_nat (U : boolalg)(X : set U.E) := (as_finset U X).card 
+
+def size {U : boolalg}(X : set U.E) : ℤ := (size_nat U X)
+
+
   
-  (union_distrib_right_ax (X Y Z : member) : union (inter X Y) Z = inter (union X Z) (union Y Z))
-  (inter_distrib_right_ax (X Y Z : member) : inter (union X Y) Z = union (inter X Z) (inter Y Z))
+/--/
+def fintype_of (U : boolalg) : fintype (U.E) := classical.some U.is_fin 
 
-  (inter_top_ax (X : member) : inter X top = X)
-  (union_bot_ax (X : member) : union X bot = X)
+def as_finset (U : boolalg) := (fintype_of U).elems 
 
-  (union_compl_ax (X : member) : union X (compl X) = top)
-  (inter_compl_ax (X : member) : inter X (compl X) = bot)
+def set_subtype (U : boolalg)(X : set U.E) := {x : U.E // x ∈ X}
 
-  (union_subset_ax (X Y : member) : subset X Y ↔ union X Y = Y)
+def fintype_of_set_subtype (U : boolalg)(X : set U.E) : fintype (set_subtype U X):= sorry 
 
--- associativity axioms can be removed - WIP
-  (inter_assoc_ax (X Y Z : member) : inter (inter X Y) Z = inter X (inter Y Z))
-  (union_assoc_ax (X Y Z : member) : union (union X Y) Z = union X (union Y Z))
+def size_nat (U : boolalg)(X : set U.E) : ℕ := 
+  (@fintype.card _ (fintype_of_set_subtype U X))-/
 
--- Instances to enable ⊆ , ∩ , ∪ , ᶜ , ⊤, ⊥ , - (set diff)
---check fin 2
---#check (finset (fin 2))
---#check boolalg.mk (set (fin 2))
+
+
+
 variables {A : boolalg}
 
+@[simp] instance alg_coe : has_coe_to_sort boolalg := 
+  {S := Type, coe := λ A, set (A.E)}
 
-
-/-
-meta def add_instances :=
-`[letI := A.alg,
-  letI := A.finite]
-  -/
-
-
-lemma foo1 (A : Type) [boolean_algebra A] (X Y : A) : X ⊔ Y = Y ⊔ X :=
-begin
-  apply sup_comm
-end
-
-
-@[simp] instance i1  : has_coe_to_sort boolalg := {S := Type, coe := boolalg.member}
---@[simp] instance i5  : has_union A := {union := A.alg.sup}
-
-/-
-lemma foo (X Y : A) : X ∪ Y = Y ∪ X :=
-begin
-  add_instances,
- -- let ba := A.alg,
- -- let bdl := @boolean_algebra.to_bounded_distrib_lattice A.member ba,
- -- let dl := bdl.to_distrib_lattice,
- -- let l := dl.to_lattice,
- -- let sls := lattice.to_semilattice_sup,
-  apply sup_comm,
-end
--/
-@[simp] instance i2  : has_bot A := {bot := A.bot}
-@[simp] instance i3  : has_top A := {top := A.top}
-@[simp] instance i4  : has_inter A := {inter := A.inter}
-@[simp] instance i5  : has_union A := {union := A.union}
-@[simp] instance i6  : has_compl A := {compl := A.compl}
-@[simp] instance i7  : has_subset A := {subset := A.subset} 
-@[simp] instance i8  : has_sdiff A := {sdiff := λ (X Y), X ∩ Yᶜ}
-@[simp] instance i9  : has_ssubset A := {ssubset := λ X Y, X ⊆ Y ∧ X ≠ Y}
-
-def size  (X : A) : ℤ := A.size X
-def size_nat (X : A) : ℕ := (size X).to_nat 
-
-lemma size_nat_eq_size (X : A) : 
-  size X = size_nat X := 
-  by {unfold size_nat, sorry }
 
 def symm_diff  (X Y : A) : A := (X \ Y) ∪ (Y \ X)
 
 
-@[simp] def top_size (A : boolalg) := size (⊤ : A)
+  --(size : set E → ℤ)
+lemma size_bot_ax :
+   size (⊥ : A) = 0 := 
+  by simp [size, size_nat, as_finset]
+
+--set_option pp.all true 
+
+lemma size_single_ax : 
+  ∀ e : A.E , size ({e}:A) = 1 := 
+  λ e, by {simp [size, size_nat], rw [as_finset, ←finset.coe_singleton], 
+          --simp only [finset.coe_singleton, set.to_finset_card],
+          have := finset.card_singleton e, unfold_coes at *,
+          suffices : {x : A.E | x ∈ {e}}.to_finset.card = 1, 
+          rw this, norm_num,
+          simp, unfold_coes, simp, unfold_projs at this, sorry, 
+           }
+
+lemma size_modular_ax : ∀ X Y : A, 
+  size (X ∪ Y) + size (X ∩ Y) = size X + size Y :=
+   sorry 
+
+
+lemma univ_eq_top :
+  set.univ = (⊤ : A) := 
+  set.top_eq_univ
+
+lemma empty_eq_bot :
+  ∅ = (⊥ : A) := 
+  set.bot_eq_empty
+
+--@[simp] def top_size (A : boolalg) := size (⊤ : A)
 
 @[simp] lemma diff_def (X Y : A) : X \ Y = X ∩ Yᶜ := 
   rfl 
@@ -120,33 +103,34 @@ def nontrivial (A : boolalg) := (⊥ : A) ≠ ⊤
 -- Commutativity
 
 lemma inter_comm (X Y : A) : (X ∩ Y = Y ∩ X) := 
-  A.inter_comm_ax X Y
+  set.inter_comm _ _
 
 lemma union_comm (X Y : A) : (X ∪ Y = Y ∪ X) := 
-  A.union_comm_ax X Y
+  set.union_comm _ _ 
 
 -- Top/Bottom with unions and intersections 
 
-@[simp] lemma inter_top (X : A) : X ∩ ⊤ = X := A.inter_top_ax X
+@[simp] lemma inter_top (X : A) : X ∩ ⊤ = X := 
+  by simp 
 
 @[simp] lemma top_inter  (X : A) : ⊤ ∩ X = X := 
-  eq.trans (inter_comm ⊤ X) (inter_top  X) 
+  by simp 
 
-@[simp] lemma union_bot {A : boolalg} (X : A) : X ∪ ⊥ = X := A.union_bot_ax X 
+@[simp] lemma union_bot {A : boolalg} (X : A) : X ∪ ⊥ = X := 
+  by simp 
 
 @[simp] lemma bot_union {A : boolalg} (X : A) : 
   ⊥ ∪ X = X := 
-  eq.trans (union_comm ⊥ X) (union_bot X)
+  by simp 
 
 
 -- Complements
 
 @[simp] lemma union_compl {A: boolalg} (X: A) : 
   X ∪ Xᶜ = ⊤ := 
-  A.union_compl_ax X 
+  by simp  
 
-@[simp] lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ 
-  := A.inter_compl_ax X 
+@[simp] lemma inter_compl {A: boolalg} (X: A) : X ∩ Xᶜ = ⊥ := by simp 
 
 @[simp] lemma union_compl_rev {A: boolalg} (X: A) : Xᶜ ∪ X = ⊤ := 
   by rw [union_comm, union_compl]
@@ -156,14 +140,16 @@ lemma union_comm (X Y : A) : (X ∪ Y = Y ∪ X) :=
 
 -- Distributivity
 
-lemma union_distrib_right {A : boolalg} (X Y Z : A) : (X ∩ Y) ∪ Z = (X ∪ Z) ∩ (Y ∪ Z) := A.union_distrib_right_ax X Y Z
+lemma union_distrib_right {A : boolalg} (X Y Z : A) : (X ∩ Y) ∪ Z = (X ∪ Z) ∩ (Y ∪ Z) := 
+  by apply set.union_distrib_right
 
 lemma union_distrib_left {A : boolalg} (X Y Z : A) : X ∪ (Y ∩ Z) = (X ∪ Y) ∩ (X ∪ Z) := 
   by calc X ∪ (Y ∩ Z) = (Y ∩ Z) ∪ X       : union_comm X (Y ∩ Z) 
                   ... = (Y ∪ X) ∩ (Z ∪ X) : union_distrib_right Y Z X  
                   ... = (X ∪ Y) ∩ (X ∪ Z) : by rw [union_comm X Y, union_comm X Z]
 
-lemma inter_distrib_right {A : boolalg} (X Y Z : A) : (X ∪ Y) ∩ Z = (X ∩ Z) ∪ (Y ∩ Z) := A.inter_distrib_right_ax X Y Z
+lemma inter_distrib_right {A : boolalg} (X Y Z : A) : (X ∪ Y) ∩ Z = (X ∩ Z) ∪ (Y ∩ Z) := 
+  by apply set.inter_distrib_right
 
 lemma inter_distrib_left {A : boolalg} (X Y Z : A) : X ∩ (Y ∪ Z) = (X ∩ Y) ∪ (X ∩ Z) := 
   by calc X ∩ (Y ∪ Z) = (Y ∪ Z) ∩ X       : inter_comm X (Y ∪ Z) 
@@ -216,10 +202,11 @@ lemma top_unique (X : A) : (∀ (Y: A), Y ∩ X = Y) → X = ⊤ :=
 
 -- Size 
 
-lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size Y := A.size_modular_ax X Y
+lemma size_modular (X Y : A) : size (X ∪ Y) + size (X ∩ Y) = size (X) + size Y := 
+  size_modular_ax X Y
 
 @[simp] lemma size_bot (A : boolalg) : size (⊥ : A) = 0 := 
-  A.size_bot_ax
+  size_bot_ax
 
 lemma compl_size (X : A) : size Xᶜ = size (⊤ : A) - size X :=
   calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
@@ -230,20 +217,25 @@ lemma size_compl (X : A) : size X = size (⊤ : A) - size(Xᶜ) :=
   by linarith [compl_size X]
 
 lemma size_nonneg (X : A) : 0 ≤ size X := 
-  A.size_nonneg_ax X 
+  sorry 
 
 lemma contains_single (X : A) : X ≠ ⊥ → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
-  A.contains_single_ax X 
+begin
+  intro h, 
+  rw [set.bot_eq_empty, set.ne_empty_iff_nonempty] at h, 
+  cases h with e he, 
+  from ⟨{e},⟨set.singleton_subset_iff.mpr he, size_single_ax e⟩⟩, 
+end
   
 
 
 -- Associativity (In fact, this can be discarded eventually, but why bother?)
 
 lemma inter_assoc (X Y Z : A) : (X ∩ Y) ∩ Z = X ∩ (Y ∩ Z) := 
-  A.inter_assoc_ax X Y Z 
+  set.inter_assoc _ _ _
 
 lemma union_assoc (X Y Z : A) : (X ∪ Y) ∪ Z = X ∪ (Y ∪ Z) := 
-  A.union_assoc_ax X Y Z 
+  set.union_assoc _ _ _ 
 
 
 -- Unions/Inters of triples 
@@ -279,7 +271,7 @@ lemma union_distrib_union_right (X Y Z : A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X
 
 
 lemma subset_def_union (X Y : A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
-  A.union_subset_ax X Y 
+  by rw [←set.compl_subset_compl, set.subset_iff_inter_eq_self, ←set.compl_union, compl_inj_iff, union_comm Y X]
 
 lemma subset_def_inter (X Y: A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   by {rw subset_def_union, exact ⟨λ h, by rw [←h, absorb_inter_union], λ h, by rw[←h, union_comm, inter_comm, absorb_union_inter]⟩} 
@@ -299,11 +291,25 @@ lemma subset_def_union_mp  {X Y : A} : X ⊆ Y → X ∪ Y = Y :=
 lemma subset_def_union_mpr {X Y : A} : X ∪ Y = Y → X ⊆ Y := 
   (subset_def_union X Y).mpr 
 
-lemma subset_ssubset_or_eq {X Y : A} : (X ⊆ Y) → (X ⊂ Y) ∨ X =Y :=
-  λ hXY, by {by_cases X = Y, exact or.inr h, exact or.inl ⟨hXY, h⟩}
+lemma subset_ssubset_or_eq {X Y : A} : (X ⊆ Y) → (X ⊂ Y) ∨ X = Y :=
+  λ hXY, by {rw or_comm, apply set.eq_or_ssubset_of_subset hXY}
+
+
+@[simp] lemma ssubset_iff {X Y : A} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
+  set.ssubset_iff_subset_ne
+
+lemma ssubset_of_subset_ne {X Y : A} : X ⊆ Y → X ≠ Y → X ⊂ Y := 
+  @lt_of_le_of_ne _ _ X Y 
+
+lemma ssubset_irrefl (X : A) : ¬(X ⊂ X) :=
+  λ h, by {rw ssubset_iff at h, from h.2 rfl}
+
 
 lemma ssubset_size {X Y : A} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y) := 
-  λ hXY hS, ⟨hXY, by {intros heq, rw heq at hS, linarith}⟩
+  λ h h', by {rw ssubset_iff, from ⟨h, λ h'', by {rw h'' at h', linarith}⟩}
+
+
+  --λ hXY hS, ⟨hXY, by {intros h, rw h at hS, linarith}⟩
 
 lemma subset_antisymm  {X Y : A} : X ⊆ Y → Y ⊆ X → X = Y := 
   λ hXY hYX, by {rw subset_def_inter at *, rw inter_comm at hXY, exact (rfl.congr hYX).mp (eq.symm hXY)}
@@ -333,7 +339,7 @@ lemma subset_bot  {X : A} (hX : X ⊆ ⊥) : X = ⊥ :=
   subset_antisymm hX (bot_subset X)  
 
 lemma ssubset_bot (X : A) : ¬ X ⊂ ⊥ := 
-  λ h, h.2 (subset_bot h.1) 
+  λ h, by {rw ssubset_iff at h, from h.2 (subset_bot h.1)}
 
 lemma disjoint_compl_subset {X Y : A} : X ∩ Y = ⊥ → X ⊆ Yᶜ := 
   λ h, by rw [subset_def_inter, ← bot_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_top]
@@ -363,13 +369,13 @@ lemma compl_inj_iff {X Y : A} : Xᶜ = Yᶜ ↔ X = Y :=
   by rw [←compl_bot, compl_inj_iff]
 
 lemma bot_of_compl_top {X : A} : Xᶜ = ⊤ → X = ⊥  := 
-  by simp 
+  by {rw [set.top_eq_univ, set.bot_eq_empty], exact set.compl_univ_iff.mp} 
 
 @[simp] lemma top_iff_compl_bot {X : A} : Xᶜ = ⊥ ↔ X = ⊤ := 
   by rw [←compl_top, compl_inj_iff]
 
-lemma top_of_compl_bot {X : A} : Xᶜ = ⊥ →  X = ⊤  := 
-  by simp 
+lemma top_of_compl_bot {X : A} : Xᶜ = ⊥ → X = ⊤  := 
+  by {rw top_iff_compl_bot, exact congr_arg _}
 
 @[simp] lemma inter_compl_left {X : A} : Xᶜ ∩ X = ⊥ := 
   by rw [inter_comm, inter_compl]
@@ -438,7 +444,7 @@ lemma compl_pair {X Y : A} : (Xᶜ = Y) → (X = Yᶜ) :=
   λ h, by rw [←h, compl_compl]
 
 lemma compl_diff (X Y : A) : (X \ Y)ᶜ = Xᶜ ∪ Y := 
-  by {dunfold has_sdiff.sdiff, rw [compl_inter, compl_compl]}
+  by rw [diff_def, compl_inter, compl_compl]
 
 @[simp] lemma union_union_compl (X Y : A) : X ∪ (Y ∪ Yᶜ) = ⊤ := 
   by rw[union_compl, union_top]
@@ -478,7 +484,7 @@ lemma subset_own_compl {X : A} : X ⊆ Xᶜ → X = ⊥ :=
 -- more subsets 
 lemma disjoint_iff_subset_compl {X Y : A} : X ∩ Y = ⊥ ↔ X ⊆ Yᶜ := 
   by {refine ⟨λ h, _, λ h, _⟩, rw [subset_def_inter, ←union_bot (X ∩ Yᶜ), ←h, ←inter_distrib_left], simp, 
-    rw [subset_def_inter] at h, rw [←h, inter_assoc], simp } 
+    rw [subset_def_inter] at h, rw [←h, inter_assoc], sorry  } 
 
 @[trans] lemma subset_trans {X Y Z : A} : X ⊆ Y → Y ⊆ Z →  X ⊆ Z :=
   λ hXY hYZ, by {rw subset_def_inter at *, rw [←hXY, inter_assoc, hYZ]}
@@ -525,16 +531,10 @@ lemma subset_of_set_and_compl {X Y: A} : X ⊆ Y → X ⊆ Yᶜ → X = ⊥ :=
   λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl at this, exact subset_bot this}
 
 lemma subset_ssubset_trans {X Y Z : A} : X ⊆ Y → Y ⊂ Z → X ⊂ Z := 
-  λ hXY hYZ, ⟨subset_trans hXY hYZ.1, λ h, by {rw ←h at hYZ, exact hYZ.2 (subset_antisymm hYZ.1 hXY)}⟩ 
+  @lt_of_le_of_lt _ _ X Y Z
 
 lemma ssubset_subset_trans {X Y Z : A} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
-  λ hXY hYZ, ⟨subset_trans hXY.1 hYZ, λ h, by {rw h at hXY, exact hXY.2 (subset_antisymm hXY.1 hYZ)}⟩ 
-
-@[simp] lemma ssubset_iff {X Y : A} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
-  by unfold has_ssubset.ssubset
-
-lemma ssubset_irrefl (X : A) : ¬ (X ⊂ X) :=
-  λ h, h.2 rfl
+  @lt_of_lt_of_le _ _ X Y Z 
 
 lemma ssubset_not_supset {X Y : A} : X ⊂ Y → ¬(Y ⊆ X) :=
   λ h h', ssubset_irrefl _ (ssubset_subset_trans h h') 
@@ -546,20 +546,21 @@ lemma eq_of_ssubset {X Y: A} : X ⊆ Y → ¬(X ⊂ Y) → X = Y :=
   λ h h', by {simp only [not_and, not_not, ssubset_iff] at h', exact h' h}
 
 lemma inter_of_ssubsets (X Y Z : A) : (X ⊂ Z) → (X ∩ Y ⊂ Z) := 
-  λ h, ⟨inter_of_subsets X Y Z h.1, λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) }⟩
+  λ h, ssubset_of_subset_ne (inter_of_subsets X Y Z h.1)
+      (λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) })
 
 
 lemma ssubset_trans {X Y Z : A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
   subset_ssubset_trans hXY.1 hYZ
 
 lemma ssubset_inter {X Y : A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
-  λ h, by {by_contra a, push_neg at a, cases a, erw [not_and', not_imp_not] at a_left a_right, 
-  exact h (eq.trans (a_left (inter_subset_left X Y)).symm (a_right (inter_subset_right X Y)) )}
+  λ h, by {by_contra a, push_neg at a, simp_rw [ssubset_iff, not_and', not_imp_not] at a, 
+  exact h (eq.trans (a.1 (inter_subset_left X Y)).symm (a.2 (inter_subset_right X Y)) )}
 
 -- Misc
 
 lemma union_union_diff (X Y Z : A) : (X ∪ Z) ∪ (Y \ Z) = X ∪ Y ∪ Z :=
-  by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp}
+  by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp, rw [univ_eq_top, union_top, inter_top], }
 
 lemma union_inter_diff (X Y Z : A) : (X ∪ Z) ∩ (Y \ Z) = (X ∩ Y) \ Z :=
   by {rw [diff_def, diff_def, inter_distrib_right], simp_rw [←inter_assoc, inter_right_comm Z Y Zᶜ], simp, }
@@ -614,7 +615,7 @@ lemma subset_diff_disjoint (X Y Z: A) : X ⊆ Y → X ∩ Z = ⊥ → X ⊆ Y \ 
 
 
 lemma ssubset_diff_nonempty {X Y : A} : X ⊂ Y → Y \ X ≠ ⊥ :=
-  λ hXY, by {intros hYX, rw diff_bot_iff_subset at hYX, exact hXY.2 (subset_antisymm hXY.1 hYX)}
+  λ hXY, by {intros hYX, rw diff_bot_iff_subset at hYX, from ssubset_irrefl _ (ssubset_subset_trans hXY hYX)}
 
 lemma union_diff_of_subset  {X Y : A} : X ⊆ Y → X ∪ (Y \ X) = Y := 
   λ h, by {rw [subset_def_inter, inter_comm] at h, have := diff_union Y X, rw h at this, exact this}
@@ -704,10 +705,6 @@ lemma size_zero_bot {X : A} : (size X = 0) →  X = ⊥ :=
 lemma size_zero_iff_bot {X : A} : (size X = 0) ↔ (X = ⊥) := 
   by {split, apply size_zero_bot, intros h, rw h, exact size_bot A}
 
-lemma nontrivial_size : 
-  nontrivial A → 1 ≤ top_size A := 
-  λ h, by {by_contra a, unfold top_size at a, from h (size_zero_bot (by linarith [size_nonneg (⊤ :A)]: size (⊤ : A) = 0)).symm}
-
 lemma size_nonempty {X : A} : X ≠ ⊥ → 0 < size X  := 
   λ hX, lt_of_le_of_ne (size_nonneg X) (λ h, hX (size_zero_bot h.symm))
 
@@ -739,16 +736,19 @@ lemma union_ssubsets (X : A) : 1 < size X  → ∃ Y Z : A, Y ⊂ X ∧ Z ⊂ X 
     intros hX, 
     have h := (λ h', by {rw [h', @size_bot A] at hX, linarith }: X ≠ ⊥), 
     rcases single_subset X h with ⟨Y,⟨Z,⟨hI,hU,h1⟩⟩⟩, use Y, use Z, 
-    refine ⟨⟨by {rw ←hU, apply subset_union_left},_⟩,⟨by {rw ←hU, apply subset_union_right},_⟩,hI,hU⟩, 
-    intros hYX, rw hYX at h1, linarith, 
-    intros hZX, 
+    simp_rw ←hU at ⊢ hX, 
+    simp only [true_and, set.subset_union_right, and_true, 
+      set.bot_eq_empty, set.subset_union_left, eq_self_iff_true, ne.def,ssubset_iff], 
+    refine ⟨λ hY, _, ⟨λ hZ, _, hI⟩ ⟩, 
+    rw [←hY,h1] at hX, from lt_irrefl _ hX, 
     have := size_modular Y Z, 
-    rw [hU, hI, @size_bot A, h1,hZX] at this, 
-    linarith
+    rw [hU, hI, @size_bot A, h1,hZ, ←hU] at this, 
+    linarith,
   end
 
 lemma ssubset_to_compl {X Y : A} : X ⊂ Y → Yᶜ ⊂ Xᶜ := 
-  λ h, ⟨subset_to_compl h.1, λ h', h.2 (compl_inj h').symm⟩
+  λ h, ssubset_of_subset_ne (subset_to_compl h.1) 
+                            (λ h', by {rw (compl_inj h') at h, from ssubset_irrefl _ h}) 
 
 lemma compl_to_ssubset {X Y : A} : Xᶜ ⊂ Yᶜ → Y ⊂ X := 
   λ h, by {have := ssubset_to_compl h, repeat {rw compl_compl at this}, exact this }
