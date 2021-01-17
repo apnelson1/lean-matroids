@@ -26,53 +26,42 @@ def loopify (M : rankfun U)(D : U) : rankfun U :=
   R3 := λ X Y, by {simp only [diff_def], rw [inter_distrib_right, inter_distrib_inter_left], linarith [R3 M (X ∩ Dᶜ) (Y ∩ Dᶜ)],  }
 }
 
+lemma loopify_r (M : rankfun U)(D X : U):
+  (loopify M D).r X = M.r (X \ D) := 
+  rfl 
+
+lemma project_r (M : rankfun U)(C X : U):
+  (project M C).r X = M.r (X ∪ C) - M.r C := 
+  rfl 
+
 def loopify_project (M : rankfun U)(C D : U) : rankfun U := 
   project (loopify M D) C 
 
-def is_pseudominor (N M : rankfun U) := 
-  ∃ C D, N = loopify_project M C D 
+lemma project_makes_loops (M : rankfun U)(C : U):
+  loops M ∪ C ⊆ loops (project M C)  := 
+  sorry 
 
-def is_proper_pseudominor (N M : rankfun U) := 
-  is_pseudominor N M ∧ ∃ e, is_loop N e ∧ ¬is_loop M e 
+lemma projected_set_rank_zero (M : rankfun U)(C : U):
+  (project M C).r C = 0 := 
+  sorry
 
-lemma project_nonloop_is_proper_pseudominor (M : rankfun U)(e : nonloop M) :
-  is_proper_pseudominor (project M e) M :=
-  sorry  
+lemma loopify_makes_loops (M : rankfun U)(D : U):
+  loops M ∪ D ⊆ loops (loopify M D) := 
+  sorry
 
-lemma loopify_nonloop_is_proper_pseudominor (M : rankfun U)(e : nonloop M) :
-  is_proper_pseudominor (loopify M e) M := 
+lemma loopified_set_rank_zero (M : rankfun U)(D : U):
+  (loopify M D).r D = 0 :=
   sorry 
 
 
+lemma indep_of_loopify_indep {M : rankfun U}{D X : U} : 
+  is_indep (loopify M D) X → is_indep M X := 
+  sorry 
+
+lemma indep_of_project_indep {M : rankfun U}{C X : U}: 
+  is_indep (project M C) X → is_indep M C → is_indep M (X ∪ C) :=
+  sorry 
+
 end pseudominor
 
-section induction 
-
-variables {U : boolalg}
-
-def lp_induction (P : rankfun U → Prop)(M₀ : rankfun U):
-  P (loopy_matroid_on U) → (∀ M, (∀ N, is_proper_pseudominor N M → P N) → P M) → P M₀ :=
-begin
-  intros hloopy hind, 
-  set Q : U → Prop := λ X, (∀ (M : rankfun U), M.r Xᶜ = 0 → P M) with hQ, 
-  have hQbot : Q ⊥ := λ M hM, by 
-    {rw [compl_bot, ←loopy_iff_top_rank_zero] at hM, rw hM, assumption},
-  rcases maximal_example_from_bot Q hQbot with ⟨W, ⟨hQW, hWmax⟩⟩, 
-  rw hQ at hQW, 
-  by_cases hW : W = ⊤, 
-  rw [hW, compl_top] at hQW, 
-  refine hQW M₀ (rank_bot _), 
-  sorry -- took a wrong turn - induction is annoying. 
-end
-
-def lp_induction_single (P : rankfun U → Prop)(M₀ : rankfun U): 
-  P (loopy_matroid_on U) → (∀ M, (∀ e: nonloop M, P (project M e) ∧ P (loopify M e)) → P M) → P M₀ :=
-begin
-  intros h hind, apply lp_induction _ _ h, 
-  intros M hind', refine hind _ (λ e, ⟨_,_⟩), 
-  apply hind', apply project_nonloop_is_proper_pseudominor, 
-  apply hind', apply loopify_nonloop_is_proper_pseudominor, 
-end
-
-end induction 
 end boolalg 

@@ -240,8 +240,77 @@ begin
   linarith, 
 end
 
-
 end size 
+
+
+section minmax
+
+variables {U : boolalg}{α : Type}[linear_order α]
+
+-- Proving this stuff probably needs fintype etc for boolalg. 
+
+-- maximum 
+def max_val_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : α := sorry
+def arg_max_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : U := sorry 
+
+lemma max_over_is_ub (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
+  ∀ X, P X → f X ≤ max_val_over f P hP :=
+  sorry
+
+lemma arg_max_over_attains (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
+  P (arg_max_over f P hP) ∧ f (arg_max_over f P hP) = max_val_over f P hP := 
+  sorry  
+
+-- minimum 
+def min_val_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : α := sorry
+def arg_min_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : U := sorry 
+
+lemma min_over_is_lb (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
+  ∀ X, P X → min_val_over f P hP ≤ f X := 
+  sorry
+
+lemma arg_min_over_attains (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
+  P (arg_min_over f P hP) ∧ f (arg_min_over f P hP) = min_val_over f P hP := 
+  sorry  
+
+---- 
+
+-- unrestricted max 
+def max_val (f : U → α) : α := max_val_over f (λ X, true) ⟨⊥, trivial⟩
+def arg_max (f : U → α) : U := arg_max_over f (λ X, true) ⟨⊥, trivial⟩
+
+def min_val (f : U → α) : α := min_val_over f (λ X, true) ⟨⊥, trivial⟩
+def arg_min (f : U → α) : U := arg_min_over f (λ X, true) ⟨⊥, trivial⟩
+
+lemma max_is_ub (f : U → α): 
+  ∀ X, f X ≤ max_val f :=
+  λ X, by {apply max_over_is_ub, trivial} 
+
+lemma arg_max_attains (f : U → α): 
+  f (arg_max f) = max_val f :=
+  (arg_max_over_attains _ _ _).2
+
+lemma min_is_lb (f : U → α) :
+  ∀ X, min_val f ≤ f X := 
+  λ X, by {apply min_over_is_lb, trivial} 
+
+lemma arg_min_attains (f : U → α) : 
+  f (arg_min f) = min_val f := 
+  (arg_min_over_attains _ _ _).2
+
+
+end minmax
+
+section sumover 
+
+  variables {U : boolalg}{α : Type}[add_comm_monoid α]
+
+  def sum_over (f : single U → α) (P : single U → Prop) : α := sorry 
+
+  def sum_over_member (f : single U → α) (X : U) : α := sorry 
+
+
+end sumover 
 
 
 end boolalg 

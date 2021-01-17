@@ -97,6 +97,11 @@ end
 @[simp] instance i9  : has_ssubset A := {ssubset := λ X Y, X ⊆ Y ∧ X ≠ Y}
 
 def size  (X : A) : ℤ := A.size X
+def size_nat (X : A) : ℕ := (size X).to_nat 
+
+lemma size_nat_eq_size (X : A) : 
+  size X = size_nat X := 
+  by {unfold size_nat, sorry }
 
 def symm_diff  (X Y : A) : A := (X \ Y) ∪ (Y \ X)
 
@@ -354,11 +359,17 @@ lemma compl_inj_iff {X Y : A} : Xᶜ = Yᶜ ↔ X = Y :=
 @[simp] lemma compl_bot (A : boolalg) : (⊥ : A)ᶜ = ⊤ := 
   eq.symm (compl_unique (union_top ⊥) (bot_inter ⊤)) 
 
-lemma bot_of_compl_top {X : A} (hX : Xᶜ = ⊤) : X = ⊥  := 
-  by rw [←compl_compl X, hX, compl_top]
+@[simp] lemma bot_iff_compl_top {X : A} : Xᶜ = ⊤ ↔ X = ⊥ := 
+  by rw [←compl_bot, compl_inj_iff]
 
-lemma top_of_compl_bot {X : A} (hX : Xᶜ = ⊥) : X = ⊤  := 
-  by rw [←compl_compl X, hX, compl_bot]
+lemma bot_of_compl_top {X : A} : Xᶜ = ⊤ → X = ⊥  := 
+  by simp 
+
+@[simp] lemma top_iff_compl_bot {X : A} : Xᶜ = ⊥ ↔ X = ⊤ := 
+  by rw [←compl_top, compl_inj_iff]
+
+lemma top_of_compl_bot {X : A} : Xᶜ = ⊥ →  X = ⊤  := 
+  by simp 
 
 @[simp] lemma inter_compl_left {X : A} : Xᶜ ∩ X = ⊥ := 
   by rw [inter_comm, inter_compl]
@@ -546,6 +557,12 @@ lemma ssubset_inter {X Y : A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
   exact h (eq.trans (a_left (inter_subset_left X Y)).symm (a_right (inter_subset_right X Y)) )}
 
 -- Misc
+
+lemma union_union_diff (X Y Z : A) : (X ∪ Z) ∪ (Y \ Z) = X ∪ Y ∪ Z :=
+  by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp}
+
+lemma union_inter_diff (X Y Z : A) : (X ∪ Z) ∩ (Y \ Z) = (X ∩ Y) \ Z :=
+  by {rw [diff_def, diff_def, inter_distrib_right], simp_rw [←inter_assoc, inter_right_comm Z Y Zᶜ], simp, }
 
 lemma inter_is_lb  {X Y Z : A} : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
   λ hZX hZY, by {rw subset_def_inter at *, rw [←inter_assoc, hZX, hZY]}

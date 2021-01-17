@@ -113,6 +113,10 @@ lemma submod_three_sets (M : rankfun U)(X Y Y' :U) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
   by {have := M.R3 (X ∪ Y) (X ∪ Y'), rw [←union_distrib_left, ←union_distrib_union_right] at this, exact this}
 
+lemma submod_three_sets_right (M : rankfun U)(X Y Y' :U) :
+  M.r ((Y ∪ Y') ∪ X) + M.r ((Y ∩ Y') ∪ X) ≤ M.r (Y ∪ X) + M.r (Y' ∪ X) := 
+  by {simp_rw ←(union_comm X), apply submod_three_sets} 
+
 lemma submod_three_sets_disj (M : rankfun U)(X Y Y' :U)(hYY' : Y ∩ Y' = ⊥) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
   by {have := submod_three_sets M X Y Y', rw [hYY', union_bot] at this, exact this}
@@ -278,6 +282,10 @@ lemma bot_indep_r (M : rankfun U) :
 lemma subset_indep_r {M : rankfun U}{X Y : U}: 
   X ⊆ Y → M.r Y = size Y → M.r X = size X := 
   λ h, by {have := subset_indep h, rw [indep_iff_r, indep_iff_r] at this, assumption} 
+
+lemma elem_indep_r {M : rankfun U}{e : single U}{I : U}:
+  e ∈ I → is_indep M I → M.r e = 1 := 
+  sorry 
 
 lemma I1 (M : rankfun U) : 
   is_indep M ⊥ := 
@@ -607,6 +615,9 @@ def is_hyperplane (M : rankfun U) : U → Prop :=
 def is_rank_k_flat (M : rankfun U) (k : ℤ) : U → Prop := 
   λ F, is_flat M F ∧ M.r F = k 
 
+def loops : rankfun U → U := 
+  λ M, cl M ⊥ 
+
 def is_loops (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 0 F
 
@@ -618,6 +629,10 @@ def is_line (M : rankfun U) : U → Prop :=
 
 def is_plane (M : rankfun U) : U → Prop := 
   λ F, is_rank_k_flat M 3 F
+
+lemma rank_loops (M: rankfun U): 
+  M.r (loops M) = 0 := 
+  by rw [loops, rank_cl, rank_bot]
 
 lemma flat_iff_r {M : rankfun U} (X : U) :
   is_flat M X ↔ ∀ Y, X ⊂ Y → M.r X < M.r Y := 
@@ -674,6 +689,8 @@ lemma is_loops_iff_cl_bot {M : rankfun U}{L : U}:
     rw [bot_union, rank_bot] at hY, 
     linarith [rank_subadditive M X Y], 
   end
+
+
 
 lemma hyperplane_iff_r {M : rankfun U} (X : U) :
   is_hyperplane M X ↔ M.r X = M.r ⊤ - 1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r ⊤ := 
@@ -782,6 +799,26 @@ def is_coloop (M : rankfun U) : single U → Prop :=
 
 def is_noncoloop (M : rankfun U) : single U → Prop := 
   λ e, is_coloop (dual M) e
+
+lemma loop_iff_elem_loops {M : rankfun U} {e : single U} : 
+  is_loop M e ↔ e ∈ loops M := 
+  sorry
+
+lemma nonloop_iff_not_elem_loops {M : rankfun U}{e : single U}: 
+  is_nonloop M e ↔ e ∉ loops M := 
+  sorry 
+
+lemma nonloop_iff_indep {M : rankfun U}{e : single U}:
+  is_nonloop M e ↔ is_indep M e := 
+  sorry 
+
+lemma rank_nonloop {M : rankfun U}{e : single U}:
+  is_nonloop M e → M.r e = 1 :=
+  by {unfold is_nonloop, from λ h, h}
+
+lemma rank_loop {M : rankfun U}{e : single U}:
+  is_loop M e → M.r e = 0 :=
+  by {unfold is_loop, from λ h, h}
 
 lemma nonloop_iff_not_loop {M : rankfun U} (e : single U) : 
   is_nonloop M e ↔ ¬ is_loop M e := 
