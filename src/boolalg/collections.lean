@@ -249,38 +249,70 @@ variables {U : boolalg}{α : Type}[linear_order α]
 
 -- Proving this stuff probably needs fintype etc for boolalg. 
 
--- maximum 
-def max_val_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : α := sorry
-def arg_max_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : U := sorry 
+def max_val_over_dep (P : U → Prop)(f : {U // P U} → α)(hP : ∃ X, P X) : α := sorry
+def arg_max_over_dep (P : U → Prop)(f : {U // P U} → α)(hP : ∃ X, P X) : U := sorry 
 
-lemma max_over_is_ub (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
-  ∀ X, P X → f X ≤ max_val_over f P hP :=
+
+
+-- maximum 
+
+def max_val_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : α := sorry
+def arg_max_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : U := sorry 
+
+lemma max_over_is_ub (P : U → Prop)(hP : ∃ X, P X)(f : U → α):
+  ∀ X, P X → f X ≤ max_val_over P hP f :=
   sorry
 
-lemma arg_max_over_attains (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
-  P (arg_max_over f P hP) ∧ f (arg_max_over f P hP) = max_val_over f P hP := 
+lemma arg_max_over_attains (P : U → Prop)(hP : ∃ X, P X)(f : U → α):
+  P (arg_max_over P hP f) ∧ f (arg_max_over P hP f) = max_val_over P hP f := 
   sorry  
+
+lemma exists_arg_max_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α): 
+  ∃ X, P X ∧ f X = max_val_over P hP f ∧ ∀ Y, P Y → f Y ≤ f X := 
+    sorry 
+
+/-def max_val_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : α := 
+  let X := classical.subtype_of_exists (exists_arg_max_over P hP f) in 
+  f X.1 
+
+def arg_max_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : U := 
+  let X := classical.subtype_of_exists (exists_arg_max_over P hP f) in 
+  X.1 -/
+
+--  ∀ X, P X → f X ≤ max_val_over f P hP :=
+--  sorry  
+
+  --let X := arg_max_over f P hP,
+  --    h := arg_max_over_attains f P hP in 
+  --⟨X,⟨h.1,⟨h.2,λ Y hY, by {rw h.2, apply max_over_is_ub f P hP, from hY}⟩⟩⟩
+      
+      
 
 -- minimum 
-def min_val_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : α := sorry
-def arg_min_over (f : U → α)(P : U → Prop)(hP : ∃ X, P X) : U := sorry 
+def min_val_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : α := sorry
+def arg_min_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α) : U := sorry 
 
-lemma min_over_is_lb (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
-  ∀ X, P X → min_val_over f P hP ≤ f X := 
+lemma min_over_is_lb (P : U → Prop)(hP : ∃ X, P X)(f : U → α):
+  ∀ X, P X → min_val_over P hP f ≤ f X := 
   sorry
 
-lemma arg_min_over_attains (f : U → α)(P : U → Prop)(hP : ∃ X, P X):
-  P (arg_min_over f P hP) ∧ f (arg_min_over f P hP) = min_val_over f P hP := 
+lemma arg_min_over_attains (P : U → Prop)(hP : ∃ X, P X)(f : U → α):
+  P (arg_min_over P hP f) ∧ f (arg_min_over P hP f) = min_val_over P hP f := 
   sorry  
+
+
+lemma exists_arg_min_over (P : U → Prop)(hP : ∃ X, P X)(f : U → α): 
+  ∃ X, P X ∧ f X = min_val_over P hP f ∧  ∀ Y, P Y → f X ≤ f Y  := sorry 
+
 
 ---- 
 
 -- unrestricted max 
-def max_val (f : U → α) : α := max_val_over f (λ X, true) ⟨⊥, trivial⟩
-def arg_max (f : U → α) : U := arg_max_over f (λ X, true) ⟨⊥, trivial⟩
+def max_val (f : U → α) : α := max_val_over (λ X, true) ⟨⊥, trivial⟩ f 
+def arg_max (f : U → α) : U := arg_max_over (λ X, true) ⟨⊥, trivial⟩ f
 
-def min_val (f : U → α) : α := min_val_over f (λ X, true) ⟨⊥, trivial⟩
-def arg_min (f : U → α) : U := arg_min_over f (λ X, true) ⟨⊥, trivial⟩
+def min_val (f : U → α) : α := min_val_over (λ X, true) ⟨⊥, trivial⟩ f
+def arg_min (f : U → α) : U := arg_min_over (λ X, true) ⟨⊥, trivial⟩ f
 
 lemma max_is_ub (f : U → α): 
   ∀ X, f X ≤ max_val f :=
@@ -298,7 +330,13 @@ lemma arg_min_attains (f : U → α) :
   f (arg_min f) = min_val f := 
   (arg_min_over_attains _ _ _).2
 
+lemma exists_arg_min (f : U → α): 
+  ∃ X, ∀ Y, f X ≤ f Y := sorry 
 
+lemma exists_arg_max (f : U → α): 
+  ∃ X, ∀ Y, f Y ≤ f X := 
+  sorry 
+  --⟨arg_max f, ⟨(arg_max_attains f), λ X', by {rw arg_max_attains f, from max_is_ub f X' }⟩⟩ 
 end minmax
 
 section sumover 

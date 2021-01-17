@@ -993,6 +993,10 @@ lemma basis_iff_r {M : rankfun U} {B : U} :
 def is_cobasis (M : rankfun U): U → Prop := 
   λ B, is_basis (dual M) B 
 
+lemma cobasis_iff {M : rankfun U}{B : U}: 
+  is_cobasis M B ↔ is_basis (dual M) B := 
+  by unfold is_cobasis   
+
 lemma basis_of_iff_augment {M : rankfun U} {B X : U}: 
   is_basis_of M B X ↔ B ⊆ X ∧ M.r B = size B ∧ ∀ e : single U, e ∈ X → M.r (B ∪ e) = M.r B := 
 begin
@@ -1098,9 +1102,19 @@ lemma exists_basis_of (M : rankfun U)(X : U) :
   ∃ B, is_basis_of M B X := 
   by {cases extends_to_basis_of (bot_subset X) (bot_indep M) with B hB, from ⟨B,hB.2⟩}
 
+lemma exists_basis (M : rankfun U): 
+  ∃ B, is_basis M B := 
+  by apply exists_basis_of
+
 lemma extends_to_basis {M : rankfun U}{I : U}:
   is_indep M I → ∃ B, I ⊆ B ∧ is_basis M B := 
   λ h, extends_to_basis_of (subset_top I) h 
+
+def choose_extension_to_basis_of {M : rankfun U}{I X: U}(hIX : I ⊆ X)(hI: is_indep M I):=
+  classical.subtype_of_exists (extends_to_basis_of hIX hI)
+
+def choose_extension_to_basis {M : rankfun U}{I: U}(hI : is_indep M I) :=
+  classical.subtype_of_exists (extends_to_basis hI)
 
 lemma indep_iff_contained_in_basis {M : rankfun U}{X : U}:
   is_indep M X ↔ ∃ B, X ⊆ B ∧ is_basis M B := 
