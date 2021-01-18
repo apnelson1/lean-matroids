@@ -32,16 +32,9 @@ def embed.compose {A B C: boolalg} : (embed A B) → (embed B C) → (embed A C)
 }
 
 def subalg {A : boolalg}(ground : A) : boolalg :=  
-let new_E  := {x : A.E // x ∈ ground} in  
-   --img     := λ (X : set (new_E)) (u : A.E), ∃ (h : u ∈ ground), (⟨u,h⟩ : new_E) ∈ X  in 
 { 
-  E := new_E, 
-  is_fin := 
-  begin
-    letI := fintype_of A,
-    refine ⟨_,trivial⟩, 
-    apply_instance, 
-  end, 
+  E       := {x : A.E // x ∈ ground},
+  is_fin  := by {letI := fintype_of A, from ⟨by apply_instance,trivial⟩}
 }
 
 def embed.from_subset (X : A) : embed (subalg X) A := 
@@ -104,36 +97,11 @@ structure iso (A B : boolalg) :=
 --def boolalg.canonical (size : ℤ) :
 --  (0 ≤ size) → boolalg := sorry
 
--- Construct a boolalg from a finite set S 
+-- Construct a boolalg from a finite set S (probably deprecated)
 def powersetalg (γ : Type)[fintype γ][decidable_eq γ] : boolalg := 
 { 
-  member := finset γ,
-  bot := ∅,
-  top := finset.univ,
-  inter := λ X Y, X ∩ Y,
-  union := λ X Y, X ∪ Y,
-  compl := λ X, Xᶜ,
-  subset := λ X Y, X ⊆ Y, 
-  size := λ X, (X.card : ℤ),
-  size_bot_ax := by simp only [finset.card_empty, int.coe_nat_zero],
-  size_nonneg_ax := by simp only [forall_const, int.coe_nat_nonneg],
-  size_modular_ax := λ X Y, by linarith [finset.card_union_add_card_inter X Y],
-  contains_single_ax := λ X hX, by {cases finset.nonempty.bex (finset.nonempty_iff_ne_empty.mpr hX) 
-                                    with e he, use {e}, split, exact finset.singleton_subset_iff.mpr he, 
-                                    rw finset.card_singleton, refl},
-  inter_comm_ax := finset.inter_comm,
-  union_comm_ax := finset.union_comm,
-  inter_distrib_right_ax := finset.inter_distrib_right,
-  union_distrib_right_ax := finset.union_distrib_right, 
-  inter_assoc_ax := finset.inter_assoc,
-  union_assoc_ax := finset.union_assoc,
-  inter_top_ax := finset.inter_univ, 
-  union_bot_ax := finset.union_empty, 
-  union_compl_ax := λ X, by {rw finset.compl_eq_univ_sdiff; simp only [finset.union_eq_right_iff_subset, 
-                            finset.union_sdiff_self_eq_union], intros a a_1, simp only [finset.mem_univ]},  
-  inter_compl_ax := λ X, by {ext1, simp only [finset.not_mem_empty, finset.mem_compl, 
-                                and_not_self, finset.mem_inter]},
-  union_subset_ax := λ X Y, finset.union_eq_right_iff_subset.symm
+  E       := γ, 
+  is_fin  := ⟨by apply_instance, trivial⟩,
 }
 
 end boolalg 
