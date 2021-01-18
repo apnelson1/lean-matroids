@@ -38,9 +38,10 @@ let new_E  := {x : A.E // x ∈ ground} in
   E := new_E, 
   is_fin := 
   begin
-    let ft := as_finset A ground, 
-    refine ⟨⟨_,_⟩,trivial⟩,
-    from finset.subtype.fintype ft, 
+    sorry 
+    --let ft := as_finset A ground, 
+    --refine ⟨⟨_,_⟩,trivial⟩,
+    --from finset.subtype.fintype ft, 
   end, 
 }
 
