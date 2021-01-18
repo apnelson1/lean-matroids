@@ -1,12 +1,12 @@
 
 import .constructions
 
-namespace boolalg 
+namespace ftype 
 
 
 section pseudominor 
 
-variables {U : boolalg}
+variables {U : ftype}
 
 def project (M : rankfun U) (C : U) : rankfun U := 
 { 
@@ -64,4 +64,4 @@ lemma indep_of_project_indep {M : rankfun U}{C X : U}:
 
 end pseudominor
 
-end boolalg 
+end ftype 

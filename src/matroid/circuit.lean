@@ -1,12 +1,12 @@
-import boolalg.basic boolalg.induction boolalg.collections .rankfun .indep 
-open boolalg 
+import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+open ftype 
 
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {U : boolalg}
+variables {U : ftype}
 
-def C_to_I (M : cct_family U): (U → Prop) := 
+def C_to_I (M : cct_family U): (set U → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
 lemma C_to_I1 (M : cct_family U) :
@@ -17,23 +17,23 @@ lemma C_to_I2 (M : cct_family U) :
   satisfies_I2 (C_to_I M) :=
   λ I J hIJ hJ X hXI, hJ _ (subset_trans hXI hIJ)
 
-lemma new_circuit_contains_new_elem_C {M : cct_family U}{I C : U}{e : single U}:
+lemma new_circuit_contains_new_elem_C {M : cct_family U}{I C : set U}{e : U}:
   C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
   λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonelem hCIe he) hC}
 
-lemma add_elem_unique_circuit_C {M : cct_family U} {I : U} {e : single U}:
+lemma add_elem_unique_circuit_C {M : cct_family U} {I : set U} {e : U}:
   C_to_I M I → ¬C_to_I M (I ∪ e) → ∃! C, M.cct C ∧ C ⊆ I ∪ e :=
   begin
     intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
     rcases hIe with ⟨C, ⟨hCI, hC⟩⟩, refine ⟨C,⟨⟨hC,hCI⟩,λ C' hC', _⟩⟩,
-    have := subset_of_inter_mpr (new_circuit_contains_new_elem_C hI hCI hC) 
+    have := elem_inter (new_circuit_contains_new_elem_C hI hCI hC) 
                                 (new_circuit_contains_new_elem_C hI hC'.2 hC'.1),
     by_contra hCC', 
     cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
     from hI _ (subset_trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
   end 
 
-lemma add_elem_le_one_circuit_C {M : cct_family U} {I C C': U} (e : single U):
+lemma add_elem_le_one_circuit_C {M : cct_family U} {I C C': set U} (e : U):
   C_to_I M I → (M.cct C ∧ C ⊆ I ∪ e) → (M.cct C' ∧ C' ⊆ I ∪ e) → C = C' :=
   begin
     intros hI hC hC', 
@@ -47,13 +47,13 @@ lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
   begin
     -- I3 states that there are no bad pairs 
-    let bad_pair : U → U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ e, e ∈ J \ I → ¬C_to_I M (I ∪ e), 
+    let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
     suffices : ∀ I J, ¬bad_pair I J, 
       push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
     by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
     
     --choose a bad pair with D = I-J minimal
-    let bad_pair_diff : U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
+    let bad_pair_diff : set U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
     have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
     rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
     rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
@@ -67,7 +67,7 @@ lemma C_to_I3 (M : cct_family U) :
       intro h, rw diff_bot_iff_subset at h, 
       cases size_pos_has_elem hJI_nonbot with e he,
       refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
-      from union_of_subsets h (subset_trans he (diff_subset _ _)), 
+      from union_of_subsets h (subset_of_elem_of_subset he (diff_subset _ _)), 
     },
 
     cases nonempty_has_elem hIJ_nonbot with e he, -- choose e from I -J
@@ -85,14 +85,14 @@ lemma C_to_I3 (M : cct_family U) :
         have : Ce ∩ (J \ I) ≠ ⊥ := λ h,  sorry ,
         cases nonempty_has_elem this with f hf,
         refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
-        apply subset_trans hf (inter_subset_right _ _), 
+        apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
         rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
-        from subset_trans hf (inter_subset_left _ _), 
+        from elem_of_elem_of_subset hf (inter_subset_left _ _), 
     },
     rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
     set J' := (J ∪ e) \ f with hdefJ', 
     
-    have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
+    have hJ'₀: J' \ I ⊆ (J ∪ I) := by sorry, 
     have hJ' : C_to_I M (J') := sorry,
     have hJ's : size I < size J' := sorry, 
     have hJ'ssu : I \ J' ⊂ I \ J := sorry, 
@@ -103,13 +103,13 @@ lemma C_to_I3 (M : cct_family U) :
 
     by_cases g ∈ J \ I,
     from h_non_aug g h hg₂, 
-    rw [nonelem_simp, ←elem_compl_iff] at h,  
-    have := subset_of_inter_mpr hg₁ h, 
+    rw [←elem_compl_iff] at h,  
+    have := elem_inter hg₁ h, 
     rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
         inter_assoc _ I _ ,inter_compl, inter_bot, union_bot, hdefJ', diff_def, inter_assoc, inter_right_comm, 
         inter_distrib_right, ←inter_assoc, inter_compl, bot_inter, bot_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
-    have := subset_trans this (inter_subset_right _ _),
-    have := (subset_of_inter_mpr (subset_trans hg₁ hJ'₀) this),
+    have := elem_of_elem_of_subset this (inter_subset_right _ _),
+    have := (elem_inter (elem_of_elem_of_subset hg₁ hJ'₀) this),
     rw inter_compl at this, from nonelem_bot g this, 
   end 
 

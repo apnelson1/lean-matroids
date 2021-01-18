@@ -1,16 +1,17 @@
 import matroid.axioms  
-import boolalg.basic boolalg.collections boolalg.examples
+import ftype.basic ftype.collections 
 
 ----------------------------------------------------------------
-namespace boolalg 
+namespace ftype 
 
+noncomputable theory 
 
 section dual
-variables {U : boolalg}
+variables {U : ftype}
 
-lemma rank_bot {B : boolalg} (M : rankfun B) :
+lemma rank_bot {B : ftype} (M : rankfun B) :
   M.r ⊥ = 0 :=
-le_antisymm (calc M.r ⊥ ≤ size (⊥ : B) : M.R1 ⊥ ... = 0 : size_bot B) (M.R0 ⊥)
+le_antisymm (calc M.r ⊥ ≤ size (⊥ : set B) : M.R1 ⊥ ... = 0 : size_bot B) (M.R0 ⊥)
 
 -- Every matroid has a dual.
 def dual :
@@ -54,19 +55,19 @@ lemma dual_dual (M : rankfun U) :
   dual (dual M) = M :=
 begin
   apply rankfun.ext, apply funext, intro X, calc
-  (dual (dual M)).r X = size X + (size Xᶜ + M.r Xᶜᶜ - M.r ⊤) - (size (⊤ : U) + M.r ⊤ᶜ - M.r ⊤) : rfl
-  ...                 = size X + (size Xᶜ + M.r X   - M.r ⊤) - (size (⊤ : U) + M.r ⊥  - M.r ⊤) : by rw [compl_compl, boolalg.compl_top]
-  ...                 = M.r X                                                                  : by linarith [size_compl X, rank_bot M]
+  (dual (dual M)).r X = size X + (size Xᶜ + M.r Xᶜᶜ - M.r ⊤) - (size ⊤ + M.r ⊤ᶜ - M.r ⊤) : rfl
+  ...                 = size X + (size Xᶜ + M.r X   - M.r ⊤) - (size ⊤ + M.r ⊥  - M.r ⊤) : by rw [compl_compl, ftype.compl_top]
+  ...                 = M.r X                                                             : by linarith [size_compl X, rank_bot M]
 end
 
 lemma dual_inj {M₁ M₂ : rankfun U} :
   dual M₁ = dual M₂ → M₁ = M₂ := 
   λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
 
-lemma dual_r (M : rankfun U)(X : U):
+lemma dual_r (M : rankfun U)(X : set U):
    (dual M).r X = size X + M.r Xᶜ - M.r ⊤ := 
    rfl 
 
 end /-section-/ dual
 
-end boolalg 
+end ftype 

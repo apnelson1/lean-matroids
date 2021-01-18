@@ -1,8 +1,8 @@
 import .constructions .projection 
 
-namespace boolalg 
+namespace ftype 
 
-variables {U : boolalg}
+variables {U : ftype}
 
 def is_common_ind (M₁ M₂ : rankfun U)(X : U) := 
   is_indep M₁ X ∧ is_indep M₂ X 
@@ -203,4 +203,4 @@ begin
   from (arg_min_attains _).symm, 
 end 
 
-end boolalg 
+end ftype 

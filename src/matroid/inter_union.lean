@@ -1,9 +1,9 @@
 import .constructions .projection 
 
 noncomputable theory 
-namespace boolalg 
+namespace ftype 
 
-variables {U : boolalg}
+variables {U : ftype}
 
 section intersection 
 
@@ -331,4 +331,4 @@ end union
 
 
 
-end boolalg 
+end ftype 

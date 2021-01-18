@@ -1,17 +1,17 @@
 
-import boolalg.basic boolalg.induction boolalg.collections boolalg.examples 
+import ftype.basic ftype.induction ftype.collections
 import .rankfun .indep 
 
-namespace boolalg 
+namespace ftype 
 
 
 section truncation 
 
 noncomputable theory 
 
-variables {U : boolalg}
+variables {U : ftype}
 
-def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : U → Prop :=  
+def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
 
 lemma trunc.I1 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
@@ -38,7 +38,7 @@ def truncate (M : rankfun U){n : ℤ}(hn : 0 ≤ n) : rankfun U :=
   indep_family_to_rankfun ⟨trunc.indep M_ind hn, trunc.I1 M_ind hn, trunc.I2 M_ind hn, trunc.I3 M_ind hn⟩
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
-lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : U) :
+lemma truncate_rank (M : rankfun U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
   (truncate M hn).r X = min n (M.r X) :=
 begin
   apply indep.I_to_r_eq_iff.mpr, 
@@ -52,12 +52,12 @@ begin
   rw hBS at h, 
   refine ⟨B₀, ⟨⟨_,⟨⟨I2 hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
   from subset_trans hB₀ hBX, 
-  linarith [size_strict_monotone ⟨hBJ1, hBJ2⟩], 
+  linarith [size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   push_neg at h, 
   rw hBS at h, 
   refine ⟨B, ⟨⟨hBX,⟨⟨hBI,by linarith⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
   rw indep_iff_r at hBI hJind, 
-  linarith [R2 M hJX, R2 M hBJ1, size_strict_monotone ⟨hBJ1, hBJ2⟩], 
+  linarith [R2 M hJX, R2 M hBJ1, size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   have := le_of_lt h, 
   rw min_comm, 
   finish, 
@@ -67,7 +67,7 @@ end
 section uniform
 
 
-def free_matroid_on (U : boolalg): rankfun U := 
+def free_matroid_on (U : ftype): rankfun U := 
   { 
     r := size,
     R0 := size_nonneg,
@@ -76,11 +76,11 @@ def free_matroid_on (U : boolalg): rankfun U :=
     R3 := λ X Y, le_of_eq (size_modular X Y),  
   } 
 
-lemma free_matroid_indep {U : boolalg}(X : U) :
+lemma free_matroid_indep {U : ftype}(X : U) :
   is_indep (free_matroid_on U) X  := 
   by rw [free_matroid_on, indep_iff_r]
 
-lemma free_iff_top_indep {U : boolalg}{M : rankfun U}: 
+lemma free_iff_top_indep {U : ftype}{M : rankfun U}: 
    M = free_matroid_on U ↔ is_indep M ⊤ := 
 begin
   refine ⟨λ h, _, λ h,_⟩, 
@@ -89,7 +89,7 @@ begin
 end
 
 
-def loopy_matroid_on (U : boolalg) : rankfun U := 
+def loopy_matroid_on (U : ftype) : rankfun U := 
   {
     r := λ X, 0, 
     R0 := λ X, le_refl 0, 
@@ -98,7 +98,7 @@ def loopy_matroid_on (U : boolalg) : rankfun U :=
     R3 := λ X Y, rfl.ge
   }
 
-def loopy_iff_top_rank_zero {U : boolalg}{M : rankfun U}:
+def loopy_iff_top_rank_zero {U : ftype}{M : rankfun U}:
   M = loopy_matroid_on U ↔ M.r ⊤ = 0 := 
 begin
   refine ⟨λ h, by finish, λ h,_⟩,  
@@ -109,33 +109,33 @@ begin
 end
 
 
-def uniform_matroid_on (U : boolalg){r : ℤ}(hr : 0 ≤ r) : rankfun U := 
+def uniform_matroid_on (U : ftype){r : ℤ}(hr : 0 ≤ r) : rankfun U := 
   truncate (free_matroid_on U) hr 
 
-@[simp] lemma uniform_matroid_rank (U : boolalg)(X : U){r : ℤ}(hr : 0 ≤ r) :
+@[simp] lemma uniform_matroid_rank (U : ftype)(X : set U){r : ℤ}(hr : 0 ≤ r) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
   by apply truncate_rank
 
-lemma uniform_matroid_indep (U : boolalg)(X : U){r : ℤ}{hr : 0 ≤ r}  : 
+lemma uniform_matroid_indep (U : ftype)(X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
   by {rw [indep_iff_r, uniform_matroid_rank], finish}
 
-lemma uniform_dual (U : boolalg){r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (⊤ : U)): 
-  dual (uniform_matroid_on U hr) = uniform_matroid_on U (by linarith : 0 ≤ size (⊤ : U) - r) :=
+lemma uniform_dual (U : ftype){r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (⊤ : set U)): 
+  dual (uniform_matroid_on U hr) = uniform_matroid_on U (by linarith : 0 ≤ size (⊤ : set U) - r) :=
 begin
   ext X, 
   simp_rw [dual, uniform_matroid_rank, compl_size, min_eq_left hrn], 
   rw [←min_add_add_left, ←(min_sub_sub_right), min_comm], simp, 
 end
 
-def circuit_matroid_on {U : boolalg} (hU : nontrivial U) : rankfun U := 
-  uniform_matroid_on U (by linarith [nontrivial_size hU] : 0 ≤ top_size U - 1)
+def circuit_matroid_on {U : ftype} (hU : nontrivial U) : rankfun U := 
+  uniform_matroid_on U (by linarith [nontrivial_size hU] : 0 ≤ size (⊤ : set U) - 1)
 
-@[simp] lemma circuit_matroid_rank {U : boolalg}(hU : nontrivial U)(X : U):
-  (circuit_matroid_on hU).r X = min (size (⊤ : U) - 1) (size X) := 
+@[simp] lemma circuit_matroid_rank {U : ftype}(hU : nontrivial U)(X : set U):
+  (circuit_matroid_on hU).r X = min (size (⊤ : set U) - 1) (size X) := 
   uniform_matroid_rank _ _ _ 
 
-lemma circuit_matroid_iff_top_circuit {U : boolalg} (hU : nontrivial U){M : rankfun U}:
+lemma circuit_matroid_iff_top_circuit {U : ftype} (hU : nontrivial U){M : rankfun U}:
   M = circuit_matroid_on hU ↔ is_circuit M ⊤ := 
 begin
   refine ⟨λ h, _, λ h, _⟩, 
@@ -159,24 +159,24 @@ end uniform
 end truncation 
 
 section relax
-variables {U : boolalg}[decidable_eq U] 
+variables {U : ftype}[decidable_eq (set U)] 
 
-def relax.r (M : rankfun U)(C : U) : U → ℤ := 
+def relax.r (M : rankfun U)(C : set U) : set U → ℤ := 
   λ X, ite (X = C) (M.r X + 1) (M.r X)
 
-lemma relax.r_of_C_eq_top {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C_eq_top {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r ⊤ := 
   by {simp_rw [relax.r, if_pos rfl], linarith [circuit_hyperplane_rank hC]}
 
-lemma relax.r_of_C {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r C + 1 := 
   by {simp_rw [relax.r, if_pos rfl]}
 
-lemma relax.r_of_not_C {M : rankfun U}{C X: U}(hC : is_circuit_hyperplane M C)(hXC : X ≠ C):
+lemma relax.r_of_not_C {M : rankfun U}{C X: set U}(hC : is_circuit_hyperplane M C)(hXC : X ≠ C):
   relax.r M C X = M.r X := 
   by {unfold relax.r, finish}
 
-lemma r_le_relax_r (M : rankfun U)(C X : U) :
+lemma r_le_relax_r (M : rankfun U)(C X : set U) :
   M.r X ≤ relax.r M C X := 
 begin
   unfold relax.r, by_cases X = C, 
@@ -184,7 +184,7 @@ begin
   rw if_neg h,
 end
 
-lemma relax.r_le_top {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C)(X : U):
+lemma relax.r_le_top {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C)(X : set U):
   relax.r M C X ≤ M.r ⊤ := 
 begin
   by_cases h : X = C, 
@@ -193,11 +193,11 @@ begin
 end 
 
 
-lemma relax.R0 (M : rankfun U)(C : U) : 
+lemma relax.R0 (M : rankfun U)(C : set U) : 
   satisfies_R0 (relax.r M C) := 
   λ X, le_trans (M.R0 X) (r_le_relax_r M C X)
 
-lemma relax.R1 {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R1 {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) : 
   satisfies_R1 (relax.r M C) := 
 begin
   intro X, unfold relax.r, by_cases h : X = C, 
@@ -209,7 +209,7 @@ begin
   from M.R1 X, 
 end
 
-lemma relax.R2 {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R2 {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) : 
   satisfies_R2 (relax.r M C) :=
 begin
   intros X Y hXY,
@@ -217,28 +217,37 @@ begin
   rw [h, relax.r_of_C_eq_top hC], 
   rw h at hXY, 
   cases subset_ssubset_or_eq hXY with h' h',
-  linarith [circuit_hyperplane_ssupset_rank hC h', relax.r_of_not_C hC (h'.2.symm)],
+  linarith [circuit_hyperplane_ssupset_rank hC h', relax.r_of_not_C hC (ne_of_ssubset h').symm],
   rw [←h', relax.r_of_C_eq_top], from hC, 
   linarith [relax.r_of_not_C hC h, r_le_relax_r M C Y, R2 M hXY],  
 end
 
-lemma relax.R3 {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R3 {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) : 
   satisfies_R3 (relax.r M C) :=
 begin
   intros X Y, 
   by_cases hi : X ∩ Y = C;
   by_cases hu : X ∪ Y = C, 
   simp only [ eq_of_union_eq_inter (eq.trans hu hi.symm), inter_idem, union_idem], 
-  rw hi, 
-  have hCY : C ⊆ Y := by {rw ← hi, apply inter_subset_right},
-  have hCX : C ⊆ X := by {rw ← hi, apply inter_subset_left},
-  by_cases hX: X = C; by_cases hY: Y = C, 
+  rw [relax.r_of_not_C hC hu,hi],  
+  have hCXY : (C ⊂ X ∨ X = C) ∧ (C ⊂ Y ∨ Y = C) := 
+    by {simp_rw [eq_comm, ←subset_iff_ssubset_or_eq, ←hi], from ⟨inter_subset_left _ _, inter_subset_right _ _⟩,},
+  cases hCXY with hCX hCY, 
+  cases hCX,
+  rw [relax.r_of_not_C hC (ne.symm (ne_of_ssubset hCX)), circuit_hyperplane_ssupset_rank hC hCX],
+  cases hCY, 
+  rw [relax.r_of_not_C hC (ne.symm (ne_of_ssubset hCY)), circuit_hyperplane_ssupset_rank hC hCY],
+  linarith [rank_le_top M (X ∪ Y), relax.r_of_C hC, circuit_hyperplane_rank hC], 
+  rw hCY, linarith [rank_le_top M (X ∪ C)], 
+  rw hCX, 
+  --have hrY := circuit_hyperplane_ssupset_rank hC hCY,
+  --by_cases hCXY.1: X = C; by_cases hY: Y = C, 
   rw [hX, hY, union_idem] at hu, 
   from false.elim (hu rfl), 
   rw [relax.r_of_not_C hC hu, relax.r_of_not_C hC hY, hX],
-  linarith [rank_le_top M (C ∪ Y), circuit_hyperplane_ssupset_rank hC ⟨hCY, ne.symm hY⟩], 
+  linarith [rank_le_top M (C ∪ Y), circuit_hyperplane_ssupset_rank hC (ssubset_of_subset_ne hCY (ne.symm hY))], 
   rw [relax.r_of_not_C hC hu, relax.r_of_not_C hC hX, hY],
-  linarith [rank_le_top M (X ∪ C), circuit_hyperplane_ssupset_rank hC ⟨hCX, ne.symm hX⟩], 
+  linarith [rank_le_top M (X ∪ C), circuit_hyperplane_ssupset_rank hC (ssubset_of_subset_ne hCX (ne.symm hX))], 
   rw [relax.r_of_not_C hC hX, relax.r_of_not_C hC hY, 
         circuit_hyperplane_ssupset_rank hC ⟨hCX, ne.symm hX⟩, circuit_hyperplane_ssupset_rank hC ⟨hCY, ne.symm hY⟩] ,
   linarith [relax.r_le_top hC (X ∪ Y), relax.r_le_top hC C], 
@@ -256,10 +265,10 @@ begin
   linarith [r_le_relax_r M C X, r_le_relax_r M C Y, M.R3 X Y], 
 end
 
-def relax (M : rankfun U)(C : U)(hC : is_circuit_hyperplane M C) : rankfun U := 
+def relax (M : rankfun U)(C : set U)(hC : is_circuit_hyperplane M C) : rankfun U := 
   ⟨relax.r M C, relax.R0 M C, relax.R1 hC, relax.R2 hC, relax.R3 hC⟩ 
 
-theorem relax.dual {M : rankfun U}{C : U}(hC : is_circuit_hyperplane M C) :
+theorem relax.dual {M : rankfun U}{C : set U}(hC : is_circuit_hyperplane M C) :
   dual (relax M C hC) = relax (dual M) Cᶜ (circuit_hyperplane_dual.mp hC) := 
 let hCc := circuit_hyperplane_dual.mp hC in 
 begin
@@ -274,7 +283,7 @@ begin
   rw relax.r_of_not_C hC hCtop,  
 end
 
-theorem single_rank_disagreement_is_relaxation {M₁ M₂ : rankfun U}{X : U}: 
+theorem single_rank_disagreement_is_relaxation {M₁ M₂ : rankfun U}{X : set U}: 
   M₁.r ⊤ = M₂.r ⊤ → M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
 begin
   intros hr hX h_other, 
@@ -343,4 +352,4 @@ end relax
 
 
 
-end boolalg 
+end ftype 

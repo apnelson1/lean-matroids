@@ -1,22 +1,35 @@
-import boolalg.basic boolalg.examples
+import ftype.basic ftype.embed
 import .rankfun .dual 
 
-namespace boolalg 
+namespace ftype 
 
-@[simp] def restrict_subset {B : boolalg} (R : B) (rfun : rankfun B)  : rankfun (subalg R) := 
-let f := (embed.from_subset R).f in 
-⟨λ X, rfun.r X, λ X, rfun.R0 X, λ X, rfun.R1 X, λ X Y, rfun.R2 X Y, λ X Y, rfun.R3 X Y⟩ 
+@[simp] def restrict_subset {B : ftype} (R : set B) (rfun : rankfun B)  : rankfun (subftype R) := 
+{ 
+  r := λ X, rfun.r X,
+  R0 := λ X, rfun.R0 X,
+  R1 := λ X, by {simp only [subftype_coe_size], from rfun.R1 X},
+  R2 := λ X Y, by {intros H, simp, apply rfun.R2, simp at H, apply H,},
+  R3 := λ X Y, by {simp, from rfun.R3 X Y}
+}
+-- simp [-has_top.top]
+-- #check has_top.top
 
-@[simp] def restrict_nested_pair {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (rfun : rankfun (subalg R)) : rankfun (subalg R₀)  := 
-let f := (embed.from_nested_pair h).f in 
+-- def image (f : α → β) (s : set α) : set β :=
+-- {b | ∃ a, a ∈ s ∧ f a = b}
+
+--let f := (embed.from_subftype R).f in 
+--⟨λ X, rfun.r X, λ X, rfun.R0 X, λ X, rfun.R1 X, λ X Y, rfun.R2 X Y, λ X Y, rfun.R3 X Y⟩ 
+
+@[simp] def restrict_nested_pair {B : ftype} {R₀ R : set B} (h : R₀ ⊆ R) (rfun : rankfun (subftype R)) : rankfun (subftype R₀)  := 
+let f := (embed.from_nested_pair h).f in  
 ⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
 
-@[simp] def corestrict_subset {U : boolalg} (R : U) (M : rankfun U)  : rankfun (subalg R) := 
-let C := Rᶜ, emb := embed.from_subset R in 
+@[simp] def corestrict_subset {U : ftype} (R : U) (M : rankfun U)  : rankfun (subftype R) := 
+let C := Rᶜ, emb := embed.from_subftype R in 
 ⟨ 
   λ X, M.r (X ∪ C) - M.r C,
   λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
-  λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X, subalg_coe_size X]},
+  λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X, subftype_coe_size X]},
   λ X Y hXY, by {simp only, linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left X Y C hXY)]}, 
   λ X Y, by
   {
@@ -27,8 +40,8 @@ let C := Rᶜ, emb := embed.from_subset R in
   },
 ⟩ 
 
-@[simp] def corestrict_nested_pair {B : boolalg} {R₀ R : B} (h : R₀ ⊆ R) (M : rankfun (subalg R)) : rankfun (subalg R₀)  := 
-let r := M.r, emb := (embed.from_nested_pair h), f := emb.f, C := (embed.to_subalg R₀ R h)ᶜ in 
+@[simp] def corestrict_nested_pair {B : ftype} {R₀ R : set B} (h : R₀ ⊆ R) (M : rankfun (subftype R)) : rankfun (subftype R₀)  := 
+let r := M.r, emb := (embed.from_nested_pair h), f := emb.f, C := (embed.to_subftype R₀ R h)ᶜ in 
 ⟨
   λ X, r (f X ∪ C) - r C, 
   λ X, by {rw sub_nonneg, exact M.R2 C (f X ∪ C) (subset_union_right (f X) C)}, 
@@ -44,14 +57,14 @@ let r := M.r, emb := (embed.from_nested_pair h), f := emb.f, C := (embed.to_suba
 
 
 -- For this file, we'll define matroids as living inside a common universe U.
-def matroid_on {U : boolalg} (E : U) : Type :=
-  rankfun (subalg E)
+def matroid_on {U : ftype} (E : U) : Type :=
+  rankfun (subftype E)
 
 ----------------------------------------------------------------
 
 section matroid_heq
 variables
-  {U : boolalg}
+  {U : ftype}
   {E₁ E₂ E₃ : U}
   {M₁ : matroid_on E₁}
   {M₂ : matroid_on E₂}
@@ -91,7 +104,7 @@ end /-section-/ matroid_heq
 
 section minor 
 
-variables {U : boolalg}
+variables {U : ftype}
 
 inductive minor_on : U → Type
 | self                       : minor_on ⊤
@@ -133,7 +146,7 @@ fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ 
 
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_top Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_top (A ∪ Zᶜ))) self)) M :=
-  let f := (embed.from_subset A).f, hAZc := subset_union_left A Zᶜ, hAZc_top := subset_top (A ∪ Zᶜ) in 
+  let f := (embed.from_subftype A).f, hAZc := subset_union_left A Zᶜ, hAZc_top := subset_top (A ∪ Zᶜ) in 
   begin
     ext X, 
     have set_eq : (A ∪ Zᶜ) \ A = ⊤ \ Z 
@@ -148,7 +161,7 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) :
 
 lemma dual_restrict_corestrict {M : rankfun U} (A Z : U) (hAZ : A ⊆ Z) : 
   dual (to_minor (restrict A hAZ (corestrict Z (subset_top Z) self)) M) = to_minor (corestrict A hAZ (restrict Z (subset_top Z) self)) (dual M) := 
-  let emb := embed.from_subset A in 
+  let emb := embed.from_subftype A in 
   begin
     rw switch_restrict_corestrict, ext X, apply eq.symm, 
     have hJ : ∀ (J : U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (⊤ \ Z) := 
@@ -183,8 +196,8 @@ begin
   apply rankfun.ext, ext X, 
   simp only,
   set f := (embed.from_nested_pair (subset_refl A)).f,
-  have : (embed.to_subalg A A _) = ⊤ := rfl,
-  rw [this,  boolalg.compl_top, union_bot, rank_bot M'],
+  have : (embed.to_subftype A A _) = ⊤ := rfl,
+  rw [this,  ftype.compl_top, union_bot, rank_bot M'],
   rw [(by cases X; refl: f X = X)],
   linarith,
 end
@@ -204,7 +217,7 @@ lemma switch_corestrict_restrict (M : rankfun U) (A Z : U) (hAZ : A ⊆ Z) :
 
 lemma restrict_restrict (M : rankfun U) (A Z : U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ (restrict Z (subset_top Z) self)) M = to_minor (restrict A (subset_top A) self) M :=
-  let f := (embed.from_subset A).f in 
+  let f := (embed.from_subftype A).f in 
   by {ext X,calc _ = M.r (f X) : rfl ...= _ : rfl}
      
 #check minor_on 
@@ -220,11 +233,11 @@ lemma restrict_restrict (M : rankfun U) (A Z : U) (hAZ : A ⊆ Z) :
     
     
     --←dual_restrict, 
-    /-let U' := subalg Z, 
+    /-let U' := subftype Z, 
     let expr := ((corestrict ⊤ (subset_refl ⊤) self) : minor_on (⊤ : U')),
     let M₀ := to_minor expr, 
     have := corestrict_top M₀ expr-/
-    --have := @corestrict_top (subalg Z) M₀ ⊤ expr, 
+    --have := @corestrict_top (subftype Z) M₀ ⊤ expr, 
     --nth_rewrite 0 ←(dual_dual M),
     
     
@@ -307,7 +320,7 @@ end-/
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) := sorry-/
   
 end minor 
-end boolalg 
+end ftype 
 
 
 
@@ -327,7 +340,7 @@ begin
   --pertinent minor M' : restrict to X ∪ Z then corestrict to Z-X
   let M' := to_minor (corestrict (Z \ X) hcr (restrict (X ∪ Z) hr self)) M, 
   -- simplified rank function of M' 
-  have hrM' : ∀ (J : subalg (Z \ X)), M'.r J = M.r (J ∪ X) - M.r (X) := 
+  have hrM' : ∀ (J : subftype (Z \ X)), M'.r J = M.r (J ∪ X) - M.r (X) := 
     by {intros J, calc _  = M.r (J ∪ ((X ∪ Z) \ (Z \ X))) - M.r ((X ∪ Z) \ (Z \ X)) : rfl ... = _ : by rw hdiff}, 
 
   have hr'top := hrM' ⊤, 
@@ -336,9 +349,9 @@ begin
   have : M'.r ⊤ ≠ 0 := by linarith [by calc M'.r ⊤ = _ : hr'top ... ≥ M.r Z - M.r X : by linarith [M.R2 Z (X ∪ Z) (subset_union_right X Z)]],
 
   apply this, apply loopy_rank_zero, intros e he,
-  specialize h e (subset_trans ((e: subalg (Z \ X)).property) (diff_subset _ _ )), 
-  rw coe_single_subalg_compose at h, 
-  rw [hrM' e, union_comm, coe_subalg_single_compose],
+  specialize h e (subset_trans ((e: subftype (Z \ X)).property) (diff_subset _ _ )), 
+  rw coe_single_subftype_compose at h, 
+  rw [hrM' e, union_comm, coe_subftype_single_compose],
   linarith [M.R2 _ _ (subset_union_left X e)],
 end
 -/

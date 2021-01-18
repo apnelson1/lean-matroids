@@ -11,12 +11,12 @@ local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
 
-namespace boolalg 
--- The operations needed on the boolalg A.
+namespace ftype 
+-- The operations needed on the ftype A.
 
-variables {A: boolalg}
+variables {A: ftype}
 
-def singlet (e : A) := (size e = 1)  -- The property of being a singleton.
+def singlet (e : set A) := (size e = 1)  -- The property of being a singleton.
 
 /-
 subset_singlet is the crucial property, and should be provable as a
@@ -24,9 +24,10 @@ consequence of the fact that singletons have size 1 and there are no
 integers between 0 and 1.
 -/
 
-lemma subset_singlet (X e : A) : (singlet e) → (X ⊆ e) → (X = ⊥ ∨ X = e) := sorry
+lemma subset_singlet (X e : set A) : (singlet e) → (X ⊆ e) → (X = ⊥ ∨ X = e) := sorry
 
-lemma subset_dec_eq (X Y : A) : (X ⊆ Y) → (X = Y) ∨ (X ≠ Y) := sorry
+lemma subset_dec_eq (X Y : set A) : (X ⊆ Y) → (X = Y) ∨ (X ≠ Y) := 
+  by {by_contra a, push_neg at a, cc,  }
 
 ----------------------------------------------------------------
 
@@ -35,12 +36,12 @@ section weak_induction
 /-
 A formulation of weak induction, which crawls up the poset,
 singleton by singleton. Provable from the axiom that every
-nonempty subset of the boolalg contains a singleton.
+nonempty subset of the ftype contains a singleton.
 -/
-lemma weak_induction (P : A → Prop) :
+lemma weak_induction (P : set A → Prop) :
   (P ⊥) →  -- Base case.
-  (forall (e Y : A), (singlet e) → (P Y) → P (e ∪ Y)) →  -- Induction step.
-  (forall (Z : A), P Z) :=
+  (forall (e Y : set A), (singlet e) → (P Y) → P (e ∪ Y)) →  -- Induction step.
+  (forall (Z : set A), P Z) :=
 sorry
 
 end /-section-/ weak_induction
@@ -50,16 +51,16 @@ end /-section-/ weak_induction
 section strong_induction
 
 -- (below P Y) says that property P is true everywhere strictly below Y.
-def below (P : A → Prop) (Y : A) : Prop :=
-  forall (X : A), (X ⊂ Y) → (P X)
+def below (P : set A → Prop) (Y : set A) : Prop :=
+  forall (X :  set A), ((X ⊆ Y) ∧  (X ≠ Y)) → (P X)
 
 -- (augment P) says that (below P Y) can be upgraded to (P Y), for all Y.
-def augment (P : A → Prop) : Prop :=
-  forall (Y : A), (below P Y) → (P Y)
+def augment (P : set A → Prop) : Prop :=
+  forall (Y : set A), (below P Y) → (P Y)
 
--- The statement of strong induction, specialized to a single position in the boolalg.
-def strong_at (Y : A) : Prop :=
-  forall (P : A → Prop), (augment P) → (P Y)
+-- The statement of strong induction, specialized to a single position in the ftype.
+def strong_at (Y : set A) : Prop :=
+  forall (P : set A → Prop), (augment P) → (P Y)
 
 /-
 The crucial part of the proof that weak induction implies strong induction.
@@ -75,8 +76,8 @@ proposition on (subalg Y), and call it (Q X).
 This will allow us to use strong induction at position Y, for Q, to prove
 that strong induction works at position (e ∪ Y), for P.
 -/
-lemma pair_up (P : A → Prop) (e : A) : (singlet e) →
-  let Q : (A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
+lemma pair_up (P : set A → Prop) (e : set A) : (singlet e) →
+  let Q : (set A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
   (augment P) → (augment Q) :=
 fun h_singlet h_augment Y h_below,
 /-
@@ -108,7 +109,7 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
 (or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
   -- Case 2 described above: X = Y.
   (fun (h₁ : X ∩ e = ⊥) (h₂ : X ∩ Y = Y),
-    @eq.rec A Y P h_Y X (
+    @eq.rec _ Y P h_Y X (
     calc Y = X ∩ Y             : h₂.symm
     ...    = ⊥ ∪ (X ∩ Y)       : (bot_union (X ∩ Y)).symm
     ...    = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
@@ -128,7 +129,7 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
     in and.left (h_below X ⟨(subset_def_inter_mpr h₃.symm),(by {rw h₃, exact h₂} : X ≠ Y)⟩))
   -- Case 3 described above: X = e ∪ X' with X' ⊂ Y.
   (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y ≠ Y),
-    @eq.rec A (e ∪ (X ∩ Y)) P
+    @eq.rec _ (e ∪ (X ∩ Y)) P
     (and.right (h_below (X ∩ Y) (⟨(inter_subset_right X Y), h₂⟩)))
     X (
     calc e ∪ (X ∩ Y) = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
@@ -140,38 +141,39 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
 Strong induction works at position ⊥, vacuously.
 -/
 lemma strong_base :
-  strong_at (⊥ :A) :=
+  strong_at (⊥ : set A) :=
 fun P aug, aug ⊥ (fun X h_ssu, false.elim (h_ssu.2 (subset_bot h_ssu.1)))
 
 /-
 As explained above, strong induction at position Y
 implies strong induction at position (e ∪ Y).
 -/
-lemma strong_step (e Y : A) :
+lemma strong_step (e Y : set A) :
   (singlet e) → (strong_at Y) → (strong_at (e ∪ Y)) :=
 fun h_singlet h_strong P h_augment,
-let Q : (A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
+let Q : (set A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
 and.right (h_strong Q (pair_up P e h_singlet h_augment))
 
 /-
 So weak induction implies strong induction at every position.
 -/
-lemma strong_induction (P : A → Prop) :
-  (augment P) → (forall (Z : A), P Z) :=
+lemma strong_induction (P : set A → Prop) :
+  (augment P) → (forall (Z : set A), P Z) :=
 fun h_augment Z, weak_induction strong_at strong_base strong_step Z P h_augment
 
-lemma minimal_example (P : A → Prop){X : A}: 
+lemma minimal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
   begin
-    set minimal_P := λ (Y : A), P Y ∧ ∀ (Z : A), Z ⊂ Y → ¬ P Z with hmin, 
+    set minimal_P := λ (Y : set A), P Y ∧ ∀ (Z : set A), Z ⊂ Y → ¬ P Z with hmin, 
     revert X, refine strong_induction _ _, intros T hT hPT, 
     by_cases ∀ Z, Z ⊂ T → ¬P Z, use T, exact ⟨subset_refl T, ⟨hPT, h⟩⟩, 
     push_neg at h, rcases h with ⟨Z, ⟨hZT, hPZ⟩⟩, 
+    rw set.ssubset_iff_subset_ne at hZT, 
     specialize hT Z hZT hPZ, rcases hT with ⟨Y, ⟨hYZ, hQY⟩⟩, 
     use Y, exact ⟨subset_trans hYZ hZT.1, hQY⟩, 
   end
 
-lemma maximal_example (P : A → Prop){X : A}: 
+lemma maximal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   begin
     intro h, rw ←compl_compl X at h, 
@@ -180,24 +182,24 @@ lemma maximal_example (P : A → Prop){X : A}:
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
-lemma maximal_example_from_bot (P : A → Prop): 
+lemma maximal_example_from_bot (P : set A → Prop): 
   P ⊥ → ∃ Y, P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   λ h, by {rcases maximal_example P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩  }
 
-lemma maximal_example_aug (P : A → Prop){X : A}: 
-  (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ e, e ∉ Y → ¬P (Y ∪ e) := 
+lemma maximal_example_aug (P : set A → Prop){X : set A}: 
+  (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
   begin
     intro hPX, 
     rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
   end 
 
-lemma maximal_example_aug_from_bot (P : A → Prop): 
-  P ⊥ → ∃ Y, P Y ∧ ∀ e, e ∉ Y → ¬P (Y ∪ e) := 
+lemma maximal_example_aug_from_bot (P : set A → Prop): 
+  P ⊥ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
   λ h, by {rcases maximal_example_aug P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩}
 
-lemma minimal_example_remove (P : A → Prop){X : A}: 
-  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ e, e ∈ Y → ¬P (Y \ e) := 
+lemma minimal_example_remove (P : set A → Prop){X : set A}: 
+  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ (e : A), e ∈ Y → ¬P (Y \ e) := 
   begin
     intro hPX, 
     rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
@@ -207,19 +209,5 @@ lemma minimal_example_remove (P : A → Prop){X : A}:
 end /-section-/ strong_induction
 
 
-section int_induction
 
-lemma int_induction_strong (P : ℤ → Prop) : 
-  P 0 → (∀ k, 0 ≤ k → (∀ k', 0 ≤ k' → k' < k → P k') → P k) → (∀ n, n ≥ 0 → P n) := 
-begin
-  intros h0 hk n hn, 
-  set Q: ℕ → Prop := λ n, P n with hQ,
-  suffices hQn : Q (n.to_nat), sorry, 
-   
-end
-
-end int_induction
-
-
-
-end boolalg 
+end ftype 

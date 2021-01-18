@@ -1,15 +1,15 @@
-import boolalg.basic boolalg.induction boolalg.collections .rankfun .indep 
-open boolalg 
+import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+open ftype 
 
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {U : boolalg}
+variables {U : ftype}
 
-lemma basis_have_same_size (M : basis_family U) (B₁ B₂ : U):
+lemma basis_have_same_size (M : basis_family U) (B₁ B₂ : set U):
   M.basis B₁ → M.basis B₂ → size B₁ = size B₂ := sorry
 
-def basis_to_indep (basis : U → Prop) : (U → Prop) :=
+def basis_to_indep (basis : set U → Prop) : (set U → Prop) :=
   λ I, ∃ B, basis B ∧ I ⊆ B.
 
 def B_to_I1 (M : basis_family U) : satisfies_I1 (basis_to_indep M.basis) :=
@@ -73,8 +73,8 @@ begin
       cases Hcase1,
       {
         have Hminimaldiff := @minimal_example U
-          (fun (X : U), 
-            ∃ B : U, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
+          (fun (X : set U), 
+            ∃ B : set U, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
           (B₂ \ (I₂ ∪ B₁))
           (begin
             use B₂, split,
@@ -136,7 +136,7 @@ begin
           }
         },
         {
-          -- not empty, so there exists x it (probably a boolalg axiom)
+          -- not empty, so there exists x it (probably a ftype axiom)
           have Hx : (∃ x, x ∈ B₂ \ (I₂ ∪ B₁)) := sorry,
           cases Hx with x Hx,
           -- nice to_I have a tactic here
