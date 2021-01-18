@@ -29,6 +29,11 @@ def as_finset_top (U : boolalg) := (fintype_of U).elems
 def as_finset (U : boolalg)(X : set U.E) : finset U.E := 
   @set.to_finset _ X (@fintype.subtype_of_fintype _ (fintype_of U) X) 
 
+def as_finset' (U : boolalg)(X : set U.E) : finset U.E := 
+  begin
+    letI := (fintype_of U),
+    exact (X.to_finset),
+  end
 def size_nat (U : boolalg)(X : set U.E) := (as_finset U X).card 
 
 def size {U : boolalg}(X : set U.E) : ℤ := (size_nat U X)
@@ -68,17 +73,63 @@ lemma size_bot_ax :
 
 lemma size_single_ax : 
   ∀ e : A.E , size ({e}:A) = 1 := 
-  λ e, by {simp [size, size_nat], rw [as_finset, ←finset.coe_singleton], 
-          --simp only [finset.coe_singleton, set.to_finset_card],
-          have := finset.card_singleton e, unfold_coes at *,
-          suffices : {x : A.E | x ∈ {e}}.to_finset.card = 1, 
-          rw this, norm_num,
-          simp, unfold_coes, simp, unfold_projs at this, sorry, 
-           }
+begin
+  intros e, 
+  simp [size, size_nat], 
+  have : (({e} : set A.E).to_finset = as_finset A {e}) := 
+    by rw [as_finset, set.to_finset_inj], 
+  rw [←this], 
+  norm_cast, 
+end
 
-lemma size_modular_ax : ∀ X Y : A, 
+/-
+lemma as_finset_to_finset (X : A.E) :
+  (as_finset A X) = @set.to_finset _ X (fintype_of A) :=
+begin
+
+end
+-/
+
+set_option pp.implicit true 
+
+
+@[simp] lemma stupid (X : A)(f : fintype (subtype X)) : f = @fintype.subtype_of_fintype A.E (fintype_of A) X := 
+  by tidy 
+
+/-lemma convert_tofinset [T : Type] (s : set T) (inst1 inst2 : fintype s)
+  @set.to_finset T s inst1 = @set.to_finset T s inst2 :=
+begin
+  ext, tidy,
+end-/
+
+lemma size_modular_ax (X Y : A): 
   size (X ∪ Y) + size (X ∩ Y) = size X + size Y :=
-   sorry 
+begin
+  letI := (fintype_of A),
+  simp [size,size_nat] at *, 
+  simp only [as_finset],
+  have hu : (X ∪ Y).to_finset = X.to_finset ∪ Y.to_finset := by tidy,
+  have hi : (X ∩ Y).to_finset = X.to_finset ∩ Y.to_finset := by tidy,
+  --simp only [stupid] at hu, 
+  
+  --rw [fintype_of] at *, 
+  /-
+  set instI1 := @fintype.subtype_of_fintype A.E (fintype_of A) (set.inter X Y) , 
+  set instI2 := @set.fintype_inter A.E X Y (@subtype.fintype A.E (λ (x : A.E), x ∈ X) (λ (a : A.E), classical.prop_decidable (a ∈ X)) _inst) (λ (a : A.E), classical.prop_decidable (Y a)), 
+  have insts_eqI : instI1 = instI2 :=  by simp only [eq_iff_true_of_subsingleton],  
+  rw insts_eqI, erw hi, 
+  set instU1 := @fintype.subtype_of_fintype A.E (fintype_of A) (set.union X Y) , 
+  set instU2 := (@set.fintype_union A.E (λ (a b : A.E), classical.prop_decidable (a = b)) X Y
+         (@subtype.fintype A.E (λ (x : A.E), x ∈ X) (λ (a : A.E), classical.prop_decidable (a ∈ X)) _inst)
+         (@subtype.fintype A.E (λ (x : A.E), x ∈ Y) (λ (a : A.E), classical.prop_decidable (a ∈ Y)) _inst)),
+  have insts_eqU : instU1 = instU2 :=  by simp only [eq_iff_true_of_subsingleton],  
+  rw insts_eqU, erw hu, 
+  have := finset.card_union_add_card_inter,
+  unfold_projs at *, apply this, 
+  --from this _ _,   -/
+
+end
+
 
 
 lemma univ_eq_top :
