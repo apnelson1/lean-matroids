@@ -38,7 +38,7 @@ def cl.is_indep (M : clfun U) : set U → Prop :=
 
 lemma cl.satisfies_I1 (M : clfun U) : 
   satisfies_I1 (cl.is_indep M) :=
-  λ e h, false.elim (nonelem_bot e h)
+  λ e h, false.elim (nonelem_empty e h)
   
 lemma cl.satisfies_I2 (M : clfun U) : 
   satisfies_I2 (cl.is_indep M) :=

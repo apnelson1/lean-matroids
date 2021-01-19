@@ -29,7 +29,7 @@ end rank
 section indep 
 
 def satisfies_I1 : (set U → Prop) → Prop := 
-  λ indep, indep ⊥ 
+  λ indep, indep ∅ 
 
 def satisfies_I2 : (set U → Prop) → Prop := 
   λ indep, ∀ I J, I ⊆ J → indep J → indep I

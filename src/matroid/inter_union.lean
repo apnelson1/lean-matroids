@@ -7,22 +7,22 @@ variables {U : ftype}
 
 section intersection 
 
-def is_common_ind (M₁ M₂ : rankfun U)(X : U) := 
+def is_common_ind (M₁ M₂ : rankfun U)(X : set U) := 
   is_indep M₁ X ∧ is_indep M₂ X 
 
-lemma bot_is_common_ind (M₁ M₂ : rankfun U): 
-  is_common_ind M₁ M₂ ⊥ := 
+lemma empty_is_common_ind (M₁ M₂ : rankfun U): 
+  is_common_ind M₁ M₂ (∅ : set U) := 
   ⟨I1 M₁, I1 M₂⟩ 
 
 lemma exists_common_ind {M₁ M₂ : rankfun U}: 
-  ∃ X, is_common_ind M₁ M₂ X := 
-  ⟨⊥, bot_is_common_ind M₁ M₂⟩
+  set.nonempty (is_common_ind M₁ M₂) := 
+  ⟨∅, empty_is_common_ind M₁ M₂⟩
 
 -- size of max common independent set 
 def ν (M₁ M₂ : rankfun U) : ℤ := 
   max_val_over (is_common_ind M₁ M₂) exists_common_ind size 
 
-def max_common_ind (M₁ M₂ : rankfun U) : U := 
+def max_common_ind (M₁ M₂ : rankfun U) : set U := 
   arg_max_over (is_common_ind M₁ M₂) exists_common_ind size
 
 lemma size_max_common_ind_eq_nu (M₁ M₂ : rankfun U) : 
@@ -33,7 +33,7 @@ lemma max_common_ind_is_common_ind (M₁ M₂ : rankfun U) :
   is_common_ind M₁ M₂ (max_common_ind M₁ M₂) := 
   (arg_max_over_attains _ _ _).1 
 
-lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : U} :
+lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : set U} :
   is_common_ind M₁ M₂ X → size X ≤ ν M₁ M₂ := 
   λ h, (max_over_is_ub _ _ _ X h)
 
@@ -43,12 +43,12 @@ lemma exists_max_common_ind (M₁ M₂ : rankfun U) :
 
 lemma nu_nonneg (M₁ M₂ : rankfun U) :
   0 ≤ ν M₁ M₂ := 
-  by {rw ←(size_bot U), from size_common_ind_le_nu (bot_is_common_ind _ _)} 
+  by {rw ←(size_empty U), from size_common_ind_le_nu (empty_is_common_ind _ _)} 
 
-def matroid_intersection_ub_fn (M₁ M₂ : rankfun U) : U → ℤ := 
+def matroid_intersection_ub_fn (M₁ M₂ : rankfun U) : set U → ℤ := 
   (λ X, M₁.r X + M₂.r Xᶜ)
 
-theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : U}(A : U) : 
+theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : set U}(A : set U) : 
   is_common_ind M₁ M₂ I → size I ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rintros ⟨h₁,h₂⟩, 
@@ -82,7 +82,7 @@ begin
   refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N₂ hsize, _), 
 
   -- base case 
-  rw [size_zero_iff_bot, top_iff_compl_bot] at hloops,
+  rw [size_zero_iff_empty, univ_iff_compl_empty] at hloops,
   have h' : (ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
   {
       simp_rw h_ub_fn,  
@@ -99,7 +99,7 @@ begin
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
     rw [nonloop_iff_not_elem_loops, ←elem_compl_iff], 
-    refine subset_trans he _, 
+    refine elem_of_elem_of_subset he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
 
@@ -221,10 +221,10 @@ def is_inter_bases (M₁ M₂ : rankfun U) :=
 def subset_inter_bases (M₁ M₂ : rankfun U) := 
   λ X, ∃ Y, is_inter_bases M₁ M₂ Y ∧ X ⊆ Y 
 
-lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : U} :
+lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
   subset_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I :=
 begin
-  rintros ⟨Y, ⟨⟨B₁,⟨B₂,⟨hB₁,⟨hB₂, hIB₁B₂⟩⟩⟩⟩,hY'⟩⟩, 
+  rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
   rw ←hIB₁B₂ at hY', split, 
   refine I2 (subset_trans hY' _) (basis_is_indep hB₁),
   apply inter_subset_left,    
@@ -232,31 +232,32 @@ begin
   apply inter_subset_right,
 end
 
-lemma common_ind_iff_subset_inter_bases {M₁ M₂ : rankfun U}{I : U}:
+lemma common_ind_iff_subset_inter_bases {M₁ M₂ : rankfun U}{I : set U}:
   is_common_ind M₁ M₂ I ↔ subset_inter_bases M₁ M₂ I :=
 begin
   refine ⟨λ h, _, subset_inter_bases_is_common_ind⟩, 
-  let B₁ := choose_extension_to_basis h.1, 
-  let B₂ := choose_extension_to_basis h.2, 
-  from ⟨B₁.1 ∩ B₂.1, ⟨⟨B₁.1,⟨B₂.1,⟨B₁.2.2,⟨B₂.2.2,rfl⟩⟩⟩⟩,inter_is_lb B₁.2.1 B₂.2.1⟩⟩, 
+  rcases extends_to_basis h.1 with ⟨B₁,hIB₁,hB₁⟩,
+  rcases extends_to_basis h.2 with ⟨B₂,hIB₂,hB₂⟩, 
+  from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, inter_is_lb hIB₁ hIB₂⟩, 
 end
 
 lemma exists_inter_bases {M₁ M₂ : rankfun U}:
-  ∃ I, is_inter_bases M₁ M₂ I := 
+  set.nonempty (is_inter_bases M₁ M₂) := 
 begin
   cases exists_basis M₁ with B₁ hB₁, 
   cases exists_basis M₂ with B₂ hB₂, 
-  from ⟨B₁ ∩ B₂, ⟨B₁,⟨B₂,⟨hB₁,⟨hB₂,rfl⟩⟩⟩⟩⟩, 
+  from ⟨B₁ ∩ B₂, ⟨B₁,B₂,hB₁,hB₂,rfl⟩⟩, 
 end
+
 
 lemma max_common_indep_inter_bases (M₁ M₂ : rankfun U):
   ν M₁ M₂ = max_val_over (is_inter_bases M₁ M₂) exists_inter_bases size :=
 begin
   rcases exists_max_common_ind M₁ M₂ 
-    with ⟨I, ⟨hI_ind, ⟨hI_size, hI'I⟩⟩⟩, 
-  rcases exists_arg_max_over (is_inter_bases M₁ M₂) exists_inter_bases size 
-    with ⟨J,⟨hJ_inter,⟨hJsize, hYJ⟩⟩⟩,  
-  rw [←hI_size, ←hJsize], 
+    with ⟨I, hI_ind, hIsize, hI'I⟩, 
+  rcases arg_max_over_spec (is_inter_bases M₁ M₂) exists_inter_bases size 
+    with ⟨J,hJ_inter,hJsize, hYJ⟩,  
+  rw [←hIsize, ←hJsize], 
   apply le_antisymm, 
   rw common_ind_iff_subset_inter_bases at hI_ind, 
   rcases hI_ind with ⟨Y,⟨h,h'⟩⟩, 
@@ -268,15 +269,15 @@ end
 end intersections_of_bases
 section union
 
-def is_two_partitionable (M₁ M₂ : rankfun U) : U → Prop := 
-  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₁ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ⊥
+def is_two_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
+  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₁ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ∅
 
-def is_two_basis_partitionable (M₁ M₂ : rankfun U) : U → Prop := 
-  λ X, ∃ B₁ (h₁ : is_basis M₁ B₁) B₂ (h₂ : is_basis M₂ B₂), B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ⊥
+def is_two_basis_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
+  λ X, ∃ B₁ (h₁ : is_basis M₁ B₁) B₂ (h₂ : is_basis M₂ B₂), B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ∅
 
 lemma exists_two_partitionable {M₁ M₂ : rankfun U}: 
   ∃ X, is_two_partitionable M₁ M₂ X := 
-  ⟨⊥, ⟨⊥,⟨⊥, ⟨I1 M₁, ⟨I1 M₂, ⟨by rw union_idem, by rw inter_idem⟩⟩ ⟩⟩⟩⟩
+  ⟨∅, ⟨∅,⟨∅, ⟨I1 M₁, ⟨I1 M₂, ⟨by rw union_idem, by rw inter_idem⟩⟩ ⟩⟩⟩⟩
 
 def π (M₁ M₂ : rankfun U) :=
   max_val_over (is_two_partitionable M₁ M₂) exists_two_partitionable size
@@ -284,21 +285,21 @@ def π (M₁ M₂ : rankfun U) :=
 def exists_common_basis (M₁ M₂ : rankfun U) :=
   ∃ B, is_basis M₁ B ∧ is_basis M₂ B 
 
-lemma top_partitionable_iff_dual_common_basis {M₁ M₂ : rankfun U}:
-  is_two_basis_partitionable M₁ M₂ ⊤ ↔ exists_common_basis M₁ (dual M₂) :=
+lemma univ_partitionable_iff_dual_common_basis {M₁ M₂ : rankfun U}:
+  is_two_basis_partitionable M₁ M₂ univ ↔ exists_common_basis M₁ (dual M₂) :=
 begin
   refine ⟨λ h, _, λ h,_⟩,
   rcases h with ⟨B₁, ⟨h₁, ⟨B₂, ⟨h₂, ⟨hu,hi⟩⟩⟩⟩⟩ , 
-  refine ⟨B₁,⟨h₁,_⟩⟩, 
+  refine ⟨B₁,h₁,_⟩, 
   rw [←cobasis_iff, cobasis_iff_compl_basis, (compl_unique hu hi).symm],
   from h₂, 
-  rcases h with ⟨B, ⟨hB₁, hB₂⟩⟩, 
+  rcases h with ⟨B, hB₁, hB₂⟩, 
   rw [←cobasis_iff, cobasis_iff_compl_basis] at hB₂, 
   refine ⟨B,⟨hB₁,⟨Bᶜ, ⟨hB₂,by {split; simp}⟩ ⟩⟩⟩, 
 end
 
 lemma pi_nu (M₁ M₂ : rankfun U) : 
-  π M₁ M₂ = ν M₁ (dual M₂) - M₂.r ⊤ := 
+  π M₁ M₂ = ν M₁ (dual M₂) - M₂.r univ := 
 begin
   sorry, 
 end

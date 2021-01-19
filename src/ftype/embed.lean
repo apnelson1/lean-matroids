@@ -94,7 +94,7 @@ end
 @[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}: (((X ∩ Y) : set (subftype S)) : set A) = ((X: set A) ∩ (Y:set A)) := 
   (embed.from_subftype S).on_inter
 
-lemma coe_top {A : ftype} (S : set A) : ((⊤ : set (subftype S)) : set A) = S := by tidy 
+lemma coe_univ {A : ftype} (S : set A) : ((univ : set (subftype S)) : set A) = S := by tidy 
 
 -- This next coe doesn't seem to work in practice, even when a P ⊆ Q proof term is in the local context 
 --instance coe_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (subftype P) (subftype Q) := ⟨(embed.from_nested_pair hPQ).f⟩ 

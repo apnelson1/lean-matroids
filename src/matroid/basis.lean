@@ -20,7 +20,7 @@ begin
     use B,
     split,
       assumption,
-      apply bot_subset,
+      apply empty_subset,
 end
 
 def B_to_I2 (M : basis_family U) : satisfies_I2 (basis_to_indep M.basis) :=

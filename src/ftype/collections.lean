@@ -1,4 +1,4 @@
-import order.bounded_lattice  -- For the has_bot / has_top notation classes.
+import order.bounded_lattice  -- For the has_empt / has_univ notation classes.
 import .basic .induction .single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
@@ -39,17 +39,17 @@ lemma contains_min {P : set A → Prop} {X : set A}:
 
 lemma max_contains {P : set A → Prop} {X : set A}:
   P X → ∃ Y, X ⊆ Y ∧ is_maximal P Y :=  
-  maximal_example P
-
+  maximal_example P  
+ 
 -- Union/Intersection-closed collections of sets
 
-def union_closed (P : set A → Prop) : Prop := P ⊥ ∧ ∀ X Y, P X → P Y → P (X ∪ Y)
-def inter_closed (P : set A → Prop) : Prop := P ⊤ ∧ ∀ X Y, P X → P Y → P (X ∩ Y)
+def union_closed (P : set A → Prop) : Prop := P ∅ ∧ ∀ X Y, P X → P Y → P (X ∪ Y)
+def inter_closed (P : set A → Prop) : Prop := P univ ∧ ∀ X Y, P X → P Y → P (X ∩ Y)
 
 lemma union_closed_iff_compl_inter_closed (P : set A → Prop) : 
   union_closed P ↔ inter_closed (λ X, P Xᶜ) := 
   begin
-    refine ⟨λ h, ⟨by {rw compl_top, exact h.1},λ X Y hX hY, _⟩, λ h,⟨by {rw ←compl_top, exact h.1},λ X Y hX hY,_⟩ ⟩,  
+    refine ⟨λ h, ⟨by {rw compl_univ, exact h.1},λ X Y hX hY, _⟩, λ h,⟨by {rw ←compl_univ, exact h.1},λ X Y hX hY,_⟩ ⟩,  
     rw compl_inter, exact h.2 _ _ hX hY, 
     rw [←compl_compl (X ∪ Y), compl_union], rw ←compl_compl X at hX, rw ←compl_compl Y at hY, exact h.2 _ _ hX hY,
   end 
@@ -166,11 +166,11 @@ lemma is_max_of_union_closed_iff {P : set A → Prop}(huc : union_closed P) (X :
 --- Unions/Intersections of collections
 lemma lb_union_closed (P : set A → Prop) : 
   union_closed (λ X, is_lb P X) := 
-  ⟨λ Z hZ, bot_subset Z, λ X Y hX hY, λ Z hZ, union_of_subsets (hX Z hZ) (hY Z hZ)⟩
+  ⟨λ Z hZ, empty_subset Z, λ X Y hX hY, λ Z hZ, union_of_subsets (hX Z hZ) (hY Z hZ)⟩
 
 lemma ub_inter_closed (P : set A → Prop) : 
   inter_closed (λ X, is_ub P X) := 
-  ⟨λ Z hZ, subset_top Z, λ X Y hX hY, λ Z hZ, subset_of_inter_mpr (hX Z hZ) (hY Z hZ)⟩
+  ⟨λ Z hZ, subset_univ Z, λ X Y hX hY, λ Z hZ, subset_of_inter_mpr (hX Z hZ) (hY Z hZ)⟩
 
 
 def inter_all (P : set A → Prop) : set A := max_of_union_closed (lb_union_closed P)
@@ -202,7 +202,7 @@ lemma has_subset_of_size {U : ftype}{X : set U}{n : ℤ}:
 let P := λ Y, Y ⊆ X ∧ size Y ≤ n in 
 begin
   intros hn hnX, 
-  rcases maximal_example_aug P (⟨bot_subset X, by linarith [size_bot U]⟩ : P ⊥) with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
+  rcases maximal_example_aug P (⟨empty_subset X, by linarith [size_empty U]⟩ : P ∅) with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
   refine ⟨Y, ⟨h₁,_⟩⟩, 
   cases subset_ssubset_or_eq h₁, 
   by_contra a, 
@@ -224,37 +224,45 @@ variables {U : ftype}{α : Type}[linear_order α]
 -- Proving this stuff probably needs fintype etc for ftype. 
 
 -- maximum 
-def max_val_over (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X) : α := sorry
-def arg_max_over (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X) : set U := sorry 
+def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := sorry
+def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := sorry 
 
-lemma max_over_is_ub (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X):
-  ∀ X, P X → f X ≤ max_val_over f P hP :=
+lemma max_over_is_ub (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  ∀ X, P X → f X ≤ max_val_over P hP f :=
   sorry
 
-lemma arg_max_over_attains (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X):
-  P (arg_max_over f P hP) ∧ f (arg_max_over f P hP) = max_val_over f P hP := 
+lemma arg_max_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  P (arg_max_over P hP f) ∧ f (arg_max_over P hP f) = max_val_over P hP f := 
   sorry  
+
+lemma arg_max_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  ∃ X, P X ∧ (f X = max_val_over P hP f) ∧ (∀ Y, P Y → f Y ≤ f X)  := 
+  sorry 
 
 -- minimum 
-def min_val_over (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X) : α := sorry
-def arg_min_over (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X) : set U := sorry 
+def min_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := sorry
+def arg_min_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := sorry 
 
-lemma min_over_is_lb (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X):
-  ∀ X, P X → min_val_over f P hP ≤ f X := 
+lemma min_over_is_lb (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  ∀ X, P X → min_val_over P hP f ≤ f X := 
   sorry
 
-lemma arg_min_over_attains (f : set U → α)(P : set U → Prop)(hP : ∃ X, P X):
-  P (arg_min_over f P hP) ∧ f (arg_min_over f P hP) = min_val_over f P hP := 
+lemma arg_min_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  P (arg_min_over P hP f) ∧ f (arg_min_over P hP f) = min_val_over P hP f := 
   sorry  
+
+lemma arg_min_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
+  ∃ X, P X ∧ (f X = min_val_over P hP f) ∧ (∀ Y, P Y → f X ≤ f Y)   := 
+  sorry 
 
 ---- 
 
 -- unrestricted max 
-def max_val (f : set U → α) : α := max_val_over f (λ X, true) ⟨⊥, trivial⟩
-def arg_max (f : set U → α) : set U := arg_max_over f (λ X, true) ⟨⊥, trivial⟩
+def max_val (f : set U → α) : α := max_val_over (λ X, true) ⟨∅, trivial⟩ f
+def arg_max (f : set U → α) : set U := arg_max_over (λ X, true) ⟨∅, trivial⟩ f
 
-def min_val (f : set U → α) : α := min_val_over f (λ X, true) ⟨⊥, trivial⟩
-def arg_min (f : set U → α) : set U := arg_min_over f (λ X, true) ⟨⊥, trivial⟩
+def min_val (f : set U → α) : α := min_val_over (λ X, true) ⟨∅, trivial⟩ f
+def arg_min (f : set U → α) : set U := arg_min_over (λ X, true) ⟨∅, trivial⟩ f
 
 lemma max_is_ub (f : set U → α): 
   ∀ X, f X ≤ max_val f :=
@@ -272,6 +280,13 @@ lemma arg_min_attains (f : set U → α) :
   f (arg_min f) = min_val f := 
   (arg_min_over_attains _ _ _).2
 
+lemma arg_min_spec (f : set U → α):
+  ∃ X, (∀ Y, f X ≤ f Y) ∧ (f X = min_val f) := 
+  sorry 
+
+lemma arg_max_spec (f : set U → α):
+  ∃ X, (∀ Y, f Y ≤ f X) ∧ (f X = max_val f) := 
+  sorry 
 
 end minmax
 

@@ -3,7 +3,7 @@ Question: is weak induction enough to prove strong induction?
 Answer: yes!
 -/
 
-import order.bounded_lattice  -- For the has_bot / has_top notation classes.
+import order.bounded_lattice  -- For the has_empt / has_top notation classes.
 import .basic .single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
@@ -24,7 +24,7 @@ consequence of the fact that singletons have size 1 and there are no
 integers between 0 and 1.
 -/
 
-lemma subset_singlet (X e : set A) : (singlet e) → (X ⊆ e) → (X = ⊥ ∨ X = e) := sorry
+lemma subset_singlet (X e : set A) : (singlet e) → (X ⊆ e) → (X = ∅ ∨ X = e) := sorry
 
 lemma subset_dec_eq (X Y : set A) : (X ⊆ Y) → (X = Y) ∨ (X ≠ Y) := 
   by {by_contra a, push_neg at a, cc,  }
@@ -39,7 +39,7 @@ singleton by singleton. Provable from the axiom that every
 nonempty subset of the ftype contains a singleton.
 -/
 lemma weak_induction (P : set A → Prop) :
-  (P ⊥) →  -- Base case.
+  (P ∅) →  -- Base case.
   (forall (e Y : set A), (singlet e) → (P Y) → P (e ∪ Y)) →  -- Induction step.
   (forall (Z : set A), P Z) :=
 sorry
@@ -108,10 +108,10 @@ let h_union :=
 in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
 (or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
   -- Case 2 described above: X = Y.
-  (fun (h₁ : X ∩ e = ⊥) (h₂ : X ∩ Y = Y),
+  (fun (h₁ : X ∩ e = ∅) (h₂ : X ∩ Y = Y),
     @eq.rec _ Y P h_Y X (
     calc Y = X ∩ Y             : h₂.symm
-    ...    = ⊥ ∪ (X ∩ Y)       : (bot_union (X ∩ Y)).symm
+    ...    = ∅ ∪ (X ∩ Y)       : (empty_union (X ∩ Y)).symm
     ...    = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
     ...    = X                 : h_union.symm))
   -- Case impossible, because X ≠ (e ∪ Y)
@@ -121,11 +121,11 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
     ...    = e ∪ Y             : by rw [h₁, h₂]))))
 (or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
   -- Case 1 described above: X ⊂ Y.
-  (fun (h₁ : X ∩ e = ⊥) (h₂ : X ∩ Y ≠ Y),
+  (fun (h₁ : X ∩ e = ∅) (h₂ : X ∩ Y ≠ Y),
     let h₃ :=
       calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
-      ...    = ⊥ ∪ (X ∩ Y)       : by rw [h₁]
-      ...    = X ∩ Y             : bot_union (X ∩ Y)
+      ...    = ∅ ∪ (X ∩ Y)       : by rw [h₁]
+      ...    = X ∩ Y             : empty_union (X ∩ Y)
     in and.left (h_below X ⟨(subset_def_inter_mpr h₃.symm),(by {rw h₃, exact h₂} : X ≠ Y)⟩))
   -- Case 3 described above: X = e ∪ X' with X' ⊂ Y.
   (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y ≠ Y),
@@ -138,11 +138,11 @@ in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
 
 
 /-
-Strong induction works at position ⊥, vacuously.
+Strong induction works at position ∅, vacuously.
 -/
 lemma strong_base :
-  strong_at (⊥ : set A) :=
-fun P aug, aug ⊥ (fun X h_ssu, false.elim (h_ssu.2 (subset_bot h_ssu.1)))
+  strong_at (∅ : set A) :=
+fun P aug, aug ∅ (fun X h_ssu, false.elim (h_ssu.2 (subset_empty h_ssu.1)))
 
 /-
 As explained above, strong induction at position Y
@@ -182,8 +182,8 @@ lemma maximal_example (P : set A → Prop){X : set A}:
     rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
-lemma maximal_example_from_bot (P : set A → Prop): 
-  P ⊥ → ∃ Y, P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
+lemma maximal_example_from_empty (P : set A → Prop): 
+  P ∅ → ∃ Y, P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   λ h, by {rcases maximal_example P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩  }
 
 lemma maximal_example_aug (P : set A → Prop){X : set A}: 
@@ -194,8 +194,8 @@ lemma maximal_example_aug (P : set A → Prop){X : set A}:
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
   end 
 
-lemma maximal_example_aug_from_bot (P : set A → Prop): 
-  P ⊥ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
+lemma maximal_example_aug_from_empty (P : set A → Prop): 
+  P ∅ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
   λ h, by {rcases maximal_example_aug P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩}
 
 lemma minimal_example_remove (P : set A → Prop){X : set A}: 

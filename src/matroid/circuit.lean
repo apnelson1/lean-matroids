@@ -11,7 +11,7 @@ def C_to_I (M : cct_family U): (set U → Prop) :=
 
 lemma C_to_I1 (M : cct_family U) :
   satisfies_I1 (C_to_I M) :=
-  by {intros X hX, rw subset_bot hX, from M.C1}
+  by {intros X hX, rw subset_empty hX, from M.C1}
 
 lemma C_to_I2 (M : cct_family U) :
   satisfies_I2 (C_to_I M) :=
@@ -59,31 +59,31 @@ lemma C_to_I3 (M : cct_family U) :
     rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
     rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
     ------------------
-    have hJI_nonbot : size (J \ I) > 0 := by 
+    have hJI_nonempty : size (J \ I) > 0 := by 
       {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
     
-    have hIJ_nonbot : I \ J ≠ ⊥ := by 
+    have hIJ_nonempty : I \ J ≠ ∅ := by 
     {
-      intro h, rw diff_bot_iff_subset at h, 
-      cases size_pos_has_elem hJI_nonbot with e he,
+      intro h, rw diff_empty_iff_subset at h, 
+      cases size_pos_has_elem hJI_nonempty with e he,
       refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
       from union_of_subsets h (subset_of_elem_of_subset he (diff_subset _ _)), 
     },
 
-    cases nonempty_has_elem hIJ_nonbot with e he, -- choose e from I -J
+    cases ne_empty_has_elem hIJ_nonempty with e he, -- choose e from I -J
 
     --There exists f ∈ J-I contained in all ccts of J ∪ e 
     have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
     {
         by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
         
-        cases size_pos_has_elem hJI_nonbot with f hf, 
+        cases size_pos_has_elem hJI_nonempty with f hf, 
         refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
         from (hJe _ hCJe) hC,
         unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
 
-        have : Ce ∩ (J \ I) ≠ ⊥ := λ h,  sorry ,
-        cases nonempty_has_elem this with f hf,
+        have : Ce ∩ (J \ I) ≠ ∅ := λ h,  sorry ,
+        cases ne_empty_has_elem this with f hf,
         refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
         apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
         rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
@@ -106,11 +106,11 @@ lemma C_to_I3 (M : cct_family U) :
     rw [←elem_compl_iff] at h,  
     have := elem_inter hg₁ h, 
     rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
-        inter_assoc _ I _ ,inter_compl, inter_bot, union_bot, hdefJ', diff_def, inter_assoc, inter_right_comm, 
-        inter_distrib_right, ←inter_assoc, inter_compl, bot_inter, bot_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
+        inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_def, inter_assoc, inter_right_comm, 
+        inter_distrib_right, ←inter_assoc, inter_compl, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
     have := elem_of_elem_of_subset this (inter_subset_right _ _),
     have := (elem_inter (elem_of_elem_of_subset hg₁ hJ'₀) this),
-    rw inter_compl at this, from nonelem_bot g this, 
+    rw inter_compl at this, from nonelem_empty g this, 
   end 
 
   --  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)

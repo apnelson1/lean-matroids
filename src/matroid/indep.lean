@@ -38,7 +38,7 @@ def indep.choose_extension_to_basis (M : indep_family U) {I X : set U} (hIX : I 
   classical.some (indep.extends_to_basis hIX hInd)
 
 def indep.choose_set_basis (M : indep_family U) (X : set U) :=
-  indep.choose_extension_to_basis M (bot_subset X) (M.I1)
+  indep.choose_extension_to_basis M (empty_subset X) (M.I1)
 
 def indep.choose_extension_to_basis_spec (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : _ := 
   classical.some_spec (indep.extends_to_basis hIX hInd)
@@ -49,7 +49,7 @@ lemma indep.choice_of_extension_to_basis_is_valid (M : indep_family U) {I X : se
 
 lemma indep.choice_of_set_basis_is_valid (M : indep_family U) (X : set U) : 
   indep.is_set_basis M (indep.choose_set_basis M X) X :=
-  (indep.choice_of_extension_to_basis_is_valid M (bot_subset X) (M.I1)).2 
+  (indep.choice_of_extension_to_basis_is_valid M (empty_subset X) (M.I1)).2 
 
 def indep.has_ext_to_basis (M : indep_family U) {I X : set U}: 
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ indep.is_set_basis M B X := 
@@ -134,7 +134,7 @@ lemma indep.has_nested_basis_pair (M : indep_family U){X Y : set U}:
 
 lemma indep.I_to_R0 (M : indep_family U): 
   satisfies_R0 (indep.I_to_r M) := 
-  λ X, by {have := indep.I_to_r_ub (bot_subset X) (M.I1), rw size_bot at this, assumption}
+  λ X, by {have := indep.I_to_r_ub (empty_subset X) (M.I1), rw size_empty at this, assumption}
 
 lemma indep.I_to_R1 (M : indep_family U): 
   satisfies_R1 (indep.I_to_r M) := 
