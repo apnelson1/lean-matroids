@@ -3,13 +3,12 @@ import .basic --.single
 namespace ftype 
 -- Embedding and subftypeebras
 
-local attribute [instance] classical.prop_decidable
+open_locale classical 
+noncomputable theory 
 
 
-
-
-def subftype {A : ftype}(ground : set A) : ftype :=  
-  ⟨{x : A // x ∈ ground}, by {letI := fintype_of A, from ⟨by apply_instance,trivial⟩}⟩
+def subftype {A : ftype} (ground : set A) : ftype :=  
+  {E := {x : A // x ∈ ground}, fin := by {letI := fintype_of A, apply_instance}} 
 
 @[ext] structure embed (A B : ftype) :=
   (f     : A → B )
@@ -53,7 +52,7 @@ def embed.from_subftype {A : ftype}(X : set A) : embed (subftype X) A :=
   ⟨λ e, e.val, by tidy⟩
  
 def embed.from_nested_pair {A : ftype}{X₁ X₂ : set A} (hX₁X₂ : X₁ ⊆ X₂) : embed (subftype X₁) (subftype X₂) := 
-  ⟨λ X, ⟨X.1, by tidy⟩, by tidy⟩
+  ⟨λ x, ⟨x.1, by tidy⟩, by tidy⟩
 
 lemma embed.compose_subset_nested_pair {A : ftype}(X₁ X₂ : set A) (hX₁X₂ : X₁ ⊆ X₂) :
  (embed.compose (embed.from_nested_pair hX₁X₂) (embed.from_subftype X₂)) = embed.from_subftype X₁ := rfl 
@@ -63,6 +62,9 @@ lemma embed.compose_nested_triple {A : ftype}(X₁ X₂ X₃ : set A) (h₁₂ :
 
 
 --Subalgebra coercion 
+
+
+--instance coe_to_coe_set {α β: Type}[has_coe α β] : has_coe (set α) (set β) := ⟨λ X, coe '' X⟩
 
 instance coe_elem_from_subftype {A : ftype} {S : set A} : has_coe (subftype S).E A := ⟨embed.from_subftype S⟩
 
@@ -88,16 +90,45 @@ begin
   assumption, 
 end
 
-@[simp] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: (((X ∪ Y) : set (subftype S)) : set A) = ((X: set A) ∪ (Y:set A)) := 
+@[simp] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: 
+  (((X ∪ Y) : set (subftype S)) : set A) = ((X: set A) ∪ (Y:set A)) := 
   (embed.from_subftype S).on_union
  
-@[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}: (((X ∩ Y) : set (subftype S)) : set A) = ((X: set A) ∩ (Y:set A)) := 
+@[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}:
+  (((X ∩ Y) : set (subftype S)) : set A) = ((X: set A) ∩ (Y:set A)) := 
   (embed.from_subftype S).on_inter
 
-lemma coe_univ {A : ftype} (S : set A) : ((univ : set (subftype S)) : set A) = S := by tidy 
+@[simp] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)}:
+  (((Xᶜ : set (subftype S))) : set A) = S \ (X : set A)  := 
+begin
+  -- Fix this garbage! 
+  unfold_coes, ext, refine ⟨λ h, ⟨_,_⟩, λ h,_⟩, 
+  rcases h with ⟨_,⟨_,_⟩⟩, rw ←h_h_right, tidy, apply h_h_left, 
+  have := (embed.from_subftype S).f_inj h_h_right, 
+  rw this, assumption, 
+  -- No really, fix it! 
+end 
+
+@[simp] lemma coe_univ {A : ftype} (S : set A) : ((univ : set (subftype S)) : set A) = S := by tidy 
+
+@[simp] lemma coe_img_set {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(X : set (subftype Y)) :
+  (((embed.from_nested_pair hYY').img X) : set A) = (X : set A) := 
+  by {simp only [embed.img], unfold_coes, tidy}
+
+@[simp] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
+  (((embed.from_nested_pair hYY') x ) : A) = (x : A) := 
+  by {unfold_coes, tidy}
+
+
+
 
 -- This next coe doesn't seem to work in practice, even when a P ⊆ Q proof term is in the local context 
---instance coe_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (subftype P) (subftype Q) := ⟨(embed.from_nested_pair hPQ).f⟩ 
+
+--instance coe_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (subftype P) (subftype Q) 
+--  := ⟨(embed.from_nested_pair hPQ).f⟩ 
+
+--instance coe_set_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (set (subftype P).E) (set (subftype Q).E) 
+--  := ⟨λ (X : set (subftype P).E), ((embed.from_nested_pair).f '' X : set (subftype Q).E)⟩
 
 /-instance embed.coe_to_fun {A B : ftype.ftype} : has_coe_to_fun (ftype.embed A B) := {
   F := (λ _, A → B),
@@ -122,7 +153,7 @@ structure iso (A B : ftype) :=
 def powersetalg (γ : Type)[fintype γ] : ftype := 
 { 
   E       := γ, 
-  is_fin  := ⟨by apply_instance, trivial⟩,
+  fin  := by apply_instance,
 }
 
 end ftype 

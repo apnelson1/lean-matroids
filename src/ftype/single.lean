@@ -7,7 +7,7 @@ variables {A : ftype}
 
 --def single (A : ftype): Type := {X : set A // size X = 1}
 
-instance coe_single {A : ftype} : has_coe A (set A) := ⟨λ e, {e}⟩  
+--instance coe_single {A : ftype} : has_coe A (set A) := ⟨λ e, {e}⟩  
 
 /-def elem : (single A) → A → Prop := λ e X, (e: set A) ⊆ X 
 def nonelem : (single A) → A → Prop := λ e X, ¬elem e X 
@@ -186,13 +186,13 @@ lemma subset_of_removal {X Y : set A}{e : A} :
   
 lemma subset_of_subset_add_nonelem {X Y: set A}{e : A} :
   X ⊆ Y ∪ e → e ∉ X → X ⊆ Y :=
-  begin
-      intros hXY heX, 
-      simp only [subset_def_inter] at hXY ⊢, 
-      rw [nonelem_disjoint_iff, inter_comm] at heX,
-      rw [inter_distrib_left, heX, union_empty] at hXY, 
-      from hXY, 
-  end
+begin
+  intros hXY heX, 
+  simp only [subset_def_inter] at hXY ⊢, 
+  rw [nonelem_disjoint_iff, inter_comm] at heX,
+  rw [inter_distrib_left, heX, union_empty] at hXY, 
+  from hXY, 
+end
 
 
 lemma removal_subset_of {X Y : set A}{e : A} :

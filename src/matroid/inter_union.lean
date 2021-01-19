@@ -166,14 +166,14 @@ begin
   },  
   
   -- apply IH to deletion, get minimizer Ad
-  rcases IH _ h_more_loops_d N₁d N₂d rfl with hd, 
+  rcases IH _ (size_nonneg _) h_more_loops_d N₁d N₂d rfl with hd, 
   set Ad := arg_min (ub_fn N₁d N₂d) with hAd,
   rw [←arg_min_attains (ub_fn N₁d N₂d), ←hAd] at hd, 
   have hAd_ub : N₁.r (Ad \ e) + N₂.r (Adᶜ \ e) ≤ k := le_trans hd h_nu_d,
 
 
   --apply IH to contraction, get minimizer Ac 
-  rcases IH _ h_more_loops_c N₁c N₂c rfl with hc,
+  rcases IH _ (size_nonneg _) h_more_loops_c N₁c N₂c rfl with hc,
   set Ac := arg_min (ub_fn N₁c N₂c) with hAc,
   rw [←arg_min_attains (ub_fn N₁c N₂c), ←hAc] at hc, 
   have hAc_ub : N₁.r (Ac ∪ e) + N₂.r (Acᶜ ∪ e) ≤ k+1 := by 

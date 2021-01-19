@@ -6,21 +6,20 @@ import tactic
 import .int_lemmas 
 
 
-local attribute [instance] classical.prop_decidable
+open_locale classical 
 noncomputable theory 
 
 namespace ftype 
 
 structure ftype :=
   (E : Type)
-  (is_fin : ∃ (fin : fintype E), true )
-  (is_fin' : ∃ (fU : finset E), (fU : set E) = set.univ)
+  [fin : fintype E]
 
 
 @[simp] instance alg_coe : has_coe_to_sort ftype := 
   {S := Type, coe := λ A, A.E}
 
-def fintype_of (U : ftype) : fintype U := classical.some U.is_fin 
+def fintype_of (U : ftype) : fintype U := U.fin 
 
 def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
@@ -109,7 +108,7 @@ lemma union_comm (X Y : set A) : (X ∪ Y = Y ∪ X) :=
 -- univ/empttom with unions and intersections 
 
 @[simp] lemma inter_univ (X : set A) : X ∩ univ = X := 
-  by {simp [univ],  }
+  by apply set.inter_univ
 
 @[simp] lemma univ_inter  (X : set A) : univ ∩ X = X := 
   by simp 
@@ -166,11 +165,11 @@ lemma univ_unique (X : set A) : (∀ (Y: set A), Y ∩ X = Y) → X = univ :=
 
 -- Idempotence
 
-@[simp] lemma union_idem (X : set A) : X ∪ X = X := 
-  by rw [←(inter_univ  (X ∪ X)), ←(union_compl X), ←(union_distrib_left X X Xᶜ), inter_compl, union_empty]
+lemma union_idem (X : set A) : X ∪ X = X := 
+  set.union_self _ 
 
-@[simp] lemma inter_idem (X : set A): X ∩ X = X := 
-  by rw [←(union_empty (X ∩ X)), ←(inter_compl X), ←(inter_distrib_left X X Xᶜ), union_compl, inter_univ ]
+lemma inter_idem (X : set A): X ∩ X = X := 
+  set.inter_self _ 
 
 @[simp] lemma union_univ  (X : set A) : X ∪ univ = univ := 
   by calc _ = univ ∩ (X ∪ univ)        : by rw univ_inter
@@ -683,8 +682,8 @@ lemma size_monotone {X Y: set A} (hXY : X ⊆ Y) : size X ≤ size Y :=
   by {have := size_modular X (Y \ X), rw union_diff_of_subset  hXY at this      , 
         rw inter_diff at this, linarith [size_nonneg(Y \ X), size_empty A]}
 
-lemma nontrivial_size :
-  nontrivial A → 1 ≤ size (univ : set A) := sorry 
+--lemma nontrivial_size :
+--  nontrivial A → 1 ≤ size (univ : set A) := sorry 
 
 
 

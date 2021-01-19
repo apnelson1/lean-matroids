@@ -2,6 +2,7 @@ import ftype.basic ftype.embed
 import .rankfun .dual 
 
 namespace ftype 
+noncomputable theory 
 
 @[simp] def restrict_subset {B : ftype} (R : set B) (rfun : rankfun B)  : rankfun (subftype R) := 
 { 
@@ -31,11 +32,10 @@ let f := embed.from_nested_pair h in
 }
 
 --⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
-
 @[simp] def corestrict_subset {U : ftype} (R : set U) (M : rankfun U)  : rankfun (subftype R) := 
 let C := Rᶜ, f := embed.from_subftype R in 
 ⟨ 
-  λ X, M.r (X ∪ C) - M.r C,
+  λ X_foo, M.r ((X_foo : set U) ∪ C) - M.r C,
   λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
   λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X, subftype_coe_size X]},
   λ X Y hXY, by {simp only, linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left _ _ C (f.on_subset hXY))]}, 
@@ -91,42 +91,29 @@ def to_minor : Π {E : set U}, minor_on E → rankfun U → matroid_on E
 | _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor expr r)
 | _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor expr r)
 
-
-/-lemma to_minor.delete_delete {D₁ D₂ : set U} (h : D₁ ∩ D₂ = ∅) :
-let
-  h₁ : (D₁ ∪ D₂)ᶜ ⊆ D₁ᶜ := sorry,
-  h₂ :  D₁ᶜ       ⊆ univ   := sorry,
-  h₃ : (D₁ ∪ D₂)ᶜ ⊆ univ   := sorry
-in
-  to_minor (restrict (D₁ ∪ D₂)ᶜ h₁
-           (restrict  D₁ᶜ       h₂ self)) =
-  to_minor (restrict (D₁ ∪ D₂)ᶜ h₃ self) :=
-begin
-  intros,
-  delta to_minor,
-  refl,
-end-
-
-
-
-@[simp] def contract_delete  (C D : set U) :
-  (C ∩ D = ∅) → minor_on (C ∪ D)ᶜ :=
-fun h, restrict (C ∪ D)ᶜ (calc (C ∪ D)ᶜ = Cᶜ ∩ Dᶜ : compl_union _ _ ... ⊆ Cᶜ : inter_subset_left _ _ ) (corestrict Cᶜ (subset_univ _) self)
--/
-
-
---simplified minor expression \ corestrict to Z, then restrict to A 
+/--simplified minor expression \ corestrict to Z, then restrict to A -/
 
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_univ Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_univ (A ∪ Zᶜ))) self)) M :=
   let f := (embed.from_subftype A).f, hAZc := subset_union_left A Zᶜ, hAZc_univ := subset_univ (A ∪ Zᶜ) in 
   begin
+    
     ext X, 
     have set_eq : (A ∪ Zᶜ) \ A = univ \ Z 
       := by {rw [diff_def, inter_distrib_right, ←compl_union, union_comm Z, 
                 subset_def_union_mp hAZ], simp},
-    let M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_univ self)) M), 
-    have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := by refl, 
+    set M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_univ self)) M) with hM', 
+    
+    --have foo : ∀ (Y Y' : set U)(hYY' : Y ⊆ Y'), (((embed.from_nested_pair hYY').img univ)) = ⟨Y, hYY'⟩ := sorry, 
+    
+    --have  bar : ∀ (Y Y' : set U)(hYY' : Y ⊆ Y')(X : set (subftype Y)),
+      --(embed.from_nested_pair hYY').img Xᶜ (Xᶜ : set A) = S \ X  := sorry 
+
+
+
+    have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := 
+      by {rw hM',convert rfl; simp,}
+    
     rw set_eq at RHS, 
     exact RHS.symm, 
   end
