@@ -1,4 +1,3 @@
-import order.bounded_lattice  -- For the has_empt / has_univ notation classes.
 import .basic .induction .single 
 ----------------------------------------------------------------
 local attribute [instance] classical.prop_decidable
@@ -239,13 +238,11 @@ lemma exists_arg_min_over_subtype (P : set U → Prop)(hP : set.nonempty P) (f :
 let f' : _ → (order_dual α) := f in exists_arg_max_over_subtype P hP f'
 
 
-
-
--- maximum 
-
+/-- maximum value of f over subsets of U satisfying P -/
 def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := 
   (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))).val 
 
+/-- subset of U attaining maximum value of f subject to satisfying P -/
 def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
   f (arg_max_over P hP f)
 
@@ -263,10 +260,11 @@ lemma arg_max_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → 
 let prev := arg_max_over_attains P hP f in 
 ⟨arg_max_over P hP f,⟨prev.1,prev.2,max_over_is_ub P hP f⟩⟩  
 
--- minimum 
+/-- minimum value of f over subsets of U satisfying P -/
 def arg_min_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U :=  
   (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))).val 
 
+/-- subset of U attaining minimum value of f subject to satisfying P -/
 def min_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
   f (arg_min_over P hP f)
 
@@ -288,11 +286,16 @@ let prev := arg_min_over_attains P hP f in
 ⟨arg_min_over P hP f,⟨prev.1,prev.2,min_over_is_lb P hP f⟩⟩ 
 ---- 
 
--- unrestricted max 
+/-- maximum value of f over subsets of U -/
 def max_val (f : set U → α) : α := max_val_over (λ X, true) ⟨∅, trivial⟩ f
+
+/-- subset of U attaining maximum value of f -/
 def arg_max (f : set U → α) : set U := arg_max_over (λ X, true) ⟨∅, trivial⟩ f
 
+/-- minimum value of f over subsets of U -/
 def min_val (f : set U → α) : α := min_val_over (λ X, true) ⟨∅, trivial⟩ f
+
+/-- subset of U attaining minimum value of f-/
 def arg_min (f : set U → α) : set U := arg_min_over (λ X, true) ⟨∅, trivial⟩ f
 
 lemma max_is_ub (f : set U → α): 

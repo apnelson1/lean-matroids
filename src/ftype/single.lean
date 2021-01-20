@@ -5,18 +5,7 @@ local attribute [instance] classical.prop_decidable
 
 variables {A : ftype}
 
---def single (A : ftype): Type := {X : set A // size X = 1}
-
 instance coe_single {A : ftype} : has_coe A (set A) := ⟨λ e, {e}⟩  
-
-/-def elem : (single A) → A → Prop := λ e X, (e: set A) ⊆ X 
-def nonelem : (single A) → A → Prop := λ e X, ¬elem e X 
-
-infix ∈ := elem 
-infix ∉ := nonelem -/
-
---lemma nonelem_simp {e : A}{X : set A}: 
---  ¬(e ∈ X) ↔ e ∉ X := by refl  
 
 lemma elem_coe_inj_iff {e f : A} :
   (e : set A) = (f : set A) ↔ e = f := 

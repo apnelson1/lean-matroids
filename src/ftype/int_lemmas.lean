@@ -14,6 +14,7 @@ lemma lt_iff_le_sub_one {x y : ℤ} :
   x < y ↔ x ≤ y - 1 := 
   int.le_sub_one_iff.symm
 
+/-- Strong induction (with base case 0) for the nonnegative integers -/
 lemma nonneg_int_strong_induction (P : ℤ → Prop) : 
   P 0 → (∀ n, 0 < n → (∀ m, 0 ≤ m → m < n → P m) → P n) → (∀ n₀, 0 ≤ n₀ → P n₀) := 
 begin

@@ -5,6 +5,19 @@ import tactic.tidy
 import tactic 
 import .int_lemmas 
 
+/-
+  API for ftype, which is a type with a bundled fintype instance. The bundling seems like 
+  it is the smoothest way to make things work; moving things before the colon caused problems. 
+  The fintype instance is only extracted when needed and used with care. 
+
+  A lot of this file is a redundant artefact of an earlier design, and now just follows from
+  lemmas in the set namespace. The main exceptions are lemmas involving size, which need to be
+  reproved using the slightly kooky way size is defined. The same is true for collections.lean
+  and embed.lean. 
+  
+  Other than that, a cleanup is in order, even though things work for now. 
+-/
+
 
 open_locale classical 
 noncomputable theory 
@@ -33,11 +46,16 @@ variables {A : ftype}
 def symm_diff  (X Y : set A) : set A := (X \ Y) ∪ (Y \ X)
 
 
+/------------------------------------------------------------
 
--- Size -----------------------------------------------------
+We define size manually by hooking into finset.card. The following
+small set of lemmas characterizes the size function 
+
+- Size -----------------------------------------------------/
 
 def size_nat (U : ftype)(X : set U.E) := (as_finset U X).card 
 
+/-- the size of a set, as an integer -/
 def size {U : ftype}(X : set U.E) : ℤ := (size_nat U X)
 
 lemma size_empty_ax :
@@ -76,24 +94,11 @@ lemma univ_eq_top :
   set.top_eq_univ 
 
 
-
-
-/-
-example (A : ftype) : false := 
-begin
-  set x := (univ : set A) with hx, 
-  simp [-set.univ_eq_univ] at hx, 
-end
--/
-
-
-
---@[simp] def univ_size (A : ftype) := size (univ : set A)
-
 @[simp] lemma diff_def (X Y : set A) : X \ Y = X ∩ Yᶜ := 
   rfl 
 
-def nontrivial (A : ftype) := (∅ : set A) ≠ univ
+/-- Universe is nonempty -/
+def nontrivial (A : ftype) := (univ : set A).nonempty
 
 
 
@@ -682,11 +687,6 @@ lemma size_monotone {X Y: set A} (hXY : X ⊆ Y) : size X ≤ size Y :=
   by {have := size_modular X (Y \ X), rw union_diff_of_subset  hXY at this      , 
         rw inter_diff at this, linarith [size_nonneg(Y \ X), size_empty A]}
 
---lemma nontrivial_size :
---  nontrivial A → 1 ≤ size (univ : set A) := sorry 
-
-
-
 lemma size_subadditive {X Y : set A} : size (X ∪ Y) ≤ size X + size Y :=
   by linarith [size_modular X Y, size_nonneg (X ∩ Y)] 
 
@@ -745,7 +745,7 @@ lemma one_le_size_iff_nonempty {X : set A} : X.nonempty ↔ 1 ≤ size X :=
 
 
 lemma nontrivial_size (hA: nontrivial A): 1 ≤ size (univ : set A) := 
-by {rw [←one_le_size_iff_nonempty, ←set.ne_empty_iff_nonempty], from ne.symm hA}
+  one_le_size_iff_nonempty.mp hA 
 
 
 lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y := 

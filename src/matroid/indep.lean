@@ -9,6 +9,7 @@ section indep
 
 variables {U :ftype}
 
+/-- removing an element from an independent set preserves independence-/
 def satisfies_weak_I2 : (set U → Prop) → Prop :=
   λ indep, ∀ I (e : U), e ∉ I → indep (I ∪ e) → indep I 
 
@@ -23,6 +24,7 @@ lemma weak_I2_to_I2 (indep : set U → Prop):
     from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwI2 _ _ heK' hKind}⟩ )
   end
 
+/-- B spans X and is independent -/
 def indep.is_set_basis (M : indep_family U) := 
   λ B X, B ⊆ X ∧ M.indep B ∧ ∀ J, B ⊂ J → J ⊆ X → ¬M.indep J
 
@@ -34,12 +36,15 @@ lemma indep.extends_to_basis {M : indep_family U} {I X : set U} :
     from ⟨hB, ⟨h₁B.1,⟨h₁B.2,λ J h₁J h₂J, not_and.mp (h₂B J h₁J) h₂J⟩⟩⟩
   end 
 
+/-- choose extension of an independent set I to a basis of X-/
 def indep.choose_extension_to_basis (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : set U := 
   classical.some (indep.extends_to_basis hIX hInd)
 
+/-- choose a basis of X -/
 def indep.choose_set_basis (M : indep_family U) (X : set U) :=
   indep.choose_extension_to_basis M (empty_subset X) (M.I1)
 
+/-- properties of the choice of a basis of X-/
 def indep.choose_extension_to_basis_spec (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : _ := 
   classical.some_spec (indep.extends_to_basis hIX hInd)
 
@@ -51,12 +56,12 @@ lemma indep.choice_of_set_basis_is_valid (M : indep_family U) (X : set U) :
   indep.is_set_basis M (indep.choose_set_basis M X) X :=
   (indep.choice_of_extension_to_basis_is_valid M (empty_subset X) (M.I1)).2 
 
-def indep.has_ext_to_basis (M : indep_family U) {I X : set U}: 
+lemma indep.has_ext_to_basis (M : indep_family U) {I X : set U}: 
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ indep.is_set_basis M B X := 
   λ hIX hI, by {use indep.choose_extension_to_basis M hIX hI, 
                   from indep.choice_of_extension_to_basis_is_valid M hIX hI}
 
-def indep.has_basis (M : indep_family U) (X : set U):
+lemma indep.has_basis (M : indep_family U) (X : set U):
   ∃ B, indep.is_set_basis M B X := 
   by {use indep.choose_set_basis M X, from indep.choice_of_set_basis_is_valid M X}
 

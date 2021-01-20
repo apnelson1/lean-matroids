@@ -15,34 +15,33 @@ namespace ftype
 
 variables {A: ftype}
 
+/-- P holds for all proper subsets of Y-/
 def below (P : set A → Prop) (Y : set A) : Prop :=
-  forall (X :  set A), ((X ⊆ Y) ∧  (X ≠ Y)) → (P X)
+  forall (X :  set A), X ⊂ Y → (P X)
 
--- (augment P) says that (below P Y) can be upgraded to (P Y), for all Y.
+/-- if P holds for all proper subsets of Y, it holds for Y-/
 def augment (P : set A → Prop) : Prop :=
   forall (Y : set A), (below P Y) → (P Y)
 
 lemma strong_induction (P : set A → Prop) :
   (augment P) → (forall (Z : set A), P Z) :=
 begin
-  unfold augment below,  intros h_augment, 
+  intros h_augment, 
   let  Q : ℤ → Prop := λ n, ∀ Y : set A, size Y = n → P Y,
   suffices : ∀ n, 0 ≤ n → Q n,  
-  refine λ Z, this (size Z) (size_nonneg _)  Z rfl, 
+  from λ Z, this (size Z) (size_nonneg _)  Z rfl, 
   refine nonneg_int_strong_induction Q _ _,
   
   intros Y hY, rw [size_zero_iff_empty] at hY, rw hY, 
   refine h_augment _ _, 
-  from λ X hX, false.elim (hX.2 (subset_empty hX.1)), 
+  from λ X hX, false.elim (ssubset_empty _ hX), 
   intros n h0n hn X hXn, 
   refine h_augment _ _,
   intros Y hY, 
   refine hn (size Y) (size_nonneg Y) _ Y rfl, 
-  rw ←hXn, apply size_strict_monotone, 
-  apply ssubset_of_subset_ne hY.1 hY.2, 
+  rw ←hXn, 
+  from size_strict_monotone hY, 
 end
-
-
 
 lemma minimal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
@@ -51,7 +50,6 @@ lemma minimal_example (P : set A → Prop){X : set A}:
     revert X, refine strong_induction _ _, intros T hT hPT, 
     by_cases ∀ Z, Z ⊂ T → ¬P Z, use T, exact ⟨subset_refl T, ⟨hPT, h⟩⟩, 
     push_neg at h, rcases h with ⟨Z, ⟨hZT, hPZ⟩⟩, 
-    rw set.ssubset_iff_subset_ne at hZT, 
     specialize hT Z hZT hPZ, rcases hT with ⟨Y, ⟨hYZ, hQY⟩⟩, 
     use Y, exact ⟨subset_trans hYZ hZT.1, hQY⟩, 
   end
@@ -88,5 +86,11 @@ lemma minimal_example_remove (P : set A → Prop){X : set A}:
     rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
   end 
+
+--lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):
+--  ∃ X, P X ∧ ∀ Y, size Y < size X → ¬ P Y := 
+
+
+
 
 end ftype 

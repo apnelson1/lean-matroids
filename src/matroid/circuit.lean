@@ -92,7 +92,7 @@ lemma C_to_I3 (M : cct_family U) :
     rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
     set J' := (J ∪ e) \ f with hdefJ', 
     
-    have hJ'₀: J' \ I ⊆ (J ∪ I) := by sorry, 
+    have hJ'₀: J' \ I ⊆ (J ∪ I) := by tidy, 
     have hJ' : C_to_I M (J') := sorry,
     have hJ's : size I < size J' := sorry, 
     have hJ'ssu : I \ J' ⊂ I \ J := sorry, 

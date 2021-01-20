@@ -198,14 +198,18 @@ end rank
 section indep
 variables {U : ftype}
 
+/-- is independent in M; rank equals size -/
 def is_indep (M : rankfun U) : set U → Prop :=
   λ X, M.r X = size X
 
 
+
+/-- subtype of independent sets (overkill?)-/
 def indep (M : rankfun U) : Type := { I : set U // is_indep M I}
 
 instance coe_indep {M : rankfun U} : has_coe (indep M) (set U) := coe_subtype   
 
+/-- is dependent in M; negation of dependence -/
 def is_dep (M : rankfun U) : set U → Prop := 
    λ X, ¬(is_indep M X)
 
@@ -330,13 +334,15 @@ end indep
 section /-Circuits-/ circuit
 variables {U : ftype}
 
-
+/-- is a circuit of M : minimally dependent -/
 def is_circuit (M : rankfun U) : set U → Prop := 
   λ X, (is_dep M X ∧  ∀ Y: set U, Y ⊂ X → is_indep M Y)
 
+/-- is a cocircuit of M: circuit of the dual -/
 def is_cocircuit (M : rankfun U) : set U → Prop := 
   is_circuit (dual M)
 
+/-- subtype of circuits -/
 def circuit (M : rankfun U) : Type := { C : set U // is_circuit M C }
 
 instance coe_circuit {M : rankfun U} : has_coe (circuit M) (set U) := coe_subtype   
@@ -448,10 +454,11 @@ section closure
 
 variables {U : ftype}
 
-
+/-- is spanning in M: closure is univ -/
 @[simp] def is_spanning (M : rankfun U) : set U → Prop := 
   λ X, M.r X = M.r univ 
 
+/-- X spans Y if the rank of X is the rank of X ∪ Y -/
 def spans (M : rankfun U) : set U → set U → Prop := 
   λ X Y, M.r (X ∪ Y) = M.r X 
 
@@ -495,6 +502,7 @@ lemma spans_subset (M : rankfun U){X Y Y' : set U} :
     linarith [R2 M (subset_union_left X Y),  R2 M (subset_union_subset_right _ _ X hYY')], 
   end
 
+/-- closure of X in M : union of all sets spanned by X -/
 def cl (M : rankfun U) : set U → set U :=
   λ X, max_of_union_closed (spanned_union_closed M X)
 
@@ -634,27 +642,31 @@ end closure
 section /-Flats-/ flat
 variables {U : ftype} 
 
+/-- all proper supersets have larger rank -/
 def is_flat (M : rankfun U) : set U → Prop := 
   λ F, ∀ (X : set U), F ⊂ X → M.r F < M.r X
 
+/-- flat of rank r M - 1 -/
 def is_hyperplane (M : rankfun U) : set U → Prop := 
   λ H, (is_flat M H) ∧ M.r H = M.r univ - 1
 
+/-- flat of rank k -/
 def is_rank_k_flat (M : rankfun U) (k : ℤ) : set U → Prop := 
   λ F, is_flat M F ∧ M.r F = k 
 
+/-- the unique rank zero flat -/
 def loops : rankfun U → set U := 
   λ M, cl M ∅ 
 
-def is_loops (M : rankfun U) : set U → Prop := 
-  λ F, is_rank_k_flat M 0 F
-
+/-- is a rank -one flat -/
 def is_point (M : rankfun U) : set U → Prop := 
   λ F, is_rank_k_flat M 1 F
 
+/-- is a rank-two flat -/
 def is_line (M : rankfun U) : set U → Prop := 
   λ F, is_rank_k_flat M 2 F
 
+/-- is a rank-three flat -/
 def is_plane (M : rankfun U) : set U → Prop := 
   λ F, is_rank_k_flat M 3 F
 
@@ -720,6 +732,7 @@ begin
   from hFr, 
 end
 
+/-
 lemma is_loops_cl_empty (M : rankfun U):
   is_loops M (cl M ∅) := 
   by {unfold is_loops is_rank_k_flat, refine ⟨cl_is_flat ∅, by {rw [rank_cl, rank_empty] }⟩} 
@@ -736,7 +749,8 @@ begin
   rw subset_cl_iff_r, apply rank_eq_of_le_union,
   rw [empty_union, rank_empty] at hY, 
   linarith [rank_subadditive M X Y], 
-end
+end 
+-/
 
 
 
@@ -804,7 +818,7 @@ begin
   exact λ h, (h₂ e he) (elem_of_elem_of_subset h (cl_monotone M (inter_subset_right F₁ F₂))), 
 end
 
-
+/-- is both a circuit and a hyperplane -/
 def is_circuit_hyperplane (M : rankfun U)(C : set U) := 
   is_circuit M C ∧ is_hyperplane M C 
 
@@ -845,15 +859,19 @@ section /- Series and Parallel -/ series_parallel
 
 variables {U : ftype}
 
+/-- is a rank-zero element -/
 def is_loop (M : rankfun U) : U → Prop := 
   λ e, M.r e = 0 
 
+/-- is a rank-one element -/
 def is_nonloop (M : rankfun U) : U → Prop := 
   λ e, M.r e = 1 
 
+/-- is a loop of the dual -/
 def is_coloop (M : rankfun U) : U → Prop := 
   is_loop (dual M) 
 
+/-- is not a coloop of the dual -/
 def is_noncoloop (M : rankfun U) : U → Prop := 
   is_coloop (dual M)
 
@@ -908,7 +926,7 @@ lemma coloop_iff_r_less {M : rankfun U} (e : U) :
   end
 
 
-
+/-- nonloop as subtype -/
 def nonloop (M : rankfun U) : Type := { e : U // is_nonloop M e}
 
 instance coe_nonloop {M : rankfun U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
@@ -930,9 +948,11 @@ lemma rank_union_nonloops_ub {M : rankfun U} (e f : nonloop M) :
   M.r (e ∪ f) ≤ 2 := 
   by {have : M.r e = 1 := e.property, have : M.r f = 1 := f.property, linarith [M.R0 (e ∩ f), M.R3 e f]}
 
+/-- two nonloops have rank-one union -/
 def parallel (M : rankfun U) : nonloop M → nonloop M → Prop := 
   λ e f, M.r (e ∪ f) = 1 
 
+/-- parallel in dual -/
 def series (M : rankfun U) : nonloop (dual M) → nonloop (dual M) → Prop := 
   λ e f, parallel (dual M) e f 
 
@@ -1031,10 +1051,11 @@ section /-Bases-/ basis
 
 variables {U : ftype}
 
-
+/-- B is a basis of X : an independent subset of X spanning X -/
 def is_basis_of (M : rankfun U) : set U → set U → Prop := 
   λ B X, B ⊆ X ∧ M.r B = size B ∧ M.r B = M.r X 
 
+/-- B is a basis of M: an independent set spanning M -/
 def is_basis (M : rankfun U) : set U → Prop := 
   λ B, is_basis_of M B univ 
 
@@ -1058,6 +1079,7 @@ lemma basis_iff_r {M : rankfun U} {B : set U} :
   is_basis M B ↔ M.r B = size B ∧ M.r B = M.r univ :=
   ⟨λ h, h.2, λ h, ⟨subset_univ B,h⟩⟩
 
+/-- is a bsais of the dual -/
 def is_cobasis (M : rankfun U): set U → Prop := 
   λ B, is_basis (dual M) B 
 
