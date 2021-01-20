@@ -18,7 +18,7 @@ lemma exists_common_ind {M₁ M₂ : rankfun U}:
   set.nonempty (is_common_ind M₁ M₂) := 
   ⟨∅, empty_is_common_ind M₁ M₂⟩
 
--- size of max common independent set 
+/-- size of max common independent set -/
 def ν (M₁ M₂ : rankfun U) : ℤ := 
   max_val_over (is_common_ind M₁ M₂) exists_common_ind size 
 
@@ -39,7 +39,9 @@ lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : set U} :
 
 lemma exists_max_common_ind (M₁ M₂ : rankfun U) : 
   ∃ I, is_common_ind M₁ M₂ I ∧ size I = ν M₁ M₂ ∧ ∀ J, is_common_ind M₁ M₂ J → size J ≤ size I := 
-  sorry 
+arg_max_over_spec (is_common_ind M₁ M₂) exists_common_ind size
+   
+
 
 lemma nu_nonneg (M₁ M₂ : rankfun U) :
   0 ≤ ν M₁ M₂ := 
@@ -298,11 +300,13 @@ begin
   refine ⟨B,⟨hB₁,⟨Bᶜ, ⟨hB₂,by {split; simp}⟩ ⟩⟩⟩, 
 end
 
+/-
 lemma pi_nu (M₁ M₂ : rankfun U) : 
   π M₁ M₂ = ν M₁ (dual M₂) - M₂.r univ := 
 begin
   sorry, 
-end
+end 
+-/
 
 
 

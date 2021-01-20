@@ -109,15 +109,27 @@ begin
   -- No really, fix it! 
 end 
 
-@[simp] lemma coe_univ {A : ftype} (S : set A) : ((univ : set (subftype S)) : set A) = S := by tidy 
+@[simp] lemma coe_univ {A : ftype} (S : set A) : 
+  ((univ : set (subftype S)) : set A) = S := 
+by tidy 
+
+@[simp] lemma coe_empty {A : ftype} (S : set A) : 
+  ((∅ : set (subftype S)) : set A) = ∅ :=
+by tidy 
+
+@[simp] lemma coe_set_is_subset {A : ftype} {S : set A} (X : set (subftype S)):
+  (X : set A) ⊆ S := 
+by tidy
 
 @[simp] lemma coe_img_set {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(X : set (subftype Y)) :
   (((embed.from_nested_pair hYY').img X) : set A) = (X : set A) := 
-  by {simp only [embed.img], unfold_coes, tidy}
+by {simp only [embed.img], unfold_coes, tidy}
 
 @[simp] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
   (((embed.from_nested_pair hYY') x ) : A) = (x : A) := 
-  by {unfold_coes, tidy}
+by {unfold_coes, tidy}
+
+
 
 
 

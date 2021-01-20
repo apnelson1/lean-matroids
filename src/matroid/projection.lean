@@ -39,28 +39,37 @@ def loopify_project (M : rankfun U)(C D : set U) : rankfun U :=
 
 lemma project_makes_loops (M : rankfun U)(C : set U):
   loops M ∪ C ⊆ loops (project M C)  := 
-  sorry 
+by rw [←rank_zero_iff_subset_loops, project_r, union_assoc, union_idem, 
+        union_comm, rank_eq_rank_union_rank_zero C (rank_loops M), sub_self]
 
 lemma projected_set_rank_zero (M : rankfun U)(C : set U):
   (project M C).r C = 0 := 
-  sorry
+by rw [project_r, union_idem, sub_self] 
 
 lemma loopify_makes_loops (M : rankfun U)(D : set U):
   loops M ∪ D ⊆ loops (loopify M D) := 
-  sorry
+by {rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], tidy,}
 
 lemma loopified_set_rank_zero (M : rankfun U)(D : set U):
   (loopify M D).r D = 0 :=
-  sorry 
-
+by rw [loopify_r, set.diff_self, rank_empty] 
 
 lemma indep_of_loopify_indep {M : rankfun U}{D X : set U} : 
   is_indep (loopify M D) X → is_indep M X := 
-  sorry 
+begin
+  simp_rw [indep_iff_r, loopify_r], 
+  refine λ h, (le_antisymm (M.R1 _) _), 
+  rw ←h, 
+  from R2 M (diff_subset _ _),  
+end
 
 lemma indep_of_project_indep {M : rankfun U}{C X : set U}: 
   is_indep (project M C) X → is_indep M C → is_indep M (X ∪ C) :=
-  sorry 
+begin
+  simp_rw [indep_iff_r, project_r], 
+  intros hXC hC,
+  linarith [M.R1 (X ∪ C), size_modular X C, size_nonneg (X ∩ C)],
+end 
 
 end pseudominor
 

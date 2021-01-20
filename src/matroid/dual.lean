@@ -9,7 +9,7 @@ noncomputable theory
 section dual
 variables {U : ftype}
  
-lemma rank_empty {B : ftype} (M : rankfun B) :
+lemma rank_empt {B : ftype} (M : rankfun B) :
   M.r ∅ = 0 :=
 le_antisymm (calc M.r ∅ ≤ size (∅ : set B) : M.R1 ∅ ... = 0 : size_empty B) (M.R0 ∅)
 
@@ -21,7 +21,7 @@ fun M, {
   R0 := (fun X,
     calc 0 ≤ M.r X  + M.r Xᶜ - M.r (X ∪ Xᶜ) - M.r (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
     ...    = M.r X  + M.r Xᶜ - M.r univ        - M.r ∅        : by rw [union_compl X, inter_compl X]
-    ...    ≤ size X + M.r Xᶜ - M.r univ                       : by linarith [M.R1 X, rank_empty M]),
+    ...    ≤ size X + M.r Xᶜ - M.r univ                       : by linarith [M.R1 X, rank_empt M]),
   R1 := (fun X, by {simp only, linarith [M.R2 _ _ (subset_univ Xᶜ)]}),
   R2 := (fun X Y h, let
     Z := Xᶜ ∩ Y,
@@ -37,7 +37,7 @@ fun M, {
       ...         = Xᶜ ∩ ∅        : by rw [inter_compl Y]
       ...         = ∅             : by apply inter_empty,
     h₃ :=
-      calc M.r Xᶜ = M.r Xᶜ + M.r ∅              : by linarith [rank_empty M]
+      calc M.r Xᶜ = M.r Xᶜ + M.r ∅              : by linarith [rank_empt M]
       ...         = M.r (Yᶜ ∪ Z) + M.r (Yᶜ ∩ Z) : by rw [h₁, h₂]
       ...         ≤ M.r Yᶜ + M.r Z              : by apply M.R3
       ...         ≤ M.r Yᶜ + size Z             : by linarith [M.R1 Z]
@@ -57,7 +57,7 @@ begin
   apply rankfun.ext, apply funext, intro X, calc
   (dual (dual M)).r X = size X + (size Xᶜ + M.r Xᶜᶜ - M.r univ) - (size univ + M.r univᶜ - M.r univ) : rfl
   ...                 = size X + (size Xᶜ + M.r X   - M.r univ) - (size univ + M.r ∅  - M.r univ) : by rw [compl_compl, ftype.compl_univ]
-  ...                 = M.r X                                                             : by linarith [size_compl X, rank_empty M]
+  ...                 = M.r X                                                             : by linarith [size_compl X, rank_empt M]
 end
 
 lemma dual_inj {M₁ M₂ : rankfun U} :

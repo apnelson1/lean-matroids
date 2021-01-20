@@ -209,7 +209,7 @@ begin
   rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
   push_neg at h₃, 
   --rw elem_iff at h₁e, 
-  from a (by linarith [add_nonelem_size h₂e, h₃ e h₂e (union_is_ub h₁ (elem_subset h₁e ))]), 
+  from a (by linarith [add_nonelem_size h₂e, h₃ e h₂e (union_is_ub h₁ (elem_to_subset h₁e ))]), 
   rw h at h₂ ⊢, 
   linarith, 
 end
@@ -224,8 +224,8 @@ variables {U : ftype}{α : Type}[linear_order α]
 -- Proving this stuff probably needs fintype etc for ftype. 
 
 
-/-- Takes the maximum of f over all sets X satisfying P -/
-lemma subtype_max_over_spec (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
+/-- finds the argmin of f over all sets X satisfying P -/
+lemma exists_arg_max_over_subtype (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
   ∃ X, ∀ Y, f Y ≤ f X := 
 begin
   letI := fintype_of U,
@@ -233,46 +233,59 @@ begin
   from fintype.exists_max f, 
 end
 
-/-- Takes the minimum of f over all sets X satisfying P -/
-lemma subtype_min_over_spec (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
+/-- finds the argmin of f over all sets X satisfying P -/
+lemma exists_arg_min_over_subtype (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
   ∃ X, ∀ Y, f X ≤ f Y := 
-let f' : _ → (order_dual α) := f in subtype_max_over_spec P hP f'
+let f' : _ → (order_dual α) := f in exists_arg_max_over_subtype P hP f'
 
 
 
 
 -- maximum 
-def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := sorry
-def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := sorry 
+
+def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := 
+  (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))).val 
+
+def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
+  f (arg_max_over P hP f)
 
 lemma max_over_is_ub (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   ∀ X, P X → f X ≤ max_val_over P hP f :=
-sorry
-
+λ X hX, classical.some_spec (exists_arg_max_over_subtype P hP (λ X, f X.val)) ⟨X, hX⟩
+  
 lemma arg_max_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   P (arg_max_over P hP f) ∧ f (arg_max_over P hP f) = max_val_over P hP f := 
-sorry  
+let X' := (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))) in 
+⟨X'.property, rfl⟩  
 
 lemma arg_max_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   ∃ X, P X ∧ (f X = max_val_over P hP f) ∧ (∀ Y, P Y → f Y ≤ f X)  := 
-sorry 
+let prev := arg_max_over_attains P hP f in 
+⟨arg_max_over P hP f,⟨prev.1,prev.2,max_over_is_ub P hP f⟩⟩  
 
 -- minimum 
-def min_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := sorry
-def arg_min_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := sorry 
+def arg_min_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U :=  
+  (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))).val 
+
+def min_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
+  f (arg_min_over P hP f)
+
+
 
 lemma min_over_is_lb (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   ∀ X, P X → min_val_over P hP f ≤ f X := 
-sorry
+λ X hX, classical.some_spec (exists_arg_min_over_subtype P hP (λ X, f X.val)) ⟨X, hX⟩
+
 
 lemma arg_min_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   P (arg_min_over P hP f) ∧ f (arg_min_over P hP f) = min_val_over P hP f := 
-  sorry  
+let X' := (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))) in 
+⟨X'.property, rfl⟩    
 
 lemma arg_min_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   ∃ X, P X ∧ (f X = min_val_over P hP f) ∧ (∀ Y, P Y → f X ≤ f Y)   := 
-  sorry 
-
+let prev := arg_min_over_attains P hP f in 
+⟨arg_min_over P hP f,⟨prev.1,prev.2,min_over_is_lb P hP f⟩⟩ 
 ---- 
 
 -- unrestricted max 
@@ -284,27 +297,27 @@ def arg_min (f : set U → α) : set U := arg_min_over (λ X, true) ⟨∅, triv
 
 lemma max_is_ub (f : set U → α): 
   ∀ X, f X ≤ max_val f :=
-  λ X, by {apply max_over_is_ub, trivial} 
+λ X, by {apply max_over_is_ub, trivial} 
 
 lemma arg_max_attains (f : set U → α): 
   f (arg_max f) = max_val f :=
-  (arg_max_over_attains _ _ _).2
+(arg_max_over_attains _ _ _).2
 
 lemma min_is_lb (f : set U → α) :
   ∀ X, min_val f ≤ f X := 
-  λ X, by {apply min_over_is_lb, trivial} 
+λ X, by {apply min_over_is_lb, trivial} 
 
 lemma arg_min_attains (f : set U → α) : 
   f (arg_min f) = min_val f := 
-  (arg_min_over_attains _ _ _).2
+(arg_min_over_attains _ _ _).2
 
 lemma arg_min_spec (f : set U → α):
   ∃ X, (∀ Y, f X ≤ f Y) ∧ (f X = min_val f) := 
-  sorry 
+⟨arg_min f, ⟨min_is_lb f, arg_min_attains f⟩ ⟩  
 
 lemma arg_max_spec (f : set U → α):
   ∃ X, (∀ Y, f Y ≤ f X) ∧ (f X = max_val f) := 
-  sorry 
+⟨arg_max f, ⟨max_is_ub f, arg_max_attains f⟩ ⟩
 
 end minmax
 

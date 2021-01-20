@@ -93,6 +93,14 @@ def to_minor : Π {E : set U}, minor_on E → rankfun U → matroid_on E
 
 /--simplified minor expression \ corestrict to Z, then restrict to A -/
 
+lemma restrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
+  (to_minor (restrict A (subset_univ A) self) M).r X = M.r X :=
+by simp [to_minor]
+
+lemma corestrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
+  (to_minor (corestrict A (subset_univ A) self) M).r X = M.r (X ∪ (univ \ A)) - M.r (univ \ A) :=
+by simp [to_minor]
+
 lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
   to_minor (restrict A hAZ ((corestrict Z (subset_univ Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_univ (A ∪ Zᶜ))) self)) M :=
   let f := (embed.from_subftype A).f, hAZc := subset_union_left A Zᶜ, hAZc_univ := subset_univ (A ∪ Zᶜ) in 
@@ -103,19 +111,13 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
       := by {rw [diff_def, inter_distrib_right, ←compl_union, union_comm Z, 
                 subset_def_union_mp hAZ], simp},
     set M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_univ self)) M) with hM', 
-    
-    --have foo : ∀ (Y Y' : set U)(hYY' : Y ⊆ Y'), (((embed.from_nested_pair hYY').img univ)) = ⟨Y, hYY'⟩ := sorry, 
-    
-    --have  bar : ∀ (Y Y' : set U)(hYY' : Y ⊆ Y')(X : set (subftype Y)),
-      --(embed.from_nested_pair hYY').img Xᶜ (Xᶜ : set A) = S \ X  := sorry 
-
-
 
     have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := 
-      by {rw hM',convert rfl; simp,}
+      by {rw hM',convert rfl; simp,},
     
     rw set_eq at RHS, 
-    exact RHS.symm, 
+    convert RHS.symm, 
+    simp [to_minor],
   end
 
 
@@ -126,17 +128,30 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
     rw switch_restrict_corestrict, ext X, apply eq.symm, 
     have hJ : ∀ (J : set U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (univ \ Z) := 
       λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, subset_def_union_mp (subset_trans hJ hAZ), inter_comm, union_comm], 
-    have hset : size ((X:set U) ∩ (Z \ A)) = 0 := 
-      by {suffices : ((X:set U) ∩ (Z \ A)) = ∅, rw this, exact size_empty U, apply subset_empty, refine subset_trans (subset_inter_subset_left (X :set U ) A (Z\A) X.2) _, rw inter_diff, apply subset_refl},
+    have hset : size ((X:set U) ∩ (Z \ A)) = 0 := by 
+    {
+      suffices : ((X:set U) ∩ (Z \ A)) = ∅, 
+      rw this, exact size_empty U,
+      have := coe_set_is_subset X, 
+      tidy, 
+    },
     have hempty : (Z\A)ᶜ = A ∪ (univ \ Z) := 
       by {rw [←empty_union (Z\A), hJ ∅ (empty_subset _), diff_empty]},
+    
+    
+    have := calc (to_minor (corestrict A hAZ (restrict Z (subset_univ Z) self)) (dual M)).r X
+           = (size ((X:set U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r univ) - (size (Z\A) + M.r (Z\A)ᶜ - M.r univ )       
+            : by {simp [to_minor, dual], } 
+       ... = size (X:set U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ                                                   
+            : by linarith [size_modular (X :set U) (Z\A), hset, emb.on_size X]
+       ... = size (X:set U) + M.r ((A \ X) ∪ (univ \ Z)) - M.r (A ∪ (univ \ Z))                                        
+            : by {congr', finish}
+       ... = size (X:set U) + (M.r ((A \ X) ∪ (univ \ Z)) - M.r (univ \ Z)) - (M.r (A ∪ (univ \ Z)) - M.r (univ \ Z))        
+            : by linarith 
+       ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M)).r X                     
+            : by {simp [dual, to_minor],} , 
 
-    calc _ = (size ((X:set U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r univ) - (size (Z\A) + M.r (Z\A)ᶜ - M.r univ )       : rfl 
-       ... = size (X:set U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ                                                   : by linarith [size_modular (X :set U) (Z\A), hset, emb.on_size X]
-       ... = size (X:set U) + M.r ((A \ X) ∪ (univ \ Z)) - M.r (A ∪ (univ \ Z))                                        : by rw [(hJ X X.2 : ((X:set U) ∪ (Z\A))ᶜ = (A\X) ∪ (univ \ Z)), hempty]
-       ... = size (X:set U) + (M.r ((A \ X) ∪ (univ \ Z)) - M.r (univ \ Z)) - (M.r (A ∪ (univ \ Z)) - M.r (univ \ Z))        : by linarith 
-       ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M)).r X                     : rfl 
-       ... = _ : by rw switch_restrict_corestrict,             
+    rw ←switch_restrict_corestrict, assumption,         
   end
 
 lemma dual_corestrict_restrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
@@ -146,7 +161,7 @@ lemma dual_corestrict_restrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
 
 lemma restrict_univ (M : rankfun U){A : set U} (expr: minor_on A) : 
   to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
-  by {ext X,cases X,refl}
+  by {ext X, simp [to_minor], congr',    }-- cases X,refl}
 
 lemma corestrict_univ (M : rankfun U){A : set U} (expr: minor_on A) : 
   to_minor (corestrict A (subset_refl A) expr) M = to_minor expr M :=

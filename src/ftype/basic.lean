@@ -740,9 +740,17 @@ begin
   from λ h', by {rw [h', size_empty] at h, from lt_irrefl 0 h} 
 end
 
+lemma one_le_size_iff_nonempty {X : set A} : X.nonempty ↔ 1 ≤ size X := 
+  size_pos_iff_nonempty
+
+
+lemma nontrivial_size (hA: nontrivial A): 1 ≤ size (univ : set A) := 
+by {rw [←one_le_size_iff_nonempty, ←set.ne_empty_iff_nonempty], from ne.symm hA}
+
+
 lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y := 
-  λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_def_inter_mp hXY.1], 
-                linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
+λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_def_inter_mp hXY.1], 
+              linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
 
 lemma eq_of_eq_size_subset {X Y : set A} : (X ⊆ Y) → (size X = size Y) → X = Y :=
   λ hXY, by {cases subset_ssubset_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, exact λ h', h}

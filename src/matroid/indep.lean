@@ -1,7 +1,7 @@
 import ftype.basic ftype.induction ftype.collections .rankfun 
 open ftype 
 
-local attribute [instance] classical.prop_decidable
+open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
 

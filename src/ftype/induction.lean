@@ -4,10 +4,9 @@ Answer: yes!
 -/
 
 import order.bounded_lattice  -- For the has_empt / has_top notation classes.
-import .basic .single 
+import .basic .single .int_lemmas 
 ----------------------------------------------------------------
-local attribute [instance] classical.prop_decidable
-
+open_locale classical 
 noncomputable theory 
 
 
@@ -16,41 +15,6 @@ namespace ftype
 
 variables {A: ftype}
 
-def singlet (e : set A) := (size e = 1)  -- The property of being a singleton.
-
-/-
-subset_singlet is the crucial property, and should be provable as a
-consequence of the fact that singletons have size 1 and there are no
-integers between 0 and 1.
--/
-
-lemma subset_singlet (X e : set A) : (singlet e) → (X ⊆ e) → (X = ∅ ∨ X = e) := sorry
-
-lemma subset_dec_eq (X Y : set A) : (X ⊆ Y) → (X = Y) ∨ (X ≠ Y) := 
-  by {by_contra a, push_neg at a, cc,  }
-
-----------------------------------------------------------------
-
-section weak_induction
-
-/-
-A formulation of weak induction, which crawls up the poset,
-singleton by singleton. Provable from the axiom that every
-nonempty subset of the ftype contains a singleton.
--/
-lemma weak_induction (P : set A → Prop) :
-  (P ∅) →  -- Base case.
-  (forall (e Y : set A), (singlet e) → (P Y) → P (e ∪ Y)) →  -- Induction step.
-  (forall (Z : set A), P Z) :=
-sorry
-
-end /-section-/ weak_induction
-
-----------------------------------------------------------------
-
-section strong_induction
-
--- (below P Y) says that property P is true everywhere strictly below Y.
 def below (P : set A → Prop) (Y : set A) : Prop :=
   forall (X :  set A), ((X ⊆ Y) ∧  (X ≠ Y)) → (P X)
 
@@ -58,108 +22,27 @@ def below (P : set A → Prop) (Y : set A) : Prop :=
 def augment (P : set A → Prop) : Prop :=
   forall (Y : set A), (below P Y) → (P Y)
 
--- The statement of strong induction, specialized to a single position in the ftype.
-def strong_at (Y : set A) : Prop :=
-  forall (P : set A → Prop), (augment P) → (P Y)
-
-/-
-The crucial part of the proof that weak induction implies strong induction.
-
-Consider the subalg of elements below Y, and the subalg of elements below (e ∪ Y).
-Because of subset_singlet, we know that (subalg (e ∪ Y)) is covered by two
-copies of (subalg Y): the elements of the form X ⊆ Y, and the elements of
-the form (e ∪ X) for X ⊆ Y.
-
-So, we package up the pair of propositions (P X) and (P (e ∪ X)) as a new
-proposition on (subalg Y), and call it (Q X).
-
-This will allow us to use strong induction at position Y, for Q, to prove
-that strong induction works at position (e ∪ Y), for P.
--/
-lemma pair_up (P : set A → Prop) (e : set A) : (singlet e) →
-  let Q : (set A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
-  (augment P) → (augment Q) :=
-fun h_singlet h_augment Y h_below,
-/-
-First use (augment P) to upgrade (below P Y) to (P Y).
-The fact that (below Q Y) implies (below P Y) is almost immediate.
--/
-let h_Y : (P Y) := h_augment Y (fun X h_ssu , and.left (h_below X h_ssu)) in
-and.intro h_Y
-/-
-Then use (augment P) to upgrade (below P (e ∪ Y)) to (P (e ∪ Y)).
-The fact that (below Q Y) implies (below P (e ∪ Y)) is *not* immediate.
-There are three cases to consider:
-
-1. Elements of the form X ⊆ Y with X ≠ Y:
-   (P X) is directly implied by (Q X).
-
-2. The element Y:
-   we proved above that (augment P) works to prove (P Y).
-
-3. Elements of the form (e ∪ X) with X ⊆ Y and X ≠ Y:
-   (P (e ∪ X)) is directly implied by (Q X).
--/
-(h_augment (e ∪ Y) (fun X h_ssu,
--- Break up X ⊆ (e ∪ Y) into the part under e and the part under Y.
-let h_union :=
-  calc X = X ∩ (e ∪ Y)       : (subset_def_inter_mp h_ssu.1).symm 
-  ...    = (X ∩ e) ∪ (X ∩ Y) : by rw ←inter_distrib_left
-in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
-(or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
-  -- Case 2 described above: X = Y.
-  (fun (h₁ : X ∩ e = ∅) (h₂ : X ∩ Y = Y),
-    @eq.rec _ Y P h_Y X (
-    calc Y = X ∩ Y             : h₂.symm
-    ...    = ∅ ∪ (X ∩ Y)       : (empty_union (X ∩ Y)).symm
-    ...    = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
-    ...    = X                 : h_union.symm))
-  -- Case impossible, because X ≠ (e ∪ Y)
-  (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y = Y),
-    false.elim (h_ssu.2 (
-    calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
-    ...    = e ∪ Y             : by rw [h₁, h₂]))))
-(or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
-  -- Case 1 described above: X ⊂ Y.
-  (fun (h₁ : X ∩ e = ∅) (h₂ : X ∩ Y ≠ Y),
-    let h₃ :=
-      calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
-      ...    = ∅ ∪ (X ∩ Y)       : by rw [h₁]
-      ...    = X ∩ Y             : empty_union (X ∩ Y)
-    in and.left (h_below X ⟨(subset_def_inter_mpr h₃.symm),(by {rw h₃, exact h₂} : X ≠ Y)⟩))
-  -- Case 3 described above: X = e ∪ X' with X' ⊂ Y.
-  (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y ≠ Y),
-    @eq.rec _ (e ∪ (X ∩ Y)) P
-    (and.right (h_below (X ∩ Y) (⟨(inter_subset_right X Y), h₂⟩)))
-    X (
-    calc e ∪ (X ∩ Y) = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
-    ...              = X                 : h_union.symm))))
-)
-
-
-/-
-Strong induction works at position ∅, vacuously.
--/
-lemma strong_base :
-  strong_at (∅ : set A) :=
-fun P aug, aug ∅ (fun X h_ssu, false.elim (h_ssu.2 (subset_empty h_ssu.1)))
-
-/-
-As explained above, strong induction at position Y
-implies strong induction at position (e ∪ Y).
--/
-lemma strong_step (e Y : set A) :
-  (singlet e) → (strong_at Y) → (strong_at (e ∪ Y)) :=
-fun h_singlet h_strong P h_augment,
-let Q : (set A → Prop) := fun Y, (P Y) ∧ P (e ∪ Y) in
-and.right (h_strong Q (pair_up P e h_singlet h_augment))
-
-/-
-So weak induction implies strong induction at every position.
--/
 lemma strong_induction (P : set A → Prop) :
   (augment P) → (forall (Z : set A), P Z) :=
-fun h_augment Z, weak_induction strong_at strong_base strong_step Z P h_augment
+begin
+  unfold augment below,  intros h_augment, 
+  let  Q : ℤ → Prop := λ n, ∀ Y : set A, size Y = n → P Y,
+  suffices : ∀ n, 0 ≤ n → Q n,  
+  refine λ Z, this (size Z) (size_nonneg _)  Z rfl, 
+  refine nonneg_int_strong_induction Q _ _,
+  
+  intros Y hY, rw [size_zero_iff_empty] at hY, rw hY, 
+  refine h_augment _ _, 
+  from λ X hX, false.elim (hX.2 (subset_empty hX.1)), 
+  intros n h0n hn X hXn, 
+  refine h_augment _ _,
+  intros Y hY, 
+  refine hn (size Y) (size_nonneg Y) _ Y rfl, 
+  rw ←hXn, apply size_strict_monotone, 
+  apply ssubset_of_subset_ne hY.1 hY.2, 
+end
+
+
 
 lemma minimal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
@@ -205,9 +88,5 @@ lemma minimal_example_remove (P : set A → Prop){X : set A}:
     rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
   end 
-
-end /-section-/ strong_induction
-
-
 
 end ftype 
