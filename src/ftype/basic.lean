@@ -250,6 +250,18 @@ lemma union_right_comm (X Y Z : set A) : X ∪ Y ∪ Z = X ∪ Z ∪ Y :=
 lemma inter_right_comm (X Y Z : set A) : X ∩ Y ∩ Z = X ∩ Z ∩ Y := 
   by rw [inter_assoc _ Y, inter_comm Y, ←inter_assoc]
 
+@[simp] lemma union_left_absorb (X Y : set A) : (X ∪ Y) ∪ X = X ∪ Y := 
+by rw [union_right_comm, union_idem]  
+
+@[simp] lemma union_right_absorb (X Y : set A) : X ∪ (Y ∪ X) = X ∪ Y := 
+by rw [union_left_comm, union_idem, union_comm]  
+
+@[simp] lemma inter_left_absorb (X Y : set A) : (X ∩ Y) ∩ X = X ∩ Y := 
+by rw [inter_right_comm, inter_idem]  
+
+@[simp] lemma inter_right_absorb (X Y : set A) : X ∩ (Y ∩ X) = X ∩ Y := 
+by rw [inter_left_comm, inter_idem, inter_comm]
+
 lemma inter_distrib_inter_left (X Y Z : set A) : (X ∩ Y) ∩ Z = (X ∩ Z) ∩ (Y ∩ Z) := 
   by rw [inter_assoc X Z, inter_comm Z, inter_assoc Y, inter_idem, inter_assoc] 
 
@@ -463,16 +475,22 @@ lemma compl_pair_iff {X Y : set A} : (Xᶜ = Y) ↔ (X = Yᶜ) :=
 lemma compl_diff (X Y : set A) : (X \ Y)ᶜ = Xᶜ ∪ Y := 
   by rw [diff_def, compl_inter, compl_compl]
 
-@[simp] lemma union_union_compl (X Y : set A) : X ∪ (Y ∪ Yᶜ) = univ := 
-  by rw[union_compl, union_univ]
+@[simp] lemma union_union_compl (X Y : set A) : (X ∪ Y) ∪ Yᶜ = univ := 
+  by rw [union_assoc, union_compl, union_univ]
 
-@[simp] lemma inter_inter_compl (X Y : set A) : X ∩ (Y ∩ Yᶜ) = ∅ := 
-  by rw[inter_compl, inter_empty]
+@[simp] lemma inter_inter_compl (X Y : set A) : (X ∩ Y) ∩ Yᶜ = ∅ := 
+  by rw [inter_assoc, inter_compl, inter_empty]
 
-@[simp] lemma union_inter_compl (X Y : set A) : X ∪ (Y ∩ Yᶜ) = X :=
-  by rw [inter_compl, union_empty]
+@[simp] lemma union_union_compl_right (X Y : set A) : X ∪ (Y ∪ Xᶜ) = univ := 
+by rw [←union_assoc, union_comm X, union_union_compl]
 
-@[simp] lemma inter_union_compl (X Y : set A) : X ∩ (Y ∪ Yᶜ) = X :=
+@[simp] lemma inter_inter_compl_right (X Y : set A) : X ∩ (Y ∩ Xᶜ) = ∅ := 
+by rw [←inter_assoc, inter_comm X, inter_inter_compl]
+
+lemma union_inter_compl_self (X Y : set A) : X ∪ (Y ∩ Yᶜ) = X :=
+  by {simp}
+
+lemma inter_union_compl_self (X Y : set A) : X ∩ (Y ∪ Yᶜ) = X :=
   by rw [union_compl, inter_univ]
 
 lemma subset_to_compl {X Y : set A} : X ⊆ Y → Yᶜ ⊆ Xᶜ := 
@@ -576,8 +594,18 @@ lemma ssubset_inter {X Y : set A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:
 
 -- Misc
 
+
 lemma union_union_diff (X Y Z : set A) : (X ∪ Z) ∪ (Y \ Z) = X ∪ Y ∪ Z :=
   by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp,}
+
+lemma union_diff_absorb (X Y : set A) : X ∪ (Y \ X) = X ∪ Y :=
+by {nth_rewrite 0 ←union_idem X, rw union_union_diff, simp}
+
+@[simp] lemma union_inter_compl (X Y : set A) : X ∪ (Y ∩ Xᶜ) = X ∪ Y := 
+by rw [←diff_def, union_diff_absorb]
+
+@[simp] lemma union_union_inter_compl (X Y Z : set A) : (X ∪ Z) ∪ (Y ∩ Zᶜ) = X ∪ Y ∪ Z :=
+  by rw [←diff_def, union_union_diff] 
 
 lemma union_inter_diff (X Y Z : set A) : (X ∪ Z) ∩ (Y \ Z) = (X ∩ Y) \ Z :=
   by {rw [diff_def, diff_def, inter_distrib_right], simp_rw [←inter_assoc, inter_right_comm Z Y Zᶜ], simp, }

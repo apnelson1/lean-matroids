@@ -87,8 +87,11 @@ lemma minimal_example_remove (P : set A → Prop){X : set A}:
     from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
   end 
 
---lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):
---  ∃ X, P X ∧ ∀ Y, size Y < size X → ¬ P Y := 
+/-lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):
+  ∃ X, P X ∧ ∀ Y, size Y < size X → ¬ P Y := 
+begin
+  by_contra h, push_neg at h, 
+end-/
 
 
 

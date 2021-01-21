@@ -322,6 +322,23 @@ lemma I2 {M : rankfun U} {X Y : set U}:
     linarith [M.R1 X, M.R1 (Y \ X ), diff_size hXY, rank_diff_subadditive M hXY]
   end 
 
+lemma I2_i_right {M : rankfun U}{X Y : set U}:
+  is_indep M Y → is_indep M (X ∩ Y) :=
+λ h, I2 (inter_subset_right _ _) h 
+
+lemma I2_i_left {M : rankfun U}{X Y : set U}:
+  is_indep M X → is_indep M (X ∩ Y) :=
+λ h, I2 (inter_subset_left _ _) h 
+
+lemma I2_u_right {M : rankfun U}{X Y : set U}:
+  is_indep M (X ∪ Y) → is_indep M Y :=
+λ h, I2 (subset_union_right _ _) h
+
+lemma I2_u_left {M : rankfun U}{X Y : set U}:
+  is_indep M (X ∪ Y) → is_indep M X :=
+λ h, I2 (subset_union_left _ _) h
+
+
 lemma I3 {M : rankfun U}{X Y : set U}: 
   size X < size Y → is_indep M X → is_indep M Y → (∃ (e:U), e ∈ Y \ X ∧ is_indep M (X ∪ e)) := 
   indep_aug_diff 

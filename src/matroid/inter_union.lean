@@ -1,4 +1,4 @@
-import .constructions .projection 
+import .constructions .projection ftype.minmaxsum 
 
 noncomputable theory 
 namespace ftype 
@@ -21,11 +21,11 @@ lemma exists_common_ind {M₁ M₂ : rankfun U}:
 
 /-- size of max common independent set of M₁ M₂ -/
 def ν (M₁ M₂ : rankfun U) : ℤ := 
-  max_val_over (is_common_ind M₁ M₂) exists_common_ind size 
+  max_size_over (is_common_ind M₁ M₂) exists_common_ind
 
 /-- A largest common independent set of M₁ M₂ -/
 def max_common_ind (M₁ M₂ : rankfun U) : set U := 
-  arg_max_over (is_common_ind M₁ M₂) exists_common_ind size
+  arg_max_size_over (is_common_ind M₁ M₂) exists_common_ind
 
 lemma size_max_common_ind_eq_nu (M₁ M₂ : rankfun U) : 
   size (max_common_ind M₁ M₂) = ν M₁ M₂ := 
@@ -41,7 +41,7 @@ lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : set U} :
 
 lemma exists_max_common_ind (M₁ M₂ : rankfun U) : 
   ∃ I, is_common_ind M₁ M₂ I ∧ size I = ν M₁ M₂ ∧ ∀ J, is_common_ind M₁ M₂ J → size J ≤ size I := 
-arg_max_over_spec (is_common_ind M₁ M₂) exists_common_ind size
+max_size_over_spec (is_common_ind M₁ M₂) exists_common_ind
    
 lemma nu_nonneg (M₁ M₂ : rankfun U) :
   0 ≤ ν M₁ M₂ := 
@@ -80,6 +80,7 @@ theorem matroid_intersection (M₁ M₂ : rankfun U):
 begin
 set ub_fn := λ (N₁ N₂ : rankfun U) X, N₁.r X + N₂.r Xᶜ with h_ub_fn, 
 --induction boilerplate (and ≥ suffices)
+
 set Q : ℤ → Prop := 
   λ s, ∀ (M₁ M₂ : rankfun U), size (loops M₁ ∪ loops M₂)ᶜ = s → 
     min_val (ub_fn M₁ M₂) ≤ ν M₁ M₂,
@@ -263,7 +264,7 @@ lemma max_common_indep_inter_bases (M₁ M₂ : rankfun U):
 begin
   rcases exists_max_common_ind M₁ M₂ 
     with ⟨I, hI_ind, hIsize, hI'I⟩, 
-  rcases arg_max_over_spec (is_inter_bases M₁ M₂) exists_inter_bases size 
+  rcases max_over_spec (is_inter_bases M₁ M₂) exists_inter_bases size 
     with ⟨J,hJ_inter,hJsize, hYJ⟩,  
   rw [←hIsize, ←hJsize], 
   apply le_antisymm, 
@@ -277,38 +278,130 @@ end
 end intersections_of_bases
 section union
 
+/-- is the union of an independent set of M₁ and an independent set of M₂-/
+def is_union_two_indep (M₁ M₂ : rankfun U) : set U → Prop := 
+  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₂ ∧ X = I₁ ∪ I₂
+
 /-- has partition into an independent set of M₁ and an independent set of M₂-/
 def is_two_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
-  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₁ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ∅
+  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₂ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ∅
 
 /-- has partition into a basis of M₁ and a basis set of M₂-/
 def is_two_basis_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
-  λ X, ∃ B₁ (h₁ : is_basis M₁ B₁) B₂ (h₂ : is_basis M₂ B₂), B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ∅
+  λ X, ∃ B₁ B₂ , is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ∅
 
-lemma exists_two_partitionable {M₁ M₂ : rankfun U}: 
+/-- is the union of a basis of M₁ and a basis of M₂ -/
+def is_union_two_bases (M₁ M₂ : rankfun U) : set U → Prop := 
+  λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X 
+
+/-- is the union of independent -/
+--def is_partitionable (Mset : list (rankfun U)) : set U → Prop := 
+  --λ X, ∃ f: Mset → set U, ∀ M : Mset, is_indep M.val (f M) ∧ set.sUnion (set.range f) = X  
+
+lemma two_partitionable_iff_union_two_indep {M₁ M₂ : rankfun U} :
+  is_two_partitionable M₁ M₂ = is_union_two_indep M₁ M₂ := 
+begin
+  ext X, rw [is_two_partitionable, is_union_two_indep], 
+  refine ⟨λ ⟨I₁,I₂, h₁, h₂, hu, hi⟩, ⟨I₁, I₂, h₁, h₂, hu⟩, λ h, _⟩, 
+  rcases h with ⟨I₁,I₂, h₁, h₂, hu⟩, 
+  from ⟨I₁, I₂ \ I₁, h₁, I2 (diff_subset I₂ I₁) h₂ , by simp [hu], by simp⟩,
+end
+
+
+/-- is a subset of the union of a basis of X and a basis of Y-/
+def is_subset_union_two_bases (M₁ M₂ : rankfun U) := 
+  λ X, ∃ Y, is_union_two_bases M₁ M₂ Y ∧ X ⊆ Y 
+
+lemma two_partitionable_iff_subset_union_two_bases {M₁ M₂ : rankfun U}:
+  is_two_partitionable M₁ M₂ = is_subset_union_two_bases M₁ M₂ := 
+begin
+  rw [two_partitionable_iff_union_two_indep], ext X, 
+  refine ⟨λ h,_,λ h,_⟩, 
+  
+  rcases h with ⟨I₁, I₂, hI₁, hI₂, hIX⟩,
+  cases extends_to_basis hI₁ with B₁ hB₁,  
+  cases extends_to_basis hI₂ with B₂ hB₂, 
+  refine ⟨B₁ ∪ B₂, ⟨B₁, B₂, hB₁.2, hB₂.2, rfl ⟩, _⟩,
+  rw hIX, apply union_subset_pairs hB₁.1 hB₂.1, 
+
+  rcases h with ⟨Y, ⟨B₁, B₂, hB₁, hB₂, hBY⟩, hXY⟩, 
+  refine ⟨X ∩ B₁, X ∩ B₂, I2_i_right (basis_is_indep hB₁), I2_i_right (basis_is_indep hB₂), _ ⟩,   
+  rw [←inter_distrib_left, hBY, eq_comm, ←subset_def_inter],
+  from hXY, 
+end
+
+lemma union_two_bases_is_subset_union_two_bases (M₁ M₂ : rankfun U): 
+  ∀ X, is_union_two_bases M₁ M₂ X → ∃ Y, is_union_two_bases M₁ M₂ Y ∧ X ⊆ Y :=
+λ X hX, ⟨X, ⟨hX, subset_refl _⟩⟩ 
+
+lemma exists_two_partitionable (M₁ M₂ : rankfun U): 
   ∃ X, is_two_partitionable M₁ M₂ X := 
-  ⟨∅, ⟨∅,⟨∅, ⟨I1 M₁, ⟨I1 M₂, ⟨by rw union_idem, by rw inter_idem⟩⟩ ⟩⟩⟩⟩
+⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_idem, by rw inter_idem⟩
 
-/-- size of largest set that partitions into independent sets of M₁, M₂ -/
-def π (M₁ M₂ : rankfun U) :=
-  max_val_over (is_two_partitionable M₁ M₂) exists_two_partitionable size
+lemma exists_union_two_indep (M₁ M₂ : rankfun U): 
+  ∃ X, is_union_two_indep M₁ M₂ X := 
+⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_idem⟩
 
-/-- there exists a set that is a basis of both M₁ and M₂-/
+lemma exists_union_two_bases (M₁ M₂ : rankfun U): 
+  ∃ X, is_union_two_bases M₁ M₂ X := 
+by {cases exists_basis M₁ with B₁ h₁, cases exists_basis M₂ with B₂ h₂, from ⟨_, B₁, B₂, h₁, h₂, rfl⟩}
+
+lemma exists_subset_union_two_bases (M₁ M₂ : rankfun U): 
+  ∃ X, is_subset_union_two_bases M₁ M₂ X := 
+by {cases exists_union_two_bases M₁ M₂ with Y hY, from ⟨Y,Y,hY, subset_refl Y⟩,  }
+
+/-- prop that there exists a set that is a basis of both M₁ and M₂-/
 def exists_common_basis (M₁ M₂ : rankfun U) :=
   ∃ B, is_basis M₁ B ∧ is_basis M₂ B 
 
 lemma univ_partitionable_iff_dual_common_basis {M₁ M₂ : rankfun U}:
-  is_two_basis_partitionable M₁ M₂ univ ↔ exists_common_basis M₁ (dual M₂) :=
+  is_two_basis_partitionable M₁ M₂ (univ : set U) ↔ exists_common_basis M₁ (dual M₂) :=
 begin
   refine ⟨λ h, _, λ h,_⟩,
-  rcases h with ⟨B₁, ⟨h₁, ⟨B₂, ⟨h₂, ⟨hu,hi⟩⟩⟩⟩⟩ , 
+  rcases h with ⟨B₁, B₂, h₁, h₂, hu, hi⟩, 
   refine ⟨B₁,h₁,_⟩, 
   rw [←cobasis_iff, cobasis_iff_compl_basis, (compl_unique hu hi).symm],
   from h₂, 
   rcases h with ⟨B, hB₁, hB₂⟩, 
   rw [←cobasis_iff, cobasis_iff_compl_basis] at hB₂, 
-  refine ⟨B,⟨hB₁,⟨Bᶜ, ⟨hB₂,by {split; simp}⟩ ⟩⟩⟩, 
+  refine ⟨B, Bᶜ, hB₁, hB₂, by simp⟩, 
 end
+
+
+
+/-- size of largest set that partitions into independent sets of M₁, M₂ -/
+def π (M₁ M₂ : rankfun U) : ℤ :=
+  max_size_over (is_two_partitionable M₁ M₂) (exists_two_partitionable _ _)
+
+lemma π_attained_by_bases (M₁ M₂ : rankfun U) : 
+  π M₁ M₂ = max_size_over (is_union_two_bases M₁ M₂) (exists_union_two_bases M₁ M₂) :=
+begin
+  --rcases max_size_over_spec (is_union_two_bases M₁ M₂) (exists_union_two_bases M₁ M₂) 
+  --  with ⟨X, hXu, hsX, hYX⟩, 
+  unfold π, simp_rw [two_partitionable_iff_subset_union_two_bases], 
+  refine le_antisymm _ _, 
+  rcases max_size_over_spec (is_union_two_bases M₁ M₂) (exists_union_two_bases M₁ M₂) 
+    with ⟨X, hXu, hsX, hYX⟩, 
+  rcases max_size_over_spec (is_subset_union_two_bases M₁ M₂) (exists_subset_union_two_bases M₁ M₂) 
+    with ⟨X', hX'u, hsX', hYX'⟩, 
+  
+  erw [←hsX, ←hsX'], 
+  cases hX'u with Y hY, 
+  linarith [hYX Y hY.1, size_monotone hY.2], 
+  
+  have hPQ := union_two_bases_is_subset_union_two_bases M₁ M₂, 
+  refine max_over_subset_le_max 
+    (is_union_two_bases M₁ M₂)
+    (λ X, ∃ Y, is_union_two_bases M₁ M₂ Y ∧ X ⊆ Y)
+    (exists_union_two_bases M₁ M₂)
+    size 
+    (union_two_bases_is_subset_union_two_bases M₁ M₂), 
+end
+--lemma max_two_partitionable_is_union_two_bases (M₁ M₂ : rankfun U) :
+--  ∃ X : set U, size X = π M₁ M₂ ∧ is_union_two_indep M₁ M₂ X 
+
+
+
 
 /-
 lemma pi_nu (M₁ M₂ : rankfun U) : 
@@ -337,12 +430,14 @@ begin
   set I := max_common_ind M₁ M₂ with hI, 
 
   sorry, 
-end-/
+end
 
 
+
+-/
 
 end union 
---test 
+
 
 
 
