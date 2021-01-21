@@ -28,6 +28,7 @@ structure ftype :=
   (E : Type)
   [fin : fintype E]
 
+--@[simp] instance ftype_sets.nonempty : nonempty ftype := ⟨⟩ 
 
 @[simp] instance alg_coe : has_coe_to_sort ftype := 
   {S := Type, coe := λ A, A.E}

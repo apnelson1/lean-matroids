@@ -397,6 +397,89 @@ begin
     size 
     (union_two_bases_is_subset_union_two_bases M₁ M₂), 
 end
+
+
+----------------------------- Trying to make summation manipulations more versatile ----------------
+
+def basis_pairs (M₁ M₂ : rankfun U) := {B : set U // is_basis M₁ B} × {B : set U // is_basis M₂ B}
+
+
+
+instance bp_fin {M₁ M₂ : rankfun U}: fintype (basis_pairs M₁ M₂) := y 
+begin
+  letI := U.fin, 
+  --haveI : fintype (set U) := infer_instance, 
+  haveI i1 : fintype {B : set U // is_basis M₁ B} := infer_instance,
+  haveI i2 : fintype {B : set U // is_basis M₂ B} := infer_instance, 
+  haveI := @prod.fintype _ _ i1 i2, assumption, 
+end
+
+
+
+variables {α α' β: Type}[fintype α][nonempty α][linear_order β]
+
+def arg_max_of (f : α → β) : α := 
+  classical.some (fintype.exists_max f)
+
+def max_of (f : α → β) : β := 
+  f (arg_max_of f)
+
+def exists_max (f : α' → β) := 
+  ∃ x, ∀ y, f y ≤ f x 
+
+lemma max_spec_of (f : α → β) : 
+  ∃ x : α, f x = max_of f ∧ ∀ y : α, f y ≤ f x := 
+⟨arg_max_of f, ⟨rfl,classical.some_spec (fintype.exists_max f) ⟩⟩
+
+lemma max_manip (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
+  max_of (f ∘ φ) = @max_of _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
+begin
+  rcases @max_spec_of _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f 
+    with ⟨x', ⟨hx'1, hx'2⟩⟩, 
+  rcases max_spec_of (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
+  rw [←hx1, ←hx'1], 
+  apply le_antisymm (hx'2 _), 
+  cases hφ.2 x' with z hz,
+  rw ←hz, apply hx2, 
+end
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+lemma ν_eq_π_minus_rank (M₁ M₂ : rankfun U) : 
+  ν M₁ (dual M₂) = π M₁ M₂ - M₂.r univ := 
+begin
+  set sub_r : ℤ → ℤ := λ n, n - M₂.r univ with h_sub_r, 
+
+  set cond2 := λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ X = B₁ \ B₂ with hcond2, 
+
+  have h_mono : monotone sub_r := λ n n' hnn', by {simp only [sub_r], linarith,}, 
+  --have := calc ν M₁ (dual M₂) = _ : by rw max_common_indep_inter_bases, 
+  rw max_common_indep_inter_bases, 
+
+  have h2: is_inter_bases M₁ (dual M₂) = cond2 := by 
+  {
+      ext, refine ⟨λ h,_,λ h,_⟩, 
+      rcases h with ⟨B₁, B₂, hB₁, hB₂, hX⟩, 
+      refine ⟨B₁, B₂ᶜ, hB₁,_,by simp [hX]⟩, 
+      rw [←cobasis_iff_compl_basis], from hB₂, 
+      rcases h with ⟨B₁, B₂, hB₁, hB₂, hX⟩, 
+      refine ⟨B₁, B₂ᶜ,hB₁,_,by simp [hX]⟩, 
+      simp_rw [←cobasis_iff_compl_basis, ←is_cobasis, dual_dual, hB₂],
+  },
+  have h3 : max_val_over (is_inter_bases M₁ (dual M₂)) exists_inter_bases size 
+          = max_val_over cond2 (by {rw ←h2, apply exists_inter_bases}) size := by congr', 
+    
+  rw h3, 
+  sorry 
+
+  
+end
+
+
+
 --lemma max_two_partitionable_is_union_two_bases (M₁ M₂ : rankfun U) :
 --  ∃ X : set U, size X = π M₁ M₂ ∧ is_union_two_indep M₁ M₂ X 
 

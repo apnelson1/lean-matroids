@@ -1,4 +1,4 @@
-import .basic .induction .single 
+import .basic .induction .single order.basic
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 
@@ -35,6 +35,7 @@ def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : s
 /-- subset of U attaining maximum value of f subject to satisfying P -/
 def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
   f (arg_max_over P hP f)
+
 
 lemma max_over_is_ub (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
   ∀ X, P X → f X ≤ max_val_over P hP f :=
@@ -194,9 +195,37 @@ begin
   from le_trans (hX.2.2 X' hX'.1) (hff' _),
 end
 
+variables {β : Type}[linear_order β]
 
+lemma max_over_compose_mono (P : set U → Prop)(hP : set.nonempty P)
+  (f : set U → α)(g : α → β)(hg : monotone g) : 
+  g (max_val_over P hP f) = max_val_over P hP (g ∘ f) := 
+begin
+  rcases max_over_spec P hP f with ⟨X, hX₁, hX₂, hX₃⟩, 
+  rcases max_over_spec P hP (g ∘ f) with ⟨X',hX'₁, hX'₂, hX'₃ ⟩, 
+  erw [←hX'₂ , ←hX₂],
+  from le_antisymm (hX'₃ _ hX₁) (hg (hX₃ _ hX'₁)), 
+end
 
+lemma min_over_compose_mono (P : set U → Prop)(hP : set.nonempty P)
+  (f : set U → α)(g : α → β)(hg : monotone g) : 
+  g (min_val_over P hP f) = min_val_over P hP (g ∘ f) := 
+begin
+  rcases min_over_spec P hP f with ⟨X, hX₁, hX₂, hX₃⟩, 
+  rcases min_over_spec P hP (g ∘ f) with ⟨X',hX'₁, hX'₂, hX'₃ ⟩, 
+  erw [←hX'₂, ←hX₂],
+  from le_antisymm (hg (hX₃ _ hX'₁)) (hX'₃ _ hX₁), 
+end
+  
+/-
+lemma max_over_rw_prop (P Q : set U → Prop)(hP : set.nonempty P)(hPQ : P = Q)(f : set U → α):
+  max_val_over P hP f = max_val_over Q (by {rw ←hPQ, from hP}) f := 
+by congr'
 
+lemma min_over_rw_prop (P Q : set U → Prop)(hP : set.nonempty P)(hPQ : P = Q)(f : set U → α):
+  min_val_over P hP f = min_val_over Q (by {rw ←hPQ, from hP}) f := 
+by congr'
+-/
 
 end minmax
 
