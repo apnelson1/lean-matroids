@@ -30,16 +30,25 @@ structure ftype :=
 
 --@[simp] instance ftype_sets.nonempty : nonempty ftype := ⟨⟩ 
 
-@[simp] instance alg_coe : has_coe_to_sort ftype := 
+@[simp] instance ftype_coe : has_coe_to_sort ftype := 
   {S := Type, coe := λ A, A.E}
 
+
 def fintype_of (U : ftype) : fintype U := U.fin 
+
+def set_fintype_of (U : ftype) : fintype (set U) := by {letI := fintype_of U, apply_instance}
+
+--instance set_inhabited_of {U : ftype} : inhabited (set U) := ⟨∅⟩
 
 def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
 def as_finset (U : ftype)(X : set U) : finset U := 
   @set.to_finset _ X (@fintype.subtype_of_fintype _ (fintype_of U) X) 
   
+
+
+
+
 
 variables {A : ftype}
 
@@ -741,6 +750,9 @@ lemma size_modular_diff (X Y : set A) : size (X ∪ Y) = size (X \ Y) + size (Y 
 
 lemma size_induced_partition (X Y : set A) : size X = size (X ∩ Y) + size (X \ Y) := 
   by {nth_rewrite 0 ←diff_union X Y, refine size_disjoint_sum _, apply partition_inter}
+
+lemma size_induced_partition_inter (X Y : set A) : size X = size (X ∩ Y) + size (X ∩ Yᶜ) := 
+  by {rw ←diff_def, apply size_induced_partition,}
 
 lemma size_compl_sum (X : set A) : size X + size Xᶜ = size (univ : set A) := 
   by {have := size_disjoint_sum (inter_compl X), rw (union_compl X) at this, linarith}

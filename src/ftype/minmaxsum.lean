@@ -1,233 +1,129 @@
-import .basic .induction .single order.basic
+-- Experimental/broken - nothing relies on this. 
+
+import .basic .induction .single 
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 
 
 
-namespace ftype 
--- The operations needed on the ftype A.
-section minmax
+-- Lemmas applying for a general nonempty fintype 
+-- TODO - lemmas about folding, so sum etc is also subsumed 
 
-variables {U : ftype}{α : Type}[linear_order α]
+section general_fintype 
 
--- Proving this stuff probably needs fintype etc for ftype. 
+variables {α α' β β': Type}[fintype α][nonempty α][linear_order β][linear_order β']
 
+lemma exists_max (f : α → β): 
+  ∃ x, ∀ y, f y ≤ f x := 
+fintype.exists_max f
 
-/-- finds the argmin of f over all sets X satisfying P -/
-lemma exists_arg_max_over_subtype (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
-  ∃ X, ∀ Y, f Y ≤ f X := 
-begin
-  letI := fintype_of U,
-  haveI : nonempty { X : set U // P X } := ⟨classical.subtype_of_exists hP⟩, 
-  from fintype.exists_max f, 
-end
+lemma exists_min (f : α → β): 
+  ∃ x, ∀ y, f x ≤ f y := 
+let f' : _ → (order_dual β) := f in exists_max f'  
 
-/-- finds the argmin of f over all sets X satisfying P -/
-lemma exists_arg_min_over_subtype (P : set U → Prop)(hP : set.nonempty P) (f : { X : set U // P X } → α): 
-  ∃ X, ∀ Y, f X ≤ f Y := 
-let f' : _ → (order_dual α) := f in exists_arg_max_over_subtype P hP f'
-
-
-/-- maximum value of f over subsets of U satisfying P -/
-def arg_max_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U := 
-  (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))).val 
-
-/-- subset of U attaining maximum value of f subject to satisfying P -/
-def max_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
-  f (arg_max_over P hP f)
-
-
-lemma max_over_is_ub (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  ∀ X, P X → f X ≤ max_val_over P hP f :=
-λ X hX, classical.some_spec (exists_arg_max_over_subtype P hP (λ X, f X.val)) ⟨X, hX⟩
+def max_val (f : α → β) : β := 
+  f (classical.some (exists_max f))
   
-lemma arg_max_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  P (arg_max_over P hP f) ∧ f (arg_max_over P hP f) = max_val_over P hP f := 
-let X' := (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))) in 
-⟨X'.property, rfl⟩  
+def min_val (f : α → β) : β := 
+  f (classical.some (exists_min f))
 
-lemma max_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  ∃ X, P X ∧ (f X = max_val_over P hP f) ∧ (∀ Y, P Y → f Y ≤ f X)  := 
-let prev := arg_max_over_attains P hP f in 
-⟨arg_max_over P hP f,⟨prev.1,prev.2,max_over_is_ub P hP f⟩⟩  
+lemma max_spec (f : α → β) : 
+  ∃ x, f x = max_val f ∧ ∀ y, f y ≤ f x :=
+⟨classical.some (exists_max f), ⟨rfl, classical.some_spec (exists_max f) ⟩⟩
 
-/-- minimum value of f over subsets of U satisfying P -/
-def arg_min_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : set U :=  
-  (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))).val 
+lemma min_spec (f : α → β) : 
+  ∃ x, f x = min_val f ∧ ∀ y, f x ≤ f y :=
+⟨classical.some (exists_min f), ⟨rfl, classical.some_spec (exists_min f) ⟩⟩
 
-/-- subset of U attaining minimum value of f subject to satisfying P -/
-def min_val_over (P : set U → Prop)(hP : set.nonempty P)(f : set U → α) : α := 
-  f (arg_min_over P hP f)
+lemma max_is_ub (f : α → β)(x : α): 
+  f x ≤ max_val f := 
+by {cases max_spec f with y hy, rw ←hy.1, apply hy.2}
 
+lemma min_is_lb (f : α → β)(x : α): 
+  min_val f ≤ f x := 
+by {cases min_spec f with y hy, rw ←hy.1, apply hy.2}
 
-
-lemma min_over_is_lb (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  ∀ X, P X → min_val_over P hP f ≤ f X := 
-λ X hX, classical.some_spec (exists_arg_min_over_subtype P hP (λ X, f X.val)) ⟨X, hX⟩
-
-
-lemma arg_min_over_attains (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  P (arg_min_over P hP f) ∧ f (arg_min_over P hP f) = min_val_over P hP f := 
-let X' := (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))) in 
-⟨X'.property, rfl⟩    
-
-lemma min_over_spec (P : set U → Prop)(hP : set.nonempty P)(f : set U → α):
-  ∃ X, P X ∧ (f X = min_val_over P hP f) ∧ (∀ Y, P Y → f X ≤ f Y)   := 
-let prev := arg_min_over_attains P hP f in 
-⟨arg_min_over P hP f,⟨prev.1,prev.2,min_over_is_lb P hP f⟩⟩ 
----- 
-
-/-- maximum value of f over subsets of U -/
-def max_val (f : set U → α) : α := max_val_over (λ X, true) ⟨∅, trivial⟩ f
-
-/-- subset of U attaining maximum value of f -/
-def arg_max (f : set U → α) : set U := arg_max_over (λ X, true) ⟨∅, trivial⟩ f
-
-/-- minimum value of f over subsets of U -/
-def min_val (f : set U → α) : α := min_val_over (λ X, true) ⟨∅, trivial⟩ f
-
-/-- subset of U attaining minimum value of f-/
-def arg_min (f : set U → α) : set U := arg_min_over (λ X, true) ⟨∅, trivial⟩ f
-
-lemma max_is_ub (f : set U → α): 
-  ∀ X, f X ≤ max_val f :=
-λ X, by {apply max_over_is_ub, trivial} 
-
-lemma arg_max_attains (f : set U → α): 
-  f (arg_max f) = max_val f :=
-(arg_max_over_attains _ _ _).2
-
-lemma min_is_lb (f : set U → α) :
-  ∀ X, min_val f ≤ f X := 
-λ X, by {apply min_over_is_lb, trivial} 
-
-lemma arg_min_attains (f : set U → α) : 
-  f (arg_min f) = min_val f := 
-(arg_min_over_attains _ _ _).2
-
-lemma min_spec (f : set U → α):
-  ∃ X, (∀ Y, f X ≤ f Y) ∧ (f X = min_val f) := 
-⟨arg_min f, ⟨min_is_lb f, arg_min_attains f⟩ ⟩  
-
-lemma max_spec (f : set U → α):
-  ∃ X, (∀ Y, f Y ≤ f X) ∧ (f X = max_val f) := 
-⟨arg_max f, ⟨max_is_ub f, arg_max_attains f⟩ ⟩
-
-
--- size 
-
-/-- largest set satisfying P -/
-def arg_max_size_over (P : set U → Prop)(hP : set.nonempty P) : set U := 
-  arg_max_over P hP size  
-
-/-- size of largest set satisfying P -/
-def max_size_over (P : set U → Prop)(hP : set.nonempty P): ℤ := 
-  size (arg_max_size_over P hP)
-
-lemma max_size_over_is_ub (P : set U → Prop)(hP : set.nonempty P):
-  ∀ X, P X → size X ≤ max_size_over P hP:=
-max_over_is_ub P hP size 
-  
-lemma arg_max_size_over_attains (P : set U → Prop)(hP : set.nonempty P):
-  P (arg_max_size_over P hP) ∧ size (arg_max_size_over P hP) = max_size_over P hP := 
-  arg_max_over_attains P hP size 
-
-lemma max_size_over_spec (P : set U → Prop)(hP : set.nonempty P):
-  ∃ X, P X ∧ (size X = max_size_over P hP) ∧ (∀ Y, P Y → size Y ≤ size X)  := 
-  max_over_spec P hP size 
-
-
-/-- smallest set satisfying P -/
-def arg_min_size_over (P : set U → Prop)(hP : set.nonempty P) : set U := 
-  arg_min_over P hP size  
-
-/-- size of smallest set satisfying P -/
-def min_size_over (P : set U → Prop)(hP : set.nonempty P): ℤ := 
-  size (arg_min_size_over P hP)
-
-lemma min_size_over_is_lb (P : set U → Prop)(hP : set.nonempty P):
-  ∀ X, P X → min_size_over P hP ≤ size X :=
-min_over_is_lb P hP size 
-  
-lemma arg_min_size_over_attains (P : set U → Prop)(hP : set.nonempty P):
-  P (arg_min_size_over P hP) ∧ size (arg_min_size_over P hP) = min_size_over P hP := 
-  arg_min_over_attains P hP size 
-
-lemma min_size_over_spec (P : set U → Prop)(hP : set.nonempty P):
-  ∃ X, P X ∧ (size X = min_size_over P hP) ∧ (∀ Y, P Y → size X ≤ size Y)  := 
-  min_over_spec P hP size 
-
---- Monotonicity 
-
-lemma max_over_subset_le_max (P Q : set U → Prop)(hP : set.nonempty P)(f : set U → α)(hPQ : set.subset P Q): 
-   max_val_over P hP f ≤ max_val_over Q (set.nonempty.mono hPQ hP) f := 
+lemma max_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
+  max_val (f ∘ φ) = @max_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases max_over_spec P hP f with ⟨XP, hXP⟩, 
-  rcases max_over_spec Q (set.nonempty.mono hPQ hP) f with ⟨XQ, hXQ⟩,
-  rw [←hXP.2.1, ←hXQ.2.1], 
-  from hXQ.2.2  _ (hPQ hXP.1),
+  rcases @max_spec _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f 
+    with ⟨x', ⟨hx'1, hx'2⟩⟩, 
+  rcases max_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
+  rw [←hx1, ←hx'1], 
+  apply le_antisymm (hx'2 _), 
+  cases hφ.2 x' with z hz,
+  rw ←hz, apply hx2, 
 end
 
-lemma min_le_min_over_subset (P Q : set U → Prop)(hP : set.nonempty P)(f : set U → α)(hPQ : set.subset P Q):
-  min_val_over Q (set.nonempty.mono hPQ hP) f ≤ min_val_over P hP f := 
+lemma min_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
+  min_val (f ∘ φ) = @min_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases min_over_spec P hP f with ⟨XP, hXP⟩, 
-  rcases min_over_spec Q (set.nonempty.mono hPQ hP) f with ⟨XQ, hXQ⟩,
-  rw [←hXP.2.1, ←hXQ.2.1], 
-  from hXQ.2.2  _ (hPQ hXP.1),
+  rcases @min_spec _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f 
+    with ⟨x', ⟨hx'1, hx'2⟩⟩, 
+  rcases min_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
+  rw [←hx1, ←hx'1], 
+  refine le_antisymm _ (hx'2 _), 
+  cases hφ.2 x' with z hz,
+  rw ←hz, apply hx2, 
 end
 
-lemma max_over_le_max_over_of_mono (P : set U → Prop)(hP : set.nonempty P)(f f' : set U → α)(hff' : ∀ X, f X ≤ f' X):
-  max_val_over P hP f ≤ max_val_over P hP f' := 
+lemma max_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
+  g (max_val f) = max_val (g ∘ f) := 
 begin
-  rcases max_over_spec P hP f with ⟨X,hX⟩, 
-  rcases max_over_spec P hP f' with ⟨X', hX'⟩, 
-  rw [←hX.2.1, ←hX'.2.1], 
-  from le_trans (hff' X) (hX'.2.2 _ hX.1), 
+  rcases max_spec f with ⟨X, hX₁, hX₂⟩, 
+  rcases max_spec (g ∘ f) with ⟨X',hX'₁, hX'₂ ⟩, 
+  erw [←hX'₁ , ←hX₁],
+  from le_antisymm (hX'₂ _) (hg (hX₂ _)), 
 end
 
-lemma min_over_le_min_over_of_mono (P : set U → Prop)(hP : set.nonempty P)(f f' : set U → α)(hff' : ∀ X, f X ≤ f' X):
-  min_val_over P hP f ≤ min_val_over P hP f' := 
+lemma min_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
+  g (min_val f) = min_val (g ∘ f) := 
 begin
-  rcases min_over_spec P hP f with ⟨X,hX⟩, 
-  rcases min_over_spec P hP f' with ⟨X', hX'⟩, 
-  rw [←hX.2.1, ←hX'.2.1], 
-  from le_trans (hX.2.2 X' hX'.1) (hff' _),
+  rcases min_spec f with ⟨X, hX₁, hX₂⟩, 
+  rcases min_spec (g ∘ f) with ⟨X',hX'₁, hX'₂⟩, 
+  rw [←hX'₁, ←hX₁],
+  from le_antisymm (hg (hX₂ _)) (hX'₂ _), 
 end
 
-variables {β : Type}[linear_order β]
+end general_fintype 
 
-lemma max_over_compose_mono (P : set U → Prop)(hP : set.nonempty P)
-  (f : set U → α)(g : α → β)(hg : monotone g) : 
-  g (max_val_over P hP f) = max_val_over P hP (g ∘ f) := 
+section adding -- lemmas with a little more structure on β 
+
+variables {α β : Type}[fintype α][nonempty α][linear_ordered_semiring β]
+
+lemma max_add_commute (f : α → β)(s : β): 
+  (max_val f) + s = max_val (λ x, f x + s) := 
 begin
-  rcases max_over_spec P hP f with ⟨X, hX₁, hX₂, hX₃⟩, 
-  rcases max_over_spec P hP (g ∘ f) with ⟨X',hX'₁, hX'₂, hX'₃ ⟩, 
-  erw [←hX'₂ , ←hX₂],
-  from le_antisymm (hX'₃ _ hX₁) (hg (hX₃ _ hX'₁)), 
-end
+  set g : β → β := λ x, x + s with hg,
+  have hg_mono : monotone g := 
+    λ x y hxy, by {rw hg, dsimp only, apply add_le_add_right hxy},
+  have := max_compose_mono f g hg_mono, 
+  congr', 
+end 
 
-lemma min_over_compose_mono (P : set U → Prop)(hP : set.nonempty P)
-  (f : set U → α)(g : α → β)(hg : monotone g) : 
-  g (min_val_over P hP f) = min_val_over P hP (g ∘ f) := 
+lemma min_add_commute (f : α → β)(s : β): 
+  (min_val f) + s = min_val (λ x, f x + s) := 
 begin
-  rcases min_over_spec P hP f with ⟨X, hX₁, hX₂, hX₃⟩, 
-  rcases min_over_spec P hP (g ∘ f) with ⟨X',hX'₁, hX'₂, hX'₃ ⟩, 
-  erw [←hX'₂, ←hX₂],
-  from le_antisymm (hg (hX₃ _ hX'₁)) (hX'₃ _ hX₁), 
-end
-  
-/-
-lemma max_over_rw_prop (P Q : set U → Prop)(hP : set.nonempty P)(hPQ : P = Q)(f : set U → α):
-  max_val_over P hP f = max_val_over Q (by {rw ←hPQ, from hP}) f := 
-by congr'
+  set g : β → β := λ x, x + s with hg,
+  have hg_mono : monotone g := 
+    λ x y hxy, by {rw hg, dsimp only, apply add_le_add_right hxy},
+  have := min_compose_mono f g hg_mono, 
+  congr', 
+end 
 
-lemma min_over_rw_prop (P Q : set U → Prop)(hP : set.nonempty P)(hPQ : P = Q)(f : set U → α):
-  min_val_over P hP f = min_val_over Q (by {rw ←hPQ, from hP}) f := 
-by congr'
--/
-
-end minmax
+end adding 
 
 
-end ftype 
+
+
+
+
+
+
+
+
+
+
+
+
+
