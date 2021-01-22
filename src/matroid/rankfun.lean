@@ -376,7 +376,7 @@ instance coe_circuit {M : matroid U} : has_coe (M.circuit) (set U) :=
   coe_subtype    
 
 instance fintype_circuit {M : matroid U} : fintype (M.circuit) := 
-  by {unfold circuit, apply_instance }
+by {unfold circuit, apply_instance }
 
 /-- is a cocircuit of M: circuit of the dual -/
 def is_cocircuit (M : matroid U) : set U → Prop := 
@@ -394,15 +394,15 @@ instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) :=
 
 lemma circuit_iff_r {M : matroid U} (X : set U) :
   M.is_circuit X ↔ (M.r X = size X - 1) ∧ (∀ Y: set U, Y ⊂ X → M.r Y = size Y) := 
-  begin
-    unfold is_circuit,
-    simp_rw indep_iff_r, 
-    split, rintros ⟨hr, hmin⟩,
-    split, rcases nonempty_single_removal (dep_nonempty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
-    rw dep_iff_r at hr, linarith [M.R2 hY₁.1],  
-    intros Y hY, exact hmin _ hY, 
-    rintros ⟨h₁, h₂⟩, rw dep_iff_r, refine ⟨by linarith, λ Y hY, _ ⟩,  exact h₂ _ hY, 
-  end
+begin
+  unfold is_circuit,
+  simp_rw indep_iff_r, 
+  split, rintros ⟨hr, hmin⟩,
+  split, rcases nonempty_single_removal (dep_nonempty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
+  rw dep_iff_r at hr, linarith [M.R2 hY₁.1],  
+  intros Y hY, exact hmin _ hY, 
+  rintros ⟨h₁, h₂⟩, rw dep_iff_r, refine ⟨by linarith, λ Y hY, _ ⟩,  exact h₂ _ hY, 
+end
 
 lemma r_cct {M : matroid U} {C : set U} :
   M.is_circuit C → M.r C = size C - 1 := 
@@ -414,8 +414,7 @@ lemma r_cct_ssub {M : matroid U} {C Y : set U} :
 
 lemma cocircuit_iff_r {M : matroid U} (X : set U):
   M.is_cocircuit X ↔ (M.r Xᶜ = M.r univ - 1) ∧ (∀ Y: set U, Y ⊂ X → M.r Yᶜ = M.r univ) := 
-by 
-{
+begin
   unfold is_cocircuit is_circuit, 
   simp_rw [codep_iff_r, coindep_iff_r],
   split, rintros ⟨h₁, h₂⟩, split, 
@@ -425,17 +424,17 @@ by
   rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
   linarith[rank_diff_le_size_diff M (subset_to_compl hY₁.1)], 
   exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
-}
+end 
 
 lemma dep_iff_contains_circuit {M : matroid U} {X : set U} :
   is_dep M X ↔ ∃ C, M.is_circuit C ∧ C ⊆ X := 
-  begin
-    refine ⟨λ h, _, λ h, _ ⟩, 
-    rcases (minimal_example _ h) with ⟨Z,⟨h₁Z,h₂Z, h₃Z⟩⟩, 
-    refine ⟨Z, ⟨⟨h₂Z, (λ Y hY, _)⟩, h₁Z⟩⟩, 
-    rw indep_iff_not_dep, exact h₃Z Y hY,  
-    cases h with C hC, exact dep_subset hC.2 hC.1.1, 
-  end 
+begin
+  refine ⟨λ h, _, λ h, _ ⟩, 
+  rcases (minimal_example _ h) with ⟨Z,⟨h₁Z,h₂Z, h₃Z⟩⟩, 
+  refine ⟨Z, ⟨⟨h₂Z, (λ Y hY, _)⟩, h₁Z⟩⟩, 
+  rw indep_iff_not_dep, exact h₃Z Y hY,  
+  cases h with C hC, exact dep_subset hC.2 hC.1.1, 
+end 
 
 /-- circuits nonempty unless matroid is free -/
 instance nonempty_circuit {M : matroid U}(hM : M.r univ < @size U univ) : nonempty (M.circuit) := 
@@ -455,25 +454,25 @@ end
 
 lemma circuit_dep {M : matroid U}{C : set U}:
   M.is_circuit C → M.is_dep C := 
-  λ h, dep_iff_contains_circuit.mpr ⟨C,h,subset_refl _⟩ 
+λ h, dep_iff_contains_circuit.mpr ⟨C,h,subset_refl _⟩ 
 
 lemma indep_iff_contains_no_circuit {M : matroid U}{X : set U} : 
   M.is_indep X ↔ ¬∃ C, M.is_circuit C ∧ C ⊆ X :=
-  by rw [←not_iff_not, ←dep_iff_not_indep, dep_iff_contains_circuit, not_not]
+by rw [←not_iff_not, ←dep_iff_not_indep, dep_iff_contains_circuit, not_not]
 
 
 lemma C1 (M : matroid U): 
   ¬M.is_circuit ∅ := 
-  by {rw circuit_iff_r, intros h, have := h.1, linarith [rank_empty M, size_empty U]}
+by {rw circuit_iff_r, intros h, have := h.1, linarith [rank_empty M, size_empty U]}
 
 lemma C2' (M : matroid U) {C₁ C₂ : set U}: 
   C₁ ⊆ C₂ → M.is_circuit C₁ → M.is_circuit C₂ → C₁ = C₂ := 
-  begin 
-    intros hC₁C₂ hC₁ hC₂, 
-    rw circuit_iff_r at hC₁ hC₂, 
-    by_contra a, 
-    linarith [hC₂.2 _ (ssubset_of_subset_ne hC₁C₂ a)],
-  end 
+begin 
+  intros hC₁C₂ hC₁ hC₂, 
+  rw circuit_iff_r at hC₁ hC₂, 
+  by_contra a, 
+  linarith [hC₂.2 _ (ssubset_of_subset_ne hC₁C₂ a)],
+end 
 
 lemma C2 (M : matroid U){C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → ¬(C₁ ⊂ C₂) :=
@@ -482,24 +481,24 @@ lemma C2 (M : matroid U){C₁ C₂ : set U}:
 
 lemma inter_circuits_ssubset {M : matroid U}{C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → C₁ ≠ C₂ → C₁ ∩ C₂ ⊂ C₁ := 
-  begin
-    intros hC₁ hC₂ hC₁C₂, 
-    refine ssubset_of_subset_ne (inter_subset_left _ _) (λ h, _), 
-    rw ←subset_def_inter at h, exact hC₁C₂ (C2' M h hC₁ hC₂ ),
-  end
+begin
+  intros hC₁ hC₂ hC₁C₂, 
+  refine ssubset_of_subset_ne (inter_subset_left _ _) (λ h, _), 
+  rw ←subset_def_inter at h, exact hC₁C₂ (C2' M h hC₁ hC₂ ),
+end
 
 lemma C3 {M : matroid U} {C₁ C₂ : set U} {e : U}: 
    C₁ ≠ C₂ → M.is_circuit C₁ → M.is_circuit C₂ → e ∈ C₁ ∩ C₂ → ∃ C, M.is_circuit C ∧ C ⊆ ((C₁ ∪ C₂) \ e) := 
-  begin
-    intros hC₁C₂ hC₁ hC₂ he, 
-    rw [←dep_iff_contains_circuit, dep_iff_r], 
-    have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
-    have heU := elem_of_elem_of_subset he (inter_subset_union C₁ C₂),
-    have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := 
-      by linarith [M.R2 (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
-          r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
-    from int.le_sub_one_iff.mp hcalc,
-  end 
+begin
+  intros hC₁C₂ hC₁ hC₂ he, 
+  rw [←dep_iff_contains_circuit, dep_iff_r], 
+  have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
+  have heU := elem_of_elem_of_subset he (inter_subset_union C₁ C₂),
+  have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := 
+    by linarith [M.R2 (diff_subset (C₁ ∪ C₂) e ), M.R3 C₁ C₂, 
+        r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
+  from int.le_sub_one_iff.mp hcalc,
+end 
 
 /-lemma C3_subtype {M : matroid U} {C₁ C₂ : circuit M} {e : U}: 
   C₁ ≠ C₂ → e ∈ (C₁ ∩ C₂ : set U) → ∃ (C : circuit M), (C : set U) ⊆ (C₁ ∪ C₂) \ e := 
