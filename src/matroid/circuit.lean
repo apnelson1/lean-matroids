@@ -1,10 +1,12 @@
 import ftype.basic ftype.induction ftype.collections .rankfun .indep 
 open ftype 
 
-local attribute [instance] classical.prop_decidable
+open_locale classical 
 noncomputable theory 
 
 variables {U : ftype}
+
+namespace cct_family
 
 def C_to_I (M : cct_family U): (set U → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
@@ -45,80 +47,90 @@ lemma add_elem_le_one_circuit_C {M : cct_family U} {I C C': set U} (e : U):
 
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
-  begin
-    -- I3 states that there are no bad pairs 
-    let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
-    suffices : ∀ I J, ¬bad_pair I J, 
-      push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
-    by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
-    
-    --choose a bad pair with D = I-J minimal
-    let bad_pair_diff : set U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
-    have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
-    rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
-    rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
-    rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
-    ------------------
-    have hJI_nonempty : size (J \ I) > 0 := by 
-      {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
-    
-    have hIJ_nonempty : I \ J ≠ ∅ := by 
-    {
-      intro h, rw diff_empty_iff_subset at h, 
-      cases size_pos_has_elem hJI_nonempty with e he,
-      refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
-      from union_of_subsets h (subset_of_elem_of_subset he (diff_subset _ _)), 
-    },
+begin
+  
+  
+  -- I3 states that there are no bad pairs 
+  let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
+  suffices : ∀ I J, ¬bad_pair I J, 
+    push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
+  by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
+  
+  --choose a bad pair with D = I-J minimal
+  let bad_pair_diff : set U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
+  have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
+  rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
+  rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
+  rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
+  ------------------
+  
+  have hJI_nonempty : size (J \ I) > 0 := by 
+    {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
+  
+  have hIJ_nonempty : I \ J ≠ ∅ := by 
+  {
+    intro h, rw diff_empty_iff_subset at h, 
+    cases size_pos_has_elem hJI_nonempty with e he,
+    refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
+    from union_of_subsets h (subset_of_elem_of_subset he (diff_subset _ _)), 
+  },
+  
+  cases ne_empty_has_elem hIJ_nonempty with e he, -- choose e from I -J
 
-    cases ne_empty_has_elem hIJ_nonempty with e he, -- choose e from I -J
+  --There exists f ∈ J-I contained in all ccts of J ∪ e 
+  have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
+  {
+      by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
+      
+      cases size_pos_has_elem hJI_nonempty with f hf, 
+      refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
+      from (hJe _ hCJe) hC,
+      unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
 
-    --There exists f ∈ J-I contained in all ccts of J ∪ e 
-    have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
-    {
-        by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
-        
-        cases size_pos_has_elem hJI_nonempty with f hf, 
-        refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
-        from (hJe _ hCJe) hC,
-        unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
+      have : Ce ∩ (J \ I) ≠ ∅ := λ h,  sorry ,
+      cases ne_empty_has_elem this with f hf,
+      refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
+      apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
+      rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
+      from elem_of_elem_of_subset hf (inter_subset_left _ _), 
+  },
+  rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
+  set J' := (J ∪ e) \ f with hdefJ', 
+  
+  have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
+  have hJ' : C_to_I M (J') := sorry,
+  have hJ's : size I < size J' := sorry, 
+  have hJ'ssu : I \ J' ⊂ I \ J := sorry, 
+  
+  have hIJ' : ¬bad_pair I J' := 
+    λ hIJ', hDmin (I \ J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩, 
+  push_neg at hIJ', rcases hIJ' hJ's hI hJ' with ⟨g,⟨hg₁,hg₂⟩⟩ ,
 
-        have : Ce ∩ (J \ I) ≠ ∅ := λ h,  sorry ,
-        cases ne_empty_has_elem this with f hf,
-        refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
-        apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
-        rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
-        from elem_of_elem_of_subset hf (inter_subset_left _ _), 
-    },
-    rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
-    set J' := (J ∪ e) \ f with hdefJ', 
-    
-    have hJ'₀: J' \ I ⊆ (J ∪ I) := by tidy, 
-    have hJ' : C_to_I M (J') := sorry,
-    have hJ's : size I < size J' := sorry, 
-    have hJ'ssu : I \ J' ⊂ I \ J := sorry, 
-
-    have hIJ' : ¬bad_pair I J' := 
-      λ hIJ', hDmin (I \ J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩, 
-    push_neg at hIJ', rcases hIJ' hJ's hI hJ' with ⟨g,⟨hg₁,hg₂⟩⟩ ,
-
-    by_cases g ∈ J \ I,
-    from h_non_aug g h hg₂, 
-    rw [←elem_compl_iff] at h,  
-    have := elem_inter hg₁ h, 
-    rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
-        inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_def, inter_assoc, inter_right_comm, 
-        inter_distrib_right, ←inter_assoc, inter_compl, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
-    have := elem_of_elem_of_subset this (inter_subset_right _ _),
-    have := (elem_inter (elem_of_elem_of_subset hg₁ hJ'₀) this),
-    rw inter_compl at this, from nonelem_empty g this, 
-  end 
+  by_cases g ∈ J \ I,
+  from h_non_aug g h hg₂, 
+  rw [←elem_compl_iff] at h,  
+  have := elem_inter hg₁ h, 
+  rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
+      inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_def, inter_assoc, inter_right_comm, 
+      inter_distrib_right, ←inter_assoc, inter_compl, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
+  have := elem_of_elem_of_subset this (inter_subset_right _ _),
+  have := (elem_inter (elem_of_elem_of_subset hg₁ hJ'₀) this),
+  rw inter_compl at this, from nonelem_empty g this, 
+end 
 
   --  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)
 
+end cct_family 
 
-def circuit_family_to_indep_family (M : cct_family U) : indep_family U :=
-  ⟨C_to_I M, C_to_I1 M, C_to_I2 M, C_to_I3 M⟩ 
 
-def circuit_family_to_rankfun (M : cct_family U) : rankfun U :=
-  indep_family_to_rankfun (circuit_family_to_indep_family M)
+def indep_family.of_circuit_family (M : cct_family U) : indep_family U :=
+  ⟨M.C_to_I, M.C_to_I1, M.C_to_I2, M.C_to_I3⟩ 
+
+
+namespace matroid 
+
+def of_circuit_family (M : cct_family U) : matroid U :=
+  of_indep_family (indep_family.of_circuit_family M)
  
+
+end matroid 

@@ -21,9 +21,11 @@ lemma exists_min (f : α → β):
   ∃ x, ∀ y, f x ≤ f y := 
 let f' : _ → (order_dual β) := f in exists_max f'  
 
+/-- maximum value of f -/
 def max_val (f : α → β) : β := 
   f (classical.some (exists_max f))
   
+/-- minimum value of f -/
 def min_val (f : α → β) : β := 
   f (classical.some (exists_min f))
 
@@ -43,6 +45,8 @@ lemma min_is_lb (f : α → β)(x : α):
   min_val f ≤ f x := 
 by {cases min_spec f with y hy, rw ←hy.1, apply hy.2}
 
+/-- taking a max over one type is equivalent to taking one over another, 
+given a bijection between them -/
 lemma max_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
   max_val (f ∘ φ) = @max_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
@@ -55,6 +59,8 @@ begin
   rw ←hz, apply hx2, 
 end
 
+/-- taking a min over one type is equivalent to taking one over another, 
+given a bijection between them -/
 lemma min_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
   min_val (f ∘ φ) = @min_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
@@ -67,6 +73,7 @@ begin
   rw ←hz, apply hx2, 
 end
 
+/-- max commutes with composing by a monotone function -/
 lemma max_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
   g (max_val f) = max_val (g ∘ f) := 
 begin
@@ -76,6 +83,7 @@ begin
   from le_antisymm (hX'₂ _) (hg (hX₂ _)), 
 end
 
+/-- min commutes with composing by a monotone function-/
 lemma min_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
   g (min_val f) = min_val (g ∘ f) := 
 begin
@@ -87,7 +95,7 @@ end
 
 end general_fintype 
 
-section adding -- lemmas with a little more structure on β 
+section adding -- lemmas with a little more structure (eg addition) on β 
 
 variables {α β : Type}[fintype α][nonempty α][linear_ordered_semiring β]
 

@@ -9,13 +9,13 @@ noncomputable theory
 section dual
 variables {U : ftype}
  
-lemma rank_empt {B : ftype} (M : rankfun B) :
+lemma rank_empt {B : ftype} (M : matroid B) :
   M.r ∅ = 0 :=
 le_antisymm (calc M.r ∅ ≤ size (∅ : set B) : M.R1 ∅ ... = 0 : size_empty B) (M.R0 ∅)
 
 -- Every matroid has a dual.
 def dual :
-  rankfun U → rankfun U :=
+  matroid U → matroid U :=
 fun M, {
   r := (fun X, size X + M.r Xᶜ - M.r univ),
   R0 := (fun X,
@@ -51,7 +51,7 @@ fun M, {
 }
 
 -- The double dual of a matroid is itself.
-lemma dual_dual (M : rankfun U) :
+@[simp] lemma dual_dual (M : matroid U) :
   dual (dual M) = M :=
 begin
   apply rankfun.ext, apply funext, intro X, calc
@@ -60,11 +60,11 @@ begin
   ...                 = M.r X                                                             : by linarith [size_compl X, rank_empt M]
 end
 
-lemma dual_inj {M₁ M₂ : rankfun U} :
+lemma dual_inj {M₁ M₂ : matroid U} :
   dual M₁ = dual M₂ → M₁ = M₂ := 
   λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
 
-lemma dual_r (M : rankfun U)(X : set U):
+lemma dual_r (M : matroid U)(X : set U):
    (dual M).r X = size X + M.r Xᶜ - M.r univ := 
    rfl 
 

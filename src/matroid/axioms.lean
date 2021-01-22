@@ -24,6 +24,8 @@ def satisfies_R3 : (set U → ℤ) → Prop :=
   (R2 : satisfies_R2 r)
   (R3 : satisfies_R3 r)
 
+def matroid (B : ftype) := rankfun B 
+
 end rank 
 
 section indep 

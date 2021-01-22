@@ -1,7 +1,4 @@
-import tactic.ext
---import tactic.ring 
-import tactic.linarith
-import tactic.tidy 
+
 import tactic 
 import .int_lemmas 
 
@@ -34,20 +31,18 @@ structure ftype :=
   {S := Type, coe := λ A, A.E}
 
 
-def fintype_of (U : ftype) : fintype U := U.fin 
+instance fintype_of (U : ftype) : fintype U := U.fin 
 
-def set_fintype_of (U : ftype) : fintype (set U) := by {letI := fintype_of U, apply_instance}
+instance set_fintype_of (U : ftype) : fintype (set U) := 
+  by {apply_instance}
 
 --instance set_inhabited_of {U : ftype} : inhabited (set U) := ⟨∅⟩
 
-def as_finset_univ (U : ftype) := (fintype_of U).elems 
+--def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
 def as_finset (U : ftype)(X : set U) : finset U := 
-  @set.to_finset _ X (@fintype.subtype_of_fintype _ (fintype_of U) X) 
+  @set.to_finset _ X (@fintype.subtype_of_fintype _ _ X) 
   
-
-
-
 
 
 variables {A : ftype}
@@ -108,9 +103,9 @@ lemma univ_eq_top :
   rfl 
 
 /-- Universe is nonempty -/
-def nontrivial (A : ftype) := (univ : set A).nonempty
+def nontriv (A : ftype) := (univ : set A).nonempty
 
-
+open set 
 
 -- Commutativity
 
@@ -180,11 +175,11 @@ lemma univ_unique (X : set A) : (∀ (Y: set A), Y ∩ X = Y) → X = univ :=
 
 -- Idempotence
 
-lemma union_idem (X : set A) : X ∪ X = X := 
-  set.union_self _ 
+lemma union_self (X : set A) : X ∪ X = X := 
+  union_self _ 
 
 lemma inter_idem (X : set A): X ∩ X = X := 
-  set.inter_self _ 
+  inter_self _ 
 
 @[simp] lemma union_univ  (X : set A) : X ∪ univ = univ := 
   by calc _ = univ ∩ (X ∪ univ)        : by rw univ_inter
@@ -261,10 +256,10 @@ lemma inter_right_comm (X Y Z : set A) : X ∩ Y ∩ Z = X ∩ Z ∩ Y :=
   by rw [inter_assoc _ Y, inter_comm Y, ←inter_assoc]
 
 @[simp] lemma union_left_absorb (X Y : set A) : (X ∪ Y) ∪ X = X ∪ Y := 
-by rw [union_right_comm, union_idem]  
+by rw [union_right_comm, union_self]  
 
 @[simp] lemma union_right_absorb (X Y : set A) : X ∪ (Y ∪ X) = X ∪ Y := 
-by rw [union_left_comm, union_idem, union_comm]  
+by rw [union_left_comm, union_self, union_comm]  
 
 @[simp] lemma inter_left_absorb (X Y : set A) : (X ∩ Y) ∩ X = X ∩ Y := 
 by rw [inter_right_comm, inter_idem]  
@@ -279,7 +274,7 @@ lemma inter_distrib_inter_right (X Y Z : set A) : X ∩ (Y ∩ Z) = (X ∩ Y) �
   by rw [inter_comm _ (X ∩ Z), inter_assoc _ _ (X ∩ Y), inter_comm Z, ←inter_assoc X, ←inter_assoc X, ←inter_assoc X, inter_idem]
 
 lemma union_distrib_union_left (X Y Z : set A) : (X ∪ Y) ∪ Z = (X ∪ Z) ∪ (Y ∪ Z) := 
-  by rw [union_assoc X Z, union_comm Z, union_assoc Y, union_idem, union_assoc]
+  by rw [union_assoc X Z, union_comm Z, union_assoc Y, union_self, union_assoc]
 
 lemma union_distrib_union_right (X Y Z : set A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X ∪ Z) := 
   by rw [union_comm X, union_distrib_union_left Y Z X, union_comm X, union_comm X]   
@@ -439,11 +434,11 @@ lemma univ_of_compl_empty {X : set A} : Xᶜ = ∅ → X = univ  :=
 @[simp] lemma inter_union_compl_union (X Y : set A) : (X ∩ Y) ∩ (Xᶜ ∪ Yᶜ)  = ∅ := 
   by rw [inter_distrib_left, inter_comm _ Xᶜ, inter_comm X Y, inter_comm _ Yᶜ, 
         ←(compl_compl Y), compl_compl Yᶜ, inter_compl_inter Yᶜ, inter_comm _ X, 
-        ←(compl_compl X), compl_compl Xᶜ, inter_compl_inter Xᶜ, union_idem]
+        ←(compl_compl X), compl_compl Xᶜ, inter_compl_inter Xᶜ, union_self]
   
 
 @[simp] lemma inter_union_compl_inter (X Y : set A) : (X ∪ Y) ∩ (Xᶜ ∩ Yᶜ) = ∅ := 
-  by rw [inter_distrib_right X Y, inter_compl_inter, inter_comm Xᶜ, inter_compl_inter, union_idem]
+  by rw [inter_distrib_right X Y, inter_compl_inter, inter_comm Xᶜ, inter_compl_inter, union_self]
   
 @[simp] lemma union_inter_compl_union  (X Y : set A) : (X ∩ Y) ∪ (Xᶜ ∪ Yᶜ) = univ := 
   by rw [union_distrib_right X Y, union_compl_union, union_comm Xᶜ, union_compl_union, inter_idem]
@@ -609,7 +604,7 @@ lemma union_union_diff (X Y Z : set A) : (X ∪ Z) ∪ (Y \ Z) = X ∪ Y ∪ Z :
   by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp,}
 
 lemma union_diff_absorb (X Y : set A) : X ∪ (Y \ X) = X ∪ Y :=
-by {nth_rewrite 0 ←union_idem X, rw union_union_diff, simp}
+by {nth_rewrite 0 ←union_self X, rw union_union_diff, simp}
 
 @[simp] lemma union_inter_compl (X Y : set A) : X ∪ (Y ∩ Xᶜ) = X ∪ Y := 
 by rw [←diff_def, union_diff_absorb]
@@ -785,7 +780,7 @@ lemma one_le_size_iff_nonempty {X : set A} : X.nonempty ↔ 1 ≤ size X :=
   size_pos_iff_nonempty
 
 
-lemma nontrivial_size (hA: nontrivial A): 1 ≤ size (univ : set A) := 
+lemma nontriv_size (hA: nontriv A): 1 ≤ size (univ : set A) := 
   one_le_size_iff_nonempty.mp hA 
 
 

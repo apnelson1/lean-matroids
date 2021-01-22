@@ -359,7 +359,7 @@ by {linarith [size_monotone (subset_union_left (e: set A) f), size_single e]}
 
 lemma size_union_singles_ub (e f : A):
   size (e ∪ f : set A) ≤ 2 := 
-by {by_cases e = f, rw [h, union_idem, size_single], linarith, linarith [size_union_distinct_singles h]}
+by {by_cases e = f, rw [h, union_self, size_single], linarith, linarith [size_union_distinct_singles h]}
 
 lemma subset_single {e : A}{X : set A} :
   X ⊆ e → X = ∅ ∨ X = e := 

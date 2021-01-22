@@ -3,18 +3,19 @@ import .constructions .projection ftype.minmaxsum
 
 open_locale classical 
 noncomputable theory 
-namespace ftype 
+open ftype 
+open matroid  
 
 variables {U : ftype}
 
 -- setting up the various types we are minimizing/maximizing over 
 section prelim 
 
-instance set_fintype : fintype (set U) := set_fintype_of U
+--instance set_fintype : fintype (set U) := set_fintype_of U
 
-def indep_pair (M₁ M₂ : rankfun U) := {p : set U × set U // is_indep M₁ p.1 ∧ is_indep M₂ p.2}
+def indep_pair (M₁ M₂ : matroid U) := {p : set U × set U // M₁.is_indep p.1 ∧ M₂.is_indep p.2}
 
-def basis_pair (M₁ M₂ : rankfun U) := {p : set U × set U // is_basis M₁ p.1 ∧ is_basis M₂ p.2}
+def basis_pair (M₁ M₂ : matroid U) := {p : set U × set U // M₁.is_basis p.1 ∧ M₂.is_basis p.2}
 
 def is_disjoint (pair : (set U × set U)) : Prop := pair.1 ∩ pair.2 = ∅  
 
@@ -22,64 +23,58 @@ def inter_size (pair : (set U × set U)) : ℤ := size (pair.1 ∩ pair.2)
 
 def union_size (pair : (set U × set U)) : ℤ := size (pair.1 ∪ pair.2) 
 
-def disjoint_indep_pair (M₁ M₂ : rankfun U) := {pair : indep_pair M₁ M₂ // is_disjoint pair.1}
+def disjoint_indep_pair (M₁ M₂ : matroid U) := {pair : indep_pair M₁ M₂ // is_disjoint pair.1}
 
-def disjoint_basis_pair (M₁ M₂ : rankfun U) := {pair : basis_pair M₁ M₂ // is_disjoint pair.1}
+def disjoint_basis_pair (M₁ M₂ : matroid U) := {pair : basis_pair M₁ M₂ // is_disjoint pair.1}
 
-instance nonempty_indep (M : rankfun U) : nonempty {X : set U // is_indep M X} := 
-  nonempty_subtype.mpr ⟨∅, I1 M⟩
-
-instance nonempty_basis (M : rankfun U) : nonempty {B : set U // is_basis M B} := 
-  nonempty_subtype.mpr (exists_basis M)
-
-instance indep_pair_fintype {M₁ M₂ : rankfun U} : fintype (indep_pair M₁ M₂) := 
+instance indep_pair_fintype {M₁ M₂ : matroid U} : fintype (indep_pair M₁ M₂) := 
   by {unfold indep_pair, apply_instance }
 
-instance basis_pair_fintype {M₁ M₂ : rankfun U} : fintype (basis_pair M₁ M₂) := 
+instance basis_pair_fintype {M₁ M₂ : matroid U} : fintype (basis_pair M₁ M₂) := 
   by {unfold basis_pair, apply_instance }
 
-instance indep_pair_nonempty {M₁ M₂ : rankfun U} : nonempty (indep_pair M₁ M₂) := 
+instance indep_pair_nonempty {M₁ M₂ : matroid U} : nonempty (indep_pair M₁ M₂) := 
 begin
   simp only [indep_pair, exists_and_distrib_right, nonempty_subtype, exists_and_distrib_left, prod.exists], 
   from ⟨⟨∅, I1 M₁⟩, ⟨∅, I1 M₂⟩⟩,  
 end 
 
-instance basis_pair_nonempty {M₁ M₂ : rankfun U} : nonempty (basis_pair M₁ M₂) := 
+instance basis_pair_nonempty {M₁ M₂ : matroid U} : nonempty (basis_pair M₁ M₂) := 
 begin
   simp only [basis_pair, exists_and_distrib_right, nonempty_subtype, exists_and_distrib_left, prod.exists], 
   from ⟨exists_basis M₁, exists_basis M₂⟩,  
 end 
 
-instance disjoint_indep_pair_nonempty (M₁ M₂ : rankfun U) : 
+instance disjoint_indep_pair_nonempty (M₁ M₂ : matroid U) : 
   nonempty (disjoint_indep_pair M₁ M₂) :=
 by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅⟩, ⟨I1 M₁, I1 M₂⟩⟩, tidy,  } 
 
 /--independence in both M₁ and M₂ -/
-def is_common_ind (M₁ M₂ : rankfun U) := 
+def is_common_ind (M₁ M₂ : matroid U) := 
   λ X, is_indep M₁ X ∧ is_indep M₂ X 
 
 /-- subtype of common independent sets -/ 
-def common_ind (M₁ M₂ : rankfun U) := {X : set U // is_common_ind M₁ M₂ X}
+def common_ind (M₁ M₂ : matroid U) := {X : set U // is_common_ind M₁ M₂ X}
 
-instance nonempty_common_ind (M₁ M₂ : rankfun U) : nonempty (common_ind M₁ M₂) := 
+instance nonempty_common_ind (M₁ M₂ : matroid U) : nonempty (common_ind M₁ M₂) := 
 by {apply nonempty_subtype.mpr, from ⟨∅, ⟨I1 M₁, I1 M₂⟩⟩}
 
-instance fintype_common_ind (M₁ M₂ : rankfun U ): fintype (common_ind M₁ M₂) := 
+instance fintype_common_ind (M₁ M₂ : matroid U ): fintype (common_ind M₁ M₂) := 
   by {unfold common_ind, apply_instance}
 
-instance coe_common_ind (M₁ M₂ : rankfun U) : has_coe (common_ind M₁ M₂) (set U) :=
+instance coe_common_ind (M₁ M₂ : matroid U) : has_coe (common_ind M₁ M₂) (set U) :=
   ⟨λ X, X.val⟩
 
 /-- has partition into an independent set of M₁ and an independent set of M₂-/
-def is_two_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
+def is_two_partitionable (M₁ M₂ : matroid U) : set U → Prop := 
   λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₂ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ∅
 
 /-- has partition into a basis of M₁ and a basis set of M₂-/
-def is_two_basis_partitionable (M₁ M₂ : rankfun U) : set U → Prop := 
+def is_two_basis_partitionable (M₁ M₂ : matroid U) : set U → Prop := 
   λ X, ∃ B₁ B₂ , is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ∅
 
 /-- is the union of a basis of M₁ and a basis of M₂ -/
-def is_union_two_bases (M₁ M₂ : rankfun U) : set U → Prop := 
+def is_union_two_bases (M₁ M₂ : matroid U) : set U → Prop := 
   λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X 
 
 end prelim   
@@ -87,10 +82,10 @@ end prelim
 section intersection 
 
 /-- size of largest common independent set -/
-def ν (M₁ M₂ : rankfun U) : ℤ := 
+def ν (M₁ M₂ : matroid U) : ℤ := 
   max_val (λ (X : common_ind M₁ M₂), size X.val)
 
-lemma ν_nonneg (M₁ M₂ : rankfun U) : 
+lemma ν_nonneg (M₁ M₂ : matroid U) : 
   0 ≤ ν M₁ M₂ := 
 begin
   rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩, 
@@ -99,12 +94,12 @@ begin
 end
 
 /-- function that provides an upper bound on ν M₁ M₂ -/
-def matroid_intersection_ub_fn (M₁ M₂ : rankfun U) : set U → ℤ := 
+def matroid_intersection_ub_fn (M₁ M₂ : matroid U) : set U → ℤ := 
   (λ X, M₁.r X + M₂.r Xᶜ)
 
 local notation `ub_fn` := matroid_intersection_ub_fn 
 
-theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : common_ind M₁ M₂}(A : set U) : 
+theorem matroid_intersection_pair_le {M₁ M₂ : matroid U}{I : common_ind M₁ M₂}(A : set U) : 
   size (I : set U) ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rcases I with ⟨I, ⟨h₁, h₂⟩⟩, 
@@ -113,10 +108,10 @@ begin
   have h₁i := I2 (inter_subset_right A I) h₁, 
   have h₂i := I2 (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
-  linarith [R2_i M₁ A I, R2_i M₂ Aᶜ I], 
+  linarith [R2_inter_left M₁ A I, R2_inter_left M₂ Aᶜ I], 
 end
 
-lemma ν_ub (M₁ M₂ : rankfun U): 
+lemma ν_ub (M₁ M₂ : matroid U): 
   ν M₁ M₂ ≤ min_val (matroid_intersection_ub_fn M₁ M₂)  := 
 begin
   rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩,
@@ -128,15 +123,15 @@ end
 /-- Edmonds' matroid intersection theorem: the size of a largest common independent set 
     is equal to the minimum value of a natural upper bound on the size of any such set. 
     Implies many other minmax theorems in combinatorics.                             -/
-theorem matroid_intersection (M₁ M₂ : rankfun U): 
+theorem matroid_intersection (M₁ M₂ : matroid U): 
   ν M₁ M₂ = min_val (matroid_intersection_ub_fn M₁ M₂) := 
 begin
   --induction boilerplate (and ≥ suffices)
 
-  set lb_fn := λ (M₁ M₂ : rankfun U), (λ (X : common_ind M₁ M₂), size X.val) with h_lb_fn, 
+  set lb_fn := λ (M₁ M₂ : matroid U), (λ (X : common_ind M₁ M₂), size X.val) with h_lb_fn, 
 
   set Q : ℤ → Prop := 
-    λ s, ∀ (M₁ M₂ : rankfun U), size (loops M₁ ∪ loops M₂)ᶜ = s → 
+    λ s, ∀ (M₁ M₂ : matroid U), size (loops M₁ ∪ loops M₂)ᶜ = s → 
       min_val (ub_fn M₁ M₂) ≤ ν M₁ M₂,
   suffices : ∀ n₀, 0 ≤ n₀ → Q n₀, 
     from antisymm (ν_ub M₁ M₂) (this _ (size_nonneg _) M₁ M₂ rfl), 
@@ -191,7 +186,7 @@ begin
     from ⟨indep_of_loopify_indep hId_ind.1, indep_of_loopify_indep hId_ind.2⟩,
   },
 
-  -- ν goes down upon contrction 
+  -- ν goes down upon contraction 
   have h_nu_c : ν N₁c N₂c ≤ k-1 := by 
   {
     rw [hk, ν, ν, ←hIc_eq_max], 
@@ -251,12 +246,13 @@ begin
     λ X, by linarith [min_is_lb (ub_fn N₁ N₂) X],
 
   -- apply the bound to sets for which we know a bound in the other direction; 
-  -- contradict submodularity. 
   have hi := h_contr (Ac ∩ Ad \ e), 
   have hu := h_contr (Ac ∪ Ad ∪ e), 
   unfold matroid_intersection_ub_fn at hi hu, 
   rw [compl_union, compl_union, ←diff_def] at hu, 
   rw [compl_diff, compl_inter] at hi, 
+  
+  -- contradict submodularity. 
   have sm1 := R3 N₁ (Ac ∪ e) (Ad \ e), 
   have sm2 := R3 N₂ (Acᶜ ∪ e) (Adᶜ \ e),
   rw [union_union_diff, union_inter_diff] at sm1 sm2, 
@@ -264,7 +260,7 @@ begin
 end
 
 /-- restatement of matroid intersection as the existence of a matching maximizer/minimizer -/
-theorem matroid_intersection_exists_pair_eq (M₁ M₂ : rankfun U): 
+theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid U): 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin
   rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 
@@ -280,14 +276,14 @@ end intersection
 section intersections_of_bases
 
 /-- is the intersection of a basis of M₁ and a basis of M₂ -/
-def is_inter_bases (M₁ M₂ : rankfun U) := 
+def is_inter_bases (M₁ M₂ : matroid U) := 
   λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∩ B₂ = X 
 
 /-- is contained in the intersection of a basis of M₁ and a basis of M₂-/
-def is_subset_inter_bases (M₁ M₂ : rankfun U) := 
+def is_subset_inter_bases (M₁ M₂ : matroid U) := 
   λ X, ∃ Y, is_inter_bases M₁ M₂ Y ∧ X ⊆ Y 
 
-lemma exists_inter_bases (M₁ M₂ : rankfun U):
+lemma exists_inter_bases (M₁ M₂ : matroid U):
   ∃ I, (is_inter_bases M₁ M₂ I) := 
 begin
   cases exists_basis M₁ with B₁ hB₁, 
@@ -295,15 +291,15 @@ begin
   from ⟨B₁ ∩ B₂, ⟨B₁,B₂,hB₁,hB₂,rfl⟩⟩, 
 end
 
-def inter_bases (M₁ M₂ : rankfun U) := {X : set U // is_inter_bases M₁ M₂ X}
+def inter_bases (M₁ M₂ : matroid U) := {X : set U // is_inter_bases M₁ M₂ X}
 
-instance inter_bases_nonempty (M₁ M₂ : rankfun U) : nonempty (inter_bases M₁ M₂) :=
+instance inter_bases_nonempty (M₁ M₂ : matroid U) : nonempty (inter_bases M₁ M₂) :=
 by {apply nonempty_subtype.mpr, apply exists_inter_bases, } 
 
-instance inter_bases_fintype (M₁ M₂ : rankfun U) : fintype (inter_bases M₁ M₂) := 
+instance inter_bases_fintype (M₁ M₂ : matroid U) : fintype (inter_bases M₁ M₂) := 
 by {unfold inter_bases, apply_instance,}
 
-lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
+lemma subset_inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
   is_subset_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I :=
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
@@ -314,7 +310,7 @@ begin
   apply inter_subset_right,
 end
 
-lemma is_common_ind_iff_is_subset_inter_bases {M₁ M₂ : rankfun U}:
+lemma is_common_ind_iff_is_subset_inter_bases {M₁ M₂ : matroid U}:
   is_common_ind M₁ M₂ = is_subset_inter_bases M₁ M₂ :=
 begin
   ext I, 
@@ -324,20 +320,20 @@ begin
   from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, inter_is_lb hIB₁ hIB₂⟩, 
 end
 
-lemma inter_two_bases_is_subset_inter_bases {M₁ M₂ : rankfun U}{B₁ B₂ : set U}:
+lemma inter_two_bases_is_subset_inter_bases {M₁ M₂ : matroid U}{B₁ B₂ : set U}:
   is_basis M₁ B₁ → is_basis M₂ B₂ → is_subset_inter_bases M₁ M₂ (B₁ ∩ B₂) := 
 λ h₁ h₂, by {refine ⟨B₁ ∩ B₂, ⟨B₁,B₂,h₁,h₂, rfl⟩ , subset_refl _⟩, }
 
-lemma inter_bases_is_subset_inter_bases {M₁ M₂ : rankfun U}{I : set U}: 
+lemma inter_bases_is_subset_inter_bases {M₁ M₂ : matroid U}{I : set U}: 
   is_inter_bases M₁ M₂ I → is_subset_inter_bases M₁ M₂ I := 
 λ h, by {rcases h with ⟨B₁,B₂,h⟩, refine ⟨I, ⟨B₁, B₂, h⟩, subset_refl _⟩,}
 
-lemma inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
+lemma inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
   is_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I := 
 by {rw is_common_ind_iff_is_subset_inter_bases, from inter_bases_is_subset_inter_bases}
 
 
-lemma max_common_indep_inter_bases (M₁ M₂ : rankfun U):
+lemma max_common_indep_inter_bases (M₁ M₂ : matroid U):
   ν M₁ M₂ = max_val (λ (pair : basis_pair M₁ M₂), inter_size pair.val) :=
 begin
   rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨⟨I,hI_ind⟩,hI_size,hI_ub⟩, 
@@ -358,10 +354,10 @@ end intersections_of_bases
 section union
 
 /-- size of the largest set that is the union of independent sets of M₁ and M₂-/
-def π (M₁ M₂ : rankfun U) : ℤ :=  
+def π (M₁ M₂ : matroid U) : ℤ :=  
   max_val (λ (Ip : indep_pair M₁ M₂), union_size Ip.val)
 
-lemma π_eq_max_union_bases (M₁ M₂ : rankfun U) :
+lemma π_eq_max_union_bases (M₁ M₂ : matroid U) :
   π M₁ M₂ = max_val (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) := 
 begin
   rcases max_spec (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) 
@@ -378,7 +374,7 @@ begin
 end
 
 /-- simple relationship between π M₁ M₂ and ν M₁ M₂* -/
-theorem π_eq_ν_plus_r (M₁ M₂ : rankfun U) :
+theorem π_eq_ν_plus_r (M₁ M₂ : matroid U) :
   π M₁ M₂ = ν M₁ (dual M₂) + M₂.r univ := 
 begin
   rw [eq_comm,max_common_indep_inter_bases, π_eq_max_union_bases],
@@ -399,7 +395,7 @@ begin
     rcases Bp with ⟨⟨Bp₁,Bp₂⟩,hBp⟩ ; rcases Bp' with ⟨⟨Bp'₁,Bp'₂⟩,hBp'⟩,  
     rw hφ at h, dsimp at h, 
     rw subtype.mk_eq_mk at h ⊢, 
-    simp only [prod.mk.inj_iff, compl_inj_iff] at h ⊢, 
+    simp only [prod.mk.inj_iff, ftype.compl_inj_iff] at h ⊢, 
     from h, 
     refine ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
     rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2, 
@@ -421,7 +417,7 @@ end
 
 /-- The matroid union theorem for two matroids : a minmax formula for the size of the
 largest partitionable set. The heavy lifting in the proof is done by matroid intersection. -/
-theorem two_matroid_union (M₁ M₂ : rankfun U) :
+theorem two_matroid_union (M₁ M₂ : matroid U) :
   π M₁ M₂ = min_val (λ A : set U, size (Aᶜ) + M₁.r A + M₂.r A ) :=
 begin
   rw [π_eq_ν_plus_r, matroid_intersection],
@@ -433,6 +429,3 @@ end
 end union 
 
 
-
-
-end ftype 

@@ -336,11 +336,11 @@ lemma union_two_bases_is_subset_union_two_bases (M₁ M₂ : rankfun U):
 
 lemma exists_two_partitionable (M₁ M₂ : rankfun U): 
   ∃ X, is_two_partitionable M₁ M₂ X := 
-⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_idem, by rw inter_idem⟩
+⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_self, by rw inter_idem⟩
 
 lemma exists_union_two_indep (M₁ M₂ : rankfun U): 
   ∃ X, is_union_two_indep M₁ M₂ X := 
-⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_idem⟩
+⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_self⟩
 
 lemma exists_union_two_bases (M₁ M₂ : rankfun U): 
   ∃ X, is_union_two_bases M₁ M₂ X := 
