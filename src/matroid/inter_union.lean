@@ -1,5 +1,5 @@
 
-import .constructions .projection ftype.minmaxsum
+import .constructions .projection ftype.minmax
 
 open_locale classical 
 noncomputable theory 
@@ -351,7 +351,7 @@ end
 end intersections_of_bases
 
 
-section union
+section two_union
 
 /-- size of the largest set that is the union of independent sets of M₁ and M₂-/
 def π (M₁ M₂ : matroid U) : ℤ :=  
@@ -389,20 +389,14 @@ begin
     from p.property.2, 
   },
   -- ... and is bijective
-  have hφ_bij : function.bijective φ := by  
+  have hφ_sur : function.surjective φ := by  
   {
-    refine ⟨(λ Bp Bp' h,_) ,(λ Bp,_)⟩, 
-    rcases Bp with ⟨⟨Bp₁,Bp₂⟩,hBp⟩ ; rcases Bp' with ⟨⟨Bp'₁,Bp'₂⟩,hBp'⟩,  
-    rw hφ at h, dsimp at h, 
-    rw subtype.mk_eq_mk at h ⊢, 
-    simp only [prod.mk.inj_iff, ftype.compl_inj_iff] at h ⊢, 
-    from h, 
-    refine ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
+    refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
     rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2, 
     rw hφ,  simp,  
   },
   -- use φ to reindex so LHS/RHS are being summed over the same set 
-  have := max_reindex φ hφ_bij (λ pair, inter_size pair.val), 
+  have := max_reindex φ hφ_sur (λ pair, inter_size pair.val), 
   erw ←this,
   
   -- bring addition inside the max 
@@ -428,7 +422,29 @@ begin
   rw [dual_r, compl_compl], linarith,  
 end
 
+end two_union 
+
+section union
+
+
+
+/-- statement that each I_i is indep in M_i -/
+def is_indep_tuple {n : ℕ}(Ms: fin n → matroid U) : (fin n → set U) → Prop := 
+  λ Is, ∀ i : fin n, (Ms i).is_indep (Is i)
+
+/-- subtype of vectors of independent sets -/
+def indep_tuple {n : ℕ}(Ms : fin n → matroid U) : Type :=
+  {Is : fin n → (set U) // is_indep_tuple Ms Is}
+
+instance indep_tuple_nonempty {n : ℕ}(Ms : fin n → matroid U ) : nonempty (indep_tuple Ms) := 
+by {apply nonempty_subtype.mpr, from ⟨(λ x, ∅), λ i, (Ms i).I1 ⟩}
   
+instance indep_tuple_fintype {n : ℕ}(Ms: fin n → matroid U): fintype (indep_tuple Ms) := 
+by {unfold indep_tuple, apply_instance }
+
+
+
+
 end union 
 
 

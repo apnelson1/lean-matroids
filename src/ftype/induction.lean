@@ -163,5 +163,29 @@ end-/
 
 end sets 
 
+section fin 
+
+
+
+ /-
+ 
+  def fin.induction {n : ℕ} {C : fin (n + 1) → Sort u_1} (h0 : C 0) 
+                          (hs : Π (i : fin n), C (⇑fin.cast_succ i) → C i.succ) (i : fin (n + 1)) :
+    C i
+
+Define C i by induction on i : fin (n + 1) via induction on the underlying nat value. This function has two arguments: h0 handles the base case on C 0, and hs defines the inductive step using C i.cast_succ.
+ -/ 
+
+
+
+-- def list.foldr {α : Type u} {β : Type v} (f : α → β → β) (b : β) :
+--list α → β
+
+
+--def union_over {n : ℕ}(Xs : fin n → set U) : set U := 
+--  finset.fold (λ a b, a ∪ b) (∅ : set U) Xs (fin n)
+
+
+end fin 
 
  

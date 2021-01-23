@@ -46,29 +46,29 @@ by {cases min_spec f with y hy, rw ←hy.1, apply hy.2}
 
 /-- taking a max over one type is equivalent to taking one over another, 
 given a bijection between them -/
-lemma max_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
-  max_val (f ∘ φ) = @max_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
+lemma max_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
+  max_val (f ∘ φ) = @max_val _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases @max_spec _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f 
+  rcases @max_spec _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f 
     with ⟨x', ⟨hx'1, hx'2⟩⟩, 
   rcases max_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
   rw [←hx1, ←hx'1], 
   apply le_antisymm (hx'2 _), 
-  cases hφ.2 x' with z hz,
+  cases hφ x' with z hz,
   rw ←hz, apply hx2, 
 end
 
 /-- taking a min over one type is equivalent to taking one over another, 
 given a bijection between them -/
-lemma min_reindex (φ : α → α')(hφ : function.bijective φ)(f : α' → β):
-  min_val (f ∘ φ) = @min_val _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f := 
+lemma min_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
+  min_val (f ∘ φ) = @min_val _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases @min_spec _ _ (fintype.of_bijective φ hφ) (nonempty.map φ _inst_2) _ f 
+  rcases @min_spec _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f 
     with ⟨x', ⟨hx'1, hx'2⟩⟩, 
   rcases min_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
   rw [←hx1, ←hx'1], 
   refine le_antisymm _ (hx'2 _), 
-  cases hφ.2 x' with z hz,
+  cases hφ x' with z hz,
   rw ←hz, apply hx2, 
 end
 

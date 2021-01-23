@@ -7,7 +7,58 @@ noncomputable theory
 
 variables {U :ftype}
 
+namespace indep_family' 
+
+def r (M : indep_family' U) : (set U) → ℤ := 
+  λ X, classical.some (M.I3' X)
+
+
+def basis_of (M : indep_family' U)(B X : set U) :=
+  B ⊆ X ∧ M.indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬M.indep Y)
+
+lemma r_spec (M : indep_family' U) (X : set U): 
+  ∀ B, M.basis_of B X → size B = M.r X :=
+classical.some_spec (M.I3' X)
+
+lemma extends_to_basis_of (M : indep_family' U)(I X : set U):
+  I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ M.basis_of B X :=
+begin
+  intros hIX hI, 
+  rcases maximal_example (λ B, B ⊆ X ∧ M.indep B) ⟨hIX, hI⟩ with ⟨B, hB₁, hB₂⟩,
+  refine ⟨B, hB₁, hB₂.1.1, hB₂.1.2, λ Y hBY hYX hY, _⟩, 
+  push_neg at hB₂,
+  from hB₂.2 Y hBY hYX hY, 
+end
+
+lemma exists_basis_of (M : indep_family' U)(X : set U):
+  ∃ B, M.basis_of B X := 
+by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.I1), finish,}
+
+
+
+lemma R0 (M : indep_family' U) (X : set U):
+  0 ≤ M.r X := 
+by {cases exists_basis_of M X with B hB, sorry , }
+
+lemma I3 (M : indep_family' U) : 
+  satisfies_I3 M.indep :=
+begin
+  intros I J hI hJ hIJ, 
+  cases M.I3' (I ∪ J) with r hr, 
+  sorry, 
+end
+
+
+end indep_family'
+
+
 namespace indep_family  
+
+
+
+--def from_indep_family' (M : indep_family') := 
+
+
 
 
 /-- removing an element from an independent set preserves independence-/

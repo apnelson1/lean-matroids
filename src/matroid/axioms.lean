@@ -39,11 +39,25 @@ def satisfies_I2 : (set U → Prop) → Prop :=
 def satisfies_I3 : (set U → Prop) → Prop := 
   λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ (e : U), e ∈ J \ I ∧ indep (I ∪ e)
 
+def satisfies_I3' : (set U → Prop) → Prop := 
+  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → size B = r
+
 @[ext] structure indep_family (U : ftype) := 
   (indep : set U → Prop)
   (I1 : satisfies_I1 indep)
   (I2 : satisfies_I2 indep)
   (I3 : satisfies_I3 indep)
+
+@[ext] structure indep_family' (U : ftype) := 
+  (indep : set U → Prop)
+  (I1 : satisfies_I1 indep)
+  (I2 : satisfies_I2 indep)
+  (I3' : satisfies_I3' indep)
+
+
+
+@[ext] structure indep_family' (U : ftype) := 
+  (indep : set U → Prop)
 
 end indep 
 

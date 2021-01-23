@@ -1,4 +1,5 @@
-import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+import ftype.basic ftype.induction ftype.collections ftype.minmax 
+import .rankfun .indep 
 open ftype 
 
 local attribute [instance] classical.prop_decidable
@@ -37,6 +38,43 @@ lemma cl_union_left (M : clfun U)(X Y : set U) :
 
 def is_indep (M : clfun U) : set U → Prop := 
   λ I, ∀ (e:U), e ∈ I → M.cl (I \ e) ≠ M.cl I 
+
+/-- all sets spanning X -/
+def spans (M : clfun U)(X : set U) : Type := 
+  {A : set U // X ⊆ M.cl A} 
+
+instance spans_fin (M : clfun U)(X : set U): fintype (M.spans X) :=
+  by {unfold spans, apply_instance}
+
+instance spans_nonempty (M : clfun U)(X : set U) : nonempty (M.spans X) := 
+  by {apply nonempty_subtype.mpr, from ⟨X, M.cl1 X⟩}
+
+def r (M : clfun U) : set U → ℤ := 
+  λ X, min_val (λ (A : M.spans X), size A.val) 
+
+lemma R1 (M : clfun U):
+  satisfies_R1 M.r := 
+begin
+  intros X, unfold clfun.r, 
+  rcases min_spec (λ (A : M.spans X), size A.val) with ⟨⟨B,hB⟩, ⟨hB₁, hB₂⟩⟩, 
+  rw ←hB₁, from hB₂ ⟨X, M.cl1 X⟩,
+end
+
+lemma R2 (M : clfun U):
+  satisfies_R2 M.r := 
+begin
+  intros X Y hXY, 
+  rcases min_spec (λ (A : M.spans Y), size A.val) with ⟨⟨BY,hBY⟩, ⟨hBY₁, hBY₂⟩⟩,
+  unfold clfun.r, rw [←hBY₁],
+  from min_is_lb (λ (A : M.spans X), size A.val) ⟨BY,trans hXY hBY⟩, 
+end
+
+lemma R3 (M : clfun U):
+  satisfies_R3 M.r :=
+begin
+  intros X Y, 
+  sorry 
+end
 
 lemma satisfies_I1 (M : clfun U) : 
   satisfies_I1 M.is_indep :=
