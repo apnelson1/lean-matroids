@@ -21,9 +21,10 @@ noncomputable theory
 
 namespace ftype 
 
-structure ftype :=
+structure ftype  :=
   (E : Type)
   [fin : fintype E]
+  
 
 --@[simp] instance ftype_sets.nonempty : nonempty ftype := ⟨⟩ 
 
@@ -570,10 +571,10 @@ lemma union_subset_pairs {X₁ X₂ Y₁ Y₂ : set A} : X₁ ⊆ Y₁ → X₂ 
 lemma subset_of_set_and_compl {X Y: set A} : X ⊆ Y → X ⊆ Yᶜ → X = ∅ :=
   λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl at this, exact subset_empty this}
 
-lemma subset_ssubset_trans {X Y Z : set A} : X ⊆ Y → Y ⊂ Z → X ⊂ Z := 
+@[trans] lemma subset_ssubset_trans {X Y Z : set A} : X ⊆ Y → Y ⊂ Z → X ⊂ Z := 
   @lt_of_le_of_lt _ _ X Y Z
 
-lemma ssubset_subset_trans {X Y Z : set A} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
+@[trans] lemma ssubset_subset_trans {X Y Z : set A} : X ⊂ Y → Y ⊆ Z → X ⊂ Z := 
   @lt_of_lt_of_le _ _ X Y Z 
 
 lemma ssubset_not_supset {X Y : set A} : X ⊂ Y → ¬(Y ⊆ X) :=
@@ -590,8 +591,8 @@ lemma inter_of_ssubsets (X Y Z : set A) : (X ⊂ Z) → (X ∩ Y ⊂ Z) :=
       (λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) })
 
 
-lemma ssubset_trans {X Y Z : set A} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z := 
-  subset_ssubset_trans hXY.1 hYZ
+@[trans] lemma ssubset_trans {X Y Z : set A}: X ⊂ Y → Y ⊂ Z → X ⊂ Z := 
+  λ hXY hYZ, subset_ssubset_trans hXY.1 hYZ
 
 lemma ssubset_inter {X Y : set A} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
   λ h, by {by_contra a, push_neg at a, simp_rw [ssubset_iff, not_and', not_imp_not] at a, 

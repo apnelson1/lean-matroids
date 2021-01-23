@@ -57,7 +57,7 @@ begin
   rw hBS at h, 
   refine ⟨B, ⟨⟨hBX,⟨⟨hBI,by linarith⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
   rw matroid.indep_iff_r at hBI hJind, 
-  linarith [R2 M hJX, M.R2 hBJ1, size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
+  linarith [rank_mono M hJX, M.rank_mono hBJ1, size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   have := le_of_lt h, 
   rw min_comm, 
   finish, 
@@ -104,9 +104,9 @@ def loopy_iff_univ_rank_zero {U : ftype}{M : matroid U}:
 begin
   refine ⟨λ h, by finish, λ h,_⟩,  
   ext X, simp_rw [loopy_matroid_on], 
-  have := R2 M (subset_univ X), 
+  have := rank_mono M (subset_univ X), 
   rw h at this, 
-  linarith [M.R0 X], 
+  linarith [M.rank_nonneg X], 
 end
 
 
@@ -192,7 +192,7 @@ end
 
 lemma relax.R0 (M : matroid U)(C : set U) : 
   satisfies_R0 (relax.r M C) := 
-  λ X, le_trans (M.R0 X) (r_le_relax_r M C X)
+  λ X, le_trans (M.rank_nonneg X) (r_le_relax_r M C X)
 
 lemma relax.R1 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
   satisfies_R1 (relax.r M C) := 
@@ -203,7 +203,7 @@ begin
   rw circuit_iff_r at h₁, 
   rw h, linarith,  
   rw if_neg h, 
-  from M.R1 X, 
+  from M.rank_le_size X, 
 end
 
 lemma relax.R2 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
@@ -216,7 +216,7 @@ begin
   cases subset_ssubset_or_eq hXY with h' h',
   linarith [circuit_hyperplane_ssupset_rank hC h', relax.r_of_not_C hC (ne_of_ssubset h').symm],
   rw [←h', relax.r_of_C_eq_univ], from hC, 
-  linarith [relax.r_of_not_C hC h, r_le_relax_r M C Y, R2 M hXY],  
+  linarith [relax.r_of_not_C hC h, r_le_relax_r M C Y, rank_mono M hXY],  
 end
 
 lemma relax.R3 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
@@ -248,9 +248,9 @@ begin
   rw [relax.r_of_not_C hC (ne_of_ssubset hCX), circuit_hyperplane_ssubset_rank hC hCX],
   rw [relax.r_of_not_C hC (ne_of_ssubset hCY), circuit_hyperplane_ssubset_rank hC hCY],
   rw [relax.r_of_C hC, circuit_hyperplane_rank_size hC, ←hu], 
-  linarith [size_modular X Y, M.R1 (X ∩ Y)], 
-  rw [hCY], linarith [relax.r_of_not_C hC (ne_of_ssubset hCX), R2 M (inter_subset_left X C)], 
-  rw [hCX], linarith [relax.r_of_not_C hC (ne_of_ssubset hCY), R2 M (inter_subset_right C Y)],
+  linarith [size_modular X Y, M.rank_le_size (X ∩ Y)], 
+  rw [hCY], linarith [relax.r_of_not_C hC (ne_of_ssubset hCX), M.rank_mono (inter_subset_left X C)], 
+  rw [hCX], linarith [relax.r_of_not_C hC (ne_of_ssubset hCY), M.rank_mono (inter_subset_right C Y)],
   rw [hCY, hCX, inter_idem], linarith [r_le_relax_r M C C], 
 
   rw [relax.r_of_not_C hC hi, relax.r_of_not_C hC hu],  

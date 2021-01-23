@@ -1,3 +1,5 @@
+--try the set tactic on the sorrys below (line 102 )
+
 import ftype.basic ftype.induction ftype.collections .rankfun .indep 
 open ftype 
 
@@ -19,36 +21,35 @@ lemma C_to_I2 (M : cct_family U) :
   satisfies_I2 (C_to_I M) :=
   λ I J hIJ hJ X hXI, hJ _ (subset_trans hXI hIJ)
 
-lemma new_circuit_contains_new_elem_C {M : cct_family U}{I C : set U}{e : U}:
+lemma new_circuit_contains_new_elem {M : cct_family U}{I C : set U}{e : U}:
   C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
   λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonelem hCIe he) hC}
 
-lemma add_elem_unique_circuit_C {M : cct_family U} {I : set U} {e : U}:
+lemma add_elem_unique_circuit {M : cct_family U} {I : set U} {e : U}:
   C_to_I M I → ¬C_to_I M (I ∪ e) → ∃! C, M.cct C ∧ C ⊆ I ∪ e :=
   begin
     intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
     rcases hIe with ⟨C, ⟨hCI, hC⟩⟩, refine ⟨C,⟨⟨hC,hCI⟩,λ C' hC', _⟩⟩,
-    have := elem_inter (new_circuit_contains_new_elem_C hI hCI hC) 
-                                (new_circuit_contains_new_elem_C hI hC'.2 hC'.1),
+    have := elem_inter (new_circuit_contains_new_elem hI hCI hC) 
+                                (new_circuit_contains_new_elem hI hC'.2 hC'.1),
     by_contra hCC', 
     cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
     from hI _ (subset_trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
   end 
 
-lemma add_elem_le_one_circuit_C {M : cct_family U} {I C C': set U} (e : U):
+lemma add_elem_le_one_circuit {M : cct_family U} {I C C': set U} (e : U):
   C_to_I M I → (M.cct C ∧ C ⊆ I ∪ e) → (M.cct C' ∧ C' ⊆ I ∪ e) → C = C' :=
   begin
     intros hI hC hC', 
     by_cases h': C_to_I M (I ∪ e), 
     exfalso, from h' _ hC.2 hC.1,
-    rcases (add_elem_unique_circuit_C hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
+    rcases (add_elem_unique_circuit hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
     from eq.trans (hC₀ _ hC) (hC₀ _ hC').symm, 
   end
 
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
 begin
-  
   
   -- I3 states that there are no bad pairs 
   let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
@@ -91,12 +92,14 @@ begin
       cases ne_empty_has_elem this with f hf,
       refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
       apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
-      rw ←(add_elem_le_one_circuit_C e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
+      rw ←(add_elem_le_one_circuit e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
       from elem_of_elem_of_subset hf (inter_subset_left _ _), 
   },
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
   set J' := (J ∪ e) \ f with hdefJ', 
   
+
+  --- test case for set tactic 
   have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
   have hJ' : C_to_I M (J') := sorry,
   have hJ's : size I < size J' := sorry, 
@@ -118,19 +121,35 @@ begin
   rw inter_compl at this, from nonelem_empty g this, 
 end 
 
-  --  λ indep, ∀ I J, size I < size J → indep I → indep J → ∃ e, e ∈ J-I ∧ indep (I ∪ e)
-
 end cct_family 
 
 
-def indep_family.of_circuit_family (M : cct_family U) : indep_family U :=
+def indep_family.of_cct_family (M : cct_family U) : indep_family U :=
   ⟨M.C_to_I, M.C_to_I1, M.C_to_I2, M.C_to_I3⟩ 
 
 
 namespace matroid 
 
-def of_circuit_family (M : cct_family U) : matroid U :=
-  of_indep_family (indep_family.of_circuit_family M)
+def of_cct_family (M : cct_family U) : matroid U :=
+  of_indep_family (indep_family.of_cct_family M)
  
+lemma cct_of_cct_family (M : cct_family U) :
+  (of_cct_family M).is_circuit = M.cct :=  
+begin
+  ext C, rw [is_circuit], 
+  erw matroid.indep_of_indep_family, dsimp only, 
+  rw [indep_family.of_cct_family], dsimp only, 
+  rw [cct_family.C_to_I], dsimp only , 
+  refine ⟨λ h, _, λ h, ⟨_,(λ Y hY X hX hXY, _)⟩⟩, 
+  rcases h with ⟨h₁,h₂⟩,
+  push_neg at h₁, 
+  rcases h₁ with ⟨X,hX₁, hX₂⟩,
+  cases subset_ssubset_or_eq hX₁, 
+  from false.elim (h₂ _ h _ (subset_refl _) hX₂), 
+  rw ←h, from hX₂, 
+  push_neg, from ⟨_, ⟨subset_refl _, h⟩⟩, 
+  from M.C2 _ _ hXY h (subset_ssubset_trans hX hY),  
+end
+
 
 end matroid 

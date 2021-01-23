@@ -1,4 +1,3 @@
--- Experimental/broken - nothing relies on this. 
 
 import .basic .induction .single 
 ----------------------------------------------------------------

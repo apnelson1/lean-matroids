@@ -108,7 +108,7 @@ begin
   have h₁i := I2 (inter_subset_right A I) h₁, 
   have h₂i := I2 (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
-  linarith [R2_inter_left M₁ A I, R2_inter_left M₂ Aᶜ I], 
+  linarith [rank_mono_inter_left M₁ A I, rank_mono_inter_left M₂ Aᶜ I], 
 end
 
 lemma ν_ub (M₁ M₂ : matroid U): 
@@ -137,13 +137,13 @@ begin
     from antisymm (ν_ub M₁ M₂) (this _ (size_nonneg _) M₁ M₂ rfl), 
   refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N₂ hsize, _), 
 
-  -- base case, when everything is a loop. Here the certificate is obvious.
+  -- base case, when everything is a loop. Here the LHS is obviously 0.
   rw [size_zero_iff_empty, univ_iff_compl_empty] at hloops,
   have h' : (matroid_intersection_ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
   {
     simp_rw matroid_intersection_ub_fn,  
-    linarith [R0 N₂ (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂,  
-                              R2 N₂ (cover_compl_subset hloops)], 
+    linarith [N₂.rank_nonneg (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂,  
+                              N₂.rank_mono (cover_compl_subset hloops)], 
   },
   linarith [ν_nonneg N₁ N₂, min_is_lb (ub_fn N₁ N₂) (loops N₁)],  
 
@@ -161,7 +161,7 @@ begin
   }, 
 
   -- contract and delete (loopify/project) e from both elements of the pairs, to get 
-  -- strictly loopier pairs to which we'll apply the IH. 
+  -- strictly loopier pairs to which we'll apply the IH, along with the associated maximizers 
   set N₁d := loopify N₁ e with hN₁d, 
   set N₂d := loopify N₂ e with hN₂d, 
   set N₁c := project N₁ e with hN₁c, 
@@ -210,7 +210,7 @@ begin
     rw [compl_size] at ⊢ hsize, linarith,  
   },
 
-  -- same for (N₁/e , N₂/e)
+  -- so is (N₁/e , N₂/e)
   have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by 
   {
     have h_add_e := union_subset_pairs 
@@ -253,8 +253,8 @@ begin
   rw [compl_diff, compl_inter] at hi, 
   
   -- contradict submodularity. 
-  have sm1 := R3 N₁ (Ac ∪ e) (Ad \ e), 
-  have sm2 := R3 N₂ (Acᶜ ∪ e) (Adᶜ \ e),
+  have sm1 := N₁.rank_submod (Ac ∪ e) (Ad \ e), 
+  have sm2 := N₂.rank_submod (Acᶜ ∪ e) (Adᶜ \ e),
   rw [union_union_diff, union_inter_diff] at sm1 sm2, 
   linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
@@ -391,7 +391,7 @@ begin
   -- ... and is bijective
   have hφ_bij : function.bijective φ := by  
   {
-    refine ⟨λ Bp Bp' h,_, λ Bp,_⟩, 
+    refine ⟨(λ Bp Bp' h,_) ,(λ Bp,_)⟩, 
     rcases Bp with ⟨⟨Bp₁,Bp₂⟩,hBp⟩ ; rcases Bp' with ⟨⟨Bp'₁,Bp'₂⟩,hBp'⟩,  
     rw hφ at h, dsimp at h, 
     rw subtype.mk_eq_mk at h ⊢, 
@@ -402,13 +402,15 @@ begin
     rw hφ,  simp,  
   },
   -- use φ to reindex so LHS/RHS are being summed over the same set 
-  have := max_reindex φ hφ_bij (λ pair, inter_size pair.val), erw ←this,
+  have := max_reindex φ hφ_bij (λ pair, inter_size pair.val), 
+  erw ←this,
   
   -- bring addition inside the max 
   rw max_add_commute, 
   
   -- it remains show the functions we're maximizing are the same 
-  convert rfl, ext Bp, 
+  convert rfl, 
+  ext Bp, 
   rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,   
   dsimp [union_size,inter_size] at ⊢ hB,
   linarith [size_basis hB.1, size_basis hB.2, size_modular B₁ B₂, size_induced_partition_inter B₁ B₂], 
@@ -426,6 +428,7 @@ begin
   rw [dual_r, compl_compl], linarith,  
 end
 
+  
 end union 
 
 
