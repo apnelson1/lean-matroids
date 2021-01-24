@@ -1,5 +1,5 @@
 
-import .constructions .projection ftype.minmax
+import matroid.constructions matroid.projection ftype.minmax
 
 open_locale classical 
 noncomputable theory 
@@ -12,12 +12,17 @@ variables {U : ftype}
 section prelim 
 
 --instance set_fintype : fintype (set U) := set_fintype_of U
+def is_indep_pair (M₁ M₂ : matroid U) := λ (p : set U × set U), M₁.is_indep p.1 ∧ M₂.is_indep p.2
 
-def indep_pair (M₁ M₂ : matroid U) := {p : set U × set U // M₁.is_indep p.1 ∧ M₂.is_indep p.2}
+def is_basis_pair (M₁ M₂ : matroid U) := λ (p : set U × set U), M₁.is_basis p.1 ∧ M₂.is_basis p.2
 
-def basis_pair (M₁ M₂ : matroid U) := {p : set U × set U // M₁.is_basis p.1 ∧ M₂.is_basis p.2}
+def is_disjoint (pair : (set U × set U)) := pair.1 ∩ pair.2 = ∅  
 
-def is_disjoint (pair : (set U × set U)) : Prop := pair.1 ∩ pair.2 = ∅  
+def indep_pair (M₁ M₂ : matroid U) := {p : set U × set U // is_indep_pair M₁ M₂ p }
+
+def basis_pair (M₁ M₂ : matroid U) := {p : set U × set U // is_basis_pair M₁ M₂ p }
+
+def indep_pair_of_subset (M₁ M₂ : matroid U)(X : set U) := {p : set U × set U // is_indep_pair M₁ M₂ p ∧ (p.1 ⊆ X ∧ p.2 ⊆ X) }
 
 def inter_size (pair : (set U × set U)) : ℤ := size (pair.1 ∩ pair.2)
 
@@ -35,14 +40,27 @@ instance basis_pair_fintype {M₁ M₂ : matroid U} : fintype (basis_pair M₁ M
 
 instance indep_pair_nonempty {M₁ M₂ : matroid U} : nonempty (indep_pair M₁ M₂) := 
 begin
-  simp only [indep_pair, exists_and_distrib_right, nonempty_subtype, exists_and_distrib_left, prod.exists], 
-  from ⟨⟨∅, I1 M₁⟩, ⟨∅, I1 M₂⟩⟩,  
+  simp only [indep_pair, nonempty_subtype, prod.exists], 
+  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩ ⟩ , 
+end 
+
+instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid U}{X : set U} : nonempty (indep_pair_of_subset M₁ M₂ X) := 
+begin
+  simp only [indep_pair_of_subset, nonempty_subtype, prod.exists], 
+  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
+end 
+
+instance indep_pair_of_subset_fintype {M₁ M₂ : matroid U}{X : set U} : fintype (indep_pair_of_subset M₁ M₂ X) := 
+begin
+  unfold indep_pair_of_subset, apply_instance, 
 end 
 
 instance basis_pair_nonempty {M₁ M₂ : matroid U} : nonempty (basis_pair M₁ M₂) := 
 begin
   simp only [basis_pair, exists_and_distrib_right, nonempty_subtype, exists_and_distrib_left, prod.exists], 
-  from ⟨exists_basis M₁, exists_basis M₂⟩,  
+  cases exists_basis M₁ with B₁ hB₁,
+  cases exists_basis M₂ with B₂ hB₂, 
+  from ⟨B₁, B₂, hB₁, hB₂⟩,  
 end 
 
 instance disjoint_indep_pair_nonempty (M₁ M₂ : matroid U) : 
@@ -273,178 +291,5 @@ end
 
 end intersection 
 
-section intersections_of_bases
-
-/-- is the intersection of a basis of M₁ and a basis of M₂ -/
-def is_inter_bases (M₁ M₂ : matroid U) := 
-  λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∩ B₂ = X 
-
-/-- is contained in the intersection of a basis of M₁ and a basis of M₂-/
-def is_subset_inter_bases (M₁ M₂ : matroid U) := 
-  λ X, ∃ Y, is_inter_bases M₁ M₂ Y ∧ X ⊆ Y 
-
-lemma exists_inter_bases (M₁ M₂ : matroid U):
-  ∃ I, (is_inter_bases M₁ M₂ I) := 
-begin
-  cases exists_basis M₁ with B₁ hB₁, 
-  cases exists_basis M₂ with B₂ hB₂,
-  from ⟨B₁ ∩ B₂, ⟨B₁,B₂,hB₁,hB₂,rfl⟩⟩, 
-end
-
-def inter_bases (M₁ M₂ : matroid U) := {X : set U // is_inter_bases M₁ M₂ X}
-
-instance inter_bases_nonempty (M₁ M₂ : matroid U) : nonempty (inter_bases M₁ M₂) :=
-by {apply nonempty_subtype.mpr, apply exists_inter_bases, } 
-
-instance inter_bases_fintype (M₁ M₂ : matroid U) : fintype (inter_bases M₁ M₂) := 
-by {unfold inter_bases, apply_instance,}
-
-lemma subset_inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
-  is_subset_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I :=
-begin
-  rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
-  rw ←hIB₁B₂ at hY', split, 
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₁),
-  apply inter_subset_left,    
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₂),
-  apply inter_subset_right,
-end
-
-lemma is_common_ind_iff_is_subset_inter_bases {M₁ M₂ : matroid U}:
-  is_common_ind M₁ M₂ = is_subset_inter_bases M₁ M₂ :=
-begin
-  ext I, 
-  refine ⟨λ h, _, subset_inter_bases_is_common_ind⟩, 
-  rcases extends_to_basis h.1 with ⟨B₁,hIB₁,hB₁⟩,
-  rcases extends_to_basis h.2 with ⟨B₂,hIB₂,hB₂⟩, 
-  from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, inter_is_lb hIB₁ hIB₂⟩, 
-end
-
-lemma inter_two_bases_is_subset_inter_bases {M₁ M₂ : matroid U}{B₁ B₂ : set U}:
-  is_basis M₁ B₁ → is_basis M₂ B₂ → is_subset_inter_bases M₁ M₂ (B₁ ∩ B₂) := 
-λ h₁ h₂, by {refine ⟨B₁ ∩ B₂, ⟨B₁,B₂,h₁,h₂, rfl⟩ , subset_refl _⟩, }
-
-lemma inter_bases_is_subset_inter_bases {M₁ M₂ : matroid U}{I : set U}: 
-  is_inter_bases M₁ M₂ I → is_subset_inter_bases M₁ M₂ I := 
-λ h, by {rcases h with ⟨B₁,B₂,h⟩, refine ⟨I, ⟨B₁, B₂, h⟩, subset_refl _⟩,}
-
-lemma inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
-  is_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I := 
-by {rw is_common_ind_iff_is_subset_inter_bases, from inter_bases_is_subset_inter_bases}
-
-
-lemma max_common_indep_inter_bases (M₁ M₂ : matroid U):
-  ν M₁ M₂ = max_val (λ (pair : basis_pair M₁ M₂), inter_size pair.val) :=
-begin
-  rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨⟨I,hI_ind⟩,hI_size,hI_ub⟩, 
-  rcases max_spec (λ (pair : basis_pair M₁ M₂), inter_size pair.val) with ⟨⟨⟨B₁, B₂⟩,hB⟩,h_inter,h_size_ub⟩, 
-  rw [ν], dsimp at *, rw [←hI_size, ←h_inter],
-  apply le_antisymm, 
-  rw is_common_ind_iff_is_subset_inter_bases at hI_ind, 
-  rcases hI_ind with ⟨Y,⟨⟨B₁',B₂',⟨hB₁',hB₂',hY⟩⟩,h'⟩⟩, 
-  have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this,  
-  rw ←hY at h', 
-  linarith [size_monotone h'],
-  refine (hI_ub ⟨B₁ ∩ B₂, subset_inter_bases_is_common_ind (inter_two_bases_is_subset_inter_bases hB.1 hB.2) ⟩), 
-end
-
-end intersections_of_bases
-
-
-section two_union
-
-/-- size of the largest set that is the union of independent sets of M₁ and M₂-/
-def π (M₁ M₂ : matroid U) : ℤ :=  
-  max_val (λ (Ip : indep_pair M₁ M₂), union_size Ip.val)
-
-lemma π_eq_max_union_bases (M₁ M₂ : matroid U) :
-  π M₁ M₂ = max_val (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) := 
-begin
-  rcases max_spec (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) 
-    with ⟨⟨⟨Bp₁, Bp₂⟩, hBp⟩, hBp_union, hBp_ub⟩, 
-  rcases max_spec (λ (Ip : indep_pair M₁ M₂), union_size Ip.val) 
-    with ⟨⟨⟨Ip₁, Ip₂⟩, hIp⟩, hIp_union, hIp_ub⟩, 
-  rw [π], dsimp only at *, rw [←hBp_union, ←hIp_union], 
-  apply le_antisymm,
-  rcases extends_to_basis hIp.1 with ⟨B₁,hB₁⟩, 
-  rcases extends_to_basis hIp.2 with ⟨B₂,hB₂⟩, 
-  refine le_trans (size_monotone _) (hBp_ub ⟨⟨B₁, B₂⟩, ⟨hB₁.2, hB₂.2⟩⟩), 
-  from union_subset_pairs hB₁.1 hB₂.1, 
-  from hIp_ub ⟨⟨Bp₁,Bp₂⟩, ⟨basis_is_indep hBp.1,basis_is_indep hBp.2⟩⟩, 
-end
-
-/-- simple relationship between π M₁ M₂ and ν M₁ M₂* -/
-theorem π_eq_ν_plus_r (M₁ M₂ : matroid U) :
-  π M₁ M₂ = ν M₁ (dual M₂) + M₂.r univ := 
-begin
-  rw [eq_comm,max_common_indep_inter_bases, π_eq_max_union_bases],
-  
-  -- bijection φ that we will use to reindex summation
-  set φ : basis_pair M₁ M₂ → basis_pair M₁ (dual M₂) := λ p, ⟨⟨p.val.1, p.val.2ᶜ⟩,_⟩ with hφ, 
-  swap,
-  -- φ really maps to basis,cobasis pairs
-  {
-    dsimp only, refine ⟨p.property.1, _⟩, 
-    rw [←cobasis_iff_compl_basis, cobasis_iff, dual_dual], 
-    from p.property.2, 
-  },
-  -- ... and is bijective
-  have hφ_sur : function.surjective φ := by  
-  {
-    refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
-    rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2, 
-    rw hφ,  simp,  
-  },
-  -- use φ to reindex so LHS/RHS are being summed over the same set 
-  have := max_reindex φ hφ_sur (λ pair, inter_size pair.val), 
-  erw ←this,
-  
-  -- bring addition inside the max 
-  rw max_add_commute, 
-  
-  -- it remains show the functions we're maximizing are the same 
-  convert rfl, 
-  ext Bp, 
-  rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,   
-  dsimp [union_size,inter_size] at ⊢ hB,
-  linarith [size_basis hB.1, size_basis hB.2, size_modular B₁ B₂, size_induced_partition_inter B₁ B₂], 
-end 
-
-
-/-- The matroid union theorem for two matroids : a minmax formula for the size of the
-largest partitionable set. The heavy lifting in the proof is done by matroid intersection. -/
-theorem two_matroid_union (M₁ M₂ : matroid U) :
-  π M₁ M₂ = min_val (λ A : set U, size (Aᶜ) + M₁.r A + M₂.r A ) :=
-begin
-  rw [π_eq_ν_plus_r, matroid_intersection],
-  rw min_add_commute (matroid_intersection_ub_fn M₁ (dual M₂)) (M₂.r univ),
-  congr', ext X, rw [matroid_intersection_ub_fn], dsimp,
-  rw [dual_r, compl_compl], linarith,  
-end
-
-end two_union 
-
-section union
-
-
-
-/-- statement that each I_i is indep in M_i -/
-def is_indep_tuple {n : ℕ}(Ms: fin n → matroid U) : (fin n → set U) → Prop := 
-  λ Is, ∀ i : fin n, (Ms i).is_indep (Is i)
-
-/-- subtype of vectors of independent sets -/
-def indep_tuple {n : ℕ}(Ms : fin n → matroid U) : Type :=
-  {Is : fin n → (set U) // is_indep_tuple Ms Is}
-
-instance indep_tuple_nonempty {n : ℕ}(Ms : fin n → matroid U ) : nonempty (indep_tuple Ms) := 
-by {apply nonempty_subtype.mpr, from ⟨(λ x, ∅), λ i, (Ms i).I1 ⟩}
-  
-instance indep_tuple_fintype {n : ℕ}(Ms: fin n → matroid U): fintype (indep_tuple Ms) := 
-by {unfold indep_tuple, apply_instance }
-
-
-
-
-end union 
 
 

@@ -35,20 +35,6 @@ lemma exists_basis_of (M : indep_family' U)(X : set U):
 by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.I1), finish,}
 
 
-
-lemma R0 (M : indep_family' U) (X : set U):
-  0 ≤ M.r X := 
-by {cases exists_basis_of M X with B hB, sorry , }
-
-lemma I3 (M : indep_family' U) : 
-  satisfies_I3 M.indep :=
-begin
-  intros I J hI hJ hIJ, 
-  cases M.I3' (I ∪ J) with r hr, 
-  sorry, 
-end
-
-
 end indep_family'
 
 

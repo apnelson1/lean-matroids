@@ -37,8 +37,6 @@ instance fintype_of (U : ftype) : fintype U := U.fin
 instance set_fintype_of (U : ftype) : fintype (set U) := 
   by {apply_instance}
 
---instance set_inhabited_of {U : ftype} : inhabited (set U) := ⟨∅⟩
-
 --def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
 def as_finset (U : ftype)(X : set U) : finset U := 
@@ -280,10 +278,14 @@ lemma union_distrib_union_left (X Y Z : set A) : (X ∪ Y) ∪ Z = (X ∪ Z) ∪
 lemma union_distrib_union_right (X Y Z : set A) : X ∪ (Y ∪ Z) = (X ∪ Y) ∪ (X ∪ Z) := 
   by rw [union_comm X, union_distrib_union_left Y Z X, union_comm X, union_comm X]   
 
-
+/-lemma union_inter_union (X Y Z W : set A): (X ∪ Y) ∩ (Z ∪ W) = (X ∪ Z) ∩ (Y ∪ W) := 
+begin
+  simp_rw [inter_distrib_left, inter_distrib_right],
+end-/
 
 
 -- Subsets 
+
 
 
 lemma subset_def_union (X Y : set A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
@@ -291,6 +293,8 @@ lemma subset_def_union (X Y : set A) : (X ⊆ Y) ↔ (X ∪ Y = Y) :=
 
 lemma subset_def_inter (X Y: set A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   by {rw subset_def_union, exact ⟨λ h, by rw [←h, absorb_inter_union], λ h, by rw[←h, union_comm, inter_comm, absorb_union_inter]⟩} 
+
+
 
 lemma subset_refl (X : set A) : X ⊆ X :=
   by rw [subset_def_inter, inter_idem]
@@ -360,6 +364,11 @@ lemma univ_subset  {X : set A} (hX : univ ⊆ X) : X = univ :=
 lemma empty_subset  (X : set A) : ∅ ⊆ X := 
   by {apply subset_def_inter_mpr, exact (empty_inter X)}
 
+instance subset_subtype_nonempty {X : set A} : nonempty {Y : set A // Y ⊆ X} := 
+  by {apply nonempty_subtype.mpr, from ⟨_,empty_subset _⟩,  }
+
+instance subtype_coe {X : set A} : has_coe {Y : set A // Y ⊆ X} (set A) := coe_subtype
+
 lemma subset_empty  {X : set A} : X ⊆ ∅ → X = ∅ := 
   λ hX, subset_antisymm hX (empty_subset X)  
 
@@ -372,9 +381,13 @@ lemma disjoint_compl_subset {X Y : set A} : X ∩ Y = ∅ → X ⊆ Yᶜ :=
 lemma subset_compl_disjoint {X Y : set A} : X ⊆ Yᶜ → X ∩ Y = ∅ := 
   λ h, by {rw subset_def_inter at h, rw [←h, inter_assoc], simp}
 
+ 
+
 lemma disjoint_iff_subset_compl {X Y : set A} : X ∩ Y = ∅ ↔ X ⊆ Yᶜ := 
   ⟨λ h, disjoint_compl_subset h, λ h, subset_compl_disjoint h⟩   
 
+lemma subset_iff_diff_empty (X Y : set A) : X ⊆ Y ↔ X \ Y = ∅ :=
+  by {rw [←compl_compl Y, ←disjoint_iff_subset_compl], simp}
 
 lemma cover_compl_subset {X Y : set A} :  X ∪ Y = univ → Xᶜ ⊆ Y  := 
   λ h, by rw [subset_def_union, ←univ_inter (Xᶜ ∪ Y), ←h, ←union_distrib_right, inter_compl, empty_union]
@@ -511,6 +524,8 @@ lemma subset_compl_right {X Y : set A}: X ⊆ Yᶜ → Y ⊆ Xᶜ :=
 lemma subset_compl_left {X Y : set A} : Xᶜ ⊆ Y → Yᶜ ⊆ X := 
   λ hXY, by {rw [←compl_compl Y] at hXY, exact compl_to_subset hXY}
 
+
+
 lemma subset_of_compl_iff_disjoint {X Y: set A} : X ⊆ Yᶜ ↔ X ∩ Y = ∅ := 
   begin 
         rw subset_def_inter,  refine ⟨λ h, _, λ h, _⟩, 
@@ -567,6 +582,9 @@ lemma subset_union_subset_right (X Y Z : set A) : (X ⊆ Y) → (Z ∪ X) ⊆ (Z
 
 lemma union_subset_pairs {X₁ X₂ Y₁ Y₂ : set A} : X₁ ⊆ Y₁ → X₂ ⊆ Y₂ → X₁ ∪ X₂ ⊆ Y₁ ∪ Y₂ :=
   λ h₁ h₂, subset_trans (subset_union_subset_left X₁ Y₁ X₂ h₁) (subset_union_subset_right X₂ Y₂ Y₁ h₂) 
+
+lemma inter_subset_pairs {X₁ X₂ Y₁ Y₂ : set A} : X₁ ⊆ Y₁ → X₂ ⊆ Y₂ → X₁ ∩ X₂ ⊆ Y₁ ∩ Y₂ :=
+  λ h₁ h₂, inter_subset_inter h₁ h₂
 
 lemma subset_of_set_and_compl {X Y: set A} : X ⊆ Y → X ⊆ Yᶜ → X = ∅ :=
   λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl at this, exact subset_empty this}
@@ -791,6 +809,9 @@ lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y :=
 
 lemma eq_of_eq_size_subset {X Y : set A} : (X ⊆ Y) → (size X = size Y) → X = Y :=
   λ hXY, by {cases subset_ssubset_or_eq hXY, intros sXY, exfalso, replace h := size_strict_monotone h, linarith, exact λ h', h}
+
+lemma eq_of_eq_size_subset_iff {X Y : set A} : (X ⊆ Y) → ((size X = size Y) ↔ X = Y) :=
+  λ hXY, ⟨λ h, eq_of_eq_size_subset hXY h, λ h, by {rw h}⟩
 
 lemma eq_of_ge_size_subset {X Y : set A} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
   λ hXY hXY', by {apply eq_of_eq_size_subset hXY, exact le_antisymm (size_monotone hXY) hXY'}

@@ -62,6 +62,19 @@ begin
   norm_num at this, assumption, 
 end
 
+
+lemma nat_induction_zero_one (P : ℕ → Prop)(n₀ : ℕ): 
+  P 0 → P 1 → (∀ n, 2 ≤ n → P (n-1) → P n) → P n₀ :=
+begin
+  intros h0 h1 hind, 
+  induction n₀ with m,
+  from h0, 
+  cases nat.eq_zero_or_pos m, 
+  rw h, from h1, 
+  have : 2 ≤ m.succ := by {rw nat.succ_eq_add_one, linarith},
+  from hind _ this n₀_ih, 
+end
+
 /-- Proves that P holds for all elements of a type α by 
     strong induction on the value of a nonnegative parameter f on α -/
 
@@ -77,6 +90,8 @@ begin
   refine h' _ (by {rw ha, from hn}) (λ a' ha', _), 
   from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl,  
 end
+
+
 
 end numbers 
 
@@ -162,30 +177,5 @@ begin
 end-/
 
 end sets 
-
-section fin 
-
-
-
- /-
- 
-  def fin.induction {n : ℕ} {C : fin (n + 1) → Sort u_1} (h0 : C 0) 
-                          (hs : Π (i : fin n), C (⇑fin.cast_succ i) → C i.succ) (i : fin (n + 1)) :
-    C i
-
-Define C i by induction on i : fin (n + 1) via induction on the underlying nat value. This function has two arguments: h0 handles the base case on C 0, and hs defines the inductive step using C i.cast_succ.
- -/ 
-
-
-
--- def list.foldr {α : Type u} {β : Type v} (f : α → β → β) (b : β) :
---list α → β
-
-
---def union_over {n : ℕ}(Xs : fin n → set U) : set U := 
---  finset.fold (λ a b, a ∪ b) (∅ : set U) Xs (fin n)
-
-
-end fin 
 
  
