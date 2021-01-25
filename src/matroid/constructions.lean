@@ -109,6 +109,11 @@ begin
   linarith [M.rank_nonneg X], 
 end
 
+lemma loopy_matroid_indep_iff_empty {U : ftype}{X : set U}:
+  (loopy_matroid_on U).is_indep X ↔ X = ∅ := 
+by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy_matroid_on]}
+
+
 
 def uniform_matroid_on (U : ftype){r : ℤ}(hr : 0 ≤ r) : matroid U := 
   truncate (free_matroid_on U) hr 

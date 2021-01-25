@@ -1,5 +1,12 @@
 
-import matroid.constructions matroid.projection ftype.minmax
+
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on U, the size of the 
+largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ, taken over 
+all X ⊆ U. The proof is really by induction on the size of the ground set, but to make things easier we 
+instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
+projections of M₁ and M₂.  -/
+
+import matroid.constructions matroid.projection ftype.minmax .basic 
 
 open_locale classical 
 noncomputable theory 
@@ -8,108 +15,12 @@ open matroid
 
 variables {U : ftype}
 
--- setting up the various types we are minimizing/maximizing over 
-section prelim 
-
---instance set_fintype : fintype (set U) := set_fintype_of U
-def is_indep_pair (M₁ M₂ : matroid U) := λ (p : set U × set U), M₁.is_indep p.1 ∧ M₂.is_indep p.2
-
-def is_basis_pair (M₁ M₂ : matroid U) := λ (p : set U × set U), M₁.is_basis p.1 ∧ M₂.is_basis p.2
-
-def is_disjoint (pair : (set U × set U)) := pair.1 ∩ pair.2 = ∅  
-
-def indep_pair (M₁ M₂ : matroid U) := {p : set U × set U // is_indep_pair M₁ M₂ p }
-
-def basis_pair (M₁ M₂ : matroid U) := {p : set U × set U // is_basis_pair M₁ M₂ p }
-
-def indep_pair_of_subset (M₁ M₂ : matroid U)(X : set U) := {p : set U × set U // is_indep_pair M₁ M₂ p ∧ (p.1 ⊆ X ∧ p.2 ⊆ X) }
-
-def inter_size (pair : (set U × set U)) : ℤ := size (pair.1 ∩ pair.2)
-
-def union_size (pair : (set U × set U)) : ℤ := size (pair.1 ∪ pair.2) 
-
-def disjoint_indep_pair (M₁ M₂ : matroid U) := {pair : indep_pair M₁ M₂ // is_disjoint pair.1}
-
-def disjoint_basis_pair (M₁ M₂ : matroid U) := {pair : basis_pair M₁ M₂ // is_disjoint pair.1}
-
-instance indep_pair_fintype {M₁ M₂ : matroid U} : fintype (indep_pair M₁ M₂) := 
-  by {unfold indep_pair, apply_instance }
-
-instance basis_pair_fintype {M₁ M₂ : matroid U} : fintype (basis_pair M₁ M₂) := 
-  by {unfold basis_pair, apply_instance }
-
-instance indep_pair_nonempty {M₁ M₂ : matroid U} : nonempty (indep_pair M₁ M₂) := 
-begin
-  simp only [indep_pair, nonempty_subtype, prod.exists], 
-  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩ ⟩ , 
-end 
-
-instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid U}{X : set U} : nonempty (indep_pair_of_subset M₁ M₂ X) := 
-begin
-  simp only [indep_pair_of_subset, nonempty_subtype, prod.exists], 
-  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
-end 
-
-instance indep_pair_of_subset_fintype {M₁ M₂ : matroid U}{X : set U} : fintype (indep_pair_of_subset M₁ M₂ X) := 
-begin
-  unfold indep_pair_of_subset, apply_instance, 
-end 
-
-instance basis_pair_nonempty {M₁ M₂ : matroid U} : nonempty (basis_pair M₁ M₂) := 
-begin
-  simp only [basis_pair, exists_and_distrib_right, nonempty_subtype, exists_and_distrib_left, prod.exists], 
-  cases exists_basis M₁ with B₁ hB₁,
-  cases exists_basis M₂ with B₂ hB₂, 
-  from ⟨B₁, B₂, hB₁, hB₂⟩,  
-end 
-
-instance disjoint_indep_pair_nonempty (M₁ M₂ : matroid U) : 
-  nonempty (disjoint_indep_pair M₁ M₂) :=
-by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅⟩, ⟨I1 M₁, I1 M₂⟩⟩, tidy,  } 
-
-/--independence in both M₁ and M₂ -/
-def is_common_ind (M₁ M₂ : matroid U) := 
-  λ X, is_indep M₁ X ∧ is_indep M₂ X 
-
-/-- subtype of common independent sets -/ 
-def common_ind (M₁ M₂ : matroid U) := {X : set U // is_common_ind M₁ M₂ X}
-
-instance nonempty_common_ind (M₁ M₂ : matroid U) : nonempty (common_ind M₁ M₂) := 
-by {apply nonempty_subtype.mpr, from ⟨∅, ⟨I1 M₁, I1 M₂⟩⟩}
-
-instance fintype_common_ind (M₁ M₂ : matroid U ): fintype (common_ind M₁ M₂) := 
-  by {unfold common_ind, apply_instance}
-
-instance coe_common_ind (M₁ M₂ : matroid U) : has_coe (common_ind M₁ M₂) (set U) :=
-  ⟨λ X, X.val⟩
-
-/-- has partition into an independent set of M₁ and an independent set of M₂-/
-def is_two_partitionable (M₁ M₂ : matroid U) : set U → Prop := 
-  λ X, ∃ I₁ I₂, is_indep M₁ I₁ ∧ is_indep M₂ I₂ ∧ X = I₁ ∪ I₂ ∧ I₁ ∩ I₂ = ∅
-
-/-- has partition into a basis of M₁ and a basis set of M₂-/
-def is_two_basis_partitionable (M₁ M₂ : matroid U) : set U → Prop := 
-  λ X, ∃ B₁ B₂ , is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X ∧ B₁ ∩ B₂ = ∅
-
-/-- is the union of a basis of M₁ and a basis of M₂ -/
-def is_union_two_bases (M₁ M₂ : matroid U) : set U → Prop := 
-  λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∪ B₂ = X 
-
-end prelim   
-
 section intersection 
 
-/-- size of largest common independent set -/
-def ν (M₁ M₂ : matroid U) : ℤ := 
-  max_val (λ (X : common_ind M₁ M₂), size X.val)
-
+/-- the parameter ν is nonnegative -/
 lemma ν_nonneg (M₁ M₂ : matroid U) : 
   0 ≤ ν M₁ M₂ := 
-begin
-  rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩, 
-  rw [ν, ←hX1],
-  apply size_nonneg,  
-end
+by {apply lb_le_max, intro X, apply size_nonneg}
 
 /-- function that provides an upper bound on ν M₁ M₂ -/
 def matroid_intersection_ub_fn (M₁ M₂ : matroid U) : set U → ℤ := 
@@ -117,6 +28,7 @@ def matroid_intersection_ub_fn (M₁ M₂ : matroid U) : set U → ℤ :=
 
 local notation `ub_fn` := matroid_intersection_ub_fn 
 
+/-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
 theorem matroid_intersection_pair_le {M₁ M₂ : matroid U}{I : common_ind M₁ M₂}(A : set U) : 
   size (I : set U) ≤ M₁.r A + M₂.r Aᶜ := 
 begin
@@ -129,6 +41,7 @@ begin
   linarith [rank_mono_inter_left M₁ A I, rank_mono_inter_left M₂ Aᶜ I], 
 end
 
+/-- the easy direction of matroid intersection, stated as an upper bound on ν -/
 lemma ν_ub (M₁ M₂ : matroid U): 
   ν M₁ M₂ ≤ min_val (matroid_intersection_ub_fn M₁ M₂)  := 
 begin
@@ -277,7 +190,7 @@ begin
   linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
 
-/-- restatement of matroid intersection as the existence of a matching maximizer/minimizer -/
+/-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/
 theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid U): 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin

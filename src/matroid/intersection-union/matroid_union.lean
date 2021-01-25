@@ -1,8 +1,13 @@
 
-import matroid.constructions matroid.projection ftype.minmax .matroid_inter 
+/- This file proves a minmax formula for π₂, the maximum size of an (M₁,M₂)-partitionable set, 
+  where M₁ and M₂ are matroids on a common ground set U, and also proves that the partitionable
+  sets are the independent sets of a matroid on U. Then it generalizes the latter result to a 
+  general list of matroids; the former is todo but shouldn't be too bad.  -/
+
+import matroid.constructions matroid.projection ftype.minmax .matroid_inter .basic
 import algebra.big_operators
 
-open_locale classical 
+open_locale classical big_operators
 noncomputable theory 
 open ftype 
 open matroid  
@@ -11,29 +16,18 @@ variables {U : ftype}
 
 section intersections_of_bases
 
-/-- is the intersection of a basis of M₁ and a basis of M₂ -/
-def is_inter_bases (M₁ M₂ : matroid U) := 
-  λ X, ∃ B₁ B₂, is_basis M₁ B₁ ∧ is_basis M₂ B₂ ∧ B₁ ∩ B₂ = X 
-
-/-- is contained in the intersection of a basis of M₁ and a basis of M₂-/
-def is_subset_inter_bases (M₁ M₂ : matroid U) := 
-  λ X, ∃ Y, is_inter_bases M₁ M₂ Y ∧ X ⊆ Y 
-
-lemma exists_inter_bases (M₁ M₂ : matroid U):
-  ∃ I, (is_inter_bases M₁ M₂ I) := 
+lemma two_partitionable_iff_union_two_indep {M₁ M₂ : matroid U}{X : set U}:
+  is_two_partitionable M₁ M₂ X ↔ is_union_two_indep M₁ M₂ X := 
 begin
-  cases exists_basis M₁ with B₁ hB₁, 
-  cases exists_basis M₂ with B₂ hB₂,
-  from ⟨B₁ ∩ B₂, ⟨B₁,B₂,hB₁,hB₂,rfl⟩⟩, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  rcases h with ⟨I₁,I₂,_,_,_,_⟩,
+  refine ⟨I₁,I₂,_,_,_⟩; assumption, 
+  rcases h with ⟨I₁,I₂,i₁,i₂,hu⟩, 
+  refine ⟨I₁,I₂ \ I₁,i₁,I2 _ i₂,_,_⟩, 
+  apply diff_subset, 
+  rw hu, finish, 
+  finish, 
 end
-
-def inter_bases (M₁ M₂ : matroid U) := {X : set U // is_inter_bases M₁ M₂ X}
-
-instance inter_bases_nonempty (M₁ M₂ : matroid U) : nonempty (inter_bases M₁ M₂) :=
-by {apply nonempty_subtype.mpr, apply exists_inter_bases, } 
-
-instance inter_bases_fintype (M₁ M₂ : matroid U) : fintype (inter_bases M₁ M₂) := 
-by {unfold inter_bases, apply_instance,}
 
 lemma subset_inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
   is_subset_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I :=
@@ -89,10 +83,6 @@ end intersections_of_bases
 
 section two_union
 
-/-- size of the largest set that is the union of independent sets of M₁ and M₂-/
-def π₂ (M₁ M₂ : matroid U) : ℤ :=  
-  max_val (λ (Ip : indep_pair M₁ M₂), union_size Ip.val)
-
 lemma π₂_eq_max_union_bases (M₁ M₂ : matroid U) :
   π₂ M₁ M₂ = max_val (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) := 
 begin
@@ -124,7 +114,7 @@ begin
     rw [←cobasis_iff_compl_basis, cobasis_iff, dual_dual], 
     from p.property.2, 
   },
-  -- ... and is bijective
+  -- ... and is surjective
   have hφ_sur : function.surjective φ := by  
   {
     refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
@@ -166,15 +156,12 @@ namespace two_union_matroid
 
 variables (M₁ M₂ : matroid U)
 
-
-
---notation M ∣ X := M.loopify_to X 
+/-- notation for loopifying to a set -/
 local infix ` |  `:50 := λ (M : matroid U)(X : set U), (M.loopify_to X)
 
 /-- independent pairs of a subset are independent pairs of a loopification to that set -/ 
 lemma indep_pair_of_subset_as_indep_pair_loopify (X : set U):
-    max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) 
-  = max_val (λ Ip : indep_pair (M₁ | X) (M₂ | X), union_size Ip.val) :=
+    max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) = π₂ (M₁ | X) (M₂ | X) :=
 begin
   set φ : indep_pair_of_subset M₁ M₂ X → indep_pair (M₁ | X) (M₂ | X) :=
     λ Ip, ⟨Ip.val ,_⟩ with hφ, 
@@ -192,7 +179,7 @@ theorem two_matroid_union_on_subset (X : set U):
   max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) 
   = min_val (λ A : {Y : set U // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A) := 
 begin
-  rw [indep_pair_of_subset_as_indep_pair_loopify, ←π₂, two_matroid_union], 
+  rw [indep_pair_of_subset_as_indep_pair_loopify, two_matroid_union], 
   
   rcases min_spec (λ A : {Y : set U // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A)
     with ⟨A, hA', hA⟩, 
@@ -243,10 +230,7 @@ lemma R0 :
   
 lemma R1 : 
   satisfies_R1 (r M₁ M₂):= 
-begin
-  intro X, apply max_le_ub, 
-  from λ Ip, size_monotone (union_is_ub Ip.2.2.1 Ip.2.2.2), 
-end
+by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_is_ub Ip.2.2.1 Ip.2.2.2)}
 
 lemma R2 :
   satisfies_R2 (r M₁ M₂) := 
@@ -262,8 +246,7 @@ end
 lemma R3 : 
   satisfies_R3 (r M₁ M₂) := 
 begin
-  intros X Y, 
-  unfold r, 
+  intros X Y, unfold r, 
   repeat {rw [two_matroid_union_on_subset]}, 
   repeat {rw [sum_of_min]},  
   have hu : ∀ p : {Y // Y ⊆ X} × {Y_1 // Y_1 ⊆ Y}, p.1.1 ∪ p.2.1 ⊆ X ∪ Y := 
@@ -276,20 +259,19 @@ begin
   apply min_of_le_is_le, 
   rintro ⟨A,B⟩, rw hφ, 
   dsimp [-diff_def], 
-  unfold_coes, rw [diff_size A.property, diff_size B.property, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
-  linarith [size_modular X Y, size_modular A.val B.val, 
-              M₁.rank_submod A.val B.val, M₂.rank_submod A.val B.val], 
+  unfold_coes, rw [diff_size A.2, diff_size B.2, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
+  linarith [size_modular X Y, size_modular A.1 B.1, M₁.rank_submod A.1 B.1, M₂.rank_submod A.1 B.1], 
 end
 
 /-- the matroid whose independent sets are the (M₁,M₂)-partitionable ones -/
-def two_partitionable_sets_matroid (M₁ M₂ : matroid U): matroid U := 
+def union (M₁ M₂ : matroid U): matroid U := 
   ⟨r M₁ M₂, R0 M₁ M₂, R1 M₁ M₂, R2 M₁ M₂, R3 M₁ M₂⟩
 
-/-- independence in the two-partitionable-sets matroid -/
-lemma partitionable_sets_matroid_indep_iff (M₁ M₂ : matroid U){X : set U}:
-  (two_partitionable_sets_matroid M₁ M₂).is_indep X ↔ is_two_partitionable M₁ M₂ X :=
+/-- independence in the union of two matroids is two-partitionability -/
+lemma two_union_matroid_indep_iff (M₁ M₂ : matroid U){X : set U}:
+  (union M₁ M₂).is_indep X ↔ is_two_partitionable M₁ M₂ X :=
 begin
-  rw [indep_iff_r, two_partitionable_sets_matroid], simp only [r], 
+  rw [indep_iff_r, union], simp only [r], 
   rcases max_spec (λ (Ip : indep_pair_of_subset M₁ M₂ X), union_size Ip.val) 
     with ⟨⟨⟨I₁,I₂⟩,⟨⟨hi1,hi2⟩,hX1,hX2⟩⟩, hI', hI⟩, 
   rw [←hI'], clear hI', dsimp only, 
@@ -306,14 +288,108 @@ begin
   from ⟨⟨h11,h12⟩, subset_union_left _ _, subset_union_right _ _⟩, 
 end 
 
+/-- independence in the union of two matroids is expressibility as a union of independent sets  -/
+lemma two_union_indep_iff_union (M₁ M₂ : matroid U){X : set U}:
+  (union M₁ M₂).is_indep X ↔ is_union_two_indep M₁ M₂ X :=
+by rw [two_union_matroid_indep_iff, two_partitionable_iff_union_two_indep]
+
+
+
+
+/-lemma exists_two_union_matroid (M₁ M₂ : matroid U): 
+  ∃! (M : matroid U), M.is_indep = is_union_two_indep M₁ M₂ :=
+begin
+  use (two_union_matroid M₁ M₂), 
+end-/
+
 end two_union_matroid 
 
 end two_union_matroid
 
-
 section union
- open_locale big_operators 
+ 
 
+
+/-- given a list of matroids, there is a matroid whose independent sets are the unions of 
+independent sets of the matroids in the list  -/
+theorem exists_union_matroid (Ms : list (matroid U)):
+  ∃ (M_union : matroid U), ∀ X : set U, M_union.is_indep X ↔ is_union_indep_list Ms X := 
+begin
+  /- I thought using lists would be better than (fin n)-indexed tuples of matroids, 
+  but this proof's length suggests otherwise. The two lists being 'decoupled' is annoying; 
+  independent indexing sets are nice. -/
+  
+  /- induction on the number of matroids in the list-/
+  induction Ms with M Ms₀ IH, 
+
+  /- bases case: the loopy matroid works -/
+  use loopy_matroid_on U, intro X, 
+  rw [loopy_matroid_indep_iff_empty, is_union_indep_list], 
+  dsimp only,
+  refine ⟨λ h, ⟨⟨list.nil, _⟩, _⟩, λ h, _⟩, 
+  rw indep_list_nil_iff_nil, 
+  simp, 
+  from h.symm, 
+  cases h with Xs hXs, rw [indep_list_nil_elim_subtype Xs] at hXs, 
+  simp only [list_empty_union_eq_empty] at hXs, from hXs.symm,  
+
+  /- inductive step: take the union of the union matroid for the shortened list,
+  with the matroid at the head of the list. All trivial stuff, given the definition
+  of independence, going between a smaller list and a bigger one -/
+  cases IH with N h₀, 
+  set MU := two_union_matroid.union M N with hMU, 
+  rw is_union_indep_list, refine ⟨MU, λ X, ⟨λ h, _, λ h, _⟩⟩, 
+  rw [hMU, two_union_matroid.two_union_indep_iff_union] at h, 
+  rcases h with ⟨IM, IN, ⟨hMi, hNi, hX⟩⟩, 
+  rw h₀ IN at hNi, 
+  rcases hNi with ⟨Ys, hYs⟩, 
+  refine ⟨⟨IM :: Ys.val, ⟨_,_⟩⟩,_⟩, 
+  {simp only [add_left_inj, list.length, subtype.val_eq_coe], from Ys.2.1},
+  {
+    rintro ⟨M', Z⟩, intro hM'Z, 
+    simp only [list.mem_cons_iff, prod.mk.inj_iff, list.zip_cons_cons, subtype.val_eq_coe] at hM'Z,
+    cases hM'Z, 
+    rw [hM'Z.1, hM'Z.2], from hMi, 
+    from Ys.property.2 _ hM'Z,
+  },
+  {simp only [list_union_cons], rw hYs, from hX.symm},
+  {
+    dsimp only at h, cases h with Xs hXs, 
+    rw [two_union_matroid.two_union_indep_iff_union, is_union_two_indep], 
+    rcases Xs with ⟨Xs, ⟨hXs_len, hXs_i⟩⟩, induction Xs with Xs_hd Xs_tl, 
+    {simp only [list.length] at hXs_len, linarith [hXs_len], },
+    refine ⟨Xs_hd, list_union (Xs_tl), ⟨_,_,_⟩⟩, 
+    {apply hXs_i ⟨M, Xs_hd⟩, simp [list.mem],},
+    rw (h₀ (list_union Xs_tl)), 
+    refine ⟨⟨Xs_tl,⟨_,λ MX hMX, _⟩⟩, _⟩, 
+      {simp only [add_left_inj, list.length] at hXs_len, from hXs_len, }, 
+      {apply hXs_i MX, apply or.intro_right, from hMX }, 
+      {simp},
+      {simp only [list_union_cons] at hXs, from hXs.symm}
+  },
+end
+
+/-- the union of a list of matroids, as a matroid -/
+def union_matroid (Ms : list (matroid U)): matroid U :=
+  classical.some (exists_union_matroid Ms)
+
+/-- independence in the union matroid -/
+theorem union_matroid_indep_iff (Ms : list (matroid U)):
+  (union_matroid Ms).is_indep = is_union_indep_list Ms := 
+by {ext x, from classical.some_spec (exists_union_matroid Ms) x}
+
+-- todo 
+/-lemma union_matroid_rank (Ms : list (matroid U)): 
+  (union_matroid Ms).r = λ X, min_val (λ A, size Aᶜ + sum_of_ranks_of_set Ms A ) := 
+begin
+
+end-/
+
+
+
+end union 
+
+/-
 /-- statement that each I_i is indep in M_i -/
 def is_indep_tuple {n : ℕ}(Ms: fin n → matroid U) : (fin n → set U) → Prop := 
   λ Is, ∀ i : fin n, (Ms i).is_indep (Is i)
@@ -336,8 +412,6 @@ def union_of_tuple {n : ℕ}(Xs : fin n → set U) : set U :=
 
 def π_tuple {n : ℕ}: (fin n → matroid U) → ℤ := 
   λ Ms, max_val (λ (Is: indep_tuple Ms), size (union_of_tuple Is.val) )
-
-
 
 @[simp] lemma sum_fin_one (a : fin 1 → ℤ):
   ∑ i, a i = a 0 := 
@@ -458,20 +532,5 @@ begin
   
                     
 
-end
-
-/-
-
-nvalid type ascription, term has type
-  @max_val (@indep_tuple U 1 Ms) ℤ (@indep_tuple_fintype U 1 Ms) _ int.linear_order (@matroid_union_lb_fn U 1 Ms) =
-    @min_val (set ↥U) ℤ (ftype.set_fintype_of U) _ int.linear_order (@matroid_union_ub_fn U 1 Ms)
-but is expected to have type
-  @max_val (@indep_tuple U n.succ Ms) ℤ (@indep_tuple_fintype U n.succ Ms) _ int.linear_order
-      (@matroid_union_lb_fn U n.succ Ms) =
-    @min_val (set ↥U) ℤ (ftype.set_fintype_of U) _ int.linear_order (@matroid_union_ub_fn U n.succ Ms)
-types contain aliased name(s): Ms
-remark: the tactic `dedup` can be used to rename aliases
-
--/
-
-end union 
+end 
+-/ 

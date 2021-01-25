@@ -25,7 +25,7 @@ elem_iff_subset.mp
 
 lemma subset_to_elem  {e : A}{X : set A} :
   (e : set A) ⊆ X → e ∈ X := 
-elem_iff_subset.mpr 
+elem_iff_subset.mpr
 
 @[simp] lemma size_single {A : ftype} (e : A) :
    size (e : set A) = 1 := by apply size_single_ax
