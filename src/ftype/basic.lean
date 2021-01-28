@@ -39,6 +39,8 @@ instance set_fintype_of (U : ftype) : fintype (set U) :=
 
 --def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
+instance ftype_mem (U : ftype): has_mem U (set U) := {mem := λ x X, x ∈ X}
+
 def as_finset (U : ftype)(X : set U) : finset U := 
   @set.to_finset _ X (@fintype.subtype_of_fintype _ _ X) 
   

@@ -1,6 +1,6 @@
 --try the set tactic on the sorrys below (line 102 )
 
-import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+import ftype.basic ftype.induction ftype.collections .rankfun .indep set_tactic.solver
 open ftype 
 
 open_locale classical 
@@ -50,7 +50,7 @@ lemma add_elem_le_one_circuit {M : cct_family U} {I C C': set U} (e : U):
 lemma C_to_I3 (M : cct_family U) :
   satisfies_I3 (C_to_I M) :=
 begin
-  
+  letI := ftype.ftype_mem U, 
   -- I3 states that there are no bad pairs 
   let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
   suffices : ∀ I J, ¬bad_pair I J, 
@@ -88,7 +88,7 @@ begin
       from (hJe _ hCJe) hC,
       unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
 
-      have : Ce ∩ (J \ I) ≠ ∅ := λ h,  sorry ,
+      have : Ce ∩ (J \ I) ≠ ∅ := λ h,  by {sorry, },
       cases ne_empty_has_elem this with f hf,
       refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
       apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
@@ -100,7 +100,7 @@ begin
   
 
   --- test case for set tactic 
-  have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
+  have hJ'₀: J' \ I ⊆ (J ∪ I) := by {set_solver, }, 
   have hJ' : C_to_I M (J') := sorry,
   have hJ's : size I < size J' := sorry, 
   have hJ'ssu : I \ J' ⊂ I \ J := sorry, 
