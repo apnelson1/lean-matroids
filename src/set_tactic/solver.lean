@@ -127,8 +127,8 @@ begin
   set_solver,
 end
 
-example (T : Type) [decidable_eq T] (x z : T) (Y : finset T) :
-  x ∈ ({z} : finset T) → x = z :=
+example (T : Type) [decidable_eq T] (x z : T) (Y : set T) :
+  x ∈ ({z} : set T) → x = z :=
 begin
   set_solver,
 end

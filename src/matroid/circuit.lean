@@ -1,6 +1,7 @@
 --try the set tactic on the sorrys below (line 102 )
 
-import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+import ftype.basic ftype.induction ftype.collections .rankfun .indep
+import set_tactic.solver
 open ftype 
 
 open_locale classical 
@@ -100,7 +101,7 @@ begin
   
 
   --- test case for set tactic 
-  have hJ'₀: J' \ I ⊆ (J ∪ I) := sorry, 
+  have hJ'₀: J' \ I ⊆ (J ∪ I) := by set_solver, 
   have hJ' : C_to_I M (J') := sorry,
   have hJ's : size I < size J' := sorry, 
   have hJ'ssu : I \ J' ⊂ I \ J := sorry, 

@@ -80,7 +80,7 @@ variables {u : ultrafilter α}
 
 namespace ultrafilter
 
-instance : has_mem (ultrafilter α) α := ⟨λ u x, u.pred x⟩
+@[priority 0] instance : has_mem (ultrafilter α) α := ⟨λ u x, u.pred x⟩
 
 lemma mem_monotone : x ≤ y → u ∈ x → u ∈ y :=
 u.pred_monotone x y
