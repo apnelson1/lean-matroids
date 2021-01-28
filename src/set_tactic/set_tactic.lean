@@ -1,4 +1,31 @@
 import data.set.basic
+import .extensionality
+
+namespace extensionality
+instance set_ext_lemmas (T : Type):
+  (boolalg_ext_lemmas (set T) T) :=
+{
+  simpl_eq := by tidy,
+  simpl_lt := by tidy,
+  ext_bot := by tidy,
+  ext_sdiff := by tidy,
+  ext_le := by tidy, 
+  ext_meet := by tidy,
+  ext_join := by tidy,
+}
+
+instance set_ext_lemmas_compl (T : Type) :
+  (boolalg_ext_lemmas_compl (set T) T) :=
+{
+  ext_compl := by tidy,
+}
+
+instance set_ext_lemmas_top (T : Type) :
+  (boolalg_ext_lemmas_top (set T) T) :=
+{
+  ext_top := by tidy,
+}
+end extensionality
 
 namespace cleanup 
 lemma set_union_sup (T : Type) (A B : set T) : (A ∪ B) = (A ⊔ B) := by refl
