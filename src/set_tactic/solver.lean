@@ -97,6 +97,7 @@ meta def gather_types : (tactic (list expr)) := do
 
 
 meta def set_ext : (tactic unit) := do
+  tactic.try `[simp only [ne, ge, gt, superset, ssuperset] at *],
   tactic.try cleanup.finset_cleanup,
   tactic.try cleanup.set_cleanup,
   types <- gather_types,
@@ -106,7 +107,6 @@ meta def set_ext : (tactic unit) := do
 meta def set_solver : (tactic unit) := do
   set_ext,
   `[finish]
-
 
 example (α : Type) [boolean_algebra α] (X Y Z P Q W : α) :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
@@ -122,7 +122,7 @@ end
 
 -- note the lack of fintype T here
 example (T : Type) [decidable_eq T] (X Y Z P Q W : finset T)  :
-  X ≤ (X ⊔ Y) :=
+  (X ∪ Y) ≥ X :=
 begin
   set_solver,
 end
