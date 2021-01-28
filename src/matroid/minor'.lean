@@ -1,9 +1,9 @@
-import ftype.basic ftype.embed
+import ftype.basic ftype.embed set_tactic.solver
 import .rankfun .dual 
 
 open ftype 
 noncomputable theory 
-variables {U₀ U V W: ftype}[nonempty U₀]
+variables {U₀ U V W: ftype}--[nonempty U₀]
 
 section basic 
 
@@ -16,13 +16,13 @@ namespace function.embedding
 def img (emb : U₀ ↪ U):=
   λ (X : set U₀), emb.to_fun '' X 
 
-def as_subtype_equiv (emb : U₀ ↪ U) : (U₀ ≃ set.range emb):= 
+/-def as_subtype_equiv (emb : U₀ ↪ U) : (U₀ ≃ set.range emb):= 
 { 
   to_fun := λ x, ⟨emb x, by simp⟩,
   inv_fun := λ y, (function.inv_fun emb.to_fun) y.1,
   left_inv := sorry, --by {have := function.left_inverse_inv_fun (emb.f_inj)},
   right_inv := sorry 
-}
+}-/
 
 end function.embedding 
 
@@ -96,6 +96,40 @@ namespace emb_minor
 /-- the ground set of an emb_minor, expressed as a set of elements of M -/
 def ground (N : emb_minor M) : set U := set.range N.emb
 
+def C (N : emb_minor M) : set U := classical.some N.minor_rank
+
+def D (N : emb_minor M) : set U := (N.ground ∪ N.C)ᶜ
+
+lemma C_ground_inter_empty (N : emb_minor M): 
+  N.C ∩ N.ground = ∅ := 
+by {rw ground, from (classical.some_spec N.minor_rank).1}
+
+lemma D_ground_inter_empty (N : emb_minor M): 
+  N.D ∩ N.ground = ∅ := 
+by {rw [D], have := C_ground_inter_empty N, rw [compl_union, inter_right_comm], set_solver}
+  -- set_solver doesn't work right after the have here, but it should. What's the problem? 
+
+lemma C_D_inter_empty (N : emb_minor M) : 
+  N.C ∩ N.D = ∅ := 
+by {rw D, have := C_ground_inter_empty N, set_solver, } 
+
+lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
+  (N.C ∪ N.D) = N.groundᶜ := 
+by {rw [D], have := N.C_ground_inter_empty, rw [compl_union, union_distrib_left], simp, sorry     }
+-- same deal here 
+
+
+lemma emb_minor_r (N : emb_minor M) : 
+  N.mat.r = λ X, M.r (N.emb '' X ∪ N.C) - M.r N.C := 
+by {rw [emb_minor.C],  from (classical.some_spec N.minor_rank).2}
+
+
+
+lemma contract_delete_disj (N : emb_minor M) : N.C ∩ N.D = ∅ ∧ N.C ∪ N.D = N.groundᶜ := 
+begin
+  rw [D,C], split, set_solver, have := (classical.some_spec minor_rank).1, 
+end
+
 
 /-- two embedded minors of M are strongly isomorphic if the associated matroids are related 
 by an isomorphism that commutes with the respective embeddings into M. Equivalence classes 
@@ -145,19 +179,20 @@ def ground {M : matroid U} : minor M → set U := quotient.lift
   (λ (N : emb_minor M), set.range (N.emb))
   (λ N N' hNN', strong_iso_same_groundset N N' hNN' )
 
-def matroid_on_subtype (N : emb_minor M) : matroid ((subftype (N.ground))) := 
-let F := set.range N.emb in 
+def as_mat_on_subtype (N : emb_minor M) : matroid ((subftype (N.ground))) := 
 {
-  r := λ (X : set {x : U // x ∈ F}), M.r (
-    
-  )
+  r := λ (X : set {x : U // x ∈ N.ground}), N.mat.r (N.emb.as_subtype_equiv ⁻¹' X),
+  R0 := by {intro X,  }, 
+  R1 := sorry, 
+  R2 := sorry, 
+  R3 := sorry, 
 }
 
 /-- the 'canonical representative' N₀ for a minor N of M (on U): the unique element of the equivalence class
 for which the embedding into U is just subtype inclusion. The ground type of N₀ is a subtype of U -/
-def as_mat {M : matroid U}(N : minor M): matroid (subftype (ground N)) := quotient.lift 
-  ()
-  ()
+--def as_mat {M : matroid U}(N : minor M): matroid (subftype (ground N)) := quotient.lift 
+--  ()
+--  ()
 
 
 end minor 

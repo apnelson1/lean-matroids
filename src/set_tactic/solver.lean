@@ -160,8 +160,15 @@ example (α : Type) [boolean_algebra α]  (A B C D E F G : α) :
 begin
   tactic.timetac "slow" $  set_solver,
 end
+ 
+example (α : Type)(C E : set α)(hCE : C ⊓ E = ∅):
+  C ⊔ (E ⊔ C)ᶜ = Eᶜ := 
+by {sorry}
 
-
+example (α : Type)(C E : set α)(h : C ⊓ E = ⊥) : 
+  C ⊓ (C ⊔ E)ᶜ = ∅ := 
+by {set_solver, } 
+--broken. Replacing ∅ with ⊥ fixes it. 
 
 /-
 example (X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ : α) :
