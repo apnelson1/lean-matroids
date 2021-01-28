@@ -26,3 +26,12 @@ instance finset_ext_lemmas_top (T : Type) [fintype T] [decidable_eq T] :
   ext_top := by unfold_projs; finish,
 }
 end extensionality
+
+namespace cleanup 
+lemma finset_union_sup (T : Type) [decidable_eq T] (A B : finset T) : (A ∪ B) = (A ⊔ B) := by refl
+lemma finset_inter_inf (T : Type) [decidable_eq T] (A B : finset T) : (A ∩ B) = (A ⊓ B) := by refl
+lemma finset_subset_le (T : Type) [decidable_eq T] (A B : finset T) : (A ⊆ B) = (A ≤ B) := by refl
+
+meta def finset_cleanup : tactic unit :=
+  `[simp only [cleanup.finset_union_sup, cleanup.finset_inter_inf, cleanup.finset_subset_le] at *]
+end cleanup
