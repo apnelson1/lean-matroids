@@ -6,6 +6,7 @@
 
 import matroid.constructions matroid.projection ftype.minmax .matroid_inter .basic
 import algebra.big_operators
+import set_tactic.solver
 
 open_locale classical big_operators
 noncomputable theory 
@@ -212,9 +213,10 @@ begin
   },
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
-  dsimp, -- Use the tactic here! 
-  rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
-  rw [compl_inter, inter_distrib_left], simp [hXB],  
+  dsimp,
+  solver, --dsimp, -- Use the tactic here! 
+  --rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
+  --rw [compl_inter, inter_distrib_left], simp [hXB],  
 end
 
 

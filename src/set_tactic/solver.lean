@@ -1,6 +1,6 @@
-import extensionality
-import boolean_algebra_tactic
-import finset_tactic
+import .extensionality
+import .boolean_algebra_tactic
+import .finset_tactic
 import tactic
 import tactic.interactive
 

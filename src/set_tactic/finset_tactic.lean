@@ -1,6 +1,6 @@
 import data.finset.basic
 import data.fintype.basic 
-import extensionality
+import .extensionality
 
 namespace extensionality
 instance finset_ext_lemmas (T : Type) [decidable_eq T] :
