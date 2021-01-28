@@ -20,8 +20,8 @@ def as_subtype_equiv (emb : U₀ ↪ U) : (U₀ ≃ set.range emb):=
 { 
   to_fun := λ x, ⟨emb x, by simp⟩,
   inv_fun := λ y, (function.inv_fun emb.to_fun) y.1,
-  left_inv := by {have := function.left_inverse_inv_fun (emb.f_inj)},
-  right_inv := _ 
+  left_inv := sorry, --by {have := function.left_inverse_inv_fun (emb.f_inj)},
+  right_inv := sorry 
 }
 
 end function.embedding 
@@ -79,24 +79,33 @@ end
 
 
 end basic
-section minor
 
 variable {M : matroid U}
 
-/-- structure describing a matroid together with its being isomorphic to a minor of M-/
-structure emb_minor_of (M : matroid U):=
+
+
+/-- structure describing a matroid together with it having an isomorphism to a minor of M -/
+structure emb_minor (M : matroid U):=
   {U₀ : ftype}
-  (minor: matroid U₀)
+  (mat : matroid U₀)
   (emb : U₀ ↪ U)
-  (minor_rank : ∃ C, C ∩ emb.img univ = ∅ ∧ minor.r = λ X, M.r (emb.img X ∪ C) - M.r C )
+  (minor_rank : ∃ C, C ∩ set.range emb = ∅ ∧ (mat.r = λ X, M.r (emb '' X ∪ C) - M.r C))
 
-/-- two (embedded) minors of M are strongly isomorphic if the associated matroids are related by an isomorphism that commutes with the respective embeddings into M. Equivalence classes correspond to actual minors of M -/
-def strongly_iso (N₁ N₂ : emb_minor_of M) : Prop := 
-  (∃ (φ : isom (N₁.minor) (N₂.minor)), ∀ x, N₁.emb x = N₂.emb (φ x) ) 
+namespace emb_minor
 
-/-- strong isomorphism is an equivalence relation -/
+/-- the ground set of an emb_minor, expressed as a set of elements of M -/
+def ground (N : emb_minor M) : set U := set.range N.emb
+
+
+/-- two embedded minors of M are strongly isomorphic if the associated matroids are related 
+by an isomorphism that commutes with the respective embeddings into M. Equivalence classes 
+of this relation correspond to actual minors of M -/
+def strongly_iso (N₁ N₂ : emb_minor M) : Prop := 
+  (∃ (φ : isom (N₁.mat) (N₂.mat)), ∀ x, N₁.emb x = N₂.emb (φ x)) 
+
+/-- existence of a strong isomorphism is an equivalence relation on embedded minors of M -/
 lemma strong_iso_equiv : 
-  equivalence (λ (N₁ N₂ : emb_minor_of M), strongly_iso N₁ N₂) := 
+  equivalence (λ (N₁ N₂ : emb_minor M), strongly_iso N₁ N₂) := 
 begin
   refine ⟨λ N, _, λ N₁ N₂ hab, _, λ N₁ N₂ N₃ hab hbc, _⟩, 
     {refine ⟨⟨equiv.refl _,_⟩,λ X, _⟩, 
@@ -107,12 +116,12 @@ begin
   from ⟨compose i₁ i₂, λ X, by {unfold_coes at *, simp [h₁,h₂,congr_arg, compose]}⟩,  
 end
 
-
-lemma strong_iso_same_groundset (N N' : emb_minor_of M):
-  strongly_iso N N' → set.range (N.emb) = set.range (N'.emb)  := 
+/-- the ground set is an invariant of equivalence classes under strong isomorphism -/
+lemma strong_iso_same_groundset (N N' : emb_minor M):
+  strongly_iso N N' → N.ground = N'.ground  := 
 begin
   rintros ⟨h₁,h₂⟩, ext, 
-  simp only [set.mem_range],
+  simp only [ground, set.mem_range],
   simp_rw h₂, 
   refine ⟨λ h, _, λ h, _⟩, 
     {cases h with y hy, from ⟨_, hy⟩},
@@ -121,24 +130,22 @@ end
 
 
 
-instance strong_iso_setoid : setoid (emb_minor_of M) := ⟨strongly_iso, strong_iso_equiv⟩ 
+instance strong_iso_setoid : setoid (emb_minor M) := ⟨strongly_iso, strong_iso_equiv⟩ 
 
 --variables {M : matroid U}[setoid (emb_minor_of M)]
-def minor (M : matroid U) := quot (λ (N N' : emb_minor_of M), strongly_iso N N')
+def minor (M : matroid U) := quot (λ (N N' : emb_minor M), strongly_iso N N')
 
-def emb_to_minor (M : matroid U) := @quotient.mk (emb_minor_of M) _
+def emb_to_minor (M : matroid U) := @quotient.mk (emb_minor M) _
 
 #check minor
 namespace minor
 
-
-
 /-- returns the ground set of a minor of M (as a subset of the ftype for M)-/
 def ground {M : matroid U} : minor M → set U := quotient.lift  
-  (λ (N : emb_minor_of M), set.range (N.emb))
+  (λ (N : emb_minor M), set.range (N.emb))
   (λ N N' hNN', strong_iso_same_groundset N N' hNN' )
 
-def matroid_on_subtype (N : emb_minor_of M) : matroid ((subftype (set.range N.emb))) := 
+def matroid_on_subtype (N : emb_minor M) : matroid ((subftype (N.ground))) := 
 let F := set.range N.emb in 
 {
   r := λ (X : set {x : U // x ∈ F}), M.r (
