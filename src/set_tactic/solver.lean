@@ -158,7 +158,7 @@ example (α : Type) [boolean_algebra α]  (A B C D E F G : α) :
   D ≤ Fᶜ →
   (A ⊓ F = ⊥) :=
 begin
-  tactic.timetac "slow" $  solver,
+  tactic.timetac "slow" $  set_solver,
 end
 
 
