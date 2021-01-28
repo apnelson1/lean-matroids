@@ -7,6 +7,7 @@ instance finset_ext_lemmas (T : Type) [decidable_eq T] :
   (boolalg_ext_lemmas (finset T) T) :=
 {
   simpl_eq := by tidy,
+  simpl_lt := by tidy,
   ext_bot := by tidy,
   ext_sdiff := by tidy,
   ext_le := by tidy, 
@@ -31,7 +32,9 @@ namespace cleanup
 lemma finset_union_sup (T : Type) [decidable_eq T] (A B : finset T) : (A ∪ B) = (A ⊔ B) := by refl
 lemma finset_inter_inf (T : Type) [decidable_eq T] (A B : finset T) : (A ∩ B) = (A ⊓ B) := by refl
 lemma finset_subset_le (T : Type) [decidable_eq T] (A B : finset T) : (A ⊆ B) = (A ≤ B) := by refl
+lemma finset_subset_lt (T : Type) [decidable_eq T] (A B : finset T) : (A ⊂ B) = (A < B) := by refl
 
 meta def finset_cleanup : tactic unit :=
-  `[simp only [cleanup.finset_union_sup, cleanup.finset_inter_inf, cleanup.finset_subset_le] at *]
+  `[simp only [cleanup.finset_union_sup, cleanup.finset_inter_inf, cleanup.finset_subset_le,
+    cleanup.finset_subset_lt] at *]
 end cleanup

@@ -215,6 +215,7 @@ instance boolalg_base_ext_lemmas (α : Type) [boolean_algebra α]
   : (boolalg_ext_lemmas α (ultrafilter α)) := 
 {
   simpl_eq := by apply rw_eq,
+  simpl_lt := by apply lt_iff_le_not_le,
   ext_bot := by apply rw_bot,
   ext_sdiff := by apply rw_sdiff, 
   ext_le := by apply rw_le, 

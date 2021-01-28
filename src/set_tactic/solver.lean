@@ -57,6 +57,7 @@ meta def infer_base_simp_lemmas (type : expr) : (tactic (list pexpr)) := do
   expr <- tactic.to_expr ``(by apply_instance : %%instance_type),
   new_hyp <- tactic.assertv name instance_type expr,
   return [``((%%new_hyp).simpl_eq),
+          ``((%%new_hyp).simpl_lt),
           ``((%%new_hyp).ext_le),
           ``((%%new_hyp).ext_bot),
           ``((%%new_hyp).ext_sdiff),
