@@ -14,6 +14,13 @@ def subftype {A : ftype} (ground : set A) : ftype :=
   (f     : A → B )
   (f_inj : function.injective f)
 
+@[ext] structure iso (A B : ftype) :=
+  (fd : A → B)
+  (bk : B → A)
+  (comp_l : bk ∘ fd = id)
+  (comp_r : fd ∘ bk = id) 
+
+
 instance emb_to_fn {A B : ftype} : has_coe_to_fun (embed A B) := {F := λ _, A → B.E, coe := embed.f}
 
 def embed.img {A B : ftype}(emb : embed A B): set A → set B := 
