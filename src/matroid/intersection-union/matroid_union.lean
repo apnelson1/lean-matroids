@@ -213,10 +213,18 @@ begin
   },
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
+<<<<<<< HEAD
   dsimp, 
   
   rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
   rw [compl_inter, inter_distrib_left], simp [hXB],  
+=======
+  dsimp,
+  set_solver,
+   --dsimp, -- Use the tactic here! 
+  --rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
+  --rw [compl_inter, inter_distrib_left], simp [hXB],  
+>>>>>>> c3ad5855dd1aba2bf3b06fe9207c324a691d4755
 end
 
 

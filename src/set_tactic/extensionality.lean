@@ -9,8 +9,10 @@ class boolalg_ext_lemmas
   [has_sdiff T]
   [has_bot T]
   [has_le T]
+  [has_lt T]
    :=
   (simpl_eq : ∀ {A B : T}, A = B ↔ A ≤ B ∧ B ≤ A)
+  (simpl_lt : ∀ {A B : T}, A < B ↔ A ≤ B ∧ ¬ B ≤ A)
   (ext_bot : ∀ {e}, e ∈ (⊥ : T) ↔ false)
   (ext_sdiff : ∀ {A B : T} e, e ∈ A \ B ↔ e ∈ A ∧ ¬ e ∈ B)
   (ext_le : ∀ {A B : T}, A ≤ B ↔ ∀ e, e ∈ A → e ∈ B) 

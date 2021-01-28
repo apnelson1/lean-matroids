@@ -3,7 +3,7 @@ import .boolean_algebra_tactic
 import .finset_tactic
 import tactic
 import tactic.interactive
-
+import .set_tactic
 
 /-meta def simpl_tactic : tactic unit :=
 `[simp only [simpl_sdiff, simpl_eq, ext_le, ext_bot, ext_top, ext_meet, ext_join, ext_compl] at *; tauto!]-/
@@ -57,6 +57,7 @@ meta def infer_base_simp_lemmas (type : expr) : (tactic (list pexpr)) := do
   expr <- tactic.to_expr ``(by apply_instance : %%instance_type),
   new_hyp <- tactic.assertv name instance_type expr,
   return [``((%%new_hyp).simpl_eq),
+          ``((%%new_hyp).simpl_lt),
           ``((%%new_hyp).ext_le),
           ``((%%new_hyp).ext_bot),
           ``((%%new_hyp).ext_sdiff),
@@ -94,35 +95,42 @@ meta def gather_types : (tactic (list expr)) := do
             return (unique_list (list.foldr list.append [] types_in_expr))),
   return types
 
-meta def solver : (tactic unit) := do
+
+meta def set_ext : (tactic unit) := do
+  tactic.try cleanup.finset_cleanup,
+  tactic.try cleanup.set_cleanup,
   types <- gather_types,
   types.mmap rewrite_for_type,
+  tactic.skip 
+
+meta def set_solver : (tactic unit) := do
+  set_ext,
   `[finish]
 
 
 example (α : Type) [boolean_algebra α] (X Y Z P Q W : α) :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
 begin
-  solver,
+  set_solver,
 end
 
 example (T : Type) [fintype T] [decidable_eq T] (X Y Z P Q W : finset T)  :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
 begin
-  solver,
+  set_solver,
 end
 
 -- note the lack of fintype T here
 example (T : Type) [decidable_eq T] (X Y Z P Q W : finset T)  :
   X ≤ (X ⊔ Y) :=
 begin
-  solver,
+  set_solver,
 end
 
 example (T : Type) [decidable_eq T] (x z : T) (Y : finset T) :
   x ∈ ({z} : finset T) → x = z :=
 begin
-  solver,
+  set_solver,
 end
 
 example (α : Type) [boolean_algebra α]  (A B C D E F G : α) :
