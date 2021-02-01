@@ -1,8 +1,11 @@
 import ftype.basic ftype.embed set_tactic.solver
 import .rankfun .dual 
 
+open_locale classical
+noncomputable theory
 open ftype 
-noncomputable theory 
+
+
 variables {U₀ U V W: ftype}--[nonempty U₀]
 
 section basic 
@@ -23,6 +26,19 @@ def img (emb : U₀ ↪ U):=
   left_inv := sorry, --by {have := function.left_inverse_inv_fun (emb.f_inj)},
   right_inv := sorry 
 }-/
+
+
+def subtype_inv_inj (emb : U₀ ↪ U){E : set U}(hE : E = set.range emb) : E ≃ U₀ :=   
+let h : Π (y : E), (∃ x : U₀, emb x = y) := 
+  by {rintros ⟨y,hy⟩, rw [hE, set.mem_range] at hy, cases hy with x hx, from ⟨x, by simp [hx]⟩} in 
+{ 
+  to_fun := λ y, classical.some (h y), 
+  inv_fun := λ x, ⟨emb x, by {rw [hE, set.mem_range], from ⟨x, rfl⟩} ⟩, 
+  left_inv := by {intros y, simp_rw (classical.some_spec (h y)), simp}, 
+  right_inv := λ x, by {cases emb with f h_inj, from h_inj (classical.some_spec (h (⟨f x,_⟩)))},
+}
+
+
 
 end function.embedding 
 
@@ -85,24 +101,33 @@ variable {M : matroid U}
 
 
 /-- structure describing a matroid together with it having an isomorphism to a minor of M -/
+structure emb_mat := 
+  {U₀ : ftype}
+  (mat : matroid U₀)
+  (emb : U₀ ↪ U)
+
 structure emb_minor (M : matroid U):=
   {U₀ : ftype}
   (mat : matroid U₀)
   (emb : U₀ ↪ U)
-  (minor_rank : ∃ C, C ∩ set.range emb = ∅ ∧ (mat.r = λ X, M.r (emb '' X ∪ C) - M.r C))
+  (C : set U)
+  (C_disj : C ∩ set.range emb = ∅)
+  (minor_rank : mat.r = λ X, M.r (emb '' X ∪ C) - M.r C)
 
 namespace emb_minor
 
 /-- the ground set of an emb_minor, expressed as a set of elements of M -/
 def ground (N : emb_minor M) : set U := set.range N.emb
 
-def C (N : emb_minor M) : set U := classical.some N.minor_rank
+--def C (N : emb_minor M) : set U := classical.some N.minor_rank
 
 def D (N : emb_minor M) : set U := (N.ground ∪ N.C)ᶜ
 
+lemma def_ground (N : emb_minor M) : N.ground = set.range N.emb  := rfl 
+
 lemma C_ground_inter_empty (N : emb_minor M): 
   N.C ∩ N.ground = ∅ := 
-by {rw ground, from (classical.some_spec N.minor_rank).1}
+by {rw ground, from N.C_disj,}
 
 lemma D_ground_inter_empty (N : emb_minor M): 
   N.D ∩ N.ground = ∅ := 
@@ -115,20 +140,18 @@ by {rw D, have := C_ground_inter_empty N, set_solver, }
 
 lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
   (N.C ∪ N.D) = N.groundᶜ := 
-by {rw [D], have := N.C_ground_inter_empty, rw [compl_union, union_distrib_left], simp, sorry     }
+by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, sorry,     }
 -- same deal here 
 
+lemma emb_minor_r (N : emb_minor M)(X : set N.U₀): 
+  N.mat.r X = M.r (N.emb '' X ∪ N.C) - M.r N.C := 
+by rw N.minor_rank
 
-lemma emb_minor_r (N : emb_minor M) : 
-  N.mat.r = λ X, M.r (N.emb '' X ∪ N.C) - M.r N.C := 
-by {rw [emb_minor.C],  from (classical.some_spec N.minor_rank).2}
+def pullback_r (N : emb_minor M) : set (N.ground) → ℤ := 
+  let pb_emb := N.emb.subtype_inv_inj (rfl : N.ground = set.range N.emb) in 
+    λ X, N.mat.r (pb_emb '' X)
 
 
-
-lemma contract_delete_disj (N : emb_minor M) : N.C ∩ N.D = ∅ ∧ N.C ∪ N.D = N.groundᶜ := 
-begin
-  rw [D,C], split, set_solver, have := (classical.some_spec minor_rank).1, 
-end
 
 
 /-- two embedded minors of M are strongly isomorphic if the associated matroids are related 
@@ -162,8 +185,6 @@ begin
   cases h with y hy, use h₁.bij.inv_fun y, unfold_coes, simp [hy],
 end 
 
-
-
 instance strong_iso_setoid : setoid (emb_minor M) := ⟨strongly_iso, strong_iso_equiv⟩ 
 
 --variables {M : matroid U}[setoid (emb_minor_of M)]
@@ -176,23 +197,15 @@ namespace minor
 
 /-- returns the ground set of a minor of M (as a subset of the ftype for M)-/
 def ground {M : matroid U} : minor M → set U := quotient.lift  
-  (λ (N : emb_minor M), set.range (N.emb))
+  (λ (N : emb_minor M), N.ground)
   (λ N N' hNN', strong_iso_same_groundset N N' hNN' )
 
-def as_mat_on_subtype (N : emb_minor M) : matroid ((subftype (N.ground))) := 
-{
-  r := λ (X : set {x : U // x ∈ N.ground}), N.mat.r (N.emb.as_subtype_equiv ⁻¹' X),
-  R0 := by {intro X,  }, 
-  R1 := sorry, 
-  R2 := sorry, 
-  R3 := sorry, 
-}
 
-/-- the 'canonical representative' N₀ for a minor N of M (on U): the unique element of the equivalence class
+/- the 'canonical representative' N₀ for a minor N of M (on U): the unique element of the equivalence class
 for which the embedding into U is just subtype inclusion. The ground type of N₀ is a subtype of U -/
 --def as_mat {M : matroid U}(N : minor M): matroid (subftype (ground N)) := quotient.lift 
 --  ()
---  ()
+--  ()-/
 
 
 end minor 

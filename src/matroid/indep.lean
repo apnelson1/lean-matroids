@@ -7,7 +7,7 @@ noncomputable theory
 
 variables {U :ftype}
 
-namespace indep_family' 
+/-namespace indep_family' 
 
 def r (M : indep_family' U) : (set U) → ℤ := 
   λ X, classical.some (M.I3' X)
@@ -35,7 +35,7 @@ lemma exists_basis_of (M : indep_family' U)(X : set U):
 by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.I1), finish,}
 
 
-end indep_family'
+end indep_family'-/
 
 
 namespace indep_family  

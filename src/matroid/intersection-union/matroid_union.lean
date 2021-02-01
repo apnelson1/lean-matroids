@@ -186,7 +186,7 @@ begin
     with ⟨A, hA', hA⟩, 
   rcases min_spec (λ A : set U, size Aᶜ + (M₁|X).r A + (M₂|X).r A)
     with ⟨B, hB', hB⟩,
-
+  
   rw [←hA', ←hB'], clear hA' hB',
   simp_rw [rank_loopify_to] at *,
   have hXB : Xᶜ ⊆ B := by 

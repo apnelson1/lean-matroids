@@ -168,7 +168,6 @@ by {sorry}
 example (α : Type)(C E : set α)(h : C ⊓ E = ⊥) : 
   C ⊓ (C ⊔ E)ᶜ = ∅ := 
 by {set_solver, } 
---broken. Replacing ∅ with ⊥ fixes it. 
 
 /-
 example (X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ : α) :
