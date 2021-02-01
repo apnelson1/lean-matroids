@@ -33,8 +33,10 @@ lemma finset_union_sup (T : Type) [decidable_eq T] (A B : finset T) : (A ∪ B) 
 lemma finset_inter_inf (T : Type) [decidable_eq T] (A B : finset T) : (A ∩ B) = (A ⊓ B) := by refl
 lemma finset_subset_le (T : Type) [decidable_eq T] (A B : finset T) : (A ⊆ B) = (A ≤ B) := by refl
 lemma finset_subset_lt (T : Type) [decidable_eq T] (A B : finset T) : (A ⊂ B) = (A < B) := by refl
+lemma finset_univ_top (T : Type) [decidable_eq T] [fintype T] : (finset.univ : finset T) = ⊤ := by refl
+lemma finset_empt_bot (T : Type) [decidable_eq T] : (∅ : finset T) = ⊥ := by refl 
 
 meta def finset_cleanup : tactic unit :=
   `[simp only [cleanup.finset_union_sup, cleanup.finset_inter_inf, cleanup.finset_subset_le,
-    cleanup.finset_subset_lt] at *]
+    cleanup.finset_subset_lt, cleanup.finset_univ_top, cleanup.finset_empt_bot] at *]
 end cleanup
