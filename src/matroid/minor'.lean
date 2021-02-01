@@ -129,11 +129,11 @@ by {rw [D], have := C_ground_inter_empty N, rw [compl_union, inter_right_comm], 
 
 lemma C_D_inter_empty (N : emb_minor M) : 
   N.C ∩ N.D = ∅ := 
-by {rw D, have := C_ground_inter_empty N, set_solver, } 
+by {rw D, have := C_ground_inter_empty N, set_solver,} 
 
 lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
   (N.C ∪ N.D) = N.groundᶜ := 
-by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, sorry,}
+by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, set_solver,}
 -- same deal here 
 
 lemma emb_minor_r (N : emb_minor M)(X : set N.U₀): 

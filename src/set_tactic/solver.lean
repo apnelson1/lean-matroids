@@ -8,43 +8,66 @@ import .set_tactic
 /-meta def simpl_tactic : tactic unit :=
 `[simp only [simpl_sdiff, simpl_eq, ext_le, ext_bot, ext_top, ext_meet, ext_join, ext_compl] at *; tauto!]-/
 
-meta def boolean_algebra_types_in_expr : expr → tactic (list expr)
-| e :=
-  match e with
-  -- This mostly handles basic expressions 
-  | expr.local_const unique pretty _ _ :=
-    do
-      ((do
-        `(%%boolalg_typ) <- tactic.infer_type e,
+
+-- TODO: Lots of things are boolean algebras.  We should have a way to configure
+-- which boolean algebras we want to solve, actually.
+--
+-- Functions into boolean algebras are usually not useful, so we ignore them by default.
+-- Moreover, hypotheses are either Prop or functions which indirectly produce a Prop,
+-- so we really should probably ignore function types with Prop in them.
+meta def get_boolalg_typ (consider_function_types := ff) (e : expr) : tactic (list expr) :=
+  ((do
+    `(%%boolalg_typ) <- tactic.infer_type e,
+    match boolalg_typ with 
+    -- finset T gets returned directly 
+    | `(finset %%set_typ) := do return [boolalg_typ]
+    -- set T gets returned directly
+    | `(set %%set_typ) := do return [boolalg_typ]
+    -- work needs to be done if we're not working with sets/finsets,
+    -- but with a type with a [boolean_algebra T] instance on it.
+    | _ := (do 
+        boolalg_hyp <- tactic.to_expr ``(infer_instance : boolean_algebra %%boolalg_typ),
         match boolalg_typ with 
-        -- finset T gets returned directly 
-        | `(finset %%set_typ) := do return [boolalg_typ]
-        -- set T gets returne directly
-        | `(set %%set_typ) := do return [boolalg_typ]
-        -- work needs to be done if we're not working with sets/finsets,
-        -- but with a type with a [boolean_algebra T] instance on it.
-        | _ := (do 
-          boolalg_hyp <- tactic.to_expr ``(infer_instance : boolean_algebra %%boolalg_typ),
-          return [boolalg_typ])
+        -- Function types are usually not useful
+        | `(_ -> _) := if consider_function_types then return [boolalg_typ] else return []
+        -- Prop is not useful
+        | `(Prop) := return []
+        -- Other types, we can (probably) return
+        | _ := return [boolalg_typ]
         end)
-      <|>
-        return [])
-  -- applications
-  | expr.app e1 e2 := 
-    do l1 <- boolean_algebra_types_in_expr e1, 
-       l2 <- boolean_algebra_types_in_expr e2,
-       return (l1 ++ l2)
-  -- abstracts
-  | expr.lam _ _ argtyp body :=
-    do l1 <- boolean_algebra_types_in_expr argtyp, 
-      l2 <- boolean_algebra_types_in_expr body,
-      return (l1 ++ l2)
-  | expr.pi _ _ argtyp body :=
-    do l1 <- boolean_algebra_types_in_expr argtyp, 
-      l2 <- boolean_algebra_types_in_expr body,
-      return (l1 ++ l2)
-  | _ := return []
-  end
+    end)
+  <|>
+    return [])
+
+meta def boolean_algebra_types_in_expr (consider_function_types := ff) : expr → tactic (list expr)
+| e :=
+  do 
+    e_inner <- (match e with
+      -- This mostly handles basic expressions 
+      | expr.local_const unique pretty _ _ := get_boolalg_typ consider_function_types e
+      -- applications
+      | expr.app e1 e2 := 
+        do l1 <- boolean_algebra_types_in_expr e1, 
+          l2 <- boolean_algebra_types_in_expr e2,
+          return (l1 ++ l2)
+      -- abstracts
+      | expr.lam _ _ argtyp body :=
+        do l1 <- boolean_algebra_types_in_expr argtyp, 
+          l2 <- boolean_algebra_types_in_expr body,
+          return (l1 ++ l2)
+      | expr.pi _ _ argtyp body :=
+        do l1 <- boolean_algebra_types_in_expr argtyp, 
+          l2 <- boolean_algebra_types_in_expr body,
+          return (l1 ++ l2)
+      | expr.elet _ argtyp argval body := 
+        do l1 <- boolean_algebra_types_in_expr argtyp, 
+          l2 <- boolean_algebra_types_in_expr argval,
+          l3 <- boolean_algebra_types_in_expr body,
+          return (l1 ++ l2 ++ l3)
+      | _ := return []
+      end),
+    e_outer <- get_boolalg_typ consider_function_types e,
+    return (e_inner ++ e_outer)
 
 def unique_list {T: Type}[decidable_eq T]: list T -> list T 
 | [] := []
@@ -87,25 +110,27 @@ meta def rewrite_for_type (type : expr) : (tactic unit) := do
                   list.nil interactive.loc.wildcard),
   tactic.skip
 
-meta def gather_types : (tactic (list expr)) := do
+meta def gather_types (consider_function_types := ff) : (tactic (list expr)) := do
   goal <- tactic.target,
   hyps <- tactic.local_context,
+  tactic.trace hyps,
   types <- (do 
-            types_in_expr <- (goal :: hyps).mmap boolean_algebra_types_in_expr,
+            types_in_expr <- (goal :: hyps).mmap (boolean_algebra_types_in_expr consider_function_types),
             return (unique_list (list.foldr list.append [] types_in_expr))),
+  tactic.trace types,
   return types
 
 
-meta def set_ext : (tactic unit) := do
+meta def set_ext (consider_function_types := ff) : (tactic unit) := do
   tactic.try `[simp only [ne, ge, gt, superset, ssuperset] at *],
   tactic.try cleanup.finset_cleanup,
   tactic.try cleanup.set_cleanup,
-  types <- gather_types,
+  types <- gather_types consider_function_types,
   types.mmap rewrite_for_type,
   tactic.skip 
 
-meta def set_solver : (tactic unit) := do
-  set_ext,
+meta def set_solver (consider_function_types := ff): (tactic unit) := do
+  set_ext consider_function_types,
   `[finish]
 
 example (α : Type) [boolean_algebra α] (X Y Z P Q W : α) :
