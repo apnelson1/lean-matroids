@@ -1,14 +1,15 @@
 import ftype.basic ftype.embed set_tactic.solver
 import .rankfun .dual 
 
+--noncomputable theory
 open_locale classical
-noncomputable theory
+noncomputable theory 
+
 open ftype 
 
 
 variables {U₀ U V W: ftype}--[nonempty U₀]
 
-section basic 
 
 --def embed := U ↪ V 
 
@@ -19,26 +20,19 @@ namespace function.embedding
 def img (emb : U₀ ↪ U):=
   λ (X : set U₀), emb.to_fun '' X 
 
-/-def as_subtype_equiv (emb : U₀ ↪ U) : (U₀ ≃ set.range emb):= 
-{ 
-  to_fun := λ x, ⟨emb x, by simp⟩,
-  inv_fun := λ y, (function.inv_fun emb.to_fun) y.1,
-  left_inv := sorry, --by {have := function.left_inverse_inv_fun (emb.f_inj)},
-  right_inv := sorry 
-}-/
-
-
+/-- given an injection emb, and a set equal to the range of emb, outputs an equivalence between the 
+domain and the subtype corresponding to the range. -/ 
 def subtype_inv_inj (emb : U₀ ↪ U){E : set U}(hE : E = set.range emb) : E ≃ U₀ :=   
 let h : Π (y : E), (∃ x : U₀, emb x = y) := 
-  by {rintros ⟨y,hy⟩, rw [hE, set.mem_range] at hy, cases hy with x hx, from ⟨x, by simp [hx]⟩} in 
+  by {rintros ⟨y,hy⟩, rw [hE, set.mem_range] at hy, cases hy with x hx, from ⟨x, by simp [hx]⟩},
+ desc : Π (y : E), {x : U₀ // emb x = y} :=   
+  λ y, classical.indefinite_description _ (h y) in 
 { 
-  to_fun := λ y, classical.some (h y), 
+  to_fun := λ y, (desc y).val, 
   inv_fun := λ x, ⟨emb x, by {rw [hE, set.mem_range], from ⟨x, rfl⟩} ⟩, 
-  left_inv := by {intros y, simp_rw (classical.some_spec (h y)), simp}, 
-  right_inv := λ x, by {cases emb with f h_inj, from h_inj (classical.some_spec (h (⟨f x,_⟩)))},
+  left_inv := by {intros y, simp_rw (desc y).property, simp}, 
+  right_inv := λ x, by {cases emb with f h_inj, from h_inj (desc ⟨f x,_⟩).property},
 }
-
-
 
 end function.embedding 
 
@@ -94,7 +88,6 @@ begin
 end
 
 
-end basic
 
 variable {M : matroid U}
 
@@ -140,27 +133,24 @@ by {rw D, have := C_ground_inter_empty N, set_solver, }
 
 lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
   (N.C ∪ N.D) = N.groundᶜ := 
-by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, sorry,     }
+by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, sorry,}
 -- same deal here 
 
 lemma emb_minor_r (N : emb_minor M)(X : set N.U₀): 
   N.mat.r X = M.r (N.emb '' X ∪ N.C) - M.r N.C := 
 by rw N.minor_rank
 
+/-- the rank function given by N when applied to a subset of the embedded ground set of N.  -/
 def pullback_r (N : emb_minor M) : set (N.ground) → ℤ := 
-  let pb_emb := N.emb.subtype_inv_inj (rfl : N.ground = set.range N.emb) in 
-    λ X, N.mat.r (pb_emb '' X)
-
-
-
+  λ X, N.mat.r ((N.emb.subtype_inv_inj (rfl : N.ground = set.range N.emb))'' X)
 
 /-- two embedded minors of M are strongly isomorphic if the associated matroids are related 
-by an isomorphism that commutes with the respective embeddings into M. Equivalence classes 
-of this relation correspond to actual minors of M -/
+by an isomorphism that commutes with the respective embeddings into M. -/
 def strongly_iso (N₁ N₂ : emb_minor M) : Prop := 
   (∃ (φ : isom (N₁.mat) (N₂.mat)), ∀ x, N₁.emb x = N₂.emb (φ x)) 
 
-/-- existence of a strong isomorphism is an equivalence relation on embedded minors of M -/
+/-- existence of a strong isomorphism is an equivalence relation on embedded minors of M.
+    Equivalence classes of this relation correspond to actual 'labelled' minors of M -/
 lemma strong_iso_equiv : 
   equivalence (λ (N₁ N₂ : emb_minor M), strongly_iso N₁ N₂) := 
 begin
@@ -185,27 +175,23 @@ begin
   cases h with y hy, use h₁.bij.inv_fun y, unfold_coes, simp [hy],
 end 
 
+
 instance strong_iso_setoid : setoid (emb_minor M) := ⟨strongly_iso, strong_iso_equiv⟩ 
 
+
+end emb_minor
+
+
 --variables {M : matroid U}[setoid (emb_minor_of M)]
-def minor (M : matroid U) := quot (λ (N N' : emb_minor M), strongly_iso N N')
+def minor (M : matroid U) := quot (λ (N N' : emb_minor M), N.strongly_iso N')
+
+namespace minor 
 
 def emb_to_minor (M : matroid U) := @quotient.mk (emb_minor M) _
-
-#check minor
-namespace minor
 
 /-- returns the ground set of a minor of M (as a subset of the ftype for M)-/
 def ground {M : matroid U} : minor M → set U := quotient.lift  
   (λ (N : emb_minor M), N.ground)
-  (λ N N' hNN', strong_iso_same_groundset N N' hNN' )
-
-
-/- the 'canonical representative' N₀ for a minor N of M (on U): the unique element of the equivalence class
-for which the embedding into U is just subtype inclusion. The ground type of N₀ is a subtype of U -/
---def as_mat {M : matroid U}(N : minor M): matroid (subftype (ground N)) := quotient.lift 
---  ()
---  ()-/
-
+  (λ N N' hNN', emb_minor.strong_iso_same_groundset N N' hNN' )
 
 end minor 
