@@ -113,10 +113,10 @@ meta def rewrite_for_type (type : expr) : (tactic unit) := do
 meta def gather_types (consider_function_types := ff) : (tactic (list expr)) := do
   goal <- tactic.target,
   hyps <- tactic.local_context,
-  tactic.trace hyps,
   types <- (do 
             types_in_expr <- (goal :: hyps).mmap (boolean_algebra_types_in_expr consider_function_types),
             return (unique_list (list.foldr list.append [] types_in_expr))),
+  tactic.trace "Boolean algebra types:",
   tactic.trace types,
   return types
 
