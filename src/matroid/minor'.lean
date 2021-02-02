@@ -7,13 +7,7 @@ noncomputable theory
 
 open ftype 
 
-
 variables {U₀ U V W: ftype}--[nonempty U₀]
-
-
---def embed := U ↪ V 
-
-
 
 namespace function.embedding
 
@@ -47,7 +41,7 @@ def inv_img (bij : U ≃ V) :=
 
 end equiv 
 
-/-- bundled isomorphism between two matroids-/
+/-- bundled isomorphism between two matroids -/
 structure isom (M : matroid U)(N : matroid V) := 
   (bij: U ≃ V)
   (rank_preserving : M.r =  N.r ∘ bij.img)
@@ -55,7 +49,7 @@ structure isom (M : matroid U)(N : matroid V) :=
 instance coe_iso_to_fun {M : matroid U}{N : matroid V}: has_coe_to_fun (isom M N) := 
 {F := λ (i : isom M N), (U → V), coe := λ i, i.bij}
 
-/-- inverse of a matroid isomorphism-/
+/-- inverse of a matroid isomorphism -/
 def inv{M: matroid U}{N: matroid V}(iso : isom M N) : isom N M := 
 {
   bij := iso.bij.symm,
@@ -133,7 +127,7 @@ by {rw D, have := C_ground_inter_empty N, set_solver, }
 
 lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
   (N.C ∪ N.D) = N.groundᶜ := 
-by {rw [D], have := N.C_ground_inter_empty,rw [compl_union, union_distrib_left], simp, sorry,}
+by {rw [D], have := N.C_ground_inter_empty, rw [compl_union, union_distrib_left], simp, sorry,}
 -- same deal here 
 
 lemma emb_minor_r (N : emb_minor M)(X : set N.U₀): 
@@ -150,7 +144,7 @@ def strongly_iso (N₁ N₂ : emb_minor M) : Prop :=
   (∃ (φ : isom (N₁.mat) (N₂.mat)), ∀ x, N₁.emb x = N₂.emb (φ x)) 
 
 /-- existence of a strong isomorphism is an equivalence relation on embedded minors of M.
-    Equivalence classes of this relation correspond to actual 'labelled' minors of M -/
+    Equivalence classes of this relation correspond to actual 'labelled' minors of M    -/
 lemma strong_iso_equiv : 
   equivalence (λ (N₁ N₂ : emb_minor M), strongly_iso N₁ N₂) := 
 begin
@@ -189,9 +183,9 @@ namespace minor
 
 def emb_to_minor (M : matroid U) := @quotient.mk (emb_minor M) _
 
-/-- returns the ground set of a minor of M (as a subset of the ftype for M)-/
+/-- returns the ground set of a minor of M (as a subset of the ftype for M) -/
 def ground {M : matroid U} : minor M → set U := quotient.lift  
-  (λ (N : emb_minor M), N.ground)
+  (λ (N : emb_minor M), N.ground )
   (λ N N' hNN', emb_minor.strong_iso_same_groundset N N' hNN' )
 
 end minor 
