@@ -116,8 +116,8 @@ meta def gather_types (consider_function_types := ff) : (tactic (list expr)) := 
   types <- (do 
             types_in_expr <- (goal :: hyps).mmap (boolean_algebra_types_in_expr consider_function_types),
             return (unique_list (list.foldr list.append [] types_in_expr))),
-  tactic.trace "Boolean algebra types:",
-  tactic.trace types,
+  --tactic.trace "Boolean algebra types:",
+  --tactic.trace types,
   return types
 
 
@@ -188,7 +188,7 @@ end
  
 example (α : Type)(C E : set α)(hCE : C ⊓ E = ∅):
   C ⊔ (E ⊔ C)ᶜ = Eᶜ := 
-by {sorry}
+by {set_solver, }
 
 example (α : Type)(C E : set α)(h : C ⊓ E = ⊥) : 
   C ⊓ (C ⊔ E)ᶜ = ∅ := 
