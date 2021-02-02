@@ -118,16 +118,16 @@ by {rw ground, from N.C_disj,}
 
 lemma D_ground_inter_empty (N : emb_minor M): 
   N.D ∩ N.ground = ∅ := 
-by {rw [D], have := C_ground_inter_empty N, rw [compl_union, inter_right_comm], set_solver}
+by {rw [D], have := C_ground_inter_empty N, set_solver}
   -- set_solver doesn't work right after the have here, but it should. What's the problem? 
 
 lemma C_D_inter_empty (N : emb_minor M) : 
   N.C ∩ N.D = ∅ := 
-by {rw D, have := C_ground_inter_empty N, set_solver, } 
+by {rw D, have := C_ground_inter_empty N, set_solver,} 
 
 lemma C_union_D_eq_ground_compl (N : emb_minor M) : 
   (N.C ∪ N.D) = N.groundᶜ := 
-by {rw [D], have := N.C_ground_inter_empty, rw [compl_union, union_distrib_left], simp, sorry,}
+by {rw [D], have := N.C_ground_inter_empty, set_solver,}
 -- same deal here 
 
 lemma emb_minor_r (N : emb_minor M)(X : set N.U₀): 
