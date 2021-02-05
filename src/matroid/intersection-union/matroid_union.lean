@@ -25,8 +25,8 @@ begin
   refine ⟨I₁,I₂,_,_,_⟩; assumption, 
   rcases h with ⟨I₁,I₂,i₁,i₂,hu⟩, 
   refine ⟨I₁,I₂ \ I₁,i₁,I2 _ i₂,_,_⟩, 
-  apply diff_subset, 
-  rw hu, finish, 
+  { apply diff_subset, },
+  { rw hu, finish, },
   finish, 
 end
 
@@ -71,12 +71,14 @@ begin
   rcases max_spec (λ (pair : basis_pair M₁ M₂), inter_size pair.val) with ⟨⟨⟨B₁, B₂⟩,hB⟩,h_inter,h_size_ub⟩, 
   rw [ν], dsimp at *, rw [←hI_size, ←h_inter],
   apply le_antisymm, 
-  rw is_common_ind_iff_is_subset_inter_bases at hI_ind, 
-  rcases hI_ind with ⟨Y,⟨⟨B₁',B₂',⟨hB₁',hB₂',hY⟩⟩,h'⟩⟩, 
-  have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this,  
-  rw ←hY at h', 
-  linarith [size_monotone h'],
-  refine (hI_ub ⟨B₁ ∩ B₂, subset_inter_bases_is_common_ind (inter_two_bases_is_subset_inter_bases hB.1 hB.2) ⟩), 
+  { rw is_common_ind_iff_is_subset_inter_bases at hI_ind, 
+    rcases hI_ind with ⟨Y,⟨⟨B₁',B₂',⟨hB₁',hB₂',hY⟩⟩,h'⟩⟩, 
+    have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this,  
+    rw ←hY at h', 
+    linarith [size_monotone h'],},
+  refine hI_ub 
+  ⟨ B₁ ∩ B₂, 
+    subset_inter_bases_is_common_ind (inter_two_bases_is_subset_inter_bases hB.1 hB.2)⟩,
 end
 
 end intersections_of_bases
@@ -165,14 +167,18 @@ lemma indep_pair_of_subset_as_indep_pair_loopify (X : set U):
     max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) = π₂ (M₁ | X) (M₂ | X) :=
 begin
   set φ : indep_pair_of_subset M₁ M₂ X → indep_pair (M₁ | X) (M₂ | X) :=
-    λ Ip, ⟨Ip.val ,_⟩ with hφ, 
-  have hφ_sur : function.surjective φ := λ Ip, _, 
-  from (max_reindex φ hφ_sur (λ Ip : indep_pair (M₁ | X) (M₂ | X), union_size Ip.val)), 
-  rcases Ip with ⟨p, ⟨h₁,h₂⟩⟩, dsimp only at *, rw indep_loopify_to_iff at h₁ h₂, cases h₁, cases h₂, 
-  refine ⟨⟨p,⟨⟨_,_⟩,⟨_,_⟩⟩⟩ ,_⟩; try {assumption},
-  ext; trivial, 
-  split; 
-  {rw indep_loopify_to_iff, rcases Ip with ⟨_,⟨⟨_,_⟩,⟨_,_⟩⟩⟩, split; assumption},
+    λ Ip, 
+    ⟨Ip.val ,
+    by {split; {rw indep_loopify_to_iff, rcases Ip with ⟨_,⟨⟨_,_⟩,⟨_,_⟩⟩⟩, split; assumption}}⟩ 
+  with hφ, 
+  have hφ_sur : function.surjective φ := λ Ip, 
+  by {rcases Ip with ⟨p, ⟨h₁,h₂⟩⟩,  
+      rw indep_loopify_to_iff at h₁ h₂,
+      cases h₁, cases h₂, 
+      refine ⟨⟨p,⟨⟨_,_⟩,⟨_,_⟩⟩⟩ ,_⟩; try {assumption}, 
+      simp},
+  rw (max_reindex φ hφ_sur (λ Ip : indep_pair (M₁ | X) (M₂ | X), union_size Ip.val)), 
+  trivial, 
 end
 
 /-- matroid union theorem for common independent sets of a given subset X -/
@@ -189,8 +195,8 @@ begin
   
   rw [←hA', ←hB'], clear hA' hB',
   simp_rw [rank_loopify_to] at *,
-  have hXB : Xᶜ ⊆ B := by 
-  {
+  have hXB : Xᶜ ⊆ B, 
+  begin
     rw [subset_def_union, eq_comm],   
     suffices : ¬B ⊂ (Xᶜ ∪ B),
     from eq_of_ssubset (subset_union_right Xᶜ B) this,  
@@ -200,17 +206,15 @@ begin
     set.compl_union, empty_union, add_le_add_iff_right] at h',  
     rw [←compl_compl_union_left, compl_size, compl_size] at h', 
     linarith [size_strict_monotone h], 
-  },  
+  end,  
   apply le_antisymm, 
   
   convert hB (Xᶜ ∪ A), 
   simp [compl_compl_union_left],  
   
   repeat 
-  {
-    unfold_coes, 
-    simp only [inter_distrib_right, subset_def_inter_mp A.property, inter_compl_left, empty_union],
-  },
+    {unfold_coes, 
+    simp only [inter_distrib_right, subset_def_inter_mp A.property, inter_compl_left, empty_union]},
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
   dsimp,
@@ -237,10 +241,10 @@ lemma R2 :
 begin
   intros X Y hXY, 
   let φ : indep_pair_of_subset M₁ M₂ X → indep_pair_of_subset M₁ M₂ Y := λ Ip, ⟨Ip.val, _⟩, 
-  from max_compose_le_max φ (λ Ip, union_size Ip.val),
-  rcases Ip with ⟨p, ⟨⟨_,_⟩,⟨_,_⟩⟩⟩, 
+  { convert max_compose_le_max φ (λ Ip, union_size Ip.val)}, 
+  rcases Ip with ⟨_, ⟨⟨_,_⟩,⟨_,_⟩⟩⟩, 
   refine ⟨⟨_,_⟩,⟨_,_⟩⟩; 
-  {try {assumption}, try {from subset_trans (by assumption) hXY}}, 
+  { try {assumption}, try {from subset_trans (by assumption) hXY}}, 
 end
 
 lemma R3 : 
@@ -259,7 +263,8 @@ begin
   apply min_of_le_is_le, 
   rintro ⟨A,B⟩, rw hφ, 
   dsimp [-diff_def], 
-  unfold_coes, rw [diff_size A.2, diff_size B.2, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
+  unfold_coes, 
+  rw [diff_size A.2, diff_size B.2, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
   linarith [size_modular X Y, size_modular A.1 B.1, M₁.rank_submod A.1 B.1, M₂.rank_submod A.1 B.1], 
 end
 
@@ -359,7 +364,7 @@ begin
   set φ : (indep_tuple Ms) → (union_matroid Ms).indep := 
   λ Is, ⟨set.Union Is.val, by {rw union_matroid_indep_iff, use Is, }⟩ with hφ, 
   have hφ' : function.surjective φ, 
-    {rintros ⟨I,hI⟩, 
+  { rintros ⟨I,hI⟩, 
     rw hφ, simp only [subtype.mk_eq_mk, subtype.val_eq_coe], 
     rw union_matroid_indep_iff at hI,   
     cases hI with Is hIs, 
@@ -397,7 +402,7 @@ begin
   have hφ' : function.surjective φ := sorry, 
   erw [←(max_reindex φ hφ' (λ Is, size (set.Union Is.val))), hφ], 
   
-
+  sorry, 
   
   
   

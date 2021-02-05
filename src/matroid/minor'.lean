@@ -246,14 +246,39 @@ instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_m
 
 end matroid_in 
 
+section minor 
 
-def is_minor_nested (N M : matroid_in U) : Prop := 
+/-- minor relation between two matroid_in U-/
+def is_minor (N M : matroid_in U) : Prop := 
   (N.ground ⊆ M.ground) ∧ ∃ C ⊆ M.ground \ N.ground, (∀ X ⊆ N.ground, N.r X = M.r (X ∪ C) - M.r C)  
 
-def is_minor (N : matroid_in U)(M : matroid U) := 
-  is_minor_nested N M 
+/-- minor relation between a matroid_in U and a matroid U -/
+def is_minor_of (N : matroid_in U)(M : matroid U) := 
+  is_minor N M 
+
+/-- N is isomorphic to a minor of M -/
+def is_emb_minor (N : matroid U₀)(M : matroid U) := 
+  ∃ emb : U₀ ↪ U, is_minor_of ⟦(⟨N,emb⟩:emb_mat U)⟧ M  
+
+lemma minor_trans: transitive (λ (M₁ M₂ : matroid_in U), is_minor M₁ M₂) :=
+begin
+  rintros M₁ M₂ M₃ ⟨h1,⟨C₁,hC₁,h1'⟩⟩ ⟨h2,⟨C₂,hC₂,h2'⟩⟩, 
+  refine ⟨subset_trans h1 h2,⟨C₁ ∪ C₂,⟨_,λ X hX, _⟩⟩⟩, 
+  ----
+  { convert set.union_subset_union hC₁ hC₂, ext, 
+    simp only [ftype.diff_def, set.mem_inter_eq, set.mem_union_eq, set.mem_compl_eq], 
+    tauto, },
+  -- set_solver should work for the goal above, but it is glacial
+  have hC₁M₂: C₁ ⊆ M₂.ground := by 
+  { intros x hx, simp only [ftype.diff_def, set.subset_inter_iff] at hC₁, tauto,},
+  rw [h1' X hX, h2' (X ∪ C₁) _, h2' C₁ hC₁M₂, ←union_assoc],  
+    linarith,
+  exact union_is_ub (subset_trans hX h1) hC₁M₂, 
+end
 
 
+
+end minor 
 
 /- the rank function given by N when applied to a subset of the embedded ground set of N.  -/
 
