@@ -30,7 +30,6 @@ let h : Π (y : E), (∃ x : U₀, emb x = y) :=
 -/
 
 
-
 /-- bundled isomorphism between two matroids -/
 structure isom (M : matroid U)(N : matroid V) := 
   (bij: U ≃ V)
@@ -154,8 +153,8 @@ end
 
 /-- if E is equal to the groundset of N, then there is a natural equivalence between E and U₀ -/
 def groundset_equiv (N : emb_mat U){E : set U}(hE : N.ground = E): 
-  E ≃ N.U₀ := 
-  ((equiv.set.range N.emb N.emb.inj').trans (equiv.set.of_eq hE)).symm 
+  N.U₀ ≃ (⟨E⟩ : ftype) := 
+  ((equiv.set.range N.emb N.emb.inj').trans (equiv.set.of_eq hE))
 
 --def pullback_r' (N : emb_mat U){E : set U}(hE : N.ground = E) : set E → ℤ := 
 
@@ -165,7 +164,7 @@ instance strong_iso_setoid (U : ftype) : setoid (emb_mat U) := ⟨strongly_iso, 
 
 end emb_mat 
 
-/-- a matroid_in U is a matroid embedded into some set of elements of U, modulo the range of the embedding-/
+/-- a matroid_in U is a matroid embedded into some set of ements of U, modulo the range of the embedding-/
 def matroid_in (U : ftype) := quot (λ (N N' : emb_mat U), N.strongly_iso N')
 
 namespace matroid_in 
@@ -181,39 +180,79 @@ def r : matroid_in U → (set U → ℤ) := quotient.lift
 def r_subtype (N : matroid_in U) : (set (N.ground) → ℤ) := 
   λ X, N.r (coe '' X)
 
---def rep_spec (N : matroid_in U) : {N₀ : emb_mat U // ⟦N₀⟧ = N} := 
---  classical.indefinite_description _ (quot.exists_rep N)
 
-/- The rank axioms should be provable here, but stuck in quotient hell. -/
+def rep_spec (N : matroid_in U) : {N₀ : emb_mat U // ⟦N₀⟧ = N} := 
+  classical.indefinite_description _ (quot.exists_rep N)
+
+/-- the ground set of a representative is the ground set of a matroid_in -/
+lemma ground_rep {N : matroid_in U}{N₀ : emb_mat U}(h : ⟦N₀⟧ = N): 
+   N₀.ground = N.ground  := 
+begin
+  unfold ground,
+  dsimp only [quotient.mk] at h, 
+  have := quotient.lift_beta (λ (N : emb_mat U), N.ground) _,  
+  dsimp only [quotient.mk] at this, 
+  rw [←this,h],  
+end
+
+section preimages 
+
+variables {N : matroid_in U}{N₀ : emb_mat U}
+
+/-- given an equivalence class representative N₀, pulls a set X back to the 
+ftype on which N₀ is defined -/
+def rep_preimage (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype) :=
+  N₀.groundset_equiv (ground_rep hN) ⁻¹' X
+
+lemma rep_preimage_on_size (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype) : 
+  size (rep_preimage hN X) = size X := 
+by {apply size_preimg_equiv} 
+
+lemma rep_preimage_on_subset (hN : ⟦N₀⟧ = N){X Y : set N.ground_ftype} :
+  X ⊆ Y → rep_preimage hN X ⊆ rep_preimage hN Y := 
+λ h, set.preimage_mono h
+
+lemma r_rep (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype):
+  r_subtype N X = N₀.mat.r (rep_preimage hN X) :=
+begin
+  unfold r_subtype r, 
+  have := quotient.lift_beta (λ (N : emb_mat U), N.pullback_r) emb_mat.strong_iso_same_pullback_r N₀ , 
+  dsimp only at *, rw hN at this, rw this, 
+  unfold emb_mat.pullback_r, apply congr_arg, ext, 
+  simp only [set.mem_image, set_coe.exists, exists_eq_right], 
+  refine ⟨λ h, _, λ h, ⟨N₀.emb x, _, h, rfl⟩⟩, 
+  dsimp at h, 
+  rcases h with ⟨x, ⟨h₁, h₂,rfl⟩⟩, 
+  simp [rep_preimage, emb_mat.groundset_equiv, h₂],  
+end 
+
+end preimages 
+
 def as_matroid (N : matroid_in U) : matroid (N.ground_ftype) := 
---let N₀ := rep_spec N in 
+let ⟨N₀,h⟩ := rep_spec N in 
 { 
   r := N.r_subtype,
-  R0 := 
-  begin
-  cases quot.exists_rep N with N₀ hN₀,  
-  intro X, 
-  simp only [matroid_in.r_subtype, matroid_in.r], 
-  have := quotient.lift_beta (λ (N : emb_mat U), N.pullback_r) emb_mat.strong_iso_same_pullback_r N₀ , 
-  dsimp only [quotient.mk] at this hN₀, simp_rw [←hN₀, this],
-  
-    --simp [matroid_in.r_subtype], intro X, dsimp, 
-    --have := N₀.2, 
-    --have n := N₀.1, 
-    --have := n.mat.R0, 
-  end ,
-  R1 := sorry ,
-  R2 := sorry ,
-  R3 := sorry 
+  R0 := λ X, by {rw r_rep h X, apply N₀.mat.R0, },
+  R1 := λ X, by {rw [r_rep h X, ←rep_preimage_on_size h], apply N₀.mat.R1,},
+  R2 := λ X Y hXY, by {repeat {rw r_rep h}, apply N₀.mat.R2, exact (rep_preimage_on_subset _ hXY),} ,
+  R3 := λ X Y, by {repeat {rw r_rep h}, apply N₀.mat.R3,  } 
 }
 
+def as_matroid_in (M : matroid U) : matroid_in U := 
+  ⟦{U₀ := U, emb := function.embedding.refl U, mat := M}⟧
+
+instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
 
 
-def is_minor (N : matroid_in U)(M : matroid U) := 
-  ∃ C, C ∩ N.ground = ∅ ∧ (∀ X ⊆ N.ground, N.r X = M.r (X ∪ C) - M.r C) 
+end matroid_in 
+
 
 def is_minor_nested (N M : matroid_in U) : Prop := 
   (N.ground ⊆ M.ground) ∧ ∃ C ⊆ M.ground \ N.ground, (∀ X ⊆ N.ground, N.r X = M.r (X ∪ C) - M.r C)  
+
+def is_minor (N : matroid_in U)(M : matroid U) := 
+  is_minor_nested N M 
+
 
 
 /- the rank function given by N when applied to a subset of the embedded ground set of N.  -/
@@ -222,7 +261,6 @@ def is_minor_nested (N M : matroid_in U) : Prop :=
 --def is_minor (N : emb_mat U)(M : matroid U) := 
   --∃ C, C ∩ N.ground = ∅ ∧ ∀ X : set U₀, N.mat.r 
 
-end matroid_in
 
 --def is_minor {U : ftype}(N : emb_mat U)(M : matroid U) := 
 --  ∃ C : set U, C ∩ N.ground = ∅ ∧ ∀ 

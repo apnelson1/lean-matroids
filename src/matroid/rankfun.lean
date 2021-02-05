@@ -5,7 +5,7 @@
 
 
 import matroid.axioms  matroid.dual 
-import ftype.basic ftype.single ftype.induction ftype.collections 
+import ftype.basic ftype.single ftype.induction ftype.collections ftype.minmax
 import tactic.wlog
 open ftype 
 --open ftype_induction 
@@ -225,6 +225,12 @@ instance fintype_indep {M : matroid U} : fintype (M.indep) :=
   by {unfold indep, apply_instance }
 
 
+def is_indep_subset_of (M : matroid U)(X : set U) : set U → Prop := 
+  λ I, I ⊆ X ∧ M.is_indep I 
+
+def indep_subset_of (M : matroid U)(X : set U) := {I : set U // M.is_indep_subset_of X I}
+
+
 /-- is dependent in M; negation of dependence -/
 def is_dep (M : matroid U) : set U → Prop := 
    λ X, ¬(M.is_indep X)
@@ -304,6 +310,17 @@ lemma indep_aug_diff {M : matroid U}{X Y : set U} :
   size X < size Y → M.is_indep X → M.is_indep Y  → (∃ (e:U), e ∈ Y \ X  ∧ M.is_indep (X ∪ e)) := 
 λ h₁ h₂ h₃, by {simp_rw elem_diff_iff, simp_rw and_assoc, exact indep_aug h₁ h₂ h₃}
 
+lemma indep_of_indep_aug {M : matroid U}{I : set U}{e : U}:
+  M.is_indep I → M.r I < M.r (I ∪ e) → M.is_indep (I ∪ e) :=
+begin
+  intros hI h, 
+  rw indep_iff_r at *, 
+  apply le_antisymm (M.rank_le_size _ ),
+  apply le_trans (add_size_ub), 
+  rw hI at h, convert h, 
+end
+
+
 lemma dep_subset {M : matroid U}{X Y : set U}: 
   X ⊆ Y → is_dep M X → is_dep M Y := 
 by {intro hXY, repeat {rw dep_iff_not_indep}, contrapose!, exact subset_indep hXY}
@@ -360,6 +377,14 @@ lemma I3 {M : matroid U}{X Y : set U}:
 def to_indep_family (M : matroid U) : indep_family U := 
   ⟨M.is_indep, I1 M, @I2 _ M, @I3 _ M⟩
 
+
+instance nonempty_indep_subset_of (M : matroid U)(X : set U) : nonempty (indep_subset_of M X) :=
+by {apply nonempty_subtype.mpr, exact ⟨∅,⟨empty_subset _, M.I1⟩ ⟩, }
+
+instance fintype_indep_subset_of (M : matroid U)(X : set U) : fintype (indep_subset_of M X) :=
+by {unfold indep_subset_of, apply_instance, } 
+
+
 end indep 
 
 section /-Circuits-/ circuit
@@ -389,8 +414,6 @@ instance coe_cocircuit {M : matroid U} : has_coe (cocircuit M) (set U) :=
   coe_subtype    
 instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) := 
   by {unfold cocircuit, apply_instance}   
-
-
 
 lemma circuit_iff_r {M : matroid U} (X : set U) :
   M.is_circuit X ↔ (M.r X = size X - 1) ∧ (∀ Y: set U, Y ⊂ X → M.r Y = size Y) := 
@@ -477,7 +500,6 @@ end
 lemma circuit_not_ssubset_circuit (M : matroid U){C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → ¬(C₁ ⊂ C₂) :=
   λ hC₁ hC₂ hC₁C₂, ne_of_ssubset hC₁C₂ (nested_circuits_equal M hC₁C₂.1 hC₁ hC₂)
-
 
 lemma inter_circuits_ssubset {M : matroid U}{C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → C₁ ≠ C₂ → C₁ ∩ C₂ ⊂ C₁ := 
@@ -1303,6 +1325,43 @@ begin
   specialize hIX J hJ₁ hJ₂,   
   rw [←hJ₃,hJ₂], rw ←(r_indep hIind) at hIX,  
   from le_trans hIX (M.rank_mono hI), 
+end
+
+
+lemma rank_eq_iff_exists_basis_of (M : matroid U) (X : set U){n : ℤ}:
+  M.r X = n ↔ ∃ B, M.is_basis_of B X ∧ size B = n := 
+begin
+  refine ⟨λ h, _, λ h, _⟩, 
+  subst h, cases exists_basis_of M X with B hB,
+  exact ⟨B, hB, size_basis_of hB⟩, 
+  rcases h with ⟨B,⟨⟨h₁,h₂⟩,h₃⟩⟩, 
+  rw [←h₂.2, h₂.1], exact h₃, 
+end
+
+lemma rank_as_indep (M : matroid U)(X : set U):
+  M.r X = max_val (λ I: indep_subset_of M X, size I.val) := 
+begin
+  rcases max_spec (λ I: indep_subset_of M X, size I.val) with ⟨⟨B,h,h'⟩, h₁, h₂⟩, 
+  dsimp only at *, rw [←h₁], clear h₁, 
+  rw [←indep_iff_r.mp h'], 
+  apply le_antisymm _ (M.rank_mono h), 
+  by_contra hcon, push_neg at hcon, 
+  rcases rank_augment hcon with ⟨z, hz, hB⟩, 
+  specialize h₂ ⟨B ∪ z, _⟩, dsimp at h₂, 
+    have : B ⊂ (B ∪ z), 
+      from ssubset_of_subset_ne (subset_union_left _ _) (λ h, by {rw ←h at hB, linarith,}), 
+    linarith [size_strict_monotone this], 
+  exact ⟨subset_of_union_subset_elem h hz, indep_of_indep_aug h' hB⟩,
+end
+
+lemma rank_matroid_as_indep (M : matroid U):
+  M.r univ = max_val (λ I : M.indep, size I.val) :=
+begin
+  rw rank_as_indep, 
+  set φ : M.indep_subset_of univ → M.indep := λ X, ⟨X.val, X.property.2⟩ with hφ, 
+  have : function.surjective φ, 
+    from λ X, by {use ⟨X.val, ⟨subset_univ X.val, X.property⟩⟩, rw hφ, simp,}, 
+  rw [max_reindex φ this (λ X, size X.val)], trivial,  
 end
 
 end basis 

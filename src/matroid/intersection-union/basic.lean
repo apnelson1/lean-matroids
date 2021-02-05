@@ -158,28 +158,65 @@ section lists
 
 open_locale big_operators 
 
-/-- property of a pair (M,X) that X is indep in M -/
+variables {n : ℕ}
+
+
+def is_indep_tuple (Ms : fin n → matroid U)(Xs : fin n → set U) :=
+  ∀ i, (Ms i).is_indep (Xs i)
+
+def indep_tuple (Ms : fin n → matroid U) := 
+  {Is : fin n → set U // is_indep_tuple Ms Is}
+
+instance indep_tuple_nonempty (Ms : fin n → matroid U) : nonempty (indep_tuple Ms) := 
+  by {apply nonempty_subtype.mpr, exact ⟨λ i, ∅, λ i, (Ms i).I1⟩,}
+
+instance indep_tuple_fintype (Ms : fin n → matroid U) : fintype (indep_tuple Ms) := 
+  by {unfold indep_tuple, apply_instance,  }
+
+/-- size of largest partitionable set wrt a tuple of matroids -/
+def π {n : ℕ}(Ms : fin n → matroid U) : ℤ := 
+  max_val (λ Is : (indep_tuple Ms), size (set.Union Is.val)) 
+
+def is_union_indep_tuple {n : ℕ}(Ms : fin n → matroid U) : (set U) → Prop := 
+  λ X, ∃ (Is : indep_tuple Ms), X = set.Union Is.val
+
+
+
+end lists 
+/-
+/- property of a pair (M,X) that X is indep in M -/
 def is_matroid_indep_pair : (matroid U) × (set U) → Prop := λ p, is_indep p.1 p.2 
 
-/-- rank in M of X, given a pair (M,X) -/
+/- rank in M of X, given a pair (M,X) -/
 def matroid_set_pair_to_rank : (matroid U) × (set U) → ℤ := λ p, p.1.r p.2 
 
-/-- property of being a list of independent sets wrt a list of matroids -/
+/- property of being a list of independent sets wrt a list of matroids -/
 def is_indep_list (Ms : list (matroid U)) : list (set U) → Prop :=
   λ Xs, Xs.length = Ms.length ∧ (∀ MX ∈ Ms.zip Xs, is_matroid_indep_pair MX)
 
-/-- type of indep lists of a list of matroids -/
+/- type of indep lists of a list of matroids -/
 def indep_list (Ms : list (matroid U)) := {Xs : list (set U) // is_indep_list Ms Xs}
 
-/-- property of being the union of an indep list (equivalent to partitionability) -/
-def is_union_indep_list (Ms : list (matroid U)) : (set U) → Prop := 
+/- property of being the union of an indep list (equivalent to partitionability) -/
+def is_union_indep_list'' (Ms : list (matroid U)) : (set U) → Prop := 
   λ Y, ∃ (Xs : indep_list Ms), list_union Xs.val = Y 
 
-/-- sum of ranks of a list of sets in a list of matroids -/
+
+
+
+def is_indep_pair_list : list (matroid U × set U) → Prop := 
+  λ Ps, (∀ p ∈ Ps, is_matroid_indep_pair p)  
+
+def indep_pair_list := {Ps : list (matroid U × set U) // is_indep_pair_list Ps}
+
+def is_union_indep_list' (Ms : list (matroid U)) : set U → Prop := 
+  λ Y, ∃ (Ps : indep_pair_list), Ps.val.unzip.1 = Ms ∧ list_union Ps.val.unzip.2 = Y 
+
+/- sum of ranks of a list of sets in a list of matroids -/
 def sum_of_ranks_of_sets (Ms : list (matroid U))(Xs : list (set U)): ℤ := 
   list.sum (list.map (matroid_set_pair_to_rank) (Ms.zip Xs)) 
 
-/-- sum of ranks of a fixed set in a list of matroids -/
+/- sum of ranks of a fixed set in a list of matroids -/
 def sum_of_ranks_of_set (Ms : list (matroid U)) (X : set U) :ℤ := 
   sum_of_ranks_of_sets Ms (list.repeat X Ms.length)
 
@@ -232,6 +269,11 @@ instance indep_nil_list_subsingleton :
   subsingleton (indep_list (list.nil : list (matroid U))) := 
 ⟨λ x y, by {cases x, cases y, rw [subtype.mk_eq_mk], rw [indep_list_nil_elim x_property, indep_list_nil_elim y_property],  }⟩
 
+
+
+
+
+
 -- These next two lemmas are TODO - they should be provable and useful. Commented to avoid sorries  
 
 /-lemma indep_list_iff_exists_zip (Ms : list (matroid U))(X : set U):
@@ -261,15 +303,14 @@ end-/
 
 
 
-/-- size of largest partitionable set wrt a list of matroids -/
-def π (Ms : list (matroid U)) : ℤ := 
-  max_val (λ Xs : indep_list Ms, size (list_union Xs.val)) 
 
 
 
 /-
 @[simp] lemma union_fin_zero (a : fin 0 → set U):
   (⋃ i, a i) = ∅ := 
+
 -/
 
-end lists 
+-/
+

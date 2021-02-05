@@ -42,7 +42,7 @@ instance set_fintype_of (U : ftype) : fintype (set U) :=
 instance ftype_mem (U : ftype): has_mem U (set U) := {mem := λ x X, x ∈ X}
 
 def as_finset (U : ftype)(X : set U) : finset U := 
-  @set.to_finset _ X (@fintype.subtype_of_fintype _ _ X) 
+  set.to_finset X 
   
 
 
@@ -288,15 +288,11 @@ end-/
 
 -- Subsets 
 
-
-
 lemma subset_def_union (X Y : set A) : (X ⊆ Y) ↔ (X ∪ Y = Y) := 
-  by rw [←set.compl_subset_compl, set.subset_iff_inter_eq_self, ←set.compl_union, compl_inj_iff, union_comm Y X]
+  by rw [←set.compl_subset_compl, set.subset_iff_inter_eq_left, ←set.compl_union, compl_inj_iff, union_comm Y X]
 
 lemma subset_def_inter (X Y: set A) : (X ⊆ Y) ↔ (X ∩ Y = X) :=
   by {rw subset_def_union, exact ⟨λ h, by rw [←h, absorb_inter_union], λ h, by rw[←h, union_comm, inter_comm, absorb_union_inter]⟩} 
-
-
 
 lemma subset_refl (X : set A) : X ⊆ X :=
   by rw [subset_def_inter, inter_idem]
@@ -803,6 +799,28 @@ lemma one_le_size_iff_nonempty {X : set A} : X.nonempty ↔ 1 ≤ size X :=
 
 lemma nontriv_size (hA: nontriv A): 1 ≤ size (univ : set A) := 
   one_le_size_iff_nonempty.mp hA 
+
+lemma size_img_inj {B : ftype}(f : A ↪ B)(X : set A): 
+  size (f '' X) = size X := 
+begin
+  simp only [ftype.size_nat.equations._eqn_1, ftype.size.equations._eqn_1, int.coe_nat_inj'],
+  convert finset.card_map f,
+  unfold as_finset,
+  ext, simp, 
+end
+
+lemma size_img_equiv {B : ftype}(f : A ≃ B)(X : set A):
+  size (f '' X) = size X :=
+size_img_inj (f.to_embedding) X 
+
+
+lemma size_preimg_equiv {B : ftype}(f : A ≃ B)(X : set B):
+  size (f ⁻¹' X) = size X :=
+begin
+  unfold_coes, 
+  rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
+  convert size_img_inj (f.symm.to_embedding) X, 
+end
 
 
 lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y := 

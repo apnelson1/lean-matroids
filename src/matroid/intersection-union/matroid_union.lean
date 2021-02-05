@@ -213,15 +213,8 @@ begin
   },
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
-  dsimp,-- set_solver, 
+  dsimp,
   set_solver, 
-  --rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
-  --rw [compl_inter, inter_distrib_left], simp [hXB],  
-  --dsimp,
-  --set_solver,
-   --dsimp, -- Use the tactic here! 
-  --rw [set.compl_subset_comm, subset_def_inter, inter_comm] at hXB, 
-  --rw [compl_inter, inter_distrib_left], simp [hXB],  
 end
 
 
@@ -275,7 +268,7 @@ def union (M₁ M₂ : matroid U): matroid U :=
   ⟨r M₁ M₂, R0 M₁ M₂, R1 M₁ M₂, R2 M₁ M₂, R3 M₁ M₂⟩
 
 /-- independence in the union of two matroids is two-partitionability -/
-lemma two_union_matroid_indep_iff (M₁ M₂ : matroid U){X : set U}:
+lemma indep_iff (M₁ M₂ : matroid U){X : set U}:
   (union M₁ M₂).is_indep X ↔ is_two_partitionable M₁ M₂ X :=
 begin
   rw [indep_iff_r, union], simp only [r], 
@@ -296,9 +289,9 @@ begin
 end 
 
 /-- independence in the union of two matroids is expressibility as a union of independent sets  -/
-lemma two_union_indep_iff_union (M₁ M₂ : matroid U){X : set U}:
+lemma indep_iff_union (M₁ M₂ : matroid U){X : set U}:
   (union M₁ M₂).is_indep X ↔ is_union_two_indep M₁ M₂ X :=
-by rw [two_union_matroid_indep_iff, two_partitionable_iff_union_two_indep]
+by rw [indep_iff, two_partitionable_iff_union_two_indep]
 
 
 
@@ -314,83 +307,101 @@ end two_union_matroid
 end two_union_matroid
 
 section union
- 
 
+variables {n : ℕ}
 
-/-- given a list of matroids, there is a matroid whose independent sets are the unions of 
-independent sets of the matroids in the list  -/
-theorem exists_union_matroid (Ms : list (matroid U)):
-  ∃ (M_union : matroid U), ∀ X : set U, M_union.is_indep X ↔ is_union_indep_list Ms X := 
+theorem exists_union_matroid (Ms : fin n → matroid U):
+  ∃ (M_union: matroid U), ∀ X, M_union.is_indep X ↔ is_union_indep_tuple Ms X := 
 begin
-  /- I thought using lists would be better than (fin n)-indexed tuples of matroids, 
-  but this proof's length suggests otherwise. The two lists being 'decoupled' is annoying; 
-  independent indexing sets are nice. -/
-  
-  /- induction on the number of matroids in the list-/
-  induction Ms with M Ms₀ IH, 
+  induction n with n IH, 
+    -- base case
+    {use loopy_matroid_on U, 
+    simp_rw [loopy_matroid_indep_iff_empty, is_union_indep_tuple], 
+    refine λ X, ⟨λ h, _, λ h, _⟩,  
+      {refine ⟨⟨λ i, fin_zero_elim i, λ i, fin_zero_elim i⟩,by {rw h, simp}⟩,},
+    cases h with Is hIs, rw hIs, simp,},
 
-  /- bases case: the loopy matroid works -/
-  use loopy_matroid_on U, intro X, 
-  rw [loopy_matroid_indep_iff_empty, is_union_indep_list], 
-  dsimp only,
-  refine ⟨λ h, ⟨⟨list.nil, _⟩, _⟩, λ h, _⟩, 
-  rw indep_list_nil_iff_nil, 
-  simp, 
-  from h.symm, 
-  cases h with Xs hXs, rw [indep_list_nil_elim_subtype Xs] at hXs, 
-  simp only [list_empty_union_eq_empty] at hXs, from hXs.symm,  
-
-  /- inductive step: take the union of the union matroid for the shortened list,
-  with the matroid at the head of the list. All trivial stuff, given the definition
-  of independence, going between a smaller list and a bigger one -/
-  cases IH with N h₀, 
-  set MU := two_union_matroid.union M N with hMU, 
-  rw is_union_indep_list, refine ⟨MU, λ X, ⟨λ h, _, λ h, _⟩⟩, 
-  rw [hMU, two_union_matroid.two_union_indep_iff_union] at h, 
-  rcases h with ⟨IM, IN, ⟨hMi, hNi, hX⟩⟩, 
-  rw h₀ IN at hNi, 
-  rcases hNi with ⟨Ys, hYs⟩, 
-  refine ⟨⟨IM :: Ys.val, ⟨_,_⟩⟩,_⟩, 
-  {simp only [add_left_inj, list.length, subtype.val_eq_coe], from Ys.2.1},
-  {
-    rintro ⟨M', Z⟩, intro hM'Z, 
-    simp only [list.mem_cons_iff, prod.mk.inj_iff, list.zip_cons_cons, subtype.val_eq_coe] at hM'Z,
-    cases hM'Z, 
-    rw [hM'Z.1, hM'Z.2], from hMi, 
-    from Ys.property.2 _ hM'Z,
-  },
-  {simp only [list_union_cons], rw hYs, from hX.symm},
-  {
-    dsimp only at h, cases h with Xs hXs, 
-    rw [two_union_matroid.two_union_indep_iff_union, is_union_two_indep], 
-    rcases Xs with ⟨Xs, ⟨hXs_len, hXs_i⟩⟩, induction Xs with Xs_hd Xs_tl, 
-    {simp only [list.length] at hXs_len, linarith [hXs_len], },
-    refine ⟨Xs_hd, list_union (Xs_tl), ⟨_,_,_⟩⟩, 
-    {apply hXs_i ⟨M, Xs_hd⟩, simp [list.mem],},
-    rw (h₀ (list_union Xs_tl)), 
-    refine ⟨⟨Xs_tl,⟨_,λ MX hMX, _⟩⟩, _⟩, 
-      {simp only [add_left_inj, list.length] at hXs_len, from hXs_len, }, 
-      {apply hXs_i MX, apply or.intro_right, from hMX }, 
-      {simp},
-      {simp only [list_union_cons] at hXs, from hXs.symm}
-  },
+  set Ms₀ := fin.tail Ms, 
+  set N := Ms 0 with hN, 
+  cases IH Ms₀ with MU₀ hMU₀, clear IH, 
+  refine ⟨two_union_matroid.union MU₀ N, λ X, _⟩,
+  rw [two_union_matroid.indep_iff_union, is_union_two_indep], dsimp only,  
+  refine ⟨λ h, _, λ h, _⟩, 
+    {{rcases h with ⟨I₁,I₂,h₁,h₂,rfl⟩, 
+    rw hMU₀ at h₁, rcases h₁ with ⟨⟨Is₀,h₃⟩,h₄⟩,
+    unfold is_union_indep_tuple, 
+    refine ⟨⟨@fin.cons _ (λ i, set U) I₂ Is₀,λ i,_⟩,_⟩, swap, 
+      {rw h₄, simp [fin.Union_cons], },
+    revert i, refine λ i, fin.cases (by {rw ←hN, simp [h₂]}) (λ i₀ , _) i, 
+    convert h₃ i₀, simp, 
+    },},
+  rcases h with ⟨⟨Is,h₂⟩, rfl⟩, 
+  refine ⟨set.Union (fin.tail Is),Is 0,_,⟨h₂ 0,_⟩⟩, 
+    {rw hMU₀, refine ⟨⟨fin.tail Is,λ i, h₂ (fin.succ i)⟩,rfl⟩, },
+  simp [fin.Union_cons],
 end
 
 /-- the union of a list of matroids, as a matroid -/
-def union_matroid (Ms : list (matroid U)): matroid U :=
+def union_matroid (Ms : fin n → matroid U): matroid U :=
   classical.some (exists_union_matroid Ms)
 
 /-- independence in the union matroid -/
-theorem union_matroid_indep_iff (Ms : list (matroid U)):
-  (union_matroid Ms).is_indep = is_union_indep_list Ms := 
+theorem union_matroid_indep_iff (Ms : fin n → matroid U):
+  (union_matroid Ms).is_indep = is_union_indep_tuple Ms := 
 by {ext x, from classical.some_spec (exists_union_matroid Ms) x}
 
 -- todo 
-/-lemma union_matroid_rank (Ms : list (matroid U)): 
-  (union_matroid Ms).r = λ X, min_val (λ A, size Aᶜ + sum_of_ranks_of_set Ms A ) := 
-begin
 
-end-/
+lemma union_matroid_rank_eq_pi (Ms : fin n → matroid U):
+  (union_matroid Ms).r univ = π Ms := 
+begin
+  unfold π, rw [rank_matroid_as_indep], 
+  set φ : (indep_tuple Ms) → (union_matroid Ms).indep := 
+  λ Is, ⟨set.Union Is.val, by {rw union_matroid_indep_iff, use Is, }⟩ with hφ, 
+  have hφ' : function.surjective φ, 
+    {rintros ⟨I,hI⟩, 
+    rw hφ, simp only [subtype.mk_eq_mk, subtype.val_eq_coe], 
+    rw union_matroid_indep_iff at hI,   
+    cases hI with Is hIs, 
+    use Is, convert hIs.symm, },
+  rw max_reindex φ hφ' (λ I, size I.val), trivial, 
+end
+
+theorem matroid_union (Ms : fin n → matroid U): 
+  π Ms = min_val (λ (A : set U), size Aᶜ + ∑ i, (Ms i).r A ) := 
+begin
+  --rw ←union_matroid_rank_eq_pi, 
+  induction n with n IH, unfold π, sorry, 
+  set N := Ms 0 with hN, 
+  specialize IH (fin.tail Ms), unfold π at *, 
+  /-set φ : indep_tuple Ms → N.indep × (indep_tuple (fin.tail Ms)) := λ Is, 
+    ⟨⟨Is.val 0, by {rw hN, from Is.property 0}⟩, 
+    ⟨fin.tail Is.val, λ i, by {exact Is.property i.succ, }⟩⟩ with hφ,
+  have hφ' : function.surjective φ, 
+  {
+    rintros ⟨I₀, Is⟩, 
+    refine ⟨⟨fin.cons I₀.val Is.val, λ i, fin.cases _ (λ i₀,_) i⟩,_⟩,
+      {convert I₀.property,},
+      {convert Is.property i₀, simp, },
+    rw hφ, simp, 
+  }, -/
+
+  set φ : N.indep × (indep_tuple (fin.tail Ms)) → indep_tuple Ms := λ Is, 
+    ⟨fin.cons Is.1.val Is.2.val, λ i, 
+      begin
+        revert i, refine λ i, fin.cases _ (λ i₀, _) i,  
+        convert Is.1.property, 
+        convert Is.2.property i₀, simp, 
+      end ⟩ with hφ,  
+  
+  have hφ' : function.surjective φ := sorry, 
+  erw [←(max_reindex φ hφ' (λ Is, size (set.Union Is.val))), hφ], 
+  
+
+  
+  
+  
+end
 
 
 

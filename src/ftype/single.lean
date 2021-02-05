@@ -65,6 +65,10 @@ lemma union_subset_of_elem_of_elem {e f : A}{X : set A}:
   e ∈ X → f ∈ X → (e ∪ f : set A) ⊆ X := 
 λ he hf, by {refine union_is_ub _ _, tidy} 
 
+lemma subset_of_union_subset_elem {X Y : set A}{e : A}:
+  X ⊆ Y → e ∈ Y → X ∪ e ⊆ Y := 
+by {rw elem_iff_subset, apply union_is_ub, } 
+
 lemma ne_empty_has_elem {X : set A}  : 
   X ≠ ∅ → ∃ e, e ∈ X := 
 by {rw [set.ne_empty_iff_nonempty, set.nonempty_def], from id}
@@ -233,6 +237,10 @@ begin
   rw [inter_comm X, nonelem_disjoint (elem_compl_iff.mp hXe), size_single, size_empty] at this, 
   linarith, 
 end
+
+lemma add_size_ub {X : set A}{e : A}:
+  size (X ∪ e) ≤ size X + 1 := 
+by linarith [size_nonneg (X ∩ e), size_modular X e, size_single e]
 
 lemma add_nonelem_size {X : set A} {e : A}: 
   e ∉ X →  size (X ∪ e) = size X + 1 := 

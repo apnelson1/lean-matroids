@@ -100,8 +100,6 @@ end
 
 end clfun 
 
- 
-
 def indep_family.of_clfun (M : clfun U) : indep_family U := 
 ⟨M.is_indep, M.satisfies_I1, M.satisfies_I2, M.satisfies_I3⟩
 

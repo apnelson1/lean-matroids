@@ -58,6 +58,60 @@ begin
 end
 
 
+namespace fin 
+
+@[simp] lemma fin_zero_Union (Xs : fin 0 → set U): 
+set.Union Xs = ∅  := 
+by {rw [set.Union_eq_empty], exact λ i, fin_zero_elim i}
+
+@[simp] lemma fin_zero_Inter (Xs : fin 0 → set U): 
+set.Inter Xs = univ  := 
+by {rw [set.Inter_eq_univ], exact λ i, fin_zero_elim i}
+
+
+lemma Union_cons {n : ℕ}(Xs : fin n → set U)(Y : set U):
+set.Union Xs ∪ Y = set.Union (fin.cons Y Xs) :=
+begin
+  ext, rw [set.mem_union, set.mem_Union, set.mem_Union],   
+  refine ⟨λ h, _, λ h, _⟩, 
+  rcases h with (⟨i, hi⟩ | h), 
+    {use fin.succ i, simp [hi]},
+    {use 0, convert h,},
+  cases h with i hi, 
+  revert i, refine λ i, fin.cases (λ h, _) (λ i₀ h, _) i,
+    {right, convert h,}, 
+  left, use i₀, 
+  convert h, simp, 
+end
+
+lemma Inter_cons {n : ℕ}(Xs : fin n → set U)(Y : set U):
+set.Inter Xs ∩ Y = set.Inter (fin.cons Y Xs) :=
+begin
+  ext, rw [set.mem_inter_iff, set.mem_Inter, set.mem_Inter],   
+  refine ⟨λ h, λ i, _, λ h, ⟨λ i, _, _⟩⟩, 
+    {revert i, refine λ i, fin.cases (by convert h.2) (λ i₀, _) i, convert h.1 i₀, simp,  },
+    {convert h (i.succ), simp,},
+  convert h 0, 
+end
+
+
+end fin
+
 
 
 end ftype
+
+namespace list
+
+lemma nil_of_unzip_nil_left {α β : Type}(L : list (α × β)) : 
+  L.unzip.1 = list.nil → L = list.nil := 
+λ h, by {rw [←L.zip_unzip, h], simp only [zip_nil_left]} 
+
+lemma nil_of_unzip_nil_right {α β : Type}(L : list (α × β)) : 
+  L.unzip.2 = list.nil → L = list.nil := 
+λ h, by {rw [←L.zip_unzip, h], simp only [zip_nil_right]} 
+
+
+end list 
+
+
