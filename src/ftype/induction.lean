@@ -140,10 +140,10 @@ lemma minimal_example (P : set A → Prop){X : set A}:
 lemma maximal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
   begin
-    intro h, rw ←compl_compl X at h, 
+    intro h, rw ←ftype.compl_compl X at h, 
     rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩, 
     use Yᶜ, refine ⟨subset_compl_right hY₁, hY₂,λ Z hZ, _⟩,  
-    rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
+    rw ←ftype.compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
   end
 
 lemma maximal_example_from_empty (P : set A → Prop): 

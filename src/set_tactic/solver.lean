@@ -105,7 +105,7 @@ meta def rewrite_for_type (type : expr) : (tactic unit) := do
   simp_lemmas <- infer_base_simp_lemmas type,
   compl_lemmas <- infer_compl_simp_lemmas type,
   top_lemmas <- infer_top_simp_lemmas type,
-  tactic.try (tactic.interactive.simp none tt
+  tactic.try (tactic.interactive.simp none none tt
               ((simp_lemmas ++ compl_lemmas ++ top_lemmas).map tactic.simp_arg_type.expr)
                   list.nil interactive.loc.wildcard),
   tactic.skip

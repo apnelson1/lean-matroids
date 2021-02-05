@@ -444,7 +444,7 @@ begin
   have h_nonempty : X ≠ ∅ := by {intros h, rw [h,ftype.compl_empty] at h₁, exact int.lt_irrefl _ h₁}, 
   rcases (nonempty_single_removal h_nonempty) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
   specialize h₂ _ hY₁,  
-  rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
+  rw [←ftype.compl_compl Y, ←ftype.compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
   linarith[M.rank_diff_le_size_diff (subset_to_compl hY₁.1)], 
   exact h₂, rintros ⟨h₁, h₂⟩, exact ⟨by linarith, h₂⟩, 
 end 
@@ -880,7 +880,7 @@ lemma cocircuit_iff_compl_hyperplane {M : matroid U} (X : set U):
 begin
   rw [cocircuit_iff_r, hyperplane_iff_r], 
   refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (ssubset_to_compl hXY)⟩⟩, 
-  rw [←(h.2 _ (ssubset_compl_left hXY)), compl_compl], 
+  rw [←(h.2 _ (ssubset_compl_left hXY)), ftype.compl_compl], 
 end
 
 lemma inter_flats_is_flat (M : matroid U) (F₁ F₂ : set U) :
@@ -920,7 +920,7 @@ lemma circuit_hyperplane_dual {M : matroid U}{C : set U}:
   M.is_circuit_hyperplane C ↔ (dual M).is_circuit_hyperplane Cᶜ := 
 begin
   simp_rw [is_circuit_hyperplane, ←cocircuit_iff_compl_hyperplane, is_cocircuit],  
-  rw [dual_dual, ←is_cocircuit, cocircuit_iff_compl_hyperplane, compl_compl, and_comm], 
+  rw [dual_dual, ←is_cocircuit, cocircuit_iff_compl_hyperplane, ftype.compl_compl, and_comm], 
 end
 
 
@@ -1270,7 +1270,7 @@ begin
   have h' : M.is_indep (B₁ \ e) := subset_indep _ hB₁.1, 
   rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
   have h'' : B₂ \ (B₁ \ e) = B₂ \ B₁ := by
-    {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e: set U), nonelem_disjoint_iff.mp he₂, union_empty]},
+    {repeat {rw diff_def}, rw [compl_inter, ftype.compl_compl, inter_distrib_left, inter_comm _ (e: set U), nonelem_disjoint_iff.mp he₂, union_empty]},
   rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
   use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 
   rw remove_single_size he₁, linarith, apply remove_single_subset, 

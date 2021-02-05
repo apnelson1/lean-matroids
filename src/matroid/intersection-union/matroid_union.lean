@@ -146,7 +146,7 @@ begin
   rw [π₂_eq_ν_plus_r, matroid_intersection],
   rw min_add_commute (matroid_intersection_ub_fn M₁ (dual M₂)) (M₂.r univ),
   congr', ext X, rw [matroid_intersection_ub_fn], dsimp,
-  rw [dual_r, compl_compl], linarith,  
+  rw [dual_r, ftype.compl_compl], linarith,  
 end
 
 end two_union 
@@ -196,8 +196,8 @@ begin
     from eq_of_ssubset (subset_union_right Xᶜ B) this,  
     intro h, 
     have h' := hB (Xᶜ ∪ B), 
-    simp only [inter_distrib_right, inter_compl_left, compl_compl, set.compl_union, 
-                                                empty_union, add_le_add_iff_right] at h',  
+    simp only [inter_distrib_right, inter_compl_left, ftype.compl_compl, 
+    set.compl_union, empty_union, add_le_add_iff_right] at h',  
     rw [←compl_compl_union_left, compl_size, compl_size] at h', 
     linarith [size_strict_monotone h], 
   },  
