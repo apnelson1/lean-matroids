@@ -29,6 +29,10 @@ let h : Π (y : E), (∃ x : U₀, emb x = y) :=
 }
 -/
 
+def subset_embed (X : set U) : X ↪ U := 
+{ to_fun := λ x, x.val, 
+  inj' := λ x y hxy, subtype.ext hxy}
+
 
 /-- bundled isomorphism between two matroids -/
 structure isom (M : matroid U)(N : matroid V) := 
@@ -84,7 +88,7 @@ structure emb_mat (U : ftype) :=
 
 namespace emb_mat 
 
-def ground (N : emb_mat U) : set U := 
+def groundset (N : emb_mat U) : set U := 
   set.range N.emb 
 
 def strongly_iso (N₁ N₂ : emb_mat U) : Prop := 
@@ -103,10 +107,10 @@ begin
 end
 
 lemma strong_iso_same_groundset (N N' : emb_mat U):
-  strongly_iso N N' → N.ground = N'.ground  := 
+  strongly_iso N N' → N.groundset = N'.groundset  := 
 begin
   rintros ⟨h₁,h₂⟩, ext, 
-  simp only [ground, set.mem_range],
+  simp only [groundset, set.mem_range],
   simp_rw h₂, 
   refine ⟨λ h, _, λ h, _⟩, 
     {cases h with y hy, from ⟨_, hy⟩},
@@ -152,7 +156,7 @@ begin
 end
 
 /-- if E is equal to the groundset of N, then there is a natural equivalence between E and U₀ -/
-def groundset_equiv (N : emb_mat U){E : set U}(hE : N.ground = E): 
+def groundset_equiv (N : emb_mat U){E : set U}(hE : N.groundset = E): 
   N.U₀ ≃ (⟨E⟩ : ftype) := 
   ((equiv.set.range N.emb N.emb.inj').trans (equiv.set.of_eq hE))
 
@@ -169,15 +173,15 @@ def matroid_in (U : ftype) := quot (λ (N N' : emb_mat U), N.strongly_iso N')
 
 namespace matroid_in 
 
-def ground : matroid_in U → set U := quotient.lift  
-  (λ (N : emb_mat U), N.ground) emb_mat.strong_iso_same_groundset
+def groundset : matroid_in U → set U := quotient.lift  
+  (λ (N : emb_mat U), N.groundset) emb_mat.strong_iso_same_groundset
 
-def ground_ftype (N : matroid_in U) : ftype := ⟨N.ground⟩
+def ground (N : matroid_in U) : ftype := ⟨N.groundset⟩
 
 def r : matroid_in U → (set U → ℤ) := quotient.lift 
   (λ (N : emb_mat U), N.pullback_r) emb_mat.strong_iso_same_pullback_r
 
-def r_subtype (N : matroid_in U) : (set (N.ground) → ℤ) := 
+def r_subtype (N : matroid_in U) : (set (N.groundset) → ℤ) := 
   λ X, N.r (coe '' X)
 
 
@@ -186,11 +190,11 @@ def rep_spec (N : matroid_in U) : {N₀ : emb_mat U // ⟦N₀⟧ = N} :=
 
 /-- the ground set of a representative is the ground set of a matroid_in -/
 lemma ground_rep {N : matroid_in U}{N₀ : emb_mat U}(h : ⟦N₀⟧ = N): 
-   N₀.ground = N.ground  := 
+   N₀.groundset = N.groundset  := 
 begin
-  unfold ground,
+  unfold groundset,
   dsimp only [quotient.mk] at h, 
-  have := quotient.lift_beta (λ (N : emb_mat U), N.ground) _,  
+  have := quotient.lift_beta (λ (N : emb_mat U), N.groundset) _,  
   dsimp only [quotient.mk] at this, 
   rw [←this,h],  
 end
@@ -201,18 +205,18 @@ variables {N : matroid_in U}{N₀ : emb_mat U}
 
 /-- given an equivalence class representative N₀, pulls a set X back to the 
 ftype on which N₀ is defined -/
-def rep_preimage (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype) :=
+def rep_preimage (hN : ⟦N₀⟧ = N)(X : set N.ground) :=
   N₀.groundset_equiv (ground_rep hN) ⁻¹' X
 
-lemma rep_preimage_on_size (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype) : 
+lemma rep_preimage_on_size (hN : ⟦N₀⟧ = N)(X : set N.ground) : 
   size (rep_preimage hN X) = size X := 
 by {apply size_preimg_equiv} 
 
-lemma rep_preimage_on_subset (hN : ⟦N₀⟧ = N){X Y : set N.ground_ftype} :
+lemma rep_preimage_on_subset (hN : ⟦N₀⟧ = N){X Y : set N.ground} :
   X ⊆ Y → rep_preimage hN X ⊆ rep_preimage hN Y := 
 λ h, set.preimage_mono h
 
-lemma r_rep (hN : ⟦N₀⟧ = N)(X : set N.ground_ftype):
+lemma r_rep (hN : ⟦N₀⟧ = N)(X : set N.ground):
   r_subtype N X = N₀.mat.r (rep_preimage hN X) :=
 begin
   unfold r_subtype r, 
@@ -228,7 +232,7 @@ end
 
 end preimages 
 
-def as_matroid (N : matroid_in U) : matroid (N.ground_ftype) := 
+def as_matroid (N : matroid_in U) : matroid (N.ground) := 
 let ⟨N₀,h⟩ := rep_spec N in 
 { 
   r := N.r_subtype,
@@ -243,6 +247,17 @@ def as_matroid_in (M : matroid U) : matroid_in U :=
 
 instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
 
+def embed (M : matroid_in U) : M.ground ↪ U := subset_embed M.groundset 
+
+def subset_embed (M : matroid_in U)(R : set U)(hR : R ⊆ M.groundset) : R ↪ M.ground :=
+{to_fun  := λ x, ⟨x.val, by {cases x, tauto}⟩,
+ inj'    := λ x y hxy, by {simp only [subtype.mk_eq_mk] at hxy, exact subtype.eq hxy, } }
+
+def nested_embed (M' M : matroid_in U)(hMM' : M'.groundset ⊆ M.groundset): M'.ground ↪ M'.ground :=
+{to_fun  := λ x, ⟨x.val, by simp⟩,
+ inj'    := λ x y hxy, by {convert hxy; simp,} }
+
+
 
 end matroid_in 
 
@@ -250,7 +265,8 @@ section minor
 
 /-- minor relation between two matroid_in U-/
 def is_minor (N M : matroid_in U) : Prop := 
-  (N.ground ⊆ M.ground) ∧ ∃ C ⊆ M.ground \ N.ground, (∀ X ⊆ N.ground, N.r X = M.r (X ∪ C) - M.r C)  
+  (N.groundset ⊆ M.groundset) ∧ 
+  ∃ C ⊆ M.groundset \ N.groundset, (∀ X ⊆ N.groundset, N.r X = M.r (X ∪ C) - M.r C)  
 
 /-- minor relation between a matroid_in U and a matroid U -/
 def is_minor_of (N : matroid_in U)(M : matroid U) := 
@@ -269,14 +285,27 @@ begin
     simp only [ftype.diff_def, set.mem_inter_eq, set.mem_union_eq, set.mem_compl_eq], 
     tauto, },
   -- set_solver should work for the goal above, but it is glacial
-  have hC₁M₂: C₁ ⊆ M₂.ground := by 
+  have hC₁M₂: C₁ ⊆ M₂.groundset := by 
   { intros x hx, simp only [ftype.diff_def, set.subset_inter_iff] at hC₁, tauto,},
-  rw [h1' X hX, h2' (X ∪ C₁) _, h2' C₁ hC₁M₂, ←union_assoc],  
-    linarith,
+  rw [h1' X hX, h2' (X ∪ C₁) _, h2' C₁ hC₁M₂, ←union_assoc],  ring,
   exact union_is_ub (subset_trans hX h1) hC₁M₂, 
 end
 
+def contract_to_matroid (M : matroid_in U)(C : set M.ground) : matroid ⟨(Cᶜ : set M.ground)⟩ :=
+let φ := M.subset_embed Cᶜ in 
+{ r := λ X, by { apply M.r, have := φ '' X, convert this, },--M.r (φ '' X ∪ C) - M.r C},
+  R0 := _,
+  R1 := _,
+  R2 := _,
+  R3 := _ }
 
+/-- returns the contraction of C in M as a minor on a subtype-/
+def contract_to_emb (M : matroid_in U)(C : set M.ground) : emb_mat U := 
+{ 
+  U₀ := ⟨(Cᶜ : set M.ground)⟩,
+  mat := sorry,
+  emb := (function.embedding.subtype (λ x, x ∈ Cᶜ)).trans M.embed,  
+}
 
 end minor 
 
