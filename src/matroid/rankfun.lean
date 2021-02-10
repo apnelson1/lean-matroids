@@ -58,7 +58,15 @@ lemma rank_mono_union_right (M : matroid U)(X Y : set U) :
 
 lemma rank_eq_zero_of_le_zero {M : matroid U}{X : set U}:
   M.r X ≤ 0 → M.r X = 0 := 
-  λ h, le_antisymm h (M.rank_nonneg X)
+λ h, le_antisymm h (M.rank_nonneg X)
+
+lemma rank_subset_rank_zero {M : matroid U}{X Y : set U}: 
+  X ⊆ Y → M.r Y = 0 → M.r X = 0 := 
+λ hXY hY, by {apply rank_eq_zero_of_le_zero, rw ←hY, exact rank_mono M hXY}
+
+lemma rank_inter_rank_zero {M : matroid U}(X : set U){Y : set U}:
+  M.r Y = 0 → M.r (X ∩ Y) = 0 :=
+λ hY, by {apply rank_subset_rank_zero _ hY, simp }
 
 @[simp] lemma rank_empty (M : matroid U): 
   M.r ∅ = 0 := 
@@ -102,10 +110,14 @@ lemma rank_eq_of_not_lt_union {M : matroid U}{X Y : set U}:
 
 @[simp] lemma rank_eq_rank_union_rank_zero {M : matroid U}(X : set U){Y :set U}:
   M.r Y = 0 → M.r (X ∪ Y) = M.r X := 
-begin 
-  intro hY, apply rank_eq_of_le_union, 
-  linarith [M.rank_nonneg (X ∩ Y ), M.rank_submod X Y], 
-end
+λ hY, by {apply rank_eq_of_le_union, linarith [M.rank_nonneg (X ∩ Y ), M.rank_submod X Y],} 
+
+lemma rank_zero_of_union_rank_zero {M : matroid U}{X Y : set U}:
+  M.r X = 0 → M.r Y = 0 → M.r (X ∪ Y) = 0 :=
+λ hX hY, by {rw (rank_eq_rank_union_rank_zero _ hY), exact hX }
+
+
+
 
 
 lemma rank_eq_of_le_union_supset {M : matroid U}(X Y Z: set U):

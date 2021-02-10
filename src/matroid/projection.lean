@@ -1,5 +1,5 @@
 
-import .constructions
+import .constructions set_tactic.solver 
 
 open ftype 
 open matroid 
@@ -41,6 +41,10 @@ lemma project_r (M : matroid U)(C X : set U):
 def loopify_project (M : matroid U)(C D : set U) : matroid U := 
   project (loopify M D) C 
 
+lemma project_rank_monotone (M : matroid U)(C X : set U):
+  (project M C).r X ≤ M.r X := 
+by {rw project_r, linarith [M.rank_subadditive X C]}
+
 lemma project_makes_loops (M : matroid U)(C : set U):
   loops M ∪ C ⊆ loops (project M C)  := 
 by rw [←rank_zero_iff_subset_loops, project_r, union_assoc, union_self, 
@@ -50,6 +54,10 @@ lemma projected_set_rank_zero (M : matroid U)(C : set U):
   (project M C).r C = 0 := 
 by rw [project_r, union_self, sub_self] 
 
+lemma projected_set_union_rank_zero (M : matroid U)(C : set U){X : set U}:
+  M.r X = 0 → (project M C).r (X ∪ C) = 0 :=
+λ h, by {rw project_r, simp only [ftype.union_left_absorb, union_comm X], rw rank_eq_rank_union_rank_zero, ring, exact h, }
+
 lemma loopify_makes_loops (M : matroid U)(D : set U):
   loops M ∪ D ⊆ loops (loopify M D) := 
 by {rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], tidy,}
@@ -57,6 +65,10 @@ by {rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], t
 lemma loopified_set_rank_zero (M : matroid U)(D : set U):
   (loopify M D).r D = 0 :=
 by rw [loopify_r, set.diff_self, rank_empty] 
+
+lemma loopified_set_union_rank_zero (M : matroid U)(D : set U){X : set U}:
+  M.r X = 0 → (loopify M D).r (X ∪ D) = 0 :=
+λ h, by {simp only [loopify_r, ftype.union_left_absorb, union_comm X], exact rank_subset_rank_zero (by set_solver) h,}
 
 lemma indep_of_loopify_indep {M : matroid U}{D X : set U} : 
   is_indep (loopify M D) X → is_indep M X := 

@@ -1,6 +1,6 @@
 /-  An alternative take on the definition of a minor, where we take a quotient. Very much WIP. -/
 
-import ftype.basic ftype.embed set_tactic.solver
+import ftype.basic set_tactic.solver
 import .rankfun .dual 
 
 --noncomputable theory
@@ -32,6 +32,31 @@ let h : Π (y : E), (∃ x : U₀, emb x = y) :=
 def subset_embed (X : set U) : X ↪ U := 
 { to_fun := λ x, x.val, 
   inj' := λ x y hxy, subtype.ext hxy}
+
+def subset_to_subtype {X Y : set U}(hXY : X ⊆ Y) : set Y := 
+  λ y, y.val ∈ X 
+
+/-- (invisible) equivalence between the class of subsets of R and the class of 
+ sets in the ftype corresponding to R -/
+def subset_equiv {R : set U} : {X : set U // X ⊆ R} ≃ set (⟨R⟩ : ftype) :=
+{ to_fun := λ X, {y | y.val ∈ X.val},
+  inv_fun := λ Y, ⟨coe '' Y,by {intros y hy, cases hy with x hx, rw ←hx.2, exact x.2,} ⟩,
+  left_inv := begin
+    intro X, ext x, simp only [set.mem_image, subtype.coe_mk],
+    refine ⟨λ h, _, λ h, ⟨⟨x,_⟩,⟨_,_⟩⟩⟩, 
+    { rcases h with ⟨x',h₁,h₂⟩, rw ←h₂, convert h₁,}, 
+    { cases X, tauto, }, 
+    { tauto, }, 
+    simp, 
+  end,
+  right_inv := begin
+    intro X, ext x, cases x with x xp,  simp only [set.mem_set_of_eq], 
+    refine ⟨λ h, _, λ h, _⟩, 
+    {unfold_projs at h, rcases h with ⟨a,h1,h2⟩, simp_rw ←h2, convert h1, simp},
+    exact ⟨⟨x,xp⟩, ⟨h,by simp⟩⟩,   
+  end, }
+
+
 
 
 /-- bundled isomorphism between two matroids -/
@@ -81,7 +106,7 @@ variable {M : matroid U}
 
 
 /-- structure describing a matroid and an embedding of its elements into U -/
-structure emb_mat (U : ftype) := 
+@[ext] structure emb_mat (U : ftype) := 
   {U₀ : ftype}
   (mat : matroid U₀)
   (emb : U₀ ↪ U)
@@ -173,30 +198,38 @@ def matroid_in (U : ftype) := quot (λ (N N' : emb_mat U), N.strongly_iso N')
 
 namespace matroid_in 
 
+/-- the groundset of N, viewed as a (set U)-/
 def groundset : matroid_in U → set U := quotient.lift  
   (λ (N : emb_mat U), N.groundset) emb_mat.strong_iso_same_groundset
 
+/-- the groundset of N, viewed as an ftype -/
 def ground (N : matroid_in U) : ftype := ⟨N.groundset⟩
 
+/-- the rank function of N as a function on set U (elements outside the groundset of N 
+are ignored)-/
 def r : matroid_in U → (set U → ℤ) := quotient.lift 
   (λ (N : emb_mat U), N.pullback_r) emb_mat.strong_iso_same_pullback_r
 
-def r_subtype (N : matroid_in U) : (set (N.groundset) → ℤ) := 
-  λ X, N.r (coe '' X)
+/-- the rank function of N as a function on sets of the ground ftype of N-/
+def r_ftype (N : matroid_in U) : (set N.ground → ℤ) := 
+  λ X, N.r ((λ x : N.ground, x.val)'' X )
 
-
+/-- an equivalence class representative for N -/
 def rep_spec (N : matroid_in U) : {N₀ : emb_mat U // ⟦N₀⟧ = N} := 
   classical.indefinite_description _ (quot.exists_rep N)
 
 /-- the ground set of a representative is the ground set of a matroid_in -/
 lemma ground_rep {N : matroid_in U}{N₀ : emb_mat U}(h : ⟦N₀⟧ = N): 
    N₀.groundset = N.groundset  := 
+by {dsimp only [quotient.mk] at h, rw ←h, refl}
+
+
+lemma r_eq_r_inter_groundset (N : matroid_in U)(X : set U): 
+  N.r X = N.r (X ∩ N.groundset) := 
 begin
-  unfold groundset,
-  dsimp only [quotient.mk] at h, 
-  have := quotient.lift_beta (λ (N : emb_mat U), N.groundset) _,  
-  dsimp only [quotient.mk] at this, 
-  rw [←this,h],  
+  unfold matroid_in.groundset r emb_mat.pullback_r emb_mat.groundset, 
+  rcases rep_spec N with ⟨N₀,h⟩,
+  simp [←h],
 end
 
 section preimages 
@@ -216,46 +249,136 @@ lemma rep_preimage_on_subset (hN : ⟦N₀⟧ = N){X Y : set N.ground} :
   X ⊆ Y → rep_preimage hN X ⊆ rep_preimage hN Y := 
 λ h, set.preimage_mono h
 
+
 lemma r_rep (hN : ⟦N₀⟧ = N)(X : set N.ground):
-  r_subtype N X = N₀.mat.r (rep_preimage hN X) :=
+  r_ftype N X = N₀.mat.r (rep_preimage hN X) :=
 begin
-  unfold r_subtype r, 
-  have := quotient.lift_beta (λ (N : emb_mat U), N.pullback_r) emb_mat.strong_iso_same_pullback_r N₀ , 
-  dsimp only at *, rw hN at this, rw this, 
-  unfold emb_mat.pullback_r, apply congr_arg, ext, 
-  simp only [set.mem_image, set_coe.exists, exists_eq_right], 
-  refine ⟨λ h, _, λ h, ⟨N₀.emb x, _, h, rfl⟩⟩, 
-  dsimp at h, 
-  rcases h with ⟨x, ⟨h₁, h₂,rfl⟩⟩, 
-  simp [rep_preimage, emb_mat.groundset_equiv, h₂],  
+  unfold r_ftype r, 
+  simp_rw ←hN, 
+  simp only [quotient.lift_mk], 
+  unfold emb_mat.pullback_r, apply congr_arg, ext x, 
+  rw [rep_preimage], 
+  simp only [set.mem_set_of_eq, emb_mat.groundset_equiv ], simp, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { rcases h with ⟨y,h,h'⟩, simp_rw ←h', convert h, simp,},
+  use N₀.emb x,
+  { unfold matroid_in.groundset, rw ←hN, simp only [quotient.lift_mk], unfold emb_mat.groundset, simp,},
+  exact ⟨h, by simp⟩, 
 end 
 
 end preimages 
 
-def as_matroid (N : matroid_in U) : matroid (N.ground) := 
-let ⟨N₀,h⟩ := rep_spec N in 
+def as_matroid (N : matroid_in U) : matroid N.ground := 
 { 
-  r := N.r_subtype,
-  R0 := λ X, by {rw r_rep h X, apply N₀.mat.R0, },
-  R1 := λ X, by {rw [r_rep h X, ←rep_preimage_on_size h], apply N₀.mat.R1,},
-  R2 := λ X Y hXY, by {repeat {rw r_rep h}, apply N₀.mat.R2, exact (rep_preimage_on_subset _ hXY),} ,
-  R3 := λ X Y, by {repeat {rw r_rep h}, apply N₀.mat.R3,  } 
+  r := N.r_ftype,
+  R0 := λ X, let ⟨N₀,h⟩ := rep_spec N in by 
+  {rw r_rep h X, apply N₀.mat.R0, },
+  R1 := λ X, let ⟨N₀,h⟩ := rep_spec N in by 
+  {rw [r_rep h X, ←rep_preimage_on_size h], apply N₀.mat.R1,},
+  R2 := λ X Y hXY, let ⟨N₀,h⟩ := rep_spec N in by 
+  {repeat {rw r_rep h}, apply N₀.mat.R2, exact (rep_preimage_on_subset _ hXY),} ,
+  R3 := λ X Y, let ⟨N₀,h⟩ := rep_spec N in by 
+  {repeat {rw r_rep h}, apply N₀.mat.R3,  } 
 }
+
+lemma as_matroid_r_eq (N : matroid_in U): 
+  ∀ X, N.r X = N.as_matroid.r (subset_equiv ⟨X ∩ N.groundset, by tidy⟩) :=
+begin
+  intro X, 
+  unfold matroid_in.as_matroid matroid_in.r_ftype subset_equiv, 
+  simp only [equiv.coe_fn_mk, subtype.coe_mk], 
+  rw r_eq_r_inter_groundset, congr', 
+  ext x, simp only [set.mem_image, set.mem_inter_eq,set.mem_set_of_eq,subtype.coe_mk],
+  refine ⟨λ h, ⟨⟨x,h.2⟩,⟨⟨h.1,h.2⟩,by simp⟩⟩, λ h, _⟩,
+  rcases h with ⟨x',⟨h,rfl⟩⟩, 
+  exact h,
+end
+
+/-- as_matroid is the canonical representative for a matroid_in -/
+lemma as_matroid_is_rep (M : matroid_in U) : 
+  M = ⟦{mat := M.as_matroid, emb := function.embedding.subtype _ }⟧ := 
+begin
+  rcases M.rep_spec with ⟨M₀,h⟩, rw ←h, apply quotient.sound, 
+  
+  simp only [has_equiv.equiv, setoid.r, emb_mat.strongly_iso, as_matroid, r_ftype], 
+  dsimp only [ftype.ftype_coe],
+  refine ⟨⟨_,_⟩,λ x, _⟩, 
+  { refine emb_mat.groundset_equiv _ _, refl, },
+  begin
+    ext X, simp only [function.comp_app, r, emb_mat.pullback_r], unfold emb_mat.groundset_equiv, congr', ext x,
+    simp only [set.mem_set_of_eq, set.image_congr, set.mem_image, exists_exists_and_eq_and, subtype.val_eq_coe],
+    refine ⟨λ h, ⟨x,h, by simp⟩, λ h, _⟩, 
+    rcases h with ⟨a,ha,h⟩, simp at h, 
+    rw ←M₀.emb.inj' h, exact ha, 
+  end,
+  refl, 
+end
+
+/- lemma as_matroid_r_eq_subset (N : matroid_in U):
+  ∀ X : {X : set U // X ⊆ N.groundset}, N.r X.val = N.as_matroid.r (subset_equiv X) :=
+begin
+  intro X, 
+  convert as_matroid_r_eq N X.val, 
+  
+end -/
+
+--lemma iso_to (M₀ : emb_mat U): 
 
 def as_matroid_in (M : matroid U) : matroid_in U := 
   ⟦{U₀ := U, emb := function.embedding.refl U, mat := M}⟧
+
+
+
 
 instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
 
 def embed (M : matroid_in U) : M.ground ↪ U := subset_embed M.groundset 
 
-def subset_embed (M : matroid_in U)(R : set U)(hR : R ⊆ M.groundset) : R ↪ M.ground :=
+def subset_embed {M : matroid_in U}{R : set U}(hR : R ⊆ M.groundset) : R ↪ M.ground :=
 {to_fun  := λ x, ⟨x.val, by {cases x, tauto}⟩,
  inj'    := λ x y hxy, by {simp only [subtype.mk_eq_mk] at hxy, exact subtype.eq hxy, } }
 
 def nested_embed (M' M : matroid_in U)(hMM' : M'.groundset ⊆ M.groundset): M'.ground ↪ M'.ground :=
 {to_fun  := λ x, ⟨x.val, by simp⟩,
  inj'    := λ x y hxy, by {convert hxy; simp,} }
+
+--set_option pp.proofs true
+
+def matroid_in_ext (M M' : matroid_in U):
+  M.groundset = M'.groundset → M.r = M'.r → M = M' :=
+begin
+  intros h h', 
+  rw [as_matroid_is_rep M, as_matroid_is_rep M', quotient.sound],  
+  refine ⟨⟨_,_⟩,λ x, _⟩, 
+  {exact {to_fun := λ x, ⟨x.val, by {rw ←h, exact x.property,}⟩ , 
+          inv_fun := λ x, ⟨x.val, by {rw h, exact x.property,}⟩, 
+          left_inv := λ x, by {dsimp only, simp,}, 
+          right_inv := λ x, by {dsimp only, simp,}}, },
+  begin
+    simp_rw h', 
+    simp only [as_matroid, r_ftype], --simp_rw h', 
+    ext X, simp only [set.image_congr, function.comp_app, subtype.val_eq_coe], rw h', 
+    apply congr_arg, ext x, dsimp only [ftype.ftype_coe], 
+    simp only [set.image_congr, set.mem_image, exists_exists_and_eq_and, subtype.val_eq_coe], 
+    refine ⟨λ hx,_, λ hx, _⟩, 
+    { rcases hx with ⟨y,h₁,rfl⟩, exact ⟨y,h₁, by simp⟩,  },
+    rcases hx with ⟨⟨y, hy⟩, hy', rfl⟩, refine ⟨⟨y,hy⟩,⟨hy',_⟩⟩, simp, 
+  end,
+  refl, 
+end
+
+
+
+def from_matroid_on_subtype {E : set U}(M : matroid ⟨E⟩) :  matroid_in U := 
+⟦{mat := M, emb := function.embedding.subtype _}⟧
+
+lemma groundset_correct {E : set U}(M : matroid ⟨E⟩) : 
+  (from_matroid_on_subtype M).groundset = E :=
+by {unfold from_matroid_on_subtype groundset emb_mat.groundset, simp}
+
+lemma rank_correct {E : set U}(M : matroid ⟨E⟩)(X : set U) : 
+  (from_matroid_on_subtype M).r X = M.r ((λ x, x.val) '' X) ∩ E   :=
+by {unfold from_matroid_on_subtype groundset emb_mat.groundset, simp}
 
 
 
@@ -291,13 +414,54 @@ begin
   exact union_is_ub (subset_trans hX h1) hC₁M₂, 
 end
 
-def contract_to_matroid (M : matroid_in U)(C : set M.ground) : matroid ⟨(Cᶜ : set M.ground)⟩ :=
-let φ := M.subset_embed Cᶜ in 
-{ r := λ X, by { apply M.r, have := φ '' X, convert this, },--M.r (φ '' X ∪ C) - M.r C},
-  R0 := _,
-  R1 := _,
-  R2 := _,
-  R3 := _ }
+ def contract_to_matroid (M : matroid_in U)(C : set U): matroid ⟨(M.groundset \ C : set U)⟩ :=
+let mtype : ftype := ⟨(M.groundset \ C : set U)⟩, 
+φ : mtype → U := λ x, x.val  in  
+{ r := λ X, M.r (φ '' X ∪ C) - M.r C,
+  R0 := 
+  begin
+    intro X, dsimp only, 
+    repeat {rw matroid_in.as_matroid_r_eq}, 
+    simp only [sub_nonneg], 
+    apply M.as_matroid.R2, 
+    unfold subset_equiv,
+    simp, tauto, 
+  end,
+  R1 := 
+  begin
+    sorry, 
+  end,
+  R2 := sorry,
+  R3 := sorry } 
+
+def contract_to_matroid_in (M : matroid_in U)(C : set U) : matroid_in U := 
+  matroid_in_from_matroid_on_subtype (contract_to_matroid M C)
+
+def delete_to_matroid (M: matroid_in U)(D : set U) : matroid ⟨(M.groundset \ D : set U)⟩  := 
+let mtype : ftype := ⟨(M.groundset \ D : set U)⟩, 
+φ : mtype → U := λ x, x.val  in  
+{ r := λ X, M.r (φ '' X),
+  R0 := sorry,
+  R1 := 
+  begin
+    sorry, 
+  end,
+  R2 := sorry,
+  R3 := sorry }
+
+def delete_to_matroid_in (M : matroid_in U)(D : set U) : matroid_in U := 
+  matroid_in_from_matroid_on_subtype (delete_to_matroid M D)
+
+lemma foo (M : matroid_in U){C D : set U}(hi : C ∩ D = ∅)(hu : C ∪ D ⊆ M.groundset) : 
+  delete_to_matroid_in (contract_to_matroid_in M C) D =  contract_to_matroid_in (delete_to_matroid_in M D) C :=
+begin
+  apply matroid_in.matroid_in_ext, 
+  unfold delete_to_matroid_in contract_to_matroid_in, repeat {rw groundset_correct}, set_solver,  
+  --simp, sorry, 
+end
+
+
+
 
 /-- returns the contraction of C in M as a minor on a subtype-/
 def contract_to_emb (M : matroid_in U)(C : set M.ground) : emb_mat U := 
@@ -308,7 +472,7 @@ def contract_to_emb (M : matroid_in U)(C : set M.ground) : emb_mat U :=
 }
 
 end minor 
-
+ 
 /- the rank function given by N when applied to a subset of the embedded ground set of N.  -/
 
 
@@ -329,6 +493,7 @@ end minor
 
 
 /-
+
 /- the ground set of an emb_minor, expressed as a set of elements of M -/
 def ground (N : emb_minor M) : set U := set.range N.emb
 

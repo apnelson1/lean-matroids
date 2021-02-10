@@ -37,6 +37,9 @@ instance fintype_of (U : ftype) : fintype U := U.fin
 instance set_fintype_of (U : ftype) : fintype (set U) := 
   by {apply_instance}
 
+instance subtype_fintype_of (U : ftype)(X : set U) : fintype X := 
+  by {apply_instance}
+
 --def as_finset_univ (U : ftype) := (fintype_of U).elems 
 
 instance ftype_mem (U : ftype): has_mem U (set U) := {mem := λ x X, x ∈ X}
@@ -74,9 +77,9 @@ begin
   simp only  [size, size_nat], 
   have : (({e} : set A.E).to_finset = as_finset A {e}) := 
     by rw [as_finset, set.to_finset_inj], 
-  rw [←this],
-   
-  norm_cast, 
+  rw [←this, set.to_finset_card], norm_cast, 
+  rw fintype.card_eq_one_iff, 
+  use e; simp, 
 end
 
 lemma size_modular_ax (X Y : set A): 
@@ -769,6 +772,19 @@ lemma size_induced_partition_inter (X Y : set A) : size X = size (X ∩ Y) + siz
 lemma size_compl_sum (X : set A) : size X + size Xᶜ = size (univ : set A) := 
   by {have := size_disjoint_sum (inter_compl X), rw (union_compl X) at this, linarith}
 
+lemma size_mono_inter_left (X Y : set A) : size (X ∩ Y) ≤ size X := 
+size_monotone (inter_subset_left _ _)
+
+lemma size_mono_inter_right (X Y : set A) : size (X ∩ Y) ≤ size Y := 
+size_monotone (inter_subset_right _ _)
+
+lemma size_mono_union_left (X Y : set A) : size X ≤ size (X ∪ Y)  := 
+size_monotone (subset_union_left _ _)
+
+lemma size_mono_union_right (X Y : set A) : size Y ≤ size (X ∪ Y) := 
+size_monotone (subset_union_right _ _)
+
+
 lemma size_zero_empty {X : set A} : (size X = 0) → X = ∅ := 
 begin
   contrapose!, intros hne hs, 
@@ -820,6 +836,24 @@ begin
   unfold_coes, 
   rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
   convert size_img_inj (f.symm.to_embedding) X, 
+end
+
+lemma size_subtype_img {E : set A}(X : set (⟨E⟩ : ftype)): 
+  size (subtype.val '' X) = size X :=
+begin
+  let f : (⟨E⟩ : ftype) ↪ A := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
+  apply size_img_inj f, 
+end
+
+lemma size_inter_subtype (X E : set A) : size {e : (⟨E⟩ : ftype) | e.val ∈ X} = size (E ∩ X) := 
+begin
+  let f : (⟨E⟩ : ftype) ↪ A := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
+  suffices h : f '' {e : (⟨E⟩ : ftype) | e.val ∈ X} = E ∩ X, 
+  { rw [←size_img_inj f {e : (⟨E⟩ : ftype) | e.val ∈ X}, h]},
+  ext x, simp only [set.image_congr, set.mem_image, set.mem_inter_eq, function.embedding.coe_fn_mk, subtype.val_eq_coe], 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { rcases h with ⟨x',h,rfl⟩, simp only [set.mem_set_of_eq] at h, exact ⟨x'.property, h⟩,  },
+  exact ⟨⟨x,h.1⟩, by simp [h.2]⟩,  
 end
 
 
