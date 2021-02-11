@@ -1,332 +1,184 @@
-import ftype.basic ftype.embed
-import .rankfun .dual 
+import ftype.basic ftype.embed set_tactic.solver
+import .rankfun .dual .projection
 
-namespace ftype 
-noncomputable theory 
+open_locale classical 
+noncomputable theory
 
-@[simp] def restrict_subset {B : ftype} (R : set B) (rfun : rankfun B)  : rankfun (subftype R) := 
-{ 
-  r := λ X, rfun.r X,
-  R0 := λ X, rfun.R0 X,
-  R1 := λ X, by {simp only [subftype_coe_size], from rfun.R1 X},
-  R2 := λ X Y, by {intros H, simp, apply rfun.R2, simp at H, apply H,},
-  R3 := λ X Y, by {simp, from rfun.R3 X Y}
-}
--- simp [-has_univ.univ]
--- #check has_univ.univ
-
--- def image (f : α → β) (s : set α) : set β :=
--- {b | ∃ a, a ∈ s ∧ f a = b}
-
---let f := (embed.from_subftype R).f in 
---⟨λ X, rfun.r X, λ X, rfun.R0 X, λ X, rfun.R1 X, λ X Y, rfun.R2 X Y, λ X Y, rfun.R3 X Y⟩ 
-
-@[simp] def restrict_nested_pair {B : ftype} {R₀ R : set B} (h : R₀ ⊆ R) (rfun : rankfun (subftype R)) : rankfun (subftype R₀)  := 
-let f := embed.from_nested_pair h in 
-{ 
-  r := λ X, rfun.r (f.img X),
-  R0 := λ X, rfun.R0 (f.img X),
-  R1 := λ X, by {rw ←f.on_size, from rfun.R1 (f.img X)},
-  R2 := λ X Y hXY, rfun.R2 _ _ (f.on_subset hXY), 
-  R3 := λ X Y, by {have := rfun.R3 (f.img X) (f.img Y), rw [←f.on_union, ←f.on_inter] at this, from this},
-}
-
---⟨λ X, rfun.r (f X), λ X, rfun.R0 (f X), λ X, rfun.R1 (f X), λ X Y, rfun.R2 (f X) (f Y), λ X Y, rfun.R3 (f X) (f Y)⟩ 
-@[simp] def corestrict_subset {U : ftype} (R : set U) (M : rankfun U)  : rankfun (subftype R) := 
-let C := Rᶜ, f := embed.from_subftype R in 
-⟨ 
-  λ X_foo, M.r ((X_foo : set U) ∪ C) - M.r C,
-  λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
-  λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X, subftype_coe_size X]},
-  λ X Y hXY, by {simp only, linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left _ _ C (f.on_subset hXY))]}, 
-  λ X Y, by
-  {
-    suffices : M.r (coe (X ∪ Y) ∪ C) + M.r (coe (X ∩ Y) ∪ C) ≤ M.r (X ∪ C) + M.r (Y ∪ C), 
-      by {simp only, linarith}, 
-    simp only [subftype_coe_inter, subftype_coe_union], 
-    have h := M.R3 (X ∪ C) (Y ∪ C), 
-    rw [←union_distrib_right, ←union_distrib_union_left] at h,  
-    assumption,
-  },
-⟩ 
-
-@[simp] def corestrict_nested_pair {B : ftype} {R₀ R₁ : set B} (h : R₀ ⊆ R₁) (M : rankfun (subftype R₁)) : rankfun (subftype R₀)  := 
-let 
-  r := M.r, 
-  f := (embed.from_nested_pair h),  
-  φ := f.img, 
-  C := (φ (set.univ))ᶜ in 
-⟨
-  λ X, r (φ X ∪ C) - r C, 
-  λ X, by {rw sub_nonneg, exact M.R2 C (φ X ∪ C) (subset_union_right (φ X) C)}, 
-  λ X, by {simp only, linarith [f.on_size X, M.R0 ((φ X) ∩ C), M.R3 (φ X) C, M.R1 (φ X)]}, 
-  λ X Y hXY, by {simp only, linarith [M.R2 ((φ X) ∪ C) ((φ Y) ∪ C) (subset_union_subset_left _ _ C (f.on_subset hXY))]}, 
-  λ X Y, by 
-  {
-    simp only, 
-    suffices : M.r (φ (X ∪ Y) ∪ C) + M.r (φ (X ∩ Y) ∪ C) ≤ M.r ((φ X) ∪ C) + M.r ((φ Y) ∪ C), by linarith, 
-    have h := M.R3 ((f.img X) ∪ C) ((f.img Y) ∪ C), 
-    rw [←union_distrib_right, ←union_distrib_union_left, ←f.on_inter, ←f.on_union] at h, 
-    from h, 
-  },
-⟩
-
---- Below here still needs refactor
-
-def matroid_on {U : ftype}(E : set U) := rankfun (subftype E)
-
-section minor 
+open ftype 
 
 variables {U : ftype}
 
-inductive minor_on : set U → Type
-| self                       : minor_on univ
-| restrict   (X : set U) {E : set U} : (X ⊆ E) → minor_on E → minor_on X
-| corestrict (X : set U) {E : set U} : (X ⊆ E) → minor_on E → minor_on X
-open minor_on
 
+/-- a matroid_in U corresponds to a matroid defined on some subset E of U. Implemented as a matroid on which the nonelements of 
+E are all loops. -/
+@[ext] structure matroid_in (U : ftype) :=
+(groundset : set U)
+(carrier : matroid U)
+(support : carrier.r groundsetᶜ = 0)
 
-def to_minor : Π {E : set U}, minor_on E → rankfun U → matroid_on E
-| _ self r := restrict_subset _ r
-| _ (restrict _ hE' expr) r := restrict_nested_pair hE' (to_minor expr r)
-| _ (corestrict _ hE' expr) r := corestrict_nested_pair hE' (to_minor expr r)
+namespace matroid_in 
 
-/--simplified minor expression \ corestrict to Z, then restrict to A -/
+/-- the rank of a set X wrt a matroid_in U. Elements of X outside the groundset of U are ignored -/
+def r (M : matroid_in U)(X : set U) := M.carrier.r X 
 
-lemma restrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
-  (to_minor (restrict A (subset_univ A) self) M).r X = M.r X :=
-by simp [to_minor]
-
-lemma corestrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
-  (to_minor (corestrict A (subset_univ A) self) M).r X = M.r (X ∪ (univ \ A)) - M.r (univ \ A) :=
-by simp [to_minor]
-
-lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
-  to_minor (restrict A hAZ ((corestrict Z (subset_univ Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_univ (A ∪ Zᶜ))) self)) M :=
-  let f := (embed.from_subftype A).f, hAZc := subset_union_left A Zᶜ, hAZc_univ := subset_univ (A ∪ Zᶜ) in 
-  begin
-    
-    ext X, 
-    have set_eq : (A ∪ Zᶜ) \ A = univ \ Z 
-      := by {rw [diff_def, inter_distrib_right, ←compl_union, union_comm Z, 
-                subset_def_union_mp hAZ], simp},
-    set M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_univ self)) M) with hM', 
-
-    have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) := 
-      by {rw hM',convert rfl; simp,},
-    
-    rw set_eq at RHS, 
-    convert RHS.symm, 
-    simp [to_minor],
-  end
-
-
-lemma dual_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
-  dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M) = to_minor (corestrict A hAZ (restrict Z (subset_univ Z) self)) (dual M) := 
-  let emb := embed.from_subftype A in 
-  begin
-    rw switch_restrict_corestrict, ext X, apply eq.symm, 
-    have hJ : ∀ (J : set U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (univ \ Z) := 
-      λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, subset_def_union_mp (subset_trans hJ hAZ), inter_comm, union_comm], 
-    have hset : size ((X:set U) ∩ (Z \ A)) = 0 := by 
-    {
-      suffices : ((X:set U) ∩ (Z \ A)) = ∅, 
-      rw this, exact size_empty U,
-      have := coe_set_is_subset X, 
-      tidy, 
-    },
-    have hempty : (Z\A)ᶜ = A ∪ (univ \ Z) := 
-      by {rw [←empty_union (Z\A), hJ ∅ (empty_subset _), diff_empty]},
-    
-    
-    have := calc (to_minor (corestrict A hAZ (restrict Z (subset_univ Z) self)) (dual M)).r X
-           = (size ((X:set U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r univ) - (size (Z\A) + M.r (Z\A)ᶜ - M.r univ )       
-            : by {simp [to_minor, dual], } 
-       ... = size (X:set U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ                                                   
-            : by linarith [size_modular (X :set U) (Z\A), hset, emb.on_size X]
-       ... = size (X:set U) + M.r ((A \ X) ∪ (univ \ Z)) - M.r (A ∪ (univ \ Z))                                        
-            : by {congr', finish}
-       ... = size (X:set U) + (M.r ((A \ X) ∪ (univ \ Z)) - M.r (univ \ Z)) - (M.r (A ∪ (univ \ Z)) - M.r (univ \ Z))        
-            : by linarith 
-       ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M)).r X                     
-            : by {simp [dual, to_minor],} , 
-
-    rw ←switch_restrict_corestrict, assumption,         
-  end
-
-lemma dual_corestrict_restrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
-  dual (to_minor (corestrict A hAZ (restrict Z (subset_univ Z) self)) M) = to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) (dual M) := 
-  by {nth_rewrite 0 ←(dual_dual M), rw [←dual_restrict_corestrict, dual_dual]}
-
-
-lemma restrict_univ (M : rankfun U){A : set U} (expr: minor_on A) : 
-  to_minor (restrict A (subset_refl A) expr) M = to_minor expr M := 
-  by {ext X, simp [to_minor], congr',    }-- cases X,refl}
-
-lemma corestrict_univ (M : rankfun U){A : set U} (expr: minor_on A) : 
-  to_minor (corestrict A (subset_refl A) expr) M = to_minor expr M :=
+lemma ext' (M₁ M₂ : matroid_in U)(h_ground : M₁.groundset = M₂.groundset)(h_r : ∀ X ⊆ M₁.groundset, M₁.r X = M₂.r X):
+  M₁ = M₂ := 
 begin
-  simp [to_minor],
-  set M' := to_minor expr M,
-  apply rankfun.ext, ext X, 
-  simp only,
-  set f := (embed.from_nested_pair (subset_refl A)).f,
-  have : (embed.to_subftype A A _) = univ := rfl,
-  rw [this,  ftype.compl_univ, union_empty, rank_empty M'],
-  rw [(by cases X; refl: f X = X)],
-  linarith,
+  apply matroid_in.ext _ _ h_ground, ext X,
+  specialize h_r (X ∩ M₁.groundset) (by simp),  
+  rw (by simp : X = (X ∩ M₁.groundset) ∪ (X ∩ M₁.groundsetᶜ)), 
+  have h₁ := matroid.rank_inter_rank_zero X M₁.support,
+  have h₂ := matroid.rank_inter_rank_zero X M₂.support, rw ←h_ground at h₂, 
+  rw [matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.groundset) h₁, matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.groundset) h₂], 
+  exact h_r, 
 end
 
-lemma dual_restrict (M: rankfun U) (A : set U) : 
-  dual (to_minor (restrict A (subset_univ A) self) M) = to_minor (corestrict A (subset_univ A) self) (dual M) := 
-    by rw [←(corestrict_univ _ (restrict A (subset_univ A) self)), dual_corestrict_restrict, restrict_univ]
-    
-lemma dual_corestrict (M: rankfun U) (A : set U) : 
-  dual (to_minor (corestrict A (subset_univ A) self) M) = to_minor (restrict A (subset_univ A) self) (dual M) := 
-    by rw [←(restrict_univ _ (corestrict A (subset_univ A) self)), dual_restrict_corestrict, corestrict_univ]
+/-- the ftype coming from the groundset of M -/
+def ground (M : matroid_in U) := subftype M.groundset
 
-lemma switch_corestrict_restrict (M : rankfun U) (A Z : set U) (hAZ : A ⊆ Z) : 
-  to_minor (corestrict A hAZ ((restrict Z (subset_univ Z)) self)) M = to_minor (restrict A (subset_union_left A Zᶜ) ((corestrict (A ∪ Zᶜ) (subset_univ (A ∪ Zᶜ))) self)) M :=
-  by {nth_rewrite 0 ←(dual_dual M), rw [←dual_restrict_corestrict, switch_restrict_corestrict, dual_corestrict_restrict, dual_dual]}
+/-- a matroid_in U gives a matroid on a subtype -/
+def as_mat_on (M : matroid_in U)(E : set U) : matroid (subftype E) := 
+{ r := λ X, M.r X,
+  R0 := λ X, M.carrier.R0 _,
+  R1 := λ X, by {dsimp only [r], rw ←size_subtype_img, apply M.carrier.R1},
+  R2 := λ X Y hXY, by {apply M.carrier.R2, apply set.image_subset _ hXY, },
+  R3 := λ X Y, by {dsimp only, convert M.carrier.R3 _ _, apply set.image_union, exact (set.image_inter subtype.val_injective).symm} }
 
+/-- a matroid_in U, viewed as a matroid on the subtype defined by its groundset -/
+def as_mat (M : matroid_in U) : matroid M.ground := as_mat_on M M.groundset 
 
-lemma restrict_restrict (M : rankfun U) (A Z : set U) (hAZ : A ⊆ Z) : 
-  to_minor (restrict A hAZ (restrict Z (subset_univ Z) self)) M = to_minor (restrict A (subset_univ A) self) M :=
-  let f := (embed.from_subftype A).f in 
-  by {ext X,calc _ = M.r (f X) : rfl ...= _ : rfl}
-     
-#check minor_on 
-
-/-lemma corestrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) : 
-  to_minor (corestrict A hAZ (corestrict Z (subset_univ Z) self)) M = to_minor (corestrict A (subset_univ A) self) M :=   
-  begin
-    nth_rewrite 0 ←(dual_dual M), 
-    have := dual_restrict (dual M) A, 
-    
-    --unfold to_minor at *,
-    
-    
-    
-    --←dual_restrict, 
-    /-let U' := subftype Z, 
-    let expr := ((corestrict univ (subset_refl univ) self) : minor_on (univ : set U')),
-    let M₀ := to_minor expr, 
-    have := corestrict_univ M₀ expr-/
-    --have := @corestrict_univ (subftype Z) M₀ univ expr, 
-    --nth_rewrite 0 ←(dual_dual M),
-    
-    
-    --have := 
-    --calc  
-    sorry, 
-  end-/
-
-@[simp] def reduced_expr  (A Z : set U) (hAZ : A ⊆ Z) : minor_on A := 
-  restrict A hAZ ((corestrict Z (subset_univ Z)) self)
-
-lemma restriction_of_reduced  {M : rankfun U} (A Z A' : set U) (hA'A : A' ⊆ A) (hAZ : A ⊆ Z) : 
-  to_minor (restrict A' hA'A (reduced_expr A Z hAZ)) M = to_minor (reduced_expr A' Z (subset_trans hA'A hAZ)) M := rfl
-
-lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : set U) (hZ'A : Z' ⊆ A) (hAZ : A ⊆ Z) : 
-  to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z \ A)) (subset_union_left Z' _)) M := 
-  let  J  := Z' ∪ (Z \ A),
-       M' := to_minor (reduced_expr A Z hAZ) M, 
-       N  := (to_minor (reduced_expr Z' J (subset_union_left _ _)) M) in 
-  begin
-    ext, rename x X, 
-    have equiv : (A \ Z') ∪ (univ \ Z) = (univ \ J) := by 
-    {
-      simp only [univ_diff, J, diff_def, univ_inter],
-      rw [compl_union, compl_inter, inter_distrib_left, ←compl_union Z', 
-          (subset_def_union_mp (subset_trans hZ'A hAZ)), compl_compl, union_comm Zᶜ, inter_comm A], 
-    }, 
-    have LHS := 
-    calc     (to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ)) M).r X
-           = (corestrict_nested_pair hZ'A M').r X                                                   : rfl 
-      ...  = M.r (X ∪ (A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z) - (M.r ((A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z)) : rfl  
-      ...  = M.r (X ∪ (A \ Z') ∪ (univ \ Z)) - M.r ((A \ Z') ∪ (univ \ Z))                                : by linarith
-      ...  = M.r (X ∪ (univ \ J)) - M.r (univ \ J)                                                        : by rw [union_assoc, equiv],
-
-    rw LHS, apply eq.symm, clear LHS, calc N.r X = _ : rfl, 
-  end
+@[simp] lemma as_mat_r (M : matroid_in U)(X : set (subftype M.groundset)): 
+  M.as_mat.r X = M.r (X : set U) :=
+rfl 
 
 
--- Every minor expression is equivalent to a reduced one. 
 
-lemma has_reduced_expr {M : rankfun U} {E : set U} (expr : minor_on E) :
-  ∃ (Z : set U) (hZ : E ⊆ Z), 
-  to_minor (reduced_expr E Z hZ) M = to_minor expr M := 
+/-- a matroid_in U, constructed from a matroid on a subtype of U -/
+def of_mat {E : set U}(N : matroid (subftype E)) : matroid_in U := 
+{ groundset := E,
+  carrier := 
+  { r := λ X, N.r (inter_subtype E X ),
+    R0 := λ X, N.R0 _,
+    R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (size_mono_inter_right E X)), apply size_inter_subtype },
+    R2 := λ X Y hXY, by {dsimp only, apply N.R2, tauto,  },
+    R3 := λ X Y, N.R3 _ _, },
+  support := by {simp [inter_subtype],} }
+
+@[simp] lemma of_mat_groundset {E : set U}(N : matroid (subftype E)) : (of_mat N).groundset = E := rfl 
+
+@[simp] lemma of_mat_r {E : set U}(N : matroid (subftype E))(X : set U) : (of_mat N).r X = N.r (inter_subtype E X) := rfl 
+
+
+lemma as_mat_of_mat {E : set U}(N : matroid (subftype E)) : 
+  as_mat (of_mat N) = N :=
 begin
-  induction expr with X₁ E₁ hX₁E₁ minor_expr IH 
-                    X₁ A₁ hX₁A₁ minor_expr IH,
-  /- self -/                  
-  { use univ,  use subset_refl univ, simp [reduced_expr], rw [restrict_univ, corestrict_univ] },
-  /-restrict-/
-  {
-    rcases IH with ⟨Z, ⟨hE₁Z, h⟩⟩,
-    use Z, use subset_trans hX₁E₁ hE₁Z, 
-    rw ← restriction_of_reduced,
-    dunfold to_minor,
-    rw h,
-  },
-  /-corestrict-/
-  {
-    rcases IH with ⟨Z, ⟨hA₁Z, h⟩⟩,
-    use X₁ ∪ (Z \ A₁), use subset_union_left X₁ _,
-    rw ←corestriction_of_reduced _ _ _ hX₁A₁ hA₁Z,
-    dunfold to_minor,
-    rw h, 
-  }
+  ext X, dsimp only [as_mat, as_mat_on, of_mat], convert rfl, ext x, 
+  suffices: x ∈ X ↔ x.val ∈ subtype.val '' X, from this, 
+  simp only [set.image_congr, set.mem_image, exists_eq_right, subtype.exists, subtype.val_eq_coe],
+  refine ⟨λ h, by {cases x, tauto}, λ h, _⟩,
+  cases x with x hx, rcases h with ⟨y,z, h⟩, convert h.1, convert h.2.symm, 
 end
 
-/-lemma has_representation {M : rankfun U} {E : set U} (expr : minor_on E) :
-  (∃ (C D : set U) (hCD : C ∩ D = ∅),  
-    (C ∪ D)ᶜ = E 
-    ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) :=
+lemma of_mat_as_mat_on {E E' : set U}(N : matroid (subftype E))(h : E' = E): 
+   of_mat ((of_mat N).as_mat_on E') = of_mat N := 
 begin
-  sorry, 
-end-/
+  apply ext', convert rfl, 
+  intros X hX, 
+  simp only [of_mat, as_mat_on], dsimp only [ftype.ftype_coe], 
+  convert rfl, exact h.symm, 
+  dsimp only [ftype.ftype_coe, r, inter_subtype],   
+  ext Y, convert rfl,  ext e, rcases e with ⟨e,he⟩,  
+  simp only [set.image_congr, set.mem_image, exists_eq_right, subtype.exists, subtype.val_eq_coe,
+  exists_eq_right, subtype.coe_mk], 
+  refine ⟨λ h', _, λ h', _⟩,
+  {simp only at h', rcases h' with ⟨_, h'', rfl⟩, exact h'',}, 
+  rw h, exact ⟨⟨e,he⟩,⟨h',rfl⟩⟩,
+end
 
 
-/-lemma has_good_representation {M : rankfun U} {E : set U} (expr : minor_on E) :
-  (∃ (C D : set U) (hCD : C ∩ D = ∅),  
-    (C ∪ D)ᶜ = E ∧
-    is_indep M C ∧ is_coindep M D 
-    ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) := sorry-/
+def as_matroid_in (M : matroid U) : matroid_in U := ⟨univ, M, by simp⟩
+
+instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
+
+section minor 
+
+/-- minor relation between two matroid_in U-/
+def is_minor (N M : matroid_in U) : Prop := 
+  (N.groundset ⊆ M.groundset) ∧ 
+  ∃ C ⊆ M.groundset \ N.groundset, (∀ X ⊆ N.groundset, N.r X = M.r (X ∪ C) - M.r C)  
+
+/-- minor relation between a matroid_in U and a matroid U -/
+def is_minor_of (N : matroid_in U)(M : matroid U) := 
+  is_minor N M 
+
+lemma minor_trans: transitive (λ (M₁ M₂ : matroid_in U), is_minor M₁ M₂) :=
+begin
+  rintros M₁ M₂ M₃ ⟨h1,⟨C₁,hC₁,h1'⟩⟩ ⟨h2,⟨C₂,hC₂,h2'⟩⟩, 
+  refine ⟨subset_trans h1 h2,⟨C₁ ∪ C₂,⟨_,λ X hX, _⟩⟩⟩, 
+  { convert set.union_subset_union hC₁ hC₂, ext, 
+    simp only [ftype.diff_def, set.mem_inter_eq, set.mem_union_eq, set.mem_compl_eq], 
+    tauto, },
+  -- set_solver should work for the goal above, but it is glacial
+  have hC₁M₂: C₁ ⊆ M₂.groundset := by 
+  { intros x hx, simp only [ftype.diff_def, set.subset_inter_iff] at hC₁, tauto,},
+  rw [h1' X hX, h2' (X ∪ C₁) _, h2' C₁ hC₁M₂, ←union_assoc],  ring,
+  exact union_is_ub (subset_trans hX h1) hC₁M₂, 
+end 
+
+def contract (M : matroid_in U)(C : set U) : matroid_in U := 
+⟨ M.groundset \ C, 
+  M.carrier.project C, 
+  by {convert M.carrier.projected_set_union_rank_zero C M.support, set_solver}⟩
+
+@[simp] lemma contract_rank (M : matroid_in U)(C X: set U): 
+  (M.contract C).r X = M.r (X ∪ C) - M.r C :=
+M.carrier.project_r _ _ 
+
+@[simp] lemma contract_groundset (M : matroid_in U)(C: set U):
+  (M.contract C).groundset = M.groundset \ C := 
+rfl 
+
+def delete (M : matroid_in U)(D : set U) : matroid_in U := 
+⟨ M.groundset \ D, 
+  M.carrier.loopify D, 
+  by {convert M.carrier.loopified_set_union_rank_zero D M.support, set_solver,}⟩
+
+@[simp] lemma delete_rank (M : matroid_in U)(D X: set U): 
+  (M.delete D).r X = M.r (X \ D) :=
+rfl
+
+@[simp] lemma delete_groundset (M : matroid_in U)(D: set U):
+  (M.delete D).groundset = M.groundset \ D := 
+rfl 
+
+lemma con_del_eq_del_con (M : matroid_in U)(C D : set U)(h : C ∩ D = ∅) : 
+  (M.contract C).delete D = (M.delete D).contract C := 
+begin
+  apply ext', simp [inter_right_comm _ Cᶜ], 
+  intros X hX, 
+  simp only [diff_def, matroid_in.contract_rank, matroid_in.delete_rank], 
+  convert rfl;
+  set_solver,
+end
+
+
+lemma dual_con_eq_del_dual (M : matroid_in U)(A : set U)(hA : A ⊆ M.groundset): 
+  of_mat ((M.contract A).as_mat.dual) = (of_mat M.as_mat.dual).delete A :=
+begin
+  refine ext' _ _ (by simp) (λ X hX, _),
   
-end minor 
-end ftype 
+  simp only [ftype.diff_def, delete_rank, of_mat_r, matroid.dual_r, contract_groundset,
+  contract_rank, as_mat_r] with coe_up, 
 
 
-
-
--- A larger-rank set can be used to add a smaller-rank one. Old proof that takes a minor
-
-/-lemma rank_augment {M : rankfun U} {X Z : set U} : (M.r X < M.r Z) → 
-  ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
-let 
-    hcr    : Z \ X ⊆ X ∪ Z         := subset_trans (diff_subset Z X) (subset_union_right X Z),
-    hr     : X ∪ Z ⊆ univ             :=  subset_univ (X ∪ Z),  
-    hdiff  : (X ∪ Z) \ (Z \ X) = X := union_diff_diff _ _,
-    hunion : (Z \ X) ∪ X = X ∪ Z   := by rw [union_comm _ X, union_diff] 
-in 
-begin
-  intros hrXrZ, by_contradiction h, push_neg at h, 
-  --pertinent minor M' : restrict to X ∪ Z then corestrict to Z-X
-  let M' := to_minor (corestrict (Z \ X) hcr (restrict (X ∪ Z) hr self)) M, 
-  -- simplified rank function of M' 
-  have hrM' : ∀ (J : subftype (Z \ X)), M'.r J = M.r (J ∪ X) - M.r (X) := 
-    by {intros J, calc _  = M.r (J ∪ ((X ∪ Z) \ (Z \ X))) - M.r ((X ∪ Z) \ (Z \ X)) : rfl ... = _ : by rw hdiff}, 
-
-  have hr'univ := hrM' univ, 
-  rw [coe_univ (Z \ X), hunion] at hr'univ, 
-
-  have : M'.r univ ≠ 0 := by linarith [by calc M'.r univ = _ : hr'univ ... ≥ M.r Z - M.r X : by linarith [M.R2 Z (X ∪ Z) (subset_union_right X Z)]],
-
-  apply this, apply loopy_rank_zero, intros e he,
-  specialize h e (subset_trans ((e: subftype (Z \ X)).property) (diff_subset _ _ )), 
-  rw coe_single_subftype_compose at h, 
-  rw [hrM' e, union_comm, coe_subftype_single_compose],
-  linarith [M.R2 _ _ (subset_union_left X e)],
+  simp only [ftype.diff_def, matroid_in.contract_groundset, set.subset_inter_iff, matroid_in.of_mat_groundset] at hX, 
+  
+  rw (λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
+  rw [inter_comm _ Aᶜ, ←inter_assoc], 
+  convert rfl; { ext, simp, tauto},
 end
--/
+
+end minor 
+
+end matroid_in 
+

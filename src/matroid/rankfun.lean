@@ -23,38 +23,38 @@ def rank (M : matroid U) := M.r univ
 /-- rank is nonnegative -/
 lemma rank_nonneg (M : matroid U)(X : set U):
   0 ≤ M.r X := 
-  M.R0 X 
+M.R0 X 
 
 /-- rank is bounded above by size -/
 lemma rank_le_size (M : matroid U)(X : set U):
-   M.r X ≤ size X := 
-   M.R1 X 
+  M.r X ≤ size X := 
+M.R1 X 
 
 /-- rank is monotone wrt set inclusion -/
 lemma rank_mono (M : matroid U){X Y : set U}:
   X ⊆ Y → M.r X ≤ M.r Y := 
-  M.R2 X Y
+M.R2 X Y
 
 /-- rank is submodular -/
 lemma rank_submod (M : matroid U)(X Y : set U):
   M.r (X ∪ Y) + M.r (X ∩ Y) ≤ M.r X + M.r Y := 
-  M.R3 X Y 
+M.R3 X Y 
 
 lemma rank_mono_inter_left (M : matroid U)(X Y : set U): 
   M.r (X ∩ Y) ≤ M.r X := 
-  M.rank_mono (inter_subset_left X Y)
+M.rank_mono (inter_subset_left X Y)
 
 lemma rank_mono_union_left (M : matroid U)(X Y : set U) : 
   M.r X ≤ M.r (X ∪ Y) := 
-  M.rank_mono (subset_union_left X Y)
+M.rank_mono (subset_union_left X Y)
 
 lemma rank_mono_inter_right (M : matroid U)(X Y : set U): 
   M.r (X ∩ Y) ≤ M.r Y := 
-  M.rank_mono (inter_subset_right X Y)
+M.rank_mono (inter_subset_right X Y)
 
 lemma rank_mono_union_right (M : matroid U)(X Y : set U) : 
   M.r Y ≤ M.r (X ∪ Y) := 
-  M.rank_mono (subset_union_right X Y)
+M.rank_mono (subset_union_right X Y)
 
 lemma rank_eq_zero_of_le_zero {M : matroid U}{X : set U}:
   M.r X ≤ 0 → M.r X = 0 := 
@@ -78,35 +78,35 @@ lemma rank_lt_size_ne_empty {M : matroid U}{X : set U}:
 
 lemma rank_single_ub (M : matroid U)(e : U):
   M.r e ≤ 1 := 
-  by {rw ←(size_single e), exact M.rank_le_size e}
+by {rw ←(size_single e), exact M.rank_le_size e}
 
 lemma rank_le_univ (M : matroid U)(X : set U) : 
   M.r X ≤ M.r univ := 
-  M.rank_mono (subset_univ X)
+M.rank_mono (subset_univ X)
 
 lemma rank_compl_univ (M : matroid U): 
   M.r (univᶜ) = 0 := 
-  by rw [ftype.compl_univ, rank_empty]
+by rw [ftype.compl_univ, rank_empty]
 
 lemma rank_gt_zero_of_ne {M : matroid U}{X : set U}:
   M.r X ≠ 0 → 0 < M.r X := 
-  λ h, lt_of_le_of_ne (M.rank_nonneg X) (ne.symm h)
+λ h, lt_of_le_of_ne (M.rank_nonneg X) (ne.symm h)
 
 lemma rank_eq_of_le_supset {M : matroid U}{X Y : set U}:
   X ⊆ Y → (M.r Y ≤ M.r X) → M.r X = M.r Y :=
-  λ h h', (le_antisymm (M.rank_mono h) h') 
+λ h h', (le_antisymm (M.rank_mono h) h') 
 
 lemma rank_eq_of_le_union {M : matroid U}{X Y : set U}:
   M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
-  λ h, ((rank_eq_of_le_supset ((subset_union_left X Y))) h).symm
+λ h, ((rank_eq_of_le_supset ((subset_union_left X Y))) h).symm
 
 lemma rank_eq_of_not_lt_supset {M : matroid U}{X Y : set U}:
   X ⊆ Y → ¬(M.r X < M.r Y) → M.r X = M.r Y :=
-  λ h h', rank_eq_of_le_supset h (int.le_of_not_gt' h')
+λ h h', rank_eq_of_le_supset h (int.le_of_not_gt' h')
 
 lemma rank_eq_of_not_lt_union {M : matroid U}{X Y : set U}:
   ¬ (M.r X < M.r (X ∪ Y)) → M.r (X ∪ Y) = M.r X :=
-  λ h', rank_eq_of_le_union (int.le_of_not_gt' h')
+λ h', rank_eq_of_le_union (int.le_of_not_gt' h')
 
 @[simp] lemma rank_eq_rank_union_rank_zero {M : matroid U}(X : set U){Y :set U}:
   M.r Y = 0 → M.r (X ∪ Y) = M.r X := 
@@ -122,20 +122,20 @@ lemma rank_zero_of_union_rank_zero {M : matroid U}{X Y : set U}:
 
 lemma rank_eq_of_le_union_supset {M : matroid U}(X Y Z: set U):
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
-  begin
-    intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
-    have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_def_inter_mp hXY] ,
-    have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_def_union_mp hXY ],
-    linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
-  end 
+begin
+  intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
+  have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_def_inter_mp hXY] ,
+  have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_def_union_mp hXY ],
+  linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
+end 
 
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
-  by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
+by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ e) ≤ M.r X + 1 := 
-  by linarith [rank_subadditive M X e, rank_single_ub M e]
+by linarith [rank_subadditive M X e, rank_single_ub M e]
 
 lemma rank_eq_add_one_of_ne_aug {M : matroid U}{X : set U}{e : U}:
   M.r (X ∪ e) ≠ M.r X → M.r (X ∪ e) = M.r X + 1 := 
@@ -155,19 +155,19 @@ by {nth_rewrite 0 ((union_diff_of_subset hXY).symm), apply rank_subadditive}
 
 lemma rank_diff_le_size_diff (M : matroid U){X Y : set U}(hXY : X ⊆ Y) :
   M.r Y - M.r X ≤ size Y - size X := 
-  by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.rank_le_size (Y \ X )]
+by linarith [(rank_diff_subadditive M hXY), diff_size hXY, M.rank_le_size (Y \ X )]
     
 lemma submod_three_sets (M : matroid U)(X Y Y' : set U) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
-  by {have := M.rank_submod (X ∪ Y) (X ∪ Y'), rw [←union_distrib_left, ←union_distrib_union_right] at this, exact this}
+by {have := M.rank_submod (X ∪ Y) (X ∪ Y'), rw [←union_distrib_left, ←union_distrib_union_right] at this, exact this}
 
 lemma submod_three_sets_right (M : matroid U)(X Y Y' : set U) :
   M.r ((Y ∪ Y') ∪ X) + M.r ((Y ∩ Y') ∪ X) ≤ M.r (Y ∪ X) + M.r (Y' ∪ X) := 
-  by {simp_rw ←(union_comm X), apply submod_three_sets} 
+by {simp_rw ←(union_comm X), apply submod_three_sets} 
 
 lemma submod_three_sets_disj (M : matroid U)(X Y Y' : set U)(hYY' : Y ∩ Y' = ∅) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
-  by {have := submod_three_sets M X Y Y', rw [hYY', union_empty] at this, exact this}
+by {have := submod_three_sets M X Y Y', rw [hYY', union_empty] at this, exact this}
 
 theorem rank_augment {M : matroid U} {X Z : set U} : (M.r X < M.r Z) → 
   ∃ (z : U), z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
@@ -249,15 +249,15 @@ def is_dep (M : matroid U) : set U → Prop :=
 
 lemma indep_iff_r {M : matroid U} {X : set U}: 
   M.is_indep X ↔ M.r X = size X := 
-  by refl 
+by refl 
 
 lemma r_indep {M : matroid U}{X : set U}:
   M.is_indep X → M.r X = size X :=
-  indep_iff_r.mp 
+indep_iff_r.mp 
 
 lemma dep_iff_r {M : matroid U} {X : set U}:
   is_dep M X ↔ M.r X < size X := 
-  by {unfold is_dep, rw indep_iff_r, exact ⟨λ h, (ne.le_iff_lt h).mp (M.rank_le_size X), λ h, by linarith⟩}
+by {unfold is_dep, rw indep_iff_r, exact ⟨λ h, (ne.le_iff_lt h).mp (M.rank_le_size X), λ h, by linarith⟩}
 
 --instance coe_coindep {M : matroid U} : has_coe (coindep M) U := ⟨λ I, I.val⟩  
 
@@ -442,11 +442,11 @@ end
 
 lemma r_cct {M : matroid U} {C : set U} :
   M.is_circuit C → M.r C = size C - 1 := 
-  λ hC, ((circuit_iff_r C).mp hC).1
+λ hC, ((circuit_iff_r C).mp hC).1
   
 lemma r_cct_ssub {M : matroid U} {C Y : set U} : 
   M.is_circuit C → (Y ⊂ C) → M.r Y = size Y :=
-  λ hC hYC, (((circuit_iff_r C).mp hC).2 Y hYC)
+λ hC hYC, (((circuit_iff_r C).mp hC).2 Y hYC)
 
 lemma cocircuit_iff_r {M : matroid U} (X : set U):
   M.is_cocircuit X ↔ (M.r Xᶜ = M.r univ - 1) ∧ (∀ Y: set U, Y ⊂ X → M.r Yᶜ = M.r univ) := 
@@ -673,7 +673,6 @@ lemma union_cl_rank_right (M : matroid U)(X Y : set U) :
   M.r (X ∪ (M.cl Y)) = M.r (X ∪ Y) :=
 by {rw [union_comm, union_comm _ Y], apply union_cl_rank_left} 
 
-
 lemma cl_idem (M : matroid U)(X : set U) :
   cl M (cl M X) = cl M X := 
 begin
@@ -682,7 +681,6 @@ begin
   apply rank_eq_of_le_union, 
   linarith [M.rank_cl X, M.union_cl_rank_left X Y], 
 end
-
 
 lemma spans_iff_cl_spans {M : matroid U}{X Y : set U}:
   M.spans X Y ↔ M.spans (M.cl X) Y :=
@@ -697,8 +695,6 @@ lemma cl_monotone (M : matroid U){X Y : set U}:
 λ h, by {rw subset_cl_iff_r, apply rank_eq_of_le_union, 
           rw [union_cl_rank_right, union_comm, subset_def_union_mp h]}
   
-  
-
 lemma nonelem_cl_iff_r {M : matroid U}{X : set U}{e : U} :
   e ∉ M.cl X ↔ M.r (X ∪ e) = M.r X + 1 :=
 begin
@@ -718,7 +714,6 @@ by rw [spans_iff_r,elem_cl_iff_r]
 lemma nonelem_cl_iff_nonspans {M : matroid U}{X : set U}{e : U}:
   e ∉ M.cl X ↔ ¬M.spans X e :=
 ⟨λ h, λ hn, h (elem_cl_iff_spans.mpr hn), λ h, λ hn, h (elem_cl_iff_spans.mp hn)⟩
-
 
 lemma cl4 (M : matroid U)(X : set U)(e f : U) : 
   e ∈ M.cl (X ∪ f) \ M.cl X  → f ∈ M.cl (X ∪ e) \ M.cl X := 
@@ -789,7 +784,6 @@ begin
   convert M.rank_mono h, 
   from eq.symm (rank_loops M), 
 end
-
 
 lemma flat_iff_r {M : matroid U} (X : set U) :
   M.is_flat X ↔ ∀ Y, X ⊂ Y → M.r X < M.r Y := 
@@ -1322,7 +1316,6 @@ begin
   from I2 hB.1 (basis_is_indep hB.2),  
 end
 
-
 lemma elem_cl_iff_i {M : matroid U}{X : set U}{e : U} :
   e ∈ M.cl X ↔ ∃ I ⊆ X, M.is_indep I ∧ ∀ J ⊆ X ∪ e, is_indep M J → size J ≤ size I :=
 begin
@@ -1338,7 +1331,6 @@ begin
   rw [←hJ₃,hJ₂], rw ←(r_indep hIind) at hIX,  
   from le_trans hIX (M.rank_mono hI), 
 end
-
 
 lemma rank_eq_iff_exists_basis_of (M : matroid U) (X : set U){n : ℤ}:
   M.r X = n ↔ ∃ B, M.is_basis_of B X ∧ size B = n := 

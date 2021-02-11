@@ -14,7 +14,6 @@ def subftype {A : ftype} (ground : set A) : ftype :=
   (f     : A → B )
   (f_inj : function.injective f)
 
-
 instance emb_to_fn {A B : ftype} : has_coe_to_fun (embed A B) := {F := λ _, A → B.E, coe := embed.f}
 
 def embed.img {A B : ftype}(emb : embed A B): set A → set B := 
@@ -63,16 +62,25 @@ lemma embed.compose_nested_triple {A : ftype}(X₁ X₂ X₃ : set A) (h₁₂ :
 
 
 --Subalgebra coercion 
-mk_simp_attribute coe_up "upwards coercion simp lemmas"
 
-instance coe_elem_from_subftype {A : ftype} {S : set A} : has_coe (subftype S).E A := ⟨embed.from_subftype S⟩
 
-instance coe_set_from_subftype {A : ftype} {S : set A} : has_coe (set (subftype S).E) (set A) := ⟨λ X, coe '' X⟩ 
+--instance coe_to_coe_set {α β: Type}[has_coe α β] : has_coe (set α) (set β) := ⟨λ X, coe '' X⟩
 
-@[coe_up] lemma subftype_coe_size {A : ftype} {S : set A} (X : set (subftype S)) : size X = size (X : set A) := 
+instance coe_elem_from_subftype {A : ftype} {S : set A} : has_coe (subftype S) A := ⟨subtype.val⟩
+
+instance coe_set_from_subftype {A : ftype} {S : set A} : has_coe (set (subftype S)) (set A) := ⟨λ X, coe '' X⟩ 
+
+
+--instance coe_single_from_subftype {A : ftype} {S : set A} : has_coe (single (subftype S)) (single A) := ⟨(embed.from_subset S).single_emb⟩ 
+
+--@[simp] lemma coe_single_subftype_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: single A): set A) = (e : set A) := rfl  
+--lemma coe_subftype_single_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: subftype S): set A) = (e : set A) := rfl  
+
+@[simp] lemma subftype_coe_size {A : ftype} {S : set A} (X : set (subftype S)) : size X = size (X : set A) := 
   ((embed.from_subftype S).on_size X).symm 
 
-@[coe_up] lemma subftype_coe_subset {A : ftype} {S : set A} {X Y : set (subftype S)}: (X ⊆ Y) ↔ ((X: set A) ⊆ (Y: set A)) :=
+
+@[simp] lemma subftype_coe_subset {A : ftype} {S : set A} {X Y : set (subftype S)}: (X ⊆ Y) ↔ ((X: set A) ⊆ (Y: set A)) :=
 begin
   refine ⟨λ h, (embed.from_subftype S).on_subset h, λ h, _⟩,
   have h1 : ∀ (Z : set (subftype S)), (Z : set A) = (coe '' Z) := λ Z, rfl, 
@@ -82,16 +90,15 @@ begin
   assumption, 
 end
 
-
-@[coe_up] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: 
+@[simp] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: 
   (((X ∪ Y) : set (subftype S)) : set A) = ((X: set A) ∪ (Y:set A)) := 
   (embed.from_subftype S).on_union
  
-@[coe_up] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}:
+@[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}:
   (((X ∩ Y) : set (subftype S)) : set A) = ((X: set A) ∩ (Y:set A)) := 
   (embed.from_subftype S).on_inter
 
-@[coe_up] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)}:
+@[simp] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)}:
   (((Xᶜ : set (subftype S))) : set A) = S \ (X : set A)  := 
 begin
   -- Fix this garbage! 
@@ -102,53 +109,63 @@ begin
   -- No really, fix it! 
 end 
 
-@[coe_up] lemma coe_univ {A : ftype} (S : set A) : 
+@[simp] lemma coe_univ {A : ftype} (S : set A) : 
   ((univ : set (subftype S)) : set A) = S := 
 by tidy 
 
-@[coe_up] lemma coe_empty {A : ftype} (S : set A) : 
+@[simp] lemma coe_empty {A : ftype} (S : set A) : 
   ((∅ : set (subftype S)) : set A) = ∅ :=
 by tidy 
 
-@[coe_up] lemma coe_set_is_subset {A : ftype} {S : set A} (X : set (subftype S)):
+@[simp] lemma coe_set_is_subset {A : ftype} {S : set A} (X : set (subftype S)):
   (X : set A) ⊆ S := 
 by tidy
 
-@[coe_up] lemma coe_img_set {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(X : set (subftype Y)) :
+@[simp] lemma coe_img_set {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(X : set (subftype Y)) :
   (((embed.from_nested_pair hYY').img X) : set A) = (X : set A) := 
 by {simp only [embed.img], unfold_coes, tidy}
 
-@[coe_up] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
+@[simp] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
   (((embed.from_nested_pair hYY') x ) : A) = (x : A) := 
 by {unfold_coes, tidy}
 
-section inter_subtype
 
-variables {A : ftype}(E : set A)
 
-/-- the intersection X ∩ E, viewed as a set E -/
-def inter_subtype (X : set A): set (subftype E) := {e : subftype E | e.val ∈ X}
 
-@[coe_up] lemma size_inter_subtype (X E : set A) : size (inter_subtype E X) = size (E ∩ X) := 
-begin
-  let f : (⟨E⟩ : ftype) ↪ A := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
-  suffices h : f '' (inter_subtype E X) = E ∩ X, 
-  { rw [←size_img_inj f (inter_subtype E X), h]},
-  ext x, simp only [set.image_congr, set.mem_image, set.mem_inter_eq, function.embedding.coe_fn_mk, subtype.val_eq_coe], 
-  refine ⟨λ h, _, λ h, _⟩, 
-  { rcases h with ⟨x',h,rfl⟩, simp only [inter_subtype, set.mem_set_of_eq] at h, exact ⟨x'.property, h⟩,  },
-  refine ⟨⟨x,h.1⟩,⟨_, by simp⟩⟩,
-  simp [inter_subtype], exact h.2, 
-end
 
-@[coe_up] lemma coe_inter_subtype (X : set A): ((inter_subtype E X) : set A) = X ∩ E := 
-begin
-  ext x, simp only [inter_subtype, set.mem_image, set.mem_inter_eq],  
-  refine ⟨λ h, _, λ h, _⟩, 
-  { rcases h with ⟨⟨y,hy⟩,h,rfl⟩, simp only [subtype.coe_mk], exact ⟨h,hy⟩},
-  exact ⟨⟨x,h.2⟩,⟨h.1,by simp⟩⟩,
-end
 
-end inter_subtype
+-- This next coe doesn't seem to work in practice, even when a P ⊆ Q proof term is in the local context 
+
+--instance coe_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (subftype P) (subftype Q) 
+--  := ⟨(embed.from_nested_pair hPQ).f⟩ 
+
+--instance coe_set_from_nested_pair {A : ftype} {P Q: set A} {hPQ : P ⊆ Q} : has_coe (set (subftype P).E) (set (subftype Q).E) 
+--  := ⟨λ (X : set (subftype P).E), ((embed.from_nested_pair).f '' X : set (subftype Q).E)⟩
+
+/-instance embed.coe_to_fun {A B : ftype.ftype} : has_coe_to_fun (ftype.embed A B) := {
+  F := (λ _, A → B),
+  coe := λ emb, emb.f,
+}-/
+--def subftype.embed {E : set A} : ftype.embed (subftype E) A := sorry
+
+
+
+---- Isomorphisms 
+
+structure iso (A B : ftype) := 
+  (fwd : embed A B)
+  (bwd : embed B A)
+  (fwd_then_bwd : embed.compose fwd bwd = embed.id)
+  (bwd_then_fwd : embed.compose bwd fwd = embed.id)
+
+--def ftype.canonical (size : ℤ) :
+--  (0 ≤ size) → ftype := sorry
+
+-- Construct a ftype from a finite set S (probably deprecated)
+def powersetalg (γ : Type)[fintype γ] : ftype := 
+{ 
+  E       := γ, 
+  fin  := by apply_instance,
+}
 
 end ftype 

@@ -67,7 +67,7 @@ begin
   suffices : ∀ n₀, 0 ≤ n₀ → Q n₀, 
     from antisymm (ν_ub M₁ M₂) (this _ (size_nonneg _) M₁ M₂ rfl), 
   refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N₂ hsize, _), 
-
+  
   -- base case, when everything is a loop. Here the LHS is obviously 0.
   rw [size_zero_iff_empty, univ_iff_compl_empty] at hloops,
   have h' : (matroid_intersection_ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
@@ -77,7 +77,7 @@ begin
                               N₂.rank_mono (cover_compl_subset hloops)], 
   },
   linarith [ν_nonneg N₁ N₂, min_is_lb (ub_fn N₁ N₂) (loops N₁)],  
-
+  
   -- we now assume that the result holds for any strictly loopier pair of matroids, 
   -- and that there is at least one common nonloop; call it e. 
   set k := ν N₁ N₂ with hk, 
@@ -90,7 +90,7 @@ begin
     refine elem_of_elem_of_subset he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
-
+  
   -- contract and delete (loopify/project) e from both elements of the pairs, to get 
   -- strictly loopier pairs to which we'll apply the IH, along with the associated maximizers 
   set N₁d := loopify N₁ e with hN₁d, 
@@ -108,7 +108,7 @@ begin
     rw [←hN₁c, elem_indep_r heIc hIc_ind.1] at this, 
     from one_ne_zero this, 
   },
-
+  /-
   -- ν does not get larger upon deletion 
   have h_nu_d : ν N₁d N₂d ≤ k := by 
   { 
@@ -116,7 +116,7 @@ begin
     refine max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Id,_⟩, 
     from ⟨indep_of_loopify_indep hId_ind.1, indep_of_loopify_indep hId_ind.2⟩,
   },
-
+  
   -- ν goes down upon contraction 
   have h_nu_c : ν N₁c N₂c ≤ k-1 := by 
   {
@@ -128,7 +128,7 @@ begin
     from indep_of_project_indep hIc_ind.1 (nonloop_iff_indep.mp h_e_nl.1), 
     from indep_of_project_indep hIc_ind.2 (nonloop_iff_indep.mp h_e_nl.2),                                                               
   },                             
-
+  
   -- (N₁\ e, N₂\e) is loopier 
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
@@ -187,7 +187,7 @@ begin
   have sm1 := N₁.rank_submod (Ac ∪ e) (Ad \ e), 
   have sm2 := N₂.rank_submod (Acᶜ ∪ e) (Adᶜ \ e),
   rw [union_union_diff, union_inter_diff] at sm1 sm2, 
-  linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
+  linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], -/
 end
 
 /-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/

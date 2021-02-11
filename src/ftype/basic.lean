@@ -845,16 +845,8 @@ begin
   apply size_img_inj f, 
 end
 
-lemma size_inter_subtype (X E : set A) : size {e : (⟨E⟩ : ftype) | e.val ∈ X} = size (E ∩ X) := 
-begin
-  let f : (⟨E⟩ : ftype) ↪ A := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
-  suffices h : f '' {e : (⟨E⟩ : ftype) | e.val ∈ X} = E ∩ X, 
-  { rw [←size_img_inj f {e : (⟨E⟩ : ftype) | e.val ∈ X}, h]},
-  ext x, simp only [set.image_congr, set.mem_image, set.mem_inter_eq, function.embedding.coe_fn_mk, subtype.val_eq_coe], 
-  refine ⟨λ h, _, λ h, _⟩, 
-  { rcases h with ⟨x',h,rfl⟩, simp only [set.mem_set_of_eq] at h, exact ⟨x'.property, h⟩,  },
-  exact ⟨⟨x,h.1⟩, by simp [h.2]⟩,  
-end
+
+
 
 
 lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y := 
@@ -918,6 +910,8 @@ lemma ssubset_compl_right {X Y : set A} : X ⊂ Yᶜ → Y ⊂ Xᶜ :=
 
 lemma ssubset_compl_left {X Y : set A} : Xᶜ ⊂ Y → Yᶜ ⊂ X := 
   λ h, by {rw [←compl_compl Y] at h, exact compl_to_ssubset h}
+
+
 
 end ftype
 

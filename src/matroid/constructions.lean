@@ -16,11 +16,11 @@ def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=
 
 lemma trunc.I1 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I1 (trunc.indep M hn) := 
-  ⟨M.I1, by {rw size_empty, assumption}⟩
+⟨M.I1, by {rw size_empty, assumption}⟩
 
 lemma trunc.I2 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
   satisfies_I2 (trunc.indep M hn) := 
-  λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
+λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
 lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
@@ -69,17 +69,15 @@ section uniform
 
 
 def free_matroid_on (U : ftype): matroid U := 
-  { 
-    r := size,
-    R0 := size_nonneg,
-    R1 := λ X, le_refl (size X),
-    R2 := λ X Y hXY, size_monotone hXY,
-    R3 := λ X Y, le_of_eq (size_modular X Y),  
-  } 
+{ r := size,
+  R0 := size_nonneg,
+  R1 := λ X, le_refl (size X),
+  R2 := λ X Y hXY, size_monotone hXY,
+  R3 := λ X Y, le_of_eq (size_modular X Y),} 
 
 lemma free_matroid_indep {U : ftype}(X : U) :
   (free_matroid_on U).is_indep X  := 
-  by rw [free_matroid_on, indep_iff_r]
+by rw [free_matroid_on, indep_iff_r]
 
 lemma free_iff_univ_indep {U : ftype}{M : matroid U}: 
    M = free_matroid_on U ↔ is_indep M univ := 
@@ -89,15 +87,12 @@ begin
   ext X, simp_rw [free_matroid_on, ←indep_iff_r, I2 (subset_univ X) h], 
 end
 
-
 def loopy_matroid_on (U : ftype) : matroid U := 
-  {
-    r := λ X, 0, 
-    R0 := λ X, le_refl 0, 
-    R1 := λ X, size_nonneg X, 
-    R2 := λ X Y hXY, le_refl 0, 
-    R3 := λ X Y, rfl.ge
-  }
+{ r := λ X, 0, 
+  R0 := λ X, le_refl 0, 
+  R1 := λ X, size_nonneg X, 
+  R2 := λ X Y hXY, le_refl 0, 
+  R3 := λ X Y, rfl.ge }
 
 def loopy_iff_univ_rank_zero {U : ftype}{M : matroid U}:
   M = loopy_matroid_on U ↔ M.r univ = 0 := 
@@ -114,17 +109,16 @@ lemma loopy_matroid_indep_iff_empty {U : ftype}{X : set U}:
 by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy_matroid_on]}
 
 
-
 def uniform_matroid_on (U : ftype){r : ℤ}(hr : 0 ≤ r) : matroid U := 
   truncate (free_matroid_on U) hr 
 
 @[simp] lemma uniform_matroid_rank (U : ftype)(X : set U){r : ℤ}(hr : 0 ≤ r) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
-  by apply truncate_rank
+by apply truncate_rank
 
 lemma uniform_matroid_indep (U : ftype)(X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
-  by {rw [indep_iff_r, uniform_matroid_rank], finish}
+by {rw [indep_iff_r, uniform_matroid_rank], finish}
 
 lemma uniform_dual (U : ftype){r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
   dual (uniform_matroid_on U hr) = uniform_matroid_on U (by linarith : 0 ≤ size (univ : set U) - r) :=
@@ -139,7 +133,7 @@ def circuit_matroid_on {U : ftype} (hU : nontriv U) : matroid U :=
 
 @[simp] lemma circuit_matroid_rank {U : ftype}(hU : nontriv U)(X : set U):
   (circuit_matroid_on hU).r X = min (size (univ : set U) - 1) (size X) := 
-  uniform_matroid_rank _ _ _ 
+uniform_matroid_rank _ _ _ 
 
 lemma circuit_matroid_iff_univ_circuit {U : ftype} (hU : nontriv U){M : matroid U}:
   M = circuit_matroid_on hU ↔ is_circuit M univ := 
