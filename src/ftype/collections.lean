@@ -5,6 +5,7 @@ noncomputable theory
 
 
 namespace ftype 
+open set 
 -- The operations needed on the ftype A.
 
 variables {A: ftype}

@@ -1,17 +1,14 @@
-
-
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on U, the size of the 
 largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ, taken over 
 all X ⊆ U. The proof is really by induction on the size of the ground set, but to make things easier we 
 instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
 projections of M₁ and M₂.  -/
 
-import matroid.constructions matroid.projection ftype.minmax .basic 
+import matroid.constructions matroid.minor.projection ftype.minmax .basic 
 
 open_locale classical 
 noncomputable theory 
-open ftype 
-open matroid  
+open ftype matroid set 
 
 variables {U : ftype}
 

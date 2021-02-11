@@ -1,5 +1,5 @@
 import ftype.basic ftype.induction ftype.collections .rankfun 
-open ftype 
+open ftype set 
 
 open_locale classical
 noncomputable theory 

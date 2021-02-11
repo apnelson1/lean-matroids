@@ -2,7 +2,7 @@ import matroid.axioms
 import ftype.basic ftype.collections 
 
 ----------------------------------------------------------------
-open ftype 
+open ftype set 
 noncomputable theory 
 namespace matroid 
 
@@ -56,7 +56,7 @@ fun M, {
 begin
   apply rankfun.ext, apply funext, intro X, calc
   (dual (dual M)).r X = size X + (size Xᶜ + M.r Xᶜᶜ - M.r univ) - (size univ + M.r univᶜ - M.r univ) : rfl
-  ...                 = size X + (size Xᶜ + M.r X   - M.r univ) - (size univ + M.r ∅  - M.r univ) : by rw [ftype.compl_compl, ftype.compl_univ]
+  ...                 = size X + (size Xᶜ + M.r X   - M.r univ) - (size univ + M.r ∅  - M.r univ) : by rw [compl_compl, compl_univ]
   ...                 = M.r X                                                             : by linarith [size_compl X, rank_empt M]
 end
 

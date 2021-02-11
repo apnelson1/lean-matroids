@@ -2,8 +2,7 @@
 import ftype.basic ftype.induction ftype.collections
 import .rankfun .indep 
 
-open ftype
-open matroid 
+open ftype matroid set 
 
 section truncation 
 
@@ -224,7 +223,7 @@ begin
   intros X Y, 
   by_cases hi : X ∩ Y = C; by_cases hu : X ∪ Y = C, 
   
-  simp only [ eq_of_union_eq_inter (eq.trans hu hi.symm), inter_idem, union_self], 
+  simp only [ eq_of_union_eq_inter (eq.trans hu hi.symm), inter_self, union_self], 
 
   rw [relax.r_of_not_C hC hu,hi],  
   have hCXY' : (C ⊆ X) ∧ (C ⊆ Y) := by {simp_rw ←hi, from ⟨inter_subset_left _ _, inter_subset_right _ _⟩, },
@@ -250,7 +249,7 @@ begin
   linarith [size_modular X Y, M.rank_le_size (X ∩ Y)], 
   rw [hCY], linarith [relax.r_of_not_C hC (ne_of_ssubset hCX), M.rank_mono (inter_subset_left X C)], 
   rw [hCX], linarith [relax.r_of_not_C hC (ne_of_ssubset hCY), M.rank_mono (inter_subset_right C Y)],
-  rw [hCY, hCX, inter_idem], linarith [r_le_relax_r M C C], 
+  rw [hCY, hCX, inter_self], linarith [r_le_relax_r M C C], 
 
   rw [relax.r_of_not_C hC hi, relax.r_of_not_C hC hu],  
   linarith [M.R3 X Y, r_le_relax_r M C X, r_le_relax_r M C Y],
@@ -267,9 +266,9 @@ begin
   have hCuniv : univ ≠ C := λ h, 
     by {have := circuit_hyperplane_rank hC, rw ←h at this, linarith}, 
   by_cases h : X = Cᶜ,   
-  simp_rw [dual_r, h, ftype.compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc],
-  rw [dual_r, ftype.compl_compl, relax.r_of_not_C hC hCuniv], linarith, 
-  have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, ftype.compl_compl] at h, finish}, 
+  simp_rw [dual_r, h, compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc],
+  rw [dual_r, compl_compl, relax.r_of_not_C hC hCuniv], linarith, 
+  have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish}, 
   simp_rw [relax, dual_r, relax.r_of_not_C hCc h, relax.r_of_not_C hC h', dual_r],
   rw relax.r_of_not_C hC hCuniv,  
 end
@@ -314,7 +313,7 @@ begin
   },
   rw (compl_pair hXZ) at this, 
   cases this with hXhp _, 
-  rw [←is_cocircuit, cocircuit_iff_compl_hyperplane, ftype.compl_compl] at hXhp,
+  rw [←is_cocircuit, cocircuit_iff_compl_hyperplane, compl_compl] at hXhp,
   let hch : is_circuit_hyperplane M₁ X := ⟨hXcct, hXhp⟩, 
   use hch,
   ext Y,

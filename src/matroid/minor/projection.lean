@@ -1,7 +1,7 @@
 
-import .constructions set_tactic.solver 
+import matroid.constructions set_tactic.solver 
 
-open ftype 
+open ftype set 
 open matroid 
 
 section pseudominor 

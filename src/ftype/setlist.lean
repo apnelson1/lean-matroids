@@ -8,6 +8,7 @@ noncomputable theory
 
  
 namespace ftype 
+open set 
 
 variables {U : ftype}
 
@@ -58,7 +59,7 @@ begin
 end
 
 
-namespace fin 
+namespace seq
 
 @[simp] lemma fin_zero_Union (Xs : fin 0 → set U): 
 set.Union Xs = ∅  := 
@@ -95,7 +96,7 @@ begin
 end
 
 
-end fin
+end seq
 
 
 

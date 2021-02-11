@@ -1,12 +1,11 @@
 
 /- This file contains the basic definitions needed to talk about matroid union and matroid intersection.-/
 
-import matroid.constructions matroid.projection ftype.minmax ftype.setlist
+import matroid.constructions matroid.minor.projection ftype.minmax ftype.setlist
 
 open_locale classical 
 noncomputable theory 
-open ftype 
-open matroid  
+open ftype matroid set 
 
 variables {U : ftype}
 

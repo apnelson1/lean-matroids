@@ -1,6 +1,9 @@
 import .basic
 namespace ftype 
 -- Singles
+
+open set 
+
 local attribute [instance] classical.prop_decidable
 
 variables {A : ftype}
@@ -39,7 +42,7 @@ lemma single_ne_empt (e : A) :
 
 @[simp] lemma single_nonempty (e : A) : 
   (e: set A).nonempty  := 
-by {rw ←set.ne_empty_iff_nonempty, from single_ne_empt e} 
+by {rw ←ne_empty_iff_nonempty, from single_ne_empt e} 
 
 @[simp] lemma nonelem_empty (e : A) : 
   e ∉ (∅: set A) := 
@@ -53,13 +56,17 @@ by {rw [elem_iff_subset], from subset_univ _,}
   e ∉ (e: set A)ᶜ := 
 λ h, by {rw elem_iff_subset at h, from single_ne_empt e (subset_own_compl h)}
 
+lemma subset_compl_single_iff {e : A}{X : set A}: 
+  X ⊆ (e : set A)ᶜ ↔ e ∉ X := 
+by tidy 
+
 lemma elem_of_elem_of_subset {e : A}{X Y : set A}: 
   e ∈ X → X ⊆ Y → e ∈ Y := 
-set.mem_of_mem_of_subset
+mem_of_mem_of_subset
 
 lemma subset_of_elem_of_subset {e : A}{X Y : set A}: 
   e ∈ X → X ⊆ Y → (e : set A) ⊆ Y := 
-by {rw ←@elem_iff_subset _ _ Y, from set.mem_of_mem_of_subset}
+by {rw ←@elem_iff_subset _ _ Y, from mem_of_mem_of_subset}
 
 lemma union_subset_of_elem_of_elem {e f : A}{X : set A}:
   e ∈ X → f ∈ X → (e ∪ f : set A) ⊆ X := 
@@ -71,7 +78,7 @@ by {rw elem_iff_subset, apply union_is_ub, }
 
 lemma ne_empty_has_elem {X : set A}  : 
   X ≠ ∅ → ∃ e, e ∈ X := 
-by {rw [set.ne_empty_iff_nonempty, set.nonempty_def], from id}
+by {rw [ne_empty_iff_nonempty, nonempty_def], from id}
 
 lemma ne_empty_iff_has_elem {X : set A} : 
   X ≠ ∅ ↔ ∃ e, e ∈ X :=
@@ -118,7 +125,7 @@ lemma inter_distinct_singles {e f : A}:
 
 lemma elem_compl_iff {X : set A}{e : A} :
   e ∈ Xᶜ ↔ e ∉ X := 
-by simp only [set.mem_compl_eq]
+by simp only [mem_compl_eq]
 
 lemma elem_union_left {e : A}{X Y : set A} : 
   e ∈ X → e ∈ X ∪ Y :=
@@ -134,15 +141,15 @@ by {rw ←elem_compl_iff, rw [compl_compl]}
 
 lemma elem_union_iff {e : A} {X Y : set A} : 
   e ∈ X ∪ Y ↔ e ∈ X ∨ e ∈ Y :=
-by simp only [set.mem_union_eq]
+by simp only [mem_union_eq]
 
 lemma elem_inter_iff {e : A}{X Y : set A}: 
   e ∈ X ∩ Y ↔ e ∈ X ∧ e ∈ Y := 
-set.mem_inter_iff e X Y
+mem_inter_iff e X Y
 
 lemma elem_inter {e : A}{X Y : set A} : 
   e ∈ X → e ∈ Y → e ∈ X ∩ Y := 
-set.mem_inter
+mem_inter
 
 lemma nonelem_inter_iff {e : A} {X Y : set A} :
    e ∉ X ∩ Y ↔ e ∉ X ∨ e ∉ Y := 
@@ -150,7 +157,7 @@ by rw [←elem_compl_iff, compl_inter, elem_union_iff, elem_compl_iff, elem_comp
 
 lemma elem_diff_iff {e : A}{X Y : set A} : 
   e ∈ X \ Y ↔ e ∈ X ∧ e ∉ Y :=
-by simp only [set.mem_diff]
+by simp only [mem_diff]
   
 lemma subset_iff_elems_contained {X Y : set A} :
   X ⊆ Y ↔ ∀ e, e ∈ X → e ∈ Y := 
@@ -229,6 +236,12 @@ lemma elem_only_larger_ssubset {X Y : set A} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
 λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
 
+lemma elem_diff_of_size_lt {X Y : set A}(h : size X < size Y):
+  ∃ (e : A), e ∈ Y ∧ e ∉ X :=
+begin
+  suffices : 0 < size (Y \ X), rw [size_pos_iff_has_elem] at this, tauto, 
+  rw diff_def, linarith [size_induced_partition_inter Y X, size_mono_inter_right Y X], 
+end 
 
 lemma add_compl_single_size {X : set A} {e : A} :
   e ∈ Xᶜ → size (X ∪ e) = size X + 1 := 
@@ -318,7 +331,7 @@ lemma add_from_nonempty_diff {X Y : set A} :
   X ⊂ Y ↔ ∃ e : A, e ∉ X ∧ X ∪ e ⊆ Y := 
 begin
   refine ⟨λ h,_, λ h, ssubset_of_subset_ne _ (λ hne, _)⟩, 
-  cases set.nonempty_def.mp (ssubset_diff_nonempty h) with e he, use e, 
+  cases nonempty_def.mp (ssubset_diff_nonempty h) with e he, use e, 
   tidy, 
 end
 
@@ -380,7 +393,7 @@ end
 lemma ssubset_pair {e f : A}{X : set A}:
   X ⊂ (e ∪ f : set A) → X = ∅ ∨ (X = e) ∨ (X = f) :=
 begin
-  intro h, rw set.ssubset_iff_subset_ne at h, 
+  intro h, rw ssubset_iff_subset_ne at h, 
   cases h with hs hne, rw [subset_def_inter, inter_distrib_left] at hs,
   cases subset_single (inter_subset_right X e),
   rw [h, empty_union, ←subset_def_inter] at hs, cases subset_single hs, exact or.inl h_1, apply or.inr, exact or.inr h_1,
@@ -405,7 +418,7 @@ lemma size_one_iff_eq_singleton {X : set A}:
   size X = 1 ↔ ∃ e, X = {e} := 
 begin
   refine ⟨λ hX, _, λ h, _⟩,
-  simp_rw set.eq_singleton_iff_nonempty_unique_mem,
+  simp_rw eq_singleton_iff_nonempty_unique_mem,
   have := size_pos_iff_nonempty.mpr (by linarith : 0 < size X), 
   have := this, 
   cases this with e he,
