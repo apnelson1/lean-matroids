@@ -102,18 +102,19 @@ begin
   rcases max_spec (λ (X : common_ind N₁c N₂c), size X.val) with ⟨⟨Ic,hIc_ind⟩, ⟨hIc_eq_max, hIc_ub⟩⟩,
 
   -- e doesn't belong to Ic, because Ic is independent in M/e 
+  
   have heIc : e ∉ Ic := λ heIc, by 
   {
     have := projected_set_rank_zero N₁ e, 
     rw [←hN₁c, elem_indep_r heIc hIc_ind.1] at this, 
-    from one_ne_zero this, 
+    exact one_ne_zero this, 
   },
-  /-
+  
   -- ν does not get larger upon deletion 
-  have h_nu_d : ν N₁d N₂d ≤ k := by 
+  have h_nu_d : ν N₁d N₂d ≤ k :=  by 
   { 
     rw [ν, ←hId_eq_max, hk, ν],
-    refine max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Id,_⟩, 
+    convert max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Id, _⟩, 
     from ⟨indep_of_loopify_indep hId_ind.1, indep_of_loopify_indep hId_ind.2⟩,
   },
   
@@ -187,7 +188,7 @@ begin
   have sm1 := N₁.rank_submod (Ac ∪ e) (Ad \ e), 
   have sm2 := N₂.rank_submod (Acᶜ ∪ e) (Adᶜ \ e),
   rw [union_union_diff, union_inter_diff] at sm1 sm2, 
-  linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], -/
+  linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
 
 /-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/
