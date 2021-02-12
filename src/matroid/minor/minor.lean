@@ -176,7 +176,7 @@ begin
   rw [minor_iff_has_delete_contract], 
   refine ⟨λ h, _, λ h,  _ ⟩, 
   { rcases h with ⟨C, D, h_disj, h_union, rfl⟩, exact ⟨C,D,h_union,⟨h_disj,rfl⟩⟩,},
-  rcases h with ⟨C,D, h', h'', rfl⟩, tidy, 
+  rcases h with ⟨C,D, h', h'', rfl⟩,  tidy, 
 end
 
 lemma minor_pair_to_is_minor : 
@@ -301,25 +301,6 @@ def move_to_contract (p : minor_pair N M){A : set U}
 }
 
 
-end minor_pair 
-
-lemma dual_minor_of_minor {M N : matroid_in U}: 
-  N.is_minor M → N.dual.is_minor M.dual :=
-begin
-  simp_rw [minor_iff_has_delete_contract, dual_ground], 
-  intro h, 
-  rcases h with ⟨C, D, h, h', rfl⟩, 
-  refine ⟨D,C, by {rwa union_comm}, by {rwa inter_comm}, dual_con_del _ _ _ h' _⟩,
-  rw h, simp,     
-end
-
-lemma minor_iff_dual_minor {M N : matroid_in U}:
-  N.is_minor M ↔ N.dual.is_minor M.dual := 
-begin
-  refine ⟨λ h, dual_minor_of_minor h, λ h, _⟩, 
-  rw [←dual_dual N, ←dual_dual M], 
-  exact dual_minor_of_minor h, 
-end
 
  /-- A minor pair C D with C dependent doesn't maximize r C + r* D -/
 lemma suboptimal_goodness {N M : matroid_in U}(p : minor_pair N M)(hdep : ¬is_indep M p.C): 
@@ -373,6 +354,25 @@ begin
 end
 
 
+end minor_pair 
+
+lemma dual_minor_of_minor {M N : matroid_in U}: 
+  N.is_minor M → N.dual.is_minor M.dual :=
+begin
+  simp_rw [minor_iff_has_delete_contract, dual_ground], 
+  intro h, 
+  rcases h with ⟨C, D, h, h', rfl⟩, 
+  refine ⟨D,C, by {rwa union_comm}, by {rwa inter_comm}, dual_con_del _ _ _ h' _⟩,
+  rw h, simp,     
+end
+
+lemma minor_iff_dual_minor {M N : matroid_in U}:
+  N.is_minor M ↔ N.dual.is_minor M.dual := 
+begin
+  --repeat {rw ←minor_pair.nonempty_iff}, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  rw ←minor_pair.nonempty_iff, apply nonempty.intro 
+end
 
 end minor 
 
