@@ -21,6 +21,10 @@ namespace matroid_in
 /-- the rank of a set X wrt a matroid_in U. Elements of X outside the E of U are ignored -/
 def r (M : matroid_in U)(X : set U) := M.carrier.r X 
 
+lemma r_carrier_eq_r (M : matroid_in U)(X : set U): 
+  M.carrier.r X = M.r X := 
+rfl 
+
 lemma r_eq_r_inter (M : matroid_in U)(X : set U):
   M.r X = M.r (X ∩ M.E) :=
 begin
@@ -28,6 +32,10 @@ begin
   apply rank_eq_rank_union_rank_zero,
   exact rank_inter_rank_zero _ M.support, 
 end
+
+lemma r_eq_inter_r (M : matroid_in U)(X : set U):
+  M.r X = M.r (M.E ∩ X) :=
+by rw [r_eq_r_inter, inter_comm]
 
 lemma ext' {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
   M₁ = M₂ := 

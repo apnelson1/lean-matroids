@@ -119,7 +119,7 @@ lemma rank_zero_of_union_rank_zero {M : matroid U}{X Y : set U}:
   M.r X = 0 → M.r Y = 0 → M.r (X ∪ Y) = 0 :=
 λ hX hY, by {rw (rank_eq_rank_union_rank_zero _ hY), exact hX }
 
-lemma rank_eq_of_le_union_supset {M : matroid U}(X Y Z: set U):
+lemma rank_eq_of_le_union_supset {M : matroid U}{X Y : set U}(Z: set U):
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
 begin
   intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
@@ -130,7 +130,7 @@ end
 
 lemma rank_eq_of_inter_union {M : matroid U}(X Y A : set U):
   M.r (X ∩ A) = M.r X → M.r ((X ∩ A) ∪ Y) = M.r (X ∪ Y) :=
-λ h, rank_eq_of_le_union_supset _ _ _ (inter_subset_left _ _) h 
+λ h, rank_eq_of_le_union_supset _ (inter_subset_left _ _) h 
   
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
@@ -683,7 +683,7 @@ end
 
 lemma union_cl_rank_left (M : matroid U)(X Y : set U) :
   M.r ((M.cl X) ∪ Y) = M.r (X ∪ Y) := 
-by {rw eq_comm, exact rank_eq_of_le_union_supset _ _ _ (subset_cl _ _) (rank_cl _ _).symm}
+by {rw eq_comm, exact rank_eq_of_le_union_supset _ (subset_cl _ _) (rank_cl _ _).symm}
   
 lemma union_cl_rank_right (M : matroid U)(X Y : set U) :
   M.r (X ∪ (M.cl Y)) = M.r (X ∪ Y) :=
@@ -702,7 +702,7 @@ lemma spans_iff_cl_spans {M : matroid U}{X Y : set U}:
   M.spans X Y ↔ M.spans (M.cl X) Y :=
 begin   
   repeat {rw spans_iff_r}, 
-  rw [rank_eq_of_le_union_supset X (cl M X), rank_cl],  
+  rw [rank_eq_of_le_union_supset, rank_cl],  
   apply subset_cl, exact (rank_cl _ _).symm,  
 end
 

@@ -428,6 +428,9 @@ lemma subset_to_compl {X Y : set A} : X ⊆ Y → Yᶜ ⊆ Xᶜ :=
 lemma compl_to_subset {X Y : set A}: Xᶜ ⊆ Yᶜ → Y ⊆ X := 
   λ hXY, by {have := subset_to_compl hXY, repeat {rw compl_compl at this}, exact this }
 
+lemma subset_iff_subset_compl {X Y : set A}: X ⊆ Y ↔ Yᶜ ⊆ Xᶜ := 
+by {split, apply subset_to_compl, apply compl_to_subset,}
+
 lemma subset_compl_right {X Y : set A}: X ⊆ Yᶜ → Y ⊆ Xᶜ := 
   λ hXY, by {rw [←compl_compl X] at hXY, exact compl_to_subset hXY}
 
