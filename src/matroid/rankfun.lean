@@ -99,6 +99,10 @@ lemma rank_eq_of_le_union {M : matroid U}{X Y : set U}:
   M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
 λ h, ((rank_eq_of_le_supset ((subset_union_left X Y))) h).symm
 
+lemma rank_eq_of_le_inter {M : matroid U}{X Y : set U}:
+  M.r X ≤ M.r (X ∩ Y) →  M.r (X ∩ Y) = M.r X :=
+λ h, (rank_eq_of_le_supset (inter_subset_left _ _) h)
+
 lemma rank_eq_of_not_lt_supset {M : matroid U}{X Y : set U}:
   X ⊆ Y → ¬(M.r X < M.r Y) → M.r X = M.r Y :=
 λ h h', rank_eq_of_le_supset h (int.le_of_not_gt' h')
@@ -124,12 +128,10 @@ begin
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
 
-lemma union_of_eq_rank_inter {M : matroid U}(X Y A : set U):
-  M.r (X ∩ A) = M.r X → M.r ((X ∪ Y) ∩ A) = M.r (X ∪ Y) :=
-begin
-  intro h, 
-end
-
+lemma rank_eq_of_inter_union {M : matroid U}(X Y A : set U):
+  M.r (X ∩ A) = M.r X → M.r ((X ∩ A) ∪ Y) = M.r (X ∪ Y) :=
+λ h, rank_eq_of_le_union_supset _ _ _ (inter_subset_left _ _) h 
+  
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
@@ -435,6 +437,11 @@ instance coe_cocircuit {M : matroid U} : has_coe (cocircuit M) (set U) :=
   coe_subtype    
 instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) := 
   by {unfold cocircuit, apply_instance}   
+
+lemma circuit_iff_i {M : matroid U}{X : set U} : 
+  M.is_circuit X ↔ ¬is_indep M X ∧  ∀ Y: set U, Y ⊂ X → M.is_indep Y :=
+by rw is_circuit 
+
 
 lemma circuit_iff_r {M : matroid U} (X : set U) :
   M.is_circuit X ↔ (M.r X = size X - 1) ∧ (∀ Y: set U, Y ⊂ X → M.r Y = size Y) := 

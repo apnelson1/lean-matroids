@@ -161,6 +161,9 @@ namespace minor_pair
 
 variables {N M : matroid_in U}
 
+
+
+
 instance fintype:
   fintype (minor_pair N M) :=  
 by tactic.mk_fintype_instance
@@ -174,10 +177,25 @@ begin
   rcases h with ⟨C,D, h', h'', rfl⟩, tidy, 
 end
 
+lemma minor_pair_to_is_minor : 
+  minor_pair N M → is_minor N M :=
+by {rw ←nonempty_iff, exact nonempty.intro}
 
 lemma nonempty_inst (h : is_minor N M) :
   nonempty (minor_pair N M):= 
 nonempty_iff.mpr h 
+
+lemma ground_subset (p : minor_pair N M):
+  N.E ⊆ M.E :=
+by {rw ←p.minor, intro x, simp, tauto}
+
+@[simp, msimp] lemma ground_disjoint_D (p : minor_pair N M):
+  N.E ∩ p.D = ∅ :=
+by {simp only [←p.minor] with msimp, rw inter_assoc, simp,}
+
+@[simp, msimp] lemma ground_disjoint_C (p : minor_pair N M):
+  N.E ∩ p.C = ∅ :=
+by {simp only [←p.minor] with msimp, rw [inter_right_comm, inter_comm, inter_assoc M.E], simp,}
 
 def to_dual: 
   minor_pair N M → minor_pair N.dual M.dual := 
@@ -206,36 +224,33 @@ def dual_equiv:
 @[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).D = p.C := rfl 
 
 /-- given a minor pair and a subset of C whose removal doesn't drop the rank of C, we can move that subset to D-/
-def move_to_delete (p : minor_pair N M){A : set U}(h₁ : A ⊆ p.C)(h₂ : M.r (p.C \ A) = M.r p.C) : minor_pair N M := 
+def move_to_delete (p : minor_pair N M){A : set U}(h₁ : A ⊆ p.C)
+(h₂ : M.r (p.C \ A) = M.r p.C) : minor_pair N M := 
 { C := p.C \ A,
   D := p.D ∪ A,
   disj := by {have := p.disj, ext, simp at *, rw ←subset_of_compl_iff_disjoint at this, tauto ,  },
   union := by {rw ←p.union, ext, simp at *,tauto,  },
   minor := begin
-    
-    --have hu : p.C \ A ∪ (p.D ∪ A) = M.E \ N.E := by {rw ←p.union, ext, simp at *,tauto,  },
     have := p.minor, simp_rw ← this, clear this, 
-    apply ext', 
-    { ext, simp at *, tauto, },
+    apply ext', { ext, simp at *, tauto, },
     
     intros X hX, repeat {rw r_eq_r_inter _ X}, 
     rw (by rw p.minor : ((M.contract p.C).delete p.D).E = N.E) at *, 
     rw (by {simp_rw ←p.minor, ext, simp [compl_inter], tauto,} :
       ((M.contract (p.C \ A)).delete (p.D ∪ A)).E = N.E) at *, 
     
-    have hCD := p.union, 
-    have hXD : X ⊆ p.Dᶜ := sorry, 
-    have hXA : X ⊆ Aᶜ := sorry, 
-    rw subset_def_inter at hX hXD hXA, 
-    simp only [compl_union] with msimp at *, 
-    simp only [h₂, sub_left_inj, hX, hXD, hXA], --apply congr_arg,
-    rw [←inter_assoc, hXD, ←inter_distrib_right], 
-
-    
-    
-    --rw [subset_iff_disjoint_compl, inter_comm] at h₁, 
-    
-
+    have hXD : X ⊆ p.Dᶜ, 
+    { refine subset_trans hX _, rw subset_compl_iff_disjoint, simp,}, 
+    have hXA : X ⊆ Aᶜ,
+    { refine subset_trans hX _, 
+      rw [subset_compl_iff_disjoint, ←disjoint_iff_inter_eq_empty], 
+      refine disjoint_of_subset_right h₁ _,
+      rw disjoint_iff_inter_eq_empty,
+      exact ground_disjoint_C p, }, 
+    rw subset_def_inter at hX hXD hXA, rw diff_def at h₂,  
+    simp only [compl_union, h₂, sub_left_inj, hX, hXD, hXA] with msimp, 
+    rw [←inter_assoc, hXD, hXA, union_comm X, union_comm X],
+    exact rank_eq_of_le_union_supset _ _ X (inter_subset_left p.C Aᶜ) h₂, 
   end } 
 
 

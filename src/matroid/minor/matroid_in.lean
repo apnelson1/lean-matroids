@@ -138,15 +138,19 @@ def as_matroid_in (M : matroid U) : matroid_in U := ⟨univ, M, by simp⟩
 
 instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
 
-
+section defs 
 
 def is_indep (M : matroid_in U)(X : set U) := M.carrier.is_indep X
+
+lemma indep_iff_carrier {M : matroid_in U}{X : set U}:
+  M.is_indep X ↔ M.carrier.is_indep X :=
+by rw is_indep 
 
 lemma indep_iff_r {M : matroid_in U}{X : set U} : 
   M.is_indep X ↔ M.r X = size X := 
 by rw [is_indep,r, matroid.is_indep]
 
-lemma is_indep_iff (M : matroid_in U)(X : set U): 
+lemma indep_iff_subtype {M : matroid_in U}{X : set U}: 
   M.is_indep X ↔ X ⊆ M.E ∧ M.as_mat.is_indep (inter_subtype M.E X) :=
 begin
   refine ⟨λ h, _, λ h, _⟩, 
@@ -160,6 +164,35 @@ begin
   simp only [matroid.indep_iff_r,as_mat_r] with coe_up at h', 
   rwa [←subset_def_inter_mp h, indep_iff_r, h'], 
 end
+
+def is_circuit (M : matroid_in U)(C : set U) :=
+  M.carrier.is_circuit C ∧ C ⊆ M.E 
+
+lemma circuit_iff_carrier {M : matroid_in U}{C : set U}:
+  M.is_circuit C ↔ M.carrier.is_circuit C ∧ C ⊆ M.E :=
+by rw is_circuit 
+
+lemma circuit_iff_r {M : matroid_in U}{C : set U}:
+  M.is_circuit C ↔ (M.r C = size C - 1 ∧ ∀ Y, Y ⊂ C → M.r Y = size Y) ∧ C ⊆ M.E := 
+by {rw [circuit_iff_carrier, circuit_iff_r], refl} 
+
+/-lemma circuit_iff_subtype {M : matroid_in U}{X : set U}:
+  M.is_circuit X ↔ X ⊆ M.E ∧ M.as_mat.is_circuit (inter_subtype M.E X) := 
+begin
+  simp_rw [circuit_iff_carrier, matroid.circuit_iff_r],  
+  refine ⟨λ h, ⟨h.2,_⟩, λ h, ⟨_,h.1⟩⟩, 
+  begin
+     
+    /-rw [circuit_iff_i, ←indep_iff_carrier] at h, rw [circuit_iff_i], 
+    rcases h with ⟨⟨hXE, h⟩, h'⟩, split, 
+    { rw indep_iff_subtype at hXE, tauto, },
+    intros Y hY, specialize h (subtype.val '' Y), 
+    rw [←indep_iff_carrier, indep_iff_subtype] at h, -/ 
+  end,
+end 
+-/
+
+
 
 def dual (M : matroid_in U) : matroid_in U := 
   of_mat (as_mat M).dual 
@@ -193,5 +226,7 @@ by rw [←dual_dual M, ←dual_dual M',h]
 lemma dual_inj_iff {M M' : matroid_in U}:
   M = M' ↔ M.dual = M'.dual := 
 ⟨λ h, by {rw h}, λ h, dual_inj h⟩
+
+end defs 
 
 end matroid_in
