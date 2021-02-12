@@ -90,8 +90,16 @@ end
 /-- loopify all elements of M outside R -/
 def loopify_to (M : matroid U)(R : set U) : matroid U := M.loopify (Rᶜ)
 
+lemma loopify_as_loopify_to (M : matroid U)(D : set U): 
+  M.loopify D = M.loopify_to Dᶜ := 
+by rw [loopify_to, compl_compl]
+
 /-- project all elements of M outside R -/
 def project_to (M : matroid U)(R : set U) : matroid U := M.project (Rᶜ)
+
+lemma project_as_project_to (M : matroid U)(C : set U): 
+  M.project C = M.project_to Cᶜ := 
+by rw [project_to, compl_compl]
 
 lemma rank_loopify_to (M : matroid U)(R X : set U) : 
   (M.loopify_to R).r X = M.r (X ∩ R) := 
@@ -100,9 +108,6 @@ by {rw [loopify_to, loopify_r], simp}
 lemma rank_project_to (M : matroid U)(R X : set U):
   (M.project_to R).r X = M.r (X ∪ Rᶜ) - M.r Rᶜ := 
 by rw [project_to, project_r]
-
-
-
 
 lemma indep_loopify_to_iff {M : matroid U}{R I : set U} : 
   (M.loopify_to R).is_indep I ↔ M.is_indep I ∧ I ⊆ R := 
@@ -121,6 +126,13 @@ begin
   -- linarith seems to be failing here for reasons I don't quite understand, hence the ugly proof. 
 end
 
+lemma indep_loopify_iff {M : matroid U}{X D : set U}: 
+  (M.loopify D).is_indep X ↔ M.is_indep X ∧ X ∩ D = ∅ := 
+begin
+  rw [loopify_as_loopify_to, indep_loopify_to_iff, iff_iff_eq], 
+  convert rfl, rw subset_compl_iff_disjoint,  
+end
+
 lemma indep_loopify_to_is_indep {M : matroid U}{R I : set U}:
   (M.loopify_to R).is_indep I → M.is_indep I := 
 by {rw indep_loopify_to_iff, from λ h, h.1}
@@ -130,6 +142,18 @@ lemma indep_loopify_to_subset_is_indep {M : matroid U}{S R I : set U}:
 begin
   intro hSR, simp_rw [indep_loopify_to_iff], 
   from λ h, ⟨h.1, subset_trans h.2 hSR⟩, 
+end
+
+lemma indep_project_iff {M : matroid U}{X C : set U}:
+  (M.project C).is_indep X ↔ M.is_indep X ∧ M.r (X ∪ C) = M.r X + M.r C := 
+begin
+  rw [indep_iff_r,project_r, indep_iff_r], 
+  refine ⟨λ h, ⟨_,_⟩, λ h, _⟩, 
+  { refine le_antisymm (M.rank_le_size _) _, rw ←h, linarith [rank_subadditive M X C]},
+  { refine le_antisymm (M.rank_subadditive X C) _, 
+    rw (by linarith : M.r (X ∪ C) = M.r C + size X), 
+    linarith [M.rank_le_size X], },
+  rw [←h.1, h.2], simp, 
 end
 
 

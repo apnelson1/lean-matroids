@@ -235,6 +235,18 @@ lemma dual_inj_iff {M M' : matroid_in U}:
   M = M' ↔ M.dual = M'.dual := 
 ⟨λ h, by {rw h}, λ h, dual_inj h⟩
 
+
+lemma coindep_iff_r {M : matroid_in U}{X : set U}: 
+  M.dual.is_indep X ↔ X ⊆ M.E ∧ M.r (M.E \ X) = M.r M.E :=
+begin
+  simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_def, subset_def_inter], 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { have h1 := size_mono_inter_left X M.E, 
+    have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,   
+    refine ⟨eq_of_eq_size_subset (inter_subset_left _ _) (by linarith) , by linarith⟩},
+  rw [h.1, h.2], simp, 
+end
+
 end defs 
 
 end matroid_in

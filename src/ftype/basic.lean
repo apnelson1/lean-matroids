@@ -315,6 +315,15 @@ lemma subset_iff_diff_empty (X Y : set A) : X ⊆ Y ↔ X \ Y = ∅ :=
 lemma subset_iff_disjoint_compl {X Y : set A} : X ⊆ Y ↔ X ∩ Yᶜ = ∅ :=
 by {rw [subset_iff_diff_empty], simp,  }
 
+lemma disjoint_of_subset_left' {X Y Z : set A }: X ⊆ Y → Y ∩ Z = ∅ → X ∩ Z = ∅ :=
+λ h h', by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset_left h h', }
+
+lemma disjoint_of_subset_right' {X Y Z : set A }: X ⊆ Y → Z ∩ Y = ∅ → Z ∩ X = ∅ :=
+λ h h', by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset_right h h', }
+
+lemma disjoint_of_subsets {X X' Y Y' : set A }: X ⊆ X' → Y ⊆ Y' → X' ∩ Y' = ∅ → X ∩ Y = ∅ :=
+λ h h' h'', by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset h h' h'', }
+
 lemma cover_compl_subset {X Y : set A} :  X ∪ Y = univ → Xᶜ ⊆ Y  := 
   λ h, by rw [subset_def_union, ←univ_inter (Xᶜ ∪ Y), ←h, ←union_distrib_right, inter_compl, empty_union]
 
