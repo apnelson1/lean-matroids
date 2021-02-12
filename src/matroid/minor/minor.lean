@@ -212,12 +212,27 @@ def move_to_delete (p : minor_pair N M){A : set U}(h₁ : A ⊆ p.C)(h₂ : M.r 
   disj := by {have := p.disj, ext, simp at *, rw ←subset_of_compl_iff_disjoint at this, tauto ,  },
   union := by {rw ←p.union, ext, simp at *,tauto,  },
   minor := begin
-    have := p.minor, simp_rw ← this, 
+    
+    --have hu : p.C \ A ∪ (p.D ∪ A) = M.E \ N.E := by {rw ←p.union, ext, simp at *,tauto,  },
+    have := p.minor, simp_rw ← this, clear this, 
     apply ext', 
     { ext, simp at *, tauto, },
-    intros X hX, 
+    
+    intros X hX, repeat {rw r_eq_r_inter _ X}, 
+    rw (by rw p.minor : ((M.contract p.C).delete p.D).E = N.E) at *, 
+    rw (by {simp_rw ←p.minor, ext, simp [compl_inter], tauto,} :
+      ((M.contract (p.C \ A)).delete (p.D ∪ A)).E = N.E) at *, 
+    
+    have hCD := p.union, 
+    have hXD : X ⊆ p.Dᶜ := sorry, 
+    have hXA : X ⊆ Aᶜ := sorry, 
+    rw subset_def_inter at hX hXD hXA, 
     simp only [compl_union] with msimp at *, 
-    simp only [h₂, sub_left_inj], apply congr_arg, have := p.disj, have := p.union, 
+    simp only [h₂, sub_left_inj, hX, hXD, hXA], --apply congr_arg,
+    rw [←inter_assoc, hXD, ←inter_distrib_right], 
+
+    
+    
     --rw [subset_iff_disjoint_compl, inter_comm] at h₁, 
     
 

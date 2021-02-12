@@ -115,10 +115,6 @@ lemma rank_zero_of_union_rank_zero {M : matroid U}{X Y : set U}:
   M.r X = 0 → M.r Y = 0 → M.r (X ∪ Y) = 0 :=
 λ hX hY, by {rw (rank_eq_rank_union_rank_zero _ hY), exact hX }
 
-
-
-
-
 lemma rank_eq_of_le_union_supset {M : matroid U}(X Y Z: set U):
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
 begin
@@ -127,6 +123,12 @@ begin
   have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_def_union_mp hXY ],
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
+
+lemma union_of_eq_rank_inter {M : matroid U}(X Y A : set U):
+  M.r (X ∩ A) = M.r X → M.r ((X ∪ Y) ∩ A) = M.r (X ∪ Y) :=
+begin
+  intro h, 
+end
 
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=

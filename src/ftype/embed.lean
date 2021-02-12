@@ -8,7 +8,7 @@ noncomputable theory
 
 
 def subftype {A : ftype} (ground : set A) : ftype :=  
-  {E := {x : A // x ∈ ground}, fin := by {apply_instance}} 
+  {E := {x : A // x ∈ ground}, ft := by {apply_instance}} 
 
 @[ext] structure embed (A B : ftype) :=
   (f     : A → B )
