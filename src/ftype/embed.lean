@@ -82,6 +82,20 @@ begin
   assumption, 
 end
 
+@[coe_up] lemma subftype_coe_inj {A : ftype} {S : set A} {X Y : set (subftype S)}: 
+  ((X: set A) = (Y: set A)) ↔ (X = Y) :=
+begin
+  refine ⟨λ h, _, λ h, by {rw h}⟩, 
+  rwa [←subset_antisymm_iff, ←subftype_coe_subset, ←subftype_coe_subset, subset_antisymm_iff] at h, 
+end
+
+@[coe_up] lemma subftype_coe_ssubset {A : ftype} {S : set A} {X Y : set (subftype S)}: 
+  (X ⊂ Y) ↔ ((X: set A) ⊂ (Y: set A)) :=
+begin
+  simp_rw [ssubset_iff, subftype_coe_subset, iff_iff_eq],
+  congr' 1,
+  rw [←iff_iff_eq, not_iff_not, subftype_coe_inj],     
+end
 
 @[coe_up] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: 
   (((X ∪ Y) : set (subftype S)) : set A) = ((X: set A) ∪ (Y:set A)) := 
@@ -94,12 +108,10 @@ end
 @[coe_up] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)}:
   (((Xᶜ : set (subftype S))) : set A) = S \ (X : set A)  := 
 begin
-  -- Fix this garbage! 
   unfold_coes, ext, refine ⟨λ h, ⟨_,_⟩, λ h,_⟩, 
-  rcases h with ⟨_,⟨_,_⟩⟩, rw ←h_h_right, tidy, apply h_h_left, 
-  have := (embed.from_subftype S).f_inj h_h_right, 
-  rw this, assumption, 
-  -- No really, fix it! 
+  rcases h with ⟨h,⟨h',h''⟩⟩, rw ←h'', tidy, 
+  apply h_h_left, 
+  rwa (embed.from_subftype S).f_inj h_h_right, 
 end 
 
 @[coe_up] lemma coe_univ {A : ftype} (S : set A) : 
@@ -121,6 +133,8 @@ by {simp only [embed.img], unfold_coes, tidy}
 @[coe_up] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
   (((embed.from_nested_pair hYY') x ) : A) = (x : A) := 
 by {unfold_coes, tidy}
+
+
 
 section inter_subtype
 

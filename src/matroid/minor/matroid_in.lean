@@ -71,8 +71,6 @@ attribute [msimp] ftype.diff_def
   M.as_mat.r X = M.r (X : set U) :=
 rfl 
 
-
-
 /-- a matroid_in U, constructed from a matroid on a subtype of U -/
 def of_mat {E : set U}(N : matroid (subftype E)) : matroid_in U := 
 { E := E,
@@ -148,59 +146,75 @@ instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_m
 
 section defs 
 
-def is_indep (M : matroid_in U)(X : set U) := M.carrier.is_indep X
+
+
+/-- translates a property of sets defined on (matroid V) to the corresponding
+set property on (matroid_in U). -/
+def lift_mat_set_property (P : Π {V : ftype}, matroid V → set V → Prop): 
+  (matroid_in U → set U → Prop) :=
+  λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
+
+---------------------------------------------------------------------------
+
+def is_indep (M : matroid_in U)(X : set U): Prop := 
+  (lift_mat_set_property (@matroid.is_indep)) M X 
+
+lemma indep_iff_r (M : matroid_in U)(X : set U): 
+  is_indep M X ↔ M.r X = size X := 
+begin
+  rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r],  
+  simp only with coe_up msimp, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { rw subset_def_inter at h, rw ←h.1, exact h.2}, 
+  suffices h' : X ⊆ M.E, refine ⟨h', by {rwa[subset_def_inter_mp h'],}⟩, 
+  rw r_eq_r_inter at h, 
+  have h' := M.carrier.rank_le_size (X ∩ M.E), 
+  rw [r_carrier_eq_r, h] at h', 
+  rw [subset_def_inter, eq_of_le_size_subset _ h'], 
+  apply inter_subset_left, 
+end
 
 lemma indep_iff_carrier {M : matroid_in U}{X : set U}:
   M.is_indep X ↔ M.carrier.is_indep X :=
-by rw is_indep 
-
-lemma indep_iff_r {M : matroid_in U}{X : set U} : 
-  M.is_indep X ↔ M.r X = size X := 
-by rw [is_indep,r, matroid.is_indep]
+by rw [indep_iff_r, matroid.indep_iff_r, r_carrier_eq_r]
 
 lemma indep_iff_subtype {M : matroid_in U}{X : set U}: 
   M.is_indep X ↔ X ⊆ M.E ∧ M.as_mat.is_indep (inter_subtype M.E X) :=
-begin
-  refine ⟨λ h, _, λ h, _⟩, 
-  begin
-    have hXE : X ⊆ M.E := by {rw subset_iff_disjoint_compl, exact indep_inter_rank_zero h M.support},
-    split, assumption, 
-    rw matroid.indep_iff_r, simp only [as_mat_r] with coe_up, 
-    rwa [←indep_iff_r, subset_def_inter_mp hXE], 
-  end,
-  cases h with h h', 
-  simp only [matroid.indep_iff_r,as_mat_r] with coe_up at h', 
-  rwa [←subset_def_inter_mp h, indep_iff_r, h'], 
-end
+by rw [is_indep, lift_mat_set_property]
 
-def is_circuit (M : matroid_in U)(C : set U) :=
-  M.carrier.is_circuit C ∧ C ⊆ M.E 
+def is_circuit (M : matroid_in U)(C : set U) := 
+  (lift_mat_set_property (@matroid.is_circuit)) M C 
+
+lemma circuit_iff_r {M : matroid_in U}{C : set U}:
+  M.is_circuit C ↔ M.r C = size C - 1 ∧ (∀ Y, Y ⊂ C → M.r Y = size Y) ∧ C ⊆ M.E := 
+begin
+  simp_rw [is_circuit, lift_mat_set_property, matroid.circuit_iff_r], 
+  simp only with coe_up msimp, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { rcases h with ⟨h, h', h''⟩, 
+    rwa subset_def_inter_mp h at h', 
+    refine ⟨h', (λ Y hY, _), h⟩, 
+    have hYE : Y ∩ M.E = Y := subset_def_inter_mp (subset_trans hY.1 h),
+    rw subset_def_inter at h,  
+    specialize h'' (inter_subtype _ Y) _, 
+    { simp only with coe_up at h'',
+      convert h''; 
+      exact hYE.symm, },
+    simpa only [h,hYE] with coe_up, },
+  rcases h with ⟨h,h',h''⟩, 
+  refine ⟨h'', _,λ Y hY, _⟩, 
+  { convert h; rwa subset_def_inter_mp h'', },
+  apply h', 
+  refine ssubset_subset_trans hY (inter_subset_left _ _), 
+end
 
 lemma circuit_iff_carrier {M : matroid_in U}{C : set U}:
   M.is_circuit C ↔ M.carrier.is_circuit C ∧ C ⊆ M.E :=
-by rw is_circuit 
+by {simp_rw [circuit_iff_r, matroid.circuit_iff_r, r_carrier_eq_r], tauto}  
 
-lemma circuit_iff_r {M : matroid_in U}{C : set U}:
-  M.is_circuit C ↔ (M.r C = size C - 1 ∧ ∀ Y, Y ⊂ C → M.r Y = size Y) ∧ C ⊆ M.E := 
-by {rw [circuit_iff_carrier, circuit_iff_r], refl} 
-
-/-lemma circuit_iff_subtype {M : matroid_in U}{X : set U}:
+lemma circuit_iff_subtype {M : matroid_in U}{X : set U}:
   M.is_circuit X ↔ X ⊆ M.E ∧ M.as_mat.is_circuit (inter_subtype M.E X) := 
-begin
-  simp_rw [circuit_iff_carrier, matroid.circuit_iff_r],  
-  refine ⟨λ h, ⟨h.2,_⟩, λ h, ⟨_,h.1⟩⟩, 
-  begin
-     
-    /-rw [circuit_iff_i, ←indep_iff_carrier] at h, rw [circuit_iff_i], 
-    rcases h with ⟨⟨hXE, h⟩, h'⟩, split, 
-    { rw indep_iff_subtype at hXE, tauto, },
-    intros Y hY, specialize h (subtype.val '' Y), 
-    rw [←indep_iff_carrier, indep_iff_subtype] at h, -/ 
-  end,
-end 
--/
-
-
+by rw [is_circuit, lift_mat_set_property]
 
 def dual (M : matroid_in U) : matroid_in U := 
   of_mat (as_mat M).dual 
@@ -248,5 +262,6 @@ begin
 end
 
 end defs 
+
 
 end matroid_in

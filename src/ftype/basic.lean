@@ -283,7 +283,10 @@ lemma ssubset_size {X Y : set A} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y)
   --λ hXY hS, ⟨hXY, by {intros h, rw h at hS, linarith}⟩
 
 lemma subset_antisymm  {X Y : set A} : X ⊆ Y → Y ⊆ X → X = Y := 
-  λ hXY hYX, by {rw subset_def_inter at *, rw inter_comm at hXY, exact (rfl.congr hYX).mp (eq.symm hXY)}
+λ hXY hYX, by {rw subset_def_inter at *, rw inter_comm at hXY, exact (rfl.congr hYX).mp (eq.symm hXY)}
+
+lemma subset_antisymm_iff {X Y : set A} : X ⊆ Y ∧ Y ⊆ X ↔ X = Y :=
+⟨λ h, subset_antisymm h.1 h.2, λ h, by {rw h, simp}⟩
 
 lemma univ_subset  {X : set A} (hX : univ ⊆ X) : X = univ := 
   subset_antisymm (subset_univ X) hX
@@ -298,6 +301,9 @@ lemma subset_empty  {X : set A} : X ⊆ ∅ → X = ∅ :=
 
 lemma ssubset_empty (X : set A) : ¬ X ⊂ ∅ := 
   λ h, by {rw ssubset_iff at h, from h.2 (subset_empty h.1)}
+
+lemma empty_of_subset_compl {X : set A} : X ⊆ Xᶜ → X = ∅ := 
+λ h, by tidy
 
 lemma disjoint_compl_subset {X Y : set A} : X ∩ Y = ∅ → X ⊆ Yᶜ := 
   λ h, by rw [subset_def_inter, ← empty_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_univ]
@@ -777,7 +783,7 @@ lemma eq_of_eq_size_subset {X Y : set A} : (X ⊆ Y) → (size X = size Y) → X
 lemma eq_of_eq_size_subset_iff {X Y : set A} : (X ⊆ Y) → ((size X = size Y) ↔ X = Y) :=
   λ hXY, ⟨λ h, eq_of_eq_size_subset hXY h, λ h, by {rw h}⟩
 
-lemma eq_of_ge_size_subset {X Y : set A} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
+lemma eq_of_le_size_subset {X Y : set A} : (X ⊆ Y) → (size Y ≤ size X) → X = Y :=
   λ hXY hXY', by {apply eq_of_eq_size_subset hXY, exact le_antisymm (size_monotone hXY) hXY'}
 
 lemma size_eq_of_supset {X Y : set A} : (X ⊆ Y) → (size Y ≤ size X) → size X = size Y := 
