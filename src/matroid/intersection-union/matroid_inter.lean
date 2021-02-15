@@ -4,7 +4,7 @@ all X ⊆ U. The proof is really by induction on the size of the ground set, but
 instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
 projections of M₁ and M₂.  -/
 
-import matroid.constructions matroid.minor.projection ftype.minmax .basic 
+import matroid.constructions matroid.submatroid.projection ftype.minmax .basic 
 
 open_locale classical 
 noncomputable theory 
@@ -66,7 +66,7 @@ begin
   refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N₂ hsize, _), 
   
   -- base case, when everything is a loop. Here the LHS is obviously 0.
-  rw [size_zero_iff_empty, univ_iff_compl_empty] at hloops,
+  rw [size_zero_iff_empty, compl_empty_iff] at hloops,
   have h' : (matroid_intersection_ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
   {
     simp_rw matroid_intersection_ub_fn,  
@@ -122,15 +122,15 @@ begin
     have := max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Ic ∪ e, _⟩, 
     dsimp only at this ⊢,
     linarith only [add_nonelem_size heIc, this], 
-    split, 
-    from indep_of_project_indep hIc_ind.1 (nonloop_iff_indep.mp h_e_nl.1), 
-    from indep_of_project_indep hIc_ind.2 (nonloop_iff_indep.mp h_e_nl.2),                                                               
+    split, all_goals {apply indep_union_project_set_of_project_indep}, 
+    exact hIc_ind.1, exact (nonloop_iff_indep.mp h_e_nl.1), 
+    exact hIc_ind.2, exact (nonloop_iff_indep.mp h_e_nl.2),                                                               
   },                             
   
   -- (N₁\ e, N₂\e) is loopier 
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
-    have h_add_e := union_subset_pairs 
+    have h_add_e := union_subset_union 
       (loopify_makes_loops N₁ e) 
       (loopify_makes_loops N₂ e), 
     rw ←union_distrib_union_left at h_add_e, 
@@ -142,7 +142,7 @@ begin
   -- so is (N₁/e , N₂/e)
   have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by 
   {
-    have h_add_e := union_subset_pairs 
+    have h_add_e := union_subset_union 
       (project_makes_loops N₁ e) 
       (project_makes_loops N₂ e), 
     rw ←union_distrib_union_left at h_add_e, 

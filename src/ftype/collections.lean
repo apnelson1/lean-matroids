@@ -24,7 +24,7 @@ lemma max_iff_compl_min (P : set A → Prop) (X : set A) :
   is_maximal P X ↔ is_minimal (λ Z, P Zᶜ) Xᶜ :=
 begin 
   refine ⟨λ h, ⟨by {rw ←compl_compl X at h, exact h.1},λ Y hY, _⟩, λ h, ⟨by {rw ←compl_compl X, exact h.1},λ Y hY, _⟩⟩, 
-  exact h.2 _ (ssubset_compl_right hY), rw ←compl_compl Y, exact h.2 _ (ssubset_to_compl hY), 
+  exact h.2 _ (scompl_subset_comm.mpr hY), rw ←compl_compl Y, exact h.2 _ (scompl_subset_compl.mpr hY), 
 end
 
 lemma down_closed_iff_negation_up_closed (P : set A → Prop) : 
@@ -120,7 +120,7 @@ begin
   refine inter_closed_min_unique P h X (min_of_inter_closed h) ⟨hX,λ Y hY hPY, _⟩ ⟨_,λ Y hY hPY,_⟩,
   exact ssubset_not_supset hY (hlb Y hPY),     
   exact min_of_inter_closed_in h, 
-  refine ssubset_not_supset (subset_ssubset_trans (hlb _ hPY) hY ) _, 
+  refine ssubset_not_supset (subset.lt_of_le_of_lt (hlb _ hPY) hY ) _, 
   exact (min_of_inter_closed_is_lb h) _ hX,
 end
 
@@ -149,7 +149,7 @@ begin
   refine union_closed_max_unique P h X (max_of_union_closed h) ⟨hX,λ Y hY hPY, _⟩ ⟨_,λ Y hY hPY,_⟩,
   exact ssubset_not_supset hY (hub Y hPY), 
   exact max_of_union_closed_in h, 
-  refine ssubset_not_supset (ssubset_subset_trans hY (hub _ hPY)) _, 
+  refine ssubset_not_supset (subset.lt_of_lt_of_le hY (hub _ hPY)) _, 
   exact (max_of_union_closed_is_ub h) _ hX,
 end
 
@@ -180,14 +180,14 @@ lemma subset_inter_all_iff (P : set A → Prop) (X : set A):
   X ⊆ inter_all P ↔ is_lb P X :=
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, max_of_union_closed_is_ub (lb_union_closed P) _ h ⟩,
-    exact subset_trans h (max_of_union_closed_in (lb_union_closed P) Y hY), 
+    exact subset.trans h (max_of_union_closed_in (lb_union_closed P) Y hY), 
   end
 
 lemma union_all_subset_iff (P : set A → Prop) (X : set A): 
   union_all P ⊆ X ↔ is_ub P X := 
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, min_of_inter_closed_is_lb (ub_inter_closed P) _ h ⟩,
-    exact subset_trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h,  
+    exact subset.trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h,  
   end
 
 lemma union_all_ub (P : set A → Prop):

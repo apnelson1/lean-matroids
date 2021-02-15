@@ -402,7 +402,7 @@ def is_emb_minor (N : matroid U₀)(M : matroid U) :=
 lemma minor_trans: transitive (λ (M₁ M₂ : matroid_in U), is_minor M₁ M₂) :=
 begin
   rintros M₁ M₂ M₃ ⟨h1,⟨C₁,hC₁,h1'⟩⟩ ⟨h2,⟨C₂,hC₂,h2'⟩⟩, 
-  refine ⟨subset_trans h1 h2,⟨C₁ ∪ C₂,⟨_,λ X hX, _⟩⟩⟩, 
+  refine ⟨subset.trans h1 h2,⟨C₁ ∪ C₂,⟨_,λ X hX, _⟩⟩⟩, 
   ----
   { convert set.union_subset_union hC₁ hC₂, ext, 
     simp only [ftype.diff_def, set.mem_inter_eq, set.mem_union_eq, set.mem_compl_eq], 
@@ -411,7 +411,7 @@ begin
   have hC₁M₂: C₁ ⊆ M₂.groundset := by 
   { intros x hx, simp only [ftype.diff_def, set.subset_inter_iff] at hC₁, tauto,},
   rw [h1' X hX, h2' (X ∪ C₁) _, h2' C₁ hC₁M₂, ←union_assoc],  ring,
-  exact union_is_ub (subset_trans hX h1) hC₁M₂, 
+  exact union_is_ub (subset.trans hX h1) hC₁M₂, 
 end
 
  def contract_to_matroid (M : matroid_in U)(C : set U): matroid ⟨(M.groundset \ C : set U)⟩ :=

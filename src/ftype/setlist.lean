@@ -71,9 +71,9 @@ by {rw [set.Inter_eq_univ], exact λ i, fin_zero_elim i}
 
 
 lemma Union_cons {n : ℕ}(Xs : fin n → set U)(Y : set U):
-set.Union Xs ∪ Y = set.Union (fin.cons Y Xs) :=
+set.Union (fin.cons Y Xs) = set.Union Xs ∪ Y  :=
 begin
-  ext, rw [set.mem_union, set.mem_Union, set.mem_Union],   
+  apply eq.symm, ext, rw [set.mem_union, set.mem_Union, set.mem_Union],   
   refine ⟨λ h, _, λ h, _⟩, 
   rcases h with (⟨i, hi⟩ | h), 
     {use fin.succ i, simp [hi]},

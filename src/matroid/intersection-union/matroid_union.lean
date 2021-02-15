@@ -4,14 +4,14 @@
   sets are the independent sets of a matroid on U. Then it generalizes the latter result to a 
   general list of matroids; the former is todo but shouldn't be too bad.  -/
 
-import matroid.constructions matroid.projection ftype.minmax .matroid_inter .basic
+import ftype.minmax ftype.setlist 
+import matroid.constructions matroid.submatroid.projection  .matroid_inter .basic
 import algebra.big_operators
 import set_tactic.solver
 
 open_locale classical big_operators
 noncomputable theory 
-open ftype 
-open matroid  
+open ftype set matroid
 
 variables {U : ftype}
 
@@ -35,9 +35,9 @@ lemma subset_inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
   rw ←hIB₁B₂ at hY', split, 
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₁),
+  refine I2 (subset.trans hY' _) (basis_is_indep hB₁),
   apply inter_subset_left,    
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₂),
+  refine I2 (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
 
@@ -98,7 +98,7 @@ begin
   rcases extends_to_basis hIp.1 with ⟨B₁,hB₁⟩, 
   rcases extends_to_basis hIp.2 with ⟨B₂,hB₂⟩, 
   refine le_trans (size_monotone _) (hBp_ub ⟨⟨B₁, B₂⟩, ⟨hB₁.2, hB₂.2⟩⟩), 
-  from union_subset_pairs hB₁.1 hB₂.1, 
+  from union_subset_union hB₁.1 hB₂.1, 
   from hIp_ub ⟨⟨Bp₁,Bp₂⟩, ⟨basis_is_indep hBp.1,basis_is_indep hBp.2⟩⟩, 
 end
 
@@ -148,7 +148,7 @@ begin
   rw [π₂_eq_ν_plus_r, matroid_intersection],
   rw min_add_commute (matroid_intersection_ub_fn M₁ (dual M₂)) (M₂.r univ),
   congr', ext X, rw [matroid_intersection_ub_fn], dsimp,
-  rw [dual_r, ftype.compl_compl], linarith,  
+  rw [dual_r, compl_compl], linarith,  
 end
 
 end two_union 
@@ -202,7 +202,7 @@ begin
     from eq_of_ssubset (subset_union_right Xᶜ B) this,  
     intro h, 
     have h' := hB (Xᶜ ∪ B), 
-    simp only [inter_distrib_right, inter_compl_left, ftype.compl_compl, 
+    simp only [inter_distrib_right, compl_inter_self, compl_compl, 
     set.compl_union, empty_union, add_le_add_iff_right] at h',  
     rw [←compl_compl_union_left, compl_size, compl_size] at h', 
     linarith [size_strict_monotone h], 
@@ -214,7 +214,7 @@ begin
   
   repeat 
     {unfold_coes, 
-    simp only [inter_distrib_right, subset_def_inter_mp A.property, inter_compl_left, empty_union]},
+    simp only [inter_distrib_right, subset_def_inter_mp A.property, compl_inter_self, empty_union]},
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
   dsimp,
@@ -244,7 +244,7 @@ begin
   { convert max_compose_le_max φ (λ Ip, union_size Ip.val)}, 
   rcases Ip with ⟨_, ⟨⟨_,_⟩,⟨_,_⟩⟩⟩, 
   refine ⟨⟨_,_⟩,⟨_,_⟩⟩; 
-  { try {assumption}, try {from subset_trans (by assumption) hXY}}, 
+  { try {assumption}, try {from subset.trans (by assumption) hXY}}, 
 end
 
 lemma R3 : 
@@ -323,8 +323,13 @@ begin
     {use loopy_matroid_on U, 
     simp_rw [loopy_matroid_indep_iff_empty, is_union_indep_tuple], 
     refine λ X, ⟨λ h, _, λ h, _⟩,  
-      {refine ⟨⟨λ i, fin_zero_elim i, λ i, fin_zero_elim i⟩,by {rw h, simp}⟩,},
-    cases h with Is hIs, rw hIs, simp,},
+      {refine ⟨⟨λ i, fin_zero_elim i, λ i, fin_zero_elim i⟩,_⟩,
+        simp only, 
+        rw [h, eq_comm, Union_eq_empty],  
+        exact fin_zero_elim,  },
+    cases h with Is hIs, rw hIs, 
+    simp only [set.Union_eq_empty, subtype.val_eq_coe],
+    apply fin_zero_elim, },
 
   set Ms₀ := fin.tail Ms, 
   set N := Ms 0 with hN, 
@@ -336,14 +341,14 @@ begin
     rw hMU₀ at h₁, rcases h₁ with ⟨⟨Is₀,h₃⟩,h₄⟩,
     unfold is_union_indep_tuple, 
     refine ⟨⟨@fin.cons _ (λ i, set U) I₂ Is₀,λ i,_⟩,_⟩, swap, 
-      {rw h₄, simp [fin.Union_cons], },
+      {rw h₄, simp [seq.Union_cons],  },
     revert i, refine λ i, fin.cases (by {rw ←hN, simp [h₂]}) (λ i₀ , _) i, 
     convert h₃ i₀, simp, 
     },},
   rcases h with ⟨⟨Is,h₂⟩, rfl⟩, 
   refine ⟨set.Union (fin.tail Is),Is 0,_,⟨h₂ 0,_⟩⟩, 
     {rw hMU₀, refine ⟨⟨fin.tail Is,λ i, h₂ (fin.succ i)⟩,rfl⟩, },
-  simp [fin.Union_cons],
+  simp [←seq.Union_cons],
 end
 
 /-- the union of a list of matroids, as a matroid -/
@@ -372,6 +377,8 @@ begin
   rw max_reindex φ hφ' (λ I, size I.val), trivial, 
 end
 
+end union 
+/-
 theorem matroid_union (Ms : fin n → matroid U): 
   π Ms = min_val (λ (A : set U), size Aᶜ + ∑ i, (Ms i).r A ) := 
 begin
@@ -407,10 +414,9 @@ begin
   
   
 end
+-/
 
 
-
-end union 
 
 /-
 /-- statement that each I_i is indep in M_i -/

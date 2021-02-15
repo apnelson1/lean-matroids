@@ -128,23 +128,23 @@ end
 
 lemma minimal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ Z, Z ⊂ Y → ¬P Z := 
-  begin
-    set minimal_P := λ (Y : set A), P Y ∧ ∀ (Z : set A), Z ⊂ Y → ¬ P Z with hmin, 
-    revert X, refine strong_induction _ _, intros T hT hPT, 
-    by_cases ∀ Z, Z ⊂ T → ¬P Z, use T, exact ⟨subset_refl T, ⟨hPT, h⟩⟩, 
-    push_neg at h, rcases h with ⟨Z, ⟨hZT, hPZ⟩⟩, 
-    specialize hT Z hZT hPZ, rcases hT with ⟨Y, ⟨hYZ, hQY⟩⟩, 
-    use Y, exact ⟨subset_trans hYZ hZT.1, hQY⟩, 
-  end
+begin
+  set minimal_P := λ (Y : set A), P Y ∧ ∀ (Z : set A), Z ⊂ Y → ¬ P Z with hmin, 
+  revert X, refine strong_induction _ _, intros T hT hPT, 
+  by_cases ∀ Z, Z ⊂ T → ¬P Z, use T, exact ⟨subset_refl T, ⟨hPT, h⟩⟩, 
+  push_neg at h, rcases h with ⟨Z, ⟨hZT, hPZ⟩⟩, 
+  specialize hT Z hZT hPZ, rcases hT with ⟨Y, ⟨hYZ, hQY⟩⟩, 
+  use Y, exact ⟨subset.trans hYZ hZT.1, hQY⟩, 
+end
 
 lemma maximal_example (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
-  begin
-    intro h, rw ←compl_compl X at h, 
-    rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩, 
-    use Yᶜ, refine ⟨subset_compl_right hY₁, hY₂,λ Z hZ, _⟩,  
-    rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_left hZ), 
-  end
+begin
+  intro h, rw ←compl_compl X at h, 
+  rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩, 
+  use Yᶜ, refine ⟨subset_compl_comm.mpr hY₁, hY₂,λ Z hZ, _⟩,  
+  rw ←compl_compl Z, exact hY₃ Zᶜ (scompl_subset_comm.mp hZ), 
+end
 
 lemma maximal_example_from_empty (P : set A → Prop): 
   P ∅ → ∃ Y, P Y ∧ ∀ Z, Y ⊂ Z → ¬P Z := 
@@ -152,11 +152,11 @@ lemma maximal_example_from_empty (P : set A → Prop):
 
 lemma maximal_example_aug (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
-  begin
-    intro hPX, 
-    rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
-    from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
-  end 
+begin
+  intro hPX, 
+  rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
+end 
 
 lemma maximal_example_aug_from_empty (P : set A → Prop): 
   P ∅ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
@@ -164,11 +164,11 @@ lemma maximal_example_aug_from_empty (P : set A → Prop):
 
 lemma minimal_example_remove (P : set A → Prop){X : set A}: 
   (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ (e : A), e ∈ Y → ¬P (Y \ e) := 
-  begin
-    intro hPX, 
-    rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
-    from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
-  end 
+begin
+  intro hPX, 
+  rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
+end 
 
 /-lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):
   ∃ X, P X ∧ ∀ Y, size Y < size X → ¬ P Y := 

@@ -92,7 +92,7 @@ begin
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
     rw [nonloop_iff_not_elem_loops, ←elem_compl_iff], 
-    refine subset_trans he _, 
+    refine subset.trans he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
 
@@ -138,7 +138,7 @@ begin
   -- these next two claims let us apply IH to deletion/contraction 
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
-    have h_add_e := union_subset_pairs 
+    have h_add_e := union_subset_union 
       (loopify_makes_loops N₁ e) 
       (loopify_makes_loops N₂ e), 
     rw ←union_distrib_union_left at h_add_e, 
@@ -149,7 +149,7 @@ begin
 
   have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by 
   {
-    have h_add_e := union_subset_pairs 
+    have h_add_e := union_subset_union 
       (project_makes_loops N₁ e) 
       (project_makes_loops N₂ e), 
     rw ←union_distrib_union_left at h_add_e, 

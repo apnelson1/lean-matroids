@@ -127,7 +127,7 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
   begin
     rw switch_restrict_corestrict, ext X, apply eq.symm, 
     have hJ : ∀ (J : set U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (univ \ Z) := 
-      λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, subset_def_union_mp (subset_trans hJ hAZ), inter_comm, union_comm], 
+      λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, subset_def_union_mp (subset.trans hJ hAZ), inter_comm, union_comm], 
     have hset : size ((X:set U) ∩ (Z \ A)) = 0 := by 
     {
       suffices : ((X:set U) ∩ (Z \ A)) = ∅, 
@@ -225,7 +225,7 @@ lemma restrict_restrict (M : rankfun U) (A Z : set U) (hAZ : A ⊆ Z) :
   restrict A hAZ ((corestrict Z (subset_univ Z)) self)
 
 lemma restriction_of_reduced  {M : rankfun U} (A Z A' : set U) (hA'A : A' ⊆ A) (hAZ : A ⊆ Z) : 
-  to_minor (restrict A' hA'A (reduced_expr A Z hAZ)) M = to_minor (reduced_expr A' Z (subset_trans hA'A hAZ)) M := rfl
+  to_minor (restrict A' hA'A (reduced_expr A Z hAZ)) M = to_minor (reduced_expr A' Z (subset.trans hA'A hAZ)) M := rfl
 
 lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : set U) (hZ'A : Z' ⊆ A) (hAZ : A ⊆ Z) : 
   to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ) ) M = to_minor (reduced_expr Z' (Z' ∪ (Z \ A)) (subset_union_left Z' _)) M := 
@@ -238,7 +238,7 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : set U) (hZ'A : Z' ⊆ A
     {
       simp only [univ_diff, J, diff_def, univ_inter],
       rw [compl_union, compl_inter, inter_distrib_left, ←compl_union Z', 
-          (subset_def_union_mp (subset_trans hZ'A hAZ)), compl_compl, union_comm Zᶜ, inter_comm A], 
+          (subset_def_union_mp (subset.trans hZ'A hAZ)), compl_compl, union_comm Zᶜ, inter_comm A], 
     }, 
     have LHS := 
     calc     (to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ)) M).r X
@@ -264,7 +264,7 @@ begin
   /-restrict-/
   {
     rcases IH with ⟨Z, ⟨hE₁Z, h⟩⟩,
-    use Z, use subset_trans hX₁E₁ hE₁Z, 
+    use Z, use subset.trans hX₁E₁ hE₁Z, 
     rw ← restriction_of_reduced,
     dunfold to_minor,
     rw h,
@@ -305,7 +305,7 @@ end ftype
 /-lemma rank_augment {M : rankfun U} {X Z : set U} : (M.r X < M.r Z) → 
   ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
 let 
-    hcr    : Z \ X ⊆ X ∪ Z         := subset_trans (diff_subset Z X) (subset_union_right X Z),
+    hcr    : Z \ X ⊆ X ∪ Z         := subset.trans (diff_subset Z X) (subset_union_right X Z),
     hr     : X ∪ Z ⊆ univ             :=  subset_univ (X ∪ Z),  
     hdiff  : (X ∪ Z) \ (Z \ X) = X := union_diff_diff _ _,
     hunion : (Z \ X) ∪ X = X ∪ Z   := by rw [union_comm _ X, union_diff] 
@@ -324,7 +324,7 @@ begin
   have : M'.r univ ≠ 0 := by linarith [by calc M'.r univ = _ : hr'univ ... ≥ M.r Z - M.r X : by linarith [M.R2 Z (X ∪ Z) (subset_union_right X Z)]],
 
   apply this, apply loopy_rank_zero, intros e he,
-  specialize h e (subset_trans ((e: subftype (Z \ X)).property) (diff_subset _ _ )), 
+  specialize h e (subset.trans ((e: subftype (Z \ X)).property) (diff_subset _ _ )), 
   rw coe_single_subftype_compose at h, 
   rw [hrM' e, union_comm, coe_subftype_single_compose],
   linarith [M.R2 _ _ (subset_union_left X e)],

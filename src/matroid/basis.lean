@@ -30,7 +30,7 @@ begin
   use B,
     split,
       assumption,
-      apply subset_trans; tidy; assumption,
+      apply subset.trans; tidy; assumption,
 end
 
 def B_to_I3 (M : basis_family U) : satisfies_I3 (basis_to_indep M.basis) :=

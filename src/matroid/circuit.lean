@@ -19,7 +19,7 @@ lemma C_to_I1 (M : cct_family U) :
 
 lemma C_to_I2 (M : cct_family U) :
   satisfies_I2 (C_to_I M) :=
-  λ I J hIJ hJ X hXI, hJ _ (subset_trans hXI hIJ)
+  λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
 lemma new_circuit_contains_new_elem {M : cct_family U}{I C : set U}{e : U}:
   C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
@@ -34,7 +34,7 @@ lemma add_elem_unique_circuit {M : cct_family U} {I : set U} {e : U}:
                                 (new_circuit_contains_new_elem hI hC'.2 hC'.1),
     by_contra hCC', 
     cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
-    from hI _ (subset_trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
+    from hI _ (subset.trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
   end 
 
 lemma add_elem_le_one_circuit {M : cct_family U} {I C C': set U} (e : U):
@@ -148,7 +148,7 @@ begin
   from false.elim (h₂ _ h _ (subset_refl _) hX₂), 
   rw ←h, from hX₂, 
   push_neg, from ⟨_, ⟨subset_refl _, h⟩⟩, 
-  from M.C2 _ _ hXY h (subset_ssubset_trans hX hY),  
+  from M.C2 _ _ hXY h (subset.lt_of_le_of_lt hX hY),  
 end
 
 

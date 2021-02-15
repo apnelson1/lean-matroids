@@ -46,7 +46,12 @@ by {rw ←ne_empty_iff_nonempty, from single_ne_empt e}
 
 @[simp] lemma nonelem_empty (e : A) : 
   e ∉ (∅: set A) := 
-by {rw nonelem_iff_subset, intro h, replace h := size_monotone h, simp at h, linarith [size_empty]}
+begin
+  rw nonelem_iff_subset, intro h, replace h := size_monotone h, 
+  simp at h, 
+  linarith [size_empty A], 
+end
+
 
 @[simp] lemma elem_univ (e : A):
   e ∈ (univ : set A) := 
@@ -266,7 +271,7 @@ lemma compl_single_remove {X : set A} {e : A} :
 lemma remove_add_elem {X : set A} {e : A}: 
   e ∈ X → (X\e) ∪ e = X := 
 λ heX, by {rw [elem_iff_subset, subset_def_union,union_comm] at heX, 
-          rw [diff_def, union_distrib_right, union_compl_left, inter_univ, heX]}
+          rw [diff_def, union_distrib_right, compl_union_self, inter_univ, heX]}
    
 lemma add_remove_nonelem {X : set A} {e : A}: 
   e ∉ X → (X ∪ e) \ e = X := 
@@ -314,9 +319,9 @@ lemma ne_univ_single_addition {X : set A}:
   X ≠ univ → ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
 begin
   intro hX, rcases nonempty_single_removal (λ h, _ : Xᶜ ≠ ∅) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
-  refine ⟨Yᶜ , ⟨ssubset_compl_right h₁, _⟩⟩,
+  refine ⟨Yᶜ , ⟨scompl_subset_comm.mpr h₁, _⟩⟩,
   linarith [size_compl X, size_compl Y], 
-  exact hX (univ_of_compl_empty h), 
+  exact hX (compl_empty_iff.mp h), 
 end
 
 lemma ne_univ_single_addition_element {X : set A}:
@@ -398,7 +403,7 @@ begin
   cases subset_single (inter_subset_right X e),
   rw [h, empty_union, ←subset_def_inter] at hs, cases subset_single hs, exact or.inl h_1, apply or.inr, exact or.inr h_1,
   rw [inter_comm, ←subset_def_inter] at h, apply or.inr, cases subset_single (inter_subset_right X f),
-  rw [h_1, union_empty, ←subset_def_inter] at hs,  exact or.inl (subset_antisymm hs h), 
+  rw [h_1, union_empty, ←subset_def_inter] at hs,  exact or.inl (subset.antisymm hs h), 
   rw [subset_def_inter, inter_comm] at h,
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
 end

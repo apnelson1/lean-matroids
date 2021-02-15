@@ -1,7 +1,8 @@
 
 import .basic --.single
 namespace ftype 
--- Embedding and subftypeebras
+open set 
+-- Embedding and subftypes
 
 open_locale classical 
 noncomputable theory 
@@ -59,7 +60,10 @@ lemma embed.compose_subset_nested_pair {A : ftype}(X₁ X₂ : set A) (hX₁X₂
  (embed.compose (embed.from_nested_pair hX₁X₂) (embed.from_subftype X₂)) = embed.from_subftype X₁ := rfl 
 
 lemma embed.compose_nested_triple {A : ftype}(X₁ X₂ X₃ : set A) (h₁₂ : X₁ ⊆ X₂) (h₂₃ : X₂ ⊆ X₃) :
-  (embed.compose (embed.from_nested_pair h₁₂) (embed.from_nested_pair h₂₃)) = embed.from_nested_pair (subset_trans h₁₂ h₂₃) := rfl
+  (embed.compose 
+  (embed.from_nested_pair h₁₂) 
+  (embed.from_nested_pair h₂₃)) = 
+  embed.from_nested_pair (subset.trans h₁₂ h₂₃) := rfl
 
 
 --Subalgebra coercion 
@@ -86,7 +90,8 @@ end
   ((X: set A) = (Y: set A)) ↔ (X = Y) :=
 begin
   refine ⟨λ h, _, λ h, by {rw h}⟩, 
-  rwa [←subset_antisymm_iff, ←subftype_coe_subset, ←subftype_coe_subset, subset_antisymm_iff] at h, 
+  rwa [subset.antisymm_iff, ←subftype_coe_subset, 
+  ←subftype_coe_subset, ←subset.antisymm_iff] at h, 
 end
 
 @[coe_up] lemma subftype_coe_ssubset {A : ftype} {S : set A} {X Y : set (subftype S)}: 

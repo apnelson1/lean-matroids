@@ -200,7 +200,7 @@ fun X, ⟨X.val.val, congr_arg subtype.val X.prop⟩
 
 def nest {U : boolalg} {E : U} (F : subalg E) :
   subalg (F.val) → subalg F :=
-fun X, ⟨⟨X.val, subset_trans X.prop F.prop⟩, subtype.ext X.prop⟩
+fun X, ⟨⟨X.val, subset.trans X.prop F.prop⟩, subtype.ext X.prop⟩
 
 -- Deletion and contraction commute.
 

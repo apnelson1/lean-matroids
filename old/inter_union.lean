@@ -89,7 +89,7 @@ suffices : ∀ n₀, 0 ≤ n₀ → Q n₀,
 refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N₂ hsize, _), 
 
 -- base case 
-rw [size_zero_iff_empty, univ_iff_compl_empty] at hloops,
+rw [size_zero_iff_empty, compl_empty_iff] at hloops,
 have h' : (ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
 {
   simp_rw h_ub_fn,  
@@ -152,7 +152,7 @@ have h_nu_c : ν N₁c N₂c ≤ k-1 := by
 -- these next two claims let us apply IH to deletion/contraction 
 have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
 {
-  have h_add_e := union_subset_pairs 
+  have h_add_e := union_subset_union 
     (loopify_makes_loops N₁ e) 
     (loopify_makes_loops N₂ e), 
   rw ←union_distrib_union_left at h_add_e, 
@@ -163,7 +163,7 @@ have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by
 
 have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by 
 {
-  have h_add_e := union_subset_pairs 
+  have h_add_e := union_subset_union 
     (project_makes_loops N₁ e) 
     (project_makes_loops N₂ e), 
   rw ←union_distrib_union_left at h_add_e, 
@@ -235,9 +235,9 @@ lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
   rw ←hIB₁B₂ at hY', split, 
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₁),
+  refine I2 (subset.trans hY' _) (basis_is_indep hB₁),
   apply inter_subset_left,    
-  refine I2 (subset_trans hY' _) (basis_is_indep hB₂),
+  refine I2 (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
 
@@ -322,7 +322,7 @@ begin
   cases extends_to_basis hI₁ with B₁ hB₁,  
   cases extends_to_basis hI₂ with B₂ hB₂, 
   refine ⟨B₁ ∪ B₂, ⟨B₁, B₂, hB₁.2, hB₂.2, rfl ⟩, _⟩,
-  rw hIX, apply union_subset_pairs hB₁.1 hB₂.1, 
+  rw hIX, apply union_subset_union hB₁.1 hB₂.1, 
 
   rcases h with ⟨Y, ⟨B₁, B₂, hB₁, hB₂, hBY⟩, hXY⟩, 
   refine ⟨X ∩ B₁, X ∩ B₂, I2_i_right (basis_is_indep hB₁), I2_i_right (basis_is_indep hB₂), _ ⟩,   

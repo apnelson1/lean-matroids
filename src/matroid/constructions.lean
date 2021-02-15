@@ -1,6 +1,6 @@
 
-import ftype.basic ftype.induction ftype.collections
-import .rankfun .indep 
+import ftype.basic ftype.induction ftype.collections 
+import .rankfun .indep matroid.submatroid.order
 
 open ftype matroid set 
 
@@ -50,7 +50,7 @@ begin
   rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
   rw hBS at h, 
   refine ⟨B₀, ⟨⟨_,⟨⟨matroid.I2 hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
-  from subset_trans hB₀ hBX, 
+  from subset.trans hB₀ hBX, 
   linarith [size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   push_neg at h, 
   rw hBS at h, 
@@ -61,6 +61,10 @@ begin
   rw min_comm, 
   finish, 
 end
+
+lemma truncation_weak_image (M : matroid U){n : ℤ}(hn : 0 ≤ n) : 
+  (truncate M hn) ≤ M := 
+λ X, by {rw truncate_rank, simp, tauto,}
 
 end truncation 
 
@@ -255,8 +259,13 @@ begin
   linarith [M.R3 X Y, r_le_relax_r M C X, r_le_relax_r M C Y],
 end
 
+/-- relaxation of the circuit_hyperplane C in M -/
 def relax (M : matroid U)(C : set U)(hC : is_circuit_hyperplane M C) : matroid U := 
   ⟨relax.r M C, relax.R0 M C, relax.R1 hC, relax.R2 hC, relax.R3 hC⟩ 
+
+lemma relax_weak_image (M : matroid U)(C : set U)(hC : is_circuit_hyperplane M C): 
+  M ≤ (relax M C hC) :=
+λ X, r_le_relax_r _ _ X 
 
 theorem relax.dual {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) :
   dual (relax M C hC) = relax (dual M) Cᶜ (circuit_hyperplane_dual.mp hC) := 

@@ -194,7 +194,7 @@ begin
   { rcases h with ⟨h, h', h''⟩, 
     rwa subset_def_inter_mp h at h', 
     refine ⟨h', (λ Y hY, _), h⟩, 
-    have hYE : Y ∩ M.E = Y := subset_def_inter_mp (subset_trans hY.1 h),
+    have hYE : Y ∩ M.E = Y := subset_def_inter_mp (subset.trans hY.1 h),
     rw subset_def_inter at h,  
     specialize h'' (inter_subtype _ Y) _, 
     { simp only with coe_up at h'',
@@ -205,7 +205,7 @@ begin
   refine ⟨h'', _,λ Y hY, _⟩, 
   { convert h; rwa subset_def_inter_mp h'', },
   apply h', 
-  refine ssubset_subset_trans hY (inter_subset_left _ _), 
+  refine subset.lt_of_lt_of_le hY (inter_subset_left _ _), 
 end
 
 lemma circuit_iff_carrier {M : matroid_in U}{C : set U}:

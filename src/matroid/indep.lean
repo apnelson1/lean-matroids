@@ -163,7 +163,7 @@ lemma has_nested_basis_pair (M : indep_family U){X Y : set U}:
   X ⊆ Y → ∃ BX BY, BX ⊆ BY ∧ M.is_set_basis BX X ∧ M.is_set_basis BY Y :=
 begin
   intro hXY, rcases M.has_basis X with ⟨BX,hBX⟩, 
-  rcases M.has_ext_to_basis (subset_trans hBX.1 hXY) hBX.2.1 with ⟨BY, hBY⟩, 
+  rcases M.has_ext_to_basis (subset.trans hBX.1 hXY) hBX.2.1 with ⟨BY, hBY⟩, 
   use BX, use BY, from ⟨hBY.1,⟨hBX, hBY.2⟩⟩, 
 end
 
@@ -187,14 +187,14 @@ lemma I_to_R2 (M : indep_family U):
   satisfies_R2 M.I_to_r := 
 begin 
   intros X Y hXY, rcases M.I_to_r_max X with ⟨B,⟨hBX,⟨hIB,hsB⟩⟩⟩, 
-  have := I_to_r_ub (subset_trans hBX hXY) hIB, rw hsB at this, assumption
+  have := I_to_r_ub (subset.trans hBX hXY) hIB, rw hsB at this, assumption
 end 
 
 lemma I_to_r_eq_rank_basis_union {M : indep_family U}{B X: set U}(Y : set U):
   M.is_set_basis B X → M.I_to_r (B ∪ Y) = M.I_to_r (X ∪ Y) := 
 begin
   intro h, 
-  rcases M.has_ext_to_basis (subset_trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨BU, ⟨hUs, hUb⟩⟩,
+  rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨BU, ⟨hUs, hUb⟩⟩,
   have := I_to_r_ub (_ : BU ⊆ B ∪ Y) hUb.2.1,  
   have := M.I_to_R2 _ _ (subset_union_subset_left B X Y h.1), 
   have := I_to_r_of_set_basis hUb, linarith, 
@@ -214,7 +214,7 @@ lemma I_to_R3 (M : indep_family U):
 begin
   intros X Y, 
   rcases M.has_nested_basis_pair (inter_subset_left X Y) with ⟨BI, BX, ⟨hss, ⟨hBI, hBX⟩⟩⟩,   
-  rcases M.has_ext_to_basis (subset_trans hBI.1 (inter_subset_right X Y)) hBI.2.1 with ⟨BY, ⟨hBIBY,hBY⟩⟩, 
+  rcases M.has_ext_to_basis (subset.trans hBI.1 (inter_subset_right X Y)) hBI.2.1 with ⟨BY, ⟨hBIBY,hBY⟩⟩, 
   rcases M.has_ext_to_basis (subset_union_left BX BY) hBX.2.1 with ⟨BU, ⟨hBXBU,hBU⟩⟩, 
   rw [←I_to_r_eq_rank_basis_union Y hBX, union_comm BX _, 
           ←I_to_r_eq_rank_basis_union BX hBY, union_comm BY, 

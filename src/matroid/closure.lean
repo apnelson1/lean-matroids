@@ -21,8 +21,8 @@ lemma subset_union (M : clfun U)(X Y : set U) :
 lemma cl_union_both (M : clfun U)(X Y : set U) :
   M.cl (X ∪ Y) = M.cl(M.cl X ∪ M.cl Y) :=
   begin
-    apply subset_antisymm, 
-    from monotone M (union_subset_pairs (M.cl1 X) (M.cl1 Y)),
+    apply subset.antisymm, 
+    from monotone M (union_subset_union (M.cl1 X) (M.cl1 Y)),
     have := monotone M (subset_union M X Y),
     rw M.cl2 at this, assumption
   end
