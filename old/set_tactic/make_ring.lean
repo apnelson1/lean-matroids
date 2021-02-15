@@ -7,7 +7,7 @@ variables {α : Type*}[boolean_algebra α]
 
 
 @[simp] def symm_diff (X Y : α) : α := (X \ Y) ⊔ (Y \ X) 
-@[simp] lemma sdiff_def {X Y : α} : X \ Y = X ⊓ Yᶜ := sdiff_eq 
+@[simp] lemma sdiff_eq {X Y : α} : X \ Y = X ⊓ Yᶜ := sdiff_eq 
 
 -- commutativity/associativity with explicit params for easier rewriting 
 lemma inf_comm' (X Y : α) : X ⊓ Y = Y ⊓ X := by apply inf_comm 
@@ -24,7 +24,7 @@ lemma symm_diff_comm (X Y : α) : symm_diff X Y = symm_diff Y X :=
 lemma symm_diff_three (X Y Z : α) : 
   symm_diff (symm_diff X Y) Z = X ⊓ Yᶜ ⊓ Zᶜ ⊔ Y ⊓ Xᶜ ⊓ Zᶜ ⊔ (Z ⊓ (Xᶜ ⊓ Yᶜ) ⊔ Z ⊓ (Y ⊓ X)) :=
 begin
-  simp only [symm_diff, sdiff_def, inf_sup_right, compl_sup,compl_inf,compl_compl'],
+  simp only [symm_diff, sdiff_eq, inf_sup_right, compl_sup,compl_inf,compl_compl'],
   repeat {rw inf_sup_left},
   repeat {rw inf_sup_right},
   rw [inf_compl_eq_bot, inf_comm' Xᶜ X, inf_compl_eq_bot], 
@@ -43,7 +43,7 @@ begin
 end
 
 lemma inf_distrib_diff (X Y Z : α) : X ⊓ (Y \ Z) = (X ⊓ Y) \ (X ⊓ Z) := 
-  by {simp only [sdiff_def, compl_inf, inf_sup_left], rw [inf_right_comm _ Y, ←inf_assoc], simp,  }
+  by {simp only [sdiff_eq, compl_inf, inf_sup_left], rw [inf_right_comm _ Y, ←inf_assoc], simp,  }
 
 lemma symm_diff_distrib_inf_left (X Y Z : α): X ⊓ (symm_diff Y Z)  = symm_diff (X ⊓ Y) (X ⊓ Z) := 
   by simp only [symm_diff, inf_sup_left, inf_sup_right, inf_distrib_diff] 
@@ -120,9 +120,9 @@ begin
   rw [add_assoc], 
   nth_rewrite 1 ←one_mul Y, 
   rw [←right_distrib, one_add, ←symm_diff_to_ring, ←inf_to_ring],
-  rw [sdiff_def, sdiff_def, inf_right_comm, compl_inf, inf_sup_left], 
+  rw [sdiff_eq, sdiff_eq, inf_right_comm, compl_inf, inf_sup_left], 
   simp only [compl_compl', inf_idem],
-  rw [←sdiff_def, inf_comm' Xᶜ, ←sdiff_def, sup_sdiff, sup_sdiff_same], 
+  rw [←sdiff_eq, inf_comm' Xᶜ, ←sdiff_eq, sup_sdiff, sup_sdiff_same], 
 end 
 
 lemma compl_to_ring {X : α} : 
@@ -135,7 +135,7 @@ lemma le_to_ring {X Y : α} :
 
 lemma diff_to_ring {X Y : α} : 
   X \ Y = X*(Y + 1) := 
-  by rw [add_one, ←inf_to_ring, sdiff_def]
+  by rw [add_one, ←inf_to_ring, sdiff_eq]
 ---------------------
 
 @[simp] lemma mul_idem (X : α): 

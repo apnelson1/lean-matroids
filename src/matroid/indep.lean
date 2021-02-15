@@ -1,11 +1,11 @@
-import ftype.basic ftype.induction ftype.collections .rankfun 
-open ftype set 
+import prelim.induction prelim.collections .rankfun 
+open set 
 
 open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
 
-variables {U :ftype}
+variables {U : Type}[fintype U]
 
 /-namespace indep_family' 
 
@@ -49,7 +49,7 @@ namespace indep_family
 
 /-- removing an element from an independent set preserves independence-/
 def satisfies_weak_I2 : (set U → Prop) → Prop :=
-  λ indep, ∀ I (e : U), e ∉ I → indep (I ∪ e) → indep I 
+  λ indep, ∀ I (e : U), e ∉ I → indep (I ∪ {e}) → indep I 
 
 lemma weak_I2_to_I2 (indep : set U → Prop):  
   satisfies_weak_I2 indep → satisfies_I2  indep :=
@@ -58,7 +58,7 @@ lemma weak_I2_to_I2 (indep : set U → Prop):
     rcases minimal_example (λ K, I ⊆ K ∧ indep K) ⟨hIJ, hJ⟩ with ⟨K,⟨hKs,⟨⟨hIK,hKind⟩,hmin⟩⟩⟩,
     by_cases I = K, rw ←h at hKind, assumption, 
     rcases aug_of_ssubset (ssubset_of_subset_ne hIK h) with ⟨K',e,hIK',hK'K,hK'e⟩,
-    have heK' : e ∉ K' := by {rw ssubset_of_add_nonelem_iff, rw hK'e, from hK'K },
+    have heK' : e ∉ K' := by {rw ssubset_of_add_nonmem_iff, rw hK'e, from hK'K },
     from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwI2 _ _ heK' hKind}⟩ )
   end
 
@@ -108,9 +108,9 @@ lemma size_ind_le_size_set_basis {M : indep_family U}{I B X : set U}:
   begin
     intros hIX hI hB, by_contra hlt, push_neg at hlt, 
     rcases M.I3 B I hlt hB.2.1 hI with ⟨e, ⟨h₁e, h₂e⟩ ⟩, 
-    rw elem_diff_iff at h₁e, refine hB.2.2 (B ∪ e) _ _ h₂e, 
-    from ssub_of_add_nonelem h₁e.2, 
-    from union_of_subsets hB.1 (subset_of_elem_of_subset h₁e.1 hIX),
+    rw elem_diff_iff at h₁e, refine hB.2.2 (B ∪ {e}) _ _ h₂e, 
+    from ssub_of_add_nonmem h₁e.2, 
+    from union_of_subsets hB.1 (subset_of_mem_of_subset h₁e.1 hIX),
   end
 
 lemma set_bases_equicardinal {M : indep_family U}{X B₁ B₂ : set U} :
@@ -123,7 +123,7 @@ end
 
 --lemma basis_ext_inter_set {M : indep_family U}{X B₁ }
 
-def I_to_r {U : ftype}(M : indep_family U) : (set U → ℤ) := 
+def I_to_r (M : indep_family U) : (set U → ℤ) := 
   λ X, size (M.choose_set_basis X)
 
 lemma I_to_r_max (M : indep_family U)(X : set U): 
@@ -142,7 +142,7 @@ begin
   linarith, 
 end 
 
-lemma I_to_r_eq_iff {U : ftype}{M : indep_family U}{X : set U}{n : ℤ} :
+lemma I_to_r_eq_iff {M : indep_family U}{X : set U}{n : ℤ} :
   M.I_to_r X = n ↔ ∃ B, M.is_set_basis B X ∧ size B = n :=
   let B₀ := M.choose_set_basis X, hB₀ := M.choice_of_set_basis_is_valid X in 
 begin
@@ -151,7 +151,7 @@ begin
   from (rfl.congr hBsize).mp (eq.symm (set_bases_equicardinal hB hB₀)), 
 end
 
-lemma has_set_basis_with_size {U : ftype}(M : indep_family U)(X : set U) : 
+lemma has_set_basis_with_size (M : indep_family U)(X : set U) : 
   ∃ B, M.is_set_basis B X ∧ size B = M.I_to_r X :=
   I_to_r_eq_iff.mp (rfl : M.I_to_r X = M.I_to_r X)
  

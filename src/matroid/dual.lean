@@ -1,17 +1,17 @@
 import matroid.axioms  
-import ftype.basic ftype.collections 
+import prelim.collections
 
 ----------------------------------------------------------------
-open ftype set 
+open set 
 noncomputable theory 
 namespace matroid 
 
 section dual
-variables {U : ftype}
+variables {U : Type}[fintype U]
  
-lemma rank_empt {B : ftype} (M : matroid B) :
+lemma rank_empt (M : matroid U) :
   M.r ∅ = 0 :=
-le_antisymm (calc M.r ∅ ≤ size (∅ : set B) : M.R1 ∅ ... = 0 : size_empty B) (M.R0 ∅)
+le_antisymm (calc M.r ∅ ≤ size (∅ : set U) : M.R1 ∅ ... = 0 : size_empty U) (M.R0 ∅)
 
 -- Every matroid has a dual.
 def dual :

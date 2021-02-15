@@ -1,11 +1,11 @@
 
 import matroid.rankfun set_tactic.solver matroid.submatroid.order
 
-open ftype set 
+open set 
 open matroid 
 
 namespace matroid 
-variables {U : ftype}
+variables {U : Type}[fintype U]
 
 /-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
 Often more convenient than just contracting C  -/
@@ -25,7 +25,7 @@ def loopify (M : matroid U)(D : set U) : matroid U :=
   R0 := λ X, M.R0 _, 
   R1 := λ X, by linarith [M.R1 (X \ D), size_diff_le_size X D], 
   R2 := λ X Y hXY, M.rank_mono (diff_subset_diff D hXY), 
-  R3 := λ X Y, by {simp only [diff_def], rw [inter_distrib_right, inter_distrib_inter_left], 
+  R3 := λ X Y, by {simp only [diff_eq], rw [inter_distrib_right, inter_distrib_inter_left], 
                     linarith [M.rank_submod (X ∩ Dᶜ) (Y ∩ Dᶜ)],  }
 }
 
@@ -84,7 +84,7 @@ lemma loopify_is_weak_image (M : matroid U)(D : set U):
 
 lemma loopify_loopify (M : matroid U)(D D' : set U):
    M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
-by {ext X, simp [←inter_assoc, inter_right_comm]}
+by {ext X, simp [diff_eq, ←inter_assoc, inter_right_comm]}
 
 lemma loopify_makes_loops (M : matroid U)(D : set U): 
   loops M ∪ D ⊆ loops (M ⟍ D) := 
@@ -96,7 +96,7 @@ by rw [loopify_r, set.diff_self, rank_empty]
 
 lemma loopified_set_union_rank_zero (M : matroid U)(D : set U){X : set U}(h: M.r X = 0):
   (M ⟍ D).r (X ∪ D) = 0 :=
-by {simp only [loopify_r, ftype.union_left_absorb, union_comm X], 
+by {simp only [loopify_r, union_left_absorb, union_comm X], 
     exact rank_subset_rank_zero (by {intro x, simp, tauto}) h}
 
 lemma indep_of_loopify_indep {M : matroid U}{D X : set U}(hX : is_indep (M ⟍ D) X) : 
@@ -132,7 +132,7 @@ by rw [project_to, compl_compl]
 
 lemma rank_loopify_to (M : matroid U)(R X : set U) : 
   (M ∥ R).r X = M.r (X ∩ R) := 
-by simp [loopify_to, loopify_r]
+by simp [diff_eq, loopify_to, loopify_r]
 
 lemma rank_project_to (M : matroid U)(R X : set U):
   (M.project_to R).r X = M.r (X ∪ Rᶜ) - M.r Rᶜ := 

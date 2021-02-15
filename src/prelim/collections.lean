@@ -4,11 +4,10 @@ open_locale classical
 noncomputable theory 
 
 
-namespace ftype 
 open set 
 -- The operations needed on the ftype A.
 
-variables {A: ftype}
+variables {A: Type}[fintype A]
 
 
 def is_lb (P : set A → Prop) (X : set A) : Prop := ∀ Y, P Y → X ⊆ Y 
@@ -30,7 +29,6 @@ end
 lemma down_closed_iff_negation_up_closed (P : set A → Prop) : 
   down_closed P ↔ up_closed (λ X, ¬P X) := 
 by {unfold down_closed up_closed, simp_rw not_imp_not}
-
 
 lemma contains_min {P : set A → Prop} {X : set A}:
   P X → ∃ Y, Y ⊆ X ∧ is_minimal P Y := 
@@ -196,23 +194,21 @@ lemma union_all_ub (P : set A → Prop):
   
 section size 
 
-lemma has_subset_of_size {U : ftype}{X : set U}{n : ℤ}:
+lemma has_subset_of_size {X : set A}{n : ℤ}:
   0 ≤ n → n ≤ size X → ∃ Y, Y ⊆ X ∧ size Y = n :=
 let P := λ Y, Y ⊆ X ∧ size Y ≤ n in 
 begin
   intros hn hnX, 
-  rcases maximal_example_aug P (⟨empty_subset X, by linarith [size_empty U]⟩ : P ∅) with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
+  rcases maximal_example_aug P (⟨empty_subset X, by linarith [size_empty A]⟩ : P ∅) with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
   refine ⟨Y, ⟨h₁,_⟩⟩, 
   cases subset_ssubset_or_eq h₁, 
   by_contra a, 
   rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
   push_neg at h₃, 
   --rw elem_iff at h₁e, 
-  from a (by linarith [add_nonelem_size h₂e, h₃ e h₂e (union_is_ub h₁ (elem_to_subset h₁e ))]), 
+  from a (by linarith [add_nonmem_size h₂e, h₃ e h₂e (union_of_subsets h₁ (singleton_subset_iff.mpr h₁e ))]), 
   rw h at h₂ ⊢, 
   linarith, 
 end
 
 end size 
-
-end ftype 

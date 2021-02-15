@@ -154,14 +154,14 @@ lemma dual_restrict {U : boolalg} (E : U) (M : rankfun U) :
 begin
   apply rankfun.ext, apply funext, intro X,
   have h₁ : size (X.val ∪ Eᶜ) = size X.val + size Eᶜ := size_disjoint_sum (calc
-    X.val ∩ Eᶜ = (X.val ∩ E) ∩ Eᶜ : by rw [(eq.symm X.prop : X.val ∩ E = X.val)]
+    X.val ∩ Eᶜ = (X.val ∩ {e}) ∩ Eᶜ : by rw [(eq.symm X.prop : X.val ∩ {e} = X.val)]
     ...        = X.val ∩ (E ∩ Eᶜ) : by apply inter_assoc
     ...        = X.val ∩ ⊥        : by rw [inter_compl]
     ...        = ⊥                : by apply inter_bot),
   have h₂ : Eᶜᶜ = E := compl_compl E,
   have h₃ := (calc
     (X.val ∪ Eᶜ)ᶜ = X.valᶜ ∩ Eᶜᶜ : by apply compl_union
-    ...           = X.valᶜ ∩ E   : by rw [compl_compl]
+    ...           = X.valᶜ ∩ {e}   : by rw [compl_compl]
     ...           = E ∩ X.valᶜ   : by apply inter_comm),
   calc
   (dual (restrict E M)).r X = size X.val + M.r (E ∩ X.valᶜ) - M.r E           : rfl
@@ -180,8 +180,8 @@ begin
   have h₂ := (calc
     (E ∩ X.valᶜ) ∪ Eᶜ = (E ∪ Eᶜ) ∩ (X.valᶜ ∪ Eᶜ) : by apply union_distrib_right
     ...               = X.valᶜ ∪ Eᶜ              : by simp only [union_compl, top_inter]
-    ...               = (X.val ∩ E)ᶜ             : by apply eq.symm; apply compl_inter
-    ...               = X.valᶜ                   : by rw [(eq.symm X.prop : X.val ∩ E = X.val)]),
+    ...               = (X.val ∩ {e})ᶜ             : by apply eq.symm; apply compl_inter
+    ...               = X.valᶜ                   : by rw [(eq.symm X.prop : X.val ∩ {e} = X.val)]),
   calc
   (restrict E (dual M)).r X = size X.val + M.r X.valᶜ - M.r ⊤                 : rfl
   ...                       = size X.val + (M.r X.valᶜ - M.r Eᶜ)
@@ -307,9 +307,9 @@ end /-section-/ contract
 
 /-- subalg Dᶜ .... -/
 def delete {U : boolalg} (D E : U) : (D ⊆ E) →
-  rankfun (subalg E) → rankfun (subalg (Dᶜ ∩ E)) :=
+  rankfun (subalg E) → rankfun (subalg (Dᶜ ∩ {e})) :=
 fun hDE M, let
-  emb : embed (subalg (Dᶜ ∩ E)) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
+  emb : embed (subalg (Dᶜ ∩ {e})) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
   f := emb.f, 
   DE := push E ⟨D, hDE⟩
 in {
@@ -321,9 +321,9 @@ in {
 }
 
 def contract {U : boolalg} (C E : U) : (C ⊆ E) →
-  rankfun (subalg E) → rankfun (subalg (Cᶜ ∩ E)) :=
+  rankfun (subalg E) → rankfun (subalg (Cᶜ ∩ {e})) :=
 fun hCE M, let
-  emb : embed (subalg (Cᶜ ∩ E)) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
+  emb : embed (subalg (Cᶜ ∩ {e})) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
   f := emb.f, 
   CE := push E ⟨C, hCE⟩
 in {

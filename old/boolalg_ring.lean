@@ -10,7 +10,7 @@ variables {A : boolalg}
 lemma symm_diff_three (X Y Z : A) : symm_diff (symm_diff X Y) Z = X ∩ Yᶜ ∩ Zᶜ ∪ Y ∩ Xᶜ ∩ Zᶜ ∪ (Z ∩ (Xᶜ ∩ Yᶜ) ∪ Z ∩ (Y ∩ X)) :=
 begin
   unfold symm_diff,
-  repeat {rw diff_def},
+  repeat {rw diff_eq},
   repeat {rw inter_distrib_right},
   rw [compl_union, compl_inter, compl_inter, compl_compl, compl_compl], 
   repeat {rw inter_distrib_left},
@@ -41,8 +41,8 @@ lemma symm_diff_distrib_inter_right (X Y Z : A): (symm_diff X Y) ∩ Z  = symm_d
 
 lemma symm_diff_inter (X Y : A) : 
   symm_diff X (X ∩ Y) = X \ Y := 
-  by rw [symm_diff_alt, absorb_union_inter, diff_def, compl_inter, inter_distrib_left,
-     union_comm, union_inter_compl, compl_inter, inter_distrib_left, union_comm, union_inter_compl, ← diff_def] -- inter_compl, bot_union, compl_inter, inter_distrib_left],  
+  by rw [symm_diff_alt, absorb_union_inter, diff_eq, compl_inter, inter_distrib_left,
+     union_comm, union_inter_compl, compl_inter, inter_distrib_left, union_comm, union_inter_compl, ← diff_eq] -- inter_compl, bot_union, compl_inter, inter_distrib_left],  
   
 lemma top_symm_diff (X : A) : 
   symm_diff ⊤ X = Xᶜ := 
@@ -90,7 +90,7 @@ lemma union_to_boolalg {X Y : A} : X ∪ Y = (X + Y) + X*Y :=
   begin 
     rw [add_assoc], 
     nth_rewrite 1 ←one_mul Y, 
-    rw [←right_distrib, one_plus, ←symm_diff_to_boolalg, ←inter_to_boolalg, diff_def, diff_def, inter_right_comm, compl_inter],
+    rw [←right_distrib, one_plus, ←symm_diff_to_boolalg, ←inter_to_boolalg, diff_eq, diff_eq, inter_right_comm, compl_inter],
     simp,
   end 
 
@@ -101,7 +101,7 @@ lemma subset_to_boolalg {X Y : A} : X ⊆ Y ↔ X*Y = X :=
   by {rw ←inter_to_boolalg, exact subset_def_inter X Y} 
 
 lemma diff_to_boolalg {X Y : A} : X \ Y = X*(Y + 1) := 
-  by rw [plus_one, ←inter_to_boolalg, diff_def]
+  by rw [plus_one, ←inter_to_boolalg, diff_eq]
 
 
 

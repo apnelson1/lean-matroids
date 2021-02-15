@@ -33,7 +33,7 @@ import func_heq
 
 
 lemma boolalg.inter_subset_right {A: boolalg} (X Y : A) : (X ∩ Y) ⊆ Y := sorry
-lemma boolalg.inter_is_lb {A: boolalg} (X Y Z : A) : (Z ⊆ X) → (Z ⊆ Y) → ((X ∩ Y) ⊆ Z) := sorry
+lemma boolalg.subset_inter {A: boolalg} (X Y Z : A) : (Z ⊆ X) → (Z ⊆ Y) → ((X ∩ Y) ⊆ Z) := sorry
 
 
 def finite_set : Type := sorry

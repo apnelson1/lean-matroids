@@ -15,7 +15,7 @@ lemma monotone (M : clfun U){X Y : set U} :
 
 lemma subset_union (M : clfun U)(X Y : set U) :
   M.cl X ∪ M.cl Y ⊆ M.cl (X ∪ Y) :=
-  union_is_ub (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
+  union_of_subsets (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
   
 
 lemma cl_union_both (M : clfun U)(X Y : set U) :
@@ -37,7 +37,7 @@ lemma cl_union_left (M : clfun U)(X Y : set U) :
   clfun.union_pair Y (M.cl2 X)
 
 def is_indep (M : clfun U) : set U → Prop := 
-  λ I, ∀ (e:U), e ∈ I → M.cl (I \ e) ≠ M.cl I 
+  λ I, ∀ (e:U), e ∈ I → M.cl (I \ {e}) ≠ M.cl I 
 
 /-- all sets spanning X -/
 def spans (M : clfun U)(X : set U) : Type := 
@@ -78,7 +78,7 @@ end
 
 lemma satisfies_I1 (M : clfun U) : 
   satisfies_I1 M.is_indep :=
-  λ e h, false.elim (nonelem_empty e h)
+  λ e h, false.elim (not_mem_empty e h)
   
 lemma satisfies_I2 (M : clfun U) : 
   satisfies_I2 M.is_indep :=
@@ -89,7 +89,7 @@ begin
   rcases h with ⟨f, ⟨hfI, hIfcl⟩⟩, 
   have := union_pair (e: set U) hIfcl, 
   rw exchange_comm hfI heI at this, 
-  from hIe f (elem_of_elem_of_subset hfI (subset_union_left I e)) this, 
+  from hIe f (mem_of_mem_of_subset hfI (subset_union_left I e)) this, 
 end 
 
 lemma satisfies_I3 (M : clfun U) : 
@@ -112,7 +112,7 @@ lemma cl_of_clfun (M : clfun U) :
   (of_clfun M).cl = M.cl :=
 begin
   funext X, rw [of_clfun], ext f,
-  rw elem_cl_iff_i, dsimp only [ftype.ftype_coe], 
+  rw mem_cl_iff_i, dsimp only [ftype.ftype_coe], 
   erw [matroid.indep_of_indep_family, indep_family.of_clfun], dsimp only, 
   rw [clfun.is_indep], dsimp only, 
 

@@ -108,7 +108,7 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
     
     ext X, 
     have set_eq : (A ∪ Zᶜ) \ A = univ \ Z 
-      := by {rw [diff_def, inter_distrib_right, ←compl_union, union_comm Z, 
+      := by {rw [diff_eq, inter_distrib_right, ←compl_union, union_comm Z, 
                 subset_def_union_mp hAZ], simp},
     set M' := (to_minor (corestrict A hAZc (restrict (A ∪ Zᶜ) hAZc_univ self)) M) with hM', 
 
@@ -127,7 +127,7 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
   begin
     rw switch_restrict_corestrict, ext X, apply eq.symm, 
     have hJ : ∀ (J : set U) (hJ : J ⊆ A), (J ∪ (Z\A))ᶜ = (A \ J) ∪ (univ \ Z) := 
-      λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_def, inter_distrib_left, ←compl_union, subset_def_union_mp (subset.trans hJ hAZ), inter_comm, union_comm], 
+      λ J hJ, by rw [compl_union, univ_diff, compl_diff, diff_eq, inter_distrib_left, ←compl_union, subset_def_union_mp (subset.trans hJ hAZ), inter_comm, union_comm], 
     have hset : size ((X:set U) ∩ (Z \ A)) = 0 := by 
     {
       suffices : ((X:set U) ∩ (Z \ A)) = ∅, 
@@ -236,7 +236,7 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : set U) (hZ'A : Z' ⊆ A
     ext, rename x X, 
     have equiv : (A \ Z') ∪ (univ \ Z) = (univ \ J) := by 
     {
-      simp only [univ_diff, J, diff_def, univ_inter],
+      simp only [univ_diff, J, diff_eq, univ_inter],
       rw [compl_union, compl_inter, inter_distrib_left, ←compl_union Z', 
           (subset_def_union_mp (subset.trans hZ'A hAZ)), compl_compl, union_comm Zᶜ, inter_comm A], 
     }, 

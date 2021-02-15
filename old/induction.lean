@@ -117,37 +117,37 @@ There are three cases to consider:
 -- Break up X ⊆ (e ∪ Y) into the part under e and the part under Y.
 let h_union :=
   calc X = X ∩ (e ∪ Y)       : (inter_eq_left X (e ∪ Y) h_ss).symm
-  ...    = (X ∩ e) ∪ (X ∩ Y) : inter_distrib_union_right X e Y
+  ...    = (X ∩ {e}) ∪ (X ∩ Y) : inter_distrib_union_right X e Y
 in or.elim (subset_dec_eq (X ∩ Y) Y (inter_subset_right X Y))
-(or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
+(or.elim (subset_singlet (X ∩ {e}) e h_singlet (inter_subset_right X e))
   -- Case 2 described above: X = Y.
-  (fun (h₁ : X ∩ e = ⊥) (h₂ : X ∩ Y = Y),
+  (fun (h₁ : X ∩ {e} = ⊥) (h₂ : X ∩ Y = Y),
     @eq.rec A Y P h_Y X (
     calc Y = X ∩ Y             : h₂.symm
     ...    = ⊥ ∪ (X ∩ Y)       : (bot_union (X ∩ Y)).symm
-    ...    = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
+    ...    = (X ∩ {e}) ∪ (X ∩ Y) : by rw [h₁]
     ...    = X                 : h_union.symm))
   -- Case impossible, because X ≠ (e ∪ Y)
-  (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y = Y),
+  (fun (h₁ : X ∩ {e} = e) (h₂ : X ∩ Y = Y),
     false.elim (h_ne (
-    calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
+    calc X = (X ∩ {e}) ∪ (X ∩ Y) : h_union
     ...    = e ∪ Y             : by rw [h₁, h₂]))))
-(or.elim (subset_singlet (X ∩ e) e h_singlet (inter_subset_right X e))
+(or.elim (subset_singlet (X ∩ {e}) e h_singlet (inter_subset_right X e))
   -- Case 1 described above: X ⊂ Y.
-  (fun (h₁ : X ∩ e = ⊥) (h₂ : X ∩ Y ≠ Y),
+  (fun (h₁ : X ∩ {e} = ⊥) (h₂ : X ∩ Y ≠ Y),
     let h₃ :=
-      calc X = (X ∩ e) ∪ (X ∩ Y) : h_union
+      calc X = (X ∩ {e}) ∪ (X ∩ Y) : h_union
       ...    = ⊥ ∪ (X ∩ Y)       : by rw [h₁]
       ...    = X ∩ Y             : bot_union (X ∩ Y)
     in and.left (h_below X
     (calc X = X ∩ Y : h₃ ... ⊆ Y : inter_subset_right X Y)
     (calc X = X ∩ Y : h₃ ... ≠ Y : h₂)))
   -- Case 3 described above: X = e ∪ X' with X' ⊂ Y.
-  (fun (h₁ : X ∩ e = e) (h₂ : X ∩ Y ≠ Y),
+  (fun (h₁ : X ∩ {e} = e) (h₂ : X ∩ Y ≠ Y),
     @eq.rec A (e ∪ (X ∩ Y)) P
     (and.right (h_below (X ∩ Y) (inter_subset_right X Y) h₂))
     X (
-    calc e ∪ (X ∩ Y) = (X ∩ e) ∪ (X ∩ Y) : by rw [h₁]
+    calc e ∪ (X ∩ Y) = (X ∩ {e}) ∪ (X ∩ Y) : by rw [h₁]
     ...              = X                 : h_union.symm)))
 ))
 

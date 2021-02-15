@@ -1,20 +1,22 @@
-import ftype.basic ftype.embed ftype.minmax set_tactic.solver
+import prelim.embed prelim.minmax set_tactic.solver
 import matroid.rankfun matroid.dual .projection
 
 open_locale classical 
 noncomputable theory
 
-open ftype matroid set 
-
-variables {U : ftype}
+open matroid set 
 
 
-/-- a matroid_in U corresponds to a matroid defined on some subset E of U. Implemented as a matroid on which the nonelements of 
+
+
+/-- a matroid_in U corresponds to a matroid defined on some subset E of U. Implemented as a matroid on which the nonmements of 
 E are all loops. -/
-@[ext] structure matroid_in (U : ftype) :=
+@[ext] structure matroid_in (U : Type)[fintype U] :=
 (E : set U)
 (carrier : matroid U)
 (support : carrier.r Eᶜ = 0)
+
+variables {U : Type}[fintype U]
 
 namespace matroid_in 
 
@@ -49,11 +51,11 @@ begin
   exact h_r, 
 end
 
-/-- the ftype coming from the E of M -/
-def ground (M : matroid_in U) := subftype M.E
+--def ground (M : matroid_in U) : Type := M.E
+
 
 /-- a matroid_in U gives a matroid on a subtype -/
-def as_mat_on (M : matroid_in U)(E : set U) : matroid (subftype E) := 
+def as_mat_on (M : matroid_in U)(E : set U) : matroid E := 
 { r := λ X, M.r X,
   R0 := λ X, M.carrier.R0 _,
   R1 := λ X, by {dsimp only [r], rw ←size_subtype_img, apply M.carrier.R1},
@@ -61,50 +63,47 @@ def as_mat_on (M : matroid_in U)(E : set U) : matroid (subftype E) :=
   R3 := λ X Y, by {dsimp only, convert M.carrier.R3 _ _, apply set.image_union, exact (set.image_inter subtype.val_injective).symm} }
 
 /-- a matroid_in U, viewed as a matroid on the subtype defined by its E -/
-def as_mat (M : matroid_in U) : matroid M.ground := as_mat_on M M.E 
+def as_mat (M : matroid_in U) : matroid M.E := as_mat_on M M.E 
 
 mk_simp_attribute msimp "minor simp lemmas"
 
-attribute [msimp] ftype.diff_def 
+attribute [msimp] diff_eq 
 
-@[simp, msimp] lemma as_mat_r (M : matroid_in U)(X : set (subftype M.E)): 
+@[simp, msimp] lemma as_mat_r (M : matroid_in U)(X : set (M.E)): 
   M.as_mat.r X = M.r (X : set U) :=
 rfl 
 
 /-- a matroid_in U, constructed from a matroid on a subtype of U -/
-def of_mat {E : set U}(N : matroid (subftype E)) : matroid_in U := 
+def of_mat {E : set U}(N : matroid E) : matroid_in U := 
 { E := E,
   carrier := 
   { r := λ X, N.r (inter_subtype E X ),
     R0 := λ X, N.R0 _,
-    R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (size_mono_inter_right E X)), apply size_inter_subtype },
+    R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (size_mono_inter_right E X)), 
+                  rw inter_comm, apply size_inter_subtype },
     R2 := λ X Y hXY, by {dsimp only, apply N.R2, tauto,  },
     R3 := λ X Y, N.R3 _ _, },
   support := by {simp [inter_subtype],} }
 
-@[simp, msimp] lemma of_mat_E {E : set U}(N : matroid (subftype E)) : 
+@[simp, msimp] lemma of_mat_E {E : set U}(N : matroid E) : 
   (of_mat N).E = E :=
 rfl 
 
-@[simp, msimp] lemma of_mat_r {E : set U}(N : matroid (subftype E))(X : set U) : 
+@[simp, msimp] lemma of_mat_r {E : set U}(N : matroid E)(X : set U) : 
   (of_mat N).r X = N.r (inter_subtype E X) := 
 rfl 
 
-lemma r_of_mat {E : set U}(N : matroid (subftype E))(X : set (subftype E)): 
+lemma r_of_mat {E : set U}(N : matroid E)(X : set E): 
   N.r X = (of_mat N).r X := 
 begin
   simp only [matroid_in.of_mat_r], convert rfl, 
   unfold inter_subtype, ext x , --rcases x with ⟨x,hx⟩, 
-  simp only [mem_set_of_eq, subtype.coe_mk], 
-  refine ⟨λ h, _, λ h, ⟨x,⟨h, by simp⟩⟩ ⟩,
-  rcases h with ⟨⟨y, h⟩, h', h''⟩, 
-  cases x, 
-  simp only [subtype.coe_mk] at h'', 
-  convert h',  rwa h'', 
+  simp only [set.mem_preimage], 
+  tidy, 
 end
 
 
-@[simp,msimp] lemma as_mat_of_mat {E : set U}(N : matroid (subftype E)) : 
+@[simp,msimp] lemma as_mat_of_mat {E : set U}(N : matroid E) : 
   as_mat (of_mat N) = N :=
 begin
   ext X, dsimp only [as_mat, as_mat_on, of_mat], convert rfl, ext x, 
@@ -120,23 +119,18 @@ ext' (by simp)
      (λ X hX, by {simp only with msimp coe_up at *, convert rfl, rw subset_def_inter_mp hX}) 
 
 
-lemma of_mat_as_mat_on {E E' : set U}(N : matroid (subftype E))(h : E' = E): 
+lemma of_mat_as_mat_on {E E' : set U}(N : matroid E)(h : E' = E): 
    of_mat ((of_mat N).as_mat_on E') = of_mat N := 
 begin
   apply ext', convert rfl, 
   intros X hX, 
-  simp only [of_mat, as_mat_on], dsimp only [ftype.ftype_coe], 
+  simp only [of_mat, as_mat_on],  
   convert rfl, exact h.symm, 
-  dsimp only [ftype.ftype_coe, r, inter_subtype],   
-  ext Y, convert rfl,  ext e, rcases e with ⟨e,he⟩,  
-  simp only [image_congr, mem_image, exists_eq_right, subtype.exists, subtype.val_eq_coe,
-  exists_eq_right, subtype.coe_mk], 
-  refine ⟨λ h', _, λ h', _⟩,
-  {simp only at h', rcases h' with ⟨_, h'', rfl⟩, exact h'',}, 
-  rw h, exact ⟨⟨e,he⟩,⟨h',rfl⟩⟩,
+  ext Y, unfold r, dsimp only, congr' 1, 
+  simp [h] with coe_up, 
 end
 
-lemma of_mat_inj {R : set U}(N N' : matroid (subftype R)):
+lemma of_mat_inj {R : set U}(N N' : matroid R):
   of_mat N = of_mat N' → N = N' := 
 λ h, by {ext, rw [r_of_mat,r_of_mat,h]}  
 
@@ -150,7 +144,7 @@ section defs
 
 /-- translates a property of sets defined on (matroid V) to the corresponding
 set property on (matroid_in U). -/
-def lift_mat_set_property (P : Π {V : ftype}, matroid V → set V → Prop): 
+def lift_mat_set_property (P : Π {V : Type}[ft : fintype V], @matroid V ft → set V → Prop): 
   (matroid_in U → set U → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 
@@ -224,11 +218,11 @@ def dual (M : matroid_in U) : matroid_in U :=
 begin
   rw [dual, of_mat_r, matroid.dual_r], simp only with coe_up, convert rfl, 
   simp only with coe_up, 
-  ext,simp only [ftype.diff_def, set.mem_inter_eq, set.mem_compl_eq], tauto, 
+  ext,simp only [diff_eq, mem_inter_eq, mem_compl_eq], tauto, 
   simp only with coe_up, 
 end 
 
-lemma of_mat_dual {E : set U}(M : matroid (subftype E)): 
+lemma of_mat_dual {E : set U}(M : matroid E): 
   of_mat M.dual = (of_mat M).dual := 
 by {unfold dual, convert rfl, simp}
 
@@ -253,7 +247,7 @@ lemma dual_inj_iff {M M' : matroid_in U}:
 lemma coindep_iff_r {M : matroid_in U}{X : set U}: 
   M.dual.is_indep X ↔ X ⊆ M.E ∧ M.r (M.E \ X) = M.r M.E :=
 begin
-  simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_def, subset_def_inter], 
+  simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_def_inter], 
   refine ⟨λ h, _, λ h, _⟩, 
   { have h1 := size_mono_inter_left X M.E, 
     have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,   

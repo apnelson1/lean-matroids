@@ -400,11 +400,11 @@ begin
   --let Xc := E \ X,
   let hXc := sdiff_subset E X,
   have Xcc : E \ (E \ X) = X, sorry,
-  have EmEO : E \ E = ∅, exact sdiff_self E,
+  have EmEO : E \ {e} = ∅, exact sdiff_self E,
   have : size X + size (E \ X) = size E, sorry,
 
-  calc (dual (dual M)).r X hX = size X - (size E - (M.r E hE) + (M.r (E \ E) _)) + (size (E \ X) - (M.r E hE) + (M.r (E \ (E \ X)) _) )   : by trivial 
-                        ...   = - (M.r (E \ E) (sdiff_subset E E)) + (M.r (E \ (E \ X)) (sdiff_subset E (E \ X)))                         : by linarith
+  calc (dual (dual M)).r X hX = size X - (size E - (M.r E hE) + (M.r (E \ {e}) _)) + (size (E \ X) - (M.r E hE) + (M.r (E \ (E \ X)) _) )   : by trivial 
+                        ...   = - (M.r (E \ {e}) (sdiff_subset E E)) + (M.r (E \ (E \ X)) (sdiff_subset E (E \ X)))                         : by linarith
                         ...   = M.r X hX : sorry,
   
 end
@@ -980,7 +980,7 @@ begin
           have hTf2 : ∀ f, f ∈ z \ x → card (x \ T f) < card (x \ z) :=
             by { intros f hf, rw mem_sdiff at hf,
             suffices H : x \ T f ⊂ x \ z, exact card_lt_card H,
-            by { simp only [ssubset_iff, exists_prop, mem_insert, not_forall_not, not_and,
+            by { simp only [ssubset_iff_subset_ne, exists_prop, mem_insert, not_forall_not, not_and,
                             mem_sdiff, mem_erase],
               exact exists.intro e
                 ⟨λ h_, ⟨λ hef, hf.2 $ hef ▸ he.1, or.inl rfl⟩,

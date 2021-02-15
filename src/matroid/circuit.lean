@@ -1,12 +1,11 @@
 --try the set tactic on the sorrys below (line 102 )
 
-import ftype.basic ftype.induction ftype.collections .rankfun .indep set_tactic.solver
-open ftype 
+import preflim.induction prelim.collections .rankfun .indep set_tactic.solver
 
 open_locale classical 
 noncomputable theory 
 
-variables {U : ftype}
+variables {U : Type}[fintype U]
 
 namespace cct_family
 
@@ -22,11 +21,11 @@ lemma C_to_I2 (M : cct_family U) :
   λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
 lemma new_circuit_contains_new_elem {M : cct_family U}{I C : set U}{e : U}:
-  C_to_I M I → C ⊆ (I ∪ e) → M.cct C → e ∈ C :=
-  λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonelem hCIe he) hC}
+  C_to_I M I → C ⊆ (I ∪ {e}) → M.cct C → e ∈ C :=
+  λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonmem hCIe he) hC}
 
 lemma add_elem_unique_circuit {M : cct_family U} {I : set U} {e : U}:
-  C_to_I M I → ¬C_to_I M (I ∪ e) → ∃! C, M.cct C ∧ C ⊆ I ∪ e :=
+  C_to_I M I → ¬C_to_I M (I ∪ {e}) → ∃! C, M.cct C ∧ C ⊆ I ∪ {e} :=
   begin
     intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
     rcases hIe with ⟨C, ⟨hCI, hC⟩⟩, refine ⟨C,⟨⟨hC,hCI⟩,λ C' hC', _⟩⟩,
@@ -38,10 +37,10 @@ lemma add_elem_unique_circuit {M : cct_family U} {I : set U} {e : U}:
   end 
 
 lemma add_elem_le_one_circuit {M : cct_family U} {I C C': set U} (e : U):
-  C_to_I M I → (M.cct C ∧ C ⊆ I ∪ e) → (M.cct C' ∧ C' ⊆ I ∪ e) → C = C' :=
+  C_to_I M I → (M.cct C ∧ C ⊆ I ∪ {e}) → (M.cct C' ∧ C' ⊆ I ∪ {e}) → C = C' :=
   begin
     intros hI hC hC', 
-    by_cases h': C_to_I M (I ∪ e), 
+    by_cases h': C_to_I M (I ∪ {e}), 
     exfalso, from h' _ hC.2 hC.1,
     rcases (add_elem_unique_circuit hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
     from eq.trans (hC₀ _ hC) (hC₀ _ hC').symm, 
@@ -52,7 +51,7 @@ lemma C_to_I3 (M : cct_family U) :
 begin
   letI := ftype.ftype_mem U, 
   -- I3 states that there are no bad pairs 
-  let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ e), 
+  let bad_pair : set U → set U → Prop := λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ {e}), 
   suffices : ∀ I J, ¬bad_pair I J, 
     push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
   by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
@@ -71,32 +70,32 @@ begin
   have hIJ_nonempty : I \ J ≠ ∅ := by 
   {
     intro h, rw diff_empty_iff_subset at h, 
-    cases size_pos_has_elem hJI_nonempty with e he,
-    refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ e ⊆ J) hJ), 
-    from union_of_subsets h (subset_of_elem_of_subset he (diff_subset _ _)), 
+    cases size_pos_has_mem hJI_nonempty with e he,
+    refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
+    from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _)), 
   },
   
-  cases ne_empty_has_elem hIJ_nonempty with e he, -- choose e from I -J
+  cases ne_empty_has_mem hIJ_nonempty with e he, -- choose e from I -J
 
-  --There exists f ∈ J-I contained in all ccts of J ∪ e 
-  have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ e → M.cct C → f ∈ C := by
+  --There exists f ∈ J-I contained in all ccts of J ∪ {e} 
+  have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ {e} → M.cct C → f ∈ C := by
   {
-      by_cases hJe : C_to_I M (J ∪ e) , -- Either J ∪ e has a circuit or doesn't
+      by_cases hJe : C_to_I M (J ∪ {e}) , -- Either J ∪ {e} has a circuit or doesn't
       
-      cases size_pos_has_elem hJI_nonempty with f hf, 
+      cases size_pos_has_mem hJI_nonempty with f hf, 
       refine ⟨f, ⟨hf, λ C hCJe hC, _⟩ ⟩, exfalso, 
       from (hJe _ hCJe) hC,
       unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ , 
 
       have : Ce ∩ (J \ I) ≠ ∅ := λ h,  by {sorry, },
-      cases ne_empty_has_elem this with f hf,
+      cases ne_empty_has_mem this with f hf,
       refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
-      apply elem_of_elem_of_subset hf (inter_subset_right _ _), 
+      apply mem_of_mem_of_subset hf (inter_subset_right _ _), 
       rw ←(add_elem_le_one_circuit e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
-      from elem_of_elem_of_subset hf (inter_subset_left _ _), 
+      from mem_of_mem_of_subset hf (inter_subset_left _ _), 
   },
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
-  set J' := (J ∪ e) \ f with hdefJ', 
+  set J' := (J ∪ {e}) \ f with hdefJ', 
   
 
   --- test case for set tactic 
@@ -113,12 +112,12 @@ begin
   from h_non_aug g h hg₂, 
   rw [←elem_compl_iff] at h,  
   have := elem_inter hg₁ h, 
-  rw [diff_def, diff_def, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
-      inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_def, inter_assoc, inter_right_comm, 
+  rw [diff_eq, diff_eq, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
+      inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_eq, inter_assoc, inter_right_comm, 
       inter_distrib_right, ←inter_assoc, inter_compl, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
-  have := elem_of_elem_of_subset this (inter_subset_right _ _),
-  have := (elem_inter (elem_of_elem_of_subset hg₁ hJ'₀) this),
-  rw inter_compl at this, from nonelem_empty g this, 
+  have := mem_of_mem_of_subset this (inter_subset_right _ _),
+  have := (elem_inter (mem_of_mem_of_subset hg₁ hJ'₀) this),
+  rw inter_compl at this, from not_mem_empty g this, 
 end 
 
 end cct_family 

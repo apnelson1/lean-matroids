@@ -47,7 +47,7 @@ def matroid.alg_ (M : matroid) := powersetalg_ M.E
 structure preminor (M : matroid) :=
   (E : M.alg_)
   (C : M.alg_)
-  (disjoint : C ∩ E = ⊥)
+  (disjoint : C ∩ {e} = ⊥)
 
 def preminor.r {M : matroid} (N : preminor M) : rankfun (subalg_ N.E) :=
 let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in 

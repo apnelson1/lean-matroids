@@ -34,7 +34,7 @@ def satisfies_cl3 : (U → U) → Prop :=
   λ cl, ∀ X Y, X ⊆ Y → cl X ⊆ cl Y 
 
 def satisfies_cl4 : (U → U) → Prop :=
-  λ cl, ∀ (X : U) (e f : single U), (e ∈ cl (X ∪ f) \ X) → (f ∈ cl (X ∪ e) \ X)
+  λ cl, ∀ (X : U) (e f : single U), (e ∈ cl (X ∪ f) \ X) → (f ∈ cl (X ∪ {e}) \ X)
 
 structure clfun (U : boolalg) := 
   (cl : U → U)

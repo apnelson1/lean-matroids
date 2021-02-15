@@ -7,9 +7,9 @@ open_locale classical
 noncomputable theory 
 
 
-open ftype set 
+open set 
 
-variables {A: ftype}
+variables {A: Type}[fintype A]
 
 section numbers 
 
@@ -151,23 +151,23 @@ lemma maximal_example_from_empty (P : set A → Prop):
   λ h, by {rcases maximal_example P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩  }
 
 lemma maximal_example_aug (P : set A → Prop){X : set A}: 
-  (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
+  (P X) → ∃ Y, X ⊆ Y ∧ P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ {e}) := 
 begin
   intro hPX, 
   rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩, 
-  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ e) (ssub_of_add_nonelem he) ⟩⟩⟩,  
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ {e}) (ssub_of_add_nonmem he) ⟩⟩⟩,  
 end 
 
 lemma maximal_example_aug_from_empty (P : set A → Prop): 
-  P ∅ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ e) := 
+  P ∅ → ∃ Y, P Y ∧ ∀ (e : A), e ∉ Y → ¬P (Y ∪ {e}) := 
   λ h, by {rcases maximal_example_aug P h with ⟨Y, ⟨_,h'⟩⟩, from ⟨Y,h'⟩}
 
 lemma minimal_example_remove (P : set A → Prop){X : set A}: 
-  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ (e : A), e ∈ Y → ¬P (Y \ e) := 
+  (P X) → ∃ Y, Y ⊆ X ∧ P Y ∧ ∀ (e : A), e ∈ Y → ¬P (Y \ {e}) := 
 begin
   intro hPX, 
   rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
-  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ e) (remove_single_ssubset he) ⟩⟩⟩,  
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (remove_single_ssubset he) ⟩⟩⟩,  
 end 
 
 /-lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):

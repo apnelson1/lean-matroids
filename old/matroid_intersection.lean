@@ -87,7 +87,7 @@ begin
   --inductive step 
   set k := ν N₁ N₂ with hk, 
   rw ←hsize at hn, 
-  cases size_pos_has_elem hn with e he, 
+  cases size_pos_has_mem hn with e he, 
   
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
@@ -126,7 +126,7 @@ begin
     rw [←size_largest_common_ind_eq_nu, ←hIc, hk], 
     linarith 
     [
-      add_nonelem_size heIc,
+      add_nonmem_size heIc,
       size_common_ind_le_nu 
       ⟨
         indep_of_project_indep hIc'.1 (nonloop_iff_indep.mp h_e_nl.1), 
@@ -162,16 +162,16 @@ begin
   rcases IH _ h_more_loops_d N₁d N₂d rfl with hd, 
   set Ad := arg_min (ub_fn N₁d N₂d) with hAd,
   rw [←arg_min_attains (ub_fn N₁d N₂d), ←hAd] at hd, 
-  have hAd_ub : N₁.r (Ad \ e) + N₂.r (Adᶜ \ e) ≤ k := le_trans hd h_nu_d,
+  have hAd_ub : N₁.r (Ad \ {e}) + N₂.r (Adᶜ \ {e}) ≤ k := le_trans hd h_nu_d,
 
 
   --apply IH to contraction, get minimizer Ac 
   rcases IH _ h_more_loops_c N₁c N₂c rfl with hc,
   set Ac := arg_min (ub_fn N₁c N₂c) with hAc,
   rw [←arg_min_attains (ub_fn N₁c N₂c), ←hAc] at hc, 
-  have hAc_ub : N₁.r (Ac ∪ e) + N₂.r (Acᶜ ∪ e) ≤ k+1 := by 
+  have hAc_ub : N₁.r (Ac ∪ {e}) + N₂.r (Acᶜ ∪ {e}) ≤ k+1 := by 
   {
-    suffices : (N₁.r (Ac ∪ e) - N₁.r e) + (N₂.r (Acᶜ ∪ e) - N₂.r e) ≤ k-1, 
+    suffices : (N₁.r (Ac ∪ {e}) - N₁.r e) + (N₂.r (Acᶜ ∪ {e}) - N₂.r e) ≤ k-1, 
       by linarith [rank_nonloop h_e_nl.1, rank_nonloop h_e_nl.2],
     from le_trans hc h_nu_c, 
   },
@@ -180,13 +180,13 @@ begin
   replace h_contr : ∀ X, k + 1 ≤ ub_fn N₁ N₂ X := 
     λ X, by linarith [min_is_lb (ub_fn N₁ N₂) X],
 
-  have hi := h_contr (Ac ∩ Ad \ e), 
-  have hu := h_contr (Ac ∪ Ad ∪ e), 
+  have hi := h_contr (Ac ∩ Ad \ {e}), 
+  have hu := h_contr (Ac ∪ Ad ∪ {e}), 
   simp_rw h_ub_fn at hi hu, 
-  rw [compl_union, compl_union, ←diff_def] at hu, 
+  rw [compl_union, compl_union, ←diff_eq] at hu, 
   rw [compl_diff, compl_inter] at hi, 
-  have sm1 := R3 N₁ (Ac ∪ e) (Ad \ e), 
-  have sm2 := R3 N₂ (Acᶜ ∪ e) (Adᶜ \ e),
+  have sm1 := R3 N₁ (Ac ∪ {e}) (Ad \ {e}), 
+  have sm2 := R3 N₂ (Acᶜ ∪ {e}) (Adᶜ \ {e}),
   rw [union_union_diff, union_inter_diff] at sm1 sm2, 
   linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end

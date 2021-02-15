@@ -1,12 +1,12 @@
-import ftype.basic ftype.embed ftype.minmax set_tactic.solver
+import prelim.embed prelim.minmax set_tactic.solver
 import matroid.rankfun matroid.dual 
 
 open_locale classical 
 noncomputable theory
 
-open ftype matroid set list 
+open matroid set list 
 
-variables {U : ftype}{N M : matroid U}
+variables {U : Type}[fintype U]{N M : matroid U}
 
 section weak_image 
 /- M is a weak image N if the rank in N is upper-bounded by the rank in M -/
@@ -76,7 +76,7 @@ weak_image_rank_zero_of_rank_zero h he
 
 lemma nonloop_of_weak_image_nonloop (h : N ≤ M){e : U}(he : N.is_nonloop e):
   M.is_nonloop e :=
-by {rw is_nonloop at *, linarith [rank_single_ub M e, h e], }
+by {rw is_nonloop at *, linarith [rank_single_ub M e, h {e}], }
 
 lemma loops_weak_image (h : N ≤ M): 
   loops M ⊆ loops N := 
@@ -118,18 +118,18 @@ begin
     rw [size_zero_iff_empty, diff_empty_iff_subset] at hs, 
     rw [subset.antisymm hXY hs, sub_self, sub_self],  }, 
   rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,   
-  cases size_pos_has_elem h_size with e he,
-  specialize h' ⟨X, Y \ e⟩ _ _, swap, 
+  cases size_pos_has_mem h_size with e he,
+  specialize h' ⟨X, Y \ {e}⟩ _ _, swap, 
   { dsimp only, rw [diff_right_comm, remove_single_size he], linarith}, swap,
-  { dsimp only [diff_def] at he ⊢, 
-    apply inter_is_lb hXY, 
-    rw subset_compl_single_iff, 
+  { dsimp only [diff_eq] at he ⊢, 
+    apply subset_inter hXY, 
+    rw subset_compl_singleton_iff, 
     rw [mem_inter_iff, mem_compl_iff] at he, 
     exact he.2,   },
-  rw [diff_def,mem_inter_iff, mem_compl_iff] at he, 
+  rw [diff_eq,mem_inter_iff, mem_compl_iff] at he, 
   dsimp only at h', 
-  suffices : N.r Y - N.r (Y \ e) ≤ M.r Y - M.r (Y \ e), by linarith, 
-  by_cases hY : M.r Y = M.r (Y \ e), swap, 
+  suffices : N.r Y - N.r (Y \ {e}) ≤ M.r Y - M.r (Y \ {e}), by linarith, 
+  by_cases hY : M.r Y = M.r (Y \ {e}), swap, 
   { rw [rank_eq_sub_one_of_ne_remove _ _ _ hY], linarith [rank_remove_single_lb N Y e]  },
   rw [hY, sub_self], 
   rw [eq_comm, rank_removal_iff_closure _ _ he.1]  at hY, 
@@ -206,15 +206,15 @@ begin
   rcases maximal_example_aug (λ X, ¬N.r X = M.r X) hn with ⟨Y, hXY, h',h''⟩, 
   dsimp only at h'', simp_rw [not_not] at h'', clear hXY hn X, 
   have hY : Y ≠ univ := λ hY, by {rw ←hY at hr, exact h' hr },
-  cases ne_univ_iff_has_nonelem.mp hY with e heY,  
+  cases ne_univ_iff_has_nonmem.mp hY with e heY,  
   specialize h'' e heY, 
   have hle := weak_image_of_quotient h, 
   rw quotient_iff_cl at h, 
   by_cases hM : e ∈ M.cl Y, 
-  { rw [(elem_cl_iff_r.mp hM)] at h'',
-    rw [←h'', eq_comm, ←elem_cl_iff_r] at h', 
-    exact h' (elem_of_elem_of_subset hM (h _))}, 
-  rw nonelem_cl_iff_r at hM,  
+  { rw [(mem_cl_iff_r.mp hM)] at h'',
+    rw [←h'', eq_comm, ←mem_cl_iff_r] at h', 
+    exact h' (mem_of_mem_of_subset hM (h _))}, 
+  rw nonmem_cl_iff_r at hM,  
   linarith [int.le_sub_one_of_le_of_ne (hle _) h', rank_augment_single_ub N Y e], 
 end
 

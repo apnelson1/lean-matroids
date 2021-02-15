@@ -1,14 +1,14 @@
 
-import ftype.basic ftype.induction ftype.collections 
+import prelim.induction prelim.collections 
 import .rankfun .indep matroid.submatroid.order
 
-open ftype matroid set 
+open matroid set 
 
 section truncation 
 
 noncomputable theory 
 
-variables {U : ftype}
+variables {U : Type}[fintype U]
 
 def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
@@ -28,7 +28,7 @@ begin
   cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
   refine ⟨e, ⟨he.1, ⟨he.2,_ ⟩ ⟩⟩, 
   by_contra h_con, push_neg at h_con, 
-  rw [(add_nonelem_size (elem_diff_iff.mp he.1).2)] at h_con, 
+  rw [(add_nonmem_size (elem_diff_iff.mp he.1).2)] at h_con, 
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
@@ -42,7 +42,7 @@ lemma truncate_rank (M : matroid U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
 begin
   apply indep_family.I_to_r_eq_iff.mpr, 
   unfold indep_family.is_set_basis trunc.indep matroid.to_indep_family, 
-  simp only [and_imp, not_and, not_le, ne.def, ssubset_iff], 
+  simp only [and_imp, not_and, not_le, ne.def, ssubset_iff_subset_ne], 
   cases M.exists_basis_of X with B hB, 
   rw matroid.basis_of_iff_indep_full_rank at hB, 
   rcases hB with ⟨hBX, ⟨hBI, hBS⟩⟩, 
@@ -70,19 +70,20 @@ end truncation
 
 section uniform
 
+variables (U : Type)[fintype U]
 
-def free_matroid_on (U : ftype): matroid U := 
+def free_matroid_on : matroid U := 
 { r := size,
   R0 := size_nonneg,
   R1 := λ X, le_refl (size X),
   R2 := λ X Y hXY, size_monotone hXY,
   R3 := λ X Y, le_of_eq (size_modular X Y),} 
 
-lemma free_matroid_indep {U : ftype}(X : U) :
+lemma free_matroid_indep (X : set U) :
   (free_matroid_on U).is_indep X  := 
 by rw [free_matroid_on, indep_iff_r]
 
-lemma free_iff_univ_indep {U : ftype}{M : matroid U}: 
+lemma free_iff_univ_indep {M : matroid U}: 
    M = free_matroid_on U ↔ is_indep M univ := 
 begin
   refine ⟨λ h, _, λ h,_⟩, 
@@ -90,14 +91,14 @@ begin
   ext X, simp_rw [free_matroid_on, ←indep_iff_r, I2 (subset_univ X) h], 
 end
 
-def loopy_matroid_on (U : ftype) : matroid U := 
+def loopy_matroid_on : matroid U := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
   R1 := λ X, size_nonneg X, 
   R2 := λ X Y hXY, le_refl 0, 
   R3 := λ X Y, rfl.ge }
 
-def loopy_iff_univ_rank_zero {U : ftype}{M : matroid U}:
+def loopy_iff_univ_rank_zero {M : matroid U}:
   M = loopy_matroid_on U ↔ M.r univ = 0 := 
 begin
   refine ⟨λ h, by finish, λ h,_⟩,  
@@ -107,39 +108,40 @@ begin
   linarith [M.rank_nonneg X], 
 end
 
-lemma loopy_matroid_indep_iff_empty {U : ftype}{X : set U}:
+lemma loopy_matroid_indep_iff_empty {X : set U}:
   (loopy_matroid_on U).is_indep X ↔ X = ∅ := 
 by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy_matroid_on]}
 
 
-def uniform_matroid_on (U : ftype){r : ℤ}(hr : 0 ≤ r) : matroid U := 
+def uniform_matroid_on {r : ℤ}(hr : 0 ≤ r) : matroid U := 
   truncate (free_matroid_on U) hr 
 
-@[simp] lemma uniform_matroid_rank (U : ftype)(X : set U){r : ℤ}(hr : 0 ≤ r) :
+@[simp] lemma uniform_matroid_rank {U : Type}[fintype U]{r : ℤ}(hr : 0 ≤ r)(X : set U) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
 by apply truncate_rank
 
-lemma uniform_matroid_indep (U : ftype)(X : set U){r : ℤ}{hr : 0 ≤ r}  : 
+lemma uniform_matroid_indep_iff {U : Type}[fintype U](X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
 by {rw [indep_iff_r, uniform_matroid_rank], finish}
 
-lemma uniform_dual (U : ftype){r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
-  dual (uniform_matroid_on U hr) = uniform_matroid_on U (by linarith : 0 ≤ size (univ : set U) - r) :=
+lemma uniform_dual {U : Type}[fintype U]{r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
+  dual (uniform_matroid_on U hr) 
+  = uniform_matroid_on U (by linarith : 0 ≤ size (univ : set U) - r) :=
 begin
   ext X, 
   simp_rw [dual, uniform_matroid_rank, compl_size, min_eq_left hrn], 
   rw [←min_add_add_left, ←(min_sub_sub_right), min_comm], simp, 
 end
 
-def circuit_matroid_on {U : ftype} (hU : nontriv U) : matroid U := 
+def circuit_matroid_on (hU : nontriv U) : matroid U := 
   uniform_matroid_on U (by linarith [nontriv_size hU] : 0 ≤ size (univ : set U) - 1)
 
-@[simp] lemma circuit_matroid_rank {U : ftype}(hU : nontriv U)(X : set U):
-  (circuit_matroid_on hU).r X = min (size (univ : set U) - 1) (size X) := 
-uniform_matroid_rank _ _ _ 
+@[simp] lemma circuit_matroid_rank {U : Type}[fintype U](hU : nontriv U)(X : set U):
+  (circuit_matroid_on U hU).r X = min (size (univ : set U) - 1) (size X) := 
+uniform_matroid_rank _ _ 
 
-lemma circuit_matroid_iff_univ_circuit {U : ftype} (hU : nontriv U){M : matroid U}:
-  M = circuit_matroid_on hU ↔ is_circuit M univ := 
+lemma circuit_matroid_iff_univ_circuit (hU : nontriv U){M : matroid U}:
+  M = circuit_matroid_on U hU ↔ is_circuit M univ := 
 begin
   refine ⟨λ h, _, λ h, _⟩, 
   rw [circuit_iff_r, h], 
@@ -158,7 +160,7 @@ end
 end uniform
 
 section relax
-variables {U : ftype}[decidable_eq (set U)] 
+variables {U : Type}[fintype U] --[decidable_eq (set U)] 
 
 def relax.r (M : matroid U)(C : set U) : set U → ℤ := 
   λ X, ite (X = C) (M.r X + 1) (M.r X)
@@ -282,10 +284,12 @@ begin
   rw relax.r_of_not_C hC hCuniv,  
 end
 
-theorem single_rank_disagreement_is_relaxation {M₁ M₂ : matroid U}{X : set U}: 
-  M₁.r univ = M₂.r univ → M₁.r X < M₂.r X → (∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) → ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
+
+
+theorem single_rank_neq_is_relaxation {M₁ M₂ : matroid U}{X : set U}(hr : M₁.r univ = M₂.r univ)
+(hX : M₁.r X < M₂.r X)(h_other : ∀ Y, Y ≠ X → M₁.r Y = M₂.r Y): 
+  ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
 begin
-  intros hr hX h_other, 
   have hne : M₁ ≠ M₂ := λ h, by {rw h at hX, from lt_irrefl _ hX },
   cases circuit_ind_of_distinct hne with X' hX', 
   have hXX' : X' = X := by
@@ -335,7 +339,7 @@ end
 
 lemma single_rank_disagreement_univ (hU : nontriv U){M₁ M₂ : matroid U}:
    M₁.r univ < M₂.r univ → (∀ X, X ≠ univ → M₁.r X = M₂.r X) → 
-    M₁ = circuit_matroid_on hU ∧ M₂ = free_matroid_on U  := 
+    M₁ = circuit_matroid_on U hU ∧ M₂ = free_matroid_on U  := 
 begin
   intros huniv hother, 
   rw [circuit_matroid_iff_univ_circuit, free_iff_univ_indep], 

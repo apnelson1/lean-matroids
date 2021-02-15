@@ -4,16 +4,17 @@
 
 
 import matroid.axioms  matroid.dual 
-import ftype.basic ftype.single ftype.induction ftype.collections ftype.minmax
-open ftype set 
+import prelim.collections prelim.minmax
+open set 
 --open ftype_induction 
 
 open_locale classical 
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
+variables {U : Type}[fintype U]
+
 section /- rank -/ rank
-variables {U : ftype}
 
 
 def rank (M : matroid U) := M.r univ 
@@ -56,7 +57,7 @@ M.rank_mono (subset_union_right X Y)
 
 lemma rank_mono_diff (M : matroid U)(X Y : set U):
   M.r (X \ Y) ≤ M.r X := 
-by {rw diff_def, apply rank_mono_inter_left}
+by {rw diff_eq, apply rank_mono_inter_left}
 
 lemma rank_eq_zero_of_le_zero {M : matroid U}{X : set U}:
   M.r X ≤ 0 → M.r X = 0 := 
@@ -79,8 +80,8 @@ lemma rank_lt_size_ne_empty {M : matroid U}{X : set U}:
 λ h hX, by {rw [hX, size_empty, rank_empty] at h, from lt_irrefl _ h,  }
 
 lemma rank_single_ub (M : matroid U)(e : U):
-  M.r e ≤ 1 := 
-by {rw ←(size_single e), exact M.rank_le_size e}
+  M.r {e} ≤ 1 := 
+by {rw ←(size_singleton e), exact M.rank_le_size {e}}
 
 lemma rank_le_univ (M : matroid U)(X : set U) : 
   M.r X ≤ M.r univ := 
@@ -140,11 +141,11 @@ lemma rank_subadditive (M : matroid U)(X Y : set U) :
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
-  M.r (X ∪ e) ≤ M.r X + 1 := 
-by linarith [rank_subadditive M X e, rank_single_ub M e]
+  M.r (X ∪ {e}) ≤ M.r X + 1 := 
+by linarith [rank_subadditive M X {e}, rank_single_ub M e]
 
 lemma rank_eq_add_one_of_ne_aug {M : matroid U}{X : set U}{e : U}:
-  M.r (X ∪ e) ≠ M.r X → M.r (X ∪ e) = M.r X + 1 := 
+  M.r (X ∪ {e}) ≠ M.r X → M.r (X ∪ {e}) = M.r X + 1 := 
 begin
   intro h, apply le_antisymm,
   from (rank_augment_single_ub M X e), 
@@ -152,7 +153,7 @@ begin
 end
 
 lemma rank_eq_of_le_aug {M : matroid U}{X : set U}{e : U}:
-  M.r (X ∪ e) ≤ M.r X → M.r (X ∪ e) = M.r X :=  
+  M.r (X ∪ {e}) ≤ M.r X → M.r (X ∪ {e}) = M.r X :=  
 λ h, le_antisymm h (rank_mono_union_left _ _ _) 
 
 lemma rank_diff_subadditive (M : matroid U)(X Y : set U) :
@@ -160,11 +161,11 @@ lemma rank_diff_subadditive (M : matroid U)(X Y : set U) :
 le_trans (M.rank_mono (by simp)) (rank_subadditive M X (Y \ X))
 
 lemma rank_remove_single_lb (M : matroid U)(X : set U)(e : U):
-  M.r X - 1 ≤ M.r (X \ e) :=
-by linarith [rank_diff_subadditive M e X, rank_single_ub M e]
+  M.r X - 1 ≤ M.r (X \ {e}) :=
+by linarith [rank_diff_subadditive M {e} X, rank_single_ub M e]
 
 lemma rank_eq_sub_one_of_ne_remove (M : matroid U)(X : set U)(e : U):
-  M.r X ≠ M.r (X \ e) → M.r (X \ e) = M.r X - 1 :=
+  M.r X ≠ M.r (X \ {e}) → M.r (X \ {e}) = M.r X - 1 :=
 begin
   intro h, apply le_antisymm  _ (rank_remove_single_lb M X e), 
   apply int.le_sub_one_of_le_of_ne _ (ne.symm h), 
@@ -197,14 +198,14 @@ end -/
 
 
 theorem rank_augment {M : matroid U} {X Z : set U} : (M.r X < M.r Z) → 
-  ∃ (z : U), z ∈ Z ∧ M.r X < M.r (X ∪ z) := 
+  ∃ (z : U), z ∈ Z ∧ M.r X < M.r (X ∪ {z}) := 
 let P : set U → Prop := λ X', 
-  (M.r X' = M.r X) ∧ (X' ⊆ X ∪ Z) ∧ (∀ (e:U), e ∈ X ∪ Z → M.r (X' ∪ e) = M.r X') in  
+  (M.r X' = M.r X) ∧ (X' ⊆ X ∪ Z) ∧ (∀ (e:U), e ∈ X ∪ Z → M.r (X' ∪ {e}) = M.r X') in  
 begin
   intro hXZ, 
   
   by_contra h_con, push_neg at h_con, 
-  replace h_con : ∀ (z:U), z ∈ X ∪ Z → M.r (X ∪ z) = M.r X := 
+  replace h_con : ∀ (z:U), z ∈ X ∪ Z → M.r (X ∪ {z}) = M.r X := 
     by {
         intros z hz, rw elem_union_iff at hz, cases hz, 
         rw add_elem hz, 
@@ -220,27 +221,27 @@ begin
   rw elem_diff_iff at he, 
   have h_aug_e := h_aug e he.1, 
   have hYe := hYmax e he.2, push_neg at hYe,
-  rcases hYe (eq.trans h_aug_e hYX) (union_is_ub hYXZ (elem_to_subset he.1))
+  rcases hYe (eq.trans h_aug_e hYX) (union_of_subsets hYXZ (singleton_subset_iff.mpr he.1))
     with ⟨f, ⟨hf, h_aug_ef⟩⟩, 
   replace h_aug_ef := rank_eq_add_one_of_ne_aug h_aug_ef,
   rw union_assoc at h_aug_ef, 
   have h_aug_f := h_aug f hf, 
   
-  have hef : (e ∩ f : set U) = ∅ := inter_distinct_singles
+  have hef : ({e} ∩ {f} : set U) = ∅ := inter_distinct_singles
     (λ h, by {rw [h, union_self] at h_aug_ef, linarith}),
   
-  linarith [submod_three_sets_disj M Y e f hef]      
+  linarith [submod_three_sets_disj M Y {e} {f} hef],
 end
 
 
-lemma loopy_rank_zero (M : matroid U) (X : set U) : (∀ (e:U), e ∈ X → M.r e = 0) → (M.r X = 0) :=
+lemma loopy_rank_zero {M : matroid U}{X : set U} (he : (∀ (e:U), e ∈ X → M.r {e} = 0)) : 
+  M.r X = 0 :=
 begin
-  intros he, by_contra h, 
+  by_contra h, 
   replace h := rank_gt_zero_of_ne h, 
-  cases rank_augment (by linarith [rank_empty M] : M.r ∅ < M.r X) with f hf,
-  specialize he f hf.1, 
-  rw [empty_union, rank_empty] at hf, 
-  linarith, 
+  rcases rank_augment (by linarith [rank_empty M] : M.r ∅ < M.r X) with ⟨f,hf, hf'⟩,
+  rw [empty_union, rank_empty, he _ hf] at hf', 
+  apply lt_irrefl _ hf', 
 end 
 
 end rank 
@@ -248,7 +249,6 @@ end rank
 -- Independence 
 
 section indep
-variables {U : ftype}
 
 /-- is independent in M; rank equals size -/
 def is_indep (M : matroid U) : set U → Prop :=
@@ -322,7 +322,7 @@ by rw [indep_iff_r, size_empty, rank_empty]
 
 lemma dep_nonempty {M : matroid U} {X : set U} (hdep : is_dep M X ):
   X ≠ ∅ := 
-λ h, by {have := @empty_indep _ M, rw ←h at this, exact hdep this}
+λ h, let h' := empty_indep M in by {rw ←h at h', exact hdep h'}
 
 lemma subset_indep {M : matroid U} {X Y : set U}: 
   X ⊆ Y → M.is_indep Y → M.is_indep X := 
@@ -332,25 +332,26 @@ begin
 end 
 
 lemma indep_aug {M : matroid U}{X Y : set U} : 
-  size X < size Y → M.is_indep X → M.is_indep Y → (∃ (e:U), e ∈ Y ∧ e ∉ X ∧ M.is_indep (X ∪ e)) := 
+  size X < size Y → M.is_indep X → M.is_indep Y → (∃ (e:U), e ∈ Y ∧ e ∉ X ∧ M.is_indep (X ∪ {e})) := 
 begin
   simp_rw indep_iff_r,
   intros hXY hIX hIY,
   rcases rank_augment (by linarith : M.r X < M.r Y) with ⟨e,⟨h₁, h₂⟩⟩, 
-  have hx := (λ he, by {rw [union_comm, subset_def_union_mp he] at h₂, linarith}: ¬((e: set U) ⊆ X)), 
-  rw ←elem_iff_subset at hx,
+  have hx : ¬({e} ⊆ X),
+  { exact (λ he, by {rw [union_comm, subset_def_union_mp he] at h₂, linarith})}, 
+  rw singleton_subset_iff at hx,
   refine ⟨e,⟨h₁,hx,_⟩⟩, 
-  have hs := (size_modular X e),
-  rw [ eq.trans (inter_comm X (e: set U)) (nonelem_disjoint hx), size_empty] at hs, 
-  linarith [size_single e, M.rank_le_size (X ∪ e), int.add_one_le_iff.mpr h₂],  
+  have hs := (size_modular X {e}),
+  rw [ eq.trans (inter_comm X {e}) (nonmem_disjoint hx), size_empty] at hs, 
+  linarith [size_singleton e, M.rank_le_size (X ∪ {e}), int.add_one_le_iff.mpr h₂],  
 end
 
 lemma indep_aug_diff {M : matroid U}{X Y : set U} : 
-  size X < size Y → M.is_indep X → M.is_indep Y  → (∃ (e:U), e ∈ Y \ X  ∧ M.is_indep (X ∪ e)) := 
+  size X < size Y → M.is_indep X → M.is_indep Y  → (∃ (e:U), e ∈ Y \ X  ∧ M.is_indep (X ∪ {e})) := 
 λ h₁ h₂ h₃, by {simp_rw elem_diff_iff, simp_rw and_assoc, exact indep_aug h₁ h₂ h₃}
 
 lemma indep_of_indep_aug {M : matroid U}{I : set U}{e : U}:
-  M.is_indep I → M.r I < M.r (I ∪ e) → M.is_indep (I ∪ e) :=
+  M.is_indep I → M.r I < M.r (I ∪ {e}) → M.is_indep (I ∪ {e}) :=
 begin
   intros hI h, 
   rw indep_iff_r at *, 
@@ -373,10 +374,13 @@ lemma subset_indep_r {M : matroid U}{X Y : set U}:
 λ h, by {have := subset_indep h, rw [indep_iff_r, indep_iff_r] at this, assumption} 
 
 
-lemma elem_indep_r {M : matroid U}{e : U}{I : set U}:
-  e ∈ I → M.is_indep I → M.r e = 1 := 
-by {rw [elem_iff_subset, ←size_single, ←indep_iff_r], from subset_indep_r, }
---λ he hI, by {rw [←size_single, ←indep_iff_r], from subset_indep (elem_to_subset he) hI,  } 
+lemma elem_indep_r {M : matroid U}{e : U}{I : set U}(he : e ∈ I)(hI : M.is_indep I):
+  M.r {e} = 1 := 
+begin 
+  rw [←singleton_subset_iff] at he, 
+  rw [←size_singleton e, ←indep_iff_r], 
+  exact subset_indep_r he hI, 
+end
 
 lemma I1 (M : matroid U) : 
   M.is_indep ∅ := 
@@ -410,7 +414,7 @@ lemma I2_u_left {M : matroid U}{X Y : set U}:
 λ h, I2 (subset_union_left _ _) h 
 
 lemma I3 {M : matroid U}{X Y : set U}: 
-  size X < size Y → M.is_indep X → M.is_indep Y → (∃ (e:U), e ∈ Y \ X ∧ M.is_indep (X ∪ e)) := 
+  size X < size Y → M.is_indep X → M.is_indep Y → (∃ (e:U), e ∈ Y \ X ∧ M.is_indep (X ∪ {e})) := 
   indep_aug_diff 
 
 lemma indep_inter_rank_zero {M : matroid U}{I X : set U}(hI : M.is_indep I)(hX : M.r X = 0): 
@@ -422,7 +426,7 @@ end
 
 /-- converts a matroid to an independence family -/
 def to_indep_family (M : matroid U) : indep_family U := 
-  ⟨M.is_indep, I1 M, @I2 _ M, @I3 _ M⟩
+  ⟨M.is_indep, I1 M, @I2 _ _ M, @I3 _ _ M⟩
 
 
 instance nonempty_indep_subset_of (M : matroid U)(X : set U) : nonempty (indep_subset_of M X) :=
@@ -436,7 +440,6 @@ by {unfold indep_subset_of, apply_instance, }
 end indep 
 
 section /-Circuits-/ circuit
-variables {U : ftype}
 
 /-- is a circuit of M : minimally dependent -/
 def is_circuit (M : matroid U) : set U → Prop := 
@@ -513,7 +516,7 @@ begin
 end 
 
 /-- circuits nonempty unless matroid is free -/
-instance nonempty_circuit {M : matroid U}(hM : M.r univ < @size U univ) : nonempty (M.circuit) := 
+instance nonempty_circuit {M : matroid U}(hM : M.r univ < size univ) : nonempty (M.circuit) := 
 begin 
   apply nonempty_subtype.mpr, 
   rw [←dep_iff_r, dep_iff_contains_circuit] at hM, 
@@ -524,7 +527,7 @@ end
 /-- cocircuits nonempty unless matroid is loopy -/
 instance nonempty_cocircuit {M : matroid U}(hM : 0 < M.r univ) : nonempty (cocircuit M) := 
 begin
-  refine matroid.nonempty_circuit (_ : (dual M).r univ < @size U univ), 
+  refine matroid.nonempty_circuit (_ : (dual M).r univ < size univ), 
   rw [dual_r, compl_univ, M.rank_empty], linarith, 
 end
 
@@ -563,37 +566,36 @@ begin
 end
 
 lemma circuit_elim {M : matroid U} {C₁ C₂ : set U} {e : U}: 
-   C₁ ≠ C₂ → M.is_circuit C₁ → M.is_circuit C₂ → e ∈ C₁ ∩ C₂ → ∃ C, M.is_circuit C ∧ C ⊆ ((C₁ ∪ C₂) \ e) := 
+   C₁ ≠ C₂ → M.is_circuit C₁ → M.is_circuit C₂ → e ∈ C₁ ∩ C₂ → ∃ C, M.is_circuit C ∧ C ⊆ ((C₁ ∪ C₂) \ {e}) := 
 begin
   intros hC₁C₂ hC₁ hC₂ he, 
   rw [←dep_iff_contains_circuit, dep_iff_r], 
   have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
-  have heU := elem_of_elem_of_subset he (inter_subset_union C₁ C₂),
-  have hcalc : M.r ((C₁ ∪ C₂) \ e) ≤ size ((C₁ ∪ C₂) \ e) -1 := 
-    by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) e ), M.rank_submod C₁ C₂, 
+  have heU := mem_of_mem_of_subset he (inter_subset_union C₁ C₂),
+  have hcalc : M.r ((C₁ ∪ C₂) \ {e}) ≤ size ((C₁ ∪ C₂) \ {e}) -1 := 
+    by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) {e} ), M.rank_submod C₁ C₂, 
         r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
   from int.le_sub_one_iff.mp hcalc,
 end 
 
 /-lemma circuit_elemination_subtype {M : matroid U} {C₁ C₂ : circuit M} {e : U}: 
-  C₁ ≠ C₂ → e ∈ (C₁ ∩ C₂ : set U) → ∃ (C : circuit M), (C : set U) ⊆ (C₁ ∪ C₂) \ e := 
+  C₁ ≠ C₂ → e ∈ (C₁ ∩ C₂ : set U) → ∃ (C : circuit M), (C : set U) ⊆ (C₁ ∪ C₂) \ {e} := 
   by{intros hne he, cases circuit_elemination _ C₁.2 C₂.2 he with C hC, use ⟨C, hC.1⟩, exact hC.2, exact λ h, hne (subtype.eq h)}-/
 
 def matroid_to_cct_family (M : matroid U) : cct_family U := 
-  ⟨λ X, M.is_circuit X, empty_not_cct M, λ C₁ C₂, circuit_not_ssubset_circuit M, @circuit_elim _ M⟩
+  ⟨λ X, M.is_circuit X, 
+   empty_not_cct M, 
+   λ C₁ C₂, circuit_not_ssubset_circuit M, 
+   @circuit_elim _ _ M⟩
 
 
 end circuit
 
 section closure
 
-variables {U : ftype}
-
 /-- is spanning in M: closure is univ -/
 @[simp] def is_spanning (M : matroid U) : set U → Prop := 
   λ X, M.r X = M.r univ 
-
-
 
 /-- X spans Y if the rank of X is the rank of X ∪ Y -/
 def spans (M : matroid U) : set U → set U → Prop := 
@@ -744,39 +746,39 @@ lemma cl_monotone (M : matroid U){X Y : set U}:
 λ h, by {rw subset_cl_iff_r, apply rank_eq_of_le_union, 
           rw [union_cl_rank_right, union_comm, subset_def_union_mp h]}
   
-lemma nonelem_cl_iff_r {M : matroid U}{X : set U}{e : U} :
-  e ∉ M.cl X ↔ M.r (X ∪ e) = M.r X + 1 :=
+lemma nonmem_cl_iff_r {M : matroid U}{X : set U}{e : U} :
+  e ∉ M.cl X ↔ M.r (X ∪ {e}) = M.r X + 1 :=
 begin
-  rw [nonelem_iff_subset, subset_cl_iff_r], refine ⟨λ h, _, λ _, λ _, by linarith⟩, 
+  rw [←singleton_subset_iff, subset_cl_iff_r], refine ⟨λ h, _, λ _, λ _, by linarith⟩, 
   linarith [rank_augment_single_ub M X e, 
-              int.add_one_le_iff.mpr ((ne.symm h).le_iff_lt.mp (rank_mono_union_left M X e))]
+  int.add_one_le_iff.mpr ((ne.symm h).le_iff_lt.mp (rank_mono_union_left M X {e}))],
 end
 
-lemma elem_cl_iff_r {M : matroid U}{X : set U}{e : U} : 
-  e ∈ M.cl X ↔ M.r (X ∪ e) = M.r X := 
-by rw [elem_iff_subset, subset_cl_iff_r]
+lemma mem_cl_iff_r {M : matroid U}{X : set U}{e : U} : 
+  e ∈ M.cl X ↔ M.r (X ∪ {e}) = M.r X := 
+by rw [←singleton_subset_iff, subset_cl_iff_r]
 
-lemma elem_cl_iff_spans {M : matroid U}{X : set U}{e : U}:
-  e ∈ M.cl X ↔ M.spans X e :=
-by rw [spans_iff_r,elem_cl_iff_r]
+lemma mem_cl_iff_spans {M : matroid U}{X : set U}{e : U}:
+  e ∈ M.cl X ↔ M.spans X {e} :=
+by rw [spans_iff_r,mem_cl_iff_r]
 
-lemma nonelem_cl_iff_nonspans {M : matroid U}{X : set U}{e : U}:
-  e ∉ M.cl X ↔ ¬M.spans X e :=
-⟨λ h, λ hn, h (elem_cl_iff_spans.mpr hn), λ h, λ hn, h (elem_cl_iff_spans.mp hn)⟩
+lemma nonmem_cl_iff_nonspans {M : matroid U}{X : set U}{e : U}:
+  e ∉ M.cl X ↔ ¬M.spans X {e} :=
+⟨λ h, λ hn, h (mem_cl_iff_spans.mpr hn), λ h, λ hn, h (mem_cl_iff_spans.mp hn)⟩
 
 lemma rank_removal_iff_closure {M : matroid U}(X : set U)(e : U)(h : e ∈ X):
-  M.r (X \ e) = M.r X ↔ e ∈ M.cl (X \ e) :=
-by rw [elem_cl_iff_r, remove_add_elem h, eq_comm]
+  M.r (X \ {e}) = M.r X ↔ e ∈ M.cl (X \ {e}) :=
+by rw [mem_cl_iff_r, remove_add_elem h, eq_comm]
   
 
 lemma cl4 (M : matroid U)(X : set U)(e f : U) : 
-  e ∈ M.cl (X ∪ f) \ M.cl X  → f ∈ M.cl (X ∪ e) \ M.cl X := 
+  e ∈ M.cl (X ∪ {f}) \ M.cl X  → f ∈ M.cl (X ∪ {e}) \ M.cl X := 
 begin 
-  repeat {rw [elem_diff_iff, nonelem_cl_iff_r, elem_cl_iff_r]}, 
+  repeat {rw [elem_diff_iff, nonmem_cl_iff_r, mem_cl_iff_r]}, 
   rw union_right_comm, refine λ h, ⟨_,_⟩, 
   apply rank_eq_of_le_union, linarith [rank_augment_single_ub M X f],  
   cases h with h1 h2, 
-  linarith [h2, rank_augment_single_ub M X f, rank_mono_union_left M (X ∪ e) f],  
+  linarith [h2, rank_augment_single_ub M X f, rank_mono_union_left M (X ∪ {e}) {f}],  
 end
 
 
@@ -784,7 +786,6 @@ end closure
 
 
 section /-Flats-/ flat
-variables {U : ftype} 
 
 /-- set for which all proper supersets have larger rank -/
 def is_flat (M : matroid U) : set U → Prop := 
@@ -887,16 +888,16 @@ end
 
 
 lemma flat_iff_add_r {M : matroid U}{F : set U}:
-  M.is_flat F ↔ ∀ (e:U), e ∉ F → M.r F < M.r (F ∪ e) :=
+  M.is_flat F ↔ ∀ (e:U), e ∉ F → M.r F < M.r (F ∪ {e}) :=
 begin
   rw flat_iff_r, 
-  refine ⟨λ h, λ e he, h _ (ssub_of_add_nonelem he), λ h, λ Y hY, _⟩,
+  refine ⟨λ h, λ e he, h _ (ssub_of_add_nonmem he), λ h, λ Y hY, _⟩,
   cases add_from_nonempty_diff.mp hY with e he, 
   exact lt_of_lt_of_le (h e he.1) (M.rank_mono he.2), 
 end
 
 lemma flat_iff_add {M : matroid U}{F : set U}:
-  M.is_flat F ↔ ∀ (e : U), e ∉ F → ¬M.spans F e := 
+  M.is_flat F ↔ ∀ (e : U), e ∉ F → ¬M.spans F {e} := 
 by {rw [flat_iff_add_r], simp_rw not_spans_iff_r}
 
 lemma fullrank_flat_is_univ {M : matroid U}{F : set U}:
@@ -943,7 +944,7 @@ begin
   rcases h with ⟨h_univ, h_flat, hmax⟩, 
   by_cases h1 : M.r H ≤ M.r univ - 2, 
   rcases ne_univ_single_addition_element h_univ with ⟨e, he₁, he₂⟩,
-  have := hmax (cl M (H ∪ e)) (cl_is_flat _ _) (subset.lt_of_lt_of_le he₁ _),
+  have := hmax (cl M (H ∪ {e})) (cl_is_flat _ _) (subset.lt_of_lt_of_le he₁ _),
   rw [←spanning_iff_cl_univ, spanning_iff_r] at this,  
   linarith [rank_augment_single_ub M H e],
   apply subset_cl, 
@@ -967,10 +968,10 @@ end
 lemma inter_flats_is_flat (M : matroid U) (F₁ F₂ : set U) :
   M.is_flat F₁ → M.is_flat F₂ → M.is_flat (F₁ ∩ F₂) := 
 begin 
-  repeat {rw [flat_iff_add]}, simp_rw ←nonelem_cl_iff_nonspans, 
-  intros h₁ h₂ e he, rw nonelem_inter_iff at he, cases he, 
-  exact λ h, (h₁ e he) (elem_of_elem_of_subset h (cl_monotone M (inter_subset_left F₁ F₂))), 
-  exact λ h, (h₂ e he) (elem_of_elem_of_subset h (cl_monotone M (inter_subset_right F₁ F₂))), 
+  repeat {rw [flat_iff_add]}, simp_rw ←nonmem_cl_iff_nonspans, 
+  intros h₁ h₂ e he, rw nonmem_inter_iff at he, cases he, 
+  exact λ h, (h₁ e he) (mem_of_mem_of_subset h (cl_monotone M (inter_subset_left F₁ F₂))), 
+  exact λ h, (h₂ e he) (mem_of_mem_of_subset h (cl_monotone M (inter_subset_right F₁ F₂))), 
 end
 
 /-- is both a circuit and a hyperplane -/
@@ -1012,15 +1013,13 @@ end flat
 
 section /- Series and Parallel -/ series_parallel 
 
-variables {U : ftype}
-
 /-- is a rank-zero element -/
 def is_loop (M : matroid U) : U → Prop := 
-  λ e, M.r e = 0 
+  λ e, M.r {e} = 0 
 
 /-- is a rank-one element -/
 def is_nonloop (M : matroid U) : U → Prop := 
-  λ e, M.r e = 1 
+  λ e, M.r {e} = 1 
 
 /-- is a loop of the dual -/
 def is_coloop (M : matroid U) : U → Prop := 
@@ -1031,25 +1030,25 @@ def is_noncoloop (M : matroid U) : U → Prop :=
   is_coloop (dual M)
 
 lemma nonloop_iff_indep {M : matroid U}{e : U}:
-  M.is_nonloop e ↔ M.is_indep e := 
-by rw [is_nonloop, indep_iff_r, size_single] 
+  M.is_nonloop e ↔ M.is_indep {e} := 
+by rw [is_nonloop, indep_iff_r, size_singleton] 
 
 lemma rank_nonloop {M : matroid U}{e : U}:
-  M.is_nonloop e → M.r e = 1 :=
+  M.is_nonloop e → M.r {(e : U)} = 1 :=
 by {unfold is_nonloop, from λ h, h}
 
 lemma rank_loop {M : matroid U}{e : U}:
-  M.is_loop e → M.r e = 0 :=
+  M.is_loop e → M.r {e} = 0 :=
 by {unfold is_loop, from λ h, h}
 
 lemma loop_iff_elem_loops {M : matroid U} {e : U} : 
   M.is_loop e ↔ e ∈ M.loops := 
-by {simp_rw [is_loop, elem_iff_subset], from rank_zero_iff_subset_loops}  
+by {simp_rw [is_loop, ←singleton_subset_iff], from rank_zero_iff_subset_loops}  
 
 lemma nonloop_iff_not_elem_loops {M : matroid U}{e : U}: 
   M.is_nonloop e ↔ e ∉ M.loops := 
 begin
-  simp_rw [is_nonloop, elem_iff_subset, ←rank_zero_iff_subset_loops], 
+  simp_rw [is_nonloop, ←singleton_subset_iff, ←rank_zero_iff_subset_loops], 
   refine ⟨λ h h', by linarith, λ h, _⟩, 
   linarith [rank_single_ub M e, rank_gt_zero_of_ne h], 
 end
@@ -1059,24 +1058,24 @@ lemma nonloop_iff_not_loop {M : matroid U} (e : U) :
 begin 
   unfold is_loop is_nonloop, refine ⟨λ h, _ ,λ h, _⟩,rw h ,
   simp only [not_false_iff, one_ne_zero], 
-  have := M.rank_le_size e, rw size_single at this,       
-  linarith [(ne.le_iff_lt (ne.symm h)).mp (M.rank_nonneg e)],  
+  have := M.rank_le_size {e}, rw size_singleton at this,       
+  linarith [(ne.le_iff_lt (ne.symm h)).mp (M.rank_nonneg {e})],  
 end
 
 lemma coloop_iff_r {M : matroid U} (e : U) :
-  M.is_coloop e ↔ M.r eᶜ = M.r univ - 1 := 
+  M.is_coloop e ↔ M.r {e}ᶜ = M.r univ - 1 := 
 begin
-  unfold is_coloop is_loop, rw [dual_r,size_single],
+  unfold is_coloop is_loop, rw [dual_r,size_singleton],
   exact ⟨λh, by linarith,λ h, by linarith⟩,   
 end
 
 lemma coloop_iff_r_less {M : matroid U} (e : U) :
-  M.is_coloop e ↔ M.r eᶜ < M.r univ := 
+  M.is_coloop e ↔ M.r {e}ᶜ < M.r univ := 
 begin
-  unfold is_coloop is_loop, rw [dual_r,size_single],
+  unfold is_coloop is_loop, rw [dual_r,size_singleton],
   refine ⟨λh,by linarith,λ h,_⟩, 
-  have := rank_diff_le_size_diff M (subset_univ (eᶜ : set U)), 
-  rw [←size_compl (e : set U),size_single] at this, 
+  have := rank_diff_le_size_diff M (subset_univ {e}ᶜ), 
+  rw [←size_compl, size_singleton] at this, 
   linarith [int.le_sub_one_iff.mpr h],
 end
 
@@ -1087,92 +1086,92 @@ def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
 instance coe_nonloop {M : matroid U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
 --def noncoloop (M : matroid U) : Type := { e : U // is_nonloop (dual M) e}
 
-lemma rank_nonloop_subtype {M : matroid U}(e : nonloop M) : 
-  M.r e = 1 := 
+lemma rank_coe_nonloop {M : matroid U}(e : nonloop M) : 
+  M.r {(e : U)} = 1 := 
 rank_nonloop (e.2)
 
-lemma nonloop_indep_subtype {M : matroid U}(e : nonloop M) :
-  M.is_indep e := 
-by {rw [indep_iff_r], simp only [size_single, coe_coe], apply rank_nonloop_subtype e,}
+lemma coe_nonloop_indep {M : matroid U}(e : nonloop M) :
+  M.is_indep {(e : U)} := 
+by {rw [indep_iff_r], simp only [size_singleton, coe_coe], apply rank_coe_nonloop e,}
 
-lemma rank_union_nonloops_lb {M : matroid U} (e f : nonloop M) :
-  1 ≤ M.r (e ∪ f) := 
-by {have : M.r e = 1 := e.property, have := M.rank_mono_union_left e f, linarith}
+lemma rank_two_nonloops_lb {M : matroid U} (e f : nonloop M) :
+  1 ≤ M.r ({e,f}) := 
+begin
+  rw ←union_singletons_eq_pair, 
+  linarith [rank_coe_nonloop e, M.rank_mono_union_left {e} {f}],
+end 
 
-lemma rank_union_nonloops_ub {M : matroid U} (e f : nonloop M) : 
-  M.r (e ∪ f) ≤ 2 := 
-by {have : M.r e = 1 := e.property, have : M.r f = 1 := f.property, linarith [M.rank_nonneg (e ∩ f), M.rank_submod e f]}
+lemma rank_two_nonloops_ub {M : matroid U} (e f : nonloop M) : 
+  M.r ({e,f}) ≤ 2 := 
+begin
+  rw ←union_singletons_eq_pair, 
+  linarith [rank_coe_nonloop e, rank_coe_nonloop f, 
+    M.rank_nonneg ({e} ∩ {f}), M.rank_submod {e} {f}], 
+end 
 
 /-- two nonloops have rank-one union -/
-def parallel (M : matroid U) : nonloop M → nonloop M → Prop := 
-  λ e f, M.r (e ∪ f) = 1 
+def parallel (M : matroid U) (e f : nonloop M) : Prop := 
+  M.r ({e,f}) = 1 
+
+
+
+--example (e f : U): ({e,f} : set U) = ({f,e} : set U) := pair_comm e f
+--example (e : U): ({e,e} : set U) = {e} := by {exact pair_eq_singleton e,}
 
 /-- parallel in dual -/
-def series (M : matroid U) : nonloop (dual M) → nonloop (dual M) → Prop := 
-  λ e f, parallel (dual M) e f 
+def series (M : matroid U) (e f : nonloop (dual M)): Prop := 
+  (dual M).parallel e f 
 
-lemma parallel_refl {M : matroid U} (e : nonloop M) : 
-  M.parallel e e := 
-by {unfold parallel, rw union_self, exact e.property}
+lemma parallel_refl (M : matroid U): 
+  reflexive M.parallel:= 
+λ e, by {unfold parallel, rw pair_eq_singleton, exact e.property}
 
-lemma parallel_symm {M : matroid U} ⦃e f : nonloop M⦄ :
-  M.parallel e f → M.parallel f e :=
-by {unfold parallel, intro h, rw union_comm, exact h}
+lemma parallel_symm (M : matroid U) : 
+  symmetric M.parallel:= 
+λ x y, by {simp_rw [parallel, pair_comm], tauto,}
 
 lemma parallel_iff_dep {M: matroid U}{e f : nonloop M} : 
-  M.parallel e f ↔ (e = f ∨ M.is_dep (e ∪ f)) :=
+  M.parallel e f ↔ (e = f ∨ M.is_dep {e,f}) :=
 begin
   unfold parallel, rw dep_iff_r,  refine ⟨λ h, ((or_iff_not_imp_left.mpr (λ hne, _))), λ h, _ ⟩,
   have := size_union_distinct_singles (λ h', hne (subtype.ext h')) , 
   rw h, unfold_coes at *, linarith,  
-  cases h, rw [h, union_self], exact f.property, 
-  have := rank_union_nonloops_lb e f, 
+  cases h, rw [h, pair_eq_singleton], exact f.property, 
+  have := rank_two_nonloops_lb e f, 
   have := size_union_singles_ub e.1 f.1,
   unfold_coes at *, rw ←int.le_sub_one_iff at h, linarith, 
 end
 
 lemma parallel_iff_cct {M: matroid U}{e f : nonloop M} : 
-  M.parallel e f ↔ (e = f ∨ M.is_circuit (e ∪ f)) :=
+  M.parallel e f ↔ (e = f ∨ M.is_circuit {e,f}) :=
 begin
-  refine ⟨λ h, _, λ h, (parallel_iff_dep.mpr (or.imp_right _ h : (e = f) ∨ is_dep M (e ∪ f)))⟩, 
+  refine ⟨λ h, _, λ h, (parallel_iff_dep.mpr (or.imp_right _ h : (e = f) ∨ is_dep M ({e,f})))⟩, 
   replace h := parallel_iff_dep.mp h, cases h, exact or.inl h, apply or_iff_not_imp_left.mpr, intro h', 
   refine ⟨h,λ Y hY, _⟩, rcases ssubset_pair hY, 
   rw h_1, exact empty_indep M,  unfold_coes at h_1,  cases h_1; 
-  {rw h_1, apply nonloop_indep_subtype,},
+  {rw h_1, apply coe_nonloop_indep,},
   apply circuit_dep, 
 end
 
-lemma parallel_trans {M : matroid U} ⦃e f g : nonloop M⦄ :
-  M.parallel e f → M.parallel f g → M.parallel e g :=
+lemma parallel_trans (M : matroid U) :
+  transitive M.parallel :=
 begin
-  unfold parallel, intros hef hfg, 
-  have := M.rank_submod (e ∪ f) (f ∪ g), rw [hef, hfg] at this, 
-  have : 1 ≤ M.r ((e ∪ f) ∩ (f ∪ g)) := _, 
-  have := M.rank_mono (_ : (e ∪ g : set U) ⊆ ((e ∪ f) ∪ (f ∪ g) : set U)), 
-  linarith [(rank_union_nonloops_lb e g)],  
-  rw [union_comm (e: set U) f, ←union_distrib_union_right], apply subset_union_right,  
-  calc _ = M.r f : f.property.symm
-    ...  ≤ _     : M.rank_mono (subset_of_inter_mpr (subset_union_right (e: set U) f) (subset_union_left (f: set U) g)), 
+  intros e f g hef hfg, unfold parallel at *, 
+  have := M.rank_submod ({e,f}) ({f,g}), rw [hef, hfg] at this, 
+  have h1 : 1 ≤ M.r (({e,f}) ∩ ({f,g})),  
+  {rw ←rank_coe_nonloop f, refine M.rank_mono (subset_inter _ _ ); simp, },
+  have h2 := M.rank_mono (_ : ({e,g} : set U)  ⊆ {e,f} ∪ {f,g}), swap, 
+  {intro x, simp, tauto,  }, 
+  linarith [(rank_two_nonloops_lb e g)],  
 end
 
-lemma parallel_equiv (M : matroid U) : equivalence (parallel M) := 
-  ⟨parallel_refl, ⟨parallel_symm,parallel_trans⟩⟩
-  
-lemma series_refl {M : matroid U} (e : nonloop (dual M)) :
-  M.series e e :=
-parallel_refl e
-
-lemma series_symm {M : matroid U} ⦃e f : nonloop (dual M)⦄ :
-  M.series e f → M.series f e :=
-@parallel_symm _ _ e f
-
-lemma series_trans {M : matroid U} ⦃e f g : nonloop (dual M)⦄ :
-  M.series e f → M.series f g → M.series e g :=
-@parallel_trans _ _ e f g
+lemma parallel_equiv (M : matroid U) : 
+  equivalence M.parallel := 
+  ⟨M.parallel_refl, M.parallel_symm, M.parallel_trans⟩
 
 lemma series_equiv (M : matroid U): 
-  equivalence (M.series) :=
-parallel_equiv _ 
+  equivalence M.series :=
+parallel_equiv M.dual 
 
 instance parallel_classes_setoid (M : matroid U) : setoid (nonloop M) := 
   ⟨M.parallel, M.parallel_equiv⟩ 
@@ -1204,15 +1203,14 @@ end-/
 
 section /-Bases-/ basis
 
-variables {U : ftype}
 
 /-- B is a basis of X : an independent subset of X spanning X -/
-def is_basis_of (M : matroid U) : set U → set U → Prop := 
-  λ B X, B ⊆ X ∧ M.r B = size B ∧ M.r B = M.r X 
+def is_basis_of (M : matroid U)( B X : set U) : Prop := 
+  B ⊆ X ∧ M.r B = size B ∧ M.r B = M.r X 
 
 /-- B is a basis of M: an independent set spanning M -/
-def is_basis (M : matroid U) : set U → Prop := 
-  λ B, M.is_basis_of B univ 
+def is_basis (M : matroid U)(B : set U) : Prop := 
+  M.is_basis_of B univ 
 
 
 /-- basis type -/
@@ -1266,41 +1264,43 @@ def cobasis (M : matroid U) := {B : set U // M.is_cobasis B}
 by rw is_cobasis
 
 @[simp] lemma basis_of_iff_augment {M : matroid U} {B X : set U}: 
-  M.is_basis_of B X ↔ B ⊆ X ∧ M.r B = size B ∧ ∀ (e:U), e ∈ X → M.r (B ∪ e) = M.r B := 
+  M.is_basis_of B X ↔ B ⊆ X ∧ M.r B = size B ∧ ∀ (e:U), e ∈ X → M.r (B ∪ {e}) = M.r B := 
 begin
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,_⟩⟩⟩, 
-  linarith [h.2.2, M.rank_mono (union_is_ub h.1 (elem_to_subset he)), M.rank_mono (subset_union_left B e)], 
+  { linarith [h.2.2, 
+      M.rank_mono (union_of_subsets h.1 (singleton_subset_iff.mpr he)), 
+      M.rank_mono (subset_union_left B {e})]}, 
   refine rank_eq_of_not_lt_supset h.1 (λ hBX, _), 
   cases rank_augment hBX with e he, 
   linarith [h.2.2 e he.1, he.2],   
 end
 
 lemma basis_iff_augment {M : matroid U}{B : set U}:
-  M.is_basis B ↔ M.r B = size B ∧ ∀ (e:U), M.r (B ∪ e) = M.r B := 
+  M.is_basis B ↔ M.r B = size B ∧ ∀ (e:U), M.r (B ∪ {e}) = M.r B := 
 begin
   unfold is_basis, rw basis_of_iff_augment, 
-  refine ⟨λ h, ⟨h.2.1,λ e, h.2.2 e (elem_univ e)⟩, λ h, ⟨subset_univ B, ⟨h.1,λ e he,h.2 e⟩⟩ ⟩, 
+  refine ⟨λ h, ⟨h.2.1,λ e, h.2.2 e (mem_univ e)⟩, λ h, ⟨subset_univ B, ⟨h.1,λ e he,h.2 e⟩⟩ ⟩, 
 end
 
 lemma basis_of_iff_augment_i {M : matroid U}{B X : set U} : 
-  M.is_basis_of B X ↔ B ⊆ X ∧ M.is_indep B ∧ ∀ (e:U), e ∈ X \ B → ¬M.is_indep (B ∪ e) :=
+  M.is_basis_of B X ↔ B ⊆ X ∧ M.is_indep B ∧ ∀ (e:U), e ∈ X \ B → ¬M.is_indep (B ∪ {e}) :=
 begin
   rw basis_of_iff_augment, 
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he hi, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩ ⟩⟩, 
   rw indep_iff_r at hi, 
   rw elem_diff_iff at he, 
-  linarith [h.2.2 e he.1, add_nonelem_size he.2], 
+  linarith [h.2.2 e he.1, add_nonmem_size he.2], 
   by_cases heB: e ∈ B, 
   rw (add_elem heB), 
   have : e ∈ X \ B := by {rw elem_diff_iff, from ⟨he,heB⟩},
   have := h.2.2 _ this, 
   rw not_indep_iff_r at this, 
   have hi := h.2.1, rw indep_iff_r at hi, 
-  linarith [add_nonelem_size heB, M.rank_mono (subset_union_left B e)], 
+  linarith [add_nonmem_size heB, M.rank_mono (subset_union_left B {e})], 
 end 
 
 lemma basis_iff_augment_i {M : matroid U}{B : set U} : 
-  is_basis M B ↔ M.is_indep B ∧ ∀ (e:U), e ∉ B → ¬M.is_indep (B ∪ e) := 
+  is_basis M B ↔ M.is_indep B ∧ ∀ (e:U), e ∉ B → ¬M.is_indep (B ∪ {e}) := 
 begin
   simp_rw [is_basis, basis_of_iff_augment_i, ←elem_compl_iff, univ_diff], 
   from ⟨λ h, ⟨h.2.1,λ e he, h.2.2 _ he⟩, λ h, ⟨subset_univ B, h⟩⟩, 
@@ -1343,18 +1343,24 @@ lemma compl_cobasis_iff_basis {M : matroid U} {B : set U}:
 by rw [cobasis_iff, ←cobasis_iff_compl_basis, cobasis_iff, dual_dual]
 
 
-lemma basis_exchange (M : matroid U){B₁ B₂ : set U}{e : U}:
-  M.is_basis B₁ → M.is_basis B₂ → e ∈ B₁ \ B₂ → ∃ f, f ∈ (B₂ \ B₁) ∧ M.is_basis ((B₁ \ e) ∪ f) :=
+lemma basis_exchange (M : matroid U){B₁ B₂ : set U}{e : U}(hB₁ : M.is_basis B₁)
+(hB₂ : M.is_basis B₂)(he : e ∈ B₁ \ B₂):
+  ∃ (f : U), f ∈ (B₂ \ B₁) ∧ M.is_basis (B₁ \ {e} ∪ {f}) :=
 begin
-  intros hB₁ hB₂ he, rw basis_iff_indep_full_rank at hB₁ hB₂, simp_rw basis_iff_indep_full_rank,   
+  rw basis_iff_indep_full_rank at hB₁ hB₂, 
+  simp_rw basis_iff_indep_full_rank,   
   cases elem_diff_iff.mp he with he₁ he₂, 
-  have h' : M.is_indep (B₁ \ e) := subset_indep _ hB₁.1, 
-  rcases indep_aug_diff _ h' hB₂.1 with ⟨f,⟨hf, hf_aug⟩⟩,  
-  have h'' : B₂ \ (B₁ \ e) = B₂ \ B₁ := by
-    {repeat {rw diff_def}, rw [compl_inter, compl_compl, inter_distrib_left, inter_comm _ (e: set U), nonelem_disjoint_iff.mp he₂, union_empty]},
-  rw h'' at hf, cases elem_diff_iff.mp hf with hf₁ hf₂, 
-  use f, refine ⟨hf, ⟨hf_aug, _⟩⟩, rw exchange_size he₁ hf₂, exact hB₁.2, 
-  rw remove_single_size he₁, linarith, apply remove_single_subset, 
+  have h' : M.is_indep (B₁ \ {e}) := subset_indep (diff_subset _ _) hB₁.1, 
+  rcases indep_aug_diff (by { rw remove_single_size he₁, linarith, }) h' hB₂.1 
+    with ⟨f,⟨hf, hf_aug⟩⟩, 
+  have h'' : B₂ \ (B₁ \ {e}) = B₂ \ B₁, 
+  { repeat {rw diff_eq}, 
+    rw [compl_inter, compl_compl, inter_distrib_left, 
+    inter_comm _ {e}, nonmem_disjoint_iff.mp he₂, union_empty]},
+  rw h'' at hf, 
+  cases elem_diff_iff.mp hf with hf₁ hf₂, 
+  refine ⟨f, hf, hf_aug, _⟩, 
+  rw exchange_size he₁ hf₂, exact hB₁.2, 
 end  
 
 lemma extends_to_basis_of {M : matroid U}{I X : set U}:
@@ -1368,7 +1374,7 @@ begin
   rw elem_diff_iff at he, 
   have := hBmax _ he.2, 
   push_neg at this, 
-  from this (subset.trans h_left (subset_union_left _ _)) hecon (union_is_ub hPB.2.2 (elem_to_subset he.1)), 
+  from this (subset.trans h_left (subset_union_left _ _)) hecon (union_of_subsets hPB.2.2 (singleton_subset_iff.mpr he.1)), 
 end 
 
 lemma exists_basis_of (M : matroid U)(X : set U) : 
@@ -1391,16 +1397,17 @@ begin
   from I2 hB.1 (basis_is_indep hB.2),  
 end
 
-lemma elem_cl_iff_i {M : matroid U}{X : set U}{e : U} :
-  e ∈ M.cl X ↔ ∃ I ⊆ X, M.is_indep I ∧ ∀ J ⊆ X ∪ e, is_indep M J → size J ≤ size I :=
+lemma mem_cl_iff_i {M : matroid U}{X : set U}{e : U} :
+  e ∈ M.cl X 
+  ↔ ∃ I ⊆ X, M.is_indep I ∧ ∀ J ⊆ X ∪ {e}, is_indep M J → size J ≤ size I :=
 begin
-  rw elem_cl_iff_r, 
+  rw mem_cl_iff_r, 
   refine ⟨λ h, _, λ h, _⟩, 
   rcases M.exists_basis_of X with ⟨I, ⟨hI₁, hI₂, hI₃⟩⟩, 
   refine ⟨_, hI₁, hI₂, λ J hJx hJ, _⟩, 
   rw [←hI₂, hI₃, ←h, ←indep_iff_r.mp hJ], from M.rank_mono hJx,
   rw eq_comm, apply rank_eq_of_le_supset (subset_union_left _ _),
-  rcases M.exists_basis_of (X ∪ e) with ⟨J, ⟨hJ₁, hJ₂, hJ₃⟩⟩, 
+  rcases M.exists_basis_of (X ∪ {e}) with ⟨J, ⟨hJ₁, hJ₂, hJ₃⟩⟩, 
   rcases h with ⟨I,hI,⟨hIind,hIX⟩⟩,
   specialize hIX J hJ₁ hJ₂,   
   rw [←hJ₃,hJ₂], rw ←(r_indep hIind) at hIX,  
@@ -1426,11 +1433,11 @@ begin
   apply le_antisymm _ (M.rank_mono h), 
   by_contra hcon, push_neg at hcon, 
   rcases rank_augment hcon with ⟨z, hz, hB⟩, 
-  specialize h₂ ⟨B ∪ z, _⟩, dsimp at h₂, 
-    have : B ⊂ (B ∪ z), 
-      from ssubset_of_subset_ne (subset_union_left _ _) (λ h, by {rw ←h at hB, linarith,}), 
+  specialize h₂ ⟨B ∪ {z}, _⟩, dsimp at h₂, 
+    have : B ⊂ (B ∪ {z}), from 
+      ssubset_of_subset_ne (subset_union_left _ _) (λ h, by {rw ←h at hB, linarith,}), 
     linarith [size_strict_monotone this], 
-  exact ⟨subset_of_union_subset_elem h hz, indep_of_indep_aug h' hB⟩,
+  exact ⟨union_singleton_subset_of_subset_mem h hz, indep_of_indep_aug h' hB⟩,
 end
 
 lemma rank_matroid_as_indep (M : matroid U):
@@ -1445,7 +1452,7 @@ end
 
 
 lemma not_indep_iff_exists_removal {M : matroid U}{X : set U} : 
-  ¬M.is_indep X ↔ ∃ (e : U), e ∈ X ∧ M.r (X \ e) = M.r X := 
+  ¬M.is_indep X ↔ ∃ (e : U), e ∈ X ∧ M.r (X \ {e}) = M.r X := 
 begin
   rw not_indep_iff_r, rcases exists_basis_of M X with ⟨B, ⟨h,h',h''⟩⟩, 
   refine ⟨λ h1, _, λ h1,_⟩, 
@@ -1453,8 +1460,8 @@ begin
     rcases elem_diff_of_size_lt h1 with ⟨e,he1,he2⟩, 
     refine ⟨e,he1,_⟩, 
     apply rank_eq_of_le_supset, intro x, simp, tauto,  
-    rw [←h'',diff_def], 
-    apply M.rank_mono (inter_is_lb h _),  tidy, },
+    rw [←h'',diff_eq], 
+    apply M.rank_mono (subset_inter h _),  tidy, },
   rcases h1 with ⟨e, heX, he⟩, 
   rw ←he, refine lt_of_le_of_lt (M.rank_le_size _) _, 
   rw remove_single_size heX, linarith,  
@@ -1464,8 +1471,6 @@ end
 end basis 
 
 section characterizations 
-
-variables {U : ftype}
 
 lemma rank_determines_matroid {M₁ M₂ : matroid U}:
   M₁.r = M₂.r → M₁ = M₂ := 

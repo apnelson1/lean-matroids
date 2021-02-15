@@ -48,7 +48,7 @@ begin
   refine ⟨λ h, _, subset_inter_bases_is_common_ind⟩, 
   rcases extends_to_basis h.1 with ⟨B₁,hIB₁,hB₁⟩,
   rcases extends_to_basis h.2 with ⟨B₂,hIB₂,hB₂⟩, 
-  from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, inter_is_lb hIB₁ hIB₂⟩, 
+  from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, subset_inter hIB₁ hIB₂⟩, 
 end
 
 lemma inter_two_bases_is_subset_inter_bases {M₁ M₂ : matroid U}{B₁ B₂ : set U}:
@@ -199,7 +199,7 @@ begin
   begin
     rw [subset_def_union, eq_comm],   
     suffices : ¬B ⊂ (Xᶜ ∪ B),
-    from eq_of_ssubset (subset_union_right Xᶜ B) this,  
+    from eq_of_subset_not_ssubset  (subset_union_right Xᶜ B) this,  
     intro h, 
     have h' := hB (Xᶜ ∪ B), 
     simp only [inter_distrib_right, compl_inter_self, compl_compl, 
@@ -234,7 +234,7 @@ lemma R0 :
   
 lemma R1 : 
   satisfies_R1 (r M₁ M₂):= 
-by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_is_ub Ip.2.2.1 Ip.2.2.2)}
+by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_of_subsets Ip.2.2.1 Ip.2.2.2)}
 
 lemma R2 :
   satisfies_R2 (r M₁ M₂) := 
@@ -262,7 +262,7 @@ begin
   refine le_trans (min_le_min_compose φ _) _, 
   apply min_of_le_is_le, 
   rintro ⟨A,B⟩, rw hφ, 
-  dsimp [-diff_def], 
+  dsimp [-diff_eq], 
   unfold_coes, 
   rw [diff_size A.2, diff_size B.2, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
   linarith [size_modular X Y, size_modular A.1 B.1, M₁.rank_submod A.1 B.1, M₂.rank_submod A.1 B.1], 
@@ -285,7 +285,7 @@ begin
   refine ⟨λ h, ⟨I₁,I₂ \ I₁, hi1,_,_,_⟩, λ h, _⟩, 
   from I2 (diff_subset I₂ I₁) hi2, 
   dsimp only [union_size] at h,  rw [eq_of_eq_size_subset_iff hss] at h, rw ←h, 
-  simp only [diff_def, union_inter_compl],  apply inter_diff, 
+  simp only [diff_eq, union_inter_compl],  apply inter_diff, 
   rcases h with ⟨I₁',I₂', ⟨h11,h12,h21,h22⟩⟩, 
   subst h21, 
   refine le_antisymm (size_monotone hss) _ , 

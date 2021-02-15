@@ -88,7 +88,7 @@ lemma subset_iff_ssubset_or_eq {X Y : set α} : (X ⊆ Y) ↔ (X ⊂ Y) ∨ X = 
   ⟨λ h, subset_ssubset_or_eq h, λ h, by {cases h, from h.1, rw h}⟩
 
 
-@[simp] lemma ssubset_iff {X Y : set α} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
+@[simp] lemma ssubset_iff_subset_ne {X Y : set α} : X ⊂ Y ↔ (X ⊆ Y) ∧ (X ≠ Y) :=
   set.ssubset_iff_subset_ne
 
 
@@ -100,7 +100,7 @@ lemma ne_of_ssubset {X Y : set α} : X ⊂ Y → X ≠ Y :=
   ne_of_irrefl
 
 lemma ssubset_irrefl (X : set α) : ¬(X ⊂ X) :=
-  λ h, by {rw ssubset_iff at h, from h.2 rfl}
+  λ h, by {rw ssubset_iff_subset_ne at h, from h.2 rfl}
 
 
   --λ hXY hS, ⟨hXY, by {intros h, rw h at hS, linarith}⟩
@@ -133,7 +133,7 @@ lemma subset_empty  {X : set α} : X ⊆ ∅ → X = ∅ :=
   λ hX, subset.antisymm hX (empty_subset X)  
 
 lemma ssubset_empty (X : set α) : ¬ X ⊂ ∅ := 
-  λ h, by {rw ssubset_iff at h, from h.2 (subset_empty h.1)}
+  λ h, by {rw ssubset_iff_subset_ne at h, from h.2 (subset_empty h.1)}
 
 lemma disjoint_compl_subset {X Y : set α} : X ∩ Y = ∅ → X ⊆ Yᶜ := 
   λ h, by rw [subset_def_inter, ← empty_union (X ∩ Yᶜ), ←h, ←inter_distrib_left, union_compl, inter_univ]
@@ -248,7 +248,7 @@ lemma compl_pair_iff {X Y : set α} : (Xᶜ = Y) ↔ (X = Yᶜ) :=
   ⟨λ h, compl_pair h, λ h, by {rw eq_comm at h, from (compl_pair h).symm}⟩
 
 lemma compl_diff (X Y : set α) : (X \ Y)ᶜ = Xᶜ ∪ Y := 
-  by rw [diff_def, compl_inter, compl_compl]
+  by rw [diff_eq, compl_inter, compl_compl]
 
 @[simp] lemma union_union_compl (X Y : set α) : (X ∪ Y) ∪ Yᶜ = univ := 
   by rw [union_assoc, union_compl, union_univ]
@@ -352,7 +352,7 @@ lemma ssubset_not_supset {X Y : set α} : X ⊂ Y → ¬(Y ⊆ X) :=
 lemma subset_not_ssupset {X Y : set α} : X ⊆ Y → ¬(Y ⊂ X) := 
   λ h h', ssubset_irrefl _ (subset.lt_of_le_of_lt h h')
 
-lemma eq_of_ssubset {X Y: set α} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
+lemma eq_of_subset_not_ssubset  {X Y: set α} : X ⊆ Y → ¬(X ⊂ Y) → X = Y := 
   λ h h', by {simp only [not_and, not_not, ssubset_iff] at h', exact h' h}
 
 lemma inter_of_ssubsets (X Y Z : set α) : (X ⊂ Z) → (X ∩ Y ⊂ Z) := 
@@ -364,31 +364,31 @@ lemma ssubset.trans {X Y Z : set α} (hXY : X ⊂ Y) (hYZ : Y ⊂ Z) : X ⊂ Z :
   subset.lt_of_le_of_lt hXY.1 hYZ
 
 lemma ssubset_inter {X Y : set α} : X ≠ Y → X ∩ Y ⊂ X ∨ X ∩ Y ⊂ Y:=
-  λ h, by {by_contra a, push_neg at a, simp_rw [ssubset_iff, not_and', not_imp_not] at a, 
+  λ h, by {by_contra a, push_neg at a, simp_rw [ssubset_iff_subset_ne, not_and', not_imp_not] at a, 
   exact h (eq.trans (a.1 (inter_subset_left X Y)).symm (a.2 (inter_subset_right X Y)) )}
 
 -- Misc
 
 
 lemma union_union_diff (X Y Z : set α) : (X ∪ Z) ∪ (Y \ Z) = X ∪ Y ∪ Z :=
-  by {rw [diff_def, union_distrib_left, union_right_comm, union_assoc _ Z], simp,}
+  by {rw [diff_eq, union_distrib_left, union_right_comm, union_assoc _ Z], simp,}
 
 lemma union_diff_absorb (X Y : set α) : X ∪ (Y \ X) = X ∪ Y :=
 by {nth_rewrite 0 ←union_self X, rw union_union_diff, simp}
 
 @[simp] lemma union_inter_compl (X Y : set α) : X ∪ (Y ∩ Xᶜ) = X ∪ Y := 
-by rw [←diff_def, union_diff_absorb]
+by rw [←diff_eq, union_diff_absorb]
 
 @[simp] lemma union_union_inter_compl (X Y Z : set α) : (X ∪ Z) ∪ (Y ∩ Zᶜ) = X ∪ Y ∪ Z :=
-  by rw [←diff_def, union_union_diff] 
+  by rw [←diff_eq, union_union_diff] 
 
 lemma union_inter_diff (X Y Z : set α) : (X ∪ Z) ∩ (Y \ Z) = (X ∩ Y) \ Z :=
-  by {rw [diff_def, diff_def, inter_distrib_right], simp_rw [←inter_assoc, inter_right_comm Z Y Zᶜ], simp, }
+  by {rw [diff_eq, diff_eq, inter_distrib_right], simp_rw [←inter_assoc, inter_right_comm Z Y Zᶜ], simp, }
 
-lemma inter_is_lb  {X Y Z : set α} : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
+lemma subset_inter  {X Y Z : set α} : Z ⊆ X → Z ⊆ Y → Z ⊆ (X ∩ Y) := 
   λ hZX hZY, by {rw subset_def_inter at *, rw [←inter_assoc, hZX, hZY]}
 
-lemma union_is_ub  {X Y Z : set α} : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
+lemma union_of_subsets  {X Y Z : set α} : X ⊆ Z → Y ⊆ Z → X ∪ Y ⊆ Z := 
   λ hXZ hYZ, by {rw subset_def_union at *, rw [union_assoc, hYZ, hXZ]}
 
 
@@ -409,29 +409,29 @@ lemma diff_subset_diff {X Y : set α} (Z : set α) : X ⊆ Y → X \ Z ⊆ Y \ Z
   λ h, subset_inter_subset_left _ _ _ h
 
 @[simp] lemma diff_union (X Y : set α): (X ∩ Y) ∪ (X \ Y) = X  := 
-  by rw [diff_def, ←inter_distrib_left, union_compl, inter_univ]
+  by rw [diff_eq, ←inter_distrib_left, union_compl, inter_univ]
 
 @[simp] lemma inter_diff (X Y : set α): X ∩ (Y \ X)  = ∅ := 
-  by rw [diff_def, ←inter_assoc, inter_right_comm, inter_compl, empty_inter]
+  by rw [diff_eq, ←inter_assoc, inter_right_comm, inter_compl, empty_inter]
 
 @[simp] lemma partition_inter (X Y : set α) : (X ∩ Y) ∩ (X \ Y) = ∅ := 
   by rw [inter_assoc, inter_diff, inter_empty]
 
 @[simp] lemma diffs_disj (X Y : set α) : (X \ Y) ∩ (Y \ X) = ∅ := 
-  by {simp only [diff_def], rw [inter_assoc, ←inter_assoc Yᶜ], simp}
+  by {simp only [diff_eq], rw [inter_assoc, ←inter_assoc Yᶜ], simp}
 
 lemma diff_empty_subset (X Y : set α) : X \ Y = ∅ → X ⊆ Y := 
   λ hXY, by {rw [←diff_union X Y, hXY, union_empty], apply inter_subset_right}
 
 lemma subset_diff_empty (X Y : set α) : X ⊆ Y → X \ Y = ∅ := 
-  λ hXY, by {rw diff_def, rw subset_def_inter at hXY, rw [←hXY, inter_assoc, inter_compl, inter_empty]}
+  λ hXY, by {rw diff_eq, rw subset_def_inter at hXY, rw [←hXY, inter_assoc, inter_compl, inter_empty]}
 
 lemma diff_empty_iff_subset (X Y : set α) : X \ Y = ∅ ↔ X ⊆ Y := 
   by {split, apply diff_empty_subset, apply subset_diff_empty}
 
 lemma subset_diff_disjoint (X Y Z: set α) : X ⊆ Y → X ∩ Z = ∅ → X ⊆ Y \ Z := 
   λ hXY hXZ, by {rw [disjoint_iff_subset_compl, subset_def_inter] at hXZ, 
-                rw [diff_def, subset_def_inter, inter_comm Y, ←inter_assoc, hXZ, subset_def_inter_mp hXY], }
+                rw [diff_eq, subset_def_inter, inter_comm Y, ←inter_assoc, hXZ, subset_def_inter_mp hXY], }
 
 
 lemma ssubset_diff_nonempty {X Y : set α} : X ⊂ Y → (Y \ X).nonempty :=
@@ -444,13 +444,13 @@ lemma union_diff_of_subset  {X Y : set α} : X ⊆ Y → X ∪ (Y \ X) = Y :=
   by rw [inter_comm, inter_diff]
 
 @[simp] lemma union_diff (X Y : set α) : X ∪ (Y \ X) = X ∪ Y := 
-  by {rw [diff_def, union_distrib_left, union_compl, inter_univ]}
+  by {rw [diff_eq, union_distrib_left, union_compl, inter_univ]}
 
 @[simp] lemma union_diff_diff (X Y : set α) : (X ∪ Y) \ (Y \ X) = X := 
-  by rw [diff_def, diff_def, compl_inter,compl_compl,union_comm, ←union_distrib_right, inter_compl, empty_union]
+  by rw [diff_eq, diff_eq, compl_inter,compl_compl,union_comm, ←union_distrib_right, inter_compl, empty_union]
 
 lemma inter_distrib_diff (X Y Z : set α) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) := 
-  by {rw [diff_def, diff_def, compl_inter, inter_distrib_left, inter_right_comm, inter_compl, empty_inter, empty_union, ←inter_assoc]}
+  by {rw [diff_eq, diff_eq, compl_inter, inter_distrib_left, inter_right_comm, inter_compl, empty_inter, empty_union, ←inter_assoc]}
 
 
 
@@ -461,16 +461,16 @@ lemma inter_distrib_diff (X Y Z : set α) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z
 
 
 @[simp] lemma diff_empty (X : set α) : X \ ∅ = X := 
-  by {rw [diff_def, compl_empty, inter_univ]} 
+  by {rw [diff_eq, compl_empty, inter_univ]} 
 
 @[simp] lemma empty_diff (X : set α) : ∅ \ X = ∅ := 
-  by rw [diff_def, empty_inter]
+  by rw [diff_eq, empty_inter]
 
 @[simp] lemma univ_diff (X : set α) : univ \ X = Xᶜ := 
-  by rw [diff_def, univ_inter]
+  by rw [diff_eq, univ_inter]
 
 @[simp] lemma diff_univ (X : set α) : X \ univ = ∅ := 
-  by rw [diff_def, compl_univ, inter_empty]
+  by rw [diff_eq, compl_univ, inter_empty]
 
 @[simp] lemma diff_self (X : set α) : X \ X = ∅ := 
   inter_compl X 
@@ -481,7 +481,7 @@ lemma inter_distrib_diff (X Y Z : set α) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z
 lemma symm_diff_alt (X Y : set α) : symm_diff X Y = (X ∪ Y) \ (X ∩ Y) := 
 begin
    unfold symm_diff, 
-   repeat {rw [diff_def]}, 
+   repeat {rw [diff_eq]}, 
    rw [compl_inter, inter_distrib_right, inter_distrib_left, inter_distrib_left],
    simp,   
 end  
