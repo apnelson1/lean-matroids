@@ -55,7 +55,7 @@ open set
 
 lemma compl_size (X : set A) : size Xᶜ = size (univ : set A) - size X :=
   calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
-  ...          = size (univ : set A)  + size (∅ : set A)  - size X : by rw [union_compl X, inter_compl X]
+  ...          = size (univ : set A)  + size (∅ : set A)  - size X : by rw [union_compl_self X, inter_compl_self X]
   ...          = size (univ : set A) - size X                  : by linarith [size_empty A]
 
 lemma size_compl (X : set A) : size X = size (univ : set A) - size(Xᶜ) := 
@@ -83,7 +83,7 @@ lemma size_subadditive {X Y : set A} : size (X ∪ Y) ≤ size X + size Y :=
   by linarith [size_modular X Y, size_nonneg (X ∩ Y)] 
 
 lemma compl_inter_size (X Y : set A) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
-  by rw [←size_modular, ←inter_distrib_right, union_compl, univ_inter, ←inter_distrib_inter_left, inter_compl, empty_inter, size_empty]; ring
+  by rw [←size_modular, ←inter_distrib_right, union_compl_self, univ_inter, ←inter_distrib_inter_left, inter_compl_self, empty_inter, size_empty]; ring
 
 lemma compl_inter_size_subset {X Y : set A} : X ⊆ Y → size (Xᶜ ∩ Y) = size Y - size X := 
   λ hXY, by {have := compl_inter_size X Y, rw subset_def_inter_mp hXY at this, linarith} 
@@ -109,7 +109,7 @@ lemma size_induced_partition_inter (X Y : set A) : size X = size (X ∩ Y) + siz
   by {rw ←diff_eq, apply size_induced_partition,}
 
 lemma size_compl_sum (X : set A) : size X + size Xᶜ = size (univ : set A) := 
-  by {have := size_disjoint_sum (inter_compl X), rw (union_compl X) at this, linarith}
+  by {have := size_disjoint_sum (inter_compl_self X), rw (union_compl_self X) at this, linarith}
 
 lemma size_mono_inter_left (X Y : set A) : size (X ∩ Y) ≤ size X := 
 size_monotone (inter_subset_left _ _)

@@ -15,7 +15,7 @@ begin
   rw [compl_union, compl_inter, compl_inter, compl_compl, compl_compl], 
   repeat {rw inter_distrib_left},
   repeat {rw inter_distrib_right},
-  rw [inter_compl Y, inter_comm Xᶜ X, inter_compl X, bot_union, union_bot]
+  rw [inter_compl_self Y, inter_comm Xᶜ X, inter_compl_self X, bot_union, union_bot]
 end
 
 lemma symm_diff_comm (X Y : A) : symm_diff X Y = symm_diff Y X := 
@@ -42,7 +42,7 @@ lemma symm_diff_distrib_inter_right (X Y Z : A): (symm_diff X Y) ∩ Z  = symm_d
 lemma symm_diff_inter (X Y : A) : 
   symm_diff X (X ∩ Y) = X \ Y := 
   by rw [symm_diff_alt, absorb_union_inter, diff_eq, compl_inter, inter_distrib_left,
-     union_comm, union_inter_compl, compl_inter, inter_distrib_left, union_comm, union_inter_compl, ← diff_eq] -- inter_compl, bot_union, compl_inter, inter_distrib_left],  
+     union_comm, union_inter_compl_self, compl_inter, inter_distrib_left, union_comm, union_inter_compl_self, ← diff_eq] -- inter_compl_self, bot_union, compl_inter, inter_distrib_left],  
   
 lemma top_symm_diff (X : A) : 
   symm_diff ⊤ X = Xᶜ := 

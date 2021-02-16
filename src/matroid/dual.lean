@@ -20,7 +20,7 @@ fun M, {
   r := (fun X, size X + M.r Xᶜ - M.r univ),
   R0 := (fun X,
     calc 0 ≤ M.r X  + M.r Xᶜ - M.r (X ∪ Xᶜ) - M.r (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
-    ...    = M.r X  + M.r Xᶜ - M.r univ        - M.r ∅        : by rw [union_compl X, inter_compl X]
+    ...    = M.r X  + M.r Xᶜ - M.r univ        - M.r ∅        : by rw [union_compl_self X, inter_compl_self X]
     ...    ≤ size X + M.r Xᶜ - M.r univ                       : by linarith [M.R1 X, rank_empt M]),
   R1 := (fun X, by {simp only, linarith [M.R2 _ _ (subset_univ Xᶜ)]}),
   R2 := (fun X Y h, let
@@ -28,13 +28,13 @@ fun M, {
     h₁ :=
       calc Yᶜ ∪ Z = (Xᶜ ∩ Y) ∪ Yᶜ        : by apply union_comm
       ...         = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : by apply union_distrib_right
-      ...         = (X ∩ Y)ᶜ ∩ univ         : by rw [compl_inter X Y, union_compl Y]
+      ...         = (X ∩ Y)ᶜ ∩ univ         : by rw [compl_inter X Y, union_compl_self Y]
       ...         = (X ∩ Y)ᶜ             : by apply inter_univ
       ...         = Xᶜ                   : by rw [subset_def_inter_mp h],
     h₂ :=
       calc Yᶜ ∩ Z = (Xᶜ ∩ Y) ∩ Yᶜ : by apply inter_comm
       ...         = Xᶜ ∩ (Y ∩ Yᶜ) : by apply inter_assoc
-      ...         = Xᶜ ∩ ∅        : by rw [inter_compl Y]
+      ...         = Xᶜ ∩ ∅        : by rw [inter_compl_self Y]
       ...         = ∅             : by apply inter_empty,
     h₃ :=
       calc M.r Xᶜ = M.r Xᶜ + M.r ∅              : by linarith [rank_empt M]

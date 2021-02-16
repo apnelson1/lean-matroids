@@ -283,7 +283,7 @@ begin
   refine ⟨λ h, ⟨I₁,I₂ \ I₁, hi1,_,_,_⟩, λ h, _⟩, 
   from I2 (diff_subset I₂ I₁) hi2, 
   dsimp only [union_size] at h,  rw [eq_of_eq_size_subset_iff hss] at h, rw ←h, 
-  simp only [diff_eq, union_inter_compl],  apply inter_diff, 
+  simp only [diff_eq, union_inter_compl_self],  apply inter_diff, 
   rcases h with ⟨I₁',I₂', ⟨h11,h12,h21,h22⟩⟩, 
   subst h21, 
   refine le_antisymm (size_monotone hss) _ , 

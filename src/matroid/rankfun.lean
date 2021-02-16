@@ -1279,13 +1279,13 @@ end
 
 end basis 
 
-section characterizations 
+section ext 
 
-lemma rank_determines_matroid {M₁ M₂ : matroid U}:
+@[ext] lemma rank_ext {M₁ M₂ : matroid U}:
   M₁.r = M₂.r → M₁ = M₂ := 
 λ h, by {ext, rw h}
 
-lemma indep_determines_matroid {M₁ M₂ : matroid U}:
+@[ext] lemma indep_ext {M₁ M₂ : matroid U}:
   M₁.is_indep = M₂.is_indep → M₁ = M₂ := 
 begin
   intro h, ext X,
@@ -1297,35 +1297,35 @@ begin
   rw ←size_basis_of hB, 
 end
 
-lemma circuit_determines_matroid {M₁ M₂ : matroid U}: 
+@[ext] lemma circuit_ext {M₁ M₂ : matroid U}: 
   M₁.is_circuit = M₂.is_circuit → M₁ = M₂ :=
 begin
-  intro h, apply indep_determines_matroid, ext X,
+  intro h, apply indep_ext, ext X,
   simp_rw [indep_iff_contains_no_circuit, h], 
 end
 
-lemma cocircuit_determines_matroid {M₁ M₂ : matroid U}:
+@[ext] lemma cocircuit_ext {M₁ M₂ : matroid U}:
   M₁.is_cocircuit = M₂.is_cocircuit → M₁ = M₂ := 
-  λ h, dual_inj (circuit_determines_matroid h)
+  λ h, dual_inj (circuit_ext h)
 
-lemma hyperplane_determines_matroid {M₁ M₂ : matroid U}:
+@[ext] lemma hyperplane_ext {M₁ M₂ : matroid U}:
   M₁.is_hyperplane = M₂.is_hyperplane → M₁ = M₂ := 
 begin
-  intro h, apply cocircuit_determines_matroid, ext X,
+  intro h, apply cocircuit_ext, ext X,
   simp_rw [cocircuit_iff_compl_hyperplane, h], 
 end
 
-lemma flat_determines_matroid {M₁ M₂ : matroid U}: 
+@[ext] lemma flat_ext {M₁ M₂ : matroid U}: 
   M₁.is_flat = M₂.is_flat → M₁ = M₂ := 
 begin
-  intro h, apply hyperplane_determines_matroid, ext X, 
+  intro h, apply hyperplane_ext, ext X, 
   simp_rw [hyperplane_iff_maximal_subflat, h], 
 end
 
-lemma basis_determines_matroid {M₁ M₂ : matroid U}: 
+@[ext] lemma basis_ext {M₁ M₂ : matroid U}: 
   M₁.is_basis = M₂.is_basis → M₁ = M₂ := 
 begin
-  intro h, apply indep_determines_matroid, ext X, 
+  intro h, apply indep_ext, ext X, 
   simp_rw [indep_iff_contained_in_basis, h], 
 end
 
@@ -1333,7 +1333,7 @@ lemma circuit_ind_of_distinct {M₁ M₂ : matroid U}(hM₁M₂ : M₁ ≠ M₂)
   ∃ X, (M₁.is_circuit X ∧ M₂.is_indep X) ∨ (M₂.is_circuit X ∧ M₁.is_indep X) := 
 begin
   by_contra h, push_neg at h, 
-  refine hM₁M₂ (indep_determines_matroid _), ext Y,
+  refine hM₁M₂ (indep_ext _), ext Y,
   simp_rw [indep_iff_contains_no_circuit, not_iff_not],
   refine ⟨λ h₁, _, λ h₂, _⟩, 
   rcases h₁ with ⟨C, ⟨hC, hCY⟩⟩, 
@@ -1348,6 +1348,6 @@ begin
   from ⟨C₂, ⟨hC₂, subset.trans hC₂C hCY⟩⟩, 
 end
 
-end characterizations
+end ext
 
 end matroid 

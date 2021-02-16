@@ -146,7 +146,7 @@ begin
   simp only [subset_def_inter, diff_eq] at h ⊢, 
   nth_rewrite 1 ← h,
   rw [inter_distrib_left, inter_distrib_right, inter_assoc _ {e}, inter_right_comm _ _ Y], 
-  simp only [inter_compl, union_empty, inter_empty], 
+  simp only [inter_compl_self, union_empty, inter_empty], 
 end
   
 lemma ssub_of_add_compl {X : set A} {e : A} : 
@@ -192,7 +192,7 @@ begin
   intro h, 
   rw [←mem_compl_iff, ←singleton_subset_iff, subset_def_union] at h, 
   rw [diff_eq, inter_distrib_right], 
-  simp only [inter_compl, union_empty], 
+  simp only [inter_compl_self, union_empty], 
   rw [←compl_compl_inter_left, inter_comm, compl_inj_iff] at h, 
   from h, 
 end

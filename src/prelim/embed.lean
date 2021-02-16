@@ -86,7 +86,7 @@ by tidy
 
 @[coe_up] lemma coe_set_is_subset (X : set S):
   (X : set A) ⊆ S := 
-by tidy
+by tidy 
 
 @[coe_up] lemma subtype_coe_compl {X : set S}:
   (((Xᶜ : set S)) : set A) = S \ (X : set A)  := 

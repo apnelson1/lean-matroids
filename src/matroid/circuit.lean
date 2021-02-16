@@ -144,11 +144,11 @@ begin
   rw [←mem_compl_iff] at h,  
   have := elem_inter hg₁ h, 
   rw [diff_eq, diff_eq, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
-      inter_assoc _ I _ ,inter_compl, inter_empty, union_empty, hdefJ', diff_eq, inter_assoc, inter_right_comm, 
-      inter_distrib_right, ←inter_assoc, inter_compl, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
+      inter_assoc _ I _ ,inter_compl_self, inter_empty, union_empty, hdefJ', diff_eq, inter_assoc, inter_right_comm, 
+      inter_distrib_right, ←inter_assoc, inter_compl_self, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
   have := mem_of_mem_of_subset this (inter_subset_right _ _),
   have := (elem_inter (mem_of_mem_of_subset hg₁ hJ'₀) this),
-  rw inter_compl at this, from not_mem_empty g this, 
+  rw inter_compl_self at this, from not_mem_empty g this, 
 end 
 
 end cct_family 

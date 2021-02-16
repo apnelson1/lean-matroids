@@ -94,8 +94,8 @@ lemma inter_maximal : (Z ⊆ X) → (Z ⊆ Y) → (Z ⊆ X ∩ Y) := A.inter_max
 lemma left_subset_union : X ⊆ (X ∪ Y) := A.left_subset_union_ X Y
 lemma right_subset_union : Y ⊆ (X ∪ Y) := A.right_subset_union_ X Y
 lemma union_minimal : (X ⊆ Z) → (Y ⊆ Z) → ((X ∪ Y) ⊆ Z) := A.union_minimal_ X Y Z
-lemma self_inter_compl : (X ∩ Xᶜ) = ⊥ := A.self_inter_compl_ X
-lemma self_union_compl : (X ∪ Xᶜ) = ⊤ := A.self_union_compl_ X
+lemma self_inter_compl_self : (X ∩ Xᶜ) = ⊥ := A.self_inter_compl_ X
+lemma self_union_compl_self : (X ∪ Xᶜ) = ⊤ := A.self_union_compl_ X
 lemma size_bot : A.size ⊥ = 0 := A.size_bot_
 lemma size_monotone : (X ⊆ Y) → A.size X ≤ A.size Y := A.size_monotone_ X Y
 lemma size_antisymm : (X ⊆ Y) → A.size X = A.size Y → X = Y := A.size_antisymm_ X Y
@@ -266,13 +266,13 @@ def fin_bool_alg.interval (A : fin_bool_alg) (small big : A): (small ⊆ big) �
   self_inter_compl_ := (fun X, subtype.ext (calc
       X.val ∩ ((X.valᶜ ∪ small) ∩ big)
     = (X.val ∩ X.valᶜ ∩ big) ∪ (X.val ∩ small ∩ big) : by simp only [fin_bool_alg.inter_distrib_union_left, fin_bool_alg.inter_distrib_union_right, fin_bool_alg.inter_assoc]
-... =                          (X.val ∩ small ∩ big) : by rw [fin_bool_alg.self_inter_compl, fin_bool_alg.bot_inter, fin_bool_alg.bot_union]
+... =                          (X.val ∩ small ∩ big) : by rw [fin_bool_alg.self_inter_compl_self, fin_bool_alg.bot_inter, fin_bool_alg.bot_union]
 ... = small                                          : let h₁ : X.val ∩ small = small := A.inter_eq_right X.prop.left, h₂ : small ∩ big = small := A.inter_eq_left H in by rw [h₁, h₂]
   )),
   self_union_compl_ := (fun X, subtype.ext (calc
       X.val ∪ ((X.valᶜ ∪ small) ∩ big)
     = (X.val ∪ X.valᶜ ∪ small) ∩ (X.val ∪ big) : by simp only [fin_bool_alg.union_distrib_inter_left, fin_bool_alg.union_assoc]
-... =                            (X.val ∪ big) : by rw [fin_bool_alg.self_union_compl, fin_bool_alg.top_union, fin_bool_alg.top_inter]
+... =                            (X.val ∪ big) : by rw [fin_bool_alg.self_union_compl_self, fin_bool_alg.top_union, fin_bool_alg.top_inter]
 ... = big                                      : A.union_eq_right X.prop.right
   )),
   size_nonneg_ := (fun X, by linarith [A.size_monotone_ small X.val X.prop.left]),
@@ -358,20 +358,20 @@ def matroid.dual : matroid → matroid := fun M, {
 
   R0 := (fun X, calc
     0   ≤ M.rank Xᶜ + M.rank X - M.rank (X ∪ Xᶜ) - M.rank (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
-    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [@fin_bool_alg.self_inter_compl _ X, @fin_bool_alg.self_union_compl _ X]
+    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [@fin_bool_alg.self_inter_compl_self _ X, @fin_bool_alg.self_union_compl_self _ X]
     ... ≤ M.rank Xᶜ + size X   - M.rank ⊤                          : by linarith [M.R1 X, M.rank_empty]),
   R1 := (fun X, by linarith [M.R2 (@fin_bool_alg.subset_top _ Xᶜ)]),
   R2 := (fun X Y (hXY : X ⊆ Y), let
     h₁ : (Xᶜ ∩ Y) ∩ Yᶜ = ⊥ := calc
       (Xᶜ ∩ Y) ∩ Yᶜ = Xᶜ ∩ (Y ∩ Yᶜ) : M.subset.inter_assoc
-      ...           = Xᶜ ∩ ⊥        : by rw [@fin_bool_alg.self_inter_compl _ Y]
+      ...           = Xᶜ ∩ ⊥        : by rw [@fin_bool_alg.self_inter_compl_self _ Y]
       ...           = ⊥             : M.subset.inter_bot,
     h₂ : (Xᶜ ∪ Yᶜ) = Xᶜ := calc
       (Xᶜ ∪ Yᶜ) = (X ∩ Y)ᶜ : M.subset.compl_inter.symm
       ...       = Xᶜ       : by rw [M.subset.inter_eq_left hXY],
     h₃ : (Xᶜ ∩ Y) ∪ Yᶜ = Xᶜ := calc
       (Xᶜ ∩ Y) ∪ Yᶜ = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : M.subset.union_distrib_inter_right
-      ...           = Xᶜ ∩ ⊤               : by rw [h₂, @fin_bool_alg.self_union_compl _ Y]
+      ...           = Xᶜ ∩ ⊤               : by rw [h₂, @fin_bool_alg.self_union_compl_self _ Y]
       ...           = Xᶜ                   : M.subset.inter_top,
     h₄ : M.rank Xᶜ ≤ size Y - size X + M.rank Yᶜ := calc
       M.rank Xᶜ = M.rank ⊥ + M.rank Xᶜ                            : by linarith [M.rank_empty]
@@ -504,10 +504,10 @@ lemma finite_set.subset.left_subset_union {γ : finite_set} (X Y : γ.subset) :
 lemma finite_set.subset.right_subset_union {γ : finite_set} (X Y : γ.subset) :
   Y ⊆ (X ∪ Y) := sorry
 
-lemma finite_set.subset.inter_compl {γ : finite_set} (X : γ.subset) :
+lemma finite_set.subset.inter_compl_self {γ : finite_set} (X : γ.subset) :
   (X ∩ Xᶜ) = ⊥ := sorry
 
-lemma finite_set.subset.union_compl {γ : finite_set} (X : γ.subset) :
+lemma finite_set.subset.union_compl_self {γ : finite_set} (X : γ.subset) :
   (X ∪ Xᶜ) = ⊤ := sorry
 
 lemma finite_set.subset.subset_top {γ : finite_set} (X : γ.subset) :

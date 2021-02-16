@@ -200,9 +200,6 @@ def indep_list (Ms : list (matroid U)) := {Xs : list (set U) // is_indep_list Ms
 def is_union_indep_list'' (Ms : list (matroid U)) : (set U) → Prop := 
   λ Y, ∃ (Xs : indep_list Ms), list_union Xs.val = Y 
 
-
-
-
 def is_indep_pair_list : list (matroid U × set U) → Prop := 
   λ Ps, (∀ p ∈ Ps, is_matroid_indep_pair p)  
 

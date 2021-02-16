@@ -115,7 +115,7 @@ lemma del_con_eq_con_del' (M : matroid_in U)(C D : set U):
 begin
   rw [con_eq_con_inter_E, ←con_del_eq_del_con, con_eq_con_inter_E M (C \ D)], 
   congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm],  
-  ext, simp, tauto, 
+  {ext, simp, tauto}, 
 end
 
 lemma dual_con_eq_del_dual (M : matroid_in U)(A : set U)(hA : A ⊆ M.E): 
@@ -125,7 +125,7 @@ begin
   simp only [matroid.dual_r] with msimp coe_up, 
   rw [(λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
   inter_comm _ Aᶜ, ←inter_assoc], 
-  convert rfl; { ext, simp, tauto},
+  convert rfl; {ext, simp, tauto},
 end
 
 lemma dual_con (M : matroid_in U)(A : set U): 
@@ -142,7 +142,7 @@ end
 
 lemma dual_del (M : matroid_in U)(A : set U):
   (M \ A).dual = M.dual / A :=
-by rw [←M.dual_dual, ← dual_con, matroid_in.dual_dual, matroid_in.dual_dual]
+by rw [←M.dual_dual, ←dual_con, matroid_in.dual_dual, matroid_in.dual_dual]
 
 lemma con_con (M : matroid_in U)(C C' : set U):
   (M / C / C') = M / (C ∪ C') :=
@@ -225,7 +225,7 @@ end
 (D : set U)
 (disj : C ∩ D = ∅)
 (union : C ∪ D = M.E \ N.E)
-(minor : (M / C) \ D = N)
+(minor : M / C \ D = N)
 
 /-- constructs a minor pair from contract/delete sets C and D  -/
 def to_minor_pair (M : matroid_in U)(C D : set U):
@@ -494,7 +494,6 @@ lemma del_con_is_minor (M : matroid_in U)(C D : set U):
   is_minor (M \ D / C) M :=
 by {rw [del_con_eq_con_del'], apply con_del_is_minor,  }
 
-
 lemma dual_minor_of_minor {M N : matroid_in U}: 
   N.is_minor M → N.dual.is_minor M.dual :=
 minor_iff_dual_minor.mp 
@@ -530,7 +529,6 @@ lemma con_or_del {N M : matroid_in U}{e : U}(h : is_minor N M)(he : e ∈ M.E \ 
   is_minor N (M / {e}) ∨ is_minor N (M \ {e}) :=
 begin
   rw ←minor_pair.nonempty_iff at h, 
-  
   rcases h with ⟨C,D,h,h',rfl⟩, 
   rw [←h', mem_union] at he, cases he, 
   { left, 
@@ -540,6 +538,8 @@ begin
   rw [con_del_eq_del_con _ _ _ h, ←add_elem he, union_comm, ←del_del ], 
   apply del_con_is_minor, 
 end
+
+
 
 
 end minor 

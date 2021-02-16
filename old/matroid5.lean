@@ -103,10 +103,10 @@ lemma finite_set.subset.left_subset_union {γ : finite_set} (X Y : γ.subset) :
 lemma finite_set.subset.right_subset_union {γ : finite_set} (X Y : γ.subset) :
   Y ⊆ (X ∪ Y) := sorry
 
-lemma finite_set.subset.inter_compl {γ : finite_set} (X : γ.subset) :
+lemma finite_set.subset.inter_compl_self {γ : finite_set} (X : γ.subset) :
   (X ∩ Xᶜ) = ⊥ := sorry
 
-lemma finite_set.subset.union_compl {γ : finite_set} (X : γ.subset) :
+lemma finite_set.subset.union_compl_self {γ : finite_set} (X : γ.subset) :
   (X ∪ Xᶜ) = ⊤ := sorry
 
 lemma finite_set.subset.subset_top {γ : finite_set} (X : γ.subset) :
@@ -220,20 +220,20 @@ def matroid.dual (M : matroid) : matroid :=
 
   R0 := (fun X, calc
     0   ≤ M.rank Xᶜ + M.rank X - M.rank (X ∪ Xᶜ) - M.rank (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
-    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [union_compl X, inter_compl X]
+    ... ≤ M.rank Xᶜ + M.rank X - M.rank ⊤        - M.rank ⊥        : by rw [union_compl_self X, inter_compl_self X]
     ... ≤ M.rank Xᶜ + (size X)  - M.rank ⊤                         : by linarith [M.R1 X, M.rank_empty]),
   R1 := (fun X, by linarith [M.R2 (subset_top Xᶜ)]),
   R2 := (fun X Y (hXY : X ⊆ Y), let
     h₁ : (Xᶜ ∩ Y) ∩ Yᶜ = ⊥ := calc
       (Xᶜ ∩ Y) ∩ Yᶜ = Xᶜ ∩ (Y ∩ Yᶜ) : inter_assoc Xᶜ Y Yᶜ
-      ...           = Xᶜ ∩ ⊥        : by rw [inter_compl Y]
+      ...           = Xᶜ ∩ ⊥        : by rw [inter_compl_self Y]
       ...           = ⊥             : inter_bot Xᶜ,
     h₂ : (Xᶜ ∪ Yᶜ) = Xᶜ := calc
       (Xᶜ ∪ Yᶜ) = (X ∩ Y)ᶜ : (compl_inter X Y).symm
       ...       = Xᶜ       : by rw [inter_subset_mp hXY],
     h₃ : (Xᶜ ∩ Y) ∪ Yᶜ = Xᶜ := calc
       (Xᶜ ∩ Y) ∪ Yᶜ = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : union_distrib_right Xᶜ Y Yᶜ --Xᶜ.union_distrib_inter_left Y Yᶜ
-      ...           = Xᶜ ∩ ⊤               : by rw [h₂, union_compl Y]
+      ...           = Xᶜ ∩ ⊤               : by rw [h₂, union_compl_self Y]
       ...           = Xᶜ                   : inter_top Xᶜ,
     h₄ : M.rank Xᶜ ≤ size Y - size X + M.rank Yᶜ := calc
       M.rank Xᶜ = M.rank ⊥ + M.rank Xᶜ                            : by linarith [M.rank_empty]

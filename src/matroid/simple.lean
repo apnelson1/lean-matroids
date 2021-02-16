@@ -39,7 +39,6 @@ lemma rank_nonloop {M : matroid U}{e : U}:
   M.is_nonloop e → M.r {(e : U)} = 1 :=
 by {unfold is_nonloop, from λ h, h}
 
-
 lemma rank_loop {M : matroid U}{e : U}:
   M.is_loop e → M.r {e} = 0 :=
 by {unfold is_loop, from λ h, h}
@@ -82,7 +81,6 @@ begin
   linarith [int.le_sub_one_iff.mpr h],
 end
 
-
 /-- nonloop as subtype -/
 def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
 
@@ -122,6 +120,22 @@ section parallel
 def parallel (M : matroid U) (e f : nonloop M) : Prop := 
   M.r ({e,f}) = 1 
 
+/-- relation of being both nonloops and having a rank-one union. Equivalence classes 
+include all singleton loops -/
+def parallel' (M : matroid U)(e f : U): Prop := 
+  M.is_nonloop e ∧ M.is_nonloop f ∧ M.r {e,f} = 1 
+
+lemma parallel_of_parallel' {M : matroid U}{e f : U}(h : M.parallel' e f ):
+  ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel ⟨e,he⟩ ⟨f,hf⟩ :=
+⟨h.1,h.2.1,h.2.2⟩
+
+lemma parallel'_of_parallel {M : matroid U}{e f : M.nonloop}(h : M.parallel e f): 
+  M.parallel' e.1 f.1 :=
+⟨e.2,f.2,h⟩
+
+lemma parallel'_iff_parallel {M : matroid U}{e f : U}:
+  M.parallel' e f ↔ ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel ⟨e,he⟩ ⟨f,hf⟩:= 
+by tidy
 
 
 --example (e f : U): ({e,f} : set U) = ({f,e} : set U) := pair_comm e f
@@ -182,30 +196,73 @@ lemma series_is_equivalence (M : matroid U):
   equivalence M.series :=
 parallel_is_equivalence M.dual 
 
-instance parallel_equiv (M : matroid U) : has_equiv M.nonloop := ⟨M.parallel⟩
 
-instance parallel_setoid (M : matroid U) : setoid M.nonloop := ⟨M.parallel, M.parallel_is_equivalence⟩ 
+--reserve infixl ` ∼ `:75
+--infix ` ∼ ` := @parallel _ _ _ 
+
+
+
+instance parallel_setoid {M : matroid U} : setoid M.nonloop := ⟨M.parallel, M.parallel_is_equivalence⟩ 
 
 
 /- a parallel class of M, implemented as an element of a quotient -/
-def parallel_class (M: matroid U) : Type := quotient M.parallel_setoid  
+def parallel_class (M: matroid U) : Type := @quotient M.nonloop (@matroid.parallel_setoid _ _ M) 
 
 /- a parallel class of M, viewed as a set U -/
 def as_set {M : matroid U}(C : M.parallel_class) : set U := 
   λ a, (∃ (h : M.is_nonloop a), ⟦(⟨a,h⟩ : M.nonloop)⟧ = C)
 
+
 instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨@as_set _ _ M⟩ 
 
+instance coe_parallel_quot_to_set {M : matroid U}: 
+  has_coe (@quotient M.nonloop (@matroid.parallel_setoid _ _ M)) (set U) := ⟨@as_set _ _ M⟩ 
+
+def as_set_mem_iff {M : matroid U}{a b : M.nonloop}: 
+  b.val ∈ (⟦a⟧ : set U) ↔ a ≈ b := 
+by {unfold_coes, simp only [as_set, quotient.eq, subtype.val_eq_coe], tidy}
+
+def as_set_mem_iff' {M : matroid U}{a : M.nonloop}{b : U}: 
+  b ∈ (⟦a⟧ : set U) ↔ ∃ (h : M.is_nonloop b), a ≈ ⟨b,h⟩ := 
+by {unfold_coes, simp only [as_set, quotient.eq, subtype.val_eq_coe], tidy}
+  
 lemma as_set_inj {M : matroid U} {P P' : M.parallel_class} (h : (P : set U) = (P' : set U)):
   P = P' := 
-begin
+begin 
   rw ext_iff at h, 
   rcases quotient.exists_rep P with ⟨⟨a,ha⟩,rfl⟩,
   rcases (h a).mp ⟨ha,rfl⟩ with ⟨h',h''⟩, 
   rw ←h'', 
 end
 
+lemma parallel'_iff {M : matroid U}{e f : U}: 
+  M.parallel' e f ↔ ∃ (P : M.parallel_class), e ∈ (P : set U) ∧ f ∈ (P : set U) :=
+begin
+  refine ⟨λ h, _, λ h, _⟩,
+  { obtain ⟨he,hf, hef⟩ := h, 
+    use ⟦⟨e,he⟩⟧, 
+    rw [as_set_mem_iff', as_set_mem_iff'],  
+    refine ⟨⟨he, quotient.eq.mp rfl⟩, ⟨hf,hef⟩⟩},
+  rcases h with ⟨P,he,hf⟩, 
+  rcases P.exists_rep with ⟨a,rfl⟩, 
+  rw as_set_mem_iff' at *, 
+  rcases he with ⟨he, hae⟩, rcases hf with ⟨hf, haf⟩, 
+  exact ⟨he,hf,setoid.trans (setoid.symm hae) haf,⟩, 
+end 
 
+def parallel_class_of {M : matroid U}{e : U}(he : M.is_nonloop e) : set U := 
+  ⟦@id M.nonloop ⟨e,he⟩⟧
+
+
+/-
+lemma parallel_iff_exists_parallel_class {M : matroid U}{e f : M.nonloop}: 
+  M.parallel e f ↔ ∃ P : M.parallel_class, e ∈ P ∧ f ∈ (P : set U) :=
+begin
+  
+  
+end -/
+
+/-
 
 def parallel_classes_set (M : matroid U):= 
   M.parallel_setoid.classes 
@@ -270,6 +327,8 @@ begin
      
 end
 
+-/
+
 end parallel 
 
 section simple 
@@ -316,3 +375,4 @@ begin
 end
 end simple 
 end matroid 
+

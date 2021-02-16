@@ -156,7 +156,6 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-
 end uniform
 
 section relax

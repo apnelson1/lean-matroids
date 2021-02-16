@@ -32,7 +32,7 @@ def quotient_alg (A : boolalg) {r : single A → single A → Prop} (hr : equiva
   inter_distrib_right_ax := _,
   inter_top_ax := _,
   union_bot_ax := _,
-  union_compl_ax := _,
+  union_compl_self := _,
   inter_compl_ax := _,
   inter_subset_ax := _,
   inter_assoc_ax := _,

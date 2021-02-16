@@ -31,7 +31,7 @@ let r := M.r, C := Eᶜ in
     have h := M.R3 (X ∪ C) (Y ∪ C), 
     rw [←union_distrib_right, ←union_distrib_union_left] at h, refine h,
   },⟩,
-  is_minor := ⟨C, ⟨inter_compl E, λ X, rfl⟩⟩,  
+  is_minor := ⟨C, ⟨inter_compl_self E, λ X, rfl⟩⟩,  
 } 
 
 def restrict' (U : boolalg)(M : rankfun U)(E : U) : minor_on' U M E := 

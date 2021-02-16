@@ -34,7 +34,7 @@ infix ` ⟋ ` :=  matroid.project
 
 reserve infixl ` ⟍ `:75
 infix ` ⟍ ` :=  matroid.loopify 
-
+   
 @[simp] lemma loopify_r (M : matroid U)(D X : set U):
   (M ⟍ D).r X = M.r (X \ D) := 
 rfl 
@@ -116,11 +116,11 @@ by {simp_rw [indep_iff_r, project_r] at *,
 /-- loopify all elements of M outside R -/
 def loopify_to (M : matroid U)(R : set U) : matroid U := M ⟍ (Rᶜ)
 
-reserve infixl ` ∥ `:75
-infix ` ∥ ` :=  matroid.loopify_to
+reserve infixl ` ‖ `:75
+infix ` ‖ ` :=  matroid.loopify_to
 
 lemma loopify_as_loopify_to (M : matroid U)(D : set U): 
-  (M ⟍ D) = (M ∥ Dᶜ) := 
+  (M ⟍ D) = (M ‖ Dᶜ) := 
 by rw [loopify_to, compl_compl]
 
 /-- project all elements of M outside R -/
@@ -131,7 +131,7 @@ lemma project_as_project_to (M : matroid U)(C : set U):
 by rw [project_to, compl_compl]
 
 lemma rank_loopify_to (M : matroid U)(R X : set U) : 
-  (M ∥ R).r X = M.r (X ∩ R) := 
+  (M ‖ R).r X = M.r (X ∩ R) := 
 by simp [diff_eq, loopify_to, loopify_r]
 
 lemma rank_project_to (M : matroid U)(R X : set U):
@@ -139,7 +139,7 @@ lemma rank_project_to (M : matroid U)(R X : set U):
 by rw [project_to, project_r]
 
 lemma indep_loopify_to_iff {M : matroid U}{R I : set U} : 
-  (M ∥ R).is_indep I ↔ M.is_indep I ∧ I ⊆ R := 
+  (M ‖ R).is_indep I ↔ M.is_indep I ∧ I ⊆ R := 
 begin
   rw [indep_iff_r, rank_loopify_to, indep_iff_r],
   refine ⟨λ h, _, λ h, by {cases h with h h', rwa subset_def_inter_mp h'}⟩,
@@ -155,13 +155,13 @@ lemma indep_loopify_iff {M : matroid U}{X D : set U}:
   (M ⟍ D).is_indep X ↔ M.is_indep X ∧ X ∩ D = ∅ := 
 by rw [loopify_as_loopify_to, indep_loopify_to_iff, subset_compl_iff_disjoint]
 
-lemma indep_of_indep_loopify_to {M : matroid U}{R I : set U}(hI : (M ∥ R).is_indep I):
+lemma indep_of_indep_loopify_to {M : matroid U}{R I : set U}(hI : (M ‖ R).is_indep I):
   M.is_indep I := 
 (indep_loopify_to_iff.mp hI).1
 
 lemma indep_loopify_to_subset_is_indep {M : matroid U}{S R I : set U}
-(hSR: S ⊆ R)(hI: (M ∥ S).is_indep I ):
-  (M ∥ R).is_indep I := 
+(hSR: S ⊆ R)(hI: (M ‖ S).is_indep I ):
+  (M ‖ R).is_indep I := 
 by {simp_rw [indep_loopify_to_iff] at *, exact ⟨hI.1, subset.trans hI.2 hSR⟩} 
 
 lemma indep_project_iff {M : matroid U}{X C : set U}:

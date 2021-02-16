@@ -24,6 +24,12 @@ by {by_cases h : x ≤ 0, left, apply le_antisymm h h0,
     push_neg at h, rw lt_iff_le_sub_one at h, 
     right, linarith, }
 
+
+lemma nat_le_two_iff {x : ℕ}(h2 : x ≤ 2): 
+  x = 0 ∨ x = 1 ∨ x = 2 :=
+by {cases x, tauto, cases x, tauto, cases x, tauto, repeat {rw nat.succ_eq_add_one at h2}, linarith} 
+
+
 lemma nonneg_le_two_iff {x : ℤ}(h0 : 0 ≤ x)(h2 : x ≤ 2):
   x = 0 ∨ x = 1 ∨ x = 2 :=
 begin
@@ -31,6 +37,5 @@ begin
   push_neg at h2', rw lt_iff_le_sub_one at h2', 
   cases nonneg_le_one_iff h0 h2', {left, exact h}, {right, left, exact h},
 end 
-
 
 end int 

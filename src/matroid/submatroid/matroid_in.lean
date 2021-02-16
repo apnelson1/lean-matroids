@@ -6,14 +6,15 @@ noncomputable theory
 
 open matroid set 
 
-/-- a matroid_in U corresponds to a matroid defined on some subset E of U. Implemented as a matroid on which the nonmements of 
-E are all loops. -/
-@[ext] structure matroid_in (U : Type)[fintype U] :=
+variables {U : Type}[fintype U]
+
+/-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
+Implemented as a matroid on which the nonelements of E are all loops. -/
+
+structure matroid_in (U : Type)[fintype U] :=
 (E : set U)
 (carrier : matroid U)
 (support : carrier.r Eᶜ = 0)
-
-variables {U : Type}[fintype U]
 
 namespace matroid_in 
 
@@ -36,10 +37,14 @@ lemma r_eq_inter_r (M : matroid_in U)(X : set U):
   M.r X = M.r (M.E ∩ X) :=
 by rw [r_eq_r_inter, inter_comm]
 
-lemma ext' {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
+lemma ext' {M M' : matroid_in U}(h : M.E = M'.E)(h' : M.carrier = M'.carrier): 
+  M = M' :=
+by {cases M, cases M', dsimp only at *, induction h', induction h, refl,} 
+
+@[ext] lemma ext'' {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
   M₁ = M₂ := 
 begin
-  apply matroid_in.ext _ _ h_ground, ext X,
+  apply ext' h_ground, ext X,
   specialize h_r (X ∩ M₁.E) (by simp),  
   rw (by simp : X = (X ∩ M₁.E) ∪ (X ∩ M₁.Eᶜ)), 
   have h₁ := matroid.rank_inter_rank_zero X M₁.support,
@@ -47,9 +52,6 @@ begin
   rw [matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.E) h₁, matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.E) h₂], 
   exact h_r, 
 end
-
---def ground (M : matroid_in U) : Type := M.E
-
 
 /-- a matroid_in U gives a matroid on a subtype -/
 def as_mat_on (M : matroid_in U)(E : set U) : matroid E := 
@@ -99,7 +101,6 @@ begin
   tidy, 
 end
 
-
 @[simp,msimp] lemma as_mat_of_mat {E : set U}(N : matroid E) : 
   as_mat (of_mat N) = N :=
 begin
@@ -112,14 +113,14 @@ end
 
 @[simp,msimp] lemma of_mat_as_mat (M : matroid_in U) : 
   of_mat (as_mat M) = M :=
-ext' (by simp) 
+ext  (by simp) 
      (λ X hX, by {simp only with msimp coe_up at *, convert rfl, rw subset_def_inter_mp hX}) 
 
 
 lemma of_mat_as_mat_on {E E' : set U}(N : matroid E)(h : E' = E): 
    of_mat ((of_mat N).as_mat_on E') = of_mat N := 
 begin
-  apply ext', convert rfl, 
+  ext : 1, convert rfl, 
   intros X hX, 
   simp only [of_mat, as_mat_on],  
   convert rfl, exact h.symm, 
@@ -136,8 +137,6 @@ def as_matroid_in (M : matroid U) : matroid_in U := ⟨univ, M, by simp⟩
 instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
 
 section defs 
-
-
 
 /-- translates a property of sets defined on (matroid V) to the corresponding
 set property on (matroid_in U). -/
@@ -223,7 +222,6 @@ lemma of_mat_dual {E : set U}(M : matroid E):
   of_mat M.dual = (of_mat M).dual := 
 by {unfold dual, convert rfl, simp}
 
-
 @[simp, msimp] lemma dual_ground (M : matroid_in U): 
   (dual M).E = M.E := 
 rfl 
@@ -240,7 +238,6 @@ lemma dual_inj_iff {M M' : matroid_in U}:
   M = M' ↔ M.dual = M'.dual := 
 ⟨λ h, by {rw h}, λ h, dual_inj h⟩
 
-
 lemma coindep_iff_r {M : matroid_in U}{X : set U}: 
   M.dual.is_indep X ↔ X ⊆ M.E ∧ M.r (M.E \ X) = M.r M.E :=
 begin
@@ -253,6 +250,4 @@ begin
 end
 
 end defs 
-
-
 end matroid_in

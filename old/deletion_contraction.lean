@@ -67,7 +67,7 @@ fun M, {
   r := (fun X, size X + M.r Xᶜ - M.r ⊤),
   R0 := (fun X,
     calc 0 ≤ M.r X  + M.r Xᶜ - M.r (X ∪ Xᶜ) - M.r (X ∩ Xᶜ) : by linarith [M.R3 X Xᶜ]
-    ...    = M.r X  + M.r Xᶜ - M.r ⊤        - M.r ⊥        : by rw [union_compl X, inter_compl X]
+    ...    = M.r X  + M.r Xᶜ - M.r ⊤        - M.r ⊥        : by rw [union_compl_self X, inter_compl_self X]
     ...    ≤ size X + M.r Xᶜ - M.r ⊤                       : by linarith [M.R1 X, rank_bot M]),
   R1 := (fun X, by linarith [M.R2 _ _ (subset_top Xᶜ)]),
   R2 := (fun X Y h, let
@@ -75,13 +75,13 @@ fun M, {
     h₁ :=
       calc Yᶜ ∪ Z = (Xᶜ ∩ Y) ∪ Yᶜ        : by apply union_comm
       ...         = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : by apply union_distrib_right
-      ...         = (X ∩ Y)ᶜ ∩ ⊤         : by rw [compl_inter X Y, union_compl Y]
+      ...         = (X ∩ Y)ᶜ ∩ ⊤         : by rw [compl_inter X Y, union_compl_self Y]
       ...         = (X ∩ Y)ᶜ             : by apply inter_top
       ...         = Xᶜ                   : by rw [inter_subset h],
     h₂ :=
       calc Yᶜ ∩ Z = (Xᶜ ∩ Y) ∩ Yᶜ : by apply inter_comm
       ...         = Xᶜ ∩ (Y ∩ Yᶜ) : by apply inter_assoc
-      ...         = Xᶜ ∩ ⊥        : by rw [inter_compl Y]
+      ...         = Xᶜ ∩ ⊥        : by rw [inter_compl_self Y]
       ...         = ⊥             : by apply inter_bot,
     h₃ :=
       calc M.r Xᶜ = M.r Xᶜ + M.r ⊥              : by linarith [rank_bot M]
@@ -156,7 +156,7 @@ begin
   have h₁ : size (X.val ∪ Eᶜ) = size X.val + size Eᶜ := size_disjoint_sum (calc
     X.val ∩ Eᶜ = (X.val ∩ {e}) ∩ Eᶜ : by rw [(eq.symm X.prop : X.val ∩ {e} = X.val)]
     ...        = X.val ∩ (E ∩ Eᶜ) : by apply inter_assoc
-    ...        = X.val ∩ ⊥        : by rw [inter_compl]
+    ...        = X.val ∩ ⊥        : by rw [inter_compl_self]
     ...        = ⊥                : by apply inter_bot),
   have h₂ : Eᶜᶜ = E := compl_compl E,
   have h₃ := (calc
@@ -176,10 +176,10 @@ lemma restrict_dual {U : boolalg} (E : U) (M : rankfun U) :
   restrict E (dual M) = dual (corestrict E M) :=
 begin
   apply rankfun.ext, apply funext, intro X,
-  have h₁ : E ∪ Eᶜ = ⊤ := by apply union_compl,
+  have h₁ : E ∪ Eᶜ = ⊤ := by apply union_compl_self,
   have h₂ := (calc
     (E ∩ X.valᶜ) ∪ Eᶜ = (E ∪ Eᶜ) ∩ (X.valᶜ ∪ Eᶜ) : by apply union_distrib_right
-    ...               = X.valᶜ ∪ Eᶜ              : by simp only [union_compl, top_inter]
+    ...               = X.valᶜ ∪ Eᶜ              : by simp only [union_compl_self, top_inter]
     ...               = (X.val ∩ {e})ᶜ             : by apply eq.symm; apply compl_inter
     ...               = X.valᶜ                   : by rw [(eq.symm X.prop : X.val ∩ {e} = X.val)]),
   calc
@@ -280,13 +280,13 @@ lemma contract_contract (C₁ C₂ : subalg E) (M : matroid_on E) :
   (calc E - C₁.val - (C₂∖C₁).val
       = (E ∩ C₁.valᶜ) ∩ (C₂.val ∩ C₁.valᶜ)ᶜ : rfl
   ... = E ∩ (C₁.val ∪ (C₂.val ∩ C₁.valᶜ))ᶜ  : by simp only [inter_assoc, compl_union]
-  ... = E ∩ (C₁.val ∪ C₂.val)ᶜ              : by simp only [union_distrib_left, union_compl, inter_top]
+  ... = E ∩ (C₁.val ∪ C₂.val)ᶜ              : by simp only [union_distrib_left, union_compl_self, inter_top]
   ... = E - (C₁ ∪ C₂).val                   : rfl),
   (fun X h₁ h₂, let
   h₃ := calc (C₂.val ∩ C₁.valᶜ) ∪ C₁.val
            = C₁.val ∪ (C₁.valᶜ ∩ C₂.val)            : by simp only [inter_comm, union_comm]
        ... = (C₁.val ∪ C₁.valᶜ) ∩ (C₁.val ∪ C₂.val) : by apply union_distrib_left
-       ... = C₁.val ∪ C₂.val                        : by simp only [union_compl, top_inter],
+       ... = C₁.val ∪ C₂.val                        : by simp only [union_compl_self, top_inter],
   h₄ := calc X ∪ (C₂.val ∩ C₁.valᶜ) ∪ C₁.val
            = X ∪ ((C₂.val ∩ C₁.valᶜ) ∪ C₁.val) : by apply union_assoc
        ... = X ∪ (C₁.val ∪ C₂.val)             : by rw [h₃],
