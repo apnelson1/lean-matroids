@@ -4,13 +4,14 @@ all X ⊆ U. The proof is really by induction on the size of the ground set, but
 instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
 projections of M₁ and M₂.  -/
 
-import matroid.constructions matroid.submatroid.projection ftype.minmax .basic 
+import matroid.constructions matroid.submatroid.projection 
+import prelim.minmax .basic 
 
 open_locale classical 
 noncomputable theory 
-open ftype matroid set 
+open matroid set 
 
-variables {U : ftype}
+variables {U : Type}[fintype U]
 
 section intersection 
 
@@ -83,17 +84,17 @@ begin
 
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
-    rw [nonloop_iff_not_elem_loops, ←elem_compl_iff], 
+    rw [nonloop_iff_not_elem_loops, ←mem_compl_iff], 
     refine mem_of_mem_of_subset he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
   
   -- contract and delete (loopify/project) e from both elements of the pairs, to get 
   -- strictly loopier pairs to which we'll apply the IH, along with the associated maximizers 
-  set N₁d := loopify N₁ e with hN₁d, 
-  set N₂d := loopify N₂ e with hN₂d, 
-  set N₁c := project N₁ e with hN₁c, 
-  set N₂c := project N₂ e with hN₂c, 
+  set N₁d := loopify N₁ {e} with hN₁d, 
+  set N₂d := loopify N₂ {e} with hN₂d, 
+  set N₁c := project N₁ {e} with hN₁c, 
+  set N₂c := project N₂ {e} with hN₂c, 
 
   rcases max_spec (λ (X : common_ind N₁d N₂d), size X.val) with ⟨⟨Id,hId_ind⟩, ⟨hId_eq_max, hId_ub⟩⟩, 
   rcases max_spec (λ (X : common_ind N₁c N₂c), size X.val) with ⟨⟨Ic,hIc_ind⟩, ⟨hIc_eq_max, hIc_ub⟩⟩,
@@ -102,7 +103,7 @@ begin
   
   have heIc : e ∉ Ic := λ heIc, by 
   {
-    have := projected_set_rank_zero N₁ e, 
+    have := projected_set_rank_zero N₁ {e}, 
     rw [←hN₁c, elem_indep_r heIc hIc_ind.1] at this, 
     exact one_ne_zero this, 
   },
@@ -119,7 +120,7 @@ begin
   have h_nu_c : ν N₁c N₂c ≤ k-1 := by 
   {
     rw [hk, ν, ν, ←hIc_eq_max], 
-    have := max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Ic ∪ e, _⟩, 
+    have := max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Ic ∪ {e}, _⟩, 
     dsimp only at this ⊢,
     linarith only [add_nonmem_size heIc, this], 
     split, all_goals {apply indep_union_project_set_of_project_indep}, 
@@ -131,8 +132,8 @@ begin
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
     have h_add_e := union_subset_union 
-      (loopify_makes_loops N₁ e) 
-      (loopify_makes_loops N₂ e), 
+      (loopify_makes_loops N₁ {e}) 
+      (loopify_makes_loops N₂ {e}), 
     rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
     rw [add_compl_single_size he, ←hN₁d, ←hN₂d] at this, 
@@ -143,8 +144,8 @@ begin
   have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by 
   {
     have h_add_e := union_subset_union 
-      (project_makes_loops N₁ e) 
-      (project_makes_loops N₂ e), 
+      (project_makes_loops N₁ {e}) 
+      (project_makes_loops N₂ {e}), 
     rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
     rw [add_compl_single_size he, ←hN₁c, ←hN₂c] at this, 
@@ -164,7 +165,7 @@ begin
   rw [←hAc_eq_min] at hc, 
   have hAc_ub : N₁.r (Ac ∪ {e}) + N₂.r (Acᶜ ∪ {e}) ≤ k+1 := by 
   {
-    suffices : (N₁.r (Ac ∪ {e}) - N₁.r e) + (N₂.r (Acᶜ ∪ {e}) - N₂.r e) ≤ k-1, 
+    suffices : (N₁.r (Ac ∪ {e}) - N₁.r {e}) + (N₂.r (Acᶜ ∪ {e}) - N₂.r {e}) ≤ k-1, 
       by linarith [rank_nonloop h_e_nl.1, rank_nonloop h_e_nl.2],
     from le_trans hc h_nu_c, 
   },
@@ -195,7 +196,7 @@ begin
   rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 
   rcases min_spec (λ X, M₁.r X + M₂.r Xᶜ) with ⟨A, hA_eq_min, hA_lb⟩, 
   refine ⟨I, A, ⟨h_ind,_⟩⟩,  
-  dsimp only [ftype.ftype_coe, nonempty_of_inhabited] at *, 
+  dsimp only at *, 
   rw [h_eq_max, hA_eq_min], 
   apply matroid_intersection, 
 end 

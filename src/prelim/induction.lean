@@ -1,7 +1,7 @@
 
 -- various flavours of induction 
 
-import .basic .single .int_lemmas 
+import .size .int_lemmas 
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 
@@ -167,7 +167,7 @@ lemma minimal_example_remove (P : set A → Prop){X : set A}:
 begin
   intro hPX, 
   rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩, 
-  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (remove_single_ssubset he) ⟩⟩⟩,  
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (ssubset_of_remove_mem he) ⟩⟩⟩,  
 end 
 
 /-lemma minimal_example_size (P : set A → Prop)(hP : set.nonempty P):

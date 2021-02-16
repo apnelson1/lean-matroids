@@ -1,11 +1,12 @@
-import ftype.basic ftype.induction ftype.collections ftype.minmax 
+import prelim.size prelim.induction prelim.collections prelim.minmax 
 import .rankfun .indep 
-open ftype 
 
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {U : ftype}
+variables {U : Type}[fintype U]
+
+open set 
 
 namespace clfun
 

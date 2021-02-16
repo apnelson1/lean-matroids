@@ -167,8 +167,6 @@ begin
   use BX, use BY, from ⟨hBY.1,⟨hBX, hBY.2⟩⟩, 
 end
 
-
-
 -----------------------------------------------------------------------
 
 lemma I_to_R0 (M : indep_family U): 
@@ -217,9 +215,9 @@ begin
   rcases M.has_ext_to_basis (subset.trans hBI.1 (inter_subset_right X Y)) hBI.2.1 with ⟨BY, ⟨hBIBY,hBY⟩⟩, 
   rcases M.has_ext_to_basis (subset_union_left BX BY) hBX.2.1 with ⟨BU, ⟨hBXBU,hBU⟩⟩, 
   rw [←I_to_r_eq_rank_basis_union Y hBX, union_comm BX _, 
-          ←I_to_r_eq_rank_basis_union BX hBY, union_comm BY, 
-            I_to_r_of_set_basis hBI, I_to_r_of_set_basis hBX, 
-              I_to_r_of_set_basis hBU, I_to_r_of_set_basis hBY],
+      ←I_to_r_eq_rank_basis_union BX hBY, union_comm BY, 
+       I_to_r_of_set_basis hBI, I_to_r_of_set_basis hBX, 
+       I_to_r_of_set_basis hBU, I_to_r_of_set_basis hBY],
   have := size_monotone hBU.1, have := size_monotone (subset_of_inter_mpr hss hBIBY),
   linarith[size_modular BX BY]
 end 

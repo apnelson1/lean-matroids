@@ -1,5 +1,5 @@
 
-import .basic --.single
+import .size --.single
 open set 
 -- Embedding and subftypes
 
@@ -107,5 +107,5 @@ by rw [subtype_coe_size, coe_inter_subtype]
 
 @[coe_up] lemma inter_subtype_eq_iff (X Y : set A):
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S):=
-by rw [←subtype_set_coe_inj, coe_inter_subtype, coe_inter_subtype], 
+by rw [←subtype_set_coe_inj, coe_inter_subtype, coe_inter_subtype]
  

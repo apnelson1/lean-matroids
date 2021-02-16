@@ -105,7 +105,7 @@ cases size_pos_has_mem hn with e he,
 
 have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
 {
-  rw [nonloop_iff_not_elem_loops, ←elem_compl_iff], 
+  rw [nonloop_iff_not_elem_loops, ←mem_compl_iff], 
   refine mem_of_mem_of_subset he _, 
   simp only [compl_union, inter_subset_left, inter_subset_right],
 }, 

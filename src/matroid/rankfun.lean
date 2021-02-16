@@ -206,7 +206,7 @@ begin
   
   by_contra h_con, push_neg at h_con, 
   replace h_con : ∀ (z:U), z ∈ X ∪ Z → M.r (X ∪ {z}) = M.r X := 
-    by {
+  by {
         intros z hz, rw elem_union_iff at hz, cases hz, 
         rw add_elem hz, 
         from (rank_eq_of_le_supset (subset_union_left _ _) (h_con z hz)).symm
@@ -261,7 +261,7 @@ instance coe_indep {M : matroid U} : has_coe (M.indep) (set U) :=
   coe_subtype   
 
 instance fintype_indep {M : matroid U} : fintype (M.indep) := 
-  by {unfold indep, apply_instance }
+by {unfold indep, apply_instance }
 
 
 def is_indep_subset_of (M : matroid U)(X : set U) : set U → Prop := 
@@ -387,7 +387,7 @@ lemma I1 (M : matroid U) :
   empty_indep M 
 
 instance nonempty_indep {M : matroid U} : nonempty (M.indep) := 
-  by {apply nonempty_subtype.mpr, from ⟨∅, M.I1⟩}
+by {apply nonempty_subtype.mpr, from ⟨∅, M.I1⟩}
 
 lemma I2 {M : matroid U} {X Y : set U}: 
   X ⊆ Y → M.is_indep Y → M.is_indep X := 
@@ -464,7 +464,7 @@ def cocircuit (M : matroid U) := { C : set U // M.is_cocircuit C }
 instance coe_cocircuit {M : matroid U} : has_coe (cocircuit M) (set U) := 
   coe_subtype    
 instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) := 
-  by {unfold cocircuit, apply_instance}   
+by {unfold cocircuit, apply_instance}   
 
 lemma circuit_iff_i {M : matroid U}{X : set U} : 
   M.is_circuit X ↔ ¬is_indep M X ∧  ∀ Y: set U, Y ⊂ X → M.is_indep Y :=
@@ -573,7 +573,7 @@ begin
   have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
   have heU := mem_of_mem_of_subset he (inter_subset_union C₁ C₂),
   have hcalc : M.r ((C₁ ∪ C₂) \ {e}) ≤ size ((C₁ ∪ C₂) \ {e}) -1 := 
-    by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) {e} ), M.rank_submod C₁ C₂, 
+  by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) {e} ), M.rank_submod C₁ C₂, 
         r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
   from int.le_sub_one_iff.mp hcalc,
 end 
@@ -798,7 +798,7 @@ instance coe_flat {M : matroid U} : has_coe (M.flat) (set U) :=
   coe_subtype   
   
 instance fintype_flat {M : matroid U} : fintype (flat M) := 
-  by {unfold flat, apply_instance }
+by {unfold flat, apply_instance }
 
 
 /-- flat of rank k -/
@@ -876,7 +876,7 @@ by {rw ←flat_iff_own_cl.mp hF, apply loops_subset_cl}
 lemma flat_iff_is_cl {M : matroid U}{F : set U}: 
   M.is_flat  F ↔ ∃ X : set U, cl M X = F := 
 ⟨λ h, ⟨F, flat_iff_own_cl.mp h⟩, λ h, 
-      by {cases h with X hX, rw flat_iff_own_cl, rw ←hX, apply cl_idem}⟩
+    by {cases h with X hX, rw flat_iff_own_cl, rw ←hX, apply cl_idem}⟩
 
 lemma subset_flat {M : matroid U}(X F : set U):
   X ⊆ F → M.is_flat F → M.cl X ⊆ F :=
@@ -885,7 +885,6 @@ begin
   intros hXF hF, 
   rw ←hF, apply cl_monotone _ hXF, 
 end
-
 
 lemma flat_iff_add_r {M : matroid U}{F : set U}:
   M.is_flat F ↔ ∀ (e:U), e ∉ F → M.r F < M.r (F ∪ {e}) :=
@@ -1173,25 +1172,11 @@ lemma series_equiv (M : matroid U):
   equivalence M.series :=
 parallel_equiv M.dual 
 
-instance parallel_classes_setoid (M : matroid U) : setoid (nonloop M) := 
+def parallel_classes_setoid (M : matroid U) : setoid (nonloop M) := 
   ⟨M.parallel, M.parallel_equiv⟩ 
-
---def parallel_quot (M : matroid U) := quotient (parallel_classes_setoid M)
-
-
 
 
 end series_parallel 
-/-lemma blah (M : matroid U)(a b : parallel_class M)(x y : nonloop M): 0 = 0:=
-begin
-  have : x ≈ y := sorry, 
-  have : ⟦x⟧ = ⟦y⟧ := sorry , 
-  let P := (⟦x⟧ : set (nonloop M)), 
-end-/
-
-
-
-
 
 
   
@@ -1220,7 +1205,7 @@ instance coe_subtype_basis {M : matroid U} : has_coe (M.basis) (set U) :=
   coe_subtype
 
 instance fintype_basis {M : matroid U} : fintype (M.basis) := 
-  by {unfold basis, apply_instance }
+by {unfold basis, apply_instance }
 
 /-- basis of set X type -/
 def basis_of (M : matroid U)(X : set U) := {B : set U // M.is_basis_of B X}
@@ -1229,7 +1214,7 @@ instance coe_subtype_basis_of {M : matroid U}(X : set U) : has_coe (M.basis_of X
   coe_subtype
 
 instance fintype_basis_of {M : matroid U}(X : set U) : fintype (M.basis_of X) := 
-  by {unfold basis_of, apply_instance }
+by {unfold basis_of, apply_instance }
 
 
 
@@ -1302,7 +1287,7 @@ end
 lemma basis_iff_augment_i {M : matroid U}{B : set U} : 
   is_basis M B ↔ M.is_indep B ∧ ∀ (e:U), e ∉ B → ¬M.is_indep (B ∪ {e}) := 
 begin
-  simp_rw [is_basis, basis_of_iff_augment_i, ←elem_compl_iff, univ_diff], 
+  simp_rw [is_basis, basis_of_iff_augment_i, ←mem_compl_iff, univ_diff], 
   from ⟨λ h, ⟨h.2.1,λ e he, h.2.2 _ he⟩, λ h, ⟨subset_univ B, h⟩⟩, 
 end
 
@@ -1360,7 +1345,7 @@ begin
   rw h'' at hf, 
   cases elem_diff_iff.mp hf with hf₁ hf₂, 
   refine ⟨f, hf, hf_aug, _⟩, 
-  rw exchange_size he₁ hf₂, exact hB₁.2, 
+  rw size_remove_insert he₁ hf₂, exact hB₁.2, 
 end  
 
 lemma extends_to_basis_of {M : matroid U}{I X : set U}:
@@ -1379,11 +1364,11 @@ end
 
 lemma exists_basis_of (M : matroid U)(X : set U) : 
   ∃ B, M.is_basis_of B X := 
-  by {cases extends_to_basis_of (empty_subset X) (empty_indep M) with B hB, from ⟨B,hB.2⟩}
+by {cases extends_to_basis_of (empty_subset X) (empty_indep M) with B hB, from ⟨B,hB.2⟩}
 
 lemma exists_basis (M : matroid U): 
   ∃ B, M.is_basis B := 
-  by apply exists_basis_of 
+by apply exists_basis_of 
 
 lemma extends_to_basis {M : matroid U}{I : set U}:
   M.is_indep I → ∃ B, I ⊆ B ∧ M.is_basis B := 

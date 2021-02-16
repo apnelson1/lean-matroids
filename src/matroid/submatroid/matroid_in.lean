@@ -6,9 +6,6 @@ noncomputable theory
 
 open matroid set 
 
-
-
-
 /-- a matroid_in U corresponds to a matroid defined on some subset E of U. Implemented as a matroid on which the nonmements of 
 E are all loops. -/
 @[ext] structure matroid_in (U : Type)[fintype U] :=

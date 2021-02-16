@@ -4,16 +4,16 @@
   sets are the independent sets of a matroid on U. Then it generalizes the latter result to a 
   general list of matroids; the former is todo but shouldn't be too bad.  -/
 
-import ftype.minmax ftype.setlist 
+import prelim.minmax prelim.setlist 
 import matroid.constructions matroid.submatroid.projection  .matroid_inter .basic
 import algebra.big_operators
 import set_tactic.solver
 
 open_locale classical big_operators
 noncomputable theory 
-open ftype set matroid
+open set matroid
 
-variables {U : ftype}
+variables {U : Type}[fintype U]
 
 section intersections_of_bases
 
@@ -104,26 +104,24 @@ end
 
 /-- simple relationship between π M₁ M₂ and ν M₁ M₂* -/
 theorem π₂_eq_ν_plus_r (M₁ M₂ : matroid U) :
-  π₂ M₁ M₂ = ν M₁ (dual M₂) + M₂.r univ := 
+  π₂ M₁ M₂ = ν M₁ (M₂.dual) + M₂.r univ := 
 begin
   rw [eq_comm,max_common_indep_inter_bases, π₂_eq_max_union_bases],
   
   -- bijection φ that we will use to reindex summation
   set φ : basis_pair M₁ M₂ → basis_pair M₁ (dual M₂) := λ p, ⟨⟨p.val.1, p.val.2ᶜ⟩,_⟩ with hφ, 
   swap,
+
   -- φ really maps to basis,cobasis pairs
-  {
-    dsimp only, refine ⟨p.property.1, _⟩, 
+  { dsimp only, refine ⟨p.property.1, _⟩, 
     rw [←cobasis_iff_compl_basis, cobasis_iff, dual_dual], 
-    from p.property.2, 
-  },
+    from p.property.2, },
   -- ... and is surjective
+  
   have hφ_sur : function.surjective φ := by  
-  {
-    refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
+  { refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,  
     rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2, 
-    rw hφ,  simp,  
-  },
+    rw hφ,  simp,},
   -- use φ to reindex so LHS/RHS are being summed over the same set 
   have := max_reindex φ hφ_sur (λ pair, inter_size pair.val), 
   erw ←this,

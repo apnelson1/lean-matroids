@@ -1,5 +1,5 @@
 
-import .basic .induction .single 
+import .size .induction .single 
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 

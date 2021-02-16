@@ -1,4 +1,4 @@
-import prelim.single 
+import prelim.size
 
 variable {U : Type}
 

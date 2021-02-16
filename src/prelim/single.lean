@@ -1,26 +1,13 @@
-import .basic
+import .set
 -- Singles
 
 open set 
 
 local attribute [instance] classical.prop_decidable
 
-variables {A : Type}[fintype A]
+variables {A : Type}
+  
 
-def set_union_singleton (X : set A)(e : A) := X ∪ {e}
-def singleton_union_set (e : A)(X : set A) := {e} ∪ X
-def set_inter_singleton (X : set A)(e : A) := X ∩ {e}
-def singleton_inter_set (e : A)(X : set A) := {e} ∩ X
-def set_diff_singleton (X : set A)(e : A) := X \ {e}
-
---infix ∪ := set_union_singleton 
---infix ∪ := singleton_union_set
---infix ∩ := set_inter_singleton 
---infix ∩ := singleton_inter_set
---infix \ := set_diff_singleton
-
-
---instance coe_single {A : Type} : has_coe A (set A) := ⟨λ e, {e}⟩  
 
 lemma elem_coe_inj_iff {e f : A} :
   ({e} : set A) = ({f}  : set A) ↔ e = f := 
@@ -32,7 +19,7 @@ by rw [not_iff_not, singleton_subset_iff]
 
 lemma singleton_ne_empty (e : A) : 
   ({e}: set A) ≠ ∅ := 
-λ h, by {have := size_singleton e, rw [h,size_empty] at this, linarith}
+λ h, by {rw set.ext_iff at h, exact not_mem_empty e ((h e).mp (by simp)),}--have := size_singleton e, rw [h,size_empty] at this, linarith}
 
 @[simp] lemma singleton_nonmem_compl_self (e : A) :
   e ∉ ({e}: set A)ᶜ := 
@@ -62,29 +49,10 @@ lemma ne_univ_iff_has_nonmem {X : set A}:
   X ≠ univ ↔ ∃ e, e ∉ X := 
 by {rw [←not_forall, not_iff_not], refine ⟨λ h x, _, λ h, _⟩, rw h, from mem_univ x, ext, tidy}
 
-lemma size_pos_has_mem {X : set A}: 
-  0 < size X → ∃ e, e ∈ X := 
-λ h, (ne_empty_iff_has_mem.mp (λ h', by {rw [h',size_empty] at h, exact lt_irrefl 0 h}))
-
-lemma size_pos_iff_has_mem {X : set A}: 
-  0 < size X ↔ ∃ e, e ∈ X := 
-⟨λ h, size_pos_has_mem h, λ h, by {cases h with e he, have := size_monotone (singleton_subset_iff.mpr he), rw size_singleton at this, linarith}⟩ 
-
-lemma size_zero_iff_has_no_mem {X : set A}:
-  size X = 0 ↔ ¬ ∃ e, e ∈ X := 
-begin
-  rw [iff.comm, ←not_iff, ←size_pos_iff_has_mem, not_iff], 
-  refine ⟨λ h, _, λ h, by linarith ⟩ ,
-  linarith [size_nonneg X, not_lt.mp h]
-end
-
-lemma nested_singletons_eq {e f: A} :
-  ({e}: set A) ⊆ ({f} : set A) → e = f :=
-begin
-  intro hef, rw ←elem_coe_inj_iff, 
-  from eq_of_eq_size_subset hef (by {simp_rw [size_singleton]}), 
-end
-
+lemma nested_singletons_eq {e f: A} (hef : ({e}: set A) ⊆ ({f} : set A)):
+   e = f :=
+by rwa [singleton_subset_iff, mem_singleton_iff] at hef 
+  
 lemma nonmem_disjoint {e : A} {X : set A}: 
   e ∉ X → ({e} ∩ X : set A) = ∅ :=
 by tidy
@@ -99,21 +67,17 @@ lemma inter_distinct_singles {e f : A}:
   e ≠ f → ({e} ∩ {f} : set A) = ∅ := 
 λ hef, nonmem_disjoint (λ h, hef (nested_singletons_eq (singleton_subset_iff.mpr h)))
 
-lemma elem_compl_iff {X : set A}{e : A} :
-  e ∈ Xᶜ ↔ e ∉ X := 
-by simp only [mem_compl_eq]
+lemma mem_union_of_mem_left {e : A}{X : set A}(Y : set A)(h : e ∈ X) : 
+  e ∈ X ∪ Y :=
+mem_of_mem_of_subset h (subset_union_left X Y)
 
-lemma elem_union_left {e : A}{X Y : set A} : 
-  e ∈ X → e ∈ X ∪ Y :=
-λ h, mem_of_mem_of_subset h (subset_union_left X Y)
-
-lemma elem_union_right {e : A}{X Y : set A} : 
-  e ∈ Y → e ∈ X ∪ Y :=
-λ h, mem_of_mem_of_subset h (subset_union_right X Y)
+lemma mem_union_of_mem_right {e : A}{X : set A}(Y : set A)(h : e ∈ Y) : 
+  e ∈ X ∪ Y :=
+mem_of_mem_of_subset h (subset_union_right X Y)
 
 lemma singleton_nonmem_compl_self_iff {X : set A}{e : A} :
   e ∉ Xᶜ ↔ e ∈ X  := 
-by {rw ←elem_compl_iff, rw [compl_compl]}
+by {rw ←mem_compl_iff, rw [compl_compl]}
 
 lemma elem_union_iff {e : A} {X Y : set A} : 
   e ∈ X ∪ Y ↔ e ∈ X ∨ e ∈ Y :=
@@ -129,7 +93,7 @@ mem_inter
 
 lemma nonmem_inter_iff {e : A} {X Y : set A} :
    e ∉ X ∩ Y ↔ e ∉ X ∨ e ∉ Y := 
-by rw [←elem_compl_iff, compl_inter, elem_union_iff, elem_compl_iff, elem_compl_iff] 
+by rw [←mem_compl_iff, compl_inter, elem_union_iff, mem_compl_iff, mem_compl_iff] 
 
 lemma elem_diff_iff {e : A}{X Y : set A} : 
   e ∈ X \ Y ↔ e ∈ X ∧ e ∉ Y :=
@@ -194,7 +158,7 @@ end
 
 lemma ssub_of_add_nonmem {X : set A} {e : A}: 
   e ∉ X → X ⊂ X ∪ {e} := 
-λ hXe, ssub_of_add_compl (elem_compl_iff.mpr hXe)
+λ hXe, ssub_of_add_compl (by {rwa mem_compl_iff })
 
 lemma ssubset_of_add_nonmem_iff {X : set A} {e : A} :
   e ∉ X ↔ X ⊂ X ∪ {e} :=
@@ -212,28 +176,6 @@ lemma elem_only_larger_ssubset {X Y : set A} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
 λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
 
-lemma elem_diff_of_size_lt {X Y : set A}(h : size X < size Y):
-  ∃ (e : A), e ∈ Y ∧ e ∉ X :=
-begin
-  suffices : 0 < size (Y \ X), rw [size_pos_iff_has_mem] at this, tauto, 
-  rw diff_eq, linarith [size_induced_partition_inter Y X, size_mono_inter_right Y X], 
-end 
-
-lemma add_compl_single_size {X : set A} {e : A} :
-  e ∈ Xᶜ → size (X ∪ {e}) = size X + 1 := 
-begin
-  intro hXe, have := size_modular X {e}, 
-  rw [inter_comm X, nonmem_disjoint (elem_compl_iff.mp hXe), size_singleton, size_empty] at this, 
-  linarith, 
-end
-
-lemma add_size_ub {X : set A}{e : A}:
-  size (X ∪ {e}) ≤ size X + 1 := 
-by linarith [size_nonneg (X ∩ {e}), size_modular X {e}, size_singleton e]
-
-lemma add_nonmem_size {X : set A} {e : A}: 
-  e ∉ X →  size (X ∪ {e}) = size X + 1 := 
-λ hXe, by {apply add_compl_single_size, exact elem_compl_iff.mpr hXe}
 
 lemma compl_single_remove {X : set A} {e : A} : 
   e ∈ X → (X \ {e})ᶜ = Xᶜ ∪ {e} := 
@@ -248,23 +190,13 @@ lemma add_remove_nonmem {X : set A} {e : A}:
   e ∉ X → (X ∪ {e}) \ {e} = X := 
 begin
   intro h, 
-  rw [←elem_compl_iff, ←singleton_subset_iff, subset_def_union] at h, 
+  rw [←mem_compl_iff, ←singleton_subset_iff, subset_def_union] at h, 
   rw [diff_eq, inter_distrib_right], 
   simp only [inter_compl, union_empty], 
   rw [←compl_compl_inter_left, inter_comm, compl_inj_iff] at h, 
   from h, 
 end
 
-lemma remove_single_size {X : set A}{e : A} :
-  e ∈ X → size (X \ {e}) = size X - 1 := 
-begin
-  intro heX, 
-  have h: e ∈ (X \ {e})ᶜ := by 
-  { rw [←singleton_subset_iff, compl_single_remove heX], 
-    apply subset_union_right}, 
-  nth_rewrite 1 ←remove_add_elem  heX, 
-  linarith [add_compl_single_size h], 
-end
 
 lemma remove_single_subset (X : set A) (e : A) : 
   X \ {e} ⊆ X := 
@@ -274,35 +206,12 @@ lemma nonmem_of_subset_remove_single (X : set A) (e : A):
   X ⊆ X \ {e} → e ∉ X :=
 by {rw diff_eq, tidy} 
 
-lemma remove_single_ssubset {X : set A} {e : A} :
-  e ∈ X → X \ {e} ⊂ X := 
-λ heX, ssubset_of_subset_ne (diff_subset _ _) (λ h, by {have := remove_single_size heX, rw h at this, linarith})
+lemma ssubset_of_remove_mem {X : set A} {e : A}(heX : e ∈ X) :
+   X \ {e} ⊂ X := 
+ssubset_of_subset_ne 
+  (diff_subset _ _) 
+  (λ h, by {rw [ext_iff] at h, specialize h e, rw mem_diff at h, tauto,  })
 
-lemma nonempty_single_removal {X : set A}:
-  X ≠ ∅ → ∃ Y : set A, Y ⊂ X ∧ size Y = size X - 1 := 
-λ hX, by {cases ne_empty_has_mem hX with e he, 
-exact ⟨X \ {e}, ⟨remove_single_ssubset he,remove_single_size he⟩ ⟩}
-
-lemma ssubset_univ_of_ne_univ {X : set A}:
-  X ≠ univ → X ⊂ univ := 
-by {rw ssubset_iff_subset_ne, tauto} 
-
-lemma ne_univ_single_addition {X : set A}:
-  X ≠ univ → ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
-begin
-  intro hX, rcases nonempty_single_removal (λ h, _ : Xᶜ ≠ ∅) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
-  refine ⟨Yᶜ , ⟨scompl_subset_comm.mpr h₁, _⟩⟩,
-  linarith [size_compl X, size_compl Y], 
-  exact hX (compl_empty_iff.mp h), 
-end
-
-lemma ne_univ_single_addition_element {X : set A}:
-  X ≠ univ → ∃ (e:A), X ⊂ X ∪ {e} ∧ size (X ∪ {e}) = size X + 1 := 
-begin
-  intro hX, 
-  rcases elem_only_larger_ssubset (ssubset_univ_of_ne_univ hX) with ⟨e,⟨_,he⟩⟩, 
-  refine ⟨e, ⟨ssub_of_add_nonmem he, add_nonmem_size he⟩⟩, 
-end
 
 lemma add_from_nonempty_diff {X Y : set A} :
   X ⊂ Y ↔ ∃ e : A, e ∉ X ∧ X ∪ {e} ⊆ Y := 
@@ -322,7 +231,7 @@ begin
   intro hXY, 
   rcases elem_only_larger_ssubset hXY with ⟨e, ⟨heY, heX⟩⟩, 
   refine ⟨Y \ {e}, e, ⟨subset_of_removal hXY.1 heX ,⟨ _, _⟩ ⟩⟩,
-  from remove_single_ssubset heY, 
+  from ssubset_of_remove_mem heY, 
   from remove_add_elem heY, 
 end 
 
@@ -340,43 +249,16 @@ lemma union_singletons_eq_pair {e f : A}:
   ({e} : set A) ∪ ({f} : set A) = {e,f} :=
 singleton_union
 
-lemma exchange_size {X : set A}{e f : A} : 
-  e ∈ X → f ∉ X → size ((X \ {e}) ∪ {f}) = size X := 
-λ he hf, by linarith [add_nonmem_size (nonmem_diff_of_nonmem {e} hf),remove_single_size he]
-
-lemma exchange_pair_sizes {X Y : set A}{e f : A}: 
-  size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
-λ h he hf, by {rw elem_diff_iff at he hf, rw [exchange_size hf.1 he.2, exchange_size he.1 hf.2], exact h}
-
-lemma size_union_distinct_singles {e f : A}: 
-  e ≠ f → size ({e,f} : set A) = 2 :=
-begin
-  intros hef, 
-  have : e ∉ ({f} : set A) := by {rw ←singleton_subset_iff, from λ h, hef (nested_singletons_eq h)}, 
-  have := add_nonmem_size this, 
-  rw [union_comm, size_singleton, union_singletons_eq_pair] at this, 
-  linarith, 
-end 
-
-lemma size_union_singles_lb (e f : A): 
-  1 ≤ size ({e,f} : set A) := 
-by {rw ←union_singletons_eq_pair, 
-    linarith [size_monotone (@subset_union_left A {e} {f}),size_singleton e],}
-
-lemma size_union_singles_ub (e f : A):
-  size ({e,f} : set A) ≤ 2 := 
-begin
-  by_cases e = f, 
-  rw [h, pair_eq_singleton, size_singleton], linarith, 
-  linarith [size_union_distinct_singles h],
-end 
-
 lemma subset_single {e : A}{X : set A} :
   X ⊆ {e} → X = ∅ ∨ X = {e} := 
 begin
-  intro h, cases lt_or_ge 0 (size X), 
-  apply or.inr, exact eq_of_eq_size_subset h (by linarith [size_singleton e, size_monotone h]), 
-  apply or.inl, exact (size_zero_empty (by linarith [size_nonneg X])),
+  rw subset_singleton_iff,  intro h', 
+  by_cases h'' : e ∈ X, 
+  right, 
+  { ext, rw ←singleton_subset_iff at h'', exact ⟨λ h, h' _ h, λ h, mem_of_mem_of_subset h h''⟩, }, 
+  left, 
+  ext, simp only [set.mem_empty_eq, iff_false], 
+  exact λ h, h'' (by rwa ←(h' _ h)),
 end
 
 lemma ssubset_pair {e f : A}{X : set A}:
@@ -390,31 +272,4 @@ begin
   rw [h_1, union_empty, ←subset_def_inter] at hs,  exact or.inl (subset.antisymm hs h), 
   rw [subset_def_inter, inter_comm] at h,
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
-end
-
-lemma equal_or_single_in_diff {X Y : set A} :
-  size X = size Y → X = Y ∨  ∃ e, e ∈ X \ Y :=
-begin
-  intros hs, by_contra h, rw not_or_distrib at h, cases h with h1 h2, 
-  rw ←ne_empty_iff_has_mem at h2, push_neg at h2,  
-  rw diff_empty_iff_subset at h2, 
-  from h1 (eq_of_eq_size_subset h2 hs),
-end
-
-lemma size_one_iff_eq_singleton {X : set A}:
-  size X = 1 ↔ ∃ e, X = {e} := 
-begin
-  refine ⟨λ hX, _, λ h, _⟩, swap,  
-    cases h with e he, rw he, apply size_singleton, 
-  simp_rw eq_singleton_iff_nonempty_unique_mem,
-  have := size_pos_iff_nonempty.mpr (by linarith : 0 < size X), 
-  have := this, 
-  cases this with e he,
-  refine ⟨e, ⟨this, λ x hx, _⟩⟩,
-  by_contra, 
-  have hu := size_union_distinct_singles h, 
-  have hss := union_subset_of_mem_of_mem hx he, 
-  have hs := size_monotone hss,
-  rw [union_singletons_eq_pair, hu, hX] at hs, 
-  norm_num at hs, 
 end

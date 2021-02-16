@@ -1,5 +1,5 @@
 import matroid.axioms  
-import prelim.collections
+import prelim.collections prelim.size 
 
 ----------------------------------------------------------------
 open set 
@@ -11,7 +11,7 @@ variables {U : Type}[fintype U]
  
 lemma rank_empt (M : matroid U) :
   M.r ∅ = 0 :=
-le_antisymm (calc M.r ∅ ≤ size (∅ : set U) : M.R1 ∅ ... = 0 : size_empty U) (M.R0 ∅)
+le_antisymm (calc M.r ∅ ≤ _ : M.R1 ∅ ... = 0 : size_empty U) (M.R0 ∅)
 
 -- Every matroid has a dual.
 def dual :
