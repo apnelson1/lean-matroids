@@ -333,3 +333,30 @@ begin
   rw [union_singletons_eq_pair, hu, hX] at hs, 
   norm_num at hs, 
 end
+
+lemma size_le_one_iff_empty_or_singleton {X : set A}:
+  size X ≤ 1 ↔ X = ∅ ∨ ∃ e, X = {e} :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, swap, 
+  { rcases h with (rfl | ⟨e, rfl⟩); simp only [size_singleton, size_empty], norm_num,},
+  by_cases h' : size X ≤ 0, 
+  { left, rw ←size_zero_iff_empty, linarith [size_nonneg X],},
+  right, rw ←size_one_iff_eq_singleton, 
+  exact le_antisymm h (by linarith), 
+end
+
+lemma size_eq_two_iff_pair {X : set A}:
+  size X = 2 ↔ ∃ (e f : A), e ≠ f ∧ X = {e,f} :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, swap, 
+  { rcases h with ⟨e,f,hef,rfl⟩, apply size_union_distinct_singles hef},
+  cases size_pos_has_mem (by {rw h, norm_num} : 0 < size X) with e he,
+  cases size_pos_has_mem (by {rw [remove_single_size he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
+  refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
+  rw eq_comm, apply eq_of_eq_size_subset, 
+  { rw ←union_singletons_eq_pair, 
+    apply union_of_subsets (singleton_subset_iff.mpr he),  
+    simp only [set.mem_diff, set.mem_singleton_iff] at hf, 
+    exact singleton_subset_iff.mpr hf.1, },
+  rwa [eq_comm, size_union_distinct_singles  (ne.symm (ne_of_mem_diff hf))],  
+end 

@@ -206,11 +206,16 @@ lemma nonmem_of_subset_remove_single (X : set A) (e : A):
   X ⊆ X \ {e} → e ∉ X :=
 by {rw diff_eq, tidy} 
 
+lemma ne_of_mem_diff {X : set A}{e f: A}(h : e ∈ X \ {f}):
+  e ≠ f := 
+λ h', by {rw h' at h, apply nonmem_removal _ _ h,}
+
 lemma ssubset_of_remove_mem {X : set A} {e : A}(heX : e ∈ X) :
    X \ {e} ⊂ X := 
 ssubset_of_subset_ne 
   (diff_subset _ _) 
   (λ h, by {rw [ext_iff] at h, specialize h e, rw mem_diff at h, tauto,  })
+
 
 
 lemma add_from_nonempty_diff {X Y : set A} :
@@ -248,6 +253,10 @@ end
 lemma union_singletons_eq_pair {e f : A}:
   ({e} : set A) ∪ ({f} : set A) = {e,f} :=
 singleton_union
+
+lemma remove_remove_single (X : set A)(e f : A):
+  X \ {e} \ {f} = X \ {e,f} :=
+by rw [diff_diff, union_singletons_eq_pair]
 
 lemma subset_single {e : A}{X : set A} :
   X ⊆ {e} → X = ∅ ∨ X = {e} := 
