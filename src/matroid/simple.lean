@@ -174,23 +174,38 @@ begin
   linarith [(rank_two_nonloops_lb e g)],  
 end
 
-lemma parallel_equiv (M : matroid U) : 
+lemma parallel_is_equivalence (M : matroid U) : 
   equivalence M.parallel := 
   ⟨M.parallel_refl, M.parallel_symm, M.parallel_trans⟩
 
-lemma series_equiv (M : matroid U): 
+lemma series_is_equivalence (M : matroid U): 
   equivalence M.series :=
-parallel_equiv M.dual 
+parallel_is_equivalence M.dual 
 
-def parallel_setoid (M : matroid U) : setoid (nonloop M) := 
-  ⟨M.parallel, M.parallel_equiv⟩ 
+instance parallel_equiv (M : matroid U) : has_equiv M.nonloop := ⟨M.parallel⟩
 
-lemma parallel_setoid_rel (M : matroid U) : 
-  M.parallel_setoid.rel = M.parallel := 
-rfl 
+instance parallel_setoid (M : matroid U) : setoid M.nonloop := ⟨M.parallel, M.parallel_is_equivalence⟩ 
 
-def parallel_classes_quot (M: matroid U):= 
-  @quotient.mk' _ M.parallel_setoid
+
+/- a parallel class of M, implemented as an element of a quotient -/
+def parallel_class (M: matroid U) : Type := quotient M.parallel_setoid  
+
+/- a parallel class of M, viewed as a set U -/
+def as_set {M : matroid U}(C : M.parallel_class) : set U := 
+  λ a, (∃ (h : M.is_nonloop a), ⟦(⟨a,h⟩ : M.nonloop)⟧ = C)
+
+instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨@as_set _ _ M⟩ 
+
+lemma as_set_inj {M : matroid U} {P P' : M.parallel_class} (h : (P : set U) = (P' : set U)):
+  P = P' := 
+begin
+  rw ext_iff at h, 
+  rcases quotient.exists_rep P with ⟨⟨a,ha⟩,rfl⟩,
+  rcases (h a).mp ⟨ha,rfl⟩ with ⟨h',h''⟩, 
+  rw ←h'', 
+end
+
+
 
 def parallel_classes_set (M : matroid U):= 
   M.parallel_setoid.classes 
@@ -206,6 +221,18 @@ end
 
 def is_parallel_class (M : matroid U)(X : set U) :=
   ∃ S : M.parallel_classes_set, X = coe '' S.val 
+
+lemma exists_unique_parallel_class {M : matroid U}(e : M.nonloop): 
+  ∃! S : M.parallel_classes_set, e ∈ S.val := 
+begin
+  rw parallel_classes_set, 
+  rcases @setoid.classes_eqv_classes _ M.parallel_setoid e with ⟨T,⟨⟨hT,⟨he,-⟩⟩,h⟩⟩, 
+  refine ⟨⟨T,hT⟩,⟨he,_⟩⟩,  
+  simp_rw [exists_unique_iff_exists] at h, 
+  rintros ⟨T',hT'⟩ heT', 
+  specialize h T' ⟨hT',heT'⟩, 
+  rwa [subtype.mk_eq_mk], 
+end
 
 lemma nonloop_of_mem_parallel_class {M : matroid U}{X : set U}(hX: M.is_parallel_class X)(e : X): 
   M.is_nonloop e :=
@@ -229,9 +256,10 @@ lemma parallel_class_iff {M : matroid U}{X : set U}:
   M.is_parallel_class X 
   ↔ (∀ e : X, M.is_nonloop e) ∧ ∀ (e f : M.nonloop), M.parallel e f → (e.val ∈ X ↔ f.val ∈ X) :=
 begin
-  rw [is_parallel_class, parallel_classes_set],  
-  refine ⟨λ h, ⟨λ e, _, λ e f hef, _⟩, λ h, _⟩, 
-  { rcases h with ⟨S,rfl⟩, }, 
+  
+  refine ⟨λ h, ⟨λ e, nonloop_of_mem_parallel_class h _, λ e f hef, _⟩, λ h, _⟩, 
+  rcases parallel_iff_setoid_rel.mp hef with ⟨Y,hY⟩, 
+  
 end  
 
 def parallel_class (M : matroid U) : Type := {X : set U // M.is_parallel_class X}

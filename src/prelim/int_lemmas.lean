@@ -29,7 +29,7 @@ lemma nonneg_le_two_iff {x : ℤ}(h0 : 0 ≤ x)(h2 : x ≤ 2):
 begin
   by_cases h2' : 2 ≤ x, right, right, apply le_antisymm h2 h2', 
   push_neg at h2', rw lt_iff_le_sub_one at h2', 
-  cases nonneg_le_one_iff h0 h2', left, exact h, right, left, exact h,
+  cases nonneg_le_one_iff h0 h2', {left, exact h}, {right, left, exact h},
 end 
 
 
