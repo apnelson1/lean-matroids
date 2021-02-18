@@ -135,11 +135,13 @@ instance coe_to_equiv {M₁ : matroid U₁}{M₂ : matroid U₂}: has_coe_to_fun
 { F := _,
   coe := λ i, i.equiv } 
 
-def isom.refl (M₁ : matroid U₁): M₁.isom M₁ := 
+def isom.refl (M₁ : matroid U₁): 
+M₁.isom M₁ := 
 { equiv := equiv.refl U₁,
   on_rank := by simp  }
 
-def isom.trans {M₁ : matroid U₁}{M₂ : matroid U₂}{M₃ : matroid U₃}(i12 : M₁.isom M₂)(i23 : M₂.isom M₃) : M₁.isom M₃ :=
+def isom.trans {M₁ : matroid U₁}{M₂ : matroid U₂}{M₃ : matroid U₃}(i12 : M₁.isom M₂)(i23 : M₂.isom M₃): 
+M₁.isom M₃ :=
 { equiv := i12.equiv.trans i23.equiv ,
   on_rank := λ X, by {rw [←i12.on_rank, ←i23.on_rank], apply congr_arg, ext, simp  }  } 
 

@@ -295,6 +295,7 @@ def dual_equiv : minor_pair N M ≃ minor_pair N.dual M.dual :=
 @[simp, msimp] lemma dual_equiv_inv_C (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).C = p.D := rfl 
 @[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).D = p.C := rfl 
 
+/-- given minor pairs for M₁ M₂ and M₂ M₃, constructs a minor pair for M₁ M₃ -/
 def trans {M₁ M₂ M₃ : matroid_in U}(p₁ : minor_pair M₁ M₂)(p₂ : minor_pair M₂ M₃) : minor_pair M₁ M₃ := 
 let h₁ : p₁.C ∩ p₂.D = ∅ := disjoint_of_subset_left' p₁.C_ss_E (by simp), 
     h₂ : p₂.C ∩ p₁.D = ∅ := disjoint_of_subset_right' p₁.D_ss_E (by {rw inter_comm, simp}) in 
@@ -320,7 +321,8 @@ let h₁ : p₁.C ∩ p₂.D = ∅ := disjoint_of_subset_left' p₁.C_ss_E (by s
     all_goals {convert rfl, rw [←subset_iff_inter, subset_compl_iff_disjoint], exact h₁, },
   end }
 
-/-- given a minor pair C,D and a subset of C whose removal doesn't drop the rank of C, we can move that subset to D -/
+/-- given a minor pair C,D and a subset of C whose removal doesn't drop the rank of C, moves 
+    that subset to D -/
 def move_to_delete (p : minor_pair N M){A : set U}
 (h₁ : A ⊆ p.C) (h₂ : M.r (p.C \ A) = M.r p.C) : minor_pair N M := 
 { C := p.C \ A,
@@ -346,7 +348,7 @@ def move_to_delete (p : minor_pair N M){A : set U}
     exact disjoint_of_subset_right h₁ (E_disj_C p), 
   end } 
 
-/-- given a minor pair C,D and a subset of D that is spanned by C, we can move that subset to C -/
+/-- given a minor pair C,D and a subset of D that is spanned by C, moves that subset to C -/
 def move_to_contract (p : minor_pair N M){A : set U}
 (h₁ : A ⊆ p.D)(h₂ : M.r (p.C ∪ A) = M.r p.C) : minor_pair N M :=
 { C := p.C ∪ A, 
