@@ -30,7 +30,7 @@ fun M, {
       ...         = (Xᶜ ∪ Yᶜ) ∩ (Y ∪ Yᶜ) : by apply union_distrib_right
       ...         = (X ∩ Y)ᶜ ∩ univ         : by rw [compl_inter X Y, union_compl_self Y]
       ...         = (X ∩ Y)ᶜ             : by apply inter_univ
-      ...         = Xᶜ                   : by rw [subset_def_inter_mp h],
+      ...         = Xᶜ                   : by rw [subset_iff_inter.mp h],
     h₂ :=
       calc Yᶜ ∩ Z = (Xᶜ ∩ Y) ∩ Yᶜ : by apply inter_comm
       ...         = Xᶜ ∩ (Y ∩ Yᶜ) : by apply inter_assoc

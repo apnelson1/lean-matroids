@@ -62,7 +62,7 @@ begin
   ext, 
   {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
   simp only with msimp, intros X hX, 
-  rw [subset_inter_iff, subset_iff_disjoint_compl, subset_def_inter] at hX, 
+  rw [subset_inter_iff, subset_iff_disjoint_compl, subset_iff_inter] at hX, 
   rw [compl_inter, inter_distrib_left], simp [hX], 
 end
 
@@ -73,7 +73,7 @@ begin
   {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
   intros X hX, 
   simp only with msimp at *, 
-  have : M.E ∩ X = X := by {rw inter_comm, exact subset_def_inter_mp (subset.trans hX (inter_subset_left _ _))}, 
+  have : M.E ∩ X = X := by {rw inter_comm, exact subset_iff_inter.mp (subset.trans hX (inter_subset_left _ _))}, 
   rw [r_eq_inter_r M C, r_eq_inter_r M (X ∪ C), inter_distrib_left, this],
 end
 
@@ -317,7 +317,7 @@ let h₁ : p₁.C ∩ p₂.D = ∅ := disjoint_of_subset_left' p₁.C_ss_E (by s
     rw (λ x y z, by linarith : ∀ x y z : ℤ, x-y - (z-y) = x-z),  
     rw [inter_distrib_right, inter_assoc, compl_union, union_assoc],
     congr' 2, 
-    all_goals {convert rfl, rw [←subset_def_inter, subset_compl_iff_disjoint], exact h₁, },
+    all_goals {convert rfl, rw [←subset_iff_inter, subset_compl_iff_disjoint], exact h₁, },
   end }
 
 /-- given a minor pair C,D and a subset of C whose removal doesn't drop the rank of C, we can move that subset to D -/
@@ -342,7 +342,7 @@ def move_to_delete (p : minor_pair N M){A : set U}
     { rw this, apply rank_eq_of_le_union_supset, apply inter_subset_left, exact h₂, }, 
     suffices : N.E ∩ Aᶜ = N.E, 
     { rw ←this, ext, simp, tauto, }, 
-    rw [←subset_def_inter, subset_compl_iff_disjoint, ←disjoint_iff_inter_eq_empty], 
+    rw [←subset_iff_inter, subset_compl_iff_disjoint, ←disjoint_iff_inter_eq_empty], 
     exact disjoint_of_subset_right h₁ (E_disj_C p), 
   end } 
 
@@ -383,7 +383,7 @@ begin
   simp only [diff_eq, matroid_in.dual_r, set.compl_union, sub_lt_sub_iff_right, add_lt_add_iff_left], 
 
   have h : size ((p.D ∪ {e}) ∩ M.E) = size (p.D ∩ M.E) + 1, 
-  { rw [inter_distrib_right, subset_def_inter_mp (subset.trans heC p.C_ss_E)], 
+  { rw [inter_distrib_right, subset_iff_inter.mp (subset.trans heC p.C_ss_E)], 
     apply add_nonmem_size, 
     by_contra hn, 
     rw singleton_subset_iff at heC, 
@@ -394,13 +394,13 @@ begin
   apply (λ x y y' h', by {rw [add_right_comm, add_assoc],simp only [add_lt_add_iff_left, int.lt_add_one_iff, h'],}: 
   ∀ (x y y' : ℤ), y ≤ y' → x + y < x + 1 + y'), 
   simp_rw [←r_eq_inter_r], 
-  have hCD : p.C ∪ p.Dᶜ = p.Dᶜ := subset_def_union_mp (by {rw subset_compl_iff_disjoint, exact p.disj}),
+  have hCD : p.C ∪ p.Dᶜ = p.Dᶜ := subset_iff_union.mp (by {rw subset_compl_iff_disjoint, exact p.disj}),
   have h' := (rank_eq_of_le_union_supset (p.Dᶜ ∩ {e}ᶜ) (by simp) he).symm,  
   
   convert (has_le.le.trans_eq (eq.le _) h'), 
   { rw [diff_eq, ←inter_distrib_right, hCD], }, 
   convert rfl,
-  rw [union_distrib_left, hCD, ←subset_def_inter],   
+  rw [union_distrib_left, hCD, ←subset_iff_inter],   
   convert subset_univ _, 
   rwa [←compl_subset_iff_union, ←compl_subset_compl.symm],
 end
@@ -473,7 +473,7 @@ begin
   repeat {rw [inter_assoc] at h}, 
   repeat {rw [←compl_union] at h}, 
   repeat {rw [←union_assoc] at h}, 
-  rw [←subset_def_inter] at h, 
+  rw [←subset_iff_inter] at h, 
   have hC : p₂.C = ∅, 
   { refine empty_of_subset_compl (subset.trans p₂.C_ss_E (subset.trans h _)), 
     intro x, simp, tauto,  },
@@ -486,6 +486,38 @@ end
 lemma minor_trans: 
   transitive (@is_minor U _) :=
 by {rintros M₁ M₂ M₃ ⟨p₁⟩ ⟨p₂⟩, apply nonempty.intro (p₁.trans p₂)}
+
+lemma minor_iff_has_contract {N M : matroid_in U}:
+  N.is_minor M ↔ N.E ⊆ M.E ∧ ∃ C ⊆ M.E \ N.E, ∀ X ⊆ N.E, N.r X = M.r (X ∪ C) - M.r C := 
+begin
+  refine ⟨λ h, _, λ h, _⟩,
+  { rcases h with ⟨p⟩, 
+    have hD := p.E_inter_D, 
+    have hE := minor_pair.E_subset p, 
+    rcases p with ⟨C,D,h,h',rfl⟩,  
+    refine ⟨hE, C, by {rw ←h', apply subset_union_left,}, λ X hX, _ ⟩,
+    dsimp only at hD, rw disjoint_iff_subset_compl at hD, 
+    simp [subset_iff_inter.mp (subset.trans hX hD), diff_eq], },
+  rcases h with ⟨hE, C,hC, h⟩,
+  have h' : M.E ∩ Cᶜ ∩ N.E = N.E, 
+  { rw ←subset_iff_inter_eq_right, apply subset_inter hE, 
+    rw [subset_compl_iff_disjoint, inter_comm, ←disjoint_iff_inter_eq_empty], 
+    rw subset_diff at hC, exact hC.2, },
+  set D := M.E \ N.E \ C with hD, 
+  suffices hN : N = M / C \ D, rw hN, apply con_del_is_minor, 
+  have hE' : (M / C \ D).E = N.E, 
+  {  simp only [hD] with msimp, 
+    simp only [compl_inter, compl_compl, inter_distrib_left],    
+    rw [inter_right_comm, inter_assoc _ Cᶜ C, h'], simp,  },
+  ext : 1, rw hE', intros X hX, rw h X hX, 
+  simp only with msimp, convert rfl, 
+  rw [hD, ←subset_iff_inter_eq_left], 
+  refine subset.trans hX _, 
+  intros h hx, 
+  simp only [and_imp, not_and, mem_diff, mem_compl_eq], tauto, 
+end
+
+
 
 lemma con_or_del {N M : matroid_in U}{e : U}(h : is_minor N M)(he : e ∈ M.E \ N.E): 
   is_minor N (M / {e}) ∨ is_minor N (M \ {e}) :=

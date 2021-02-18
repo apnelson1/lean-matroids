@@ -86,7 +86,7 @@ lemma compl_inter_size (X Y : set A) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size
   by rw [←size_modular, ←inter_distrib_right, union_compl_self, univ_inter, ←inter_distrib_inter_left, inter_compl_self, empty_inter, size_empty]; ring
 
 lemma compl_inter_size_subset {X Y : set A} : X ⊆ Y → size (Xᶜ ∩ Y) = size Y - size X := 
-  λ hXY, by {have := compl_inter_size X Y, rw subset_def_inter_mp hXY at this, linarith} 
+  λ hXY, by {have := compl_inter_size X Y, rw subset_iff_inter.mp hXY at this, linarith} 
 
 lemma diff_size {X Y : set A} : X ⊆ Y → size (Y \ X) = size Y - size X :=  
   λ hXY, by rw [diff_eq, inter_comm, compl_inter_size_subset hXY]
@@ -156,7 +156,7 @@ lemma nontriv_size (hA: nontriv A): 1 ≤ size (univ : set A) :=
   one_le_size_iff_nonempty.mp hA 
 
 lemma size_strict_monotone {X Y : set A} : X ⊂ Y → size X < size Y := 
-λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_def_inter_mp hXY.1], 
+λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_iff_inter.mp hXY.1], 
               linarith [size_nonempty (ssubset_diff_nonempty hXY)]} 
 
 lemma eq_of_eq_size_subset {X Y : set A} : (X ⊆ Y) → (size X = size Y) → X = Y :=

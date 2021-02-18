@@ -326,7 +326,7 @@ begin
 
   rcases h with ⟨Y, ⟨B₁, B₂, hB₁, hB₂, hBY⟩, hXY⟩, 
   refine ⟨X ∩ B₁, X ∩ B₂, I2_i_right (basis_is_indep hB₁), I2_i_right (basis_is_indep hB₂), _ ⟩,   
-  rw [←inter_distrib_left, hBY, eq_comm, ←subset_def_inter],
+  rw [←inter_distrib_left, hBY, eq_comm, ←subset_iff_inter],
   from hXY, 
 end
 

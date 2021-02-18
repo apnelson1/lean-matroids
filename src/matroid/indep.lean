@@ -202,7 +202,7 @@ begin
     rw [I_to_r_of_set_basis h] at this, 
     from eq_of_le_size_subset (subset_of_inter_mpr hUs h.1) this, 
   },
-  have h' := subset_def_inter_mp hUb.1, rw [inter_distrib_left, ←this] at h', 
+  have h' := subset_iff_inter.mp hUb.1, rw [inter_distrib_left, ←this] at h', 
   rw ←h', from subset_union_subset_right _ _ _ (inter_subset_right BU Y),
 end
 

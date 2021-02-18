@@ -142,12 +142,12 @@ lemma indep_loopify_to_iff {M : matroid U}{R I : set U} :
   (M ‖ R).is_indep I ↔ M.is_indep I ∧ I ⊆ R := 
 begin
   rw [indep_iff_r, rank_loopify_to, indep_iff_r],
-  refine ⟨λ h, _, λ h, by {cases h with h h', rwa subset_def_inter_mp h'}⟩,
+  refine ⟨λ h, _, λ h, by {cases h with h h', rwa subset_iff_inter.mp h'}⟩,
   have h' : I ∩ R = I, 
   { apply eq_of_eq_size_subset (inter_subset_left _ _), 
     refine le_antisymm (size_mono_inter_left _ _) _,
     rw ←h, apply rank_le_size },
-  rw [←h, h', subset_def_inter],
+  rw [←h, h', subset_iff_inter],
   simpa, 
 end
 
@@ -187,7 +187,7 @@ begin
   { refine subset.trans _ (loops_subset_flat _ h),  
     rw ←rank_zero_iff_subset_loops,
     apply projected_set_rank_zero, },
-  simp_rw [flat_iff_r, project_r, union_comm F C, subset_def_union_mp h.2], 
+  simp_rw [flat_iff_r, project_r, union_comm F C, subset_iff_union.mp h.2], 
   intros Y hFY, 
   suffices : M.r F < M.r Y, linarith [rank_mono_union_left M Y C], 
   exact h.1 _ hFY, 

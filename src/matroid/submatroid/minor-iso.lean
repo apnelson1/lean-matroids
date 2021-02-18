@@ -49,7 +49,7 @@ begin
   set M₀ : matroid_in U := (M : matroid_in U) / C \ D with hM₀,
   refine ⟨M₀, matroid_in.con_del_is_minor _ _ _,nonempty.intro _, ⟩,
   have hEM: set.range φ = M₀.E , 
-  { rw [disjoint_iff_subset_compl, subset_def_inter, inter_comm] at hC, 
+  { rw [disjoint_iff_subset_compl, subset_iff_inter, inter_comm] at hC, 
     simp only [hM₀, ←hE, hD, hC, compl_compl, univ_inter, inter_distrib_left] with msimp,   
     simp,},
   set eqv : M₀.E ≃ V := 
@@ -59,7 +59,7 @@ begin
   
   simp only [hr, hM₀, heqv] with msimp,  convert rfl,
   have hXD : (↑X ∩ Dᶜ) = X,
-  { simp_rw [←subset_def_inter,hD,compl_compl, hE, hEM],  
+  { simp_rw [←subset_iff_inter,hD,compl_compl, hE, hEM],  
     apply subset_union_of_subset_left hX _, },
   rw hXD, 
      

@@ -113,7 +113,7 @@ end
 
 @[simp,msimp] lemma of_mat_as_mat (M : matroid_in U) : 
   of_mat (as_mat M) = M :=
-ext (by simp) (λ X hX, by {simp only with msimp coe_up at *, congr', exact subset_def_inter_mp hX}) 
+ext (by simp) (λ X hX, by {simp only with msimp coe_up at *, congr', exact subset_iff_inter.mp hX}) 
 
 
 lemma of_mat_as_mat_on {E E' : set U}(N : matroid E)(h : E' = E): 
@@ -170,12 +170,12 @@ begin
   rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r],  
   simp only with coe_up msimp, 
   refine ⟨λ h, _, λ h, _⟩, 
-  { rw subset_def_inter at h, rw ←h.1, exact h.2}, 
-  suffices h' : X ⊆ M.E, refine ⟨h', by {rwa[subset_def_inter_mp h'],}⟩, 
+  { rw subset_iff_inter at h, rw ←h.1, exact h.2}, 
+  suffices h' : X ⊆ M.E, refine ⟨h', by {rwa[subset_iff_inter.mp h'],}⟩, 
   rw r_eq_r_inter at h, 
   have h' := M.carrier.rank_le_size (X ∩ M.E), 
   rw [r_carrier_eq_r, h] at h', 
-  rw [subset_def_inter, eq_of_le_size_subset _ h'], 
+  rw [subset_iff_inter, eq_of_le_size_subset _ h'], 
   apply inter_subset_left, 
 end
 
@@ -197,10 +197,10 @@ begin
   simp only with coe_up msimp, 
   refine ⟨λ h, _, λ h, _⟩, 
   { rcases h with ⟨h, h', h''⟩, 
-    rwa subset_def_inter_mp h at h', 
+    rwa subset_iff_inter.mp h at h', 
     refine ⟨h', (λ Y hY, _), h⟩, 
-    have hYE : Y ∩ M.E = Y := subset_def_inter_mp (subset.trans hY.1 h),
-    rw subset_def_inter at h,  
+    have hYE : Y ∩ M.E = Y := subset_iff_inter.mp (subset.trans hY.1 h),
+    rw subset_iff_inter at h,  
     specialize h'' (inter_subtype _ Y) _, 
     { simp only with coe_up at h'',
       convert h''; 
@@ -208,7 +208,7 @@ begin
     simpa only [h,hYE] with coe_up, },
   rcases h with ⟨h,h',h''⟩, 
   refine ⟨h'', _,λ Y hY, _⟩, 
-  { convert h; rwa subset_def_inter_mp h'', },
+  { convert h; rwa subset_iff_inter.mp h'', },
   apply h', 
   refine subset.lt_of_lt_of_le hY (inter_subset_left _ _), 
 end
@@ -256,7 +256,7 @@ lemma dual_inj_iff {M M' : matroid_in U}:
 lemma coindep_iff_r {M : matroid_in U}{X : set U}: 
   M.dual.is_indep X ↔ X ⊆ M.E ∧ M.r (M.E \ X) = M.r M.E :=
 begin
-  simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_def_inter], 
+  simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_iff_inter], 
   refine ⟨λ h, _, λ h, _⟩, 
   { have h1 := size_mono_inter_left X M.E, 
     have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,   

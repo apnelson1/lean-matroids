@@ -135,8 +135,8 @@ lemma rank_eq_of_le_union_supset {M : matroid U}{X Y : set U}(Z: set U):
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
 begin
   intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
-  have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_def_inter_mp hXY] ,
-  have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_def_union_mp hXY ],
+  have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_iff_inter.mp hXY] ,
+  have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_iff_union.mp hXY ],
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
 
@@ -346,7 +346,7 @@ begin
   intros hXY hIX hIY,
   rcases rank_augment (by linarith : M.r X < M.r Y) with ⟨e,⟨h₁, h₂⟩⟩, 
   have hx : ¬({e} ⊆ X),
-  { exact (λ he, by {rw [union_comm, subset_def_union_mp he] at h₂, linarith})}, 
+  { exact (λ he, by {rw [union_comm, subset_iff_union.mp he] at h₂, linarith})}, 
   rw singleton_subset_iff at hx,
   refine ⟨e,⟨h₁,hx,_⟩⟩, 
   have hs := (size_modular X {e}),
@@ -570,7 +570,7 @@ lemma inter_circuits_ssubset {M : matroid U}{C₁ C₂ : set U}:
 begin
   intros hC₁ hC₂ hC₁C₂, 
   refine ssubset_of_subset_ne (inter_subset_left _ _) (λ h, _), 
-  rw ←subset_def_inter at h, exact hC₁C₂ (nested_circuits_equal M h hC₁ hC₂ ),
+  rw ←subset_iff_inter at h, exact hC₁C₂ (nested_circuits_equal M h hC₁ hC₂ ),
 end
 
 lemma circuit_elim {M : matroid U} {C₁ C₂ : set U} {e : U}: 
@@ -752,7 +752,7 @@ end
 lemma cl_monotone (M : matroid U){X Y : set U}:
   X ⊆ Y → M.cl X ⊆ M.cl Y :=
 λ h, by {rw subset_cl_iff_r, apply rank_eq_of_le_union, 
-          rw [union_cl_rank_right, union_comm, subset_def_union_mp h]}
+          rw [union_cl_rank_right, union_comm, subset_iff_union.mp h]}
   
 lemma nonmem_cl_iff_r {M : matroid U}{X : set U}{e : U} :
   e ∉ M.cl X ↔ M.r (X ∪ {e}) = M.r X + 1 :=
@@ -864,7 +864,7 @@ lemma cl_is_flat (M : matroid U) (X : set U):
 begin
   rw flat_iff_r, intros Y hY, have hne := cl_is_max.2 _ hY, 
   rw [spans_iff_cl_spans, spans_iff_r] at hne, 
-  rw ←subset_def_union_mp hY.1, 
+  rw ←subset_iff_union.mp hY.1, 
   from lt_of_le_of_ne (M.rank_mono_union_left (cl M X) Y) (ne.symm hne), 
 end
 
@@ -1112,6 +1112,8 @@ def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
 instance coe_nonloop {M : matroid U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
 --def noncoloop (M : matroid U) : Type := { e : U // is_nonloop (dual M) e}
 
+instance fin_nonloop {M : matroid U} : fintype M.nonloop := by {unfold nonloop, apply_instance}
+
 lemma eq_nonloop_coe {M : matroid U}{e : U}(h : M.is_nonloop e): 
   e = coe (⟨e, h⟩ : M.nonloop) := 
 rfl 
@@ -1333,7 +1335,7 @@ lemma flat_eq_cl_basis {M : matroid U}{B F : set U}(hF : M.is_flat F)(hBF : M.is
   F = M.cl B :=
 begin
   apply subset.antisymm, 
-  rw [subset_cl_iff_r, subset_def_union_mp hBF.1, hBF.2.2], 
+  rw [subset_cl_iff_r, subset_iff_union.mp hBF.1, hBF.2.2], 
   rw [←flat_iff_own_cl.mp hF], 
   apply M.cl_monotone hBF.1,  
 end

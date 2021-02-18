@@ -98,7 +98,7 @@ lemma compl_to_boolalg {X : A} : Xᶜ = X + 1 :=
   (plus_one X).symm 
 
 lemma subset_to_boolalg {X Y : A} : X ⊆ Y ↔ X*Y = X := 
-  by {rw ←inter_to_boolalg, exact subset_def_inter X Y} 
+  by {rw ←inter_to_boolalg, exact subset_iff_inter X Y} 
 
 lemma diff_to_boolalg {X Y : A} : X \ Y = X*(Y + 1) := 
   by rw [plus_one, ←inter_to_boolalg, diff_eq]

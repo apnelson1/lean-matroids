@@ -64,8 +64,8 @@ lemma inter_closed_min_iff_in_and_lb {P : set A → Prop}(hP : inter_closed P) (
   is_minimal P X ↔ P X ∧ is_lb P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra a, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
-    rw [←subset_def_union, subset_def_inter, inter_comm] at a, 
+    by_contra a, rw subset_iff_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    rw [←subset_iff_union, subset_iff_inter, inter_comm] at a, 
     exact ssubset_of_subset_ne (inter_subset_right _ _) a, 
     exact ssubset_not_supset hY (h.2 _ hPY), 
   end
@@ -85,7 +85,7 @@ lemma union_closed_max_iff_in_and_ub {P : set A → Prop}(hP : union_closed P) (
   is_maximal P X ↔ P X ∧ is_ub P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
-    by_contra a, rw subset_def_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
+    by_contra a, rw subset_iff_union at a, refine  h.2 _ _ (hP.2 _ _ pZ h.1), 
     exact ssubset_of_subset_ne (subset_union_right _ _) (ne.symm a), 
     exact ssubset_not_supset hY (h.2 _ hPY), 
   end

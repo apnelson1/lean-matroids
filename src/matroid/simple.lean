@@ -10,51 +10,45 @@ namespace matroid
 
 variables {U : Type}[fintype U]
 
+section parallel_nl 
 
-
-section parallel 
-
-/-- two nonloops have rank-one union -/
-def parallel (M : matroid U) (e f : nonloop M) : Prop := 
+/-- equivalence relation of being parallel for nonloops  -/
+def parallel_nl (M : matroid U) (e f : nonloop M) : Prop := 
   M.r ({e,f}) = 1 
 
-/-- relation of being both nonloops and having a rank-one union. Equivalence classes 
-include all singleton loops -/
-def parallel' (M : matroid U)(e f : U): Prop := 
+/-- relation of being both nonloops and having a rank-one union. Irreflexive at loops; 
+    an equivalence relation when restricted to nonloops -/
+def parallel (M : matroid U)(e f : U): Prop := 
   M.is_nonloop e ∧ M.is_nonloop f ∧ M.r {e,f} = 1 
 
-lemma parallel_of_parallel' {M : matroid U}{e f : U}(h : M.parallel' e f ):
-  ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel ⟨e,he⟩ ⟨f,hf⟩ :=
+lemma parallel_nl_of_parallel {M : matroid U}{e f : U}(h : M.parallel e f ):
+  ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel_nl ⟨e,he⟩ ⟨f,hf⟩ :=
 ⟨h.1,h.2.1,h.2.2⟩
 
-lemma parallel'_of_parallel {M : matroid U}{e f : M.nonloop}(h : M.parallel e f): 
-  M.parallel' e.1 f.1 :=
+lemma parallel_of_parallel_nl {M : matroid U}{e f : M.nonloop}(h : M.parallel_nl e f): 
+  M.parallel e.1 f.1 :=
 ⟨e.2,f.2,h⟩
 
-lemma parallel'_iff_parallel {M : matroid U}{e f : U}:
-  M.parallel' e f ↔ ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel ⟨e,he⟩ ⟨f,hf⟩:= 
+lemma parallel_iff_parallel_nl {M : matroid U}{e f : U}:
+  M.parallel e f ↔ ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel_nl ⟨e,he⟩ ⟨f,hf⟩:= 
 by tidy
 
-
---example (e f : U): ({e,f} : set U) = ({f,e} : set U) := pair_comm e f
---example (e : U): ({e,e} : set U) = {e} := by {exact pair_eq_singleton e,}
-
-/-- parallel in dual -/
+/-- parallel_nl in dual -/
 def series (M : matroid U) (e f : nonloop (dual M)): Prop := 
-  (dual M).parallel e f 
+  (dual M).parallel_nl e f 
 
-lemma parallel_refl (M : matroid U): 
-  reflexive M.parallel:= 
-λ e, by {unfold parallel, rw pair_eq_singleton, exact e.property}
+lemma parallel_nl_refl (M : matroid U): 
+  reflexive M.parallel_nl:= 
+λ e, by {unfold parallel_nl, rw pair_eq_singleton, exact e.property}
 
-lemma parallel_symm (M : matroid U) : 
-  symmetric M.parallel:= 
-λ x y, by {simp_rw [parallel, pair_comm], tauto,}
+lemma parallel_nl_symm (M : matroid U) : 
+  symmetric M.parallel_nl:= 
+λ x y, by {simp_rw [parallel_nl, pair_comm], tauto,}
 
-lemma parallel_iff_dep {M: matroid U}{e f : nonloop M} : 
-  M.parallel e f ↔ (e = f ∨ M.is_dep {e,f}) :=
+lemma parallel_nl_iff_dep {M: matroid U}{e f : nonloop M} : 
+  M.parallel_nl e f ↔ (e = f ∨ M.is_dep {e,f}) :=
 begin
-  unfold parallel, rw dep_iff_r,  refine ⟨λ h, ((or_iff_not_imp_left.mpr (λ hne, _))), λ h, _ ⟩,
+  unfold parallel_nl, rw dep_iff_r,  refine ⟨λ h, ((or_iff_not_imp_left.mpr (λ hne, _))), λ h, _ ⟩,
   have := size_union_distinct_singles (λ h', hne (subtype.ext h')) , 
   rw h, unfold_coes at *, linarith,  
   cases h, rw [h, pair_eq_singleton], exact f.property, 
@@ -63,21 +57,21 @@ begin
   unfold_coes at *, rw ←int.le_sub_one_iff at h, linarith, 
 end
 
-lemma parallel_iff_cct {M: matroid U}{e f : nonloop M} : 
-  M.parallel e f ↔ (e = f ∨ M.is_circuit {e,f}) :=
+lemma parallel_nl_iff_cct {M: matroid U}{e f : nonloop M} : 
+  M.parallel_nl e f ↔ (e = f ∨ M.is_circuit {e,f}) :=
 begin
-  refine ⟨λ h, _, λ h, (parallel_iff_dep.mpr (or.imp_right _ h : (e = f) ∨ is_dep M ({e,f})))⟩, 
-  replace h := parallel_iff_dep.mp h, cases h, exact or.inl h, apply or_iff_not_imp_left.mpr, intro h', 
+  refine ⟨λ h, _, λ h, (parallel_nl_iff_dep.mpr (or.imp_right _ h : (e = f) ∨ is_dep M ({e,f})))⟩, 
+  replace h := parallel_nl_iff_dep.mp h, cases h, exact or.inl h, apply or_iff_not_imp_left.mpr, intro h', 
   refine ⟨h,λ Y hY, _⟩, rcases ssubset_pair hY, 
   rw h_1, exact empty_indep M,  unfold_coes at h_1,  cases h_1; 
   {rw h_1, apply coe_nonloop_indep,},
   apply circuit_dep, 
 end
 
-lemma parallel_trans (M : matroid U) :
-  transitive M.parallel :=
+lemma parallel_nl_trans (M : matroid U) :
+  transitive M.parallel_nl :=
 begin
-  intros e f g hef hfg, unfold parallel at *, 
+  intros e f g hef hfg, unfold parallel_nl at *, 
   have := M.rank_submod ({e,f}) ({f,g}), rw [hef, hfg] at this, 
   have h1 : 1 ≤ M.r (({e,f}) ∩ ({f,g})),  
   {rw ←rank_coe_nonloop f, refine M.rank_mono (subset_inter _ _ ); simp, },
@@ -86,42 +80,144 @@ begin
   linarith [(rank_two_nonloops_lb e g)],  
 end
 
-lemma parallel_is_equivalence (M : matroid U) : 
-  equivalence M.parallel := 
-  ⟨M.parallel_refl, M.parallel_symm, M.parallel_trans⟩
+lemma parallel_refl_nonloop (M : matroid U){e : U}(h : M.is_nonloop e): 
+  M.parallel e e :=
+⟨h,h,by rwa [pair_eq_singleton]⟩
+
+lemma parallel_trans (M : matroid U): 
+  transitive M.parallel :=
+begin
+  rintros e f g ⟨he,hf,hef⟩ ⟨-,hg,hfg⟩,-- unfold parallel at *, 
+  refine ⟨he,hg,_⟩, 
+  have hef' : M.parallel_nl ⟨e,he⟩ ⟨f,hf⟩:= hef, 
+  have hfg' : M.parallel_nl ⟨f,hf⟩ ⟨g,hg⟩ := hfg, 
+  exact parallel_nl_trans M hef' hfg', 
+end
+
+lemma parallel_symm (M : matroid U): 
+  symmetric M.parallel :=
+by {rintros e f ⟨he,hf,hef⟩, refine ⟨hf,he,_⟩, rwa pair_comm}
+
+@[symm] lemma parallel_symm' {M : matroid U}{e f : U}(hef : M.parallel e f):
+  M.parallel f e := 
+parallel_symm M hef
+
+lemma parallel_symm_iff {M : matroid U}{e f : U}:
+  M.parallel e f ↔ M.parallel f e :=
+⟨λ h, by {symmetry, exact h}, λ h, by {symmetry, exact h}⟩
+
+@[trans] lemma parallel_trans' {M : matroid U}{e f g : U}(hef : M.parallel e f)(hfg : M.parallel f g): 
+  M.parallel e g := 
+parallel_trans M hef hfg
+
+lemma parallel_nl_is_equivalence (M : matroid U) : 
+  equivalence M.parallel_nl := 
+  ⟨M.parallel_nl_refl, M.parallel_nl_symm, M.parallel_nl_trans⟩
 
 lemma series_is_equivalence (M : matroid U): 
   equivalence M.series :=
-parallel_is_equivalence M.dual 
+parallel_nl_is_equivalence M.dual 
+
+/-- the parallel class containing e -/
+def parallel_cl (M : matroid U)(e : U) := 
+  {a : U | M.parallel a e}
+
+lemma mem_parallel_cl {M : matroid U}{e f : U}: 
+  e ∈ M.parallel_cl f ↔ M.parallel e f := 
+by simp_rw [parallel_cl, mem_set_of_eq]
+
+def is_parallel_class (M : matroid U)(P : set U)  := 
+  ∃ e,  M.is_nonloop e ∧ P = M.parallel_cl e 
+
+def parallel_class (M : matroid U): Type := {X : set U // M.is_parallel_class X}
+
+instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨subtype.val⟩ 
+instance parallel_class_fintype {M : matroid U}: fintype M.parallel_class := by {unfold parallel_class, apply_instance} 
+
+lemma nonloop_of_mem_parallel_class {M : matroid U}{P : set U}{e : U}(heP : e ∈ P)(h : M.is_parallel_class P) :
+  M.is_nonloop e := 
+by {rcases h with ⟨f, ⟨hf,rfl⟩⟩, rw mem_parallel_cl at heP, exact heP.1} 
+
+lemma parallel_cl_eq_cl_minus_loops (M : matroid U)(e : U): 
+  M.parallel_cl e = M.cl {e} \ M.loops :=
+begin
+  by_cases he: M.is_nonloop e, swap, 
+  { ext x, rw [mem_diff, mem_parallel_cl],
+    refine ⟨λ h, false.elim (he h.2.1), λ h, false.elim _⟩,
+    rw [←loop_iff_not_nonloop, loop_iff_r] at he, 
+    rw [mem_cl_iff_r,he, ←nonloop_iff_not_elem_loops, nonloop_iff_r] at h,
+    linarith[h.1, h.2, M.rank_mono_union_right {e} {x}], },
+  ext x, 
+  simp only [mem_diff, mem_set_of_eq, mem_cl_iff_r, rank_nonloop he, union_singleton, ←nonloop_iff_not_elem_loops], 
+  split, { rintros ⟨hx,he,hxe⟩, split; assumption,  }, 
+  rintros ⟨hxe,hx⟩, exact ⟨hx,he,hxe⟩, 
+end
+
+lemma parallel_class_eq_cl_nonloop_diff_loops {M : matroid U}{P : set U}: 
+  M.is_parallel_class P ↔ (nonempty P) ∧ (∀ e ∈ P, P = M.cl {e} \ M.loops ):= 
+begin
+  simp_rw [←parallel_cl_eq_cl_minus_loops, is_parallel_class],  
+  split,
+  { rintros ⟨e,he,rfl⟩, refine ⟨nonempty.intro ⟨e,_⟩, _⟩, apply parallel_refl_nonloop, assumption, 
+    intros f hf, ext x, simp only [mem_parallel_cl] at *, have := parallel_symm' hf, 
+    split; {intro h, transitivity; assumption}, },
+  rintros ⟨⟨⟨e,he⟩⟩,hP⟩, 
+  specialize hP e he, rw [hP, mem_parallel_cl] at he, 
+  exact ⟨e, he.1, hP⟩, 
+end
+
+lemma parallel_class_is_cl_diff_loops {M : matroid U}(P : M.parallel_class): 
+  ∃ e ∈ (P : set U), M.is_nonloop e ∧ (P : set U) = M.cl {e} \ M.loops :=
+begin
+  rcases parallel_class_eq_cl_nonloop_diff_loops.mp P.property with ⟨⟨⟨e,he⟩⟩,hP⟩, 
+  exact ⟨e,he,nonloop_of_mem_parallel_class he P.property, hP e he⟩, 
+end
+
+lemma parallel_class_is_parallel_cl {M : matroid U}(P : M.parallel_class):
+  ∃ e ∈ (P : set U), M.is_nonloop e ∧ (P : set U) = M.parallel_cl e :=
+by {have := parallel_class_is_cl_diff_loops P, simp_rw ←parallel_cl_eq_cl_minus_loops at this, assumption}
+
+lemma parallel_class_eq_of_nonempty_inter {M : matroid U}{P₁ P₂ : M.parallel_class}(h : set.nonempty (P₁ ∩ P₂ : set U)): 
+  P₁ = P₂ :=
+begin
+  rcases h with ⟨x,hx⟩, 
+  rcases parallel_class_is_parallel_cl P₁ with ⟨e₁,he₁P,⟨he₁,h₁⟩⟩,  
+  rcases parallel_class_is_parallel_cl P₂ with ⟨e₂,he₂P,⟨he₂,h₂⟩⟩,  
+  
+  rw [mem_inter_iff, h₁,h₂] at hx, 
+  have h₁₂ : M.parallel e₁ e₂, {transitivity x, symmetry, exact hx.1, exact hx.2},
+  have h₂₁ := parallel_symm' h₁₂, 
+  rcases P₁ with ⟨P₁, hP₁⟩, rcases P₂ with ⟨P₂, hP₂⟩, rw subtype.mk_eq_mk, 
+  rw subtype.coe_mk at *, subst h₁, subst h₂, 
+  ext y, simp only [mem_parallel_cl],
+  split; {intro h, symmetry, transitivity, assumption, symmetry, assumption,}, 
+end
 
 
---reserve infixl ` ∼ `:75
---infix ` ∼ ` := @parallel _ _ _ 
+  
+  
+  -- P = { a : U | ∃ (h : M.is_nonloop a), ⟦(⟨a,h⟩ : M.nonloop)⟧ = ⟦e⟧ }
 
 
 
-instance parallel_setoid {M : matroid U} : setoid M.nonloop := ⟨M.parallel, M.parallel_is_equivalence⟩ 
+/-
+instance parallel_nl_class_fin (M : matroid U) : fintype M.parallel_nl_class := 
+by {unfold parallel_nl_class, apply_instance  }
 
-lemma parallel_of_nonloop_r {M : matroid U}{e f : M.nonloop}(h : M.r {e,f} = 1):
-  e ≈ f := 
-h
 
-/- a parallel class of M, implemented as an element of a quotient -/
-def parallel_class (M: matroid U) : Type := @quotient M.nonloop (@matroid.parallel_setoid _ _ M) 
-
-lemma parallel_class_has_rep {M : matroid U}(P : M.parallel_class): 
+lemma parallel_nl_class_has_rep {M : matroid U}(P : M.parallel_nl_class): 
   ∃ (e : nonloop M), ⟦e⟧ = P :=
 quotient.exists_rep P 
 
-/- a parallel class of M, viewed as a set U -/
-def as_set {M : matroid U}(C : M.parallel_class) : set U := 
+/- a parallel_nl class of M, viewed as a set U -/
+def as_set {M : matroid U}(C : M.parallel_nl_class) : set U := 
   λ a, (∃ (h : M.is_nonloop a), ⟦(⟨a,h⟩ : M.nonloop)⟧ = C)
 
 
-instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨@as_set _ _ M⟩ 
+instance coe_parallel_nl_class_to_set {M : matroid U}: has_coe (M.parallel_nl_class) (set U) := ⟨@as_set _ _ M⟩ 
 
-instance coe_parallel_quot_to_set {M : matroid U}: 
-  has_coe (@quotient M.nonloop (@matroid.parallel_setoid _ _ M)) (set U) := ⟨@as_set _ _ M⟩ 
+instance coe_parallel_nl_quot_to_set {M : matroid U}: 
+  has_coe (@quotient M.nonloop (@matroid.parallel_nl_setoid _ _ M)) (set U) := ⟨@as_set _ _ M⟩ 
 
 def as_set_mem_iff {M : matroid U}{a b : M.nonloop}: 
   ↑b ∈ (⟦a⟧ : set U) ↔ a ≈ b := 
@@ -131,7 +227,7 @@ def as_set_mem_iff' {M : matroid U}{a : M.nonloop}{b : U}:
   b ∈ (⟦a⟧ : set U) ↔ ∃ (h : M.is_nonloop b), a ≈ ⟨b,h⟩ := 
 by {unfold_coes, simp only [as_set, quotient.eq, subtype.val_eq_coe], tidy}
   
-lemma as_set_inj {M : matroid U} {P P' : M.parallel_class} (h : (P : set U) = (P' : set U)):
+lemma as_set_inj {M : matroid U} {P P' : M.parallel_nl_class} (h : (P : set U) = (P' : set U)):
   P = P' := 
 begin 
   rw ext_iff at h, 
@@ -140,8 +236,8 @@ begin
   rw ←h'', 
 end
 
-lemma parallel'_iff {M : matroid U}{e f : U}: 
-  M.parallel' e f ↔ ∃ (P : M.parallel_class), e ∈ (P : set U) ∧ f ∈ (P : set U) :=
+lemma parallel_iff {M : matroid U}{e f : U}: 
+  M.parallel e f ↔ ∃ (P : M.parallel_nl_class), e ∈ (P : set U) ∧ f ∈ (P : set U) :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
   { obtain ⟨he,hf, hef⟩ := h, 
@@ -155,13 +251,13 @@ begin
   exact ⟨he,hf,setoid.trans (setoid.symm hae) haf,⟩, 
 end 
 
-def parallel_class_of {M : matroid U}{e : U}(he : M.is_nonloop e) : set U := 
+def parallel_nl_class_of {M : matroid U}{e : U}(he : M.is_nonloop e) : set U := 
   ⟦@id M.nonloop ⟨e,he⟩⟧
 
-lemma cl_nonloop_eq_parallel_class_and_loops {M : matroid U}(e : M.nonloop) : 
+lemma cl_nonloop_eq_parallel_nl_class_and_loops {M : matroid U}(e : M.nonloop) : 
   M.cl {(e : U)} = ⟦e⟧ ∪ M.loops := 
 begin
-  rcases e with ⟨e,he⟩,  dsimp only, ext, 
+  rcases e with ⟨e,he⟩,  dsimp only [subtype.coe_mk], ext, 
   rw [mem_cl_iff_r, mem_union, union_singletons_eq_pair, as_set_mem_iff', 
     rank_nonloop he, ←loop_iff_mem_loops], 
   refine ⟨λ h, _, λ h, _⟩,
@@ -171,97 +267,19 @@ begin
   rwa [←union_singletons_eq_pair, rank_eq_rank_insert_loop _ hl], 
 end
 
-lemma point_iff_loops_and_parallel_class {M : matroid U}{P : set U}:
-  M.is_point P ↔ ∃ P₀ : M.parallel_class, P = P₀ ∪ M.loops :=
+lemma point_iff_loops_and_parallel_nl_class {M : matroid U}{P : set U}:
+  M.is_point P ↔ ∃ P₀ : M.parallel_nl_class, P = P₀ ∪ M.loops :=
 begin
   rw [point_iff_cl_nonloop], 
   refine ⟨λ h, _, λ h, _⟩, 
-  begin
-    rcases h with ⟨e,he,rfl⟩,  
-    refine ⟨⟦⟨e,he⟩⟧, _⟩, 
-  end,
-  rcases h with ⟨P₀, rfl⟩, rcases parallel_class_has_rep P₀ with ⟨⟨e,he⟩,rfl⟩,
-  refine ⟨e,he,_⟩,  
-
-end
-
-
-/-
-lemma parallel_iff_exists_parallel_class {M : matroid U}{e f : M.nonloop}: 
-  M.parallel e f ↔ ∃ P : M.parallel_class, e ∈ P ∧ f ∈ (P : set U) :=
-begin
-  
-  
-end -/
-
-/-
-
-def parallel_classes_set (M : matroid U):= 
-  M.parallel_setoid.classes 
-
-lemma parallel_iff_setoid_rel {M : matroid U}{e f : M.nonloop} : 
-  M.parallel e f ↔ ∃ X : M.parallel_classes_set, e ∈ X.val ∧ f ∈ X.val := 
-begin
-  rw [←parallel_setoid_rel, setoid.rel_iff_exists_classes], 
-  refine ⟨λ h, _, λ h, _⟩, 
-  rcases h with ⟨Y,hY,he,hf⟩, exact ⟨⟨Y,hY⟩,he,hf⟩, 
-  rcases h with ⟨⟨Y,hY⟩,he,hf⟩, exact ⟨Y,hY,he,hf⟩, 
-end
-
-def is_parallel_class (M : matroid U)(X : set U) :=
-  ∃ S : M.parallel_classes_set, X = coe '' S.val 
-
-lemma exists_unique_parallel_class {M : matroid U}(e : M.nonloop): 
-  ∃! S : M.parallel_classes_set, e ∈ S.val := 
-begin
-  rw parallel_classes_set, 
-  rcases @setoid.classes_eqv_classes _ M.parallel_setoid e with ⟨T,⟨⟨hT,⟨he,-⟩⟩,h⟩⟩, 
-  refine ⟨⟨T,hT⟩,⟨he,_⟩⟩,  
-  simp_rw [exists_unique_iff_exists] at h, 
-  rintros ⟨T',hT'⟩ heT', 
-  specialize h T' ⟨hT',heT'⟩, 
-  rwa [subtype.mk_eq_mk], 
-end
-
-lemma nonloop_of_mem_parallel_class {M : matroid U}{X : set U}(hX: M.is_parallel_class X)(e : X): 
-  M.is_nonloop e :=
-begin
-  rw [is_parallel_class, parallel_classes_set] at hX, rcases hX with ⟨⟨S,hS⟩,rfl⟩,
-  rcases e with ⟨e,he⟩, 
-  rcases (mem_image _ _ _).mp he with ⟨w,⟨hw, rfl⟩⟩,
-  exact w.property, 
-end
-
-lemma parallel_of_mems_parallel_class {M : matroid U}{X : set U}(hX: M.is_parallel_class X)(e f : X): 
-  ∃ (he : M.is_nonloop e)(hf : M.is_nonloop f), M.parallel ⟨e,he⟩ ⟨f,hf⟩ :=
-begin
-  rw [is_parallel_class, parallel_classes_set] at hX, 
-  refine ⟨nonloop_of_mem_parallel_class hX e, nonloop_of_mem_parallel_class hX f, _⟩, 
-  rw parallel_iff_setoid_rel, 
-  rcases hX with ⟨⟨S,hS⟩,rfl⟩, use ⟨S,hS⟩, tidy, 
-end
-
-lemma parallel_class_iff {M : matroid U}{X : set U}:
-  M.is_parallel_class X 
-  ↔ (∀ e : X, M.is_nonloop e) ∧ ∀ (e f : M.nonloop), M.parallel e f → (e.val ∈ X ↔ f.val ∈ X) :=
-begin
-  
-  refine ⟨λ h, ⟨λ e, nonloop_of_mem_parallel_class h _, λ e f hef, _⟩, λ h, _⟩, 
-  rcases parallel_iff_setoid_rel.mp hef with ⟨Y,hY⟩, 
-  
-end  
-
-def parallel_class (M : matroid U) : Type := {X : set U // M.is_parallel_class X}
-
-lemma point_iff_parallel_class_and_loops {M : matroid U} {P: set U} : 
-  is_point M P ↔ ∃ X, is_parallel_class M X ∧ P = X ∪ M.loops:=
-begin
-     
+  { rcases h with ⟨e,he,rfl⟩,  
+    exact ⟨⟦⟨e,he⟩⟧, by rw [←cl_nonloop_eq_parallel_nl_class_and_loops, subtype.coe_mk]⟩}, 
+  rcases h with ⟨P₀, rfl⟩, rcases parallel_nl_class_has_rep P₀ with ⟨⟨e,he⟩,rfl⟩,
+  exact ⟨e,he, by {rw [←cl_nonloop_eq_parallel_nl_class_and_loops, subtype.coe_mk] }⟩,  
 end
 
 -/
-
-end parallel 
+end parallel_nl 
 
 section simple 
 
@@ -281,13 +299,13 @@ begin
   rw [size_singleton, h e], 
 end 
 
-lemma simple_iff_no_loops_or_parallel_pairs {M : matroid U}:
-  M.is_simple ↔ (∀ e, M.is_nonloop e) ∧ ∀ (e f : nonloop M), M.parallel e f → e = f :=
+lemma simple_iff_no_loops_or_parallel_nl_pairs {M : matroid U}:
+  M.is_simple ↔ (∀ e, M.is_nonloop e) ∧ ∀ (e f : nonloop M), M.parallel_nl e f → e = f :=
 begin
   refine ⟨λ h, ⟨λ e, _, λ e f hef, _⟩,  λ h, λ X hX, _⟩, 
   
   { rw nonloop_iff_indep, apply h, rw size_singleton, norm_num}, 
-  { rw [parallel] at hef, 
+  { rw [parallel_nl] at hef, 
     suffices : (e : U) = (f : U), cases e, cases f, simpa, 
     by_contra hn,
     have := h {coe e, coe f} (by rw size_union_distinct_singles hn),  
@@ -301,10 +319,52 @@ begin
   rw [eq_nonloop_coe (h.1 e), eq_nonloop_coe (h.1 f)], 
   
   rw [indep_iff_not_dep], by_contra hn, push_neg at hn, 
-  have h' := h.2 ⟨e, h.1 e⟩ ⟨f, h.1 f⟩, rw parallel_iff_dep at h',
+  have h' := h.2 ⟨e, h.1 e⟩ ⟨f, h.1 f⟩, rw parallel_nl_iff_dep at h',
   specialize h' (or.intro_right _ hn), rw [subtype.mk_eq_mk] at h',   
   exact hef h', 
 end
+
+lemma intersecting_parallel_nl_classes_eq {M : matroid U}(S : set M.parallel_nl_class) : set U :=
+
+def union_parallel_nl_classes {M : matroid U}(S : set M.parallel_nl_class): set U := 
+  set.Union (λ (P : S), (P : set U))
+
+
+/- these next two lemmas are likely isomorphic to something in mathlib -/
+lemma union_union_parallel_nl_classes {M : matroid U}(S₁ S₂ : set M.parallel_nl_class): 
+  union_parallel_nl_classes (S₁ ∪ S₂) = union_parallel_nl_classes S₁ ∪ union_parallel_nl_classes S₂ :=
+begin
+  unfold union_parallel_nl_classes, ext x, 
+  rw mem_union, repeat {rw mem_Union}, 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { rcases h with ⟨⟨i,hi⟩, hix⟩, 
+    rw mem_union at hi, 
+    rcases hi with (h₁ | h₂), left, use ⟨i,h₁⟩, exact hix, 
+    right, use ⟨i,h₂⟩, exact hix,  },    
+  rcases h with (⟨⟨i,hi⟩,h⟩|⟨⟨i,hi⟩,h⟩); {refine ⟨⟨i,_⟩, h⟩, rw mem_union, tauto}, 
+end
+
+lemma inter_union_parallel_nl_classes {M : matroid U}(S₁ S₂ : set M.parallel_nl_class): 
+  union_parallel_nl_classes (S₁ ∩ S₂) = union_parallel_nl_classes S₁ ∩ union_parallel_nl_classes S₂ :=
+begin
+  unfold union_parallel_nl_classes, ext x, 
+  rw mem_inter_iff, repeat {rw mem_Union}, 
+  split, 
+  { rintros ⟨⟨i,hi⟩, hix⟩, 
+    exact ⟨⟨⟨i,mem_of_mem_inter_left hi⟩,hix⟩,⟨⟨i,mem_of_mem_inter_right hi⟩,hix⟩⟩},
+  rintros ⟨⟨⟨i₁,hi₁⟩,hi₁x⟩,⟨⟨i₂,hi₂⟩,hi₂x⟩⟩, 
+  refine ⟨⟨i₁, _⟩, hi₁x⟩, 
+
+end
+
+def si (M : matroid U): matroid (M.parallel_nl_class) := 
+{ r := λ X, M.r (set.Union (λ (P : X), (P : set U))),
+  R0 := λ X, by {apply M.R0 },
+  R1 := λ X, by {},
+  R2 := _,
+  R3 := _ }
+
+
 end simple 
 end matroid 
 
