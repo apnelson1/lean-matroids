@@ -176,6 +176,9 @@ lemma elem_only_larger_ssubset {X Y : set A} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
 λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
 
+lemma nonmem_of_mem_disjoint {e : A}{X Y : set A}(he : e ∈ X)(hXY : X ∩ Y = ∅) :
+  e ∉ Y := 
+λ hf, by {have h := mem_inter he hf,  rw hXY at h, exact not_mem_empty e h,  }
 
 lemma compl_single_remove {X : set A} {e : A} : 
   e ∈ X → (X \ {e})ᶜ = Xᶜ ∪ {e} := 

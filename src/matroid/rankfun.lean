@@ -1281,11 +1281,11 @@ end basis
 
 section ext 
 
-@[ext] lemma rank_ext {M₁ M₂ : matroid U}:
+lemma rank_ext {M₁ M₂ : matroid U}:
   M₁.r = M₂.r → M₁ = M₂ := 
 λ h, by {ext, rw h}
 
-@[ext] lemma indep_ext {M₁ M₂ : matroid U}:
+lemma indep_ext {M₁ M₂ : matroid U}:
   M₁.is_indep = M₂.is_indep → M₁ = M₂ := 
 begin
   intro h, ext X,
@@ -1297,32 +1297,32 @@ begin
   rw ←size_basis_of hB, 
 end
 
-@[ext] lemma circuit_ext {M₁ M₂ : matroid U}: 
+lemma circuit_ext {M₁ M₂ : matroid U}: 
   M₁.is_circuit = M₂.is_circuit → M₁ = M₂ :=
 begin
   intro h, apply indep_ext, ext X,
   simp_rw [indep_iff_contains_no_circuit, h], 
 end
 
-@[ext] lemma cocircuit_ext {M₁ M₂ : matroid U}:
+lemma cocircuit_ext {M₁ M₂ : matroid U}:
   M₁.is_cocircuit = M₂.is_cocircuit → M₁ = M₂ := 
   λ h, dual_inj (circuit_ext h)
 
-@[ext] lemma hyperplane_ext {M₁ M₂ : matroid U}:
+lemma hyperplane_ext {M₁ M₂ : matroid U}:
   M₁.is_hyperplane = M₂.is_hyperplane → M₁ = M₂ := 
 begin
   intro h, apply cocircuit_ext, ext X,
   simp_rw [cocircuit_iff_compl_hyperplane, h], 
 end
 
-@[ext] lemma flat_ext {M₁ M₂ : matroid U}: 
+lemma flat_ext {M₁ M₂ : matroid U}: 
   M₁.is_flat = M₂.is_flat → M₁ = M₂ := 
 begin
   intro h, apply hyperplane_ext, ext X, 
   simp_rw [hyperplane_iff_maximal_subflat, h], 
 end
 
-@[ext] lemma basis_ext {M₁ M₂ : matroid U}: 
+lemma basis_ext {M₁ M₂ : matroid U}: 
   M₁.is_basis = M₂.is_basis → M₁ = M₂ := 
 begin
   intro h, apply indep_ext, ext X, 

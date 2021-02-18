@@ -1,5 +1,7 @@
 import prelim.size
 
+section axiom_sets 
+
 variable {U : Type}
 
 section rank 
@@ -24,8 +26,6 @@ def satisfies_R3 (r : set U → ℤ) : Prop :=
   (R1 : satisfies_R1 r)
   (R2 : satisfies_R2 r)
   (R3 : satisfies_R3 r)
-
-def matroid (U : Type)[fintype U] := rankfun U 
 
 end rank 
 
@@ -119,3 +119,37 @@ structure clfun (U : Type) :=
   (cl4 : satisfies_cl4 cl)
 
 end cl 
+
+end axiom_sets 
+
+def matroid (U : Type)[fintype U] := rankfun U 
+
+
+variables {U₁ U₂ U₃ : Type}[fintype U₁][fintype U₂][fintype U₃]
+
+structure matroid.isom (M₁ : matroid U₁)(M₂ : matroid U₂) := 
+(equiv : U₁ ≃ U₂)
+(on_rank : ∀ X, M₂.r (equiv '' X) = M₁.r X)
+
+instance coe_to_equiv {M₁ : matroid U₁}{M₂ : matroid U₂}: has_coe_to_fun (M₁.isom M₂) := 
+{ F := _,
+  coe := λ i, i.equiv } 
+
+def isom.refl (M₁ : matroid U₁): M₁.isom M₁ := 
+{ equiv := equiv.refl U₁,
+  on_rank := by simp  }
+
+def isom.trans {M₁ : matroid U₁}{M₂ : matroid U₂}{M₃ : matroid U₃}(i12 : M₁.isom M₂)(i23 : M₂.isom M₃) : M₁.isom M₃ :=
+{ equiv := i12.equiv.trans i23.equiv ,
+  on_rank := λ X, by {rw [←i12.on_rank, ←i23.on_rank], apply congr_arg, ext, simp  }  } 
+
+def isom.symm {M₁ : matroid U₁}{M₂ : matroid U₂}(i : M₁.isom M₂) : M₂.isom M₁ := 
+{ equiv := i.equiv.symm,
+  on_rank := λ X, by {rw ←i.on_rank, apply congr_arg, ext, simp,  } }
+
+def is_isom (M₁ : matroid U₁)(M₂ : matroid U₂) := 
+  nonempty (M₁.isom M₂)
+
+
+
+

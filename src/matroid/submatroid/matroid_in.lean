@@ -41,7 +41,7 @@ lemma ext' {M M' : matroid_in U}(h : M.E = M'.E)(h' : M.carrier = M'.carrier):
   M = M' :=
 by {cases M, cases M', dsimp only at *, induction h', induction h, refl,} 
 
-@[ext] lemma ext'' {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
+@[ext] lemma ext {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
   M₁ = M₂ := 
 begin
   apply ext' h_ground, ext X,
@@ -113,8 +113,7 @@ end
 
 @[simp,msimp] lemma of_mat_as_mat (M : matroid_in U) : 
   of_mat (as_mat M) = M :=
-ext  (by simp) 
-     (λ X hX, by {simp only with msimp coe_up at *, convert rfl, rw subset_def_inter_mp hX}) 
+ext (by simp) (λ X hX, by {simp only with msimp coe_up at *, congr', exact subset_def_inter_mp hX}) 
 
 
 lemma of_mat_as_mat_on {E E' : set U}(N : matroid E)(h : E' = E): 
@@ -135,6 +134,22 @@ lemma of_mat_inj {R : set U}(N N' : matroid R):
 def as_matroid_in (M : matroid U) : matroid_in U := ⟨univ, M, by simp⟩
 
 instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
+
+@[simp, msimp] lemma as_matroid_in_E (M : matroid U): 
+  (as_matroid_in M).E = univ 
+:= rfl 
+
+@[simp, msimp] lemma coe_to_as_matroid_in_E (M : matroid U): 
+  (M : matroid_in U).E = univ 
+:= rfl 
+
+@[simp, msimp] lemma as_matroid_in_r (M : matroid U)(X : set U): 
+  (as_matroid_in M).r X = M.r X 
+:= rfl 
+
+@[simp, msimp] lemma coe_to_as_matroid_in_r (M : matroid U)(X : set U): 
+  (M : matroid_in U).r X = M.r X 
+:= rfl 
 
 section defs 
 
@@ -250,4 +265,21 @@ begin
 end
 
 end defs 
+
+variables {V : Type}[fintype V]
+
+/-- isomorphism between a matroid_in an a matroid -/
+def isom (M : matroid_in U)(N : matroid V) := 
+  matroid.isom M.as_mat N 
+
+def is_isom (M : matroid_in U)(N : matroid V) := 
+  nonempty (M.isom N)
+
+/-- for (M : matroid U), gives an matroid_in isomorphism from of_mat M to M -/
+def of_mat_isom (M : matroid U) : isom (as_matroid_in M) M := 
+{ equiv := equiv.subtype_univ_equiv (by tauto),
+  on_rank := λ X, by {apply congr_arg, ext, exact iff.rfl, } }
+
+
+
 end matroid_in
