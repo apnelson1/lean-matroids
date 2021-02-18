@@ -80,7 +80,7 @@ by {rw is_nonloop at *, linarith [rank_single_ub M e, h {e}], }
 
 lemma loops_weak_image (h : N ≤ M): 
   loops M ⊆ loops N := 
-by {intro e, simp only [←loop_iff_elem_loops], apply weak_image_loop_of_loop h }
+by {intro e, simp only [←loop_iff_mem_loops], apply weak_image_loop_of_loop h }
 
 end weak_image
 

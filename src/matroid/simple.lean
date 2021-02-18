@@ -11,108 +11,6 @@ namespace matroid
 variables {U : Type}[fintype U]
 
 
-/-- is a rank-zero element -/
-def is_loop (M : matroid U) : U → Prop := 
-  λ e, M.r {e} = 0 
-
-/-- is a rank-one element -/
-def is_nonloop (M : matroid U) : U → Prop := 
-  λ e, M.r {e} = 1 
-
-/-- is a loop of the dual -/
-def is_coloop (M : matroid U) : U → Prop := 
-  is_loop (dual M) 
-
-/-- is not a coloop of the dual -/
-def is_noncoloop (M : matroid U) : U → Prop := 
-  is_coloop (dual M)
-
-lemma nonloop_iff_r {M : matroid U}{e : U}:
-  M.is_nonloop e ↔ M.r {e} = 1 := 
-iff.rfl 
-
-lemma nonloop_iff_indep {M : matroid U}{e : U}:
-  M.is_nonloop e ↔ M.is_indep {e} := 
-by rw [is_nonloop, indep_iff_r, size_singleton] 
-
-lemma rank_nonloop {M : matroid U}{e : U}:
-  M.is_nonloop e → M.r {(e : U)} = 1 :=
-by {unfold is_nonloop, from λ h, h}
-
-lemma rank_loop {M : matroid U}{e : U}:
-  M.is_loop e → M.r {e} = 0 :=
-by {unfold is_loop, from λ h, h}
-
-lemma loop_iff_elem_loops {M : matroid U} {e : U} : 
-  M.is_loop e ↔ e ∈ M.loops := 
-by {simp_rw [is_loop, ←singleton_subset_iff], from rank_zero_iff_subset_loops}  
-
-lemma nonloop_iff_not_elem_loops {M : matroid U}{e : U}: 
-  M.is_nonloop e ↔ e ∉ M.loops := 
-begin
-  simp_rw [is_nonloop, ←singleton_subset_iff, ←rank_zero_iff_subset_loops], 
-  refine ⟨λ h h', by linarith, λ h, _⟩, 
-  linarith [rank_single_ub M e, rank_gt_zero_of_ne h], 
-end
-
-lemma nonloop_iff_not_loop {M : matroid U} (e : U) : 
-  M.is_nonloop e ↔ ¬ M.is_loop e := 
-begin 
-  unfold is_loop is_nonloop, refine ⟨λ h, _ ,λ h, _⟩,rw h ,
-  simp only [not_false_iff, one_ne_zero], 
-  have := M.rank_le_size {e}, rw size_singleton at this,       
-  linarith [(ne.le_iff_lt (ne.symm h)).mp (M.rank_nonneg {e})],  
-end
-
-lemma coloop_iff_r {M : matroid U} (e : U) :
-  M.is_coloop e ↔ M.r {e}ᶜ = M.r univ - 1 := 
-begin
-  unfold is_coloop is_loop, rw [dual_r,size_singleton],
-  exact ⟨λh, by linarith,λ h, by linarith⟩,   
-end
-
-lemma coloop_iff_r_less {M : matroid U} (e : U) :
-  M.is_coloop e ↔ M.r {e}ᶜ < M.r univ := 
-begin
-  unfold is_coloop is_loop, rw [dual_r,size_singleton],
-  refine ⟨λh,by linarith,λ h,_⟩, 
-  have := rank_diff_le_size_diff M (subset_univ {e}ᶜ), 
-  rw [←size_compl, size_singleton] at this, 
-  linarith [int.le_sub_one_iff.mpr h],
-end
-
-/-- nonloop as subtype -/
-def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
-
-instance coe_nonloop {M : matroid U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
---def noncoloop (M : matroid U) : Type := { e : U // is_nonloop (dual M) e}
-
-lemma eq_nonloop_coe {M : matroid U}{e : U}(h : M.is_nonloop e): 
-  e = coe (⟨e, h⟩ : M.nonloop) := 
-rfl 
-
-lemma rank_coe_nonloop {M : matroid U}(e : nonloop M) : 
-  M.r {(e : U)} = 1 := 
-rank_nonloop (e.2)
-
-lemma coe_nonloop_indep {M : matroid U}(e : nonloop M) :
-  M.is_indep {(e : U)} := 
-by {rw [indep_iff_r], simp only [size_singleton, coe_coe], apply rank_coe_nonloop e,}
-
-lemma rank_two_nonloops_lb {M : matroid U} (e f : nonloop M) :
-  1 ≤ M.r ({e,f}) := 
-begin
-  rw ←union_singletons_eq_pair, 
-  linarith [rank_coe_nonloop e, M.rank_mono_union_left {e} {f}],
-end 
-
-lemma rank_two_nonloops_ub {M : matroid U} (e f : nonloop M) : 
-  M.r ({e,f}) ≤ 2 := 
-begin
-  rw ←union_singletons_eq_pair, 
-  linarith [rank_coe_nonloop e, rank_coe_nonloop f, 
-    M.rank_nonneg ({e} ∩ {f}), M.rank_submod {e} {f}], 
-end 
 
 section parallel 
 
@@ -204,9 +102,16 @@ parallel_is_equivalence M.dual
 
 instance parallel_setoid {M : matroid U} : setoid M.nonloop := ⟨M.parallel, M.parallel_is_equivalence⟩ 
 
+lemma parallel_of_nonloop_r {M : matroid U}{e f : M.nonloop}(h : M.r {e,f} = 1):
+  e ≈ f := 
+h
 
 /- a parallel class of M, implemented as an element of a quotient -/
 def parallel_class (M: matroid U) : Type := @quotient M.nonloop (@matroid.parallel_setoid _ _ M) 
+
+lemma parallel_class_has_rep {M : matroid U}(P : M.parallel_class): 
+  ∃ (e : nonloop M), ⟦e⟧ = P :=
+quotient.exists_rep P 
 
 /- a parallel class of M, viewed as a set U -/
 def as_set {M : matroid U}(C : M.parallel_class) : set U := 
@@ -219,7 +124,7 @@ instance coe_parallel_quot_to_set {M : matroid U}:
   has_coe (@quotient M.nonloop (@matroid.parallel_setoid _ _ M)) (set U) := ⟨@as_set _ _ M⟩ 
 
 def as_set_mem_iff {M : matroid U}{a b : M.nonloop}: 
-  b.val ∈ (⟦a⟧ : set U) ↔ a ≈ b := 
+  ↑b ∈ (⟦a⟧ : set U) ↔ a ≈ b := 
 by {unfold_coes, simp only [as_set, quotient.eq, subtype.val_eq_coe], tidy}
 
 def as_set_mem_iff' {M : matroid U}{a : M.nonloop}{b : U}: 
@@ -252,6 +157,33 @@ end
 
 def parallel_class_of {M : matroid U}{e : U}(he : M.is_nonloop e) : set U := 
   ⟦@id M.nonloop ⟨e,he⟩⟧
+
+lemma cl_nonloop_eq_parallel_class_and_loops {M : matroid U}(e : M.nonloop) : 
+  M.cl {(e : U)} = ⟦e⟧ ∪ M.loops := 
+begin
+  rcases e with ⟨e,he⟩,  dsimp only, ext, 
+  rw [mem_cl_iff_r, mem_union, union_singletons_eq_pair, as_set_mem_iff', 
+    rank_nonloop he, ←loop_iff_mem_loops], 
+  refine ⟨λ h, _, λ h, _⟩,
+  { by_cases hx : M.is_nonloop x, left, exact ⟨hx,h⟩,
+    right, rwa [loop_iff_not_nonloop],  },
+  rcases h with (⟨he, hpara⟩ | hl), exact hpara, 
+  rwa [←union_singletons_eq_pair, rank_eq_rank_insert_loop _ hl], 
+end
+
+lemma point_iff_loops_and_parallel_class {M : matroid U}{P : set U}:
+  M.is_point P ↔ ∃ P₀ : M.parallel_class, P = P₀ ∪ M.loops :=
+begin
+  rw [point_iff_cl_nonloop], 
+  refine ⟨λ h, _, λ h, _⟩, 
+  begin
+    rcases h with ⟨e,he,rfl⟩,  
+    refine ⟨⟦⟨e,he⟩⟧, _⟩, 
+  end,
+  rcases h with ⟨P₀, rfl⟩, rcases parallel_class_has_rep P₀ with ⟨⟨e,he⟩,rfl⟩,
+  refine ⟨e,he,_⟩,  
+
+end
 
 
 /-
