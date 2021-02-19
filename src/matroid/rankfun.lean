@@ -9,6 +9,7 @@ open set
 --open ftype_induction 
 
 open_locale classical 
+open_locale big_operators 
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
@@ -147,6 +148,13 @@ lemma rank_eq_of_inter_union {M : matroid U}(X Y A : set U):
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
+
+lemma rank_subadditive_sUnion (M : matroid U)(S : set (set U)):
+  M.r (sUnion S) ≤ ∑ (X : S), M.r X := 
+begin
+  
+end 
+
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ {e}) ≤ M.r X + 1 := 
@@ -561,9 +569,14 @@ begin
   linarith [hC₂.2 _ (ssubset_of_subset_ne hC₁C₂ a)],
 end 
 
-lemma circuit_not_ssubset_circuit (M : matroid U){C₁ C₂ : set U}:
+lemma circuit_not_ssubset_circuit {M : matroid U}{C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → ¬(C₁ ⊂ C₂) :=
   λ hC₁ hC₂ hC₁C₂, ne_of_ssubset hC₁C₂ (nested_circuits_equal M hC₁C₂.1 hC₁ hC₂)
+
+lemma not_circuit_of_ssubset_circuit {M : matroid U}{X C : set U}(hXC : X ⊂ C)(hC : M.is_circuit C):
+  ¬M.is_circuit X := 
+by_contra (λ hX, by {rw not_not at hX, exact circuit_not_ssubset_circuit hX hC hXC, })
+
 
 lemma inter_circuits_ssubset {M : matroid U}{C₁ C₂ : set U}:
   M.is_circuit C₁ → M.is_circuit C₂ → C₁ ≠ C₂ → C₁ ∩ C₂ ⊂ C₁ := 
@@ -1043,6 +1056,10 @@ iff.rfl
 lemma loop_iff_r {M : matroid U}{e : U}:
   M.is_loop e ↔ M.r {e} = 0 := 
 iff.rfl 
+
+lemma loop_iff_circuit {M : matroid U}{e : U}:
+  M.is_loop e ↔ M.is_circuit {e} :=
+by simp [loop_iff_r, circuit_iff_r, size_singleton, ssubset_single_iff_empty] 
 
 lemma nonloop_iff_indep {M : matroid U}{e : U}:
   M.is_nonloop e ↔ M.is_indep {e} := 

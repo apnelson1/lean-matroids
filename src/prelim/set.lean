@@ -429,3 +429,14 @@ lemma scompl_subset_comm.mp {X Y : set A} : Xᶜ ⊂ Y → Yᶜ ⊂ X :=
 
 lemma ssubset_univ_of_ne_univ {X : set A}: X ≠ univ → X ⊂ univ := 
 by {rw ssubset_iff_subset_ne, tauto} 
+
+lemma pairwise_disjoint_inter_sUnion {S S₁ S₂: set (set A)} 
+(hdj : pairwise_disjoint S)(h₁ : S₁ ⊆ S)(h₂ : S₂ ⊆ S):
+  sUnion (S₁ ∩ S₂) = sUnion S₁ ∩ sUnion S₂ := 
+begin
+  ext, simp only [mem_inter_iff, mem_sUnion], split, 
+  { rintros ⟨t,hT,hxt⟩, rw mem_inter_iff at hT, refine ⟨⟨t,hT.1,hxt⟩,⟨t,hT.2,hxt⟩⟩, },
+  rintros ⟨⟨t,h,hxt⟩,⟨t',h',hxt'⟩⟩,
+  have := (pairwise_disjoint.elim hdj (mem_of_mem_of_subset h h₁) ((mem_of_mem_of_subset h' h₂)) x hxt hxt'), 
+  subst this, use t, tidy, 
+end

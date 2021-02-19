@@ -253,6 +253,14 @@ begin
   rw this, 
 end
 
+lemma singleton_ssubset_pair_left {e f : A}(h : e ≠ f):
+  ({e} : set A) ⊂ {e,f} :=
+by {rw [pair_comm, ssubset_iff_insert], refine ⟨f,_,subset_refl _⟩, tauto, }
+
+lemma singleton_ssubset_pair_right {e f : A}(h : e ≠ f):
+  ({f} : set A) ⊂ {e,f} :=
+by {rw [ssubset_iff_insert], refine ⟨e,_,subset_refl _⟩, tauto, }
+
 lemma union_singletons_eq_pair {e f : A}:
   ({e} : set A) ∪ ({f} : set A) = {e,f} :=
 singleton_union
@@ -261,7 +269,7 @@ lemma remove_remove_single (X : set A)(e f : A):
   X \ {e} \ {f} = X \ {e,f} :=
 by rw [diff_diff, union_singletons_eq_pair]
 
-lemma subset_single {e : A}{X : set A} :
+lemma subset_singleton_eq_singleton_or_empty {e : A}{X : set A} :
   X ⊆ {e} → X = ∅ ∨ X = {e} := 
 begin
   rw subset_singleton_iff,  intro h', 
@@ -273,15 +281,34 @@ begin
   exact λ h, h'' (by rwa ←(h' _ h)),
 end
 
+lemma subset_singleton_iff_self_or_empty {e : A}{X : set A} :
+  X ⊆ {e} ↔ X = ∅ ∨ X = {e} := 
+begin
+  refine ⟨λ h, subset_singleton_eq_singleton_or_empty h, λ h, _⟩,
+  rcases h with (rfl | rfl); simp, 
+end
+
+
+lemma ssubset_singleton_iff_empty {e : A}{X : set A}:
+  X ⊂ {e} ↔ X = ∅ := 
+begin
+  rw [ssubset_iff_subset_ne, subset_singleton_iff_self_or_empty], 
+  exact ⟨λ h, by tauto, λ h, ⟨by {left, assumption}, by {rw h, apply (singleton_ne_empty e).symm}⟩⟩,   
+end
+
 lemma ssubset_pair {e f : A}{X : set A}:
   X ⊂ {e,f} → X = ∅ ∨ (X = {e}) ∨ (X = {f}) :=
 begin
   intro h, rw [ssubset_iff_subset_ne, ←union_singletons_eq_pair] at h, 
   cases h with hs hne, rw [subset_iff_inter, inter_distrib_left] at hs,
-  cases subset_single (inter_subset_right X {e}),
-  rw [h, empty_union, ←subset_iff_inter] at hs, cases subset_single hs, exact or.inl h_1, apply or.inr, exact or.inr h_1,
-  rw [inter_comm, ←subset_iff_inter] at h, apply or.inr, cases subset_single (inter_subset_right X {f}),
+  cases subset_singleton_eq_singleton_or_empty (inter_subset_right X {e}),
+  rw [h, empty_union, ←subset_iff_inter] at hs, 
+  cases subset_singleton_eq_singleton_or_empty hs, 
+  exact or.inl h_1, apply or.inr, exact or.inr h_1,
+  rw [inter_comm, ←subset_iff_inter] at h, apply or.inr, 
+  cases subset_singleton_eq_singleton_or_empty (inter_subset_right X {f}),
   rw [h_1, union_empty, ←subset_iff_inter] at hs,  exact or.inl (subset.antisymm hs h), 
   rw [subset_iff_inter, inter_comm] at h,
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
 end
+

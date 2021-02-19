@@ -57,6 +57,7 @@ begin
   unfold_coes at *, rw ←int.le_sub_one_iff at h, linarith, 
 end
 
+
 lemma parallel_nl_iff_cct {M: matroid U}{e f : nonloop M} : 
   M.parallel_nl e f ↔ (e = f ∨ M.is_circuit {e,f}) :=
 begin
@@ -83,6 +84,49 @@ end
 lemma parallel_refl_nonloop (M : matroid U){e : U}(h : M.is_nonloop e): 
   M.parallel e e :=
 ⟨h,h,by rwa [pair_eq_singleton]⟩
+
+
+lemma parallel_iff_dep {M : matroid U}{e f : U}(he : M.is_nonloop e)(hf : M.is_nonloop f):
+  M.parallel e f ↔ (e = f) ∨ M.is_dep {e,f} :=
+begin
+  split, 
+  { rintros ⟨-,-,hef⟩, 
+    by_contra hn, push_neg at hn, cases hn with hne hef',  
+    rw [←indep_iff_not_dep, indep_iff_r, hef, size_union_distinct_singles hne] at hef',
+    norm_num at hef', },
+  rintros (heq | hef), rw heq, exact parallel_refl_nonloop _ hf,
+  rw [dep_iff_r, ←int.le_sub_one_iff] at hef, 
+  refine ⟨he,hf,_⟩,  
+  linarith [nonloop_iff_r.mp he, M.rank_mono (by tidy: {e} ⊆ {e,f}), size_union_singles_ub e f],   
+end
+
+lemma parallel_iff_cct {M: matroid U}{e f : U}(he : M.is_nonloop e)(hf : M.is_nonloop f) : 
+  M.parallel e f ↔ (e = f ∨ M.is_circuit {e,f}) :=
+begin
+  rw parallel_iff_dep he hf, split, 
+  { rintros (heq | hdep), left, assumption, right, 
+    rw circuit_iff_i, 
+    refine ⟨dep_iff_not_indep.mp hdep, λ Y hY, _⟩, 
+    rcases ssubset_pair hY with (rfl | rfl | rfl), apply M.I1, 
+    all_goals {rwa ←nonloop_iff_indep}, },
+  rintros (heq | hef), left, assumption, right, 
+  apply circuit_dep hef,  
+end
+
+lemma parallel_of_nonloop_dep {M : matroid U}{e f : U}(he : M.is_nonloop e)(hf : M.is_nonloop f)(h : M.is_dep {e,f}):
+  M.parallel e f := 
+by {rw parallel_iff_dep he hf,right, assumption,  }
+
+lemma parallel_of_circuit {M : matroid U}{e f : U}(hef : e ≠ f)(h : M.is_circuit {e,f}):
+  M.parallel e f := 
+begin
+  rw parallel_iff_cct, right, assumption, all_goals
+  { rw [nonloop_iff_not_loop, loop_iff_circuit], by_contra hn, 
+    apply circuit_not_ssubset_circuit hn h,},
+  apply singleton_ssubset_pair_left hef, 
+  apply singleton_ssubset_pair_right hef,    
+end
+
 
 lemma parallel_trans (M : matroid U): 
   transitive M.parallel :=
@@ -193,6 +237,49 @@ begin
   split; {intro h, symmetry, transitivity, assumption, symmetry, assumption,}, 
 end
 
+lemma disj_of_distinct_parallel_classes {M : matroid U}{P₁ P₂ : M.parallel_class}(h : P₁ ≠ P₂):
+  disjoint (P₁ : set U) (P₂ : set U) := 
+begin
+  by_contra hn, rcases not_disjoint_iff.mp hn with ⟨e,⟨h₁,h₂⟩⟩, 
+  exact h (parallel_class_eq_of_nonempty_inter ⟨e,mem_inter h₁ h₂⟩),
+end
+
+lemma parallel_class_eq_of_mem_both {M : matroid U}{P₁ P₂ : M.parallel_class}{x : U}
+  (h₁ : x ∈ (P₁ : set U))(h₂ : x ∈ (P₂ : set U)): 
+  P₁ = P₂ := 
+parallel_class_eq_of_nonempty_inter ⟨x,mem_inter h₁ h₂⟩
+
+
+/-- the set of parallel classes of M -/
+def parallel_classes_set (M : matroid U): set (set U) := 
+  range (coe : M.parallel_class → set U)
+
+lemma parallel_class_set_disjoint (M : matroid U): 
+  pairwise_disjoint M.parallel_classes_set :=
+begin
+  rintros S hS T hT hST, 
+  rcases mem_range.mp hS with ⟨P₁,rfl⟩, 
+  rcases mem_range.mp hT with ⟨P₂,rfl⟩,
+  have h : P₁ ≠ P₂ := λ hP₁P₂, by {rw hP₁P₂ at hST, tauto, },
+  apply disj_of_distinct_parallel_classes h, 
+end
+
+/-- the union of a set of parallel classes of M -/
+def union_parallel_classes {M : matroid U}(S : set M.parallel_class): set U := 
+  set.sUnion (coe '' S)
+
+lemma union_union_parallel_nl_classes {M : matroid U}(S₁ S₂ : set M.parallel_class): 
+  union_parallel_classes (S₁ ∪ S₂) = union_parallel_classes S₁ ∪ union_parallel_classes S₂ :=
+by simp_rw [union_parallel_classes, image_union, sUnion_union]
+
+
+lemma inter_union_parallel_classes {M : matroid U}(S₁ S₂ : set M.parallel_class): 
+  union_parallel_classes (S₁ ∩ S₂) = union_parallel_classes S₁ ∩ union_parallel_classes S₂ :=
+begin
+  simp_rw [union_parallel_classes, ←image_inter (subtype.coe_injective)], 
+  apply pairwise_disjoint_inter_sUnion (parallel_class_set_disjoint M); 
+  apply image_subset_range, 
+end
 
   
   
@@ -299,63 +386,34 @@ begin
   rw [size_singleton, h e], 
 end 
 
-lemma simple_iff_no_loops_or_parallel_nl_pairs {M : matroid U}:
-  M.is_simple ↔ (∀ e, M.is_nonloop e) ∧ ∀ (e f : nonloop M), M.parallel_nl e f → e = f :=
+lemma nonloop_of_loopless {M : matroid U}(e : U)(h : M.is_loopless):
+  M.is_nonloop e := 
+by {rw loopless_iff_all_nonloops at h, tauto, }
+
+
+lemma simple_iff_no_loops_or_parallel_pairs {M : matroid U}:
+  M.is_simple ↔ M.is_loopless ∧ ∀ (e f : U), M.parallel e f → e = f :=
 begin
-  refine ⟨λ h, ⟨λ e, _, λ e f hef, _⟩,  λ h, λ X hX, _⟩, 
-  
-  { rw nonloop_iff_indep, apply h, rw size_singleton, norm_num}, 
-  { rw [parallel_nl] at hef, 
-    suffices : (e : U) = (f : U), cases e, cases f, simpa, 
-    by_contra hn,
-    have := h {coe e, coe f} (by rw size_union_distinct_singles hn),  
-    rw [indep_iff_r, hef, size_union_distinct_singles hn] at this, 
-    norm_num at this, },
-  
+  refine ⟨λ h, ⟨λ X hX, h X (by linarith),λ e f hef, by_contra (λ hn, _)⟩, λ h, λ X hX, _⟩, 
+  { rcases hef with ⟨he,hf,hef⟩, 
+    have hef' := size_union_distinct_singles hn, 
+    linarith [r_indep (h {e,f} (by linarith))],},
   rcases int.nonneg_le_two_iff (size_nonneg X) hX with (h0 | h1 | h2), 
   { rw size_zero_iff_empty at h0, rw h0, apply M.I1, },
-  { rcases size_one_iff_eq_singleton.mp h1 with ⟨e,rfl⟩, rw ←nonloop_iff_indep, apply h.1, },
-  rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩,
-  rw [eq_nonloop_coe (h.1 e), eq_nonloop_coe (h.1 f)], 
-  
-  rw [indep_iff_not_dep], by_contra hn, push_neg at hn, 
-  have h' := h.2 ⟨e, h.1 e⟩ ⟨f, h.1 f⟩, rw parallel_nl_iff_dep at h',
-  specialize h' (or.intro_right _ hn), rw [subtype.mk_eq_mk] at h',   
-  exact hef h', 
+  { rcases size_one_iff_eq_singleton.mp h1 with ⟨e,rfl⟩, 
+    exact nonloop_iff_indep.mp (nonloop_of_loopless _ h.1), },
+  rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩, 
+  by_contra hn, 
+  suffices heq : e = f, rw [heq, pair_eq_singleton, size_singleton] at h2, norm_num at h2, 
+  apply h.2 e f, rw parallel_iff_dep _ _, right, 
+    rwa [←dep_iff_not_indep] at hn, 
+  all_goals {apply nonloop_of_loopless, exact h.1},
 end
 
-lemma intersecting_parallel_nl_classes_eq {M : matroid U}(S : set M.parallel_nl_class) : set U :=
-
-def union_parallel_nl_classes {M : matroid U}(S : set M.parallel_nl_class): set U := 
-  set.Union (λ (P : S), (P : set U))
+--lemma intersecting_parallel_nl_classes_eq {M : matroid U}(S : set M.parallel_nl_class) : set U :=
 
 
-/- these next two lemmas are likely isomorphic to something in mathlib -/
-lemma union_union_parallel_nl_classes {M : matroid U}(S₁ S₂ : set M.parallel_nl_class): 
-  union_parallel_nl_classes (S₁ ∪ S₂) = union_parallel_nl_classes S₁ ∪ union_parallel_nl_classes S₂ :=
-begin
-  unfold union_parallel_nl_classes, ext x, 
-  rw mem_union, repeat {rw mem_Union}, 
-  refine ⟨λ h, _, λ h, _⟩, 
-  { rcases h with ⟨⟨i,hi⟩, hix⟩, 
-    rw mem_union at hi, 
-    rcases hi with (h₁ | h₂), left, use ⟨i,h₁⟩, exact hix, 
-    right, use ⟨i,h₂⟩, exact hix,  },    
-  rcases h with (⟨⟨i,hi⟩,h⟩|⟨⟨i,hi⟩,h⟩); {refine ⟨⟨i,_⟩, h⟩, rw mem_union, tauto}, 
-end
-
-lemma inter_union_parallel_nl_classes {M : matroid U}(S₁ S₂ : set M.parallel_nl_class): 
-  union_parallel_nl_classes (S₁ ∩ S₂) = union_parallel_nl_classes S₁ ∩ union_parallel_nl_classes S₂ :=
-begin
-  unfold union_parallel_nl_classes, ext x, 
-  rw mem_inter_iff, repeat {rw mem_Union}, 
-  split, 
-  { rintros ⟨⟨i,hi⟩, hix⟩, 
-    exact ⟨⟨⟨i,mem_of_mem_inter_left hi⟩,hix⟩,⟨⟨i,mem_of_mem_inter_right hi⟩,hix⟩⟩},
-  rintros ⟨⟨⟨i₁,hi₁⟩,hi₁x⟩,⟨⟨i₂,hi₂⟩,hi₂x⟩⟩, 
-  refine ⟨⟨i₁, _⟩, hi₁x⟩, 
-
-end
+--lemma rank_union_parallel_classes {}
 
 def si (M : matroid U): matroid (M.parallel_nl_class) := 
 { r := λ X, M.r (set.Union (λ (P : X), (P : set U))),
