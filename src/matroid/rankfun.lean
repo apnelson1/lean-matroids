@@ -149,10 +149,21 @@ lemma rank_subadditive (M : matroid U)(X Y : set U) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
 
+example (α : Type)[fintype α](f : α → ℤ): ∑ (X : (∅ : set α)), f X = 0 :=
+begin
+  convert finset.sum_empty, 
+end  
+
 lemma rank_subadditive_sUnion (M : matroid U)(S : set (set U)):
   M.r (sUnion S) ≤ ∑ (X : S), M.r X := 
 begin
-  
+  set P : set (set U) → Prop := λ S, M.r (sUnion S) ≤ ∑ (X : S), M.r X with hP, 
+  apply induction_set_size_add P, 
+  { rw hP, dsimp only, 
+    rw [sUnion_empty, rank_empty], 
+    exact has_le.le.trans_eq (le_refl 0) (by convert finset.sum_empty.symm),  },
+  intros S e he hS,
+  simp_rw hP at hS ⊢,   
 end 
 
 
@@ -606,7 +617,7 @@ end
 def matroid_to_cct_family (M : matroid U) : cct_family U := 
   ⟨λ X, M.is_circuit X, 
    empty_not_cct M, 
-   λ C₁ C₂, circuit_not_ssubset_circuit M, 
+   λ C₁ C₂, circuit_not_ssubset_circuit, 
    @circuit_elim _ _ M⟩
 
 
@@ -1059,7 +1070,7 @@ iff.rfl
 
 lemma loop_iff_circuit {M : matroid U}{e : U}:
   M.is_loop e ↔ M.is_circuit {e} :=
-by simp [loop_iff_r, circuit_iff_r, size_singleton, ssubset_single_iff_empty] 
+by simp [loop_iff_r, circuit_iff_r, size_singleton, ssubset_singleton_iff_empty] 
 
 lemma nonloop_iff_indep {M : matroid U}{e : U}:
   M.is_nonloop e ↔ M.is_indep {e} := 

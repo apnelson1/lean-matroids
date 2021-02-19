@@ -1,6 +1,7 @@
 import .size .induction 
 ----------------------------------------------------------------
 open_locale classical 
+open_locale big_operators 
 noncomputable theory 
 
 
@@ -210,5 +211,51 @@ begin
   rw h at h₂ ⊢, 
   linarith, 
 end
+
+section fin_sum
+
+variables {α β : Type}[fintype α][add_comm_monoid β](f : α → β)
+
+lemma set.to_finset_insert' (X : set α)(e : α) : 
+  (X ∪ {e}).to_finset = X.to_finset ∪ {e} :=
+by {ext, simp[or_comm]}  
+
+
+lemma fin_sum_empty : 
+  ∑ (a : (∅ : set α)), f a = 0 :=  
+by convert finset.sum_empty 
+
+lemma fin_sum_eq (X : set α): 
+  ∑ (a : X), f a = ∑ a in X.to_finset, f a := 
+let φ : X ↪ α := ⟨coe, subtype.coe_injective⟩ in (finset.sum_map (finset.univ) φ f).symm
+
+#check finset.sum_union 
+
+--set_option pp.notation false
+lemma fin_sum_insert {α β : Type}[fintype α][add_comm_monoid β](f : α → β){X : set α}{e : α}: 
+  e ∉ X → ∑ (a : X ∪ {e}), f a = (∑ (a : X), f a) + f e :=
+begin
+  intro he, 
+  set X' := X.to_finset with hX', 
+  have he' : e ∉ X' := by rwa [hX', mem_to_finset],  
+  convert (@fin_sum_eq _ _ _ _ f (X ∪ {e} : set α)), 
+  have hX : X.finite := finite.of_fintype X, 
+  -- fintype instance mismatches happening here. 
+  have := (set.to_finset_insert' X e), 
+  rw [eq_comm, fin_sum_eq], 
+  --calc (X ∪ {e}).to_finset.sum f
+  calc 
+      _ = (X.to_finset ∪ {e}).sum f                  : by {congr', convert this}
+    ... = X.to_finset.sum f + ({e} : finset α).sum f : finset.sum_union (by {sorry} : disjoint X.to_finset {e}) 
+    ... = X.to_finset.sum f + f e                    : (sorry : ({e} : finset α).sum f = f e)
+    ... = _ : sorry, 
+  --suffices : f e + Σ (a : X) f a = (X.to_finset ∪ {e}).sum f, 
+  
+  --have := @finset.sum_insert α β _ _ f _ _ he',  
+  
+  --simp_rw ←union_singleton at this, 
+end
+
+end fin_sum
 
 end size 
