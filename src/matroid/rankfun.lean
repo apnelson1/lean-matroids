@@ -4,7 +4,7 @@
 
 
 import matroid.axioms  matroid.dual 
-import prelim.collections prelim.minmax
+import prelim.collections prelim.minmax 
 open set 
 --open ftype_induction 
 
@@ -149,11 +149,6 @@ lemma rank_subadditive (M : matroid U)(X Y : set U) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
 
-example (α : Type)[fintype α](f : α → ℤ): ∑ (X : (∅ : set α)), f X = 0 :=
-begin
-  convert finset.sum_empty, 
-end  
-
 lemma rank_subadditive_sUnion (M : matroid U)(S : set (set U)):
   M.r (sUnion S) ≤ ∑ (X : S), M.r X := 
 begin
@@ -162,8 +157,13 @@ begin
   { rw hP, dsimp only, 
     rw [sUnion_empty, rank_empty], 
     exact has_le.le.trans_eq (le_refl 0) (by convert finset.sum_empty.symm),  },
-  intros S e he hS,
-  simp_rw hP at hS ⊢,   
+  -- it would be nice to rw with fin_sum_insert M.r hX₀ right here, but mismatch issues make this 
+  -- impossible. Instead, we reduce to this lemma and then convert. 
+  intros S X₀ hX₀ hS,
+  simp_rw [hP, sUnion_union, sUnion_singleton] at hS ⊢,   
+  refine le_trans (rank_subadditive M _ _) _, 
+  refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq _),
+  convert (fin_sum_insert M.r hX₀).symm, 
 end 
 
 
