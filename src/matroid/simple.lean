@@ -281,7 +281,7 @@ begin
   apply image_subset_range, 
 end
 
-  
+
   
   -- P = { a : U | ∃ (h : M.is_nonloop a), ⟦(⟨a,h⟩ : M.nonloop)⟧ = ⟦e⟧ }
 
@@ -415,8 +415,8 @@ end
 
 --lemma rank_union_parallel_classes {}
 
-def si (M : matroid U): matroid (M.parallel_nl_class) := 
-{ r := λ X, M.r (set.Union (λ (P : X), (P : set U))),
+def si (M : matroid U): matroid (M.parallel_class) := 
+{ r := λ X, M.r (union_parallel_classes X),
   R0 := λ X, by {apply M.R0 },
   R1 := λ X, by {},
   R2 := _,

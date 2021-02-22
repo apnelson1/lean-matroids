@@ -1,20 +1,43 @@
-/-import prelim.collections prelim.size prelim.induction prelim.minmax
-import .rankfun
 import tactic 
--/
-import tactic data.setoid.partition 
+----------------------------------------------------------------
+open_locale classical big_operators
+open set 
 
+variables {α β : Type}[add_comm_monoid β]
 
-example {α : Type} {r : setoid α} (a : α): ∃! (b : set α), b ∈ r.classes ∧ a ∈ b := 
+lemma fin_sum_empty (f : α → β) : 
+  ∑ (a : (∅ : set α)), f a = 0 :=  
+finset.sum_empty 
+
+lemma fin_sum_eq (f : α → β)(X : set α)[fintype X]: 
+  ∑ (a : X), f a = ∑ a in X.to_finset, f a := 
+let φ : X ↪ α := ⟨coe, subtype.coe_injective⟩ in (finset.sum_map (finset.univ) φ f).symm
+
+lemma fin_sum_insert (f : α → β){X : set α}{e : α}(he : e ∉ X)[fintype ↥X][fintype ↥(X ∪ {e})]:
+   ∑ (a : X ∪ {e}), f a = (∑ (a : X), f a) + f e :=
 begin
-  have := @setoid.classes_eqv_classes _ r a, 
-  --rw exists_unique_iff_exists at this, 
-  rcases this with ⟨b, ⟨h, hb, -⟩, hu⟩, 
-  refine ⟨b, ⟨h,hb⟩, _⟩, 
-  convert hu, simp only [exists_prop, exists_unique_iff_exists], 
-  --  this: ∃! (b : set α) (H : b ∈ r.classes), a ∈ b
-  --convert this, simp only [eq_self_iff_true],
-  
+  unfreezingI {obtain ⟨X', rfl⟩ := finite.exists_finset_coe ⟨‹fintype ↥X›⟩ },
+  rw [fin_sum_eq, fin_sum_eq, add_comm, ←finset.sum_insert],
+  { congr', ext, simp },
+  simpa using he,
 end
 
+lemma induction_foo [fintype α](P : set α → Prop): 
+  (P ∅) → (∀ (X : set α)(e : α), e ∉ X → P X → P (X ∪ {e})) → (∀ X, P X) := 
+sorry 
 
+lemma fin_sum_one_eq_card [fintype α](X : set α): 
+  ∑ (a : X), (1 : α → ℤ) a = X.to_finset.card := 
+begin
+  revert X, apply induction_foo, 
+  {rw [to_finset_card, empty_card'], convert fin_sum_empty _, }, 
+  
+  intros X e he hX, 
+  -- rw fin_sum_insert _ he, 
+  -- doesn't work 
+
+  rw fin_sum_insert, swap, assumption, 
+  --works
+
+  sorry,
+end

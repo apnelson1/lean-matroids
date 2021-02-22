@@ -156,16 +156,14 @@ begin
   apply induction_set_size_add P, 
   { rw hP, dsimp only, 
     rw [sUnion_empty, rank_empty], 
-    exact has_le.le.trans_eq (le_refl 0) (by convert finset.sum_empty.symm),  },
-  -- it would be nice to rw with fin_sum_insert M.r hX₀ right here, but mismatch issues make this 
-  -- impossible. Instead, we reduce to this lemma and then convert. 
-  intros S X₀ hX₀ hS,
+    exact has_le.le.trans_eq (le_refl 0) (by convert finset.sum_empty.symm)},
+  
+  intros S X₀ hX₀ hS, 
   simp_rw [hP, sUnion_union, sUnion_singleton] at hS ⊢,   
+  rw fin_sum_insert, swap, assumption, 
   refine le_trans (rank_subadditive M _ _) _, 
-  refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq _),
-  convert (fin_sum_insert M.r hX₀).symm, 
+  refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq rfl),
 end 
-
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ {e}) ≤ M.r X + 1 := 

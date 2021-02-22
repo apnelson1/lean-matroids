@@ -214,39 +214,40 @@ end
 
 section fin_sum
 
-variables {α β : Type}[fintype α][add_comm_monoid β](f : α → β)
+variables {α β : Type}[add_comm_monoid β]
 
-lemma set.to_finset_insert' (X : set α)(e : α) : 
-  (X ∪ {e}).to_finset = X.to_finset ∪ {e} :=
-by {ext, simp[or_comm]}  
-
-
-lemma fin_sum_empty : 
+lemma fin_sum_empty (f : α → β) : 
   ∑ (a : (∅ : set α)), f a = 0 :=  
-by convert finset.sum_empty 
+finset.sum_empty 
 
-lemma fin_sum_eq (X : set α): 
+lemma fin_sum_eq (f : α → β)(X : set α)[fintype X]: 
   ∑ (a : X), f a = ∑ a in X.to_finset, f a := 
 let φ : X ↪ α := ⟨coe, subtype.coe_injective⟩ in (finset.sum_map (finset.univ) φ f).symm
 
-lemma fin_sum_insert {α β : Type}[fintype α][add_comm_monoid β](f : α → β){X : set α}{e : α}: 
-  e ∉ X → ∑ (a : X ∪ {e}), f a = (∑ (a : X), f a) + f e :=
+lemma fin_sum_insert (f : α → β){X : set α}{e : α}(he : e ∉ X)[fintype ↥X][fintype ↥(X ∪ {e})]:
+   ∑ (a : X ∪ {e}), f a = (∑ (a : X), f a) + f e :=
 begin
-  rintro he, 
-  have hdj :disjoint X.to_finset {e}, 
-  { rw [finset.disjoint_iff_inter_eq_empty], ext, 
-    simp only [finset.not_mem_empty, not_and, finset.mem_singleton, iff_false, finset.mem_inter, mem_to_finset],
-    exact λ haX hae, false.elim (he (by {rwa ←hae})),},
+  unfreezingI {obtain ⟨X', rfl⟩ := finite.exists_finset_coe ⟨‹fintype ↥X›⟩ },
+  rw [fin_sum_eq, fin_sum_eq, add_comm, ←finset.sum_insert],
+  { congr', ext, simp },
+  simpa using he,
+end
 
-  -- this next claim causes instance mismatch problems if fin_sum_eq is invoked directly, 
-  -- due to two competing instances of fintype for X ∪ {e} 
-  have hXe : ∑ (a : (X ∪{e}) ), f a = ∑ a in (X ∪ {e}).to_finset, f a, 
-    convert fin_sum_eq f (X ∪ {e} : set α), 
-  
-  rw [hXe, fin_sum_eq f (X : set α), set.to_finset_insert' X e, finset.sum_union hdj], 
-  simp, 
-end 
 
-end fin_sum
+lemma induction_foo [fintype α](P : set α → Prop): 
+  (P ∅) → (∀ (X : set α)(e : α), e ∉ X → P X → P (X ∪ {e})) → (∀ X, P X) := 
+sorry 
+
+lemma fin_sum_one_eq_size [fintype α](X : set α): 
+  ∑ (a : X), (λ (x : α), (1 : ℤ)) a = X.to_finset.card := 
+begin
+  --set P : set α → Prop := λ Y, ∑ (a : Y), (1 : ℤ) = size Y, 
+  revert X, apply induction_foo, 
+  { rw [size_empty], convert fin_sum_empty _, }, 
+  intros X e he hX, 
+  rw fin_sum_insert (λ (x : α), (1 : ℤ)) he, 
+end
+
+
 
 end size 
