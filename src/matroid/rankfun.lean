@@ -115,7 +115,6 @@ lemma rank_eq_of_not_lt_supset {M : matroid U}{X Y : set U}:
 lemma rank_eq_of_not_lt_union {M : matroid U}{X Y : set U}:
   ¬ (M.r X < M.r (X ∪ Y)) → M.r (X ∪ Y) = M.r X :=
 λ h', rank_eq_of_le_union (int.le_of_not_gt' h')
-
 @[simp] lemma rank_eq_rank_union_rank_zero {M : matroid U}(X : set U){Y :set U}(hY : M.r Y = 0):
   M.r (X ∪ Y) = M.r X := 
 by {apply rank_eq_of_le_union, linarith [M.rank_nonneg (X ∩ Y ), M.rank_submod X Y],} 
@@ -140,6 +139,17 @@ begin
   have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_iff_union.mp hXY ],
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
+
+/-
+lemma rank_union_eq_of_rank_union_supset_eq {M : matroid U}{X S T : set U}(hXT : M.r (X ∪ T) = M.r X)
+(hST : S ⊆ T):
+  M.r (X ∪ S) = M.r X :=
+begin
+  have : X ∪ S ⊆ X ∪ T := sorry,  
+  have := rank_eq_of_le_union_supset X this,  
+  --have := rank_eq_of_le_union_supset (_ : )  
+end
+-/
 
 lemma rank_eq_of_inter_union {M : matroid U}(X Y A : set U):
   M.r (X ∩ A) = M.r X → M.r ((X ∩ A) ∪ Y) = M.r (X ∪ Y) :=
@@ -381,7 +391,7 @@ begin
   intros hI h, 
   rw indep_iff_r at *, 
   apply le_antisymm (M.rank_le_size _ ),
-  apply le_trans (add_size_ub), 
+  apply le_trans (size_insert_ub), 
   rw hI at h, convert h, 
 end
 
@@ -502,7 +512,7 @@ begin
   unfold is_circuit,
   rw not_indep_iff_r, simp_rw indep_iff_r, 
   split, rintros ⟨hr, hmin⟩,
-  split, rcases nonempty_single_removal (rank_lt_size_ne_empty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
+  split, rcases nonempty_has_sub_one_size_ssubset (rank_lt_size_ne_empty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
   linarith [M.rank_mono hY₁.1],  
   intros Y hY, exact hmin _ hY, 
   rintros ⟨h₁, h₂⟩, refine ⟨by linarith, λ Y hY, _ ⟩,  
@@ -523,7 +533,7 @@ begin
   simp_rw [is_cocircuit, is_circuit, not_coindep_iff_r, coindep_iff_r],
   split, rintros ⟨h₁, h₂⟩, split, 
   have h_nonempty : X ≠ ∅ := by {intros h, rw [h,compl_empty] at h₁, exact int.lt_irrefl _ h₁}, 
-  rcases (nonempty_single_removal h_nonempty) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
+  rcases (nonempty_has_sub_one_size_ssubset h_nonempty) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
   specialize h₂ _ hY₁,  
   rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
   linarith[M.rank_diff_le_size_diff (compl_subset_compl.mpr hY₁.1)], 
@@ -604,7 +614,7 @@ begin
   have heU := mem_of_mem_of_subset he (inter_subset_union C₁ C₂),
   have hcalc : M.r ((C₁ ∪ C₂) \ {e}) ≤ size ((C₁ ∪ C₂) \ {e}) -1 := 
   by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) {e} ), M.rank_submod C₁ C₂, 
-        r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, remove_single_size heU],
+        r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, size_remove_mem heU],
   from int.le_sub_one_iff.mp hcalc,
 end 
 
@@ -956,7 +966,7 @@ begin
   intros Y hXY, linarith [h.2 Y hXY, h.2, rank_le_univ M Y],
   simp only [is_spanning], 
   refine λ h, ⟨_,h.2⟩, cases h with h1 h2,  
-  rcases ne_univ_single_addition (λ h', by {rw h' at h1, from h1 rfl} : X ≠ univ) with ⟨Y,hY₁, hY₂⟩,
+  rcases ne_univ_has_add_one_size_ssupset (λ h', by {rw h' at h1, from h1 rfl} : X ≠ univ) with ⟨Y,hY₁, hY₂⟩,
   linarith [rank_diff_le_size_diff M hY₁.1, h2 _ hY₁, 
             int.le_sub_one_of_le_of_ne (rank_le_univ M X) h1],   
 end 
@@ -973,7 +983,7 @@ begin
   
   rcases h with ⟨h_univ, h_flat, hmax⟩, 
   by_cases h1 : M.r H ≤ M.r univ - 2, 
-  rcases ne_univ_single_addition_element h_univ with ⟨e, he₁, he₂⟩,
+  rcases ne_univ_has_add_one_size_ssupset_element h_univ with ⟨e, he₁, he₂⟩,
   have := hmax (cl M (H ∪ {e})) (cl_is_flat _ _) (subset.lt_of_lt_of_le he₁ _),
   rw [←spanning_iff_cl_univ, spanning_iff_r] at this,  
   linarith [rank_augment_single_ub M H e],
@@ -1257,14 +1267,14 @@ begin
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he hi, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩ ⟩⟩, 
   rw indep_iff_r at hi, 
   rw elem_diff_iff at he, 
-  linarith [h.2.2 e he.1, add_nonmem_size he.2], 
+  linarith [h.2.2 e he.1, size_insert_nonmem he.2], 
   by_cases heB: e ∈ B, 
   rw (add_elem heB), 
   have : e ∈ X \ B := by {rw elem_diff_iff, from ⟨he,heB⟩},
   have := h.2.2 _ this, 
   rw not_indep_iff_r at this, 
   have hi := h.2.1, rw indep_iff_r at hi, 
-  linarith [add_nonmem_size heB, M.rank_mono (subset_union_left B {e})], 
+  linarith [size_insert_nonmem heB, M.rank_mono (subset_union_left B {e})], 
 end 
 
 lemma basis_iff_augment_i {M : matroid U}{B : set U} : 
@@ -1319,7 +1329,7 @@ begin
   simp_rw basis_iff_indep_full_rank,   
   cases elem_diff_iff.mp he with he₁ he₂, 
   have h' : M.is_indep (B₁ \ {e}) := subset_indep (diff_subset _ _) hB₁.1, 
-  rcases indep_aug_diff (by { rw remove_single_size he₁, linarith, }) h' hB₂.1 
+  rcases indep_aug_diff (by { rw size_remove_mem he₁, linarith, }) h' hB₂.1 
     with ⟨f,⟨hf, hf_aug⟩⟩, 
   have h'' : B₂ \ (B₁ \ {e}) = B₂ \ B₁, 
   { repeat {rw diff_eq}, 
@@ -1477,7 +1487,7 @@ begin
     apply M.rank_mono (subset_inter h _),  tidy, },
   rcases h1 with ⟨e, heX, he⟩, 
   rw ←he, refine lt_of_le_of_lt (M.rank_le_size _) _, 
-  rw remove_single_size heX, linarith,  
+  rw size_remove_mem heX, linarith,  
 end
 
 

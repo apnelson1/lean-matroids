@@ -207,7 +207,7 @@ begin
   rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
   push_neg at h₃, 
   --rw elem_iff at h₁e, 
-  from a (by linarith [add_nonmem_size h₂e, h₃ e h₂e (union_of_subsets h₁ (singleton_subset_iff.mpr h₁e ))]), 
+  from a (by linarith [size_insert_nonmem h₂e, h₃ e h₂e (union_of_subsets h₁ (singleton_subset_iff.mpr h₁e ))]), 
   rw h at h₂ ⊢, 
   linarith, 
 end
@@ -233,19 +233,14 @@ begin
   simpa using he,
 end
 
-
-lemma induction_foo [fintype α](P : set α → Prop): 
-  (P ∅) → (∀ (X : set α)(e : α), e ∉ X → P X → P (X ∪ {e})) → (∀ X, P X) := 
-sorry 
-
 lemma fin_sum_one_eq_size [fintype α](X : set α): 
-  ∑ (a : X), (λ (x : α), (1 : ℤ)) a = X.to_finset.card := 
+  ∑ (a : X), (1 : α → ℤ) a = size X  := 
 begin
-  --set P : set α → Prop := λ Y, ∑ (a : Y), (1 : ℤ) = size Y, 
-  revert X, apply induction_foo, 
+  revert X, apply induction_set_size_add, 
   { rw [size_empty], convert fin_sum_empty _, }, 
   intros X e he hX, 
-  rw fin_sum_insert (λ (x : α), (1 : ℤ)) he, 
+  rw fin_sum_insert, swap, assumption, 
+  rw [hX, size_insert_nonmem he], simp, 
 end
 
 

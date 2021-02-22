@@ -140,7 +140,7 @@ have h_nu_c : ν N₁c N₂c ≤ k-1 := by
   rw [←size_max_common_ind_eq_nu, ←hIc, hk], 
   linarith 
   [
-    add_nonmem_size heIc,
+    size_insert_nonmem heIc,
     size_common_ind_le_nu 
     ⟨
       indep_of_project_indep hIc'.1 (nonloop_iff_indep.mp h_e_nl.1), 
@@ -157,7 +157,7 @@ have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by
     (loopify_makes_loops N₂ e), 
   rw ←union_distrib_union_left at h_add_e, 
   have := size_monotone h_add_e, 
-  rw [add_compl_single_size he, ←hN₁d, ←hN₂d] at this, 
+  rw [size_insert_mem_compl he, ←hN₁d, ←hN₂d] at this, 
   rw [compl_size] at ⊢ hsize, linarith,  
 },
 
@@ -168,7 +168,7 @@ have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by
     (project_makes_loops N₂ e), 
   rw ←union_distrib_union_left at h_add_e, 
   have := size_monotone h_add_e, 
-  rw [add_compl_single_size he, ←hN₁c, ←hN₂c] at this, 
+  rw [size_insert_mem_compl he, ←hN₁c, ←hN₂c] at this, 
   rw [compl_size] at ⊢ hsize, linarith,  
 },  
 

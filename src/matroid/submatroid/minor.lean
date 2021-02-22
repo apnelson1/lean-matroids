@@ -386,7 +386,7 @@ begin
 
   have h : size ((p.D ∪ {e}) ∩ M.E) = size (p.D ∩ M.E) + 1, 
   { rw [inter_distrib_right, subset_iff_inter.mp (subset.trans heC p.C_ss_E)], 
-    apply add_nonmem_size, 
+    apply size_insert_nonmem, 
     by_contra hn, 
     rw singleton_subset_iff at heC, 
     have := eq_empty_iff_forall_not_mem.mp p.disj e,   

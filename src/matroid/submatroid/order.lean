@@ -120,7 +120,7 @@ begin
   rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,   
   cases size_pos_has_mem h_size with e he,
   specialize h' ⟨X, Y \ {e}⟩ _ _, swap, 
-  { dsimp only, rw [diff_right_comm, remove_single_size he], linarith}, swap,
+  { dsimp only, rw [diff_right_comm, size_remove_mem he], linarith}, swap,
   { dsimp only [diff_eq] at he ⊢, 
     apply subset_inter hXY, 
     rw subset_compl_singleton_iff, 

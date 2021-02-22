@@ -61,14 +61,11 @@ lemma compl_size (X : set A) : size Xᶜ = size (univ : set A) - size X :=
 lemma size_compl (X : set A) : size X = size (univ : set A) - size(Xᶜ) := 
   by linarith [compl_size X]
 
-lemma contains_single (X : set A) : X.nonempty → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
+lemma contains_singleton (X : set A) : X.nonempty → (∃ Y, Y ⊆ X ∧ size Y = 1) :=
 begin
   rintros ⟨e,he⟩,  
   from ⟨{e},⟨set.singleton_subset_iff.mpr he, size_singleton e⟩⟩, 
 end
-  
-
-
 
 
 lemma ssubset_size {X Y : set A} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y) := 
@@ -128,7 +125,7 @@ lemma size_zero_empty {X : set A} : (size X = 0) → X = ∅ :=
 begin
   contrapose!, intros hne hs, 
   rw [push_neg.not_eq, set.ne_empty_iff_nonempty] at hne, 
-  cases contains_single X hne with Y hY,
+  cases contains_singleton X hne with Y hY,
   linarith [size_monotone hY.1], 
 end  
 
@@ -173,7 +170,7 @@ lemma size_eq_of_supset {X Y : set A} : (X ⊆ Y) → (size Y ≤ size X) → si
 
 lemma single_subset (X : set A) : X.nonempty → (∃ Y Z, Y ∩ Z = ∅ ∧ Y ∪ Z = X ∧ size Y = 1) := 
   begin
-    intro h, cases contains_single X h with Y hY, use Y, use X \ Y, 
+    intro h, cases contains_singleton X h with Y hY, use Y, use X \ Y, 
     exact ⟨inter_diff _ _,⟨union_diff_of_subset  hY.1,hY.2⟩⟩,
   end
 
@@ -221,7 +218,7 @@ begin
   rw diff_eq, linarith [size_induced_partition_inter Y X, size_mono_inter_right Y X], 
 end 
 
-lemma add_compl_single_size {X : set A} {e : A} :
+lemma size_insert_mem_compl {X : set A} {e : A} :
   e ∈ Xᶜ → size (X ∪ {e}) = size X + 1 := 
 begin
   intro hXe, have := size_modular X {e}, 
@@ -229,16 +226,16 @@ begin
   linarith, 
 end
 
-lemma add_size_ub {X : set A}{e : A}:
+lemma size_insert_ub {X : set A}{e : A}:
   size (X ∪ {e}) ≤ size X + 1 := 
 by linarith [size_nonneg (X ∩ {e}), size_modular X {e}, size_singleton e]
 
-lemma add_nonmem_size {X : set A} {e : A}: 
-  e ∉ X →  size (X ∪ {e}) = size X + 1 := 
-λ hXe, by {apply add_compl_single_size, rwa ←mem_compl_iff at hXe}
+lemma size_insert_nonmem {X : set A} {e : A}: 
+  e ∉ X → size (X ∪ {e}) = size X + 1 := 
+λ hXe, by {apply size_insert_mem_compl, rwa ←mem_compl_iff at hXe}
 
 
-lemma remove_single_size {X : set A}{e : A} :
+lemma size_remove_mem {X : set A}{e : A} :
   e ∈ X → size (X \ {e}) = size X - 1 := 
 begin
   intro heX, 
@@ -246,39 +243,39 @@ begin
   { rw [←singleton_subset_iff, compl_single_remove heX], 
     apply subset_union_right}, 
   nth_rewrite 1 ←remove_add_elem  heX, 
-  linarith [add_compl_single_size h], 
+  linarith [size_insert_mem_compl h], 
 end
 
 
-lemma nonempty_single_removal {X : set A}:
+lemma nonempty_has_sub_one_size_ssubset {X : set A}:
   X ≠ ∅ → ∃ Y : set A, Y ⊂ X ∧ size Y = size X - 1 := 
 λ hX, by {cases ne_empty_has_mem hX with e he, 
-exact ⟨X \ {e}, ⟨ssubset_of_remove_mem he,remove_single_size he⟩ ⟩}
+exact ⟨X \ {e}, ⟨ssubset_of_remove_mem he,size_remove_mem he⟩ ⟩}
 
-lemma ne_univ_single_addition {X : set A}:
+lemma ne_univ_has_add_one_size_ssupset {X : set A}:
   X ≠ univ → ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
 begin
-  intro hX, rcases nonempty_single_removal (λ h, _ : Xᶜ ≠ ∅) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
+  intro hX, rcases nonempty_has_sub_one_size_ssubset (λ h, _ : Xᶜ ≠ ∅) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
   refine ⟨Yᶜ , ⟨scompl_subset_comm.mpr h₁, _⟩⟩,
   linarith [size_compl X, size_compl Y], 
   exact hX (compl_empty_iff.mp h), 
 end
 
-lemma ne_univ_single_addition_element {X : set A}:
+lemma ne_univ_has_add_one_size_ssupset_element {X : set A}:
   X ≠ univ → ∃ (e:A), X ⊂ X ∪ {e} ∧ size (X ∪ {e}) = size X + 1 := 
 begin
   intro hX, 
   rcases elem_only_larger_ssubset (ssubset_univ_of_ne_univ hX) with ⟨e,⟨_,he⟩⟩, 
-  refine ⟨e, ⟨ssub_of_add_nonmem he, add_nonmem_size he⟩⟩, 
+  refine ⟨e, ⟨ssub_of_add_nonmem he, size_insert_nonmem he⟩⟩, 
 end
 
 lemma size_remove_insert {X : set A}{e f : A}(he : e ∈ X)(hf : f ∉ X) : 
   size ((X \ {e}) ∪ {f}) = size X := 
-by linarith [add_nonmem_size (nonmem_diff_of_nonmem {e} hf),remove_single_size he]
+by linarith [size_insert_nonmem (nonmem_diff_of_nonmem {e} hf),size_remove_mem he]
 
 lemma size_insert_remove {X : set A}{e f : A}(he : e ∈ X)(hf : f ∉ X) : 
   size ((X ∪ {f}) \ {e}) = size X := 
-by linarith [add_nonmem_size hf, remove_single_size (mem_union_of_mem_left {f} he)]
+by linarith [size_insert_nonmem hf, size_remove_mem (mem_union_of_mem_left {f} he)]
 
 lemma exchange_pair_sizes {X Y : set A}{e f : A}: 
   size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
@@ -289,7 +286,7 @@ lemma size_union_distinct_singles {e f : A}:
 begin
   intros hef, 
   have : e ∉ ({f} : set A) := by {rw ←singleton_subset_iff, from λ h, hef (nested_singletons_eq h)}, 
-  have := add_nonmem_size this, 
+  have := size_insert_nonmem this, 
   rw [union_comm, size_singleton, union_singletons_eq_pair] at this, 
   linarith, 
 end 
@@ -351,7 +348,7 @@ begin
   refine ⟨λ h, _, λ h, _⟩, swap, 
   { rcases h with ⟨e,f,hef,rfl⟩, apply size_union_distinct_singles hef},
   cases size_pos_has_mem (by {rw h, norm_num} : 0 < size X) with e he,
-  cases size_pos_has_mem (by {rw [remove_single_size he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
+  cases size_pos_has_mem (by {rw [size_remove_mem he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
   refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
   rw eq_comm, apply eq_of_eq_size_subset, 
   { rw ←union_singletons_eq_pair, 
