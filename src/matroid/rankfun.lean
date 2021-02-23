@@ -140,6 +140,14 @@ begin
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
 
+lemma rank_eq_of_union_eq_rank_subsets {M : matroid U}{X X' Y Y' : set U}(hX : X ⊆ X')
+(hY : Y ⊆ Y')(hXX' : M.r X = M.r X')(hYY' : M.r Y = M.r Y'):
+  M.r (X ∪ Y) = M.r (X' ∪ Y'):=
+by rw [rank_eq_of_le_union_supset Y hX hXX', union_comm, union_comm _ Y',
+       rank_eq_of_le_union_supset _ hY hYY']  
+
+
+
 /-
 lemma rank_union_eq_of_rank_union_supset_eq {M : matroid U}{X S T : set U}(hXT : M.r (X ∪ T) = M.r X)
 (hST : S ⊆ T):

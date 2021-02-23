@@ -249,8 +249,7 @@ lemma parallel_class_is_parallel_cl {M : matroid U}(P : M.parallel_class):
   ∃ e, (P : set U) = M.parallel_cl e :=
 by {obtain ⟨e,he,he'⟩ := parallel_class_is_parallel_cl_nonloop P, use ⟨e,he'.2⟩,   }
 
-
-
+lemma mem_parallel_class_iff_parallel_cl {M : matroid U}
 
 lemma rank_parallel_class (M : matroid U)(P : M.parallel_class ): 
   M.r P = 1 := 
@@ -379,32 +378,38 @@ end
 --lemma intersecting_parallel_nl_classes_eq {M : matroid U}(S : set M.parallel_nl_class) : set U :=
 
 /- property that a map sends parallel classes to representatives -/
-def is_rep_map {M : matroid U}(f : M.parallel_class → U) :=
+def is_transversal {M : matroid U}(f : M.parallel_class → U) :=
   ∀ P, M.parallel_cl (f P) = (P : set U)
 
-lemma exists_rep_map (M : matroid U): 
-  ∃ (f : M.parallel_class → U), is_rep_map f := 
+lemma exists_transversal (M : matroid U): 
+  ∃ (f : M.parallel_class → U), is_transversal f := 
 ⟨λ P, (classical.some (parallel_class_is_parallel_cl P)), 
  λ P, (classical.some_spec (parallel_class_is_parallel_cl P)).symm ⟩ 
 
-lemma rep_map_subset_union {M : matroid U}{f : M.parallel_class → U}(hf : is_rep_map f)
+lemma transversal_subset_union {M : matroid U}{f : M.parallel_class → U}(hf : is_transversal f)
 (S : set M.parallel_class):
   f '' S ⊆ union_parallel_classes S :=
 begin
-  intros x hx,
+  intros x hx, 
   obtain ⟨P, hP, rfl⟩ := (mem_image _ _ _).mp hx, 
+  
+  rw [union_parallel_classes, mem_sUnion], 
+  refine ⟨P,_,_⟩, 
+  rw mem_image, refine ⟨P,hP, by simp⟩, 
+
   
 end 
 
 
-lemma rep_map_preserves_rank {M : matroid U}{f : M.parallel_class → U}(hf : M.is_rep_map f):
+lemma transversal_preserves_rank {M : matroid U}{f : M.parallel_class → U}(hf : is_transversal f):
   ∀ (S : set M.parallel_class), M.r (union_parallel_classes S) = M.r (f '' S) :=
 begin
   apply induction_set_size_add, simp [union_parallel_classes],
   intros S X₀  hX₀S IH, 
   rw [union_parallel_classes] at *,
   rw [image_union, image_singleton, sUnion_union, sUnion_singleton], 
-  rw [image_union, image_singleton] at *, 
+  rw [image_union, image_singleton, eq_comm] at *,
+
   
 end
 

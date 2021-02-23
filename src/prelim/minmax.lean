@@ -226,7 +226,7 @@ lemma min_zip [nonempty α'][fintype α'](f : α → β)(f' : α' → β)(g : β
   g ⟨min_val f, min_val f'⟩ = min_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
 begin
-  rcases min_spec f with ⟨a, ⟨ha₁, ha₂⟩⟩, 
+  obtain ⟨a, ⟨ha₁, ha₂⟩⟩ := min_spec f, 
   rcases min_spec f' with ⟨a', ⟨ha'₁, ha'₂⟩⟩, 
   rcases min_spec f_prod with ⟨⟨x,x'⟩,⟨hx₁, hx₂⟩⟩, 
   rw [←ha₁,←ha'₁,←hx₁],
