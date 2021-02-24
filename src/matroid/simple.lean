@@ -1,6 +1,5 @@
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax
-import .rankfun
-import tactic data.setoid.partition
+import .rankfun matroid.submatroid.minor_iso matroid.submatroid.projection 
 
 noncomputable theory 
 open_locale classical 
@@ -23,9 +22,7 @@ is unbundled, but I'm not convinced it's the best one.
 -/
 
 
-variables {U : Type}[fintype U]
-
-
+variables {U V : Type}[fintype U][fintype V]
 
 section parallel_nl 
 
@@ -406,6 +403,10 @@ lemma nonloop_of_loopless {M : matroid U}(e : U)(h : M.is_loopless):
   M.is_nonloop e := 
 by {rw loopless_iff_all_nonloops at h, tauto, }
 
+lemma rank_single_of_loopless {M : matroid U}(h : M.is_loopless)(e : U): 
+  M.r {e} = 1 := 
+by {rw [←nonloop_iff_r], apply nonloop_of_loopless e h,  }
+
 
 lemma simple_iff_no_loops_or_parallel_pairs {M : matroid U}:
   M.is_simple ↔ M.is_loopless ∧ ∀ (e f : U), M.parallel e f → e = f :=
@@ -457,8 +458,7 @@ lemma exists_transversal (M : matroid U):
 def choose_transversal (M : matroid U): M.transversal  :=
 classical.indefinite_description _ (M.exists_transversal)
 
-lemma transversal_subset_union {M : matroid U}(f : M.transversal)
-(S : set M.parallel_class):
+lemma transversal_subset_union {M : matroid U}(f : M.transversal)(S : set M.parallel_class):
   f '' S ⊆ union_parallel_classes S :=
 begin
   intros x hx, 
@@ -537,7 +537,7 @@ rfl
 
 /- it is more convenient to think of the simplification rank in terms of a fixed transversal of the parallel classes-/
 lemma si_r_transversal {M : matroid U}(f : M.transversal)(S : set M.parallel_class): 
-  M.si.r S = M.r (f '' S) := 
+  (si M).r S = M.r (f '' S) := 
 by rw [←rank_img_transversal, si_r]
 
 lemma si_is_loopless (M : matroid U): 
@@ -558,7 +558,45 @@ begin
   rwa [si_r_transversal f, image_pair] at hr, 
 end
 
+lemma si_is_iso_to_restr (M : matroid U): 
+  (si M).is_iso_to_restr_of M :=
+begin
+  rw iso_to_restriction_of_iff_exists_map, 
+  let f := choose_transversal M, 
+  exact ⟨⟨f, transversal_inj f⟩, λ S, by {rw [si_r_transversal f], refl}⟩, 
+end
 
 end simple 
+
+section simple_minor
+
+lemma minor_of_loopless_pseudominor {N : matroid V}{M' M: matroid U}(hN : N.is_loopless)
+(hNM' : N.is_iso_to_minor_of M')(hM'M : M'.is_pseudominor_of M):
+N.is_iso_to_minor_of M :=
+begin
+  rw iso_to_minor_of_iff_exists_map at *, 
+  obtain ⟨φ,C, hrange, hr⟩ := hNM',  
+  obtain ⟨C',D',hM'⟩ := hM'M, 
+  refine ⟨φ, C ∪ C', by_contra (λ hn, _),_⟩, 
+  { push_neg at hn, 
+    obtain ⟨e,he⟩ := ne_empty_iff_has_mem.mp hn, clear hn,
+    obtain ⟨heφ, heC⟩ := ((mem_inter_iff _ _ _).mp he), clear he, 
+    obtain ⟨f,rfl⟩ := mem_range.mp heφ, clear heφ, 
+    
+    specialize hr {f}, rw [rank_single_of_loopless hN, image_singleton, hM'] at hr,
+    simp only [project_r,loopify_r] at hr,  }, 
+
+end
+
+lemma minor_iff_minor_si_of_simple {N : matroid V}{M : matroid U}(hN : N.is_simple):
+  N.is_iso_to_minor_of M ↔ N.is_iso_to_minor_of (si M) :=
+begin
+  sorry, 
+end
+
+
+
+
+end simple_minor 
 end matroid 
 

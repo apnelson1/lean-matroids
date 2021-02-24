@@ -281,6 +281,53 @@ def of_mat_isom (M : matroid U) : isom (as_matroid_in M) M :=
 { equiv := equiv.subtype_univ_equiv (by tauto),
   on_rank := λ X, by {apply congr_arg, ext, exact iff.rfl, } }
 
+/-- N is isomorphic to a matroid_in of M iff there is a suitable injection from N to M. This is 
+dtt hell, but probably only needs to be done once. -/
+lemma isom_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
+  is_isom M N ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
+begin
+  split, 
+  begin
+    rintros ⟨⟨eqv, hr⟩⟩,
+    refine ⟨ eqv.symm.to_embedding.trans (function.embedding.subtype _),⟨_,λ X, _⟩⟩, 
+    { ext, 
+      simp only [equiv.to_embedding_apply, function.embedding.coe_subtype, 
+        function.embedding.trans_apply, mem_range], 
+      split, { rintros ⟨y,rfl⟩, cases (eqv.symm y), tauto, },
+      exact λ hx, ⟨eqv ⟨x,hx⟩, by simp⟩,}, 
+    specialize hr (eqv ⁻¹' X), simp only [equiv.image_preimage, matroid_in.as_mat_r] at hr,
+    rw hr, congr', unfold_coes, ext, 
+    simp only [mem_image, equiv.to_fun_as_coe, equiv.to_embedding_apply, function.embedding.coe_subtype, 
+      set_coe.exists, function.embedding.trans_apply, exists_and_distrib_right, 
+      function.embedding.to_fun_eq_coe, exists_eq_right, mem_preimage, subtype.coe_mk], 
+    split, { rintros ⟨hx,h'⟩, refine ⟨_,h',_⟩, simp,  }, 
+    rintros ⟨y, hyX, rfl⟩, 
+    refine ⟨_,_⟩, swap, convert hyX, simp, 
+    exact ((eqv.symm) y).property, 
+  end,
+  rintros ⟨φ, hrange, hr⟩, 
+  set E := set.range φ with hE, 
+
+  set eqv : M.E ≃ V := 
+    (equiv.trans (equiv.set.range φ φ.inj') (equiv.set.of_eq hrange)).symm with heqv, 
+
+  refine nonempty.intro ⟨eqv, λ X, _⟩, 
+  simp only [hr, heqv] with msimp, congr' 1,
+  ext,  simp only [mem_image, equiv.symm_trans_apply, set_coe.exists, 
+  equiv.set.of_eq_symm_apply, subtype.coe_mk], 
+  split, 
+  { rintro ⟨y, ⟨x, hx, hxX', rfl⟩, rfl⟩, 
+    rw equiv.set.apply_range_symm φ φ.inj', 
+    unfold_coes, simp, refine ⟨hx,hxX'⟩,  },
+  --refine λ h'', _, 
+  unfold_coes, simp only [mem_image, equiv.to_fun_as_coe, set_coe.exists, exists_and_distrib_right, 
+  function.embedding.to_fun_eq_coe, exists_eq_right, subtype.coe_mk, exists_imp_distrib], 
+  refine λ hx hxX', ⟨eqv ⟨x,hx⟩,⟨⟨x,hx,⟨hxX',_⟩⟩,_⟩⟩,
+  all_goals {simp [heqv, equiv.set.apply_range_symm φ φ.inj']}, 
+end
+
+
+
 
 
 end matroid_in

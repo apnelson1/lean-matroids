@@ -29,11 +29,10 @@ def loopify (M : matroid U)(D : set U) : matroid U :=
                     linarith [M.rank_submod (X ∩ Dᶜ) (Y ∩ Dᶜ)],  }
 }
 
-reserve infixl ` ⟋ `:75
-infix ` ⟋ ` :=  matroid.project  
 
-reserve infixl ` ⟍ `:75
-infix ` ⟍ ` :=  matroid.loopify 
+infix ` ⟋ ` :75 :=  matroid.project  
+
+infix ` ⟍ ` :75 :=  matroid.loopify 
    
 @[simp] lemma loopify_r (M : matroid U)(D X : set U):
   (M ⟍ D).r X = M.r (X \ D) := 
@@ -192,5 +191,35 @@ begin
   suffices : M.r F < M.r Y, linarith [rank_mono_union_left M Y C], 
   exact h.1 _ hFY, 
 end
+
+section pseudominor
+
+def is_pseudominor_of (N M : matroid U) := 
+  ∃ C D, N = M ⟋ C ⟍ D 
+
+lemma pr_lp_eq_lp_pr (M : matroid U)(C D : set U):
+  M ⟋ C ⟍ D = M ⟍ (D \ C) ⟋ C :=
+begin
+  ext X, simp only [loopify_r, project_r, diff_eq], convert rfl; set_solver, 
+end
+  
+lemma lp_pr_eq_pr_lp (M : matroid U)(C D : set U):
+  M ⟍ D ⟋ C = M ⟋ (C \ D) ⟍ D :=
+begin
+  ext X, simp only [loopify_r, project_r, diff_eq], convert rfl; set_solver, 
+end
+
+
+lemma pseudominor_iff_exists_lp_pr (N M : matroid U) :
+  N.is_pseudominor_of M ↔ ∃ C D, N = M ⟍ D ⟋ C :=
+begin
+  split, rintros ⟨C,D,h⟩, refine ⟨C,D \ C,_ ⟩, rwa ←pr_lp_eq_lp_pr, 
+  rintros ⟨C,D,h⟩, refine ⟨C \ D, D, _⟩, rwa ←lp_pr_eq_pr_lp, 
+end
+
+
+
+
+end pseudominor 
 
 end matroid 

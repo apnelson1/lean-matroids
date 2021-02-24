@@ -1,5 +1,5 @@
 import prelim.embed prelim.minmax set_tactic.solver
-import matroid.rankfun matroid.dual --matroid.simple 
+import matroid.rankfun matroid.dual 
 
 open_locale classical 
 noncomputable theory

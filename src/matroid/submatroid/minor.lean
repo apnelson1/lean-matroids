@@ -1,5 +1,5 @@
 import prelim.embed prelim.minmax set_tactic.solver
-import matroid.rankfun matroid.dual .projection .matroid_in matroid.simple 
+import matroid.rankfun matroid.dual .projection .matroid_in .delete_contract 
 
 open_locale classical 
 noncomputable theory
@@ -12,176 +12,6 @@ variables {U : Type}[fintype U]
 
 section minor 
 
-
-/-- the contraction of C in M. Implemented as a projection -/
-def contract (M : matroid_in U)(C : set U) : matroid_in U := 
-⟨ M.E \ C, 
-  M.carrier.project C, 
-  by {convert M.carrier.projected_set_union_rank_zero C M.support, rw [diff_eq, compl_compl_inter_right], }⟩
-
-/-- the deletion of D in M. Implemented as a loopification -/
-def delete (M : matroid_in U)(D : set U) : matroid_in U := 
-⟨ M.E \ D, 
-  M.carrier.loopify D, 
-  by {convert M.carrier.loopified_set_union_rank_zero D M.support, set_solver,}⟩
-
-notation M / C := matroid_in.contract M C 
-notation M \ D := matroid_in.delete M D 
-
-@[simp, msimp] lemma con_rank (M : matroid_in U)(C X: set U): 
-  (M / C).r X = M.r (X ∪ C) - M.r C :=
-M.carrier.project_r _ _ 
-
-@[simp, msimp] lemma con_E (M : matroid_in U)(C: set U):
-  (M / C).E = M.E \ C := 
-rfl 
-
-@[simp, msimp] lemma del_rank (M : matroid_in U)(D X: set U): 
-  (M \ D).r X = M.r (X \ D) :=
-rfl
-
-@[simp, msimp] lemma del_E (M : matroid_in U)(D: set U):
-  (M \ D).E = M.E \ D := 
-rfl 
-
-@[simp, msimp] lemma cont_empty (M : matroid_in U): 
-  (M / ∅) = M := 
-by {ext, simp, intros X hX, simp [←r_carrier_eq_r _ ∅]}
-
-@[simp, msimp] lemma del_empty (M : matroid_in U): 
-  (M \ ∅) = M := 
-by {ext, simp, intros X hX, simp [←r_carrier_eq_r _ ∅]}
-
-@[simp,msimp] lemma del_del (M : matroid_in U)(D D' : set U):
-  (M \ D \ D') = M \ (D ∪ D') := 
-by {ext, simp [diff_eq, ←inter_assoc], intros X hX, simp [diff_eq, ←inter_assoc, inter_right_comm ],  }
-
-lemma del_eq_del_inter_E (M : matroid_in U)(D : set U): 
-  M \ D = M \ (M.E ∩ D) :=
-begin
-  ext, 
-  {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
-  simp only with msimp, intros X hX, 
-  rw [subset_inter_iff, subset_iff_disjoint_compl, subset_iff_inter_eq_left] at hX, 
-  rw [compl_inter, inter_distrib_left], simp [hX], 
-end
-
-lemma con_eq_con_inter_E (M : matroid_in U)(C : set U): 
-  M / C = M / (M.E ∩ C) := 
-begin
-  ext,
-  {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
-  intros X hX, 
-  simp only with msimp at *, 
-  have : M.E ∩ X = X := by {rw inter_comm, exact subset_iff_inter_eq_left.mp (subset.trans hX (inter_subset_left _ _))}, 
-  rw [r_eq_inter_r M C, r_eq_inter_r M (X ∪ C), inter_distrib_left, this],
-end
-
-lemma con_del_E (M : matroid_in U)(C D : set U): 
-  (M / C \ D).E = M.E \ (C ∪ D) :=
-by {simp only with msimp, simp [←inter_assoc]}
-
-lemma con_del_eq_del_con (M : matroid_in U)(C D : set U)(h : C ∩ D = ∅) : 
-  M / C \ D = M \ D / C := 
-begin
-  ext, simp [diff_eq, inter_right_comm _ Cᶜ], 
-  intros X hX, 
-  simp only [diff_eq, matroid_in.con_rank, matroid_in.del_rank], 
-  convert rfl; set_solver,
-end
-
-/- turns contract/delete to delete/contract when C ∩ D ≠ ∅ -/
-lemma con_del_eq_del_con' (M : matroid_in U)(C D : set U):
-  M / C \ D = M \ (D \ C) / C :=
-begin
-  rw [del_eq_del_inter_E, con_del_eq_del_con, del_eq_del_inter_E M (D \ C)], 
-  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm],  
-  ext, simp, tauto, 
-end
-
-/- turns delete/contract to contract/delete when C ∩ D ≠ ∅ -/
-lemma del_con_eq_con_del' (M : matroid_in U)(C D : set U):
-  M \ D / C = M / (C \ D) \ D :=
-begin
-  rw [con_eq_con_inter_E, ←con_del_eq_del_con, con_eq_con_inter_E M (C \ D)], 
-  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm],  
-  {ext, simp, tauto}, 
-end
-
-lemma dual_con_eq_del_dual (M : matroid_in U)(A : set U)(hA : A ⊆ M.E): 
-  of_mat ((M / A).as_mat.dual) = (of_mat M.as_mat.dual) \ A :=
-begin
-  ext, simp, 
-  refine (λ X hX, _),
-  simp only [matroid.dual_r] with msimp coe_up, 
-  rw [(λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
-  inter_comm _ Aᶜ, ←inter_assoc], 
-  convert rfl; {ext, simp, tauto},
-end
-
-lemma dual_con (M : matroid_in U)(A : set U): 
-  (M / A).dual = (M.dual) \ A :=
-begin
-  rw [con_eq_con_inter_E, del_eq_del_inter_E],  simp only with msimp, 
-  set A' := M.E ∩ A with hA', 
-  ext, simp, 
-  refine (λ X hX, _),
-  simp only [matroid.dual_r] with msimp coe_up, 
-  rw [(λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
-  inter_comm _ A'ᶜ, ←inter_assoc], 
-  convert rfl; { ext, simp, tauto},
-end
-
-lemma dual_del (M : matroid_in U)(A : set U):
-  (M \ A).dual = M.dual / A :=
-by rw [←M.dual_dual, ←dual_con, matroid_in.dual_dual, matroid_in.dual_dual]
-
-lemma con_con (M : matroid_in U)(C C' : set U):
-  (M / C / C') = M / (C ∪ C') :=
-by {rw [←M.dual_dual], repeat {rw ←dual_del}, rw del_del}
-
-lemma con_del_con_del (M : matroid_in U)(C C' D D': set U)(h : (C ∪ C') ∩ (D ∪ D') = ∅ ):
-  M / C \ D / C' \ D' = M / (C ∪ C') \ (D ∪ D') :=
-begin
-  repeat {rw con_del_eq_del_con}, rwa [con_con, del_del], 
-  all_goals 
-  {apply disjoint_of_subsets _ _ h, 
-    repeat {apply subset_union_left}, 
-    repeat {apply subset_union_right},}, 
-end
-
-lemma dual_con_del (M : matroid_in U){C D : set U}(hi : C ∩ D = ∅): 
-  (M / C \ D).dual = M.dual / D \ C :=
-by {rw [dual_del _ D, dual_con _ C, con_del_eq_del_con], rwa inter_comm,} 
-    
-lemma dual_con_del' (M : matroid_in U){C D : set U}(hi : C ∩ D = ∅): 
-  (M / C \ D).dual = M.dual \ C / D :=
-by {rw [dual_con_del _ hi, con_del_eq_del_con],  rwa inter_comm,}
-
-lemma con_rank_ground (M : matroid_in U)(C : set U):
-  (M / C).r (M / C).E = M.r M.E - M.r C := 
-begin
-  simp only with msimp, 
-  rw r_eq_inter_r, convert rfl, 
-  rw [inter_distrib_left, ←inter_assoc, inter_self, ←inter_distrib_left], simp,    
-end
-
-lemma indep_del_iff_indep_loopify {M : matroid_in U}{D X : set U}: 
-  (M \ D).is_indep X ↔ (M.carrier.loopify D).is_indep X := 
-by rw [indep_iff_carrier, delete]
-
-lemma indep_del_iff {M : matroid_in U}{D X : set U}: 
-  (M \ D).is_indep X ↔ X ∩ D = ∅ ∧ M.is_indep X := 
-by {rw [indep_del_iff_indep_loopify, indep_loopify_iff, indep_iff_r, matroid.indep_iff_r, r_carrier_eq_r], tauto,  }
-
-lemma delete_coindep_rank_ground (M : matroid_in U){D : set U}(hD : M.dual.is_indep D):
-  (M \ D).r (M \ D).E = M.r M.E := 
-by {simp only [inter_assoc, inter_self] with msimp, exact (coindep_iff_r.mp hD).2,} 
-
-lemma coindep_contract_iff {M : matroid_in U}{C X : set U}: 
-  (M / C).dual.is_indep X ↔ X ∩ C = ∅ ∧ M.dual.is_indep X := 
-by rw [dual_con, indep_del_iff]
-
 /-- a structure whose existence certifies that N is a minor of M -/
 @[ext] structure minor_pair (N M : matroid_in U) :=
 (C : set U)
@@ -190,13 +20,18 @@ by rw [dual_con, indep_del_iff]
 (union : C ∪ D = M.E \ N.E)
 (minor : M / C \ D = N)
 
-
 /-- minor relation on matroid_in U-/
 def is_minor (N M : matroid_in U) : Prop := 
   nonempty (minor_pair N M)
 
 def is_proper_minor (N M : matroid_in U) : Prop :=
   is_minor N M ∧ N ≠ M 
+
+def is_restriction (N M : matroid_in U) : Prop := 
+  ∃ P: minor_pair N M, P.C = ∅ 
+
+def is_contraction_minor (N M : matroid_in U) : Prop := 
+  ∃ P: minor_pair N M, P.D = ∅
 
 /-- constructs a minor pair from contract/delete sets C and D  -/
 def to_minor_pair (M : matroid_in U)(C D : set U):
@@ -210,6 +45,9 @@ def to_minor_pair (M : matroid_in U)(C D : set U):
     nth_rewrite 1 [del_eq_del_inter_E], 
     simp [diff_eq, inter_right_comm], 
   end  }
+
+--def restrict_to_minor_pair (M : matroid_in U)(R : set U): 
+
 
 namespace minor_pair 
 
@@ -294,6 +132,14 @@ def dual_equiv : minor_pair N M ≃ minor_pair N.dual M.dual :=
 @[simp, msimp] lemma dual_equiv_D (p : minor_pair N M) : (dual_equiv p).D = p.C := rfl 
 @[simp, msimp] lemma dual_equiv_inv_C (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).C = p.D := rfl 
 @[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).D = p.C := rfl 
+
+lemma rank (p : minor_pair N M)(X : set U)(hX : X ⊆ N.E):
+  N.r X = M.r (X ∪ p.C) - M.r p.C := 
+begin
+  simp only [←p.minor] with msimp,  congr', 
+  refine subset_iff_inter_eq_left.mp (subset.trans hX _),
+  exact subset_compl_iff_disjoint.mpr (p.E_inter_D),  
+end
 
 /-- given minor pairs for M₁ M₂ and M₂ M₃, constructs a minor pair for M₁ M₃ -/
 def trans {M₁ M₂ M₃ : matroid_in U}(p₁ : minor_pair M₁ M₂)(p₂ : minor_pair M₂ M₃) : minor_pair M₁ M₃ := 
@@ -404,7 +250,7 @@ begin
   convert rfl,
   rw [union_distrib_left, hCD, ←subset_iff_inter_eq_left],   
   convert subset_univ _, 
-  rwa [←compl_subset_iff_union_eq_left, ←compl_subset_compl.symm],
+  rwa [←compl_subset_iff_union, ←compl_subset_compl.symm],
 end
 
 /-- each minor can be represented by a indep/coindep contract_delete pair -/
@@ -446,8 +292,12 @@ end minor_pair
 
 
 lemma con_del_is_minor (M : matroid_in U)(C D : set U):
-  is_minor (M / C \ D) M :=
+  (M / C \ D).is_minor M :=
 ⟨to_minor_pair M C D⟩  
+
+lemma con_restr_is_minor (M : matroid_in U)(C R : set U): 
+  (M / C ∣ R).is_minor M := 
+con_del_is_minor _ _ _ 
 
 lemma minor_iff_dual_minor {M N : matroid_in U}:
   N.is_minor M ↔ N.dual.is_minor M.dual := 
@@ -459,12 +309,34 @@ begin
 end
 
 lemma del_con_is_minor (M : matroid_in U)(C D : set U):
-  is_minor (M \ D / C) M :=
+   (M \ D / C).is_minor M :=
 by {rw [del_con_eq_con_del'], apply con_del_is_minor,  }
 
 lemma dual_minor_of_minor {M N : matroid_in U}: 
   N.is_minor M → N.dual.is_minor M.dual :=
 minor_iff_dual_minor.mp 
+
+lemma deletion_is_restriction (M : matroid_in U)(D : set U):
+  (M \ D).is_restriction M := 
+by {nth_rewrite 0 ←con_empty M, refine ⟨to_minor_pair M ∅ D, by simp [to_minor_pair]⟩} 
+
+lemma restriction_to_is_restriction (M : matroid_in U)(R : set U): 
+  (M ∣ R).is_restriction M := 
+deletion_is_restriction M Rᶜ 
+
+lemma contraction_is_contraction_minor (M : matroid_in U)(C : set U):
+  (M / C).is_contraction_minor M := 
+by {rw ←del_empty (M / C), refine ⟨to_minor_pair M C ∅, by simp [to_minor_pair]⟩} 
+
+lemma restriction_is_minor (N M : matroid_in U): 
+  N.is_restriction M → N.is_minor M := 
+by {rintros ⟨h,-⟩, exact ⟨h⟩}
+
+lemma contraction_minor_is_minor (N M : matroid_in U): 
+  N.is_contraction_minor M → N.is_minor M := 
+by {rintros ⟨h,-⟩, exact ⟨h⟩}
+
+
 
 lemma minor_antisymm: 
   anti_symmetric (@is_minor U _) := 
@@ -518,8 +390,6 @@ begin
   intros h hx, 
   simp only [and_imp, not_and, mem_diff, mem_compl_eq], tauto, 
 end
-
-
 
 lemma con_or_del {N M : matroid_in U}{e : U}(h : is_minor N M)(he : e ∈ M.E \ N.E): 
   is_minor N (M / {e}) ∨ is_minor N (M \ {e}) :=
