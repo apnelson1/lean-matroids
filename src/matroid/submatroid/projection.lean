@@ -199,15 +199,13 @@ def is_pseudominor_of (N M : matroid U) :=
 
 lemma pr_lp_eq_lp_pr (M : matroid U)(C D : set U):
   M ⟋ C ⟍ D = M ⟍ (D \ C) ⟋ C :=
-begin
-  ext X, simp only [loopify_r, project_r, diff_eq], convert rfl; set_solver, 
-end
+by {ext X, simp only [loopify_r, project_r], convert rfl; {ext, simp, tauto! }}
+
   
 lemma lp_pr_eq_pr_lp (M : matroid U)(C D : set U):
   M ⟍ D ⟋ C = M ⟋ (C \ D) ⟍ D :=
-begin
-  ext X, simp only [loopify_r, project_r, diff_eq], convert rfl; set_solver, 
-end
+by {ext X, simp only [loopify_r, project_r], convert rfl; {ext, simp, tauto! }}
+
 
 
 lemma pseudominor_iff_exists_lp_pr (N M : matroid U) :
