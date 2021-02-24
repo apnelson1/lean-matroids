@@ -195,7 +195,7 @@ begin
   simp_rw [rank_loopify_to] at *,
   have hXB : Xᶜ ⊆ B, 
   begin
-    rw [subset_iff_union, eq_comm],   
+    rw [subset_iff_union_eq_left, eq_comm],   
     suffices : ¬B ⊂ (Xᶜ ∪ B),
     from eq_of_subset_not_ssubset  (subset_union_right Xᶜ B) this,  
     intro h, 
@@ -212,7 +212,7 @@ begin
   
   repeat 
     {unfold_coes, 
-    simp only [inter_distrib_right, subset_iff_inter.mp A.property, compl_inter_self, empty_union]},
+    simp only [inter_distrib_right, subset_iff_inter_eq_left.mp A.property, compl_inter_self, empty_union]},
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
   dsimp,

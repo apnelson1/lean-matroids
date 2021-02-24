@@ -60,7 +60,7 @@ by tidy
 lemma nonmem_disjoint_iff {e : A} {X : set A}: 
   e ∉ X ↔ {e} ∩ X = ∅ := 
 by {refine ⟨λ h, nonmem_disjoint h, λ h he, _⟩, 
-  rw [←singleton_subset_iff, subset_iff_inter,h] at he, 
+  rw [←singleton_subset_iff, subset_iff_inter_eq_left,h] at he, 
   exact singleton_ne_empty e he.symm,}
 
 lemma inter_distinct_singles {e f : A}: 
@@ -132,7 +132,7 @@ lemma subset_of_subset_add_nonmem {X Y: set A}{e : A} :
   X ⊆ Y ∪ {e} → e ∉ X → X ⊆ Y :=
 begin
   intros hXY heX, 
-  simp only [subset_iff_inter] at hXY ⊢, 
+  simp only [subset_iff_inter_eq_left] at hXY ⊢, 
   rw [nonmem_disjoint_iff, inter_comm] at heX,
   rw [inter_distrib_left, heX, union_empty] at hXY, 
   from hXY, 
@@ -143,7 +143,7 @@ lemma removal_subset_of {X Y : set A}{e : A} :
   X ⊆ Y ∪ {e} → X \ {e} ⊆ Y :=
 begin
   intro h, 
-  simp only [subset_iff_inter, diff_eq] at h ⊢, 
+  simp only [subset_iff_inter_eq_left, diff_eq] at h ⊢, 
   nth_rewrite 1 ← h,
   rw [inter_distrib_left, inter_distrib_right, inter_assoc _ {e}, inter_right_comm _ _ Y], 
   simp only [inter_compl_self, union_empty, inter_empty], 
@@ -162,7 +162,7 @@ lemma ssub_of_add_nonmem {X : set A} {e : A}:
 
 lemma ssubset_of_add_nonmem_iff {X : set A} {e : A} :
   e ∉ X ↔ X ⊂ X ∪ {e} :=
-by {refine ⟨λ h, ssub_of_add_nonmem h, λ h, λ hex, _⟩, rw [←singleton_subset_iff, subset_iff_union, union_comm] at hex, rw hex at h, from ssubset_irrefl _ h}
+by {refine ⟨λ h, ssub_of_add_nonmem h, λ h, λ hex, _⟩, rw [←singleton_subset_iff, subset_iff_union_eq_left, union_comm] at hex, rw hex at h, from ssubset_irrefl _ h}
 
 lemma add_elem {X : set A} {e : A}: 
   e ∈ X → X ∪ {e} = X := 
@@ -186,14 +186,14 @@ lemma compl_single_remove {X : set A} {e : A} :
 
 lemma remove_add_elem {X : set A} {e : A}: 
   e ∈ X → (X \ {e}) ∪ {e} = X := 
-λ heX, by {rw [←singleton_subset_iff, subset_iff_union,union_comm] at heX, 
+λ heX, by {rw [←singleton_subset_iff, subset_iff_union_eq_left,union_comm] at heX, 
           rw [diff_eq, union_distrib_right, compl_union_self, inter_univ, heX]}
    
 lemma add_remove_nonmem {X : set A} {e : A}: 
   e ∉ X → (X ∪ {e}) \ {e} = X := 
 begin
   intro h, 
-  rw [←mem_compl_iff, ←singleton_subset_iff, subset_iff_union] at h, 
+  rw [←mem_compl_iff, ←singleton_subset_iff, subset_iff_union_eq_left] at h, 
   rw [diff_eq, inter_distrib_right], 
   simp only [inter_compl_self, union_empty], 
   rw [←compl_compl_inter_left, inter_comm, compl_inj_iff] at h, 
@@ -249,9 +249,17 @@ begin
   intros he hf, 
   simp only [diff_eq], rw [inter_distrib_right],
   have : ({f} ∩ {e}ᶜ : set A) = {f} := 
-    by {rw [←subset_iff_inter, ←disjoint_iff_subset_compl, inter_distinct_singles], by_contra h, push_neg at h, rw h at hf, from hf he},
+    by {rw [←subset_iff_inter_eq_left, ←disjoint_iff_subset_compl, inter_distinct_singles], by_contra h, push_neg at h, rw h at hf, from hf he},
   rw this, 
 end
+
+lemma singleton_subset_pair_left (e f : A):
+  ({e} : set A) ⊆ {e,f} := 
+λ x, or.intro_left _
+
+lemma singleton_subset_pair_right (e f : A):
+  ({f} : set A) ⊆ {e,f} := 
+λ x, or.intro_right _
 
 lemma singleton_ssubset_pair_left {e f : A}(h : e ≠ f):
   ({e} : set A) ⊂ {e,f} :=
@@ -260,6 +268,9 @@ by {rw [pair_comm, ssubset_iff_insert], refine ⟨f,_,subset_refl _⟩, tauto, }
 lemma singleton_ssubset_pair_right {e f : A}(h : e ≠ f):
   ({f} : set A) ⊂ {e,f} :=
 by {rw [ssubset_iff_insert], refine ⟨e,_,subset_refl _⟩, tauto, }
+
+
+
 
 lemma union_singletons_eq_pair {e f : A}:
   ({e} : set A) ∪ ({f} : set A) = {e,f} :=
@@ -300,15 +311,15 @@ lemma ssubset_pair {e f : A}{X : set A}:
   X ⊂ {e,f} → X = ∅ ∨ (X = {e}) ∨ (X = {f}) :=
 begin
   intro h, rw [ssubset_iff_subset_ne, ←union_singletons_eq_pair] at h, 
-  cases h with hs hne, rw [subset_iff_inter, inter_distrib_left] at hs,
+  cases h with hs hne, rw [subset_iff_inter_eq_left, inter_distrib_left] at hs,
   cases subset_singleton_eq_singleton_or_empty (inter_subset_right X {e}),
-  rw [h, empty_union, ←subset_iff_inter] at hs, 
+  rw [h, empty_union, ←subset_iff_inter_eq_left] at hs, 
   cases subset_singleton_eq_singleton_or_empty hs, 
   exact or.inl h_1, apply or.inr, exact or.inr h_1,
-  rw [inter_comm, ←subset_iff_inter] at h, apply or.inr, 
+  rw [inter_comm, ←subset_iff_inter_eq_left] at h, apply or.inr, 
   cases subset_singleton_eq_singleton_or_empty (inter_subset_right X {f}),
-  rw [h_1, union_empty, ←subset_iff_inter] at hs,  exact or.inl (subset.antisymm hs h), 
-  rw [subset_iff_inter, inter_comm] at h,
+  rw [h_1, union_empty, ←subset_iff_inter_eq_left] at hs,  exact or.inl (subset.antisymm hs h), 
+  rw [subset_iff_inter_eq_left, inter_comm] at h,
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
 end
 

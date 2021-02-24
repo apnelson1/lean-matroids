@@ -124,7 +124,6 @@ end axiom_sets
 
 def matroid (U : Type)[fintype U] := rankfun U 
 
-
 variables {U₁ U₂ U₃ : Type}[fintype U₁][fintype U₂][fintype U₃]
 
 structure matroid.isom (M₁ : matroid U₁)(M₂ : matroid U₂) := 

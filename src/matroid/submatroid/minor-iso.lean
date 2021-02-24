@@ -12,8 +12,9 @@ variables {U V : Type}[fintype U][fintype V]
 def matroid.is_iso_to_minor_of (N : matroid V)(M : matroid U) := 
   ∃ (M' : matroid_in U), M'.is_minor M ∧ M'.is_isom N 
 
-/-- N is isomorphic to a minor of M iff there is a suitable injection and contract set. This is DTT hell, but hopefully 
-only has to be done once, and is in practice how one would show M has an N-minor -/
+/-- N is isomorphic to a minor of M iff there is a suitable injection and contract set. 
+This is DTT hell, but hopefully only has to be done once, and is in practice how one would 
+show M has an N-minor -/
 lemma iso_to_minor_of_iff_exists_map {N : matroid V}{M : matroid U}:
   N.is_iso_to_minor_of M ↔ ∃ (φ : V ↪ U)(C : set U), (set.range φ) ∩ C = ∅ 
                          ∧ ∀ X, N.r X = M.r (φ '' X ∪ C) - M.r C := 
@@ -49,7 +50,7 @@ begin
   set M₀ : matroid_in U := (M : matroid_in U) / C \ D with hM₀,
   refine ⟨M₀, matroid_in.con_del_is_minor _ _ _,nonempty.intro _, ⟩,
   have hEM: set.range φ = M₀.E , 
-  { rw [disjoint_iff_subset_compl, subset_iff_inter, inter_comm] at hC, 
+  { rw [disjoint_iff_subset_compl, subset_iff_inter_eq_left, inter_comm] at hC, 
     simp only [hM₀, ←hE, hD, hC, compl_compl, univ_inter, inter_distrib_left] with msimp,   
     simp,},
   set eqv : M₀.E ≃ V := 
@@ -59,7 +60,7 @@ begin
   
   simp only [hr, hM₀, heqv] with msimp,  convert rfl,
   have hXD : (↑X ∩ Dᶜ) = X,
-  { simp_rw [←subset_iff_inter,hD,compl_compl, hE, hEM],  
+  { simp_rw [←subset_iff_inter_eq_left,hD,compl_compl, hE, hEM],  
     apply subset_union_of_subset_left hX _, },
   rw hXD, 
      

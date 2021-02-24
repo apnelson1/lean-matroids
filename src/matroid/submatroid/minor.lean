@@ -62,7 +62,7 @@ begin
   ext, 
   {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
   simp only with msimp, intros X hX, 
-  rw [subset_inter_iff, subset_iff_disjoint_compl, subset_iff_inter] at hX, 
+  rw [subset_inter_iff, subset_iff_disjoint_compl, subset_iff_inter_eq_left] at hX, 
   rw [compl_inter, inter_distrib_left], simp [hX], 
 end
 
@@ -73,7 +73,7 @@ begin
   {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
   intros X hX, 
   simp only with msimp at *, 
-  have : M.E ∩ X = X := by {rw inter_comm, exact subset_iff_inter.mp (subset.trans hX (inter_subset_left _ _))}, 
+  have : M.E ∩ X = X := by {rw inter_comm, exact subset_iff_inter_eq_left.mp (subset.trans hX (inter_subset_left _ _))}, 
   rw [r_eq_inter_r M C, r_eq_inter_r M (X ∪ C), inter_distrib_left, this],
 end
 
@@ -318,7 +318,7 @@ let h₁ : p₁.C ∩ p₂.D = ∅ := disjoint_of_subset_left' p₁.C_ss_E (by s
     rw (λ x y z, by linarith : ∀ x y z : ℤ, x-y - (z-y) = x-z),  
     rw [inter_distrib_right, inter_assoc, compl_union, union_assoc],
     congr' 2, 
-    all_goals {convert rfl, rw [←subset_iff_inter, subset_compl_iff_disjoint], exact h₁, },
+    all_goals {convert rfl, rw [←subset_iff_inter_eq_left, subset_compl_iff_disjoint], exact h₁, },
   end }
 
 /-- given a minor pair C,D and a subset of C whose removal doesn't drop the rank of C, moves 
@@ -341,10 +341,10 @@ def move_to_delete (p : minor_pair N M){A : set U}
     simp only [compl_union, h₂, sub_left_inj, union_comm _ (p.C ∩ Aᶜ), union_comm _ p.C] with msimp, 
     
     suffices : X ∩ N.E ∩ p.Dᶜ = X ∩ N.E ∩ (p.Dᶜ ∩ Aᶜ), 
-    { rw this, apply rank_eq_of_le_union_supset, apply inter_subset_left, exact h₂, }, 
+    { rw this, apply rank_eq_of_union_eq_rank_subset, apply inter_subset_left, exact h₂, }, 
     suffices : N.E ∩ Aᶜ = N.E, 
     { rw ←this, ext, simp, tauto, }, 
-    rw [←subset_iff_inter, subset_compl_iff_disjoint, ←disjoint_iff_inter_eq_empty], 
+    rw [←subset_iff_inter_eq_left, subset_compl_iff_disjoint, ←disjoint_iff_inter_eq_empty], 
     exact disjoint_of_subset_right h₁ (E_disj_C p), 
   end } 
 
@@ -367,7 +367,7 @@ def move_to_contract (p : minor_pair N M){A : set U}
     simp only [h₂, sub_left_inj] with msimp at ⊢ hX, 
     rw [union_comm, union_comm _ p.C, eq_comm], 
     suffices : X ∩ N.E ∩ p.Dᶜ = X ∩ N.E ∩ (p.D ∩ Aᶜ)ᶜ, 
-    { rw this, apply rank_eq_of_le_union_supset, apply subset_union_left, exact h₂.symm,},
+    { rw this, apply rank_eq_of_union_eq_rank_subset, apply subset_union_left, exact h₂.symm,},
     rw [compl_inter, inter_distrib_left, inter_assoc _ _ Aᶜᶜ],
     suffices : N.E ∩ Aᶜᶜ = ∅, rw this, simp, 
     rw [compl_compl, ←disjoint_iff_inter_eq_empty], 
@@ -385,7 +385,7 @@ begin
   simp only [diff_eq, matroid_in.dual_r, set.compl_union, sub_lt_sub_iff_right, add_lt_add_iff_left], 
 
   have h : size ((p.D ∪ {e}) ∩ M.E) = size (p.D ∩ M.E) + 1, 
-  { rw [inter_distrib_right, subset_iff_inter.mp (subset.trans heC p.C_ss_E)], 
+  { rw [inter_distrib_right, subset_iff_inter_eq_left.mp (subset.trans heC p.C_ss_E)], 
     apply size_insert_nonmem, 
     by_contra hn, 
     rw singleton_subset_iff at heC, 
@@ -396,15 +396,15 @@ begin
   apply (λ x y y' h', by {rw [add_right_comm, add_assoc],simp only [add_lt_add_iff_left, int.lt_add_one_iff, h'],}: 
   ∀ (x y y' : ℤ), y ≤ y' → x + y < x + 1 + y'), 
   simp_rw [←r_eq_inter_r], 
-  have hCD : p.C ∪ p.Dᶜ = p.Dᶜ := subset_iff_union.mp (by {rw subset_compl_iff_disjoint, exact p.disj}),
-  have h' := (rank_eq_of_le_union_supset (p.Dᶜ ∩ {e}ᶜ) (by simp) he).symm,  
+  have hCD : p.C ∪ p.Dᶜ = p.Dᶜ := subset_iff_union_eq_left.mp (by {rw subset_compl_iff_disjoint, exact p.disj}),
+  have h' := (rank_eq_of_union_eq_rank_subset (p.Dᶜ ∩ {e}ᶜ) (by simp) he).symm,  
   
   convert (has_le.le.trans_eq (eq.le _) h'), 
   { rw [diff_eq, ←inter_distrib_right, hCD], }, 
   convert rfl,
-  rw [union_distrib_left, hCD, ←subset_iff_inter],   
+  rw [union_distrib_left, hCD, ←subset_iff_inter_eq_left],   
   convert subset_univ _, 
-  rwa [←compl_subset_iff_union, ←compl_subset_compl.symm],
+  rwa [←compl_subset_iff_union_eq_left, ←compl_subset_compl.symm],
 end
 
 /-- each minor can be represented by a indep/coindep contract_delete pair -/
@@ -475,7 +475,7 @@ begin
   repeat {rw [inter_assoc] at h}, 
   repeat {rw [←compl_union] at h}, 
   repeat {rw [←union_assoc] at h}, 
-  rw [←subset_iff_inter] at h, 
+  rw [←subset_iff_inter_eq_left] at h, 
   have hC : p₂.C = ∅, 
   { refine empty_of_subset_compl (subset.trans p₂.C_ss_E (subset.trans h _)), 
     intro x, simp, tauto,  },
@@ -499,7 +499,7 @@ begin
     rcases p with ⟨C,D,h,h',rfl⟩,  
     refine ⟨hE, C, by {rw ←h', apply subset_union_left,}, λ X hX, _ ⟩,
     dsimp only at hD, rw disjoint_iff_subset_compl at hD, 
-    simp [subset_iff_inter.mp (subset.trans hX hD), diff_eq], },
+    simp [subset_iff_inter_eq_left.mp (subset.trans hX hD), diff_eq], },
   rcases h with ⟨hE, C,hC, h⟩,
   have h' : M.E ∩ Cᶜ ∩ N.E = N.E, 
   { rw ←subset_iff_inter_eq_right, apply subset_inter hE, 

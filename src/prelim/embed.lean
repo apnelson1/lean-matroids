@@ -10,7 +10,7 @@ mk_simp_attribute coe_up "upwards coercion simp lemmas"
 section size_lemmas 
 variables {A B : Type}[fintype A][fintype B]
 
-lemma size_img_inj (f : A ↪ B)(X : set A): 
+lemma size_img_emb (f : A ↪ B)(X : set A): 
   size (f '' X) = size X := 
 begin
   simp_rw [size, size_nat], norm_cast, 
@@ -18,23 +18,27 @@ begin
   ext, simp, 
 end
 
+lemma size_img_inj {f : A → B}(hf : function.injective f)(X : set A): 
+  size (f '' X) = size X := 
+size_img_emb ⟨f , hf⟩ X
+
 lemma size_img_equiv (f : A ≃ B)(X : set A):
   size (f '' X) = size X :=
-size_img_inj (f.to_embedding) X 
+size_img_emb (f.to_embedding) X 
 
 lemma size_preimg_equiv (f : A ≃ B)(X : set B):
   size (f ⁻¹' X) = size X :=
 begin
   unfold_coes, 
   rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
-  convert size_img_inj (f.symm.to_embedding) X, 
+  convert size_img_emb (f.symm.to_embedding) X, 
 end
 
 lemma size_subtype_img {E : set A}(X : set E): 
   size (subtype.val '' X) = size X :=
 begin
   let f : E ↪ A := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
-  apply size_img_inj f, 
+  apply size_img_emb f, 
 end
 
 end size_lemmas 
