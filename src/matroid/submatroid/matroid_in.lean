@@ -67,7 +67,7 @@ def as_mat (M : matroid_in U) : matroid M.E := as_mat_on M M.E
 
 mk_simp_attribute msimp "minor simp lemmas"
 
-attribute [msimp] diff_eq 
+--attribute [msimp] diff_eq 
 
 @[simp, msimp] lemma as_mat_r (M : matroid_in U)(X : set (M.E)): 
   M.as_mat.r X = M.r (X : set U) :=
@@ -148,7 +148,7 @@ instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_m
   (as_matroid_in M).r X = M.r X 
 := rfl 
 
-@[simp, msimp] lemma coe_to_as_matroid_in_r (M : matroid U)(X : set U): 
+@[simp, msimp] lemma coe_r (M : matroid U)(X : set U): 
   (M : matroid_in U).r X = M.r X 
 := rfl 
 
@@ -277,22 +277,77 @@ end defs
 
 variables {V : Type}[fintype V]
 
-/-- isomorphism between a matroid_in an a matroid -/
-def isom (M : matroid_in U)(N : matroid V) := 
-  matroid.isom M.as_mat N 
+/-- isomorphism between two matroid_in. -/
+def isom (M : matroid_in U)(N : matroid_in V) := 
+  matroid.isom M.as_mat N.as_mat 
 
-def is_isom (M : matroid_in U)(N : matroid V) := 
+/-- there exists an isomorphism between two matroid_in -/
+def is_isom (M : matroid_in U)(N : matroid_in V) := 
   nonempty (M.isom N)
 
+/-- isomorphism from a matroid_in to a matroid -/
+def isom_to_matroid (M : matroid_in U)(N : matroid V) := 
+  matroid.isom M.as_mat N 
+
+/-- there exists an isomorphism from a matroid_in to a matroid -/
+def is_isom_to_matroid (M : matroid_in U)(N : matroid V) := 
+  nonempty (M.isom_to_matroid N)
+
+
+/-- converts an isomorphism between (M : matroid_in) and (N : matroid) to one between 
+(M : matroid_in) and (↑N : matroid_in) -/
+def isom_of_isom_to_matroid {M : matroid_in U}{N : matroid V}(i : isom_to_matroid M N): 
+  isom M (N : matroid_in V) :=
+⟨ i.equiv.trans ((equiv.set.univ V).symm.trans (equiv.set.of_eq (coe_E N).symm)), 
+  λ X, by {rw [←i.on_rank X, as_mat_r, coe_r], congr', unfold_coes, ext, simp}⟩
+
+/-- converts an isomorphism between (M : matroid_in) and (↑N : matroid_in) to one between 
+(M : matroid_in) and (N : matroid) -/
+def isom_to_matroid_of_isom {M : matroid_in U}{N : matroid V}(i : isom M (N : matroid_in V)):
+  isom_to_matroid M N := 
+⟨ i.equiv.trans ((equiv.set.of_eq (coe_E N)).trans (equiv.set.univ V)),
+  λ X, begin
+    rw [←i.on_rank X, as_mat_r, coe_r], congr' 1, 
+    unfold_coes, ext, 
+    simp only [mem_image, equiv.to_fun_as_coe, equiv.set.of_eq_apply, set_coe.exists, 
+    mem_univ, function.comp_app, exists_eq_right, exists_prop_of_true, equiv.coe_trans, 
+    subtype.coe_eta, equiv.set.univ_apply, subtype.coe_mk, coe_E], 
+    split;
+    {rintros ⟨x,hx,⟨hxX, h'⟩⟩, refine ⟨x,hx,hxX,_⟩, try {rw h', simp}, try {rw ←h', simp},},       
+  end ⟩ 
+
+lemma is_isom_to_matroid_iff_is_isom_to_coe {M : matroid_in U}{N : matroid V}:
+  is_isom_to_matroid M N ↔ is_isom M (N : matroid_in V) :=
+begin
+  split,
+  rintros ⟨i⟩, exact ⟨isom_of_isom_to_matroid i⟩, 
+  rintros ⟨i⟩, exact ⟨isom_to_matroid_of_isom i⟩, 
+end
+
 /-- for (M : matroid U), gives an matroid_in isomorphism from of_mat M to M -/
-def of_mat_isom (M : matroid U) : isom (as_matroid_in M) M := 
+def coe_isom (M : matroid U) : 
+isom_to_matroid (M : matroid_in U) M := 
 { equiv := equiv.subtype_univ_equiv (by tauto),
   on_rank := λ X, by {apply congr_arg, ext, exact iff.rfl, } }
 
+/-- for (M : matroid U), gives a matroid_in isomorphism from M to (M.as_mat : matroid_in M.E)-/
+def as_mat_isom (M : matroid_in U) : isom M (M.as_mat : matroid_in M.E) :=
+{ equiv := (equiv.set.univ M.E).symm.trans (equiv.set.of_eq (coe_E M.as_mat).symm), 
+  on_rank := λ X,  begin
+    simp only [as_mat_r, coe_r,subtype.coe_mk,coe_E], 
+    congr, unfold_coes, ext, cases x with x hx, 
+    simp only [mem_image, equiv.to_fun_as_coe, equiv.set.of_eq_apply, set_coe.exists, 
+    exists_and_distrib_right, mem_univ, equiv.set.univ_symm_apply, function.comp_app, 
+    subtype.mk_eq_mk, exists_eq_right, exists_prop_of_true, equiv.coe_trans,  subtype.coe_mk, 
+    coe_E, subtype.val_eq_coe], 
+    tauto, 
+end}
+
+
 /-- N is isomorphic to a matroid_in of M iff there is a suitable injection from N to M. This is 
 dtt hell, but probably only needs to be done once. -/
-lemma isom_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
-  is_isom M N ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
+lemma isom_to_matroid_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
+  M.is_isom_to_matroid N ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
 begin
   split, 
   begin
@@ -333,6 +388,10 @@ begin
   refine λ hx hxX', ⟨eqv ⟨x,hx⟩,⟨⟨x,hx,⟨hxX',_⟩⟩,_⟩⟩,
   all_goals {simp [heqv, equiv.set.apply_range_symm φ φ.inj']}, 
 end
+
+lemma isom_to_coe_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
+  M.is_isom (N : matroid_in V) ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
+by rw [←isom_to_matroid_iff_exists_embedding, is_isom_to_matroid_iff_is_isom_to_coe]
 
 
 

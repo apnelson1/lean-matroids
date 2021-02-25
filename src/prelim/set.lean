@@ -384,6 +384,9 @@ by {rw [diff_eq, union_distrib_left, union_compl_self, inter_univ]}
 @[simp] lemma union_diff_diff (X Y : set A) : (X ∪ Y) \ (Y \ X) = X := 
 by rw [diff_eq, diff_eq, compl_inter,compl_compl,union_comm, ←union_distrib_right, inter_compl_self, empty_union]
 
+lemma diff_self_diff (X Y : set A) : X \ (X \ Y) = X ∩ Y := 
+by rw [diff_eq, compl_diff, inter_distrib_left, inter_compl_self, empty_union]
+
 lemma inter_distrib_diff (X Y Z : set A) : X ∩ (Y \ Z) = (X ∩ Y) \ (X ∩ Z) := 
 by {rw [diff_eq, diff_eq, compl_inter, inter_distrib_left, inter_right_comm, inter_compl_self, empty_inter, empty_union, ←inter_assoc]}
 
