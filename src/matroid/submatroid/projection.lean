@@ -81,6 +81,14 @@ lemma loopify_is_weak_image (M : matroid U)(D : set U):
   M ⟍ D ≤ M :=
 λ X, rank_mono_diff _ _ _ 
 
+lemma project_rank_zero_eq {M : matroid U}{C : set U}(h : M.r C = 0):
+  M ⟋ C = M := 
+by {ext X, rw [project_r, rank_eq_rank_union_rank_zero X h, h, sub_zero]}
+
+lemma project_rank_zero_of_rank_zero {M : matroid U}(C : set U){X : set U}(hX : M.r X = 0):
+  (M ⟋ C).r X = 0 := 
+by {apply rank_eq_zero_of_le_zero, rw ←hX, apply project_is_weak_image}
+
 lemma loopify_loopify (M : matroid U)(D D' : set U):
    M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
 by {ext X, simp [diff_eq, ←inter_assoc, inter_right_comm]}
@@ -89,6 +97,11 @@ lemma loopify_makes_loops (M : matroid U)(D : set U):
   loops M ∪ D ⊆ loops (M ⟍ D) := 
 by {rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], tidy,}
 
+lemma loopify_rank_zero_eq {M : matroid U}{D : set U}(h : M.r D = 0):
+  M ⟍ D = M := 
+by {ext X, rw [loopify_r, rank_eq_rank_diff_rank_zero X h]}
+
+
 lemma loopified_set_rank_zero (M : matroid U)(D : set U):
   (M ⟍ D).r D = 0 :=
 by rw [loopify_r, set.diff_self, rank_empty] 
@@ -96,7 +109,15 @@ by rw [loopify_r, set.diff_self, rank_empty]
 lemma loopified_set_union_rank_zero (M : matroid U)(D : set U){X : set U}(h: M.r X = 0):
   (M ⟍ D).r (X ∪ D) = 0 :=
 by {simp only [loopify_r, union_left_absorb, union_comm X], 
-    exact rank_subset_rank_zero (by {intro x, simp, tauto}) h}
+    exact rank_zero_of_subset_rank_zero (by {intro x, simp, tauto}) h}
+
+lemma loopify_rank_zero_of_rank_zero {M : matroid U}(D : set U){X : set U}(hX : M.r X = 0):
+  (M ⟍ D).r X = 0 := 
+by {apply rank_eq_zero_of_le_zero, rw ←hX, apply loopify_is_weak_image}
+
+lemma loopify_rank_of_disjoint (M : matroid U){D X : set U}(h : D ∩ X = ∅):
+  (M ⟍ D).r X = M.r X := 
+by {rw loopify_r, congr, rwa [inter_comm, disjoint_iff_diff_eq_left] at h}
 
 lemma indep_of_loopify_indep {M : matroid U}{D X : set U}(hX : is_indep (M ⟍ D) X) : 
   is_indep M X := 
@@ -200,19 +221,42 @@ def is_pseudominor_of (N M : matroid U) :=
 lemma pr_lp_eq_lp_pr (M : matroid U)(C D : set U):
   M ⟋ C ⟍ D = M ⟍ (D \ C) ⟋ C :=
 by {ext X, simp only [loopify_r, project_r], convert rfl; {ext, simp, tauto! }}
-
   
 lemma lp_pr_eq_pr_lp (M : matroid U)(C D : set U):
   M ⟍ D ⟋ C = M ⟋ (C \ D) ⟍ D :=
 by {ext X, simp only [loopify_r, project_r], convert rfl; {ext, simp, tauto! }}
 
-
-
-lemma pseudominor_iff_exists_lp_pr (N M : matroid U) :
-  N.is_pseudominor_of M ↔ ∃ C D, N = M ⟍ D ⟋ C :=
+lemma rank_zero_of_lp_pr (M : matroid U)(C D : set U):
+  (M ⟍ D ⟋ C).r (C ∪ D) = 0 := 
 begin
-  split, rintros ⟨C,D,h⟩, refine ⟨C,D \ C,_ ⟩, rwa ←pr_lp_eq_lp_pr, 
-  rintros ⟨C,D,h⟩, refine ⟨C \ D, D, _⟩, rwa ←lp_pr_eq_pr_lp, 
+  apply rank_zero_of_union_rank_zero, apply projected_set_rank_zero, 
+  apply project_rank_zero_of_rank_zero, apply loopified_set_rank_zero, 
+end
+
+lemma rank_zero_of_pr_lp (M : matroid U)(C D : set U):
+  (M ⟋ C ⟍ D).r (C ∪ D) = 0 := 
+begin
+  apply rank_zero_of_union_rank_zero, 
+  apply loopify_rank_zero_of_rank_zero, apply projected_set_rank_zero, 
+  apply loopified_set_rank_zero,
+end
+
+lemma pseudominor_iff_exists_lp_pr_disjoint {N M : matroid U} :
+  N.is_pseudominor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟍ D ⟋ C :=
+begin
+  split, rintros ⟨C,D,h⟩, refine ⟨C,D \ C, ⟨by simp ,_⟩ ⟩, rwa ←pr_lp_eq_lp_pr, 
+  rintros ⟨C,D,hCD,h⟩, refine ⟨C \ D, D, _⟩, rwa ←lp_pr_eq_pr_lp, 
+end
+
+lemma pseudominor_iff_exists_pr_lp_disjoint {N M : matroid U} :
+  N.is_pseudominor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟋ C ⟍ D :=
+begin
+  split, swap, rintros ⟨C,D,hCD,h⟩, exact ⟨C, D, h⟩,
+  rintros ⟨C,D,h⟩, refine ⟨C,D \ C, ⟨by simp ,_⟩ ⟩, 
+  rw [h, ←loopify_rank_zero_eq (_ : (M ⟋ C ⟍ (D \ C)).r (C ∩ D) = 0), loopify_loopify],
+  { congr, ext, simp, tauto!, }, 
+  refine rank_zero_of_subset_rank_zero _ (rank_zero_of_pr_lp _ _ _), 
+  intro x, simp, tauto,
 end
 
 

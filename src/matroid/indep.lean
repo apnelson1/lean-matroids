@@ -32,7 +32,7 @@ end
 
 lemma exists_basis_of (M : indep_family' U)(X : set U):
   ∃ B, M.basis_of B X := 
-by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.I1), finish,}
+by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.empty_indep), finish,}
 
 
 end indep_family'-/
@@ -48,18 +48,18 @@ namespace indep_family
 
 
 /-- removing an element from an independent set preserves independence-/
-def satisfies_weak_I2 : (set U → Prop) → Prop :=
+def satisfies_weak_indep_of_subset_indep : (set U → Prop) → Prop :=
   λ indep, ∀ I (e : U), e ∉ I → indep (I ∪ {e}) → indep I 
 
-lemma weak_I2_to_I2 (indep : set U → Prop):  
-  satisfies_weak_I2 indep → satisfies_I2  indep :=
+lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set U → Prop):  
+  satisfies_weak_indep_of_subset_indep indep → satisfies_indep_of_subset_indep  indep :=
   begin
-    intros hwI2 I J hIJ hJ, 
+    intros hwindep_of_subset_indep I J hIJ hJ, 
     rcases minimal_example (λ K, I ⊆ K ∧ indep K) ⟨hIJ, hJ⟩ with ⟨K,⟨hKs,⟨⟨hIK,hKind⟩,hmin⟩⟩⟩,
     by_cases I = K, rw ←h at hKind, assumption, 
     rcases aug_of_ssubset (ssubset_of_subset_ne hIK h) with ⟨K',e,hIK',hK'K,hK'e⟩,
     have heK' : e ∉ K' := by {rw ssubset_of_add_nonmem_iff, rw hK'e, from hK'K },
-    from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwI2 _ _ heK' hKind}⟩ )
+    from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwindep_of_subset_indep _ _ heK' hKind}⟩ )
   end
 
 /-- B spans X and is independent -/
@@ -80,7 +80,7 @@ def choose_extension_to_basis (M : indep_family U) {I X : set U} (hIX : I ⊆ X)
 
 /-- choose a basis of X -/
 def choose_set_basis (M : indep_family U) (X : set U) :=
-  M.choose_extension_to_basis (empty_subset X) (M.I1)
+  M.choose_extension_to_basis (empty_subset X) (M.empty_indep)
 
 /-- properties of the choice of a basis of X-/
 def choose_extension_to_basis_spec (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : _ := 
@@ -92,7 +92,7 @@ lemma choice_of_extension_to_basis_is_valid (M : indep_family U) {I X : set U} (
 
 lemma choice_of_set_basis_is_valid (M : indep_family U) (X : set U) : 
   is_set_basis M (M.choose_set_basis X) X :=
-  (choice_of_extension_to_basis_is_valid M (empty_subset X) (M.I1)).2 
+  (choice_of_extension_to_basis_is_valid M (empty_subset X) (M.empty_indep)).2 
 
 lemma has_ext_to_basis (M : indep_family U) {I X : set U}: 
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ is_set_basis M B X := 
@@ -171,7 +171,7 @@ end
 
 lemma I_to_R0 (M : indep_family U): 
   satisfies_R0 M.I_to_r := 
-λ X, by {have := I_to_r_ub (empty_subset X) (M.I1), rw size_empty at this, assumption}
+λ X, by {have := I_to_r_ub (empty_subset X) (M.empty_indep), rw size_empty at this, assumption}
 
 lemma I_to_R1 (M : indep_family U): 
   satisfies_R1 M.I_to_r := 
@@ -198,7 +198,7 @@ begin
   have := I_to_r_of_set_basis hUb, linarith, 
   have : B = BU ∩ X := by
   {
-    have := I_to_r_ub (inter_subset_right BU X) (M.I2 _ _ (inter_subset_left BU X) hUb.2.1),
+    have := I_to_r_ub (inter_subset_right BU X) (M.indep_of_subset_indep _ _ (inter_subset_left BU X) hUb.2.1),
     rw [I_to_r_of_set_basis h] at this, 
     from eq_of_le_size_subset (subset_of_inter_mpr hUs h.1) this, 
   },

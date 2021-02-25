@@ -761,9 +761,9 @@ end matroid
 structure indep (E : finset α) :=
 (indep : finset (finset α))
 (indep_subset_powerset_ground : indep ⊆ powerset E)
--- (I1)
+-- (empty_indep)
 (empty_mem_indep : ∅ ∈ indep)
--- (I2)
+-- (indep_of_subset_indep)
 (indep_of_subset_indep {x y} (hx : x ∈ indep) (hyx : y ⊆ x) : y ∈ indep)
 -- (I3)
 (indep_exch {x y} (hx : x ∈ indep) (hy : y ∈ indep) (hcard : card x < card y)
@@ -838,7 +838,7 @@ have hxmy : x \ y ≠ ∅ := mt subset_iff_sdiff_eq_empty.mpr $ mt (C2_of_indep 
     have hxaF : erase x a ∈ F := mem_filter.2 ⟨mem_powerset.mpr $ subset.trans (erase_subset a x) $
       @subset_union_left _ _ x y, ⟨subset.refl _, hxai⟩⟩, clear hxai,
     exact exists.elim (max_fun_of_ne_empty card $ ne_empty_of_mem hxaF)
-      (λ I hEI2, exists.elim hEI2 $ by { clear hxaF hEI2,
+      (λ I hEindep_of_subset_indep, exists.elim hEindep_of_subset_indep $ by { clear hxaF hEindep_of_subset_indep,
         exact λ hIF hI,
           have hIFindep : I ∈ m.indep := (mem_filter.mp hIF).2.2,
           have hIdep : _ → I ∉ m.indep := (dep_iff_circuit_subset m $ mem_powerset.1 $
@@ -929,7 +929,7 @@ def indep_indep_of_circuits (C : circuits E) : finset (finset α) :=
 (powerset E).filter (λ S, ∀ c ∈ C.circuits, ¬c ⊆ S)
 
 /-- first part of Theorem 1.1.4 -/
-lemma I2_of_circuits (C : circuits E) (x y : finset α) : x ∈ indep_indep_of_circuits C → y ⊆ x →
+lemma indep_of_subset_indep_of_circuits (C : circuits E) (x y : finset α) : x ∈ indep_indep_of_circuits C → y ⊆ x →
   y ∈ indep_indep_of_circuits C :=
 begin
   simp only [indep_indep_of_circuits, mem_powerset, and_imp, mem_filter],
@@ -960,7 +960,7 @@ begin
           have Hxsubz : x ⊆ z := subset_iff_sdiff_eq_empty.mpr H,
           have hay : a ∈ y := or.elim (mem_union.mp $ mem_of_subset hzxuy ha.1)
             (λ Hax, false.elim $ ha.2 Hax) id,
-          have haindep : insert a x ∈ indep_indep_of_circuits C := I2_of_circuits C z (insert a x)
+          have haindep : insert a x ∈ indep_indep_of_circuits C := indep_of_subset_indep_of_circuits C z (insert a x)
             (by { simp only [indep_indep_of_circuits, mem_powerset, mem_filter],
             exact ⟨subset.trans hzxuy $ union_subset hx.1 hy.1, hz.1⟩ })
             (insert_subset.mpr ⟨ha.1, Hxsubz⟩),
@@ -1080,7 +1080,7 @@ def indep_of_circuits (C : circuits E) : indep E :=
 by simp only [indep_indep_of_circuits, filter_subset],
 mem_filter.mpr
   ⟨empty_mem_powerset E, λ c hc H, C.empty_not_mem_circuits $ (subset_empty.mp H) ▸ hc⟩,
-I2_of_circuits C,
+indep_of_subset_indep_of_circuits C,
 I3_of_circuits C⟩
 
 instance circ_indep : has_coe (circuits E) (indep E) := ⟨indep_of_circuits⟩

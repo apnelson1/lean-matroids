@@ -77,14 +77,14 @@ begin
   sorry 
 end
 
-lemma satisfies_I1 (M : clfun U) : 
-  satisfies_I1 M.is_indep :=
+lemma satisfies_empty_indep (M : clfun U) : 
+  satisfies_empty_indep M.is_indep :=
   λ e h, false.elim (not_mem_empty e h)
   
-lemma satisfies_I2 (M : clfun U) : 
-  satisfies_I2 M.is_indep :=
+lemma satisfies_indep_of_subset_indep (M : clfun U) : 
+  satisfies_indep_of_subset_indep M.is_indep :=
 begin
-  apply indep_family.weak_I2_to_I2 (λ X, M.is_indep X), 
+  apply indep_family.weak_indep_of_subset_indep_to_indep_of_subset_indep (λ X, M.is_indep X), 
   intros I e heI hIe,
   by_contra h, unfold is_indep at h, push_neg at h, 
   rcases h with ⟨f, ⟨hfI, hIfcl⟩⟩, 
@@ -102,7 +102,7 @@ end
 end clfun 
 
 def indep_family.of_clfun (M : clfun U) : indep_family U := 
-⟨M.is_indep, M.satisfies_I1, M.satisfies_I2, M.satisfies_I3⟩
+⟨M.is_indep, M.satisfies_empty_indep, M.satisfies_indep_of_subset_indep, M.satisfies_I3⟩
 
 namespace matroid 
 

@@ -64,13 +64,13 @@ lemma rank_eq_zero_of_le_zero {M : matroid U}{X : set U}:
   M.r X ≤ 0 → M.r X = 0 := 
 λ h, le_antisymm h (M.rank_nonneg X)
 
-lemma rank_subset_rank_zero {M : matroid U}{X Y : set U}: 
+lemma rank_zero_of_subset_rank_zero {M : matroid U}{X Y : set U}: 
   X ⊆ Y → M.r Y = 0 → M.r X = 0 := 
 λ hXY hY, by {apply rank_eq_zero_of_le_zero, rw ←hY, exact rank_mono M hXY}
 
-lemma rank_inter_rank_zero {M : matroid U}(X : set U){Y : set U}:
+lemma rank_zero_of_inter_rank_zero {M : matroid U}(X : set U){Y : set U}:
   M.r Y = 0 → M.r (X ∩ Y) = 0 :=
-λ hY, by {apply rank_subset_rank_zero _ hY, simp }
+λ hY, by {apply rank_zero_of_subset_rank_zero _ hY, simp }
 
 @[simp] lemma rank_empty (M : matroid U): 
   M.r ∅ = 0 := 
@@ -439,14 +439,10 @@ begin
   exact subset_indep_r he hI, 
 end
 
-lemma I1 (M : matroid U) : 
-  M.is_indep ∅ := 
-  empty_indep M 
-
 instance nonempty_indep {M : matroid U} : nonempty (M.indep) := 
-by {apply nonempty_subtype.mpr, from ⟨∅, M.I1⟩}
+by {apply nonempty_subtype.mpr, from ⟨∅, M.empty_indep⟩}
 
-lemma I2 {M : matroid U} {X Y : set U}: 
+lemma indep_of_subset_indep {M : matroid U} {X Y : set U}: 
   X ⊆ Y → M.is_indep Y → M.is_indep X := 
 begin 
   intro hXY, simp_rw indep_iff_r, intro hY, 
@@ -454,21 +450,21 @@ begin
   diff_size hXY, rank_diff_subadditive M X Y]
 end 
 
-lemma I2_i_right {M : matroid U}(X Y : set U):
+lemma inter_indep_of_indep_right {M : matroid U}(X Y : set U):
   M.is_indep Y → M.is_indep (X ∩ Y) :=
-λ h, I2 (inter_subset_right _ _) h 
+λ h, indep_of_subset_indep (inter_subset_right _ _) h 
 
-lemma I2_i_left {M : matroid U}(X Y : set U):
+lemma inter_indep_of_indep_left {M : matroid U}(X Y : set U):
   M.is_indep X → M.is_indep (X ∩ Y) :=
-λ h, I2 (inter_subset_left _ _) h 
+λ h, indep_of_subset_indep (inter_subset_left _ _) h 
 
-lemma I2_u_right {M : matroid U}{X Y : set U}:
+lemma indep_of_union_indep_right {M : matroid U}{X Y : set U}:
   M.is_indep (X ∪ Y) → M.is_indep Y :=
-λ h, I2 (subset_union_right _ _) h
+λ h, indep_of_subset_indep (subset_union_right _ _) h
 
-lemma I2_u_left {M : matroid U}{X Y : set U}:
+lemma indep_of_union_indep_left {M : matroid U}{X Y : set U}:
   M.is_indep (X ∪ Y) → M.is_indep X :=
-λ h, I2 (subset_union_left _ _) h 
+λ h, indep_of_subset_indep (subset_union_left _ _) h 
 
 lemma I3 {M : matroid U}{X Y : set U}: 
   size X < size Y → M.is_indep X → M.is_indep Y → (∃ (e:U), e ∈ Y \ X ∧ M.is_indep (X ∪ {e})) := 
@@ -477,17 +473,17 @@ lemma I3 {M : matroid U}{X Y : set U}:
 lemma indep_inter_rank_zero {M : matroid U}{I X : set U}(hI : M.is_indep I)(hX : M.r X = 0): 
    I ∩ X = ∅ :=
 begin
-  have h := I2_i_left I X hI, 
-  rwa [indep_iff_r,rank_inter_rank_zero I hX, eq_comm, size_zero_iff_empty] at h, 
+  have h := inter_indep_of_indep_left I X hI, 
+  rwa [indep_iff_r,rank_zero_of_inter_rank_zero I hX, eq_comm, size_zero_iff_empty] at h, 
 end
 
 /-- converts a matroid to an independence family -/
 def to_indep_family (M : matroid U) : indep_family U := 
-  ⟨M.is_indep, I1 M, @I2 _ _ M, @I3 _ _ M⟩
+  ⟨M.is_indep, empty_indep M, @indep_of_subset_indep _ _ M, @I3 _ _ M⟩
 
 
 instance nonempty_indep_subset_of (M : matroid U)(X : set U) : nonempty (indep_subset_of M X) :=
-by {apply nonempty_subtype.mpr, exact ⟨∅,⟨empty_subset _, M.I1⟩ ⟩, }
+by {apply nonempty_subtype.mpr, exact ⟨∅,⟨empty_subset _, M.empty_indep⟩ ⟩, }
 
 instance fintype_indep_subset_of (M : matroid U)(X : set U) : fintype (indep_subset_of M X) :=
 by {unfold indep_subset_of, apply_instance, } 
@@ -1447,7 +1443,7 @@ lemma indep_iff_contained_in_basis {M : matroid U}{X : set U}:
 begin
   refine ⟨λ h, extends_to_basis h,  λ h, _⟩, 
   cases h with B hB, 
-  from I2 hB.1 (basis_is_indep hB.2),  
+  from indep_of_subset_indep hB.1 (basis_is_indep hB.2),  
 end
 
 lemma mem_cl_iff_i {M : matroid U}{X : set U}{e : U} :

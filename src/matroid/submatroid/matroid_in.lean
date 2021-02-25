@@ -1,5 +1,5 @@
 import prelim.embed prelim.minmax set_tactic.solver
-import matroid.rankfun matroid.dual .projection
+import matroid.rankfun matroid.dual 
 
 open_locale classical 
 noncomputable theory
@@ -30,7 +30,7 @@ lemma r_eq_r_inter (M : matroid_in U)(X : set U):
 begin
   nth_rewrite 0 ←(inter_union_compl X M.E), 
   apply rank_eq_rank_union_rank_zero,
-  exact rank_inter_rank_zero _ M.support, 
+  exact rank_zero_of_inter_rank_zero _ M.support, 
 end
 
 lemma r_eq_inter_r (M : matroid_in U)(X : set U):
@@ -47,8 +47,8 @@ begin
   apply ext' h_ground, ext X,
   specialize h_r (X ∩ M₁.E) (by simp),  
   rw (by simp : X = (X ∩ M₁.E) ∪ (X ∩ M₁.Eᶜ)), 
-  have h₁ := matroid.rank_inter_rank_zero X M₁.support,
-  have h₂ := matroid.rank_inter_rank_zero X M₂.support, rw ←h_ground at h₂, 
+  have h₁ := matroid.rank_zero_of_inter_rank_zero X M₁.support,
+  have h₂ := matroid.rank_zero_of_inter_rank_zero X M₂.support, rw ←h_ground at h₂, 
   rw [matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.E) h₁, matroid.rank_eq_rank_union_rank_zero (X ∩ M₁.E) h₂], 
   exact h_r, 
 end
@@ -152,6 +152,10 @@ instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_m
   (M : matroid_in U).r X = M.r X 
 := rfl 
 
+@[simp, msimp] lemma coe_E (M : matroid U): 
+  (M : matroid_in U).E = univ := 
+rfl 
+
 section defs 
 
 /-- translates a property of sets defined on (matroid V) to the corresponding
@@ -187,6 +191,10 @@ by rw [indep_iff_r, matroid.indep_iff_r, r_carrier_eq_r]
 lemma indep_iff_subtype {M : matroid_in U}{X : set U}: 
   M.is_indep X ↔ X ⊆ M.E ∧ M.as_mat.is_indep (inter_subtype M.E X) :=
 by rw [is_indep, lift_mat_set_property]
+
+@[simp, msimp] lemma indep_iff_coe {M : matroid U}{X : set U}:
+  (M : matroid_in U).is_indep X ↔ M.is_indep X := 
+by {rw [matroid_in.indep_iff_r, matroid.indep_iff_r], simp,  }
 
 def is_circuit (M : matroid_in U)(C : set U) := 
   (lift_mat_set_property (@matroid.is_circuit)) M C 

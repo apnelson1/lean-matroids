@@ -62,8 +62,8 @@ structure fin_bool_alg :=
 Various instances to allow nice notations:
 (X : A), ⊥, ⊤, (X ∩ Y), (X ∪ Y), Xᶜ, (X ⊆ Y)
 -/
-instance i1 : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
-instance i2 {A : fin_bool_alg} : has_bot A := {bot := A.bot}
+instance empty_indep : has_coe_to_sort fin_bool_alg := {S := Type, coe := fin_bool_alg.subset}
+instance indep_of_subset_indep {A : fin_bool_alg} : has_bot A := {bot := A.bot}
 instance i3 {A : fin_bool_alg} : has_top A := {top := A.top}
 instance i4 {A : fin_bool_alg} : has_inter A := {inter := A.inter}
 instance i5 {A : fin_bool_alg} : has_union A := {union := A.union}

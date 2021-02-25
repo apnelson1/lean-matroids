@@ -34,15 +34,15 @@ with ground set `E` (encoded in Lean as a `fintype`).
 
 It has the following fields:
 - `indep : finset (finset E)` : the set of independent subsets of E
-- `empty_mem_indep` : axiom (I1), the empty set is independent.
-- `indep_of_subset_indep` : axiom (I2), subsets of independent sets are independent.
+- `empty_mem_indep` : axiom (empty_indep), the empty set is independent.
+- `indep_of_subset_indep` : axiom (indep_of_subset_indep), subsets of independent sets are independent.
 - `indep_exch` : axiom (I3), the exchange axiom. Given two independent sets `x`, `y` with `x.card < y.card`, there exists `e ∈ y \ x` such that `insert e x` is independent.
 -/
 structure of_indep :=
 (indep : finset (finset E))
--- (I1)
+-- (empty_indep)
 (empty_mem_indep : ∅ ∈ indep)
--- (I2)
+-- (indep_of_subset_indep)
 (indep_of_subset_indep {x y : finset E} (hx : x ∈ indep) (hyx : y ⊆ x) : y ∈ indep)
 -- (I3)
 (indep_exch {x y : finset E} (hx : x ∈ indep) (hy : y ∈ indep) (hcard : card x < card y)

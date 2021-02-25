@@ -88,13 +88,13 @@ instance basis_pair_fintype {M₁ M₂ : matroid U} : fintype (basis_pair M₁ M
 instance indep_pair_nonempty {M₁ M₂ : matroid U} : nonempty (indep_pair M₁ M₂) := 
 begin
   simp only [indep_pair, nonempty_subtype, prod.exists], 
-  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩ ⟩ , 
+  from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩ ⟩ , 
 end 
 
 instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid U}{X : set U} : nonempty (indep_pair_of_subset M₁ M₂ X) := 
 begin
   simp only [indep_pair_of_subset, nonempty_subtype, prod.exists], 
-  from ⟨∅, ∅, ⟨M₁.I1, M₂.I1⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
+  from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
 end 
 
 instance indep_pair_of_subset_fintype {M₁ M₂ : matroid U}{X : set U} : fintype (indep_pair_of_subset M₁ M₂ X) := 
@@ -126,11 +126,11 @@ by {unfold inter_bases, apply_instance,}
 
 instance disjoint_indep_pair_nonempty (M₁ M₂ : matroid U) : 
   nonempty (disjoint_indep_pair M₁ M₂) :=
-by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅⟩, ⟨I1 M₁, I1 M₂⟩⟩, tidy,  } 
+by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅⟩, ⟨empty_indep M₁, empty_indep M₂⟩⟩, tidy,  } 
 
 
 instance nonempty_common_ind (M₁ M₂ : matroid U) : nonempty (common_ind M₁ M₂) := 
-by {apply nonempty_subtype.mpr, from ⟨∅, ⟨I1 M₁, I1 M₂⟩⟩}
+by {apply nonempty_subtype.mpr, from ⟨∅, ⟨empty_indep M₁, empty_indep M₂⟩⟩}
 
 instance fintype_common_ind (M₁ M₂ : matroid U ): fintype (common_ind M₁ M₂) := 
   by {unfold common_ind, apply_instance}
@@ -167,7 +167,7 @@ def indep_tuple (Ms : fin n → matroid U) :=
   {Is : fin n → set U // is_indep_tuple Ms Is}
 
 instance indep_tuple_nonempty (Ms : fin n → matroid U) : nonempty (indep_tuple Ms) := 
-  by {apply nonempty_subtype.mpr, exact ⟨λ i, ∅, λ i, (Ms i).I1⟩,}
+  by {apply nonempty_subtype.mpr, exact ⟨λ i, ∅, λ i, (Ms i).empty_indep⟩,}
 
 instance indep_tuple_fintype (Ms : fin n → matroid U) : fintype (indep_tuple Ms) := 
   by {unfold indep_tuple, apply_instance,  }
@@ -235,7 +235,7 @@ begin
   refine ⟨Ms'.cons ∅, ⟨by simp [h1], λ MX, _⟩⟩,  
   simp only [list.mem_cons_iff, list.zip_cons_cons],
   rintro ⟨c1, c2⟩, 
-  apply I1, apply h2, from H, 
+  apply empty_indep, apply h2, from H, 
   -- I imagine this shouldn't be so hard  
 end
 

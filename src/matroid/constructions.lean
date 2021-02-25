@@ -13,13 +13,13 @@ variables {U : Type}[fintype U]
 def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
 
-lemma trunc.I1 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
-  satisfies_I1 (trunc.indep M hn) := 
-⟨M.I1, by {rw size_empty, assumption}⟩
+lemma trunc.empty_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
+  satisfies_empty_indep (trunc.indep M hn) := 
+⟨M.empty_indep, by {rw size_empty, assumption}⟩
 
-lemma trunc.I2 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
-  satisfies_I2 (trunc.indep M hn) := 
-λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
+lemma trunc.indep_of_subset_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
+  satisfies_indep_of_subset_indep (trunc.indep M hn) := 
+λ I J hIJ hJ, ⟨M.indep_of_subset_indep I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
 lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
@@ -34,7 +34,7 @@ end
 
 def truncate (M : matroid U){n : ℤ}(hn : 0 ≤ n) : matroid U := 
   let M_ind := M.to_indep_family in 
-  matroid.of_indep_family ⟨trunc.indep M_ind hn, trunc.I1 M_ind hn, trunc.I2 M_ind hn, trunc.I3 M_ind hn⟩
+  matroid.of_indep_family ⟨trunc.indep M_ind hn, trunc.empty_indep M_ind hn, trunc.indep_of_subset_indep M_ind hn, trunc.I3 M_ind hn⟩
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
 lemma truncate_rank (M : matroid U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
@@ -49,7 +49,7 @@ begin
   by_cases n ≤ size B,
   rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
   rw hBS at h, 
-  refine ⟨B₀, ⟨⟨_,⟨⟨matroid.I2 hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
+  refine ⟨B₀, ⟨⟨_,⟨⟨matroid.indep_of_subset_indep hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
   from subset.trans hB₀ hBX, 
   linarith [size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   push_neg at h, 
@@ -88,7 +88,7 @@ lemma free_iff_univ_indep {M : matroid U}:
 begin
   refine ⟨λ h, _, λ h,_⟩, 
   rw [indep_iff_r,h], finish,  
-  ext X, simp_rw [free_matroid_on, ←indep_iff_r, I2 (subset_univ X) h], 
+  ext X, simp_rw [free_matroid_on, ←indep_iff_r, indep_of_subset_indep (subset_univ X) h], 
 end
 
 def loopy_matroid_on : matroid U := 

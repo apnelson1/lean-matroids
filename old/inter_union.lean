@@ -13,7 +13,7 @@ def is_common_ind (M₁ M₂ : rankfun U)(X : set U) :=
 
 lemma empty_is_common_ind (M₁ M₂ : rankfun U): 
   is_common_ind M₁ M₂ (∅ : set U) := 
-  ⟨I1 M₁, I1 M₂⟩ 
+  ⟨empty_indep M₁, empty_indep M₂⟩ 
 
 lemma exists_common_ind {M₁ M₂ : rankfun U}: 
   set.nonempty (is_common_ind M₁ M₂) := 
@@ -56,8 +56,8 @@ theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : set U}(A : set 
 begin
   rintros ⟨h₁,h₂⟩, 
   rw ←(compl_inter_size A I), 
-  have h₁i := I2 (inter_subset_right A I) h₁, 
-  have h₂i := I2 (inter_subset_right Aᶜ I) h₂, 
+  have h₁i := indep_of_subset_indep (inter_subset_right A I) h₁, 
+  have h₂i := indep_of_subset_indep (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
   linarith [R2 M₁ (inter_subset_left A I), R2 M₂ (inter_subset_left Aᶜ I)], 
 end
@@ -235,9 +235,9 @@ lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
   rw ←hIB₁B₂ at hY', split, 
-  refine I2 (subset.trans hY' _) (basis_is_indep hB₁),
+  refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₁),
   apply inter_subset_left,    
-  refine I2 (subset.trans hY' _) (basis_is_indep hB₂),
+  refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
 
@@ -304,7 +304,7 @@ begin
   ext X, rw [is_two_partitionable, is_union_two_indep], 
   refine ⟨λ ⟨I₁,I₂, h₁, h₂, hu, hi⟩, ⟨I₁, I₂, h₁, h₂, hu⟩, λ h, _⟩, 
   rcases h with ⟨I₁,I₂, h₁, h₂, hu⟩, 
-  from ⟨I₁, I₂ \ I₁, h₁, I2 (diff_subset I₂ I₁) h₂ , by simp [hu], by simp⟩,
+  from ⟨I₁, I₂ \ I₁, h₁, indep_of_subset_indep (diff_subset I₂ I₁) h₂ , by simp [hu], by simp⟩,
 end
 
 
@@ -325,7 +325,7 @@ begin
   rw hIX, apply union_subset_union hB₁.1 hB₂.1, 
 
   rcases h with ⟨Y, ⟨B₁, B₂, hB₁, hB₂, hBY⟩, hXY⟩, 
-  refine ⟨X ∩ B₁, X ∩ B₂, I2_i_right (basis_is_indep hB₁), I2_i_right (basis_is_indep hB₂), _ ⟩,   
+  refine ⟨X ∩ B₁, X ∩ B₂, inter_indep_of_indep_right (basis_is_indep hB₁), inter_indep_of_indep_right (basis_is_indep hB₂), _ ⟩,   
   rw [←inter_distrib_left, hBY, eq_comm, ←subset_iff_inter_eq_left],
   from hXY, 
 end
@@ -336,11 +336,11 @@ lemma union_two_bases_is_subset_union_two_bases (M₁ M₂ : rankfun U):
 
 lemma exists_two_partitionable (M₁ M₂ : rankfun U): 
   ∃ X, is_two_partitionable M₁ M₂ X := 
-⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_self, by rw inter_idem⟩
+⟨∅, ∅, ∅, empty_indep M₁, empty_indep M₂, by rw union_self, by rw inter_idem⟩
 
 lemma exists_union_two_indep (M₁ M₂ : rankfun U): 
   ∃ X, is_union_two_indep M₁ M₂ X := 
-⟨∅, ∅, ∅, I1 M₁, I1 M₂, by rw union_self⟩
+⟨∅, ∅, ∅, empty_indep M₁, empty_indep M₂, by rw union_self⟩
 
 lemma exists_union_two_bases (M₁ M₂ : rankfun U): 
   ∃ X, is_union_two_bases M₁ M₂ X := 
@@ -407,8 +407,8 @@ def prop_pairs {α : Type} (P₁ P₂ : α → Prop) := {x : α // P₁ x} × {x
 
 instance pp_fin {α : Type} [fintype α] {P₁ P₂ : α → Prop} : fintype (prop_pairs P₁ P₂) := 
 begin
-  --letI i1: fintype {x : α // P₁ x} := infer_instance, 
-  --letI i2: fintype {x : α // P₂ x} := infer_instance,  
+  --letI empty_indep: fintype {x : α // P₁ x} := infer_instance, 
+  --letI indep_of_subset_indep: fintype {x : α // P₂ x} := infer_instance,  
   unfold prop_pairs, apply_instance,
   --from @prod.fintype _ _ (fintype.subtype_of_fintype (is_basis M₁)) (fintype.subtype_of_fintype (is_basis M₂)),
 end 
@@ -423,8 +423,8 @@ begin
   letI := U.fin, 
   unfold basis_pairs, apply_instance,
   --haveI : fintype (set U) := infer_instance, 
-  --haveI i1 : fintype {B : set U // is_basis M₁ B} := by library_search,
-  --haveI i2 : fintype {B : set U // is_basis M₂ B} := infer_instance, 
+  --haveI empty_indep : fintype {B : set U // is_basis M₁ B} := by library_search,
+  --haveI indep_of_subset_indep : fintype {B : set U // is_basis M₂ B} := infer_instance, 
   --exact @prod.fintype _ _ (fintype.subtype_of_fintype (is_basis M₁)) (fintype.subtype_of_fintype (is_basis M₂)),
   
   --unfold basis_pairs, 

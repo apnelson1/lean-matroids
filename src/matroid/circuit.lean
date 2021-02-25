@@ -14,12 +14,12 @@ namespace cct_family
 def C_to_I (M : cct_family U): (set U → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
-lemma C_to_I1 (M : cct_family U) :
-  satisfies_I1 (C_to_I M) :=
+lemma C_to_empty_indep (M : cct_family U) :
+  satisfies_empty_indep (C_to_I M) :=
 by {intros X hX, rw subset_empty hX, from M.C1}
 
-lemma C_to_I2 (M : cct_family U) :
-  satisfies_I2 (C_to_I M) :=
+lemma C_to_indep_of_subset_indep (M : cct_family U) :
+  satisfies_indep_of_subset_indep (C_to_I M) :=
 λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
 lemma new_circuit_contains_new_elem {M : cct_family U}{I C : set U}{e : U}:
@@ -73,7 +73,7 @@ begin
   {
     intro h, rw diff_empty_iff_subset at h, 
     cases size_pos_has_mem hJI_nonempty with e he,
-    refine h_non_aug e he (C_to_I2 M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
+    refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
     from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _)), 
   },
   
@@ -155,7 +155,7 @@ end cct_family
 
 
 def indep_family.of_cct_family (M : cct_family U) : indep_family U :=
-  ⟨M.C_to_I, M.C_to_I1, M.C_to_I2, M.C_to_I3⟩ 
+  ⟨M.C_to_I, M.C_to_empty_indep, M.C_to_indep_of_subset_indep, M.C_to_I3⟩ 
 
 
 namespace matroid 

@@ -9,7 +9,7 @@ def is_common_ind (M₁ M₂ : rankfun U)(X : U) :=
 
 lemma bot_is_common_ind (M₁ M₂ : rankfun U): 
   is_common_ind M₁ M₂ ⊥ := 
-  ⟨I1 M₁, I1 M₂⟩ 
+  ⟨empty_indep M₁, empty_indep M₂⟩ 
 
 lemma exists_common_ind {M₁ M₂ : rankfun U}: 
   ∃ X, is_common_ind M₁ M₂ X := 
@@ -46,8 +46,8 @@ theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : U}(A : U) :
 begin
   rintros ⟨h₁,h₂⟩, 
   rw ←(compl_inter_size A I), 
-  have h₁i := I2 (inter_subset_right A I) h₁, 
-  have h₂i := I2 (inter_subset_right Aᶜ I) h₂, 
+  have h₁i := indep_of_subset_indep (inter_subset_right A I) h₁, 
+  have h₂i := indep_of_subset_indep (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
   linarith [R2 M₁ (inter_subset_left A I), R2 M₂ (inter_subset_left Aᶜ I)], 
 end

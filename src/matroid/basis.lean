@@ -12,7 +12,7 @@ lemma basis_have_same_size (M : basis_family U) (B₁ B₂ : set U):
 def basis_to_indep (basis : set U → Prop) : (set U → Prop) :=
   λ I, ∃ B, basis B ∧ I ⊆ B.
 
-def B_to_I1 (M : basis_family U) : satisfies_I1 (basis_to_indep M.basis) :=
+def B_to_empty_indep (M : basis_family U) : satisfies_empty_indep (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep],
   have Hbasis := M.B1,
@@ -23,9 +23,9 @@ begin
       apply empty_subset,
 end
 
-def B_to_I2 (M : basis_family U) : satisfies_I2 (basis_to_indep M.basis) :=
+def B_to_indep_of_subset_indep (M : basis_family U) : satisfies_indep_of_subset_indep (basis_to_indep M.basis) :=
 begin
-  simp only [basis_to_indep, satisfies_I2, and_imp, exists_imp_distrib],
+  simp only [basis_to_indep, satisfies_indep_of_subset_indep, and_imp, exists_imp_distrib],
   intros I J HIJ B HB HindepJ,
   use B,
     split,

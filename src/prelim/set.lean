@@ -139,6 +139,9 @@ by rw [disjoint_iff_subset_compl, subset_iff_inter_eq_left]
 lemma disjoint_iff_inter_compl_eq_right {X Y : set A} : X ∩ Y = ∅ ↔ Xᶜ ∩ Y = Y := 
 by rw [inter_comm, disjoint_iff_inter_compl_eq_left, inter_comm]
 
+lemma disjoint_iff_diff_eq_left {X Y : set A} : X ∩ Y = ∅ ↔ X \ Y = X := 
+disjoint_iff_inter_compl_eq_left
+
 lemma subset_iff_diff_empty (X Y : set A) : X ⊆ Y ↔ X \ Y = ∅ :=
 by {rw [←compl_compl Y, ←disjoint_iff_subset_compl], simp [diff_eq],}
 

@@ -24,7 +24,7 @@ begin
   rcases h with ⟨I₁,I₂,_,_,_,_⟩,
   refine ⟨I₁,I₂,_,_,_⟩; assumption, 
   rcases h with ⟨I₁,I₂,i₁,i₂,hu⟩, 
-  refine ⟨I₁,I₂ \ I₁,i₁,I2 _ i₂,_,_⟩, 
+  refine ⟨I₁,I₂ \ I₁,i₁,indep_of_subset_indep _ i₂,_,_⟩, 
   { apply diff_subset, },
   { rw hu, finish, },
   finish, 
@@ -35,9 +35,9 @@ lemma subset_inter_bases_is_common_ind {M₁ M₂ : matroid U}{I : set U} :
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
   rw ←hIB₁B₂ at hY', split, 
-  refine I2 (subset.trans hY' _) (basis_is_indep hB₁),
+  refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₁),
   apply inter_subset_left,    
-  refine I2 (subset.trans hY' _) (basis_is_indep hB₂),
+  refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
 
@@ -276,12 +276,12 @@ lemma indep_iff (M₁ M₂ : matroid U){X : set U}:
 begin
   rw [indep_iff_r, union], simp only [r], 
   rcases max_spec (λ (Ip : indep_pair_of_subset M₁ M₂ X), union_size Ip.val) 
-    with ⟨⟨⟨I₁,I₂⟩,⟨⟨hi1,hi2⟩,hX1,hX2⟩⟩, hI', hI⟩, 
+    with ⟨⟨⟨I₁,I₂⟩,⟨⟨hempty_indep,hindep_of_subset_indep⟩,hX1,hX2⟩⟩, hI', hI⟩, 
   rw [←hI'], clear hI', dsimp only, 
   have hss := (set.union_subset_union hX1 hX2), simp only [set.union_self] at hss, 
  
-  refine ⟨λ h, ⟨I₁,I₂ \ I₁, hi1,_,_,_⟩, λ h, _⟩, 
-  from I2 (diff_subset I₂ I₁) hi2, 
+  refine ⟨λ h, ⟨I₁,I₂ \ I₁, hempty_indep,_,_,_⟩, λ h, _⟩, 
+  from indep_of_subset_indep (diff_subset I₂ I₁) hindep_of_subset_indep, 
   dsimp only [union_size] at h,  rw [eq_of_eq_size_subset_iff hss] at h, rw ←h, 
   simp only [diff_eq, union_inter_compl_self],  apply inter_diff, 
   rcases h with ⟨I₁',I₂', ⟨h11,h12,h21,h22⟩⟩, 
@@ -426,7 +426,7 @@ def indep_tuple {n : ℕ}(Ms : fin n → matroid U) : Type :=
   {Is : fin n → (set U) // is_indep_tuple Ms Is}
 
 instance indep_tuple_nonempty {n : ℕ}(Ms : fin n → matroid U ) : nonempty (indep_tuple Ms) := 
-by {apply nonempty_subtype.mpr, from ⟨(λ x, ∅), λ i, (Ms i).I1 ⟩}
+by {apply nonempty_subtype.mpr, from ⟨(λ x, ∅), λ i, (Ms i).empty_indep ⟩}
   
 instance indep_tuple_fintype {n : ℕ}(Ms: fin n → matroid U): fintype (indep_tuple Ms) := 
 by {unfold indep_tuple, apply_instance }

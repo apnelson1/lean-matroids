@@ -33,8 +33,8 @@ begin
   rcases I with ⟨I, ⟨h₁, h₂⟩⟩, 
   unfold_coes, dsimp only, 
   rw ←(compl_inter_size A I), 
-  have h₁i := I2 (inter_subset_right A I) h₁, 
-  have h₂i := I2 (inter_subset_right Aᶜ I) h₂, 
+  have h₁i := indep_of_subset_indep (inter_subset_right A I) h₁, 
+  have h₂i := indep_of_subset_indep (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
   linarith [rank_mono_inter_left M₁ A I, rank_mono_inter_left M₂ Aᶜ I], 
 end
