@@ -59,6 +59,10 @@ rfl
   (M ∣ R).E = M.E ∩ R := 
 by rw [restr_eq_del_compl, del_E, diff_compl]
 
+lemma contr_restr_E (M : matroid_in U){C R : set U}(hR : R ⊆ M.E \ C): 
+  (M / C ∣ R).E = R := 
+by rwa [restr_E, con_E, ←subset_iff_inter_eq_right]
+
 @[simp, msimp] lemma con_empty (M : matroid_in U): 
   (M / ∅) = M := 
 by {ext, simp, intros X hX, simp [←r_carrier_eq_r _ ∅]}
@@ -75,8 +79,8 @@ lemma del_eq_del_inter_E (M : matroid_in U)(D : set U):
   M \ D = M \ (M.E ∩ D) :=
 begin
   ext, 
-  {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
-  simp only with msimp, intros X hX, 
+  {  simp only [diff_eq] with msimp, rw [compl_inter, inter_distrib_left], simp,  },
+  simp only [diff_eq] with msimp, intros X hX, 
   rw [subset_inter_iff, subset_iff_disjoint_compl, subset_iff_inter_eq_left] at hX, 
   rw [compl_inter, inter_distrib_left], simp [hX], 
 end
@@ -85,7 +89,7 @@ lemma con_eq_con_inter_E (M : matroid_in U)(C : set U):
   M / C = M / (M.E ∩ C) := 
 begin
   ext,
-  {  simp only with msimp, rw [compl_inter, inter_distrib_left], simp,  },
+  {  simp only [diff_eq] with msimp, rw [compl_inter, inter_distrib_left], simp,  },
   intros X hX, 
   simp only with msimp at *, 
   have : M.E ∩ X = X := by {rw inter_comm, exact subset_iff_inter_eq_left.mp (subset.trans hX (inter_subset_left _ _))}, 
@@ -94,7 +98,7 @@ end
 
 lemma con_del_E (M : matroid_in U)(C D : set U): 
   (M / C \ D).E = M.E \ (C ∪ D) :=
-by {simp only with msimp, simp [←inter_assoc]}
+by {simp only [diff_eq] with msimp, simp [←inter_assoc]}
 
 lemma con_del_eq_del_con (M : matroid_in U)(C D : set U)(h : C ∩ D = ∅) : 
   M / C \ D = M \ D / C := 
@@ -128,7 +132,7 @@ lemma dual_con_eq_del_dual (M : matroid_in U)(A : set U)(hA : A ⊆ M.E):
 begin
   ext, simp, 
   refine (λ X hX, _),
-  simp only [matroid.dual_r] with msimp coe_up, 
+  simp only [diff_eq, matroid.dual_r] with msimp coe_up, 
   rw [(λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
   inter_comm _ Aᶜ, ←inter_assoc], 
   convert rfl; {ext, simp, tauto},
@@ -141,7 +145,7 @@ begin
   set A' := M.E ∩ A with hA', 
   ext, simp, 
   refine (λ X hX, _),
-  simp only [matroid.dual_r] with msimp coe_up, 
+  simp only [diff_eq, matroid.dual_r] with msimp coe_up, 
   rw [(λ p q r z, by ring : ∀ p q r z : ℤ, p + (q-z) - (r-z) = p + q - r), 
   inter_comm _ A'ᶜ, ←inter_assoc], 
   convert rfl; { ext, simp, tauto},
@@ -176,7 +180,7 @@ by {rw [dual_con_del _ hi, con_del_eq_del_con],  rwa inter_comm,}
 lemma con_rank_ground (M : matroid_in U)(C : set U):
   (M / C).r (M / C).E = M.r M.E - M.r C := 
 begin
-  simp only with msimp, 
+  simp only [diff_eq] with msimp, 
   rw r_eq_inter_r, convert rfl, 
   rw [inter_distrib_left, ←inter_assoc, inter_self, ←inter_distrib_left], simp,    
 end
@@ -191,7 +195,7 @@ by {rw [indep_del_iff_indep_loopify, indep_loopify_iff, indep_iff_r, matroid.ind
 
 lemma delete_coindep_rank_ground (M : matroid_in U){D : set U}(hD : M.dual.is_indep D):
   (M \ D).r (M \ D).E = M.r M.E := 
-by {simp only [inter_assoc, inter_self] with msimp, exact (coindep_iff_r.mp hD).2,} 
+by {simp only [inter_assoc, inter_self, diff_eq] with msimp, exact (coindep_iff_r.mp hD).2,} 
 
 lemma coindep_contract_iff {M : matroid_in U}{C X : set U}: 
   (M / C).dual.is_indep X ↔ X ∩ C = ∅ ∧ M.dual.is_indep X := 

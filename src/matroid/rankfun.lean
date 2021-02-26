@@ -1482,7 +1482,7 @@ begin
   apply le_antisymm _ (M.rank_mono h), 
   by_contra hcon, push_neg at hcon, 
   rcases rank_augment hcon with ⟨z, hz, hB⟩, 
-  specialize h₂ ⟨B ∪ {z}, _⟩, dsimp at h₂, 
+  specialize h₂ ⟨B ∪ {z}, _⟩, swap, dsimp at h₂, 
     have : B ⊂ (B ∪ {z}), from 
       ssubset_of_subset_ne (subset_union_left _ _) (λ h, by {rw ←h at hB, linarith,}), 
     linarith [size_strict_monotone this], 

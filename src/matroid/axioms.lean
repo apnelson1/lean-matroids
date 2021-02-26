@@ -157,6 +157,10 @@ lemma isom.inv_on_rank {M₁ : matroid U₁}{M₂ : matroid U₂}(i : isom M₁ 
   M₂.r X = M₁.r (i.equiv.symm '' X) :=
 by {rw ←i.symm.on_rank X, refl} 
 
+def isom_equiv {M₁ N₁ : matroid U₁}{M₂ N₂ : matroid U₂}(h₁ : M₁ = N₁)(h₂ : M₂ = N₂)(i : isom M₁ M₂): 
+  isom N₁ N₂ := 
+{ equiv := i.equiv,
+  on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }
 
 end matroid 
 

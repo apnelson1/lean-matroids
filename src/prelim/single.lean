@@ -200,6 +200,13 @@ begin
   from h, 
 end
 
+lemma subset_of_remove_mem_diff {X Y: set A}{e : A}(hXY : X ⊆ Y)(he : e ∈ Y \ X): 
+  X ⊆ Y \ {e} := 
+begin
+  intros x hx, rw [mem_diff, mem_singleton_iff] at *, 
+  exact ⟨mem_of_mem_of_subset hx hXY, by {rintro ⟨rfl⟩, exact he.2 hx,}⟩,
+end
+
 
 lemma remove_single_subset (X : set A) (e : A) : 
   X \ {e} ⊆ X := 

@@ -156,6 +156,8 @@ instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_m
   (M : matroid_in U).E = univ := 
 rfl 
 
+
+
 section defs 
 
 /-- translates a property of sets defined on (matroid V) to the corresponding
@@ -210,7 +212,7 @@ begin
     refine ⟨h', (λ Y hY, _), h⟩, 
     have hYE : Y ∩ M.E = Y := subset_iff_inter_eq_left.mp (subset.trans hY.1 h),
     rw subset_iff_inter_eq_left at h,  
-    specialize h'' (inter_subtype _ Y) _, 
+    specialize h'' (inter_subtype _ Y) _, swap, 
     { simp only with coe_up at h'',
       convert h''; 
       exact hYE.symm, },
@@ -280,6 +282,13 @@ variables {V : Type}[fintype V]
 /-- isomorphism between two matroid_in. -/
 def isom (M : matroid_in U)(N : matroid_in V) := 
   matroid.isom M.as_mat N.as_mat 
+
+def isom_equiv {M₁ M₂ : matroid_in U}{N₁ N₂ : matroid_in V}(hM : M₁ = M₂)(hN : N₁ = N₂)(i : isom M₁ N₁):
+  isom M₂ N₂ := 
+{
+  equiv := ((equiv.set.of_eq (by rw hM : M₂.E = M₁.E)).trans i.equiv).trans (equiv.set.of_eq (by rw hN : N₁.E = N₂.E)),
+  on_rank := λ X, by {subst hM, subst hN, rw ←i.on_rank, congr, ext, simp,  }
+}
 
 /-- there exists an isomorphism between two matroid_in -/
 def is_isom (M : matroid_in U)(N : matroid_in V) := 

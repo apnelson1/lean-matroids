@@ -26,6 +26,14 @@ lemma size_img_equiv (f : A ≃ B)(X : set A):
   size (f '' X) = size X :=
 size_img_emb (f.to_embedding) X 
 
+@[simp] lemma equiv.image_mem_image_iff_mem {f : A ≃ B}{x : A}{X : set A}: 
+  f x ∈ f '' X ↔ x ∈ X := 
+begin
+  rw mem_image, split, 
+  { rintros ⟨y, hy, hyx⟩, rw equiv.apply_eq_iff_eq at hyx, rwa ←hyx},
+  exact λ hx, ⟨x, hx, rfl⟩, 
+end
+
 lemma size_preimg_equiv (f : A ≃ B)(X : set B):
   size (f ⁻¹' X) = size X :=
 begin
