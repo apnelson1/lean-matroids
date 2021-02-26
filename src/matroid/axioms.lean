@@ -153,6 +153,10 @@ def isom.symm {M₁ : matroid U₁}{M₂ : matroid U₂}(i : M₁.isom M₂) : M
 def is_isom (M₁ : matroid U₁)(M₂ : matroid U₂) := 
   nonempty (M₁.isom M₂)
 
+lemma isom.inv_on_rank {M₁ : matroid U₁}{M₂ : matroid U₂}(i : isom M₁ M₂)(X : set U₂):
+  M₂.r X = M₁.r (i.equiv.symm '' X) :=
+by {rw ←i.symm.on_rank X, refl} 
+
 
 end matroid 
 

@@ -290,13 +290,79 @@ begin
   linarith, 
 end
 
-def C_as_subtype (P : minor_pair N M) : set (M.E) := coe ⁻¹' P.C 
-def D_as_subtype (P : minor_pair N M) : set (M.E) := coe ⁻¹' P.D 
+-- The next few definitions relate a minor pair N M to a minor pair N' M.as_mat 
 
+--def C_as_subtype (P : minor_pair N M) : set (M.E) := coe ⁻¹' P.C 
+--def D_as_subtype (P : minor_pair N M) : set (M.E) := coe ⁻¹' P.D 
+
+--def E_as_subtype (P : minor_pair N M) : set (M.E) := coe ⁻¹' N.E 
+
+/-lemma E_inter_C_subtype (P : minor_pair N M) : 
+  (coe ⁻¹' P.C : set M.E) ∩ (coe ⁻¹' N.E : set M.E) = ∅ := 
+begin
+
+end-/
+
+def subset_pair_equiv {X Y : set U}(h : X ⊆ Y) :=
+  equiv.set.range 
+    (λ (x : X), (⟨x.val, mem_of_mem_of_subset x.property h⟩ : Y))
+    (λ x y hxy, by {cases x, cases y, dsimp at hxy, rwa subtype.mk_eq_mk at *,  })
+
+
+@[simp] lemma subset_pair_equiv_apply {X Y : set U}(h : X ⊆ Y)(x : X) :
+  subset_pair_equiv h x = ⟨⟨x.val, mem_of_mem_of_subset x.property h⟩, mem_range_self x⟩ := 
+rfl 
+
+def subtype_equiv (P : minor_pair N M) := subset_pair_equiv P.E_subset
+
+@[simp] lemma subtype_equiv_apply (P : minor_pair N M )(x : N.E): 
+  P.subtype_equiv x = ⟨⟨x.val, mem_of_mem_of_subset x.property P.E_subset⟩, mem_range_self x⟩  := 
+rfl 
+
+
+#check subtype_equiv 
+
+def foo_iso (P : minor_pair N M): 
+  N.isom ((M.as_mat : matroid_in M.E) / (coe ⁻¹' P.C) \ (coe ⁻¹' P.D)) := 
+⟨ P.subtype_equiv.trans (equiv.set.of_eq begin
+    simp only with msimp,
+    ext, cases x with x hx, 
+    simp only [exists_prop, set_coe.exists, mem_range, exists_eq_right, 
+    mem_preimage, mem_diff, subtype.coe_mk, univ_diff, mem_compl_eq], 
+    rw [←not_iff_not, decidable.not_and_distrib, not_not, not_not, 
+    ←mem_union, P.union, mem_diff], tauto, end ), 
+  λ X, begin
+    simp only with msimp, rw P.rank, swap, 
+      {intros x hx, unfold_coes at hx,  
+      obtain ⟨⟨y,hy⟩,-,rfl⟩ := (mem_image _ _ _).mp hx, exact hy,},
+    congr, swap, unfold_coes, 
+    rw [image_preimage_eq_of_subset], 
+    rw [subtype.range_val], exact P.C_ss_E, 
+    unfold_coes, 
+    rw [image_union, image_diff, image_preimage_eq_of_subset, image_preimage_eq_of_subset],
+    rotate, 
+    { rw [subtype.range_val], exact P.C_ss_E}, 
+    { rw [subtype.range_val], exact P.D_ss_E},
+    { exact subtype.val_injective}, 
+    ext, rw [mem_union, mem_diff], conv
+    { to_lhs, congr, congr, rw mem_image, congr, funext, rw mem_image, 
+      conv {congr, congr, funext, rw mem_image, },},
+     simp, split, 
+     rintro (⟨⟨x, hx, ⟨x',⟨hx'C,hx'D⟩,⟨⟨hxN,hxX⟩,hx'X, rfl⟩⟩, rfl⟩, hxD⟩ | hxC), 
+     { left, exact ⟨hxN, hxX⟩}, {right, assumption}, 
+     rintro (⟨hxE, hxX⟩ | hxC), swap, right, assumption, left, 
+     have hxM := mem_of_mem_of_subset hxE P.E_subset, 
+     have hxC : x ∉ P.C := nonmem_of_mem_disjoint hxE P.E_inter_C, 
+     have hxD : x ∉ P.D := nonmem_of_mem_disjoint hxE P.E_inter_D, 
+     refine ⟨⟨x,⟨_,⟨x,⟨⟨_,_⟩,⟨⟨hxE,_⟩,⟨_,rfl⟩⟩⟩⟩,rfl⟩⟩,_⟩; 
+     assumption, 
+    end⟩ 
+
+  
 end minor_pair 
 
-
-/-- the image of a minor of M under an isomorphism of M to M' -/
+/-
+/- the image of a minor of M under an isomorphism of M to M' -/
 def image_minor {N M : matroid_in U}{M' : matroid_in V}
 (i : isom M M')(P : minor_pair N M) : 
   matroid_in V := 
@@ -317,10 +383,15 @@ def foo (α : Type)(X Y : set α)(Z : set X)(h : coe '' Z = Y):
         simpa,  }⟩,
   left_inv := λ x, by simp ,
   right_inv := λ y, by simp, }
+
+
+lemma isom_foo {N M : matroid_in U}(P : minor_pair N M):
+  N.isom ((M.as_mat : matroid_in M.E) / (P.C_as_subtype) \ P.D_as_subtype) := 
+⟨P.subtype_equiv, by {sorry}⟩  
   
-/-- the image of a minor under an isomorphism is isomorphic to the minor. The main difficulty in the proof
-is proving that the invisible equivalence is well-defined. There might be a nicer way to do it by chaining
-equivalences, so this works. -/
+/- the image of a minor under an isomorphism is isomorphic to the minor. The main difficulty in the
+(horrible) proof is showing that the invisible equivalence is well-defined. There might be a nicer \
+way to do it by chaining equivalences, but this works. -/
 lemma image_minor_iso_minor {N M : matroid_in U}{M' : matroid_in V}
 (i : isom M M')(P : minor_pair N M) :
   isom N (image_minor i P) := 
@@ -372,18 +443,43 @@ lemma image_minor_iso_minor {N M : matroid_in U}{M' : matroid_in V}
     left_inv := λ x, by simp,
     right_inv := λ y, by simp },
   on_rank := begin
+    
     intro X, 
+    --have hr := i.on_rank, simp only  with msimp at hr, --unfold_coes at hr, 
+    --have hr' : ∀ (Y : set V), M'.r Y = M'. 
+    
+    /-simp only [image_minor] with msimp, unfold_coes, 
+    conv {to_lhs, congr, congr, skip, congr, congr, dsimp},
+    unfold_coes, 
+    conv {to_lhs, congr, congr, skip, congr, congr, dsimp,  }, -/
+    
+
     simp only [not_exists, mem_image, equiv.to_fun_as_coe, exists_prop, con_E,
       equiv.apply_eq_iff_eq, equiv.coe_fn_mk, set_coe.exists, not_and, subtype.coe_prop, 
-      exists_and_distrib_right, equiv.symm_apply_apply, not_not,  eq_self_iff_true, 
+      exists_and_distrib_right, equiv.symm_apply_apply, not_not, eq_self_iff_true, 
       minor_pair.E_inter_C, not_true, equiv.apply_symm_apply, subtype.mk_eq_mk, exists_eq_right,
       mem_preimage, exists_and_distrib_left, exists_prop_of_true, ne.def, mem_diff, 
       subtype.coe_eta, minor_pair.E_inter_D,  subtype.coe_mk, del_E, not_forall, subtype.val_eq_coe,
-      equiv.inv_fun_as_coe],
-    simp only [image_minor] with msimp, 
-    have := i.on_rank, simp only  with msimp at this, 
-    simp only [minor_pair.D_as_subtype, minor_pair.C_as_subtype], 
-    rw [P.rank, ←(this X), ←(this X)],  
+      equiv.inv_fun_as_coe, image_minor, minor_pair.D_as_subtype, minor_pair.C_as_subtype] 
+      with msimp,
+    have hr := i.on_rank, simp only  with msimp at hr, 
+    have hr' := i.symm.on_rank, simp only with msimp at hr', 
+    rw [P.rank],  congr' 1,  swap,
+    { rw hr, 
+      unfold_coes, 
+      rw [image_preimage_eq_of_subset], 
+      rw [subtype.range_val], 
+      apply minor_pair.C_ss_E, }, swap, 
+    { unfold_coes, intro x, rw mem_image, rintros ⟨⟨y,hy⟩,-, rfl⟩, exact hy, },
+    set f : N.E → M.E := λ x, ⟨x.val, mem_of_mem_of_subset x.property P.E_subset⟩ with hf, 
+    
+    have h : (↑X ∪ P.C) = ↑(f '' X ∪ P.C_as_subtype), sorry, 
+    rw [h, ←hr], congr', 
+    unfold_coes, 
+    --unfold_coes, simp [minor_pair.C_as_subtype, minor_pair.D_as_subtype, hf, image_minor] 
+    
+    --{ }, 
+    
     
 
   end
@@ -419,13 +515,11 @@ def image_minor_pair {N M : matroid_in U}{M' : matroid_in V}
       intro x, rw mem_range, rintros ⟨⟨y,hy⟩,rfl⟩, exact hy,  
     end,
     minor := rfl }
-def 
 
-end matroid_in.isom 
 
 --def iso_of_minor_pair {N M : matroid_in U}{M : matroid_in V}
 
-
+-/
 
 
 lemma con_del_is_minor (M : matroid_in U)(C D : set U):
@@ -478,7 +572,7 @@ lemma minor_antisymm:
 begin
   rintros M₁ M₂ ⟨p₁⟩ ⟨p₂⟩, --rw is_minor at h₁ h₂, 
   have := p₁.minor, simp_rw ←p₂.minor at this ⊢,   
-  have h := congr_arg E this, simp only with msimp at h, 
+  have h := congr_arg E this, simp only [diff_eq] with msimp at h, 
   repeat {rw [inter_assoc] at h}, 
   repeat {rw [←compl_union] at h}, 
   repeat {rw [←union_assoc] at h}, 
@@ -515,11 +609,11 @@ begin
   set D := M.E \ N.E \ C with hD, 
   suffices hN : N = M / C \ D, rw hN, apply con_del_is_minor, 
   have hE' : (M / C \ D).E = N.E, 
-  {  simp only [hD] with msimp, 
+  {  simp only [hD, diff_eq] with msimp, 
     simp only [compl_inter, compl_compl, inter_distrib_left],    
     rw [inter_right_comm, inter_assoc _ Cᶜ C, h'], simp,  },
   ext : 1, rw hE', intros X hX, rw h X hX, 
-  simp only with msimp, convert rfl, 
+  simp only [diff_eq] with msimp, convert rfl, 
   rw [hD, ←subset_iff_inter_eq_left], 
   refine subset.trans hX _, 
   intros h hx, 
