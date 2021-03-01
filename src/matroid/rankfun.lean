@@ -147,6 +147,7 @@ by rw [rank_eq_of_union_eq_rank_subset Y hX hXX', union_comm, union_comm _ Y',
        rank_eq_of_union_eq_rank_subset _ hY hYY']  
 
 
+
 /-
 lemma rank_union_eq_of_rank_union_supset_eq {M : matroid U}{X S T : set U}(hXT : M.r (X ∪ T) = M.r X)
 (hST : S ⊆ T):
@@ -162,6 +163,10 @@ lemma rank_eq_of_inter_union {M : matroid U}(X Y A : set U):
   M.r (X ∩ A) = M.r X → M.r ((X ∩ A) ∪ Y) = M.r (X ∪ Y) :=
 λ h, rank_eq_of_union_eq_rank_subset _ (inter_subset_left _ _) h 
   
+lemma rank_eq_of_union_rank_diff_eq {M : matroid U}{X Y : set U}(Z : set U)(hX : M.r (X \ Y) = M.r X):
+  M.r (Z ∪ (X \ Y)) = M.r (Z ∪ X) := 
+by {rw diff_eq at *, rw [union_comm _ X, ← rank_eq_of_inter_union _ Z _ hX, union_comm Z]} 
+
 lemma rank_subadditive (M : matroid U)(X Y : set U) : 
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]

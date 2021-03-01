@@ -6,7 +6,7 @@ noncomputable theory
 
 open matroid set 
 
-variables {U : Type}[fintype U]
+variables {U V U₁ U₂ U₃: Type}[fintype U][fintype V][fintype U₁][fintype U₂][fintype U₃]
 
 /-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
@@ -80,7 +80,7 @@ def of_mat {E : set U}(N : matroid E) : matroid_in U :=
   { r := λ X, N.r (inter_subtype E X ),
     R0 := λ X, N.R0 _,
     R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (size_mono_inter_right E X)), 
-                  rw inter_comm, apply size_inter_subtype },
+                  rw inter_comm, apply sizNE_inter_subtype },
     R2 := λ X Y hXY, by {dsimp only, apply N.R2, tauto,  },
     R3 := λ X Y, N.R3 _ _, },
   support := by {simp [inter_subtype],} }
@@ -277,7 +277,7 @@ end
 
 end defs 
 
-variables {V : Type}[fintype V]
+section isom 
 
 /-- isomorphism between two matroid_in. -/
 def isom (M : matroid_in U)(N : matroid_in V) := 
@@ -402,8 +402,6 @@ lemma isom_to_coe_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
   M.is_isom (N : matroid_in V) ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
 by rw [←isom_to_matroid_iff_exists_embedding, is_isom_to_matroid_iff_is_isom_to_coe]
 
-
-
-
+end isom 
 
 end matroid_in

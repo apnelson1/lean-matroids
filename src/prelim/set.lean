@@ -356,6 +356,9 @@ by rw [inter_assoc, inter_diff, inter_empty]
 @[simp] lemma diffs_disj (X Y : set A) : (X \ Y) ∩ (Y \ X) = ∅ := 
 by {simp only [diff_eq], rw [inter_assoc, ←inter_assoc Yᶜ], simp}
 
+lemma pair_move {X Z: set A}(Y :set A)(hXY : Z ⊆ X): (X \ Z) ∪ (Y ∪ Z) = X ∪ Y := 
+by {ext, simp, tauto, }
+
 lemma diff_empty_subset (X Y : set A) : X \ Y = ∅ → X ⊆ Y := 
 λ hXY, by {rw [←diff_union X Y, hXY, union_empty], apply inter_subset_right}
 
@@ -375,7 +378,10 @@ lemma ssubset_diff_nonempty {X Y : set A} : X ⊂ Y → (Y \ X).nonempty :=
 lemma union_diff_of_subset  {X Y : set A} : X ⊆ Y → X ∪ (Y \ X) = Y := 
 λ h, by {rw [subset_iff_inter_eq_left, inter_comm] at h, have := diff_union Y X, rw h at this, exact this}
 
-@[simp] lemma diff_inter (X Y : set A) : (Y \ X) ∩ X = ∅ := 
+lemma diff_eq_self_of_subset_diff {X Y Z : set A}(h : X ⊆ Z \ Y): X \ Y = X :=
+by {rw [←disjoint_iff_diff_eq_left, disjoint_iff_subset_compl], refine subset.trans h _, rw diff_eq, simp, }
+
+@[simp] lemma diff_inter_right_eq_empty (X Y : set A) : (Y \ X) ∩ X = ∅ := 
 by rw [inter_comm, inter_diff]
 
 @[simp] lemma union_diff (X Y : set A) : X ∪ (Y \ X) = X ∪ Y := 

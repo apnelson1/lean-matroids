@@ -207,6 +207,10 @@ begin
   exact ⟨mem_of_mem_of_subset hx hXY, by {rintro ⟨rfl⟩, exact he.2 hx,}⟩,
 end
 
+lemma subset_remove_nonmem_of_subset {X Y : set A}{e : A}(hXY : X ⊆ Y)(he : e ∉ X): 
+  X ⊆ Y \ {e} := 
+λ x hx, by {simp, refine ⟨hXY hx, λ h, _⟩, rw h at hx, exact he hx} 
+
 
 lemma remove_single_subset (X : set A) (e : A) : 
   X \ {e} ⊆ X := 

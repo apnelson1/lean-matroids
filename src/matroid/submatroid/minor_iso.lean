@@ -17,24 +17,31 @@ def subset_pair_equiv {X Y : set U}(h : X ⊆ Y) :=
     (λ (x : X), (⟨x.val, mem_of_mem_of_subset x.property h⟩ : Y))
     (λ x y hxy, by {cases x, cases y, dsimp at hxy, rwa subtype.mk_eq_mk at *,  })
 
-def subtype_equiv (P : minor_pair N M) := subset_pair_equiv P.E_subset
+def subtype_equiv (P : minor_pair N M) := subset_pair_equiv P.NE_ss_ME
 
 @[simp] lemma subset_pair_equiv_apply {X Y : set U}(h : X ⊆ Y)(x : X) :
   subset_pair_equiv h x = ⟨⟨x.val, mem_of_mem_of_subset x.property h⟩, mem_range_self x⟩ := 
 rfl 
 
 @[simp] lemma subtype_equiv_apply (P : minor_pair N M)(x : N.E): 
-  P.subtype_equiv x = ⟨⟨x.val, mem_of_mem_of_subset x.property P.E_subset⟩, mem_range_self x⟩  := 
+  P.subtype_equiv x = ⟨⟨x.val, mem_of_mem_of_subset x.property P.NE_ss_ME⟩, mem_range_self x⟩  := 
 rfl 
 
-/-- maps a minor_pair N M to the corresponding minor pair N' M.as_mat-/
-def minor_pair_to_as_mat (P : minor_pair N M): 
+/-- maps a cd_pair M to the corresponding pair in M.as_mat-/
+def cd_pair_to_as_mat (p : cd_pair M): cd_pair (M.as_mat : matroid_in M.E) := 
+{ C := (coe ⁻¹' p.C), 
+  D := (coe ⁻¹' p.D), 
+  disj := by {unfold_coes, rw [←preimage_inter, p.disj, preimage_empty]},
+  C_ss_E := λ x hx, by {simp at *}, 
+  D_ss_E := λ x hx, by {simp at *}}
+
+/-def minor_pair_to_as_mat (P : inor_pair N M): 
     minor_pair ((M.as_mat : matroid_in M.E) / (coe ⁻¹' P.C) \ (coe ⁻¹' P.D)) M.as_mat :=
-  { C := (coe ⁻¹' P.C),
-    D := (coe ⁻¹' P.D),
+{ C := (coe ⁻¹' P.C),
+  D := (coe ⁻¹' P.D),
   disj := by {unfold_coes, rw [←preimage_inter, P.disj, preimage_empty]},
   union := by {unfold_coes, simp [←preimage_union, P.union, preimage_diff, compl_diff] with msimp},   
-  minor := rfl }
+  minor := rfl }-/
 
 /-- for a minor pair N M, gives the isomorphism from N to the corresponding minor N' 
 of M.as_mat. Not a fun proof because dependent types are annoying - can we improve it?-/
@@ -65,15 +72,26 @@ def minor_isom_minor_as_mat (P : minor_pair N M):
      rintro (⟨⟨x, hx, ⟨x',⟨hx'C,hx'D⟩,⟨⟨hxN,hxX⟩,hx'X, rfl⟩⟩, rfl⟩, hxD⟩ | hxC), 
      { left, exact ⟨hxN, hxX⟩}, {right, assumption}, 
      rintro (⟨hxE, hxX⟩ | hxC), swap, right, assumption, left, 
-     have hxM := mem_of_mem_of_subset hxE P.E_subset, 
-     have hxC : x ∉ P.C := nonmem_of_mem_disjoint hxE P.E_inter_C, 
-     have hxD : x ∉ P.D := nonmem_of_mem_disjoint hxE P.E_inter_D, 
+     have hxM := mem_of_mem_of_subset hxE P.NE_ss_ME, 
+     have hxC : x ∉ P.C := nonmem_of_mem_disjoint hxE P.NE_inter_C, 
+     have hxD : x ∉ P.D := nonmem_of_mem_disjoint hxE P.NE_inter_D, 
      refine ⟨⟨x,⟨_,⟨x,⟨⟨_,_⟩,⟨⟨hxE,_⟩,⟨_,rfl⟩⟩⟩⟩,rfl⟩⟩,_⟩;
      assumption, 
     end⟩ 
 
-/-- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, constructs the corresponding
-minor pair N' M'-/
+def cd_pair_image_iso {M : matroid U}{M' : matroid V}(p : cd_pair (M : matroid_in U))
+(i : M.isom M') : 
+  cd_pair (M' : matroid_in V) := 
+{ C := (i.equiv '' p.C),
+  D := (i.equiv '' p.D),
+  disj := by rw [(image_inter i.equiv.injective), p.disj, image_empty],
+  C_ss_E := λ x hx, by simp, 
+  D_ss_E := λ x hx, by simp}
+
+
+
+/- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, constructs the corresponding
+minor pair N' M'
 def minor_pair_matroid_to_minor_pair_iso {M : matroid U}{M' : matroid V}{N : matroid_in U}
 (P : minor_pair N M)(i : M.isom M'):
   minor_pair ((M' : matroid_in V) / (i.equiv '' P.C) \ (i.equiv '' P.D)) M' := 
@@ -81,7 +99,7 @@ def minor_pair_matroid_to_minor_pair_iso {M : matroid U}{M' : matroid V}{N : mat
   D := (i.equiv '' P.D),
   disj := by rw [image_inter i.equiv.injective, P.disj, image_empty],
   union := by {simp only with msimp, rw [diff_diff, ←image_union, P.union], simp,},
-  minor := rfl }
+  minor := rfl }-/
 
 /-- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, gives an isomorphism from 
 N to the corresponding minor N' of M' -/
@@ -105,7 +123,7 @@ def minor_matroid_to_minor_iso {M : matroid U}{M' : matroid V}{N : matroid_in U}
       dsimp only at h', subst h',
       exact ⟨⟨z,hz⟩,⟨hzX,by {by {simp at hy', assumption, }, }⟩⟩},
     rintro ⟨⟨y,hy⟩,⟨hyx,rfl⟩⟩, 
-    refine ⟨⟨⟨i.equiv y, _⟩ ,_⟩,nonmem_of_mem_disjoint hy P.E_inter_D⟩, 
+    refine ⟨⟨⟨i.equiv y, _⟩ ,_⟩,nonmem_of_mem_disjoint hy P.NE_inter_D⟩, 
     { simp only with msimp, 
       rwa [diff_diff, ←image_union, P.union, coe_E, univ_diff, univ_diff, equiv.image_compl, 
       compl_compl, equiv.image_mem_image_iff_mem], }, 
@@ -188,7 +206,7 @@ def minor_emb_equiv_C_emb {N : matroid V}{M : matroid U}:
       iff_false, equiv.inv_fun_as_coe], 
       rintros hx y hxy, rw ←hxy at hx, 
       cases me.i.equiv.symm y with z hz,  
-      exact ne_empty_iff_has_mem.mpr ⟨_,(mem_inter hz hx)⟩ me.P.E_inter_C, },
+      exact ne_empty_iff_has_mem.mpr ⟨_,(mem_inter hz hx)⟩ me.P.NE_inter_C, },
     on_rank := λ X, by {
       cases me with N' P i, dsimp only, 
       rw [←i.symm.on_rank, as_mat_r, P.rank_subtype, coe_r], congr', 
@@ -244,7 +262,7 @@ begin
   split, 
   { rintros ⟨M,⟨P⟩, ⟨φ, ⟨hrange, hr⟩⟩⟩, 
     refine ⟨φ, P.C,_, λ X, _⟩, 
-    { rw hrange, exact P.E_inter_C, },
+    { rw hrange, exact P.NE_inter_C, },
     { rw [hr X, P.rank (φ '' X) (by {rw ←hrange, apply image_subset_range})], refl, }},
   rintros ⟨φ,C, hrange, hr⟩, 
   rw [disjoint_iff_inter_compl_eq_left, inter_comm] at hrange, 
@@ -269,7 +287,7 @@ begin
     obtain ⟨P,⟨hPi,hPs⟩⟩ := matroid_in.minor_pair.minor_has_indep_coindep_pair' h_minor, 
     rw matroid_in.indep_iff_coe at hPi,
     refine ⟨φ, P.C,_, λ X, _, hPi ,_⟩,  
-    { rw hrange, exact P.E_inter_C, },
+    { rw hrange, exact P.NE_inter_C, },
     { rw [hr X, P.rank (φ '' X) (by {rw ←hrange, apply image_subset_range})], refl},
     simp only [←indep_iff_r.mp hPi] with msimp at hPs, 
     rw [hPs, hr univ, image_univ, hrange], simp, },

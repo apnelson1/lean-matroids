@@ -104,7 +104,7 @@ by tidy
   (((Xᶜ : set S)) : set A) = S \ (X : set A)  := 
 by rw [compl_eq_univ_diff, subtype_coe_diff, coe_univ]
 
-@[coe_up] lemma coe_inter_subtype (X : set A): 
+@[coe_up] lemma coNE_inter_subtype (X : set A): 
   ((inter_subtype S X) : set A) = X ∩ S := 
 begin
   ext x, simp only [inter_subtype, set.mem_image, set.mem_inter_eq],  
@@ -113,11 +113,11 @@ begin
   exact ⟨⟨x,h.2⟩,⟨h.1,by simp⟩⟩,
 end
 
-@[coe_up] lemma size_inter_subtype (X : set A) : 
+@[coe_up] lemma sizNE_inter_subtype (X : set A) : 
   size (inter_subtype S X) = size (X ∩ S) := 
-by rw [subtype_coe_size, coe_inter_subtype]
+by rw [subtype_coe_size, coNE_inter_subtype]
 
 @[coe_up] lemma inter_subtype_eq_iff (X Y : set A):
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S):=
-by rw [←subtype_set_coe_inj, coe_inter_subtype, coe_inter_subtype]
+by rw [←subtype_set_coe_inj, coNE_inter_subtype, coNE_inter_subtype]
  

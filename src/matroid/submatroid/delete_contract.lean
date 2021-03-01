@@ -75,6 +75,10 @@ by {ext, simp, intros X hX, simp [←r_carrier_eq_r _ ∅]}
   (M \ D \ D') = M \ (D ∪ D') := 
 by {ext, simp [diff_eq, ←inter_assoc], intros X hX, simp [diff_eq, ←inter_assoc, inter_right_comm ],  }
 
+lemma del_del_comm (M : matroid_in U)(D D' : set U): 
+  M \ D \ D' = M \ D' \ D := 
+by rw [del_del, union_comm, ←del_del]
+
 lemma del_eq_del_inter_E (M : matroid_in U)(D : set U): 
   M \ D = M \ (M.E ∩ D) :=
 begin
@@ -159,6 +163,10 @@ lemma con_con (M : matroid_in U)(C C' : set U):
   (M / C / C') = M / (C ∪ C') :=
 by {rw [←M.dual_dual], repeat {rw ←dual_del}, rw del_del}
 
+lemma con_con_comm (M : matroid_in U)(C C' : set U): 
+  M / C / C' = M / C' / C:= 
+by rw [con_con, union_comm, ← con_con]
+
 lemma con_del_con_del (M : matroid_in U)(C C' D D': set U)(h : (C ∪ C') ∩ (D ∪ D') = ∅ ):
   M / C \ D / C' \ D' = M / (C ∪ C') \ (D ∪ D') :=
 begin
@@ -200,5 +208,42 @@ by {simp only [inter_assoc, inter_self, diff_eq] with msimp, exact (coindep_iff_
 lemma coindep_contract_iff {M : matroid_in U}{C X : set U}: 
   (M / C).dual.is_indep X ↔ X ∩ C = ∅ ∧ M.dual.is_indep X := 
 by rw [dual_con, indep_del_iff]
+
+/-- structure consisting of an ordered pair of disjoint sets contained in M.E . Possibly should
+be abstracted away from matroids completely -/
+@[ext] structure cd_pair (M : matroid_in U) :=
+(C : set U)
+(D : set U)
+(disj : C ∩ D = ∅)
+(C_ss_E : C ⊆ M.E)
+(D_ss_E : D ⊆ M.E)
+
+instance cd_pair.fintype (M : matroid_in U) : fintype (cd_pair M) := 
+by tactic.mk_fintype_instance 
+
+def cd_pair.trivial (M : matroid_in U): cd_pair M := 
+⟨∅, ∅, by rw inter_self, empty_subset _, empty_subset _⟩ 
+
+def cd_pair.switch {M : matroid_in U} (p : cd_pair M ): cd_pair M  :=
+⟨p.D,p.C, by {simpa [inter_comm] using p.disj}, p.D_ss_E, p.C_ss_E ⟩
+
+def cd_pair.of_eq_E {M M': matroid_in U}(p : cd_pair M)(hE : M'.E = M.E): 
+  cd_pair M' :=
+⟨p.C,p.D, p.disj, by simpa [hE] using p.C_ss_E, by simpa [hE] using p.D_ss_E⟩  
+
+lemma cd_pair.rank {M : matroid_in U}(p : cd_pair M)(X : set U)(hX : X ⊆ (M / p.C \ p.D).E): 
+  (M / p.C \ p.D).r X = M.r (X ∪ p.C) - M.r p.C := 
+begin
+  simp only [diff_eq] with msimp at *, congr', 
+  exact subset_iff_inter_eq_left.mp (subset.trans hX (inter_subset_right _ _)), 
+end
+
+@[simp, msimp] lemma cd_pair.rank_subtype {M : matroid_in U}(p : cd_pair M)(X : set (M / p.C \ p.D).E): 
+  (M / p.C \ p.D).r X = M.r (X ∪ p.C) - M.r p.C := 
+by {rw cd_pair.rank, rintro x hx, obtain ⟨⟨x,h⟩,-,rfl⟩ := (mem_image _ _ _).mp hx, exact h, }
+
+@[simp, msimp] lemma cd_pair.E {M : matroid_in U}(p : cd_pair M): 
+  (M / p.C \ p.D).E = M.E \ (p.C ∪ p.D) := 
+by simp only [diff_diff] with msimp
 
 end matroid_in 
