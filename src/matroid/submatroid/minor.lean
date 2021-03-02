@@ -53,11 +53,16 @@ namespace minor_pair
 
 variables {N M : matroid_in U}(mp : minor_pair N M)
 
-/- there must be a more principled way to do this. Extending a fintype by a prop gives a fintype, obviously -/
+/-- given a minor pair N M, returns the corresponding minor_pair in M.as_mat -/
+def minor_pair_to_as_mat (P : minor_pair N M): 
+    minor_pair ((M.as_mat : matroid_in M.E) / (coe ⁻¹' P.C) \ (coe ⁻¹' P.D)) M.as_mat :=
+{  minor := rfl, .. cd_pair.to_as_mat (coe P) }
+
 instance fintype : fintype (minor_pair N M) :=  
 fintype.of_injective 
   (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})
 
+/-- constructs the trivial minor pair associated with M -/
 def trivial (M : matroid_in U) : minor_pair M M := 
 ⟨cd_pair.trivial M, by simp [cd_pair.trivial]⟩
 
@@ -72,16 +77,16 @@ end
 
 lemma minor_eq : M / mp.C \ mp.D = N := mp.minor 
 
+def of_restrict (M : matroid_in U){R : set U}(hR : R ⊆ M.E): 
+  minor_pair (M ∣ R) M := 
+{minor := by {dsimp only [cd_pair.of_restr, restrict], rw [con_empty, diff_eq, ← del_eq_del_inter_E],} ,
+ .. cd_pair.of_restr M hR}
+
 def of_contract_restrict (M : matroid_in U){C R : set U}(hC : C ⊆ M.E)(hR : R ⊆ M.E \ C): 
   minor_pair (M / C ∣ R) M :=
-{ C := C, 
-  D := M.E \ (C ∪ R), 
-  C_ss_E := hC, 
-  D_ss_E := diff_subset _ _,
-  disj := by {ext, simp, tauto},
-  minor := by 
-  { rw [matroid_in.restrict, del_eq_del_inter_E _ Rᶜ], 
-    congr' 1, simp [diff_eq, ←inter_assoc],    }}
+⟨ cd_pair.of_con_restr M hC hR,  
+  by {rw [matroid_in.restrict, del_eq_del_inter_E _ Rᶜ], 
+      congr' 1, simp [←inter_assoc, cd_pair.of_con_restr, diff_eq]}⟩ 
 
 def choose_minor_pair (h : is_minor N M): minor_pair N M := 
   classical.choice (h)

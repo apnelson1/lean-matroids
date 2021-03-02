@@ -161,6 +161,7 @@ def isom_equiv {M₁ N₁ : matroid U₁}{M₂ N₂ : matroid U₂}(h₁ : M₁ 
   isom N₁ N₂ := 
 { equiv := i.equiv,
   on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }
+ 
 
 end matroid 
 

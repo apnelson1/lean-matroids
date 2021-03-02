@@ -121,3 +121,10 @@ by rw [subtype_coe_size, coNE_inter_subtype]
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S):=
 by rw [←subtype_set_coe_inj, coNE_inter_subtype, coNE_inter_subtype]
  
+@[simp] lemma function.embedding.image_trans {A B C : Type}(e₁ : A ↪ B)(e₂ : B ↪ C)(X : set A):
+  (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
+by {unfold function.embedding.trans, rw ← image_comp, refl,   }
+
+@[simp] lemma equiv.image_trans {A B C : Type}(e₁ : A ≃ B)(e₂ : B ≃ C)(X : set A):
+  (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
+by {unfold equiv.trans, rw ← image_comp, refl,   }

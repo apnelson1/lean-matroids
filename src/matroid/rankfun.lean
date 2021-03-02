@@ -1351,7 +1351,7 @@ lemma compl_cobasis_iff_basis {M : matroid U} {B : set U}:
   M.is_cobasis Bᶜ ↔ M.is_basis B := 
 by rw [cobasis_iff, ←cobasis_iff_compl_basis, cobasis_iff, dual_dual]
 
-
+set_option pp.all true 
 lemma basis_exchange (M : matroid U){B₁ B₂ : set U}{e : U}(hB₁ : M.is_basis B₁)
 (hB₂ : M.is_basis B₂)(he : e ∈ B₁ \ B₂):
   ∃ (f : U), f ∈ (B₂ \ B₁) ∧ M.is_basis (B₁ \ {e} ∪ {f}) :=
@@ -1596,3 +1596,5 @@ end
 end ext
 
 end matroid 
+
+#lint 

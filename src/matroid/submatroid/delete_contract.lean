@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {U : Type}[fintype U]
+variables {U V : Type}[fintype U][fintype V]
 
 
 /-- the contraction of C in M. Implemented as a projection -/
@@ -245,5 +245,48 @@ by {rw cd_pair.rank, rintro x hx, obtain ⟨⟨x,h⟩,-,rfl⟩ := (mem_image _ _
 @[simp, msimp] lemma cd_pair.E {M : matroid_in U}(p : cd_pair M): 
   (M / p.C \ p.D).E = M.E \ (p.C ∪ p.D) := 
 by simp only [diff_diff] with msimp
+
+def cd_pair.of_restr (M : matroid_in U){R : set U}(hR : R ⊆ M.E): 
+  cd_pair M := 
+{ C := ∅, 
+  D := M.E \ R, 
+  C_ss_E := empty_subset _, 
+  D_ss_E := diff_subset _ _, 
+  disj := empty_inter _}
+
+def cd_pair.of_con_restr (M : matroid_in U){C R : set U}(hC : C ⊆ M.E)(hR : R ⊆ M.E \ C): 
+  cd_pair M :=
+{ C := C, 
+  D := M.E \ (C ∪ R), 
+  C_ss_E := hC, 
+  D_ss_E := diff_subset _ _,
+  disj := by {ext, simp, tauto}}
+
+
+/-- maps a cd_pair M to the corresponding pair in M.as_mat-/
+def cd_pair.to_as_mat {M : matroid_in U}(p : cd_pair M): cd_pair (M.as_mat : matroid_in M.E) := 
+{ C := (coe ⁻¹' p.C), 
+  D := (coe ⁻¹' p.D), 
+  disj := by {unfold_coes, rw [←preimage_inter, p.disj, preimage_empty]},
+  C_ss_E := λ x hx, by {simp at *}, 
+  D_ss_E := λ x hx, by {simp at *}}
+
+/-- maps a cd_pair (M.as_mat : matroid_in M.E) to the corresponding pair in M-/
+def cd_pair.from_as_mat {M : matroid_in U}(p : cd_pair (M.as_mat : matroid_in M.E)) : cd_pair M := 
+{ C := coe '' p.C,
+  D := coe '' p.D,
+  disj := by {unfold_coes, rw [image_inter, p.disj, image_empty], exact subtype.coe_injective,  },
+  C_ss_E := by simp,
+  D_ss_E := by simp }
+
+ 
+/-- the image of a cd_pair under an injection  -/
+def cd_pair.image {M : matroid U}{M' : matroid V}(p : cd_pair (M : matroid_in U))(f : U ↪ V): 
+  cd_pair (M' : matroid_in V) := 
+{ C := (f.to_fun '' p.C),
+  D := (f.to_fun '' p.D),
+  disj := by {rw [(image_inter f.inj'), p.disj, image_empty], },
+  C_ss_E := λ x hx, by simp, 
+  D_ss_E := λ x hx, by simp} 
 
 end matroid_in 

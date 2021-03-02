@@ -213,9 +213,11 @@ begin
   exact h.1 _ hFY, 
 end
 
-section pseudominor
+section pminor
 
-def is_pseudominor_of (N M : matroid U) := 
+/-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising from loopifications and/or
+projections of M  -/
+def is_pminor_of (N M : matroid U) := 
   ∃ C D, N = M ⟋ C ⟍ D 
 
 lemma pr_lp_eq_lp_pr (M : matroid U)(C D : set U):
@@ -241,15 +243,15 @@ begin
   apply loopified_set_rank_zero,
 end
 
-lemma pseudominor_iff_exists_lp_pr_disjoint {N M : matroid U} :
-  N.is_pseudominor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟍ D ⟋ C :=
+lemma pminor_iff_exists_lp_pr_disjoint {N M : matroid U} :
+  N.is_pminor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟍ D ⟋ C :=
 begin
   split, rintros ⟨C,D,h⟩, refine ⟨C,D \ C, ⟨by simp ,_⟩ ⟩, rwa ←pr_lp_eq_lp_pr, 
   rintros ⟨C,D,hCD,h⟩, refine ⟨C \ D, D, _⟩, rwa ←lp_pr_eq_pr_lp, 
 end
 
-lemma pseudominor_iff_exists_pr_lp_disjoint {N M : matroid U} :
-  N.is_pseudominor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟋ C ⟍ D :=
+lemma pminor_iff_exists_pr_lp_disjoint {N M : matroid U} :
+  N.is_pminor_of M ↔ ∃ C D, C ∩ D = ∅ ∧ N = M ⟋ C ⟍ D :=
 begin
   split, swap, rintros ⟨C,D,hCD,h⟩, exact ⟨C, D, h⟩,
   rintros ⟨C,D,h⟩, refine ⟨C,D \ C, ⟨by simp ,_⟩ ⟩, 
@@ -262,6 +264,6 @@ end
 
 
 
-end pseudominor 
+end pminor 
 
 end matroid 

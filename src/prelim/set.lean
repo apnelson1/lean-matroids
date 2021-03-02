@@ -10,6 +10,7 @@ open set
 
 variables {A : Type}
 
+/-- the symmetric difference of two sets -/
 def symm_diff (X Y : set A) : set A := (X \ Y) ∪ (Y \ X)
 
 
@@ -184,7 +185,7 @@ by rw [inter_distrib_left, inter_compl_self, empty_union]
 @[simp] lemma union_compl_inter (X Y : set A) : X ∪ (Xᶜ ∩ Y) = X ∪ Y :=
 by rw [union_distrib_left, union_compl_self, univ_inter]
 
-@[simp] lemma union_inter_compl_inter (X Y : set A) : (X ∪ Y) ∪ (Xᶜ ∩ Yᶜ)  = univ := 
+lemma union_inter_compl_inter (X Y : set A) : (X ∪ Y) ∪ (Xᶜ ∩ Yᶜ)  = univ := 
 by rw [union_distrib_left, union_comm _ Xᶜ, union_comm X Y, union_comm _ Yᶜ,
       ←(compl_compl Y),  compl_compl Yᶜ, union_compl_union Yᶜ, union_comm _ X, 
       ←(compl_compl X),    compl_compl Xᶜ, union_compl_union Xᶜ, inter_self]
@@ -455,3 +456,5 @@ begin
   have := (pairwise_disjoint.elim hdj (mem_of_mem_of_subset h h₁) ((mem_of_mem_of_subset h' h₂)) x hxt hxt'), 
   subst this, use t, tidy, 
 end
+
+#lint 

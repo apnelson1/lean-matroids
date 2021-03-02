@@ -138,7 +138,6 @@ begin
   from hXY, 
 end
 
-
 lemma removal_subset_of {X Y : set A}{e : A} :
   X ⊆ Y ∪ {e} → X \ {e} ⊆ Y :=
 begin

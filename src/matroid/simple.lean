@@ -108,7 +108,7 @@ end
 lemma si_is_irestr (M : matroid U): 
   (si M).is_irestr_of M :=
 begin
-  rw iso_to_restriction_of_iff_exists_map, 
+  rw irestr_of_iff_exists_map, 
   let f := choose_transversal M, 
   exact ⟨⟨f, transversal_inj f⟩, λ S, by {rw [si_r_transversal f], refl}⟩, 
 end
@@ -117,14 +117,15 @@ end simple
 
 section simple_minor
 
-/-- If N is loopless and is isomorphic to a minor of a pseudominor of M, then N is isomorphic 
+
+/-- If N is loopless and is isomorphic to a minor of a pminor of M, then N is isomorphic 
 to a minor of M.  -/
-lemma iminor_of_iminor_of_pseudominor {N : matroid V}{M' M: matroid U}(hN : N.is_loopless)
-(hNM' : N.is_iminor_of M')(hM'M : M'.is_pseudominor_of M):
+lemma iminor_of_iminor_of_pminor {N : matroid V}{M' M: matroid U}(hN : N.is_loopless)
+(hNM' : N.is_iminor_of M')(hM'M : M'.is_pminor_of M):
 N.is_iminor_of M :=
 begin
-  obtain ⟨φ,C, hrange, hr, hCi, hCr⟩ := iminor_of_iff_exists_good_map.mp hNM', 
-  obtain ⟨C',D',hC'D', rfl⟩ := pseudominor_iff_exists_pr_lp_disjoint.mp hM'M,
+  obtain ⟨φ,C, hrange, hr, hCi, hCr⟩ := iminor_of_iff_exists_good_C.mp hNM', 
+  obtain ⟨C',D',hC'D', h⟩ := pminor_iff_exists_pr_lp_disjoint.mp hM'M, substI h, 
   clear hM'M hNM', 
   
   have hrange' : range φ ∩ (C' ∪ D') = ∅, 
@@ -142,7 +143,7 @@ begin
         ←rank_zero_of_inter_rank_zero C (rank_zero_of_pr_lp M C' D'),
         ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)], },
   
-  refine iso_to_minor_of_iff_exists_map.mpr ⟨φ, C ∪ C', _, λ X, _⟩, 
+  refine iminor_of_iff_exists_embedding.mpr ⟨φ, C ∪ C', _, λ X, _⟩, 
   {rw disjoint_iff_subset_compl at *, 
    refine subset.trans (subset_inter hrange hrange') _, 
    intros x, simp only [and_imp, compl_union, mem_inter_eq, mem_compl_eq], tauto},
@@ -157,8 +158,8 @@ begin
   apply image_subset_range,  
 end
 
-lemma minor_iff_minor_si_of_simple {N : matroid V}{M : matroid U}(hN : N.is_simple):
-  N.is_iso_to_minor_of M ↔ N.is_iso_to_minor_of (si M) :=
+lemma iminor_iff_iminor_si {N : matroid V}{M : matroid U}(hN : N.is_simple):
+  N.is_iminor_of M ↔ N.is_iminor_of (si M) :=
 begin
   
   sorry, 
