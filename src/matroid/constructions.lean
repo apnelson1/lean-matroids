@@ -14,12 +14,12 @@ def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=
   λ X, M.indep X ∧ size X ≤ n
 
 lemma trunc.empty_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
-  satisfies_empty_indep (trunc.indep M hn) := 
-⟨M.empty_indep, by {rw size_empty, assumption}⟩
+  satisfies_I1 (trunc.indep M hn) := 
+⟨M.I1, by {rw size_empty, assumption}⟩
 
 lemma trunc.indep_of_subset_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
-  satisfies_indep_of_subset_indep (trunc.indep M hn) := 
-λ I J hIJ hJ, ⟨M.indep_of_subset_indep I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
+  satisfies_I2 (trunc.indep M hn) := 
+λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
 lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
@@ -352,6 +352,31 @@ begin
 end
 
 end relax 
+
+namespace partition 
+variables {U α : Type}[fintype U](f : U → α)(b : α → ℤ)
+
+/-- A set is independent in the partition matroid if, for each a ∈ α, it contains at most
+b a elements with label α  -/
+def indep : set U → Prop := 
+  λ X, ∀ a : α, size (X ∩ (f ⁻¹' {a})) ≤ b a 
+
+lemma satisfies_I1 (hb : ∀ a, 0 ≤ b a): 
+  satisfies_I1 (indep f b) := 
+λ a, by {rw [empty_inter, size_empty], apply hb}
+
+lemma satisfies_I2 (hb : ∀ a, 0 ≤ b a): 
+  satisfies_I2 (indep f b) :=
+λ I J hIJ hJ a, le_trans (size_monotone (subset_inter_subset_left _ hIJ)) (hJ a)
+
+lemma satisfies_I3 (hb : ∀ a, 0 ≤ b a): 
+  satisfies_I3 (indep f b) := 
+λ I J hI hJ hIJ, by_contra (λ hn, 
+begin
+  push_neg at hn, have := 
+end )
+
+end partition
 
 
  

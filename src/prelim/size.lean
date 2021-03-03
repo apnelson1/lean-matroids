@@ -2,7 +2,7 @@
 import tactic 
 import .int_lemmas .set .single 
 
-open_locale classical 
+open_locale classical big_operators 
 noncomputable theory 
 
 open set 
@@ -43,6 +43,10 @@ begin
   { ext, simp only [mem_to_finset, finset.mem_inter, mem_inter_iff]}, 
   exact classical.dec_eq A, 
 end
+
+lemma size_union (X Y : set A): 
+  size (X ∪ Y) = size X + size Y - size (X ∩ Y) := 
+by linarith [size_modular X Y]
 
 lemma size_nonneg (X : set A) : 0 ≤ size X := 
   by {simp only [size, size_nat], norm_cast, apply zero_le}  

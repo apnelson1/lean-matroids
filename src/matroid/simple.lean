@@ -7,9 +7,7 @@ open_locale classical
 open set 
 namespace matroid 
 
-
 variables {U V : Type}[fintype U][fintype V]
-
 
 section simple 
 
@@ -161,12 +159,8 @@ end
 lemma iminor_iff_iminor_si {N : matroid V}{M : matroid U}(hN : N.is_simple):
   N.is_iminor_of M ↔ N.is_iminor_of (si M) :=
 begin
-  
   sorry, 
 end
-
-
-
 
 end simple_minor 
 end matroid 

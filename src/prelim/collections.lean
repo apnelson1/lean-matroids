@@ -243,6 +243,18 @@ begin
   rw [hX, size_insert_nonmem he], simp, 
 end
 
+#check @finset.sum_fiberwise_of_maps_to
+
+
+--set_option pp.notation false
+theorem size_eq_sum_size_image {α β : Type}[fintype α][fintype β] (f : α → β) (X : set α) :
+size X = ∑ (b : β), size (f ⁻¹' {b} ∩ X) := 
+begin
+  have := finset.card_eq_sum_card_image f, unfold size size_nat, 
+  norm_num, 
+  rw this (finset.filter (λ (x : α), x ∈ X) finset.univ),
+end
+
 
 
 end size 
