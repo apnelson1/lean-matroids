@@ -1,4 +1,4 @@
-import .size .induction 
+import .size .induction algebra.big_operators.order 
 ----------------------------------------------------------------
 open_locale classical 
 open_locale big_operators 
@@ -243,18 +243,42 @@ begin
   rw [hX, size_insert_nonmem he], simp, 
 end
 
-#check @finset.sum_fiberwise_of_maps_to
-
-
---set_option pp.notation false
-theorem size_eq_sum_size_image {α β : Type}[fintype α][fintype β] (f : α → β) (X : set α) :
-size X = ∑ (b : β), size (f ⁻¹' {b} ∩ X) := 
+theorem size_eq_sum_size_image' {α β : Type}[fintype α] (f : α → β)(B : finset β) (X : set α) :
+size (f⁻¹' B ∩  X) = ∑ b in B, size (f ⁻¹' {b} ∩ X) := 
 begin
-  have := finset.card_eq_sum_card_image f, unfold size size_nat, 
-  norm_num, 
-  rw this (finset.filter (λ (x : α), x ∈ X) finset.univ),
+  apply @finset.induction_on β _ _ B, simp, 
+  rintro a B' ha IH,
+  rw [finset.coe_insert, ← union_singleton, preimage_union, inter_distrib_right], 
+  rw size_disjoint_sum, swap, 
+  { ext, simp, rintros h₁ - rfl, exact false.elim (ha h₁),  },
+  rw IH, rw [finset.sum_insert ha, add_comm], 
 end
 
 
 
+theorem size_eq_sum_size_image {α β : Type}[fintype α][fintype β] (f : α → β) (X : set α) :
+size X = ∑ (b : β), size (f ⁻¹' {b} ∩ X) := 
+begin
+  have h : (X = f ⁻¹' (finset.univ : finset β) ∩ X) := by simp, 
+  nth_rewrite 0 h, simp_rw size_eq_sum_size_image', 
+end
+
+lemma finset.summands_eq_of_le_sum_in_eq {α β : Type} {s : finset α} {f g : α → β} [linear_ordered_cancel_add_comm_monoid β] 
+(hle : ∀ a ∈ s, f a ≤ g a)(hs : ∑ a in s, f a = ∑ a in s, g a) :
+∀ a ∈ s, f a = g a := 
+begin
+  by_contra hn, push_neg at hn, 
+  obtain ⟨x,hxs,hx⟩ := hn, 
+  replace hx : f x < g x := lt_of_le_of_ne (hle x hxs) hx, 
+  have := finset.sum_lt_sum hle ⟨x,hxs,hx⟩, 
+  rw hs at this, exact lt_irrefl _ this, 
+end
+
+lemma finset.summands_eq_of_le_sum_eq {α β : Type}[fintype α]{f g : α → β} [linear_ordered_cancel_add_comm_monoid β]
+(hle : ∀ a, f a ≤ g a)(hs : ∑ (a : α), f a = ∑ (a : α), g a ) :
+∀ a, f a = g a :=
+have h : _ := @finset.summands_eq_of_le_sum_in_eq _ _ finset.univ f g _ (λ a _, hle a) hs, 
+λ a, h a (finset.mem_univ _)
+
+end fin_sum 
 end size 

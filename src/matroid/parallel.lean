@@ -215,8 +215,29 @@ def parallel_class (M : matroid U): Type := {X : set U // M.is_parallel_class X}
 def parallel_cl' {M : matroid U}(e : M.nonloop) : M.parallel_class := 
   ⟨M.parallel_cl e, ⟨e,⟨e.property, rfl⟩⟩⟩ 
 
+lemma parallel_iff_parallel_cl'_eq {M : matroid U}{e f : M.nonloop}: 
+  M.parallel e f ↔ parallel_cl' e = parallel_cl' f  :=
+begin
+  simp_rw [parallel_cl', parallel_cl, subtype.mk_eq_mk, ext_iff, mem_set_of_eq],  
+  refine ⟨λ h x, (have h' : _ := parallel_symm M h, ⟨λ hxe, _, λ hxf, _⟩), λ h, _⟩, 
+  repeat {transitivity, assumption, assumption, }, 
+  { apply (h e).mp, apply parallel_refl_nonloop e.property}, 
+end
+
+
 instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨subtype.val⟩ 
 instance parallel_class_fintype {M : matroid U}: fintype M.parallel_class := by {unfold parallel_class, apply_instance} 
+
+lemma parallel_of_mems_parallel_class {M : matroid U}{P : M.parallel_class}{e f : U}
+(he : e ∈ (P : set U))(hf : f ∈ (P : set U)) : 
+M.parallel e f := 
+begin
+  cases P with P hP, 
+  obtain ⟨x, ⟨hx, rfl⟩⟩ := hP, 
+  rw [subtype.coe_mk, mem_parallel_cl] at he hf, 
+  transitivity, assumption, symmetry, assumption, 
+end
+
 
 lemma nonloop_of_mem_parallel_class {M : matroid U}{P : set U}{e : U}(heP : e ∈ P)(h : M.is_parallel_class P) :
   M.is_nonloop e := 

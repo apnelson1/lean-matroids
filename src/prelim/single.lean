@@ -333,3 +333,9 @@ begin
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
 end
 
+lemma pair_subset_iff {e f : A}{X : set A}: 
+  {e,f} ⊆ X ↔ e ∈ X ∧ f ∈ X := 
+by {refine ⟨λ h, ⟨_,_⟩, λ h, λ x hx, _⟩, 
+  repeat {apply singleton_subset_iff.mp, apply subset.trans _ h, simp, }, 
+  simp only [set.mem_insert_iff, set.mem_singleton_iff] at hx,
+  rcases hx with (rfl | rfl); tauto,   }

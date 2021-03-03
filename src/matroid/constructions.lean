@@ -1,27 +1,29 @@
 
-import prelim.induction prelim.collections 
+import prelim.induction prelim.collections algebra.big_operators.order 
 import .rankfun .indep matroid.submatroid.order
 
 open matroid set 
+open_locale classical big_operators 
 
-section truncation 
+
 
 noncomputable theory 
+namespace trunc 
 
 variables {U : Type}[fintype U]
 
-def trunc.indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
+def indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
 
-lemma trunc.empty_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
+lemma I1 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I1 (trunc.indep M hn) := 
 ⟨M.I1, by {rw size_empty, assumption}⟩
 
-lemma trunc.indep_of_subset_indep (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
+lemma I2 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
   satisfies_I2 (trunc.indep M hn) := 
 λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
-lemma trunc.I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
+lemma I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
 begin
   intros I J hIJ hI hJ, 
@@ -32,13 +34,13 @@ begin
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
-def truncate (M : matroid U){n : ℤ}(hn : 0 ≤ n) : matroid U := 
+def tr (M : matroid U){n : ℤ}(hn : 0 ≤ n) : matroid U := 
   let M_ind := M.to_indep_family in 
-  matroid.of_indep_family ⟨trunc.indep M_ind hn, trunc.empty_indep M_ind hn, trunc.indep_of_subset_indep M_ind hn, trunc.I3 M_ind hn⟩
+  matroid.of_indep_family ⟨indep M_ind hn, I1 M_ind hn, I2 M_ind hn, I3 M_ind hn⟩
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
-lemma truncate_rank (M : matroid U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
-  (truncate M hn).r X = min n (M.r X) :=
+lemma r_eq (M : matroid U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
+  (tr M hn).r X = min n (M.r X) :=
 begin
   apply indep_family.I_to_r_eq_iff.mpr, 
   unfold indep_family.is_set_basis trunc.indep matroid.to_indep_family, 
@@ -62,13 +64,13 @@ begin
   finish, 
 end
 
-lemma truncation_weak_image (M : matroid U){n : ℤ}(hn : 0 ≤ n) : 
-  (truncate M hn) ≤ M := 
-λ X, by {rw truncate_rank, simp, tauto,}
+lemma weak_image (M : matroid U){n : ℤ}(hn : 0 ≤ n) : 
+  (tr M hn) ≤ M := 
+λ X, by {rw r_eq, simp, tauto,}
 
-end truncation 
+end trunc
 
-section uniform
+namespace unif
 
 variables (U : Type)[fintype U]
 
@@ -79,7 +81,7 @@ def free_matroid_on : matroid U :=
   R2 := λ X Y hXY, size_monotone hXY,
   R3 := λ X Y, le_of_eq (size_modular X Y),} 
 
-lemma free_matroid_indep (X : set U) :
+lemma free_indep (X : set U) :
   (free_matroid_on U).is_indep X  := 
 by rw [free_matroid_on, indep_iff_r]
 
@@ -91,7 +93,7 @@ begin
   ext X, simp_rw [free_matroid_on, ←indep_iff_r, indep_of_subset_indep (subset_univ X) h], 
 end
 
-def loopy_matroid_on : matroid U := 
+def loopy : matroid U := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
   R1 := λ X, size_nonneg X, 
@@ -99,26 +101,26 @@ def loopy_matroid_on : matroid U :=
   R3 := λ X Y, rfl.ge }
 
 def loopy_iff_univ_rank_zero {M : matroid U}:
-  M = loopy_matroid_on U ↔ M.r univ = 0 := 
+  M = loopy U ↔ M.r univ = 0 := 
 begin
   refine ⟨λ h, by finish, λ h,_⟩,  
-  ext X, simp_rw [loopy_matroid_on], 
+  ext X, simp_rw [loopy], 
   have := rank_mono M (subset_univ X), 
   rw h at this, 
   linarith [M.rank_nonneg X], 
 end
 
 lemma loopy_matroid_indep_iff_empty {X : set U}:
-  (loopy_matroid_on U).is_indep X ↔ X = ∅ := 
-by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy_matroid_on]}
+  (loopy U).is_indep X ↔ X = ∅ := 
+by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 
 
 def uniform_matroid_on {r : ℤ}(hr : 0 ≤ r) : matroid U := 
-  truncate (free_matroid_on U) hr 
+  trunc.tr (free_matroid_on U) hr 
 
 @[simp] lemma uniform_matroid_rank {U : Type}[fintype U]{r : ℤ}(hr : 0 ≤ r)(X : set U) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
-by apply truncate_rank
+by apply trunc.r_eq
 
 lemma uniform_matroid_indep_iff {U : Type}[fintype U](X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
@@ -156,7 +158,7 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-end uniform
+end unif 
 
 section relax
 variables {U : Type}[fintype U] --[decidable_eq (set U)] 
@@ -338,10 +340,10 @@ end
 
 lemma single_rank_disagreement_univ (hU : nontriv U){M₁ M₂ : matroid U}:
    M₁.r univ < M₂.r univ → (∀ X, X ≠ univ → M₁.r X = M₂.r X) → 
-    M₁ = circuit_matroid_on U hU ∧ M₂ = free_matroid_on U  := 
+    M₁ = unif.circuit_matroid_on U hU ∧ M₂ = unif.free_matroid_on U  := 
 begin
   intros huniv hother, 
-  rw [circuit_matroid_iff_univ_circuit, free_iff_univ_indep], 
+  rw [unif.circuit_matroid_iff_univ_circuit, unif.free_iff_univ_indep], 
   have hM₁M₂ : M₁ ≠ M₂ := λ h, by {rw h at huniv, from lt_irrefl _ huniv}, 
   cases circuit_ind_of_distinct hM₁M₂ with Z hZ, 
   by_cases Z = univ; cases hZ, 
@@ -353,30 +355,78 @@ end
 
 end relax 
 
-namespace partition 
-variables {U α : Type}[fintype U](f : U → α)(b : α → ℤ)
 
-/-- A set is independent in the partition matroid if, for each a ∈ α, it contains at most
-b a elements with label α  -/
-def indep : set U → Prop := 
-  λ X, ∀ a : α, size (X ∩ (f ⁻¹' {a})) ≤ b a 
 
-lemma satisfies_I1 (hb : ∀ a, 0 ≤ b a): 
-  satisfies_I1 (indep f b) := 
-λ a, by {rw [empty_inter, size_empty], apply hb}
+open finset 
 
-lemma satisfies_I2 (hb : ∀ a, 0 ≤ b a): 
-  satisfies_I2 (indep f b) :=
-λ I J hIJ hJ a, le_trans (size_monotone (subset_inter_subset_left _ hIJ)) (hJ a)
+namespace idsum 
 
-lemma satisfies_I3 (hb : ∀ a, 0 ≤ b a): 
-  satisfies_I3 (indep f b) := 
-λ I J hI hJ hIJ, by_contra (λ hn, 
+variables {U ι : Type}[fintype U][fintype ι](f : U → ι)
+(Rs : ∀ (i : ι), matroid {x // f x = i})
+
+/-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
+def r : set U → ℤ := 
+λ X, ∑ (i : ι), (Rs i).r (coe ⁻¹' X)
+
+lemma size_coe_eq (i : ι)(X : set U): 
+  size (coe ⁻¹' X : set {x // f x = i}) = size (f ⁻¹' {i} ∩ X) := 
 begin
-  push_neg at hn, have := 
-end )
+  unfold_coes, 
+  let f : {x // f x = i} ↪ U := ⟨subtype.val, subtype.coe_injective⟩, 
+  convert (size_img_emb f (subtype.val ⁻¹' X)).symm, ext, tidy, 
+end
+  
+
+lemma R0: 
+  satisfies_R0 (r f Rs) := 
+λ X, sum_nonneg (λ i h, (Rs i).rank_nonneg _)
+
+lemma R1: 
+  satisfies_R1 (r f Rs) := 
+λ X, begin
+  rw size_eq_sum_size_image f, 
+  exact sum_le_sum (λ i hi, has_le.le.trans_eq (rank_le_size (Rs i) _) (size_coe_eq _ _ _)),  
+end 
+
+lemma R2:
+  satisfies_R2 (r f Rs) := 
+λ X Y hXY, by {apply sum_le_sum, refine λ i _, rank_mono _ (λ x, _), rw [mem_preimage], apply hXY,  }
+
+lemma R3:
+  satisfies_R3 (r f Rs) :=
+λ X Y, by {simp_rw [r, ← sum_add_distrib], apply sum_le_sum, exact λ i _, rank_submod _ _ _}
+
+/-- the 'internal direct sum' of matroids whose ground sets partition U, indexed by f : U → ι -/
+def M : matroid U := 
+⟨idsum.r f Rs, idsum.R0 f Rs, idsum.R1 f Rs, idsum.R2 f Rs, idsum.R3 f Rs⟩ 
+
+lemma indep_iff (X : set U): 
+  (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
+begin
+  simp_rw [indep_iff_r, size_eq_sum_size_image f X, ← size_coe_eq],   
+  refine ⟨λ h, _, λ h, _⟩, swap, 
+  {conv_rhs {congr, skip, funext, rw [← h], }, refl},
+  have := (λ i, (Rs i).rank_le_size (coe ⁻¹' X)), 
+  exact finset.summands_eq_of_le_sum_eq this h, 
+end
+
+end idsum 
+
+namespace partition 
+variables {U ι : Type}[fintype U][fintype ι](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+
+/-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
+whose intersection with each cell i has size at most b i -/
+def M : matroid U := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
+
+lemma indep_iff (X : set U) : 
+  (M f hb).is_indep X ↔ ∀ i, size (X ∩ f ⁻¹' {i}) ≤ b i :=
+by simp_rw [M, idsum.indep_iff, unif.uniform_matroid_indep_iff, idsum.size_coe_eq, set.inter_comm]
+
+
+
+
 
 end partition
-
 
  

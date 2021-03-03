@@ -11,21 +11,80 @@ variables {U V : Type}[fintype U][fintype V]
 
 section simple 
 
+def is_loopless_set (M : matroid U)(S : set U) :=
+  ∀ X ⊆ S, size X ≤ 1 → M.is_indep X
+
 def is_loopless (M : matroid U) := 
-  ∀ X, size X ≤ 1 → M.is_indep X 
+  is_loopless_set M univ 
+
+lemma loopless_iff_univ_loopless {M : matroid U}: 
+  is_loopless M ↔ is_loopless_set M univ := 
+iff.rfl 
+
+def is_simple_set (M : matroid U)(S : set U) :=
+  ∀ X ⊆ S, size X ≤ 2 → M.is_indep X 
+
+lemma simple_of_subset_simple {M : matroid U}{S T : set U}(hT : M.is_simple_set T)(hST : S ⊆ T):
+  M.is_simple_set S := 
+λ X hX, hT X (subset.trans hX hST)
+
 
 def is_simple (M : matroid U) :=
-  ∀ X, size X ≤ 2 → M.is_indep X 
+  is_simple_set M univ 
+
+lemma simple_iff_univ_simple {M : matroid U}: 
+  is_simple M ↔ is_simple_set M univ := 
+iff.rfl 
+
+def simple_set (M : matroid U) := {X : set U // M.is_simple_set X} 
+
+instance simple_set_nonempty {M : matroid U}: nonempty M.simple_set := 
+  ⟨⟨∅, λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }⟩⟩ 
+
+instance simple_set_fintype {M : matroid U}: fintype M.simple_set := 
+  by {unfold simple_set, apply_instance,}
+
+def simple_subset_of (M : matroid U)(S : set U) := {X : set U // M.is_simple_set X ∧ X ⊆ S} 
+
+instance simple_subset_nonempty {M : matroid U}{S : set U}: nonempty (M.simple_subset_of S) := 
+  ⟨⟨∅, ⟨λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }, empty_subset _⟩ ⟩⟩ 
+
+instance simple_subset_fintype {M : matroid U}{S : set U}: fintype (M.simple_subset_of S) := 
+  by {unfold simple_subset_of, apply_instance,}
+
+
+lemma loopless_set_iff_all_nonloops {M : matroid U}{S : set U}: 
+  M.is_loopless_set S ↔ ∀ e ∈ S, M.is_nonloop e :=
+begin
+  simp_rw [nonloop_iff_r, is_loopless_set, size_le_one_iff_empty_or_singleton, indep_iff_r],
+  refine ⟨λ h, λ e he ,_  , λ h, λ X hX h', _⟩, 
+  {rw ← size_singleton e, exact h _ (singleton_subset_iff.mpr he) (or.inr ⟨e, rfl⟩)},  
+  rcases h' with (rfl | ⟨e,rfl⟩), simp, 
+  rw [size_singleton, h e (singleton_subset_iff.mp hX)],  
+end
 
 lemma loopless_iff_all_nonloops {M : matroid U} :
   M.is_loopless ↔ ∀ e, M.is_nonloop e :=
+by {rw [loopless_iff_univ_loopless, loopless_set_iff_all_nonloops], tauto}
+
+lemma nonloop_of_mem_loopless_set {M : matroid U}{S : set U}{e : U}
+(h : M.is_loopless_set S)(he : e ∈ S):
+  M.is_nonloop e := 
+by {rw loopless_set_iff_all_nonloops at h, tauto, }
+
+lemma exists_loop_of_not_loopless_set {M : matroid U}{S : set U}(hS : ¬M.is_loopless_set S): 
+  ∃ e ∈ S, M.is_loop e :=
 begin
-  simp_rw [nonloop_iff_r, is_loopless, size_le_one_iff_empty_or_singleton, indep_iff_r],
-  refine ⟨λ h, λ e, _, λ h, λ X hX, _⟩, 
-  { rw ←size_singleton e, apply h, right, exact ⟨e,rfl⟩},
-  rcases hX with (rfl | ⟨e,rfl⟩), simp, 
-  rw [size_singleton, h e], 
+  by_contra hn, 
+  simp_rw [loopless_set_iff_all_nonloops, nonloop_iff_not_loop] at hS, 
+  push_neg at hS hn,
+  obtain ⟨e,⟨he,he'⟩⟩ := hS, 
+  exact hn e he he',    
 end 
+
+lemma exists_loop_of_not_loopless {M : matroid U}(h : ¬M.is_loopless): 
+  ∃ e, M.is_loop e := 
+let ⟨e,_,h'⟩ := exists_loop_of_not_loopless_set h in ⟨e,h'⟩ 
 
 lemma nonloop_of_loopless {M : matroid U}(e : U)(h : M.is_loopless):
   M.is_nonloop e := 
@@ -35,25 +94,33 @@ lemma rank_single_of_loopless {M : matroid U}(h : M.is_loopless)(e : U):
   M.r {e} = 1 := 
 by {rw [←nonloop_iff_r], apply nonloop_of_loopless e h,  }
 
+lemma simple_set_iff_no_loops_or_parallel_pairs {M : matroid U}{S : set U}:
+  M.is_simple_set S ↔ M.is_loopless_set S ∧ ∀ (e f ∈ S), M.parallel e f → e = f := 
+begin
+  refine ⟨λ h, ⟨λ X hXS hX, h X hXS (by linarith [hX]),λ e f he hf hef, by_contra (λ hn, _)⟩, λ h, λ X hXS hX, _⟩, 
+  { rcases hef with ⟨he,hf,hef⟩, 
+    have hef' := size_union_distinct_singles hn, 
+    linarith [r_indep (h {e,f} (λ x, by {simp, rintros (rfl | rfl); assumption, }) (by linarith))]},
+  rcases int.nonneg_le_two_iff (size_nonneg X) hX with (h0 | h1 | h2), 
+  { rw size_zero_iff_empty at h0, rw h0, apply M.empty_indep, },
+  { obtain ⟨e,rfl⟩ := size_one_iff_eq_singleton.mp h1, 
+    rw singleton_subset_iff at hXS, 
+    exact nonloop_iff_indep.mp (nonloop_of_mem_loopless_set h.1 hXS), },
+  rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩, 
+  by_contra hn, 
+  cases pair_subset_iff.mp hXS with he hf, 
+  
+  suffices heq : e = f, rw [heq, pair_eq_singleton, size_singleton] at h2, norm_num at h2, 
+  apply h.2 e f he hf, rw parallel_iff_dep _ _, right, 
+    rwa [←dep_iff_not_indep] at hn, 
+  all_goals {apply nonloop_of_mem_loopless_set h.1, assumption,  },
+end
+
 
 lemma simple_iff_no_loops_or_parallel_pairs {M : matroid U}:
   M.is_simple ↔ M.is_loopless ∧ ∀ (e f : U), M.parallel e f → e = f :=
-begin
-  refine ⟨λ h, ⟨λ X hX, h X (by linarith),λ e f hef, by_contra (λ hn, _)⟩, λ h, λ X hX, _⟩, 
-  { rcases hef with ⟨he,hf,hef⟩, 
-    have hef' := size_union_distinct_singles hn, 
-    linarith [r_indep (h {e,f} (by linarith))],},
-  rcases int.nonneg_le_two_iff (size_nonneg X) hX with (h0 | h1 | h2), 
-  { rw size_zero_iff_empty at h0, rw h0, apply M.empty_indep, },
-  { rcases size_one_iff_eq_singleton.mp h1 with ⟨e,rfl⟩, 
-    exact nonloop_iff_indep.mp (nonloop_of_loopless _ h.1), },
-  rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩, 
-  by_contra hn, 
-  suffices heq : e = f, rw [heq, pair_eq_singleton, size_singleton] at h2, norm_num at h2, 
-  apply h.2 e f, rw parallel_iff_dep _ _, right, 
-    rwa [←dep_iff_not_indep] at hn, 
-  all_goals {apply nonloop_of_loopless, exact h.1},
-end
+by {rw [simple_iff_univ_simple, simple_set_iff_no_loops_or_parallel_pairs], tidy, }  
+
 
 /- The simple matroid associated with M (simplification of M). Its elements are the parallel classes of M, and 
 the rank of a set of parallel classes is just the rank in M of their union. -/

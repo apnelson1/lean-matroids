@@ -206,6 +206,7 @@ lemma size_pos_iff_has_mem {X : set A}:
   0 < size X ↔ ∃ e, e ∈ X := 
 ⟨λ h, size_pos_has_mem h, λ h, by {cases h with e he, have := size_monotone (singleton_subset_iff.mpr he), rw size_singleton at this, linarith}⟩ 
 
+
 lemma size_zero_iff_has_no_mem {X : set A}:
   size X = 0 ↔ ¬ ∃ e, e ∈ X := 
 begin
@@ -213,6 +214,15 @@ begin
   refine ⟨λ h, _, λ h, by linarith ⟩ ,
   linarith [size_nonneg X, not_lt.mp h]
 end
+
+lemma size_le_zero_iff_has_no_mem {X : set A}:
+  size X ≤ 0 ↔ ¬ ∃ e, e ∈ X := 
+begin
+  rw ←size_zero_iff_has_no_mem, split, 
+  { intro, linarith [size_nonneg X]}, 
+  intro h, rw h, 
+end
+
 
 
 lemma elem_diff_of_size_lt {X Y : set A}(h : size X < size Y):
@@ -295,6 +305,21 @@ begin
   linarith, 
 end 
 
+lemma two_le_size_iff_has_distinct {X : set A}:
+  2 ≤ size X ↔ ∃ e f ∈ X, e ≠ f :=
+begin
+  split, 
+  { intro h, 
+    obtain ⟨e,he⟩ := @size_pos_has_mem _ _ X (by linarith),
+    obtain ⟨f,hf⟩ := @size_pos_has_mem _ _ (X \ {e}) (by linarith [size_remove_mem he]), 
+    refine ⟨e,f,he,mem_of_mem_of_subset hf (diff_subset _ _), _⟩, 
+    rintro rfl, simpa using hf,},
+  rintro ⟨e,f,he,hf,hef⟩, 
+  rw ← size_union_distinct_singles hef, 
+  apply size_monotone, 
+  rw pair_subset_iff, tauto, 
+end
+
 lemma size_union_singles_lb (e f : A): 
   1 ≤ size ({e,f} : set A) := 
 by {rw ←union_singletons_eq_pair, 
@@ -346,6 +371,18 @@ begin
   exact le_antisymm h (by linarith), 
 end
 
+lemma size_le_one_iff_mem_unique {X : set A}: 
+  size X ≤ 1 ↔ ∀ e f ∈ X, e = f := 
+begin
+  split, 
+  { rw size_le_one_iff_empty_or_singleton, 
+    rintros (rfl | ⟨e,rfl⟩); simp [mem_singleton_iff], rintros e f rfl rfl, refl,},
+  refine λ h, by_contra (λ hn, _), 
+  rw [not_le] at hn, replace hn := int.add_one_le_of_lt hn, norm_num at hn,
+  rw two_le_size_iff_has_distinct at hn, 
+  obtain ⟨e,f,he,hf,hef⟩ := hn, exact hef (h e f he hf),   
+end
+
 lemma size_eq_two_iff_pair {X : set A}:
   size X = 2 ↔ ∃ (e f : A), e ≠ f ∧ X = {e,f} :=
 begin
@@ -361,3 +398,4 @@ begin
     exact singleton_subset_iff.mpr hf.1, },
   rwa [eq_comm, size_union_distinct_singles  (ne.symm (ne_of_mem_diff hf))],  
 end 
+
