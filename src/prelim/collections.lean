@@ -1,4 +1,4 @@
-import .size .induction algebra.big_operators.order 
+import .size .induction algebra.big_operators.order finsum.finsum 
 ----------------------------------------------------------------
 open_locale classical 
 open_locale big_operators 
@@ -279,6 +279,12 @@ lemma finset.summands_eq_of_le_sum_eq {α β : Type}[fintype α]{f g : α → β
 ∀ a, f a = g a :=
 have h : _ := @finset.summands_eq_of_le_sum_in_eq _ _ finset.univ f g _ (λ a _, hle a) hs, 
 λ a, h a (finset.mem_univ _)
+
+lemma sum_filter_ne_zero {α β : Type}[fintype α][add_comm_monoid β](f : α → β):
+  ∑ (x : {x : α // f x ≠ 0}), f x = ∑ (x : α), f x := 
+begin
+  have := finset.sum_subtype_eq_sum_filter f, 
+end
 
 end fin_sum 
 end size 

@@ -117,8 +117,25 @@ lemma ε_eq_size_univ_iff_simple {M : matroid U}:
   M.ε univ = size (univ :set U) ↔ M.is_simple :=
 ε_eq_size_iff_simple_set
 
+lemma ε_eq_num_parallel_classes_inter (M : matroid U)(X : set U):
+  M.ε X = type_size {P : M.parallel_class // (P.val ∩ X).nonempty } :=
+begin
+  rw [ε_eq_pp_matroid_r, parallel_partition_matroid, partition.r_eq, type_size_eq, ← fin_sum_one_eq_size], 
+  rw ← finset.sum_filter_ne_zero, 
+  let f : ↥(finset.filter 
+    (λ (x : option M.parallel_class), min (parallel_ub_fn M x) 
+    (size (X ∩ parallel_partition_fn M ⁻¹' {x})) ≠ 0) 
+    finset.univ) 
+    ≃ {P : M.parallel_class // (P.val ∩ X).nonempty} := sorry, 
+  
+end
+
+lemma ε_eq_num_points (M : matroid U)(X : set U): 
+  M.ε X = type_size {P : M.point // ((P.val \ M.loops) ∩ X).nonempty } :=
+begin
+
+end
 
 
---def point_partition_matroid (M : matroid U) := 
 
-#lint 
+--def point_partition_matroid (M : mat

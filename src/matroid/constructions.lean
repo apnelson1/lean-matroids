@@ -368,6 +368,7 @@ variables {U ι : Type}[fintype U][fintype ι](f : U → ι)
 def r : set U → ℤ := 
 λ X, ∑ (i : ι), (Rs i).r (coe ⁻¹' X)
 
+
 lemma size_coe_eq (i : ι)(X : set U): 
   size (coe ⁻¹' X : set {x // f x = i}) = size (f ⁻¹' {i} ∩ X) := 
 begin
@@ -400,6 +401,11 @@ lemma R3:
 def M : matroid U := 
 ⟨idsum.r f Rs, idsum.R0 f Rs, idsum.R1 f Rs, idsum.R2 f Rs, idsum.R3 f Rs⟩ 
 
+lemma r_eq (X : set U) : 
+  (M f Rs).r X = ∑ (i : ι), (Rs i).r (coe ⁻¹' X) :=
+rfl 
+
+
 lemma indep_iff (X : set U): 
   (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
 begin
@@ -422,6 +428,21 @@ def M : matroid U := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
 lemma indep_iff (X : set U) : 
   (M f hb).is_indep X ↔ ∀ i, size (X ∩ f ⁻¹' {i}) ≤ b i :=
 by simp_rw [M, idsum.indep_iff, unif.uniform_matroid_indep_iff, idsum.size_coe_eq, set.inter_comm]
+
+lemma r_eq (X : set U): 
+  (M f hb).r X = ∑ (i : ι), (min (b i) (size (X ∩ f⁻¹' {i}))) :=
+by {simp_rw [M, idsum.r_eq, unif.uniform_matroid_rank, idsum.size_coe_eq], convert rfl, simp_rw set.inter_comm} 
+
+lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set U):
+  (M f hb).r X = type_size {i // b i = 1 ∧ ∃ x ∈ X, f x = i} :=
+begin
+  rw [r_eq, type_size_eq, ← fin_sum_one_eq_size, ← finset.sum_filter_ne_zero],  
+  let e : {i // b i = 1 ∧ ∃ x ∈ X, f x = i} 
+        ≃ (finset.filter (λ (x : ι), min (b x) (size (X ∩ f ⁻¹' {x})) ≠ 0) univ : set ι) := sorry, 
+  
+  
+end
+
 
 
 

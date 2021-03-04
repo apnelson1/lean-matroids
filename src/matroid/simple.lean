@@ -28,7 +28,6 @@ lemma simple_of_subset_simple {M : matroid U}{S T : set U}(hT : M.is_simple_set 
   M.is_simple_set S := 
 λ X hX, hT X (subset.trans hX hST)
 
-
 def is_simple (M : matroid U) :=
   is_simple_set M univ 
 

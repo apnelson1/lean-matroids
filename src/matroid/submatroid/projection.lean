@@ -42,6 +42,10 @@ rfl
   (M ⟋ C).r X = M.r (X ∪ C) - M.r C := 
 rfl 
 
+lemma project_rank (M : matroid U)(C : set U):
+  (M ⟋ C).r univ = M.r univ - M.r C := 
+by rw [project_r, univ_union]
+
 def loopify_project (M : matroid U)(C D : set U) : matroid U := 
   project (loopify M D) C 
 
@@ -260,9 +264,6 @@ begin
   refine rank_zero_of_subset_rank_zero _ (rank_zero_of_pr_lp _ _ _), 
   intro x, simp, tauto,
 end
-
-
-
 
 end pminor 
 

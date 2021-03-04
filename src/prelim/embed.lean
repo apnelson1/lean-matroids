@@ -18,6 +18,10 @@ begin
   ext, simp, 
 end
 
+lemma type_size_le_type_size_inj (f : A ↪ B): 
+  type_size A ≤ type_size B := 
+by {rw [type_size, type_size, ← size_img_emb f], apply size_monotone, apply subset_univ, }
+
 lemma size_img_inj {f : A → B}(hf : function.injective f)(X : set A): 
   size (f '' X) = size X := 
 size_img_emb ⟨f , hf⟩ X
@@ -25,6 +29,11 @@ size_img_emb ⟨f , hf⟩ X
 lemma size_img_equiv (f : A ≃ B)(X : set A):
   size (f '' X) = size X :=
 size_img_emb (f.to_embedding) X 
+
+lemma type_size_eq_type_size_equiv (f : A ≃ B): 
+  type_size A = type_size B := 
+by rw [type_size, type_size, ← size_img_equiv f, ← f.range_eq_univ, image_univ]
+
 
 @[simp] lemma equiv.image_mem_image_iff_mem {f : A ≃ B}{x : A}{X : set A}: 
   f x ∈ f '' X ↔ x ∈ X := 

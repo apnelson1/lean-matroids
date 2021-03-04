@@ -456,5 +456,3 @@ begin
   have := (pairwise_disjoint.elim hdj (mem_of_mem_of_subset h h₁) ((mem_of_mem_of_subset h' h₂)) x hxt hxt'), 
   subst this, use t, tidy, 
 end
-
-#lint 

@@ -186,6 +186,15 @@ begin
   refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq rfl),
 end 
 
+lemma rank_subadditive_sUnion' (M : matroid U)(S : set (set U)):
+  M.r (sUnion S) ≤ ∑ᶠ (X : S), M.r X := 
+begin
+  set P : set (set U) → Prop := λ S, M.r (sUnion S) ≤ ∑ᶠ (X : S), M.r X with hP, 
+  apply induction_set_size_add P, 
+  { rw hP, rw [sUnion_empty, rank_empty],}, 
+end 
+
+
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ {e}) ≤ M.r X + 1 := 
 by linarith [rank_subadditive M X {e}, rank_single_ub M e]
@@ -875,6 +884,7 @@ def loops : matroid U → set U :=
 def is_point (M : matroid U) : set U → Prop := 
   λ F, M.is_rank_k_flat 1 F
 
+
 /-- is a rank-two flat -/
 def is_line (M : matroid U) : set U → Prop := 
   λ F, M.is_rank_k_flat 2 F
@@ -886,6 +896,19 @@ def is_plane (M : matroid U) : set U → Prop :=
 /-- flat of rank r M - 1 -/
 def is_hyperplane (M : matroid U) : set U → Prop := 
   λ H, M.is_rank_k_flat (M.r univ - 1) H 
+
+def point (M : matroid U): Type := {P : set U // M.is_point P}
+
+instance point_fin {M : matroid U}: fintype M.point := by {unfold point, apply_instance}
+
+def line (M : matroid U): Type := {L : set U // M.is_line L}
+
+instance line_fin {M : matroid U}: fintype M.line := by {unfold line, apply_instance}
+
+def plane (M : matroid U): Type := {P : set U // M.is_plane P}
+
+instance plane_fin {M : matroid U}: fintype M.plane := by {unfold plane, apply_instance}
+
 
 lemma rank_loops (M: matroid U): 
   M.r (M.loops) = 0 := 

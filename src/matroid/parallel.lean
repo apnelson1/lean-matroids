@@ -275,6 +275,26 @@ begin
   exact ⟨e, he.1, hP⟩, 
 end
 
+/-- the natural equivalence between points and parallel classes in a matroid -/
+def parallel_class_point_equiv {M : matroid U}: 
+  M.parallel_class ≃ M.point := 
+{ to_fun := λ P, ⟨P.val ∪ M.loops, 
+  let ⟨e,he,h⟩ := P.property in by 
+  { simp_rw [h, point_iff_cl_nonloop, parallel_cl_eq_cl_minus_loops, diff_union_self, union_comm, 
+    subset_iff_union_eq_left.mp (M.loops_subset_cl {e})],
+    exact ⟨e,he,rfl⟩, }⟩, 
+inv_fun := λ P, ⟨P.val \ M.loops, 
+  let ⟨e,he,hP⟩ := point_iff_cl_nonloop.mp P.2 in by 
+  { rw [hP, ← parallel_cl_eq_cl_minus_loops], 
+    refine ⟨e, he, rfl⟩,}⟩,
+left_inv := λ P, let ⟨e,he,h⟩ := P.2 in by 
+  { simp_rw [h, union_diff_right, parallel_cl_eq_cl_minus_loops, diff_diff, union_self, 
+    ← parallel_cl_eq_cl_minus_loops, ← h], simp, },
+right_inv := λ P, let ⟨e,he,hP⟩ := point_iff_cl_nonloop.mp P.2 in by 
+  { dsimp only, simp_rw [hP, diff_union_self, union_comm, 
+    subset_iff_union_eq_left.mp (M.loops_subset_cl {e}), ←hP],simp, }}
+
+
 lemma parallel_class_nonempty {M : matroid U}(P : M.parallel_class):
   set.nonempty (P : set U) := 
 (parallel_class_eq_cl_nonloop_diff_loops.mp P.property).1
