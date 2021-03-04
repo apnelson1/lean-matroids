@@ -6,7 +6,7 @@ noncomputable theory
 
 open matroid set list 
 
-variables {U : Type}[fintype U]{N M : matroid U}
+variables {U : Type}[nonempty (fintype U)]{N M : matroid U}
 
 section weak_image 
 /- M is a weak image N if the rank in N is upper-bounded by the rank in M -/

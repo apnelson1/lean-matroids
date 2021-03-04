@@ -7,7 +7,7 @@ noncomputable theory
 namespace matroid 
 
 section dual
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
  
 lemma rank_empt (M : matroid U) :
   M.r ∅ = 0 :=

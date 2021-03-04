@@ -8,7 +8,7 @@ noncomputable theory
 open set 
 -- The operations needed on the ftype A.
 
-variables {A: Type}[fintype A]
+variables {A: Type}[nonempty (fintype A)]
 
 
 def is_lb (P : set A → Prop) (X : set A) : Prop := ∀ Y, P Y → X ⊆ Y 
@@ -233,7 +233,7 @@ begin
   simpa using he,
 end
 
-lemma fin_sum_one_eq_size [fintype α](X : set α): 
+lemma fin_sum_one_eq_size [nonempty (fintype α)](X : set α): 
   ∑ (a : X), (1 : α → ℤ) a = size X  := 
 begin
   revert X, apply induction_set_size_add, 
@@ -243,7 +243,7 @@ begin
   rw [hX, size_insert_nonmem he], simp, 
 end
 
-theorem size_eq_sum_size_image' {α β : Type}[fintype α] (f : α → β)(B : finset β) (X : set α) :
+theorem size_eq_sum_size_image' {α β : Type}(f : α → β)(B : set β)(X : set α) :
 size (f⁻¹' B ∩  X) = ∑ b in B, size (f ⁻¹' {b} ∩ X) := 
 begin
   apply @finset.induction_on β _ _ B, simp, 
@@ -253,6 +253,10 @@ begin
   { ext, simp, rintros h₁ - rfl, exact false.elim (ha h₁),  },
   rw IH, rw [finset.sum_insert ha, add_comm], 
 end
+
+
+
+
 
 
 

@@ -6,12 +6,12 @@ noncomputable theory
 
 open matroid set 
 
-variables {U V U₁ U₂ U₃: Type}[fintype U][fintype V][fintype U₁][fintype U₂][fintype U₃]
+variables {U V U₁ U₂ U₃: Type}[nonempty (fintype U)][fintype V][fintype U₁][fintype U₂][fintype U₃]
 
 /-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
 
-structure matroid_in (U : Type)[fintype U] :=
+structure matroid_in (U : Type)[nonempty (fintype U)] :=
 (E : set U)
 (carrier : matroid U)
 (support : carrier.r Eᶜ = 0)

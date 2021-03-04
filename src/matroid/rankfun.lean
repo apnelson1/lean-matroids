@@ -12,7 +12,7 @@ open_locale big_operators
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 section /- rank -/ rank
 
@@ -186,6 +186,7 @@ begin
   refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq rfl),
 end 
 
+/-
 lemma rank_subadditive_sUnion' (M : matroid U)(S : set (set U)):
   M.r (sUnion S) ≤ ∑ᶠ (X : S), M.r X := 
 begin
@@ -193,7 +194,7 @@ begin
   apply induction_set_size_add P, 
   { rw hP, rw [sUnion_empty, rank_empty],}, 
 end 
-
+-/
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ {e}) ≤ M.r X + 1 := 
@@ -330,7 +331,7 @@ def indep (M : matroid U) := {I : set U // M.is_indep I}
 instance coe_indep {M : matroid U} : has_coe (M.indep) (set U) := 
   coe_subtype   
 
-instance fintype_indep {M : matroid U} : fintype (M.indep) := 
+instance fintype_indep {M : matroid U} : nonempty (fintype (M.indep)) := 
 by {unfold indep, apply_instance }
 
 
@@ -1250,7 +1251,7 @@ def basis (M : matroid U) := {B : set U // M.is_basis B}
 instance coe_subtype_basis {M : matroid U} : has_coe (M.basis) (set U) :=
   coe_subtype
 
-instance fintype_basis {M : matroid U} : fintype (M.basis) := 
+instance finite_basis {M : matroid U} : nonempty (fintype (M.basis)) := 
 by {unfold basis, apply_instance }
 
 /-- basis of set X type -/
@@ -1259,7 +1260,7 @@ def basis_of (M : matroid U)(X : set U) := {B : set U // M.is_basis_of B X}
 instance coe_subtype_basis_of {M : matroid U}(X : set U) : has_coe (M.basis_of X) (set U) :=
   coe_subtype
 
-instance fintype_basis_of {M : matroid U}(X : set U) : fintype (M.basis_of X) := 
+instance fintype_basis_of {M : matroid U}(X : set U) : nonempty (fintype (M.basis_of X)) := 
 by {unfold basis_of, apply_instance }
 
 

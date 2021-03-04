@@ -10,7 +10,7 @@ noncomputable theory
 namespace ftype 
 open set 
 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 def list_union : list (set U) → set U := 
   λ Xs, (⋃ (X ∈ Xs), X) 

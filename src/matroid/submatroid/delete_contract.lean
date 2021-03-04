@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {U V : Type}[fintype U][fintype V]
+variables {U V : Type}[nonempty (fintype U)][fintype V]
 
 
 /-- the contraction of C in M. Implemented as a projection -/

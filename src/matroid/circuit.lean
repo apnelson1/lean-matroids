@@ -7,7 +7,7 @@ noncomputable theory
 
 open set 
 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 namespace cct_family
 

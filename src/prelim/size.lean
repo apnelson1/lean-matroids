@@ -1,61 +1,48 @@
 
 import tactic 
-import .int_lemmas .set .single 
+import .int_lemmas .set .single finsum.fincard
 
 open_locale classical big_operators 
 noncomputable theory 
 
 open set 
 
-variables {A : Type}[fintype A]
+variables {A : Type}[nonempty (fintype A)]
 
-/------------------------------------------------------------
+/- ----------------------------------------------------------
 
-We define size manually by hooking into finset.card. The following
+We define size by hooking into fincard. The following
 small set of lemmas characterizes the size function 
 
 - Size -----------------------------------------------------/
 
-def size_nat (U : Type)[fintype U](X : set U) := X.to_finset.card 
 
 /-- the size of a set, as an integer -/
-def size {U : Type}[fintype U](X : set U) : ℤ := (size_nat U X)
+def size {U : Type}(X : set U) : ℤ := (fincard X)
 
+def type_size (U : Type) : ℤ := size (univ : set U)
 
-def type_size (U : Type)[fintype U] : ℤ := size (univ : set U)
-
-lemma type_size_eq (U : Type)[fintype U]:
+lemma type_size_eq (U : Type):
   type_size U = size (univ : set U) := rfl 
 
-@[simp] lemma size_empty (A : Type)[fintype A] :
+@[simp] lemma size_empty (A : Type) :
    size (∅ : set A) = 0 := 
-by simp [size, size_nat]
+by simp [size]
 
 @[simp] lemma size_singleton (e : A): 
   size ({e}: set A) = 1 := 
-begin
-  simp only  [size, size_nat, to_finset_card], 
-  norm_cast, 
-  rw fintype.card_eq_one_iff, 
-  use e; simp, 
-end
+by simp [size]
 
 lemma size_modular (X Y : set A): 
   size (X ∪ Y) + size (X ∩ Y) = size X + size Y :=
-begin
-  simp only [size, size_nat], norm_cast, 
-  convert finset.card_union_add_card_inter _ _, 
-  { ext, simp only [mem_to_finset, finset.mem_union, mem_union]}, 
-  { ext, simp only [mem_to_finset, finset.mem_inter, mem_inter_iff]}, 
-  exact classical.dec_eq A, 
-end
+by {letI := classical.choice _inst_1, simp_rw size, norm_cast, apply fincard_modular; apply finite.of_fintype} 
 
 lemma size_union (X Y : set A): 
   size (X ∪ Y) = size X + size Y - size (X ∩ Y) := 
 by linarith [size_modular X Y]
 
 lemma size_nonneg (X : set A) : 0 ≤ size X := 
-  by {simp only [size, size_nat], norm_cast, apply zero_le}  
+  by {simp only [size], norm_cast, apply zero_le}  
 
 -------------------------------------------------------------
 open set 

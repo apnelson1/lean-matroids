@@ -7,7 +7,7 @@ open_locale classical
 open set matroid 
 
 
-variables {U V : Type}[fintype U][fintype V]
+variables {U V : Type}[nonempty (fintype U)][fintype V]
 
 /-- sends each nonloop to its parallel class, and each loop to 'none' -/
 def parallel_partition_fn (M : matroid U):  U → option (M.parallel_class) := 

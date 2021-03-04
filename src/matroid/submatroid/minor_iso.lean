@@ -8,7 +8,7 @@ open matroid set matroid_in
 
 namespace matroid_in.minor_pair
 
-variables {U V : Type}[fintype U][fintype V]{N M : matroid_in U}
+variables {U V : Type}[nonempty (fintype U)][fintype V]{N M : matroid_in U}
 
 -- The next few definitions relate a minor pair N M to a minor pair N' M.as_mat 
 
@@ -148,7 +148,7 @@ namespace matroid
 open matroid_in.minor_pair 
 
 
-variables {U V W : Type}[fintype U][fintype V][fintype W]
+variables {U V W : Type}[nonempty (fintype U)][fintype V][fintype W]
 
 
 /-- an embedding of N into M as a minor-/

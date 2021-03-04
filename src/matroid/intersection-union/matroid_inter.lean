@@ -11,7 +11,7 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 section intersection 
 

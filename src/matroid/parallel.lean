@@ -23,7 +23,7 @@ is unbundled, but I'm not convinced it's the best one.
 -/
 
 
-variables {U V : Type}[fintype U][fintype V]
+variables {U V : Type}[nonempty (fintype U)][fintype V]
 
 /-- equivalence relation of being parallel for nonloops  -/
 def parallel_nl (M : matroid U) (e f : nonloop M) : Prop := 

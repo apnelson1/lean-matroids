@@ -9,7 +9,7 @@ noncomputable theory
 
 open set 
 
-variables {A: Type}[fintype A]
+variables {A: Type}[nonempty (fintype A)]
 
 section numbers 
 

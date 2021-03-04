@@ -7,7 +7,7 @@ open_locale classical
 open set 
 namespace matroid 
 
-variables {U V : Type}[fintype U][fintype V]
+variables {U V : Type}[nonempty (fintype U)][fintype V]
 
 section simple 
 

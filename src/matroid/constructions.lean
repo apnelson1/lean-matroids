@@ -10,7 +10,7 @@ open_locale classical big_operators
 noncomputable theory 
 namespace trunc 
 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 def indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
@@ -72,7 +72,7 @@ end trunc
 
 namespace unif
 
-variables (U : Type)[fintype U]
+variables (U : Type)[nonempty (fintype U)]
 
 def free_matroid_on : matroid U := 
 { r := size,
@@ -118,15 +118,15 @@ by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 def uniform_matroid_on {r : ℤ}(hr : 0 ≤ r) : matroid U := 
   trunc.tr (free_matroid_on U) hr 
 
-@[simp] lemma uniform_matroid_rank {U : Type}[fintype U]{r : ℤ}(hr : 0 ≤ r)(X : set U) :
+@[simp] lemma uniform_matroid_rank {U : Type}[nonempty (fintype U)]{r : ℤ}(hr : 0 ≤ r)(X : set U) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
 by apply trunc.r_eq
 
-lemma uniform_matroid_indep_iff {U : Type}[fintype U](X : set U){r : ℤ}{hr : 0 ≤ r}  : 
+lemma uniform_matroid_indep_iff {U : Type}[nonempty (fintype U)](X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
 by {rw [indep_iff_r, uniform_matroid_rank], finish}
 
-lemma uniform_dual {U : Type}[fintype U]{r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
+lemma uniform_dual {U : Type}[nonempty (fintype U)]{r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
   dual (uniform_matroid_on U hr) 
   = uniform_matroid_on U (by linarith : 0 ≤ size (univ : set U) - r) :=
 begin
@@ -138,7 +138,7 @@ end
 def circuit_matroid_on (hU : nontriv U) : matroid U := 
   uniform_matroid_on U (by linarith [nontriv_size hU] : 0 ≤ size (univ : set U) - 1)
 
-@[simp] lemma circuit_matroid_rank {U : Type}[fintype U](hU : nontriv U)(X : set U):
+@[simp] lemma circuit_matroid_rank {U : Type}[nonempty (fintype U)](hU : nontriv U)(X : set U):
   (circuit_matroid_on U hU).r X = min (size (univ : set U) - 1) (size X) := 
 uniform_matroid_rank _ _ 
 
@@ -161,7 +161,7 @@ end
 end unif 
 
 section relax
-variables {U : Type}[fintype U] --[decidable_eq (set U)] 
+variables {U : Type}[nonempty (fintype U)] --[decidable_eq (set U)] 
 
 def relax.r (M : matroid U)(C : set U) : set U → ℤ := 
   λ X, ite (X = C) (M.r X + 1) (M.r X)
@@ -361,7 +361,7 @@ open finset
 
 namespace idsum 
 
-variables {U ι : Type}[fintype U][fintype ι](f : U → ι)
+variables {U ι : Type}[nonempty (fintype U)][fintype ι](f : U → ι)
 (Rs : ∀ (i : ι), matroid {x // f x = i})
 
 /-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
@@ -419,7 +419,7 @@ end
 end idsum 
 
 namespace partition 
-variables {U ι : Type}[fintype U][fintype ι](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+variables {U ι : Type}[nonempty (fintype U)][fintype ι](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
 
 /-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/

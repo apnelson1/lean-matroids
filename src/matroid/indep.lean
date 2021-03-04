@@ -5,7 +5,7 @@ open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
 
-variables {U : Type}[fintype U]
+variables {U : Type}[nonempty (fintype U)]
 
 /-namespace indep_family' 
 
