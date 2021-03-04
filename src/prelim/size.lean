@@ -21,6 +21,12 @@ def size_nat (U : Type)[fintype U](X : set U) := X.to_finset.card
 /-- the size of a set, as an integer -/
 def size {U : Type}[fintype U](X : set U) : ℤ := (size_nat U X)
 
+
+def type_size (U : Type)[fintype U] : ℤ := size (univ : set U)
+
+lemma type_size_eq (U : Type)[fintype U]:
+  type_size U = size (univ : set U) := rfl 
+
 @[simp] lemma size_empty (A : Type)[fintype A] :
    size (∅ : set A) = 0 := 
 by simp [size, size_nat]

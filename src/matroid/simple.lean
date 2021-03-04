@@ -223,12 +223,17 @@ begin
   apply image_subset_range,  
 end
 
+
+/- TODO - a simple matroid is a minor of M iff if it is a minor of si M . 
+
 lemma iminor_iff_iminor_si {N : matroid V}{M : matroid U}(hN : N.is_simple):
   N.is_iminor_of M ↔ N.is_iminor_of (si M) :=
 begin
   sorry, 
-end
+end -/ 
+
 
 end simple_minor 
 end matroid 
+
 

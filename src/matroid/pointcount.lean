@@ -36,22 +36,26 @@ def parallel_ub_fn (M : matroid U) : option (M.parallel_class) → ℤ
   | none       := 0
   | (some val) := 1
 
-@[simp] lemma parallel_ub_fn_at_zero (M : matroid U) : parallel_ub_fn M none = 0 := rfl 
-@[simp] lemma parallel_ub_fn_at_val (M : matroid U)(P : M.parallel_class) : parallel_ub_fn M (some P) = 1 := rfl 
+@[simp] lemma parallel_ub_fn_at_zero (M : matroid U): 
+  parallel_ub_fn M none = 0 := rfl 
+
+@[simp] lemma parallel_ub_fn_at_val (M : matroid U)(P : M.parallel_class) : 
+  parallel_ub_fn M (some P) = 1 := rfl 
 
 lemma parallel_ub_fn_nonneg (M : matroid U): 
   ∀ x, 0 ≤ parallel_ub_fn M x :=
 λ x, by {cases x; simp [parallel_ub_fn, zero_le_one]}
 
-/-- the matroid on U in which the rank of a set is the number of parallel class of M that it insersects-/
+/-- the matroid on U in which the rank of a set is the number of parallel classes of M 
+that it intersects-/
 def parallel_partition_matroid (M : matroid U) := 
   partition.M (parallel_partition_fn M) (parallel_ub_fn_nonneg M)
 
 /-- the number of parallel classes that intersect a set X-/
-def matroid.num_points_in (M : matroid U)(X : set U) := (parallel_partition_matroid M).r X 
+def matroid.ε (M : matroid U)(X : set U) := (parallel_partition_matroid M).r X 
 
-lemma num_points_in_eq_pp_matroid_r (M : matroid U)(X : set U): 
-  M.num_points_in X = (parallel_partition_matroid M).r X := rfl 
+lemma ε_eq_pp_matroid_r (M : matroid U)(X : set U): 
+  M.ε X = (parallel_partition_matroid M).r X := rfl 
 
 lemma parallel_partition_matroid_indep_iff (M : matroid U)(X : set U): 
   (parallel_partition_matroid M).is_indep X ↔ M.is_simple_set X  := 
@@ -86,24 +90,35 @@ begin
   apply parallel_of_mems_parallel_class hei hfi, 
 end
 
-
-
-lemma num_points_in_eq_largest_simple_subset (M : matroid U)(X : set U): 
-  M.num_points_in X = max_val (λ (S : M.simple_subset_of X), size S.val) :=
+lemma ε_eq_largest_simple_subset (M : matroid U)(X : set U): 
+  M.ε X = max_val (λ (S : M.simple_subset_of X), size S.val) :=
 begin
-  rw [num_points_in_eq_pp_matroid_r, rank_as_indep], 
+  rw [ε_eq_pp_matroid_r, rank_as_indep], 
   let e : ((parallel_partition_matroid M).indep_subset_of X) ≃ (M.simple_subset_of X) := 
-  equiv.subtype_equiv_right (λ X, by {rw [← parallel_partition_matroid_indep_iff, and_comm], refl, }),
+  equiv.subtype_equiv_right 
+    (λ X, by {rw [← parallel_partition_matroid_indep_iff, and_comm], refl, }),
   exact (max_reindex e.to_fun e.surjective (λ X, size X.val)), 
 end
 
-lemma num_points_in_simple {M : matroid U}(hM : M.is_simple)(X : set U): 
-  M.num_points_in X = size X :=
+lemma ε_eq_size_of_simple_matroid {M : matroid U}(hM : M.is_simple)(X : set U): 
+  M.ε X = size X :=
 begin
-  rw [num_points_in_eq_largest_simple_subset], 
-  let X' : M.simple_subset_of X := ⟨X, ⟨simple_of_subset_simple hM (subset_univ _), subset_refl _⟩⟩, 
+  rw [ε_eq_largest_simple_subset], 
+  let X' : M.simple_subset_of X := 
+    ⟨X, ⟨simple_of_subset_simple hM (subset_univ _), subset_refl _⟩⟩, 
   exact attained_ub_is_max' _ X' (size X) rfl (λ Y, size_monotone Y.2.2),  
 end
 
+lemma ε_eq_size_iff_simple_set {M : matroid U}{X : set U}:
+  M.ε X = size X ↔ M.is_simple_set X :=
+by rw [ε_eq_pp_matroid_r, ← indep_iff_r, parallel_partition_matroid_indep_iff]
+
+lemma ε_eq_size_univ_iff_simple {M : matroid U}:
+  M.ε univ = size (univ :set U) ↔ M.is_simple :=
+ε_eq_size_iff_simple_set
+
+
 
 --def point_partition_matroid (M : matroid U) := 
+
+#lint 
