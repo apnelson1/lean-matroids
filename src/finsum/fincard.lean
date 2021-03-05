@@ -61,24 +61,32 @@ begin
   exact set.finite.subset hs (inter_subset_left _ _), 
 end
 
-
-
-theorem fincard_preimage_eq_sum {α β : Type}(f : α → β){s : set β}(hs : s.finite) :
-fincard (f⁻¹' s) = ∑ᶠ y in s, fincard {x | f x = y} := 
+theorem fincard_preimage_eq_sum' {α β : Type}(f : α → β){s : set α}{t : set β}
+(hs : s.finite)(ht : t.finite) :
+fincard (s ∩ f⁻¹' t) = ∑ᶠ y in t, fincard {x ∈ s | f x = y} := 
 begin
-  --set s' := set.finite.to_finset hs with hs', simp
   simp_rw fincard, 
-  have := @finsum_in_bUnion α ℕ _ β (λ _, 1) s (λ y, {x | f x = y}) hs _ _, rotate, 
-
-
-  --apply @finset.induction_on β _ _ B, simp, 
-  --rintro a B' ha IH,
-  --rw [finset.coe_insert, ← union_singleton, preimage_union, inter_distrib_right], 
-  --rw size_disjoint_sum, swap, 
-  --{ ext, simp, rintros h₁ - rfl, exact false.elim (ha h₁),  },
-  --rw IH, rw [finset.sum_insert ha, add_comm], 
+  have := @finsum_in_bUnion α ℕ _ β (λ _, 1) t (λ y, {x ∈ s | f x = y}) ht _ _, rotate, 
+  { intro b, apply set.finite.subset hs, intros x hx, simp only [mem_sep_eq] at hx, exact hx.1},
+  { rintro x hx y hy hxy, 
+    simp only [disjoint_left, and_imp, mem_sep_eq, not_and], 
+    rintros a ha rfl - rfl, exact hxy rfl},
+  convert this, {ext, simp, tauto}, 
 end
 
+theorem fincard_preimage_eq_sum {α β : Type}(f : α → β){t : set β}
+(ht : t.finite)(ht' : (f ⁻¹' t).finite) :
+fincard (f⁻¹' t) = ∑ᶠ y in t, fincard {x | f x = y} := 
+begin
+  have := fincard_preimage_eq_sum' f ht' ht, rw inter_self at this,  
+  rw [this, finsum_in_def, finsum_in_def], congr', ext, 
+  split_ifs, swap, refl, 
+  convert fincard_img_emb (function.embedding.refl α) _, 
+  ext, simp, rintro rfl, assumption,  
+end
+
+theorem fincard_univ_eq_sum_fincard_preimage {α β : Type}
+[nonempty (fintype α)]
 
 /-
 

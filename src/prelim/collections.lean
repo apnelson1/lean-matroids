@@ -233,6 +233,7 @@ begin
   simpa using he,
 end
 
+/-
 lemma fin_sum_one_eq_size [nonempty (fintype α)](X : set α): 
   ∑ (a : X), (1 : α → ℤ) a = size X  := 
 begin
@@ -242,6 +243,7 @@ begin
   rw fin_sum_insert, swap, assumption, 
   rw [hX, size_insert_nonmem he], simp, 
 end
+
 
 theorem size_eq_sum_size_image' {α β : Type}(f : α → β)(B : set β)(X : set α) :
 size (f⁻¹' B ∩  X) = ∑ b in B, size (f ⁻¹' {b} ∩ X) := 
@@ -253,16 +255,18 @@ begin
   { ext, simp, rintros h₁ - rfl, exact false.elim (ha h₁),  },
   rw IH, rw [finset.sum_insert ha, add_comm], 
 end
+-/
 
 
 
 
 
 
-
-theorem size_eq_sum_size_image {α β : Type}[fintype α][fintype β] (f : α → β) (X : set α) :
-size X = ∑ (b : β), size (f ⁻¹' {b} ∩ X) := 
+theorem size_eq_sum_size_image {α β : Type}[nonempty (fintype α)][nonempty (fintype β)] 
+(f : α → β) (X : set α) :
+size X = ∑ᶠ (b : β), size (f ⁻¹' {b} ∩ X) := 
 begin
+  unfold size,  
   have h : (X = f ⁻¹' (finset.univ : finset β) ∩ X) := by simp, 
   nth_rewrite 0 h, simp_rw size_eq_sum_size_image', 
 end
