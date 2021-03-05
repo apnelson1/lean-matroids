@@ -356,91 +356,101 @@ end
 end relax 
 
 
-
-open finset 
-
 namespace idsum 
 
-variables {U ι : Type}[nonempty (fintype U)][fintype ι](f : U → ι)
+variables {U ι : Type}[nonempty (fintype U)][nonempty (fintype ι)](f : U → ι)
 (Rs : ∀ (i : ι), matroid {x // f x = i})
 
 /-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
 def r : set U → ℤ := 
-λ X, ∑ (i : ι), (Rs i).r (coe ⁻¹' X)
+λ X, ∑ᶠ (i : ι), (Rs i).r (coe ⁻¹' X)
 
 
 lemma size_coe_eq (i : ι)(X : set U): 
-  size (coe ⁻¹' X : set {x // f x = i}) = size (f ⁻¹' {i} ∩ X) := 
-begin
-  unfold_coes, 
-  let f : {x // f x = i} ↪ U := ⟨subtype.val, subtype.coe_injective⟩, 
-  convert (size_img_emb f (subtype.val ⁻¹' X)).symm, ext, tidy, 
-end
-  
+  size (coe ⁻¹' X : set {x // f x = i}) = size ({ x ∈ X| f x = i}) := 
+by {rw size_preimage_coe, congr'}  
 
 lemma R0: 
   satisfies_R0 (r f Rs) := 
-λ X, sum_nonneg (λ i h, (Rs i).rank_nonneg _)
+λ X, nonneg_of_finsum_nonneg (λ i, (Rs i).rank_nonneg _)
 
 lemma R1: 
   satisfies_R1 (r f Rs) := 
 λ X, begin
-  rw size_eq_sum_size_image f, 
-  exact sum_le_sum (λ i hi, has_le.le.trans_eq (rank_le_size (Rs i) _) (size_coe_eq _ _ _)),  
+  rw [r, ← sum_size_fiber_eq_size _ f], 
+  refine fin.finsum_le_finsum (λ i, has_le.le.trans_eq (rank_le_size _ _) _), 
+  rw size_coe_eq, 
 end 
 
 lemma R2:
   satisfies_R2 (r f Rs) := 
-λ X Y hXY, by {apply sum_le_sum, refine λ i _, rank_mono _ (λ x, _), rw [mem_preimage], apply hXY,  }
+λ X Y hXY, by 
+{ refine fin.finsum_le_finsum (λ i, (rank_mono _ (λ x, _))), 
+  rw [mem_preimage, mem_preimage],  
+  apply hXY, }
 
 lemma R3:
   satisfies_R3 (r f Rs) :=
-λ X Y, by {simp_rw [r, ← sum_add_distrib], apply sum_le_sum, exact λ i _, rank_submod _ _ _}
+λ X Y, by {
+  simp_rw [r, ← fin.finsum_add_distrib, preimage_inter, preimage_union], 
+  apply fin.finsum_le_finsum, 
+  intro i, 
+  apply rank_submod, }
 
 /-- the 'internal direct sum' of matroids whose ground sets partition U, indexed by f : U → ι -/
 def M : matroid U := 
 ⟨idsum.r f Rs, idsum.R0 f Rs, idsum.R1 f Rs, idsum.R2 f Rs, idsum.R3 f Rs⟩ 
 
 lemma r_eq (X : set U) : 
-  (M f Rs).r X = ∑ (i : ι), (Rs i).r (coe ⁻¹' X) :=
+  (M f Rs).r X = ∑ᶠ (i : ι), (Rs i).r (coe ⁻¹' X) :=
 rfl 
 
 
 lemma indep_iff (X : set U): 
   (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
 begin
-  simp_rw [indep_iff_r, size_eq_sum_size_image f X, ← size_coe_eq],   
-  refine ⟨λ h, _, λ h, _⟩, swap, 
-  {conv_rhs {congr, skip, funext, rw [← h], }, refl},
-  have := (λ i, (Rs i).rank_le_size (coe ⁻¹' X)), 
-  exact finset.summands_eq_of_le_sum_eq this h, 
+  simp_rw [indep_iff_r, ← sum_size_fiber_eq_size X f, size_coe_eq, r_eq],
+  rw [fin.finsum_eq_finsum_iff_of_le],  
+  simp_rw [← size_coe_eq], 
+  exact λ x, rank_le_size _ _, 
 end
 
 end idsum 
 
 namespace partition 
-variables {U ι : Type}[nonempty (fintype U)][fintype ι](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+variables {U ι : Type}[nonempty (fintype U)][nonempty (fintype ι)](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
 
 /-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/
 def M : matroid U := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
 
 lemma indep_iff (X : set U) : 
-  (M f hb).is_indep X ↔ ∀ i, size (X ∩ f ⁻¹' {i}) ≤ b i :=
-by simp_rw [M, idsum.indep_iff, unif.uniform_matroid_indep_iff, idsum.size_coe_eq, set.inter_comm]
+  (M f hb).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
+by {rw [M, idsum.indep_iff], simp_rw [unif.uniform_matroid_indep_iff, idsum.size_coe_eq]}
 
 lemma r_eq (X : set U): 
-  (M f hb).r X = ∑ (i : ι), (min (b i) (size (X ∩ f⁻¹' {i}))) :=
-by {simp_rw [M, idsum.r_eq, unif.uniform_matroid_rank, idsum.size_coe_eq], convert rfl, simp_rw set.inter_comm} 
+  (M f hb).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
+by {rw [M, idsum.r_eq], simp_rw [unif.uniform_matroid_rank, idsum.size_coe_eq]}
 
+/-- in the partition matroid where the upper bounds are all at most one
+(such as the parallel partition matroid), the rank of a set is the number of cells for which the 
+bound is 1 that it insersects -/
 lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set U):
   (M f hb).r X = type_size {i // b i = 1 ∧ ∃ x ∈ X, f x = i} :=
 begin
-  rw [r_eq, type_size_eq, ← fin_sum_one_eq_size, ← finset.sum_filter_ne_zero],  
-  let e : {i // b i = 1 ∧ ∃ x ∈ X, f x = i} 
-        ≃ (finset.filter (λ (x : ι), min (b x) (size (X ∩ f ⁻¹' {x})) ≠ 0) univ : set ι) := sorry, 
-  
-  
+  rw [r_eq, type_size_eq],
+  rw ← @sum_size_fiber_eq_size {i // b i = 1 ∧ ∃ (x : U) (H : x ∈ X), f x = i} _ ι univ subtype.val, 
+  congr', ext i,
+  have hi : b i = 0 ∨ b i = 1 := int.nonneg_le_one_iff (hb i) (hb' i), 
+  rcases (hi) with (h0 | h1), 
+  { rw [h0, min_eq_left_iff.mpr (size_nonneg _), eq_comm, size_zero_iff_has_no_mem],
+    have : b i ≠ 1 := λ hn, by {rw h0 at hn, exact int.zero_ne_one hn}, 
+    tidy, },
+  by_cases hi : ∃ x ∈ X, f x = i, swap, 
+  { convert (min_eq_right_of_lt (int.zero_lt_one)); {rw size_zero_iff_has_no_mem, tidy},},
+  convert (λ x hx, by {rw min_eq_left_iff.mpr hx} : ∀ x : ℤ, 1 ≤ x → min (1 : ℤ) x = 1) _ _, 
+  { rw size_one_iff_eq_singleton, tidy, }, 
+  rw one_le_size_iff_has_mem, tidy, 
 end
 
 

@@ -233,6 +233,7 @@ begin
   simpa using he,
 end
 
+end fin_sum 
 /-
 lemma fin_sum_one_eq_size [nonempty (fintype α)](X : set α): 
   ∑ (a : X), (1 : α → ℤ) a = size X  := 
@@ -259,7 +260,7 @@ end
 
 
 
-
+/-
 
 
 theorem size_eq_sum_size_image {α β : Type}[nonempty (fintype α)][nonempty (fintype β)] 
@@ -292,7 +293,8 @@ lemma sum_filter_ne_zero {α β : Type}[fintype α][add_comm_monoid β](f : α �
   ∑ (x : {x : α // f x ≠ 0}), f x = ∑ (x : α), f x := 
 begin
   have := finset.sum_subtype_eq_sum_filter f, 
-end
+end 
+-/
 
-end fin_sum 
+
 end size 

@@ -463,7 +463,7 @@ begin
   split; intro ha; rcases ha with ⟨x, hx₀, hx₁⟩,
     exact ⟨x, (set.finite.mem_to_finset hs).2 hx₀, (set.finite.mem_to_finset (ht _)).2 hx₁⟩,
     exact ⟨x, (set.finite.mem_to_finset hs).1 hx₀, (set.finite.mem_to_finset (ht _)).1 hx₁⟩
-end .
+end 
 
 /-- An alternative version of `finsum_in_bUnion` in which we sum on the a fintype rather than a
   finite set. -/
@@ -689,79 +689,3 @@ end
 
 end finsum 
 
-
-/- Everything after this is added by me (Peter)-/
-
-section finsum_group
-open_locale big_operators 
-
-variables {α : Type u}{M: Type v}[add_comm_group M]{f g : α → M}{s : set α}
-
-lemma finsum_in_neg_distrib (f : α → M)(s : set α): 
-  ∑ᶠ i in s, - f i = - ∑ᶠ i in s, f i :=   
-begin
-  by_cases hs : (s ∩ function.support f).finite, 
-    exact finsum_in_hom' (- (add_monoid_hom.id M)) hs, 
-  repeat {rw [finsum_in_eq_zero_of_infinite]}; simp [hs], 
-end 
-
-lemma finsum_neg_distrib (f : α → M): 
-  ∑ᶠ i, - f i = - ∑ᶠ i, f i :=   
-by {repeat {rw finsum_eq_finsum_in_univ}, exact finsum_in_neg_distrib _ _} 
-
---lemma finsum_in_sub_distrib {M : Type*}[add_comm_group M]{f g : α → M}{s : set α}: 
-
-lemma finsum_in_sub_distrib' 
-  (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite) :
-  ∑ᶠ i in s, (f - g) i = ∑ᶠ i in s, f i - ∑ᶠ i in s, g i :=
-begin
-  simp_rw [sub_eq_add_neg, ← finsum_in_neg_distrib], 
-  convert finsum_in_add_distrib' _ _, assumption, 
-  rwa ← function.support_neg at hg,  
-end
-
-lemma finsum_in_sub_distrib (hs : s.finite):
-  ∑ᶠ i in s, (f - g) i = ∑ᶠ i in s, f i - ∑ᶠ i in s, g i :=
-by {apply finsum_in_sub_distrib'; exact set.finite.subset hs (set.inter_subset_left _ _), }
-
-lemma finsum_sub_distrib 
-(hf : (function.support f).finite) (hg : (function.support g).finite):
-  ∑ᶠ (i : α), (f - g) i = ∑ᶠ (i : α), f i - ∑ᶠ (i : α), g i :=
-by {repeat {rw finsum_eq_finsum_in_univ}, apply finsum_in_sub_distrib'; 
-    exact set.finite.subset (by assumption) (set.inter_subset_right _ _), }
-
-end finsum_group
-
-section finsum_order
-
-open_locale big_operators 
-
-variables {α : Type u}{M: Type v}{f g : α → M}{s : set α}
-
-lemma nonneg_of_finsum_in_nonneg [ordered_add_comm_monoid M](hf : ∀ i ∈ s, 0 ≤ f i): 
-  0 ≤ ∑ᶠ i in s, f i := 
-finsum_in_induction _ (le_refl _) (λ _ _ ha hb, add_nonneg ha hb) hf
-
-lemma nonneg_of_finsum_nonneg [ordered_add_comm_monoid M](hf : ∀ i, 0 ≤ f i): 
-  0 ≤ ∑ᶠ (i : α), f i := 
-by {rw finsum_eq_finsum_in_univ, exact nonneg_of_finsum_in_nonneg (λ i _, hf i)}
-
-
-/-- This should be done without M being a group, but just wanted the result for now -/
-lemma finsum_in_le_finsum_in' [ordered_add_comm_group M ](hfg : ∀ x ∈ s, f x ≤ g x)
-(hf : (s ∩ function.support f).finite)(hg : (s ∩ function.support g).finite): 
-  ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
-begin 
-  rw [← sub_nonneg, ← finsum_in_sub_distrib' hg hf], 
-  refine nonneg_of_finsum_nonneg (λ i, _), 
-  split_ifs with h, swap, apply le_refl, 
-  simpa only [sub_nonneg, pi.sub_apply] using hfg i h,  
-end
-
-lemma finsum_in_le_finsum_in [ordered_add_comm_group M ](hfg : ∀ x ∈ s, f x ≤ g x)(hs : s.finite): 
-  ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
-by {apply finsum_in_le_finsum_in' hfg;  exact set.finite.subset hs (set.inter_subset_left _ _)}
-
-
-
-end finsum_order

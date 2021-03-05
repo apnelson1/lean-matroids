@@ -6,6 +6,7 @@ open_locale classical
 variables {α : Type*}
 
 
+
 instance is_finite_of_subset_type [i : nonempty (fintype α)]{S : set α} : nonempty (fintype S) := 
 by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
 

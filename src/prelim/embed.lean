@@ -54,6 +54,16 @@ begin
   apply size_img_emb f, 
 end
 
+
+@[simp] lemma size_image_coe {E : set A}(X : set E): 
+  size (coe '' X : set A) = size X := 
+size_subtype_img X 
+
+@[simp] lemma size_preimage_coe {E : set A}(X : set A): 
+  size (coe ⁻¹' X : set E) = size (X ∩ E) := 
+by {rw ← size_image_coe (coe ⁻¹' X : set E), simp, }
+
+
 end size_lemmas 
 
 instance coe_set_from_subtype {B : Type}{S : set B}: has_coe (set S) (set B) := ⟨λ X, coe '' X⟩ 
