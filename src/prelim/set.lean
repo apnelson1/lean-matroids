@@ -37,6 +37,10 @@ lemma empty_unique (X : set A) : (∀ (Y: set A), Y ∪ X = Y) → X = ∅ :=
 λ hX, by calc X = ∅ ∪ X : (empty_union X).symm ... = ∅ : hX ∅
 
 
+@[simp] lemma empty_of_ss_empty {P : A → Prop}:
+  {x ∈ (∅ : set A) | P x} = ∅ :=
+by {ext, simp, }
+
 -- Absorption
 
 @[simp] lemma absorb_union_inter (X Y : set A) : X ∪ (X ∩ Y) = X := 

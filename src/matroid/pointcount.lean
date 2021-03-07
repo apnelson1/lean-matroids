@@ -6,97 +6,57 @@ open_locale classical
 
 open set matroid 
 
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]
-
-/-- sends each nonloop to its parallel class, and each loop to 'none' -/
-def parallel_partition_fn (M : matroid U):  U → option (M.parallel_class) := 
-  λ e, dite (M.is_nonloop e) (λ he, some (parallel_cl' ⟨e,he⟩)) (λ _, none) 
-
-@[simp] lemma parallel_partition_fn_eq_none_iff {M : matroid U}{e : U}: 
-  parallel_partition_fn M e = none ↔ M.is_loop e := 
-by {rw [loop_iff_not_nonloop, parallel_partition_fn], dsimp only, split_ifs; tauto,   } 
-
-@[simp] lemma parallel_partition_fn_eq_some_iff {M : matroid U}{e : U}{P : M.parallel_class}: 
-  parallel_partition_fn M e = some P ↔ e ∈ (P : set U) := 
-begin
-  cases P, dsimp only [parallel_partition_fn, parallel_cl', subtype.coe_mk],
-  split_ifs with he, 
-  { rw [subtype.mk_eq_mk], 
-    obtain ⟨f,hf,rfl⟩ := P_property,   
-    simp_rw [mem_parallel_cl, parallel_cl, ext_iff, mem_set_of_eq],
-    refine ⟨λ h, (h e).mp (parallel_refl_nonloop he), λ h, λ x, (have _ := parallel_symm' h, ⟨_,_⟩)⟩;
-    {intro, transitivity; assumption }},
-  simp only [false_iff],
-  exact λ hn, he (nonloop_of_mem_parallel_class hn P_property), 
-end 
-
-/-- sends each parallel class to 1 and 'none' to 0 -/
-def parallel_ub_fn (M : matroid U) : option (M.parallel_class) → ℤ  
-  | none       := 0
-  | (some val) := 1
-
-@[simp] lemma parallel_ub_fn_at_zero (M : matroid U): 
-  parallel_ub_fn M none = 0 := rfl 
-
-@[simp] lemma parallel_ub_fn_at_val (M : matroid U)(P : M.parallel_class) : 
-  parallel_ub_fn M (some P) = 1 := rfl 
-
-lemma parallel_ub_fn_nonneg (M : matroid U): 
-  ∀ x, 0 ≤ parallel_ub_fn M x :=
-λ x, by {cases x; simp [parallel_ub_fn, zero_le_one]}
-
-/-- the matroid on U in which the rank of a set is the number of parallel classes of M 
+/-- the 'parallel class matroid' on U in which the rank of a set is the number of parallel classes of M 
 that it intersects-/
-def parallel_partition_matroid (M : matroid U) := 
-  partition.M (parallel_partition_fn M) (parallel_ub_fn_nonneg M)
+def pc_matroid (M : matroid U) := 
+  partition.M M.parallel_cl M.rank_nonneg 
 
 /-- the number of parallel classes that intersect a set X-/
-def matroid.ε (M : matroid U)(X : set U) := (parallel_partition_matroid M).r X 
+def matroid.ε (M : matroid U)(X : set U) := (pc_matroid M).r X 
 
-lemma ε_eq_pp_matroid_r (M : matroid U)(X : set U): 
-  M.ε X = (parallel_partition_matroid M).r X := rfl 
-
-lemma parallel_partition_matroid_indep_iff (M : matroid U)(X : set U): 
-  (parallel_partition_matroid M).is_indep X ↔ M.is_simple_set X  := 
+lemma ε_eq_pc_matroid_r (M : matroid U)(X : set U): 
+  M.ε X = (pc_matroid M).r X := 
+rfl 
+/-
+lemma pc_matroid_indep_iff (M : matroid U)(X : set U): 
+  (pc_matroid M).is_indep X ↔ M.is_simple_set X  := 
 begin
-  rw [parallel_partition_matroid, partition.indep_iff, simple_set_iff_no_loops_or_parallel_pairs],
-  refine ⟨λ h, ⟨by_contra (λ hn, _), λ e f he hf hef, (by_contra (λ hn ,_))⟩, λ h i, _⟩,
+  rw [pc_matroid, partition.indep_iff, simple_set_iff_no_loops_or_parallel_pairs],
+  refine ⟨λ h, ⟨by_contra (λ hn, _), λ e f he hf hef, (by_contra (λ hn ,_))⟩, λ h P, _⟩,
   { obtain ⟨e,heX, he⟩ := exists_loop_of_not_loopless_set hn, 
-    specialize h none, 
-    simp_rw [parallel_ub_fn, size_le_zero_iff_has_no_mem, mem_inter_iff, not_exists, 
-    not_and, mem_preimage, mem_singleton_iff, parallel_partition_fn] at h,  
-    rw loop_iff_not_nonloop at he, 
-    specialize h e heX, split_ifs at h, tauto, },
-  { obtain ⟨he',hf',-⟩ := id hef, 
-    have hefs:= size_union_distinct_singles hn, 
-    set P := (parallel_cl' ⟨e,he'⟩) with hP, 
-    specialize h (some P), rw parallel_ub_fn_at_val at h,
-    suffices h₀ : (e ∈ parallel_partition_fn M ⁻¹' {some P}) 
-                ∧ (f ∈ parallel_partition_fn M ⁻¹' {some P}), 
-    linarith [size_monotone (subset_inter (pair_subset_iff.mpr ⟨he,hf⟩) (pair_subset_iff.mpr h₀))],
-    simp only [hP, mem_singleton_iff, mem_preimage, parallel_partition_fn_eq_some_iff, parallel_cl', 
-    subtype.coe_mk, mem_parallel_cl],
-    refine ⟨parallel_refl_nonloop he', parallel_symm' hef⟩},
-  cases i with P, 
-  { simp_rw [parallel_ub_fn_at_zero, size_le_zero_iff_has_no_mem],
-    simp only [not_exists, mem_singleton_iff, mem_inter_eq, not_and, mem_preimage, parallel_partition_fn_eq_none_iff],
-    simp_rw ← nonloop_iff_not_loop,   
-    exact λ x hx, nonloop_of_mem_loopless_set h.1 hx},
-  simp_rw [parallel_ub_fn_at_val, size_le_one_iff_mem_unique, mem_inter_iff, mem_preimage, mem_singleton_iff, 
-  parallel_partition_fn_eq_some_iff],
-  rintros e f ⟨heX, hei⟩ ⟨hfX, hfi⟩, 
-  apply h.2 e f heX hfX, 
-  apply parallel_of_mems_parallel_class hei hfi, 
+    specialize h (M.parallel_cl e), 
+    rw [parallel_cl_loop_empty he, rank_empty, size_le_zero_iff_has_no_mem] at h, 
+    exact h ⟨e, by {simp [heX, parallel_cl_loop_empty he], }⟩,},
+  { specialize h (M.parallel_cl e), 
+    rw [rank_parallel_cl (hef.1), size_le_one_iff_mem_unique] at h,
+    refine hn (h _ _ _ _), simpa using he,
+    simp only [mem_sep_eq], 
+    exact ⟨hf, (parallel_cl_eq_of_parallel hef).symm⟩},
+  by_cases hP : ∃ x ∈ X, M.parallel_cl x = P, swap, 
+  { refine le_trans _ (M.rank_nonneg P),
+    rw [size_le_zero_iff_eq_empty, sep_in_eq_empty_iff],
+    exact λ x hx hP', hP (⟨x,hx, hP'⟩)}, 
+  obtain ⟨e, heX, rfl⟩ := hP, 
+  rcases loop_or_nonloop M e with (h0 | h1), 
+  { rw [parallel_cl_loop_empty h0, rank_empty, size_le_zero_iff_eq_empty, sep_in_eq_empty_iff], 
+    refine λ x hx, ne_empty_iff_nonempty.mpr _, 
+    exact parallel_cl_nonempty_of_nonloop (nonloop_of_mem_loopless_set h.1 hx)},
+  simp_rw [rank_parallel_cl h1, size_le_one_iff_mem_unique, mem_sep_eq], 
+  rintros f f' ⟨hfx, hf⟩ ⟨hf'x, hf'⟩,
+  refine h.2 _ _ hfx hf'x (parallel_of_parallel_cl_eq_left _ (by rw [hf, hf'])), 
+  exact nonloop_of_mem_loopless_set h.1 hfx, 
 end
+
 
 lemma ε_eq_largest_simple_subset (M : matroid U)(X : set U): 
   M.ε X = max_val (λ (S : M.simple_subset_of X), size S.val) :=
 begin
-  rw [ε_eq_pp_matroid_r, rank_as_indep], 
-  let e : ((parallel_partition_matroid M).indep_subset_of X) ≃ (M.simple_subset_of X) := 
+  rw [ε_eq_pc_matroid_r, rank_as_indep], 
+  let e : ((pc_matroid M).indep_subset_of X) ≃ (M.simple_subset_of X) := 
   equiv.subtype_equiv_right 
-    (λ X, by {rw [← parallel_partition_matroid_indep_iff, and_comm], refl, }),
+    (λ X, by {rw [← pc_matroid_indep_iff, and_comm], refl, }),
   exact (max_reindex e.to_fun e.surjective (λ X, size X.val)), 
 end
 
@@ -111,22 +71,23 @@ end
 
 lemma ε_eq_size_iff_simple_set {M : matroid U}{X : set U}:
   M.ε X = size X ↔ M.is_simple_set X :=
-by rw [ε_eq_pp_matroid_r, ← indep_iff_r, parallel_partition_matroid_indep_iff]
+by rw [ε_eq_pc_matroid_r, ← indep_iff_r, pc_matroid_indep_iff]
 
 lemma ε_eq_size_univ_iff_simple {M : matroid U}:
   M.ε univ = size (univ :set U) ↔ M.is_simple :=
 ε_eq_size_iff_simple_set
 
 lemma ε_eq_num_parallel_classes_inter (M : matroid U)(X : set U):
-  M.ε X = type_size {P : M.parallel_class // (P.val ∩ X).nonempty } :=
+  M.ε X = size {P : M.parallel_class | (X ∩ P).nonempty } :=
 begin
-  rw [ε_eq_pp_matroid_r, parallel_partition_matroid, partition.r_eq, type_size_eq, ← fin_sum_one_eq_size], 
+
+  /-rw [ε_eq_pc_matroid_r, pc_matroid, partition.r_eq, type_size_eq, ← fin_sum_one_eq_size], 
   rw ← finset.sum_filter_ne_zero, 
   let f : ↥(finset.filter 
     (λ (x : option M.parallel_class), min (parallel_ub_fn M x) 
     (size (X ∩ parallel_partition_fn M ⁻¹' {x})) ≠ 0) 
     finset.univ) 
-    ≃ {P : M.parallel_class // (P.val ∩ X).nonempty} := sorry, 
+    ≃ {P : M.parallel_class // (P.val ∩ X).nonempty} := sorry, -/
   
 end
 
@@ -136,6 +97,6 @@ begin
 
 end
 
-
+-/
 
 --def point_partition_matroid (M : mat

@@ -1,4 +1,4 @@
-import finsum.finsum 
+import finsum.finsum algebra.ring.basic 
 
 open_locale big_operators classical 
 
@@ -12,6 +12,34 @@ section general
 
 variables {α : Type u}{M: Type v}[add_comm_monoid M]{f g : α → M}{s t : set α}
 
+lemma finsum_eq_zero_of_infinite 
+  (hs : ¬ (function.support f).finite) : ∑ᶠ i, f i = 0 :=
+by {rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_of_infinite], rwa set.univ_inter}
+
+lemma finsupp_of_finsum_nonzero (h : ∑ᶠ i, f i ≠ 0): 
+  (function.support f).finite :=
+by_contra (λ hn, by {rw finsum_eq_zero_of_infinite hn at h, exact h rfl, })
+
+lemma finsupp_of_finsum_in_nonzero (h : ∑ᶠ i in s, f i ≠ 0): 
+  (s ∩ function.support f).finite :=
+by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at h, exact h rfl, })
+
+
+@[simp] lemma finsum_empty_set_type:
+  ∑ᶠ (i : ((∅ : set α) : Type)), f i = 0 :=
+begin
+  rw [finsum_eq_finsum_in_univ, set.univ_eq_empty_iff.mpr, finsum_in_empty],  
+  by_contra, obtain ⟨x,hx⟩ := h, 
+  rwa set.mem_empty_eq at hx, 
+end
+
+@[simp] lemma finsum_in_zero: 
+  ∑ᶠ i in s, (0 : M) = 0 := 
+by {rw finsum_in_inter_support, convert finsum_in_empty, simp}
+
+@[simp] lemma finsum_zero: 
+  ∑ᶠ (i : α), (0 : M) = 0 := 
+by rw [finsum_eq_finsum_in_univ, finsum_in_zero]
 
 
 lemma finsum_in_eq_of_eq (h : ∀ i ∈ s, f i = g i):
@@ -65,8 +93,6 @@ begin
   rw finsum_eq_finsum_in_univ, 
   exact finsum_in_eq_finsum_in_subset (set.subset_univ _) (λ x _ hx, hf x hx),
 end 
-
-
 end general 
 
 section nat 
@@ -89,6 +115,41 @@ by rw [finsum_eq_finsum_in_univ, nat.coe_int_distrib_finsum_in, ← finsum_eq_fi
 
 end nat 
 
+section ring
+
+variables {α : Type u}{M: Type v}[comm_semiring M]{f g : α → M}{s : set α}
+
+
+lemma mul_distrib_finsum_in' 
+(hs : (s ∩ function.support f).finite) (c : M):
+  c * (∑ᶠ x in s, f x) = ∑ᶠ x in s, c * f x := 
+(finsum_in_hom' (add_monoid_hom.mul_left c) hs).symm 
+
+lemma mul_distrib_finsum_in [no_zero_divisors M](c : M):
+  c * (∑ᶠ x in s, f x) = ∑ᶠ x in s, c * f x := 
+begin
+  by_cases hs : (s ∩ function.support f).finite,
+    apply mul_distrib_finsum_in' hs, 
+  by_cases hc : c = 0, simp [hc], 
+  rw [finsum_in_eq_zero_of_infinite hs, finsum_in_eq_zero_of_infinite, mul_zero],
+  convert hs using 3,
+  ext, simp [hc],   
+end
+
+lemma mul_distrib_finsum'
+(h : (function.support f).finite)(c : M):
+  c * (∑ᶠ x, f x) = ∑ᶠ x, c * f x := 
+begin
+  rw [finsum_eq_finsum_in_univ, finsum_eq_finsum_in_univ],
+  apply mul_distrib_finsum_in', 
+  rwa set.univ_inter, 
+end
+
+lemma mul_distrib_finsum [no_zero_divisors M](c : M):
+  c * (∑ᶠ x, f x) = ∑ᶠ x, c * f x := 
+by {rw [finsum_eq_finsum_in_univ, finsum_eq_finsum_in_univ], apply mul_distrib_finsum_in}
+  
+end ring 
 
 
 section group 
@@ -160,6 +221,18 @@ lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M](hfg : ∀ x ∈ s, f x 
   ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
 by {apply finsum_in_le_finsum_in' hfg;  exact set.finite.subset hs (set.inter_subset_left _ _)}
 
+lemma finsum_in_le_finsum_in_of_pos [ordered_add_comm_monoid M]
+(hfg : ∀ x ∈ s, f x ≤ g x)(hg : 0 < ∑ᶠ i in s, g i):
+  ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
+begin
+  have hg' : (s ∩ function.support g).finite, from
+    by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at hg, exact lt_irrefl _ hg, }),
+  by_cases hf : (s ∩ function.support f).finite, 
+    exact finsum_in_le_finsum_in' hfg hf hg', 
+  rw finsum_in_eq_zero_of_infinite hf, 
+  exact le_of_lt hg,
+end 
+
 lemma finsum_le_finsum [ordered_add_comm_monoid M](hfg : ∀ x, f x ≤ g x)
 (hf : (function.support f).finite)(hg : (function.support g).finite): 
   ∑ᶠ (i : α), f i ≤ ∑ᶠ (i : α), g i := 
@@ -169,7 +242,16 @@ begin
   exact set.finite.subset (by assumption) (set.inter_subset_right _ _), 
 end
 
- 
+lemma finsum_le_finsum_of_pos [ordered_add_comm_monoid M](hfg : ∀ x, f x ≤ g x)
+(hg : 0 < ∑ᶠ i, g i):
+  ∑ᶠ (i : α), f i ≤ ∑ᶠ (i : α), g i := 
+begin
+  simp_rw finsum_eq_finsum_in_univ at *, 
+  apply finsum_in_le_finsum_in_of_pos (λ x hx, hfg x) hg, 
+end
+
+
+
 lemma finsum_in_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
 (hs : (s ∩ function.support f).finite)(hf : ∀ x ∈ s, 0 ≤ f x): 
   ∑ᶠ x in s, f x = 0 ↔ ∀ x ∈ s, f x = 0 := 

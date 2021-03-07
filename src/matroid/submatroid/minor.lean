@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
 
 section minor 
 
@@ -58,9 +58,12 @@ def minor_pair_to_as_mat (P : minor_pair N M):
     minor_pair ((M.as_mat : matroid_in M.E) / (coe ⁻¹' P.C) \ (coe ⁻¹' P.D)) M.as_mat :=
 {  minor := rfl, .. cd_pair.to_as_mat (coe P) }
 
-instance fintype : fintype (minor_pair N M) :=  
-fintype.of_injective 
-  (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})
+instance fintype : nonempty (fintype (minor_pair N M)) :=  
+begin
+  letI : fintype (M.cd_pair):= classical.choice (by apply_instance), 
+  exact ⟨fintype.of_injective 
+  (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})⟩,
+end 
 
 /-- constructs the trivial minor pair associated with M -/
 def trivial (M : matroid_in U) : minor_pair M M := 
@@ -379,8 +382,12 @@ lemma con_or_del {N M : matroid_in U}{e : U}(h : is_minor N M)(he : e ∈ M.E \ 
   is_minor N (M / {e}) ∨ is_minor N (M \ {e}) :=
 begin
   rw is_minor at h, rcases h with ⟨p⟩, 
-  rw [← p.union, mem_union] at he, simp_rw ←p.minor, cases he, 
-  { rw [←add_elem he, union_comm, ←con_con], exact or.inl (con_del_is_minor (M / {e}) _ _),  },
+  rw [← p.union, mem_union] at he, 
+  rw ←p.minor, 
+  cases he, 
+  { rw [←add_elem he, union_comm, ←con_con], 
+    let Me := matroid_in.contract M {e}, 
+    exact or.inl (con_del_is_minor (M / {e}) _ _),  },
   right, rw [con_del_eq_del_con _ _ _ p.disj, ←add_elem he, union_comm, ←del_del ],
   apply del_con_is_minor,   
 end

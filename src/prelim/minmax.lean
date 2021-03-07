@@ -10,11 +10,26 @@ noncomputable theory
 
 section general_fintype 
 
-variables {α α' β β': Type}[fintype α][nonempty α][linear_order β][linear_order β']
+variables {α α' β β': Type}[nonempty (fintype α)][nonempty α][linear_order β][linear_order β']
+
+--instance fin_α : fintype α := by {letI := classical.choice _inst_1, apply_instance, }
+
+/- theorem set.finite.exists_maximal_wrt {α : Type u} {β : Type v} [partial_order β]
+(f : α → β)(s : set α) (h : s.finite) :
+s.nonempty → (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') -/
+
 
 lemma exists_max (f : α → β): 
   ∃ x, ∀ y, f y ≤ f x := 
-fintype.exists_max f
+begin
+  letI := classical.choice _inst_1, 
+  unfreezingI {obtain ⟨a₀⟩ := _inst_2}, 
+  obtain ⟨a, -, ha⟩ := 
+    set.finite.exists_maximal_wrt f set.univ (set.finite.of_fintype _) ⟨a₀, set.mem_univ a₀⟩,
+  refine ⟨a, λ x, _⟩,  
+  rcases le_total (f x) (f a) with (h | h), exact h, 
+  exact le_of_eq (ha x (set.mem_univ _) h).symm, 
+end
 
 lemma exists_min (f : α → β): 
   ∃ x, ∀ y, f x ≤ f y := 
@@ -62,14 +77,17 @@ begin
   from le_trans (ha.2 _) (hff' a'), 
 end
 
+def surj_fin {φ : α → α'}(hφ : function.surjective φ) : 
+  nonempty (fintype α') := 
+by {letI := classical.choice _inst_1, exact ⟨fintype.of_surjective φ hφ⟩, } 
 
 
 /-- taking a max over one type is equivalent to taking one over another, 
 given a bijection between them -/
 lemma max_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
-  max_val (f ∘ φ) = @max_val _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f := 
+  max_val (f ∘ φ) = @max_val _ _ (surj_fin hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases @max_spec _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f 
+  rcases @max_spec _ _ (surj_fin hφ) (nonempty.map φ _inst_2) _ f 
     with ⟨x', ⟨hx'1, hx'2⟩⟩, 
   rcases max_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
   rw [←hx1, ←hx'1], 
@@ -81,9 +99,9 @@ end
 /-- taking a min over one type is equivalent to taking one over another, 
 given a bijection between them -/
 lemma min_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
-  min_val (f ∘ φ) = @min_val _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f := 
+  min_val (f ∘ φ) = @min_val _ _ (surj_fin hφ) (nonempty.map φ _inst_2) _ f := 
 begin
-  rcases @min_spec _ _ (fintype.of_surjective φ hφ) (nonempty.map φ _inst_2) _ f 
+  rcases @min_spec _ _ (surj_fin hφ) (nonempty.map φ _inst_2) _ f 
     with ⟨x', ⟨hx'1, hx'2⟩⟩, 
   rcases min_spec (f ∘ φ) with ⟨x, ⟨hx1, hx2⟩ ⟩, 
   rw [←hx1, ←hx'1], 
@@ -173,11 +191,9 @@ lemma min_const (b : β):
 by {rcases min_spec (λ (x : α), b) with ⟨x, hx⟩, rw ←hx.1 }
 
 
-
-
 /-- given a bound f(x) ≤ f(x') for all x,x', a pair a,a' for which f(a) = f(a') determines
 the max and min of f,f' respectively  -/
-lemma minmax_eq_cert [nonempty α'][fintype α'](f : α → β)(f' : α' → β):
+lemma minmax_eq_cert [nonempty α'][nonempty (fintype α')](f : α → β)(f' : α' → β):
   (∃ a a', f a = f' a') → (∀ x x', f x ≤ f' x') → max_val f = min_val f' := 
 begin
   rintros ⟨a, a', heq⟩ hbound, 
@@ -188,7 +204,7 @@ begin
   rw [hub, hlb, heq],
 end
 
-lemma max_compose_le_max [non_empt : nonempty α][fintype α'](φ : α → α')(f : α' → β): 
+lemma max_compose_le_max [non_empt : nonempty α][nonempty (fintype α')](φ : α → α')(f : α' → β): 
   max_val (f ∘ φ) ≤ @max_val _ _ _ (nonempty.map φ non_empt) _ f := 
 begin
   rcases max_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -197,7 +213,7 @@ begin
   apply ha'₂,  
 end
 
-lemma min_le_min_compose [non_empt : nonempty α][fintype α'](φ : α → α')(f : α' → β): 
+lemma min_le_min_compose [non_empt : nonempty α][nonempty (fintype α')](φ : α → α')(f : α' → β): 
   @min_val _ _ _ (nonempty.map φ non_empt) _ f  ≤ min_val (f ∘ φ) := 
 begin
   rcases min_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -206,8 +222,13 @@ begin
   apply ha'₂,  
 end
 
+instance prod_fin [nonempty (fintype α')]: nonempty (fintype (α × α')) := 
+by {letI := classical.choice _inst_1, 
+    letI := classical.choice _inst_5, 
+    apply nonempty.intro, apply_instance, } 
+
 /-- a bimonotone function of two maxima is a maximum over a product type -/
-lemma max_zip [nonempty α'][fintype α'](f : α → β)(f' : α' → β)(g : β × β → β')
+lemma max_zip [nonempty α'][nonempty (fintype α')](f : α → β)(f' : α' → β)(g : β × β → β')
                 (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩): 
   g ⟨max_val f, max_val f'⟩ = max_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
@@ -221,7 +242,7 @@ begin
 end
 
 /-- a bimonotone function of two minima is a minimum over a product type -/
-lemma min_zip [nonempty α'][fintype α'](f : α → β)(f' : α' → β)(g : β × β → β')
+lemma min_zip [nonempty α'][nonempty (fintype α')](f : α → β)(f' : α' → β)(g : β × β → β')
                 (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩): 
   g ⟨min_val f, min_val f'⟩ = min_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
@@ -241,7 +262,7 @@ end general_fintype
 
 section adding -- lemmas with a little more structure (eg addition) on β 
 
-variables {α α' β : Type}[nonempty α][fintype α][nonempty α'][fintype α'][linear_ordered_semiring β]
+variables {α α' β : Type}[nonempty α][nonempty (fintype α)][nonempty α'][nonempty (fintype α')][linear_ordered_semiring β]
 
 lemma max_add_commute (f : α → β)(s : β): 
   (max_val f) + s = max_val (λ x, f x + s) := 

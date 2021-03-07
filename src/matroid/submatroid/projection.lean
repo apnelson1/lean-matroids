@@ -168,9 +168,9 @@ begin
   rw [indep_iff_r, rank_loopify_to, indep_iff_r],
   refine ⟨λ h, _, λ h, by {cases h with h h', rwa subset_iff_inter_eq_left.mp h'}⟩,
   have h' : I ∩ R = I, 
-  { apply eq_of_eq_size_subset (inter_subset_left _ _), 
+  { refine eq_of_eq_size_subset (inter_subset_left _ _) _, 
     refine le_antisymm (size_mono_inter_left _ _) _,
-    rw ←h, apply rank_le_size },
+    rw ←h, apply rank_le_size,},
   rw [←h, h', subset_iff_inter_eq_left],
   simpa, 
 end

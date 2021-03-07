@@ -7,7 +7,7 @@ open_locale classical
 open set 
 namespace matroid 
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
 
 section simple 
 
@@ -40,7 +40,8 @@ def simple_set (M : matroid U) := {X : set U // M.is_simple_set X}
 instance simple_set_nonempty {M : matroid U}: nonempty M.simple_set := 
   ⟨⟨∅, λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }⟩⟩ 
 
-instance simple_set_fintype {M : matroid U}: fintype M.simple_set := 
+instance simple_set_fintype {M : matroid U}: 
+nonempty (fintype M.simple_set) := 
   by {unfold simple_set, apply_instance,}
 
 def simple_subset_of (M : matroid U)(S : set U) := {X : set U // M.is_simple_set X ∧ X ⊆ S} 
@@ -48,8 +49,9 @@ def simple_subset_of (M : matroid U)(S : set U) := {X : set U // M.is_simple_set
 instance simple_subset_nonempty {M : matroid U}{S : set U}: nonempty (M.simple_subset_of S) := 
   ⟨⟨∅, ⟨λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }, empty_subset _⟩ ⟩⟩ 
 
-instance simple_subset_fintype {M : matroid U}{S : set U}: fintype (M.simple_subset_of S) := 
-  by {unfold simple_subset_of, apply_instance,}
+instance simple_subset_fintype {M : matroid U}{S : set U}: 
+  nonempty (fintype (M.simple_subset_of S)) := 
+by {unfold simple_subset_of, apply_instance,}
 
 
 lemma loopless_set_iff_all_nonloops {M : matroid U}{S : set U}: 
@@ -198,16 +200,20 @@ begin
     obtain ⟨heφ, heC⟩ := ((mem_inter_iff _ _ _).mp he), clear he, 
     obtain ⟨f,rfl⟩ := mem_range.mp heφ, clear heφ, 
     specialize hr {f}, 
-    rw [rank_single_of_loopless hN, image_singleton] at hr,
-    rw [union_comm, rank_eq_rank_union_rank_zero C _, sub_self] at hr, exact one_ne_zero hr, 
+    --have := @rank_single_of_loopless V _inst_2 N hN f,
+    unfreezingI {
+      rw [rank_single_of_loopless hN, image_singleton] at hr,
+      rw [union_comm, rank_eq_rank_union_rank_zero C _, sub_self] at hr}, 
+    exact one_ne_zero hr, 
     apply rank_zero_of_subset_rank_zero (singleton_subset_iff.mpr heC),
     apply rank_zero_of_pr_lp, },
   have hCC'D' : C ∩ (C' ∪ D') = ∅, 
-  { rw [←size_zero_iff_empty, 
+  { unfreezingI
+    {rw [←size_zero_iff_empty, 
         ←rank_zero_of_inter_rank_zero C (rank_zero_of_pr_lp M C' D'),
-        ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)], },
+        ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)]}, },
   
-  refine iminor_of_iff_exists_embedding.mpr ⟨φ, C ∪ C', _, λ X, _⟩, 
+  unfreezingI {refine iminor_of_iff_exists_embedding.mpr ⟨φ, C ∪ C', _, λ X, _⟩}, 
   {rw disjoint_iff_subset_compl at *, 
    refine subset.trans (subset_inter hrange hrange') _, 
    intros x, simp only [and_imp, compl_union, mem_inter_eq, mem_compl_eq], tauto},

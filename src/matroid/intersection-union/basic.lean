@@ -1,7 +1,7 @@
 
 /- This file contains the basic definitions needed to talk about matroid union and matroid intersection.-/
 
-import matroid.constructions matroid.submatroid.projection prelim.minmax 
+import matroid.submatroid.projection prelim.minmax 
 
 open_locale classical 
 noncomputable theory 
@@ -79,10 +79,10 @@ def common_ind (M₁ M₂ : matroid U) := {X : set U // is_common_ind M₁ M₂ 
 
 -- All the types above are trivially finite, and nonempty because bases/independent sets exist 
 
-instance indep_pair_fintype {M₁ M₂ : matroid U} : fintype (indep_pair M₁ M₂) := 
+instance indep_pair_fintype {M₁ M₂ : matroid U} : nonempty (fintype (indep_pair M₁ M₂)) := 
   by {unfold indep_pair, apply_instance }
 
-instance basis_pair_fintype {M₁ M₂ : matroid U} : fintype (basis_pair M₁ M₂) := 
+instance basis_pair_fintype {M₁ M₂ : matroid U} : nonempty (fintype (basis_pair M₁ M₂)) := 
   by {unfold basis_pair, apply_instance }
 
 instance indep_pair_nonempty {M₁ M₂ : matroid U} : nonempty (indep_pair M₁ M₂) := 
@@ -91,13 +91,15 @@ begin
   from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩ ⟩ , 
 end 
 
-instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid U}{X : set U} : nonempty (indep_pair_of_subset M₁ M₂ X) := 
+instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid U}{X : set U} : 
+  nonempty (indep_pair_of_subset M₁ M₂ X) := 
 begin
   simp only [indep_pair_of_subset, nonempty_subtype, prod.exists], 
   from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
 end 
 
-instance indep_pair_of_subset_fintype {M₁ M₂ : matroid U}{X : set U} : fintype (indep_pair_of_subset M₁ M₂ X) := 
+instance indep_pair_of_subset_fintype {M₁ M₂ : matroid U}{X : set U} : 
+  nonempty (fintype (indep_pair_of_subset M₁ M₂ X)) := 
 begin
   unfold indep_pair_of_subset, apply_instance, 
 end 
@@ -121,7 +123,7 @@ end
 instance inter_bases_nonempty (M₁ M₂ : matroid U) : nonempty (inter_bases M₁ M₂) :=
 by {apply nonempty_subtype.mpr, apply exists_inter_bases, } 
 
-instance inter_bases_fintype (M₁ M₂ : matroid U) : fintype (inter_bases M₁ M₂) := 
+instance inter_bases_fintype (M₁ M₂ : matroid U) : nonempty (fintype (inter_bases M₁ M₂)) := 
 by {unfold inter_bases, apply_instance,}
 
 instance disjoint_indep_pair_nonempty (M₁ M₂ : matroid U) : 
@@ -132,7 +134,7 @@ by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅
 instance nonempty_common_ind (M₁ M₂ : matroid U) : nonempty (common_ind M₁ M₂) := 
 by {apply nonempty_subtype.mpr, from ⟨∅, ⟨empty_indep M₁, empty_indep M₂⟩⟩}
 
-instance fintype_common_ind (M₁ M₂ : matroid U ): fintype (common_ind M₁ M₂) := 
+instance fintype_common_ind (M₁ M₂ : matroid U ): nonempty (fintype (common_ind M₁ M₂)) := 
   by {unfold common_ind, apply_instance}
 
 instance coe_common_ind (M₁ M₂ : matroid U) : has_coe (common_ind M₁ M₂) (set U) :=
@@ -169,8 +171,8 @@ def indep_tuple (Ms : fin n → matroid U) :=
 instance indep_tuple_nonempty (Ms : fin n → matroid U) : nonempty (indep_tuple Ms) := 
   by {apply nonempty_subtype.mpr, exact ⟨λ i, ∅, λ i, (Ms i).empty_indep⟩,}
 
-instance indep_tuple_fintype (Ms : fin n → matroid U) : fintype (indep_tuple Ms) := 
-  by {unfold indep_tuple, apply_instance,  }
+instance indep_tuple_fintype (Ms : fin n → matroid U) : nonempty (fintype (indep_tuple Ms)) := 
+  by {letI := classical.choice _inst_1, unfold indep_tuple, exact ⟨by apply_instance⟩,  }
 
 /-- size of largest partitionable set wrt a tuple of matroids -/
 def π {n : ℕ}(Ms : fin n → matroid U) : ℤ := 

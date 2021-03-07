@@ -12,11 +12,15 @@ open set
 
 def fincard (s : set α) : ℕ := ∑ᶠ x in s, 1  
 
-def fincard_t (α : Type) := fincard (set.univ : set α)
+def fincard_t (α : Type*) := fincard (set.univ : set α)
 
 lemma fincard_def (s : set α) : 
   fincard s = ∑ᶠ x in s, 1 := 
 rfl 
+
+lemma fincard_t_eq_sum_ones (α : Type*): 
+  fincard_t α = ∑ᶠ (x : α), 1 := 
+by rw [fincard_t, fincard_def, finsum_eq_finsum_in_univ]
 
 @[simp] lemma support_const [has_zero β]{b : β}(hb : b ≠ 0): 
   function.support (λ x : α, b) = univ :=
@@ -95,6 +99,14 @@ begin
   convert fincard_img_emb (function.embedding.refl α) _, 
   ext, simp, rintro rfl, assumption,  
 end
+
+@[simp] lemma nat.finsum_const_eq_mul_fincard_t (b : ℕ): 
+  ∑ᶠ (i : α), b = b * (fincard_t α) := 
+by rw [← mul_one b, ← mul_distrib_finsum, fincard_t_eq_sum_ones, mul_one]
+
+@[simp] lemma nat.finsum_in_const_eq_mul_fincard (b : ℕ){s : set α}: 
+  ∑ᶠ i in s, b = b * (fincard s) := 
+by rw [← mul_one b, ← mul_distrib_finsum_in, fincard_def, mul_one]
 
 lemma sum_fincard_fiber_eq_fincard {s : set α}(f : α → β)
 (hs : s.finite): 

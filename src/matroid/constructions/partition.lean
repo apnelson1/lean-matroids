@@ -1,0 +1,151 @@
+
+import prelim.induction prelim.collections prelim.presetoid
+import matroid.rankfun matroid.indep 
+import .uniform .direct_sum
+
+open matroid set 
+open_locale classical big_operators 
+
+noncomputable theory 
+
+
+namespace partition
+
+--finiteness assumption on ι could/should be removed 
+variables {U ι : Type}[nonempty (fintype U)][nonempty (fintype ι)](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+
+/-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
+whose intersection with each cell i has size at most b i -/
+def M : matroid U := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
+
+lemma indep_iff (X : set U) : 
+  (M f hb).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
+by {rw [M, idsum.indep_iff], simp_rw [unif.uniform_matroid_indep_iff, idsum.size_coe_eq]}
+
+lemma r_eq (X : set U): 
+  (M f hb).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
+by {rw [M, idsum.r_eq], simp_rw [unif.uniform_matroid_rank, idsum.size_coe_eq]}
+
+/- in the partition matroid where the upper bounds are all at most one
+(such as the parallel partition matroid), the rank of a set is the number of 
+cells for which the bound is 1 that it insersects
+lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set U):
+  (M f hb).r X = size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} :=
+begin
+  rw [r_eq],
+  rw ← sum_size_fiber_eq_size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} id, 
+  congr', ext i, 
+  have hi : b i = 0 ∨ b i = 1 := int.nonneg_le_one_iff (hb i) (hb' i), 
+  rcases (hi) with (h0 | h1), 
+  { rw [h0, min_eq_left_iff.mpr (size_nonneg _), eq_comm, size_zero_iff_has_no_mem],
+    have : b i ≠ 1 := λ hn, by {rw h0 at hn, exact int.zero_ne_one hn}, 
+    tidy, },
+  by_cases hi : ∃ x ∈ X, f x = i, swap, 
+  { convert (min_eq_right_of_lt (int.zero_lt_one)); {rw size_zero_iff_has_no_mem, tidy},},
+  convert (λ x hx, by {rw min_eq_left_iff.mpr hx} : ∀ x : ℤ, 1 ≤ x → min (1 : ℤ) x = 1) _ _, 
+  { rw size_one_iff_eq_singleton, 
+    refine ⟨i, _⟩, ext, 
+    simp only [sep_set_of, exists_prop, mem_singleton_iff, 
+    and_iff_right_iff_imp, id.def, mem_set_of_eq],
+    rintro rfl, 
+    tauto,   }, 
+  rw one_le_size_iff_has_mem, tidy, 
+end -/
+
+end partition
+
+section presetoid_class
+
+variables {U : Type}[nonempty (fintype U)](S : presetoid U)
+
+namespace presetoid_matroid
+
+/- Given a presetoid S on U, we construct a matroid on U whose independent sets are those containing
+no elements of the kernel of U, and at most one element of each class of U -/
+
+
+
+def partition_fn : set U → ℤ := 
+  λ X, ite (X = ∅) 0 1 
+
+lemma partition_fn_nonneg: 
+  ∀ (X : set U), 0 ≤ partition_fn X := 
+λ X, by {unfold partition_fn, split_ifs; norm_num,}
+
+def M : matroid U := partition.M S.cl partition_fn_nonneg
+
+lemma M_def : 
+  M S = partition.M S.cl partition_fn_nonneg := 
+rfl 
+
+lemma r_eq (X : set U): 
+  (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty}:= 
+begin
+  rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], swap, apply_instance, 
+  convert rfl, funext, 
+  rw partition_fn, dsimp only [id.def], split_ifs, 
+  { subst h, 
+    rw min_eq_left (size_nonneg _), 
+    simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
+    id.def, sep_in_eq_empty_iff, exists_imp_distrib], 
+    rintros P x hx rfl - hx', 
+    exact S.cl_eq_empty_iff.mp hx' hx},
+  by_cases hi : ∃ x ∈ X, S.cl x = i, swap,
+  { convert (min_eq_right (zero_le_one : (0 :ℤ) ≤ 1 )).symm,  
+    { simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
+        sep_in_eq_empty_iff, exists_imp_distrib], 
+      rintros s x hx rfl hxX rfl,
+      obtain ⟨x',hx'⟩ := hxX, 
+      rw mem_inter_iff at hx', 
+      exact hi ⟨x', hx'.1, S.cl_eq_cl_of_rel (S.mem_cl_iff.mp hx'.2)⟩ }, 
+    simp only [size_zero_iff_empty, sep_in_eq_empty_iff], 
+    exact λ x hx hS, hi ⟨x,hx,hS⟩},
+  obtain ⟨x,hx,rfl⟩ := hi, 
+  rw [presetoid.cl_eq_empty_iff, not_not] at h, 
+  convert (λ m hm, by {rw min_eq_left hm} : (∀ m : ℤ, 1 ≤ m → 1 = min 1 m)) _ _,  
+  { rw size_one_iff_eq_singleton, 
+    refine ⟨S.cl x, ext_iff.mpr (λ f, _)⟩,
+    simp only [mem_sep_eq, presetoid.mem_classes_iff, mem_singleton_iff, 
+    and_iff_right_iff_imp],  
+    rintros rfl, 
+    exact ⟨⟨x, h, rfl⟩,⟨x,mem_inter hx (S.mem_cl_iff.mpr h)⟩⟩}, 
+  exact one_le_size_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
+end
+
+lemma indep_iff (I : set U):
+  (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, size (I ∩ P) ≤ 1 :=
+begin
+  rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 
+  simp only [and_imp, presetoid.mem_classes_iff, exists_imp_distrib, S.mem_kernel_iff, not_imp_not], 
+  refine ⟨λ h, ⟨by {simpa using h ∅}, _⟩, λ h P, _⟩, 
+  { rintros P x hx rfl, 
+    convert h (S.cl x),
+    { ext, rw [eq_comm, S.cl_eq_cl_iff hx, S.rel_comm, ← S.mem_cl_iff], refl},
+    suffices : (S.cl x) ≠ ∅, split_ifs; tauto,   
+    simp_rw [ne_empty_iff_has_mem, S.mem_cl_iff], 
+    exact ⟨x,hx⟩ },
+  by_cases hP : ∃ x, P = S.cl x, 
+  { obtain ⟨x,rfl⟩ := hP, 
+    by_cases hx : S.rel x x, 
+    { convert h.2 (S.cl x) _ hx rfl, 
+      {ext y, rw [eq_comm, S.cl_eq_cl_iff hx, S.rel_comm, S.mem_cl_iff]},
+      simpa using hx},
+    rw [S.cl_eq_empty_iff.mpr hx], 
+    simpa using h.1},
+  convert (λ Q, by {split_ifs; norm_num} : ∀ Q: Prop, (0 : ℤ) ≤ ite Q (0 : ℤ) 1) _ , 
+  rw [size_zero_iff_empty, sep_in_eq_empty_iff], 
+  exact λ x hx hxP, hP ⟨x, hxP.symm⟩, 
+end
+
+
+
+
+end presetoid_matroid
+
+end presetoid_class 
+
+
+
+
+
+ 

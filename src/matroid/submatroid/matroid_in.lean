@@ -6,7 +6,9 @@ noncomputable theory
 
 open matroid set 
 
-variables {U V U₁ U₂ U₃: Type}[nonempty (fintype U)][fintype V][fintype U₁][fintype U₂][fintype U₃]
+variables {U V U₁ U₂ U₃: Type}
+[nonempty (fintype U)][nonempty (fintype V)]
+[nonempty (fintype U₁)][nonempty (fintype U₂)][nonempty (fintype U₃)]
 
 /-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
@@ -162,7 +164,8 @@ section defs
 
 /-- translates a property of sets defined on (matroid V) to the corresponding
 set property on (matroid_in U). -/
-def lift_mat_set_property (P : Π {V : Type}[ft : fintype V], @matroid V ft → set V → Prop): 
+def lift_mat_set_property 
+(P : Π {V : Type}[ft : nonempty (fintype V)], @matroid V ft → set V → Prop): 
   (matroid_in U → set U → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 
@@ -353,8 +356,8 @@ def as_mat_isom (M : matroid_in U) : isom M (M.as_mat : matroid_in M.E) :=
 end}
 
 
-/-- N is isomorphic to a matroid_in of M iff there is a suitable injection from N to M. This is 
-dtt hell, but probably only needs to be done once. -/
+/-- N is isomorphic to a matroid_in of M iff there is a suitable injection from N to M. 
+Yuck!  -/
 lemma isom_to_matroid_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
   M.is_isom_to_matroid N ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
 begin

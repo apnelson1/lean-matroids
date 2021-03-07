@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
 
 
 /-- the contraction of C in M. Implemented as a projection -/
@@ -218,8 +218,9 @@ be abstracted away from matroids completely -/
 (C_ss_E : C ⊆ M.E)
 (D_ss_E : D ⊆ M.E)
 
-instance cd_pair.fintype (M : matroid_in U) : fintype (cd_pair M) := 
-by tactic.mk_fintype_instance 
+instance cd_pair.fintype (M : matroid_in U) : 
+  nonempty (fintype (cd_pair M)) := 
+nonempty.intro (by { letI := classical.choice _inst_1,  tactic.mk_fintype_instance, })
 
 def cd_pair.trivial (M : matroid_in U): cd_pair M := 
 ⟨∅, ∅, by rw inter_self, empty_subset _, empty_subset _⟩ 

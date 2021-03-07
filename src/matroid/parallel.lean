@@ -23,7 +23,7 @@ is unbundled, but I'm not convinced it's the best one.
 -/
 
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
 
 /-- equivalence relation of being parallel for nonloops  -/
 def parallel_nl (M : matroid U) (e f : nonloop M) : Prop := 
@@ -202,10 +202,27 @@ lemma parallel_cl_loop_empty {M : matroid U}{e : U}(he : M.is_loop e):
   M.parallel_cl e = ∅ := 
 by {ext, simp [parallel_cl, parallel, loop_iff_not_nonloop.mp he]}
 
+
+lemma parallel_cl_nonempty_of_nonloop {M : matroid U}{e : U}(he : M.is_nonloop e): 
+  (M.parallel_cl e).nonempty := 
+⟨e, by {rw [parallel_cl, mem_set_of_eq], exact parallel_refl_nonloop he,  }⟩ 
+
 lemma mem_parallel_cl {M : matroid U}{e f : U}: 
   e ∈ M.parallel_cl f ↔ M.parallel e f := 
 by simp_rw [parallel_cl, mem_set_of_eq]
   
+
+lemma parallel_cl_eq_empty_iff_loop {M : matroid U}{e : U}:
+  M.parallel_cl e = ∅ ↔ M.is_loop e :=
+begin
+  refine ⟨λ h, by_contra (λ hn, _), λ h, parallel_cl_loop_empty h⟩, 
+  rw ← nonloop_iff_not_loop at hn, 
+  rw empty_iff_has_no_mem at h, 
+  apply h e, 
+  rw mem_parallel_cl, 
+  apply parallel_refl_nonloop hn, 
+end
+
 def is_parallel_class (M : matroid U)(P : set U)  := 
   ∃ e,  M.is_nonloop e ∧ P = M.parallel_cl e 
 
@@ -214,6 +231,19 @@ def parallel_class (M : matroid U): Type := {X : set U // M.is_parallel_class X}
 /-- function taking a nonloop to its parallel class -/
 def parallel_cl' {M : matroid U}(e : M.nonloop) : M.parallel_class := 
   ⟨M.parallel_cl e, ⟨e,⟨e.property, rfl⟩⟩⟩ 
+
+lemma parallel_cl_eq_of_parallel {M : matroid U}{e f : U}(hef : M.parallel e f):
+   M.parallel_cl e = M.parallel_cl f :=
+begin
+  ext, rw [mem_parallel_cl, mem_parallel_cl], 
+  have := parallel_symm' hef,
+  split; {intro, transitivity; assumption,},
+end
+
+lemma parallel_of_parallel_cl_eq_left {M : matroid U}{e f : U}(he : M.is_nonloop e)
+(hef : M.parallel_cl e = M.parallel_cl f): 
+  M.parallel e f :=
+by {rw [← mem_parallel_cl, ← hef, mem_parallel_cl], apply parallel_refl_nonloop he}
 
 lemma parallel_iff_parallel_cl'_eq {M : matroid U}{e f : M.nonloop}: 
   M.parallel e f ↔ parallel_cl' e = parallel_cl' f  :=
@@ -226,7 +256,9 @@ end
 
 
 instance coe_parallel_class_to_set {M : matroid U}: has_coe (M.parallel_class) (set U) := ⟨subtype.val⟩ 
-instance parallel_class_fintype {M : matroid U}: fintype M.parallel_class := by {unfold parallel_class, apply_instance} 
+instance parallel_class_fintype {M : matroid U}: 
+  nonempty (fintype M.parallel_class) := 
+by {unfold parallel_class, apply_instance} 
 
 lemma parallel_of_mems_parallel_class {M : matroid U}{P : M.parallel_class}{e f : U}
 (he : e ∈ (P : set U))(hf : f ∈ (P : set U)) : 

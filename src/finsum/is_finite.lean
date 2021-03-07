@@ -3,7 +3,9 @@ import tactic
 
 open_locale classical 
 
-variables {α : Type*}
+universes u v
+
+variables {α : Type u}{β : Type v}
 
 
 
@@ -15,3 +17,9 @@ by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
 
 instance is_finite_of_set_type [i : nonempty (fintype α)] : nonempty (fintype (set α)) := 
 by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
+
+instance is_finite_option_type [i : nonempty (fintype α)] : 
+  nonempty (fintype (option α)) := 
+by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
+
+--instance is_finite_of_fn [i : nonempty (fintype α)][j : nonempty (fintype β)] : nonempty (fintype )

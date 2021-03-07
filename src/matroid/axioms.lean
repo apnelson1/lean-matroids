@@ -6,12 +6,12 @@ variable {U : Type}
 
 section rank 
 
-variable [nonempty (fintype U)]
+
 
 def satisfies_R0 (r : set U → ℤ) : Prop := 
   ∀ X, 0 ≤ r X 
 
-def satisfies_R1 (r : set U → ℤ) : Prop := 
+def satisfies_R1 [nonempty (fintype U)](r : set U → ℤ) : Prop := 
   ∀ X, r X ≤ size X
 
 def satisfies_R2 (r : set U → ℤ) : Prop := 
@@ -31,7 +31,7 @@ end rank
 
 section indep 
 
-variable [nonempty (fintype U)]
+
 
 def satisfies_I1 (indep : set U → Prop) : Prop := 
   indep ∅ 
@@ -39,7 +39,7 @@ def satisfies_I1 (indep : set U → Prop) : Prop :=
 def satisfies_I2 (indep : set U → Prop) : Prop := 
   ∀ I J, I ⊆ J → indep J → indep I
 
-def satisfies_I3 (indep : set U → Prop) : Prop := 
+def satisfies_I3 [nonempty (fintype U)](indep : set U → Prop) : Prop := 
   ∀ I J, size I < size J → indep I → indep J → ∃ (e : U), e ∈ J \ I ∧ indep (I ∪ {e})
 
 --def satisfies_I3' : (set U → Prop) → Prop := 

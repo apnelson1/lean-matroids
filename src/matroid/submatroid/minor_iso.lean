@@ -8,7 +8,8 @@ open matroid set matroid_in
 
 namespace matroid_in.minor_pair
 
-variables {U V : Type}[nonempty (fintype U)][fintype V]{N M : matroid_in U}
+variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
+{N M : matroid_in U}
 
 -- The next few definitions relate a minor pair N M to a minor pair N' M.as_mat 
 
@@ -148,7 +149,8 @@ namespace matroid
 open matroid_in.minor_pair 
 
 
-variables {U V W : Type}[nonempty (fintype U)][fintype V][fintype W]
+variables {U V W : Type}
+[nonempty (fintype U)][nonempty (fintype V)][nonempty (fintype W)]
 
 
 /-- an embedding of N into M as a minor-/
@@ -363,7 +365,8 @@ lemma iminor_of_isom_iminor {N : matroid U}{N' : matroid V}{M : matroid W}
 begin
   unfold is_iminor_of is_isom at *, 
   obtain ⟨⟨i⟩,⟨e⟩⟩ := ⟨hNN', hN'M⟩, 
-  exact ⟨minor_emb_of_isom_of_minor_emb i e⟩,
+  have := minor_emb_of_isom_of_minor_emb, 
+  exact ⟨this i e⟩ , 
 end
 
 lemma iminor_of_iminor_isom {N : matroid U}{M : matroid V}{M' : matroid W}
@@ -372,7 +375,8 @@ lemma iminor_of_iminor_isom {N : matroid U}{M : matroid V}{M' : matroid W}
 begin
   unfold is_iminor_of is_isom at *, 
   obtain ⟨⟨i⟩,⟨e⟩⟩ := ⟨hMM', hNM⟩, 
-  exact ⟨minor_emb_of_minor_emb_of_isom e i⟩,
+  have := minor_emb_of_minor_emb_of_isom,
+  exact ⟨this e i⟩, 
 end
 
 def iminor_emb_of_minor_pair {N M : matroid_in U}(P : N.minor_pair M): 
@@ -403,6 +407,12 @@ con_emb.to_minor_emb ({
 lemma iminor_trans {L : matroid U}{M : matroid V}{N : matroid W}
 (hLM : L.is_iminor_of M)(hMN : M.is_iminor_of N):
 L.is_iminor_of N := 
-by {unfold is_iminor_of at *, obtain ⟨⟨e₁⟩,⟨e₂⟩⟩ := ⟨hLM, hMN⟩, exact ⟨e₁.trans e₂⟩} 
+begin
+  -- why is this silly hack neccessary? 
+  unfold is_iminor_of at *, 
+  obtain ⟨⟨e₁⟩,⟨e₂⟩⟩ := ⟨hLM, hMN⟩, 
+  have := minor_emb.trans, 
+  exact ⟨this e₁ e₂⟩, 
+end 
 
 end matroid 

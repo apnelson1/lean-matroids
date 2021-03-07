@@ -10,8 +10,7 @@ open set
 variables {A : Type}
 /- ----------------------------------------------------------
 
-We define size by hooking into fincard. The following
-small set of lemmas characterizes the size function 
+We define size simply as the cast of fincard to int. 
 
 - Size -----------------------------------------------------/
 
@@ -48,20 +47,28 @@ lemma size_nonneg (X : set A) :
   0 ≤ size X := 
 by {simp only [size], norm_cast, apply zero_le}  
 
-lemma finsum_ones_eq_size (X : set A) : 
+@[simp] lemma finsum_ones_eq_size (X : set A) : 
   ∑ᶠ x in X, (1 : ℤ) = size X := 
 by {rw [size, fincard, nat.coe_int_distrib_finsum_in], refl}
+
+@[simp] lemma finsum_ones_eq_type_size (B : Type*) : 
+  ∑ᶠ (x : B), (1 : ℤ) = type_size B := 
+by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
+
+@[simp] lemma int.finsum_const_eq_mul_type_size (B : Type*)(b : ℤ):
+  ∑ᶠ (x : B), b = b * type_size B := 
+by rw [← mul_one b, ← finsum_ones_eq_type_size, ← mul_distrib_finsum, mul_one]
+
+@[simp] lemma int.finsum_in_const_eq_mul_size (X : set A)(b : ℤ):
+  ∑ᶠ x in X, b = b * size X := 
+by rw [← mul_one b, ← finsum_ones_eq_size, ← mul_distrib_finsum_in, mul_one]
 
 lemma sum_size_fiber_eq_size [nonempty (fintype A)]{ι : Type}(s : set A)(f : A → ι):
   ∑ᶠ (i : ι), size {a ∈ s | f a = i} = size s := 
 by simp_rw [size_def, ← nat.coe_int_distrib_finsum, fin.sum_fincard_fiber_eq_fincard s f]
 
-
-
-
 -------------------------------------------------------------
 open set 
-
 
 -- Size 
 
@@ -143,8 +150,14 @@ begin
   linarith [size_monotone hY.1], 
 end  
 
-lemma size_zero_iff_empty [nonempty (fintype A)]{X : set A} : (size X = 0) ↔ (X = ∅) := 
+@[simp] lemma size_zero_iff_empty [nonempty (fintype A)]{X : set A} : (size X = 0) ↔ (X = ∅) := 
   by {split, apply size_zero_empty, intros h, rw h, exact size_empty A}
+
+@[simp] lemma size_le_zero_iff_eq_empty [nonempty (fintype A)]{X : set A}:
+  size X ≤ 0 ↔ X = ∅ := 
+by {rw [← size_zero_iff_empty], exact ⟨λ h, le_antisymm h (size_nonneg _), λ h, le_of_eq h⟩} 
+
+
 
 lemma size_nonempty [nonempty (fintype A)]{X : set A} : X.nonempty → 0 < size X  := 
 begin
@@ -159,9 +172,12 @@ begin
   from λ h', by {rw [h', size_empty] at h, from lt_irrefl 0 h} 
 end
 
+lemma size_pos_iff_ne_empty [nonempty (fintype A)]{X : set A}:
+  0 < size X ↔ X ≠ ∅ := 
+by rw [← size_pos_iff_nonempty, ← ne_empty_iff_nonempty]
+
 lemma one_le_size_iff_nonempty [nonempty (fintype A)]{X : set A} : X.nonempty ↔ 1 ≤ size X := 
   size_pos_iff_nonempty
-
 
 lemma nontriv_size [nonempty (fintype A)](hA: nontriv A): 1 ≤ size (univ : set A) := 
   one_le_size_iff_nonempty.mp hA 
@@ -221,7 +237,7 @@ lemma size_pos_iff_has_mem [nonempty (fintype A)]{X : set A}:
 ⟨λ h, size_pos_has_mem h, λ h, by {cases h with e he, have := size_monotone (singleton_subset_iff.mpr he), rw size_singleton at this, linarith}⟩ 
 
 
-lemma one_le_size_iff_has_mem [nonempty (fintype A)][X : set A]: 
+lemma one_le_size_iff_has_mem [nonempty (fintype A)]{X : set A}: 
   1 ≤ size X ↔ ∃ e, e ∈ X := 
 by {convert size_pos_iff_has_mem, apply_instance, }
 

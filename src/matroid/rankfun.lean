@@ -171,30 +171,13 @@ lemma rank_subadditive (M : matroid U)(X Y : set U) :
 by linarith [M.rank_submod X Y, M.rank_nonneg (X ∩ Y)]
 
 lemma rank_subadditive_sUnion (M : matroid U)(S : set (set U)):
-  M.r (sUnion S) ≤ ∑ (X : S), M.r X := 
+  M.r (⋃₀ S) ≤ ∑ᶠ X in S, M.r X := 
 begin
-  set P : set (set U) → Prop := λ S, M.r (sUnion S) ≤ ∑ (X : S), M.r X with hP, 
-  apply induction_set_size_add P, 
-  { rw hP, dsimp only, 
-    rw [sUnion_empty, rank_empty], 
-    exact has_le.le.trans_eq (le_refl 0) (by convert finset.sum_empty.symm)},
-  
-  intros S X₀ hX₀ hS, 
-  simp_rw [hP, sUnion_union, sUnion_singleton] at hS ⊢,   
-  rw fin_sum_insert, swap, assumption, 
-  refine le_trans (rank_subadditive M _ _) _, 
-  refine le_trans (int.add_le_add_right hS (M.r X₀)) (le_of_eq rfl),
+  set P := λ (S : set (set U)), M.r (⋃₀ S) ≤ ∑ᶠ X in S, M.r X with hP, 
+  refine induction_set_size_insert P (by {rw hP, simp}) (λ X A hA hX, _) _, 
+  rw [hP, sUnion_insert, fin.finsum_in_insert _ hA],
+  exact le_trans (rank_subadditive M _ _) (int.add_le_add_left hX _), 
 end 
-
-/-
-lemma rank_subadditive_sUnion' (M : matroid U)(S : set (set U)):
-  M.r (sUnion S) ≤ ∑ᶠ (X : S), M.r X := 
-begin
-  set P : set (set U) → Prop := λ S, M.r (sUnion S) ≤ ∑ᶠ (X : S), M.r X with hP, 
-  apply induction_set_size_add P, 
-  { rw hP, rw [sUnion_empty, rank_empty],}, 
-end 
--/
 
 lemma rank_augment_single_ub (M : matroid U)(X : set U)(e : U): 
   M.r (X ∪ {e}) ≤ M.r X + 1 := 
@@ -427,7 +410,7 @@ begin
   intros hI h, 
   rw indep_iff_r at *, 
   apply le_antisymm (M.rank_le_size _ ),
-  apply le_trans (size_insert_ub), 
+  refine le_trans (size_insert_ub) _, 
   rw hI at h, convert h, 
 end
 
@@ -499,7 +482,7 @@ def to_indep_family (M : matroid U) : indep_family U :=
 instance nonempty_indep_subset_of (M : matroid U)(X : set U) : nonempty (indep_subset_of M X) :=
 by {apply nonempty_subtype.mpr, exact ⟨∅,⟨empty_subset _, M.empty_indep⟩ ⟩, }
 
-instance fintype_indep_subset_of (M : matroid U)(X : set U) : fintype (indep_subset_of M X) :=
+instance fintype_indep_subset_of (M : matroid U)(X : set U) : nonempty (fintype (indep_subset_of M X)) :=
 by {unfold indep_subset_of, apply_instance, } 
 
 
@@ -518,7 +501,7 @@ def circuit (M : matroid U) := { C : set U // M.is_circuit C }
 instance coe_circuit {M : matroid U} : has_coe (M.circuit) (set U) := 
   coe_subtype    
 
-instance fintype_circuit {M : matroid U} : fintype (M.circuit) := 
+instance fintype_circuit {M : matroid U} : nonempty (fintype (M.circuit)) := 
 by {unfold circuit, apply_instance }
 
 /-- is a cocircuit of M: circuit of the dual -/
@@ -530,7 +513,7 @@ def cocircuit (M : matroid U) := { C : set U // M.is_cocircuit C }
 
 instance coe_cocircuit {M : matroid U} : has_coe (cocircuit M) (set U) := 
   coe_subtype    
-instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) := 
+instance fintype_cocircuit {M : matroid U} : nonempty (fintype (cocircuit M)) := 
 by {unfold cocircuit, apply_instance}   
 
 lemma circuit_iff_i {M : matroid U}{X : set U} : 
@@ -869,7 +852,7 @@ def flat (M : matroid U) := { F : set U // M.is_flat F }
 instance coe_flat {M : matroid U} : has_coe (M.flat) (set U) := 
   coe_subtype   
   
-instance fintype_flat {M : matroid U} : fintype (flat M) := 
+instance fintype_flat {M : matroid U} : nonempty (fintype (flat M)) := 
 by {unfold flat, apply_instance }
 
 
@@ -900,15 +883,18 @@ def is_hyperplane (M : matroid U) : set U → Prop :=
 
 def point (M : matroid U): Type := {P : set U // M.is_point P}
 
-instance point_fin {M : matroid U}: fintype M.point := by {unfold point, apply_instance}
+instance point_fin {M : matroid U}: nonempty (fintype M.point) := 
+by {unfold point, apply_instance}
 
 def line (M : matroid U): Type := {L : set U // M.is_line L}
 
-instance line_fin {M : matroid U}: fintype M.line := by {unfold line, apply_instance}
+instance line_fin {M : matroid U}: nonempty (fintype M.line) := 
+by {unfold line, apply_instance}
 
 def plane (M : matroid U): Type := {P : set U // M.is_plane P}
 
-instance plane_fin {M : matroid U}: fintype M.plane := by {unfold plane, apply_instance}
+instance plane_fin {M : matroid U}: nonempty (fintype M.plane) := 
+by {unfold plane, apply_instance}
 
 
 lemma rank_loops (M: matroid U): 
@@ -1203,7 +1189,8 @@ def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
 instance coe_nonloop {M : matroid U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
 --def noncoloop (M : matroid U) : Type := { e : U // is_nonloop (dual M) e}
 
-instance fin_nonloop {M : matroid U} : fintype M.nonloop := by {unfold nonloop, apply_instance}
+instance fin_nonloop {M : matroid U} : nonempty (fintype M.nonloop) := 
+by {unfold nonloop, apply_instance}
 
 lemma eq_nonloop_coe {M : matroid U}{e : U}(h : M.is_nonloop e): 
   e = coe (⟨e, h⟩ : M.nonloop) := 
@@ -1374,7 +1361,6 @@ lemma compl_cobasis_iff_basis {M : matroid U} {B : set U}:
   M.is_cobasis Bᶜ ↔ M.is_basis B := 
 by rw [cobasis_iff, ←cobasis_iff_compl_basis, cobasis_iff, dual_dual]
 
-set_option pp.all true 
 lemma basis_exchange (M : matroid U){B₁ B₂ : set U}{e : U}(hB₁ : M.is_basis B₁)
 (hB₂ : M.is_basis B₂)(he : e ∈ B₁ \ B₂):
   ∃ (f : U), f ∈ (B₂ \ B₁) ∧ M.is_basis (B₁ \ {e} ∪ {f}) :=
@@ -1524,7 +1510,7 @@ begin
   set φ : M.indep_subset_of univ → M.indep := λ X, ⟨X.val, X.property.2⟩ with hφ, 
   have : function.surjective φ, 
     from λ X, by {use ⟨X.val, ⟨subset_univ X.val, X.property⟩⟩, rw hφ, simp,}, 
-  rw [max_reindex φ this (λ X, size X.val)], trivial,  
+  rw [max_reindex φ this (λ X, size X.val)], 
 end
 
 

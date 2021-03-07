@@ -105,12 +105,30 @@ lemma induction_set_size_add (P : set A → Prop):
   (P ∅) → (∀ (X : set A)(e : A), e ∉ X → P X → P (X ∪ {e})) → (∀ X, P X) :=
 begin
   intros h0 h, 
-  refine nonneg_int_strong_induction_param P size (size_nonneg) (λ X hX, _) (λ X hX hX', _ ), 
+  refine nonneg_int_strong_induction_param P size 
+    (size_nonneg) 
+    (λ X hX, _) 
+    (λ X hX hX', _ ), 
   { convert h0, apply size_zero_empty hX}, 
   rcases size_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
   convert h (X \ {e}) e _ (hX' _ _);
   simp [insert_eq_of_mem he, int.zero_lt_one,size_remove_mem he], 
 end
+
+lemma induction_set_size_insert (P : set A → Prop): 
+  (P ∅) → (∀ (X : set A)(e : A), e ∉ X → P X → P (insert e X)) → (∀ X, P X) :=
+begin
+  intros h0 h, 
+  refine nonneg_int_strong_induction_param P size 
+    (size_nonneg) 
+    (λ X hX, _) 
+    (λ X hX hX', _ ), 
+  { convert h0, apply size_zero_empty hX}, 
+  rcases size_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
+  convert h (X \ {e}) e _ (hX' _ _);
+  simp [insert_eq_of_mem he, int.zero_lt_one,size_remove_mem he], 
+end
+
 
 end numbers 
 

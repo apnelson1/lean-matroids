@@ -56,7 +56,19 @@ by rwa [singleton_subset_iff, mem_singleton_iff] at hef
 lemma nonmem_disjoint {e : A} {X : set A}: 
   e ∉ X → ({e} ∩ X : set A) = ∅ :=
 by tidy
-  
+
+@[simp] lemma set.sep_eq_empty_iff {P : A → Prop}: 
+  {x | P x} = ∅ ↔ ∀ x, ¬P x :=
+by {rw ext_iff, simp, }
+
+@[simp] lemma set.sep_in_eq_empty_iff {P : A → Prop}{X : set A}: 
+  {x ∈ X | P x} = ∅ ↔ ∀ x ∈ X, ¬P x :=
+by {rw ext_iff, simp, }
+
+lemma set.empty_iff_has_no_mem {X : set A}:
+  X = ∅ ↔ ∀ x, x ∉ X :=
+by {split, rintro rfl, simp, intro h, ext, simp, exact h x,   }
+
 lemma nonmem_disjoint_iff {e : A} {X : set A}: 
   e ∉ X ↔ {e} ∩ X = ∅ := 
 by {refine ⟨λ h, nonmem_disjoint h, λ h he, _⟩, 

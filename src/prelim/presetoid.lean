@@ -1,4 +1,4 @@
-import tactic 
+import tactic .single 
 
 /- WIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
 that it is transitive and symmetric -/
@@ -8,67 +8,109 @@ noncomputable theory
 
 open set function 
 
-class presetoid (α : Type) := 
-(r : α → α → Prop)
-(r_transitive : transitive r)
-(r_symmetric : symmetric r)
+structure presetoid (α : Type) := 
+(rel : α → α → Prop)
+(rel_transitive : transitive rel)
+(rel_symmetric : symmetric rel)
 
-variables {α : Type}[presetoid α]
+variables {α : Type}{a b c : α}{s : set α}(S : presetoid α) 
 
 namespace presetoid 
 
 def kernel : set α := 
-  {x : α | ¬r x x}
+  {x : α | ¬S.rel x x}
 
---def nontriv (α : Type)[presetoid α] := {a : α // r a a}
+lemma mem_kernel_iff : 
+  a ∈ S.kernel ↔ ¬S.rel a a := 
+by simp [kernel]
 
---instance coe_val : has_coe (nontriv α) α := ⟨subtype.val⟩  
+def cl (a : α) : set α :=
+  { x : α | S.rel x a }
 
---instance setoid_of_presetoid : setoid {x : α // r x x} := 
+def is_class (s : set α) : Prop := 
+  nonempty s ∧ ∃ a, s = S.cl a 
 
-def class_of (a : α) : set α :=
-  { x : α | r x a }
+lemma is_class_def {s : set α}: 
+  S.is_class s ↔ (nonempty s ∧ ∃ a, s = S.cl a) :=
+iff.rfl 
 
-def is_class (X : set α) : Prop := 
-  ∃ a, r a a ∧ X = class_of a 
+def classes : set (set α) := 
+  { X | S.is_class X }
 
---def classes : set (set α) := 
---  { S : set α | is_class S }
+@[trans] lemma trans (hab : S.rel a b)(hbc : S.rel b c) : 
+  S.rel a c :=
+S.rel_transitive hab hbc
 
-def eqv_class (α : Type)[presetoid α]: Type := 
-  { S : set α // is_class S}
+@[symm] lemma symm (hab : S.rel a b):
+  S.rel b a :=
+S.rel_symmetric hab 
 
-def eqv_classes (α : Type)[presetoid α] : set (set α) := 
-  { S : set α | is_class S }
+def rel_self_of_rel (ha : S.rel a b): 
+  S.rel a a := 
+S.trans ha (S.symm ha)
 
-instance coe_set : has_coe (eqv_class α) (set α) := coe_subtype 
+@[simp] lemma cl_eq_empty_iff: 
+  S.cl a = ∅ ↔ ¬S.rel a a := 
+begin
+  rw [cl, sep_eq_empty_iff, ← not_iff_not],
+  push_neg, 
+  exact ⟨λ h, let ⟨x,hx⟩ := h in S.rel_self_of_rel (S.symm hx), λ h, ⟨_,h⟩⟩, 
+end
 
-@[trans] lemma trans {a b c : α}(hab : r a b)(hbc : r b c) : 
-  r a c :=
-r_transitive hab hbc
 
-@[symm] lemma symm {a b : α}(hab : r a b):
-  r b a :=
-r_symmetric hab 
-
-lemma rel_comm {a b : α}: 
-  r a b ↔ r b a := 
+lemma rel_comm: 
+  S.rel a b ↔ S.rel b a := 
 by {split; {intro, symmetry, assumption}} 
 
-lemma mem_class_of_iff {a b : α}: 
-  a ∈ class_of b ↔ r a b := 
-by rw [class_of, mem_set_of_eq]
+lemma mem_cl_iff: 
+  a ∈ S.cl b ↔ S.rel a b := 
+by rw [cl, mem_set_of_eq]
 
-lemma class_of_eq_class_of_iff {a b :  α}(ha : r a a):
-  class_of a = class_of b ↔ r a b := 
+lemma rel_of_mems_cl (ha : a ∈ S.cl c)(hb : b ∈ S.cl c):
+  S.rel a b :=
+S.trans (S.mem_cl_iff.mp ha) (S.symm (S.mem_cl_iff.mp hb))
+
+lemma rel_of_mems_class {s : set α}(hs : S.is_class s)(ha : a ∈ s)(hb : b ∈ s):
+  S.rel a b :=
+by {obtain ⟨-, x, rfl⟩ := hs, exact S.rel_of_mems_cl ha hb}
+
+lemma mem_cl_self_iff: 
+  a ∈ S.cl a ↔ S.rel a a := 
+by rw mem_cl_iff 
+
+lemma is_class_iff_rep {X : set α}: 
+  S.is_class X ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
 begin
-  simp_rw [class_of, ext_iff, mem_set_of_eq],
+  refine ⟨λ h, _, λ h, _⟩,
+  { obtain ⟨⟨b⟩, ⟨a,rfl⟩⟩ := h, 
+    exact ⟨a, S.rel_self_of_rel (S.mem_cl_iff.mp (S.symm b.2)), rfl⟩}, 
+  obtain ⟨a, ⟨ha,rfl⟩⟩ := h, 
+  exact ⟨⟨⟨a,S.mem_cl_iff.mpr ha⟩⟩,a,rfl⟩,
+end
+
+@[simp] lemma mem_classes_iff {X : set α}: 
+  X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
+by rw [classes, mem_set_of_eq, is_class_iff_rep]
+
+
+lemma cl_eq_cl_iff (ha : S.rel a a):
+  S.cl a = S.cl b ↔ S.rel a b := 
+begin
+  simp_rw [cl, ext_iff, mem_set_of_eq],
   refine ⟨λ h, by rwa ←h a, λ h, λ x, _⟩,
-  have := symm h, 
+  have := S.symm h, 
   split; {intro, transitivity; assumption}, 
 end
 
-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α}(hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty): 
+def cl_eq_cl_of_rel (h : S.rel a b): 
+  S.cl a = S.cl b :=
+begin
+  have := S.symm h, 
+  refine ext_iff.mpr (λ x, ⟨λ h, _, λ h, _⟩);
+  {rw mem_cl_iff at *, transitivity; assumption}, 
+end 
+
+/-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α}(hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty): 
   C₁ = C₂ := 
 begin
   cases C₁ with C₁ hC₁, cases C₂ with C₂ hC₂, 
@@ -78,17 +120,28 @@ begin
   rw [subtype.mk_eq_mk, class_of_eq_class_of_iff hx₁], 
   rw mem_class_of_iff at h₁ h₂, 
   transitivity, exact symm h₁, assumption, 
-end
+end-/
 
 lemma eqv_classes_pairwise_disj : 
-  pairwise_disjoint (eqv_classes α) :=
+  pairwise_disjoint (S.classes) :=
 begin
   intros C₁ hC₁ C₂ hC₂ hC₁C₂, 
-  by_contra hn, rw [disjoint_iff_inter_eq_empty] at hn,  
-  refine hC₁C₂ _,
-  have := @classes_eq_of_nonempty_inter _ _ ⟨C₁,hC₁⟩ ⟨C₂, hC₂⟩, 
-  simp_rw [subtype.coe_mk, subtype.mk_eq_mk] at this, 
-  exact this (ne_empty_iff_nonempty.mp hn), 
+  refine disjoint_left.mpr (λ a ha₁ ha₂, hC₁C₂ _), 
+  obtain ⟨⟨x₁,h₁,rfl⟩,⟨x₂,h₂,rfl⟩⟩ := ⟨S.mem_classes_iff.mp hC₁, S.mem_classes_iff.mp hC₂⟩, 
+  rw mem_cl_iff at ha₁ ha₂, 
+  rw (S.cl_eq_cl_iff h₁),  
+  transitivity, symmetry, exact ha₁, assumption, 
+end
+
+lemma sUnion_classes_eq_compl_kernel : 
+  ⋃₀ S.classes = S.kernelᶜ :=
+begin
+  ext x, 
+  simp only [kernel, exists_prop, not_not, mem_set_of_eq, mem_classes_iff, mem_compl_eq],  
+  split, 
+  { rintro ⟨P, ⟨a, ha, rfl⟩, haP⟩, 
+    exact S.rel_self_of_rel (S.mem_cl_iff.mp haP), },
+  exact λ hx, ⟨S.cl x, ⟨_, hx,rfl⟩ , S.mem_cl_iff.mp hx⟩, 
 end
 
 

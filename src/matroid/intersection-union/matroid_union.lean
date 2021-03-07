@@ -4,8 +4,10 @@
   sets are the independent sets of a matroid on U. Then it generalizes the latter result to a 
   general list of matroids; the former is todo but shouldn't be too bad.  -/
 
+-- somewhat broken due to extensive refactoring; needs work 
+
 import prelim.minmax prelim.setlist 
-import matroid.constructions matroid.submatroid.projection  .matroid_inter .basic
+import matroid.submatroid.projection  .matroid_inter .basic
 import algebra.big_operators
 import set_tactic.solver
 
@@ -133,7 +135,7 @@ begin
   convert rfl, 
   ext Bp, 
   rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,   
-  dsimp [union_size,inter_size] at ⊢ hB,
+  dsimp [union_size,inter_size] at ⊢,
   linarith [size_basis hB.1, size_basis hB.2, size_modular B₁ B₂, size_induced_partition_inter B₁ B₂], 
 end 
 
@@ -283,7 +285,10 @@ begin
   refine ⟨λ h, ⟨I₁,I₂ \ I₁, hempty_indep,_,_,_⟩, λ h, _⟩, 
   from indep_of_subset_indep (diff_subset I₂ I₁) hindep_of_subset_indep, 
   dsimp only [union_size] at h,  rw [eq_of_eq_size_subset_iff hss] at h, rw ←h, 
-  simp only [diff_eq, union_inter_compl_self],  apply inter_diff, 
+  rw ←union_diff_absorb, 
+  --simp only [diff_eq], 
+  --rw ← diff_eq, 
+  apply inter_diff, 
   rcases h with ⟨I₁',I₂', ⟨h11,h12,h21,h22⟩⟩, 
   subst h21, 
   refine le_antisymm (size_monotone hss) _ , 

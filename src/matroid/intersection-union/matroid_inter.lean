@@ -4,8 +4,9 @@ all X ⊆ U. The proof is really by induction on the size of the ground set, but
 instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
 projections of M₁ and M₂.  -/
 
-import matroid.constructions matroid.submatroid.projection 
-import prelim.minmax .basic 
+import matroid.submatroid.projection 
+import prelim.minmax 
+import .basic 
 
 open_locale classical 
 noncomputable theory 
