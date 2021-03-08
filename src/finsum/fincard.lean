@@ -22,6 +22,20 @@ lemma fincard_t_eq_sum_ones (α : Type*):
   fincard_t α = ∑ᶠ (x : α), 1 := 
 by rw [fincard_t, fincard_def, finsum_eq_finsum_in_univ]
 
+lemma fincard_eq_finset_card' (s : set α)(hs : s.finite):
+  fincard s = finset.card (hs.to_finset) :=
+begin
+  convert (finset.card_eq_sum_ones (hs.to_finset)).symm, 
+  exact finsum_in_eq_finset_sum''' (1 : α → ℕ) hs, 
+end
+
+lemma fincard_eq_finset_card (s : set α)[fintype α]: 
+  fincard s = s.to_finset.card := 
+begin
+  convert (finset.card_eq_sum_ones (s.to_finset)).symm, 
+  exact finsum_in_eq_finset_sum' (1 : α → ℕ) _, 
+end
+
 @[simp] lemma support_const [has_zero β]{b : β}(hb : b ≠ 0): 
   function.support (λ x : α, b) = univ :=
 by {ext, simp [hb], }

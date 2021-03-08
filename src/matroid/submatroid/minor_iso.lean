@@ -210,8 +210,14 @@ def con_emb.to_minor_emb {N : matroid β}{M : matroid α}(ce : con_emb N M) : (m
     exact nonmem_of_mem_disjoint (mem_range_self _) (ce.disj), 
   end⟩}
 
+lemma con_emb.rank_le_rank_image {N : matroid β}{M : matroid α}(emb : con_emb N M)(X : set β):
+  N.r X ≤ M.r (emb.e '' X) :=
+by {rw emb.on_rank, linarith [M.rank_subadditive (emb.e '' X) emb.C ]}
 
-
+lemma con_emb.nonloop_of_nonloop {N : matroid β}{M : matroid α}(emb : con_emb N M)
+{x : β}(he : N.is_nonloop x) :
+  M.is_nonloop (emb.e x) := 
+nonloop_of_one_le_rank (by {rw [←rank_nonloop he, ← image_singleton], apply emb.rank_le_rank_image,  })
 
 /-- an embedding of N into M as a restriction -/
 @[ext] structure restr_emb (N : matroid β)(M : matroid α) := 
@@ -247,7 +253,9 @@ def inj_emb.to_restr_emb {N : matroid β}{M : matroid α}{ie : inj_emb N M }: re
     split; tidy, 
   end ⟩ } 
 
-
+def restr_emb.to_minor_emb {N : matroid β}{M : matroid α}(re : restr_emb N M): 
+  minor_emb N M := 
+⟨re.P, re.i⟩ 
 
 /-- the property of N being isomorphic to a minor of M-/
 def is_iminor_of (N : matroid β)(M : matroid α) := nonempty (minor_emb N M)
@@ -310,6 +318,15 @@ begin
     λ X, by {simp [hr.1 X, subset_iff_inter_eq_left.mp (image_subset_range φ X)],}, ⟩⟩, 
 end
 
+lemma iminor_of_iff_exists_con_emb {N : matroid β}{M : matroid α}:
+  N.is_iminor_of M ↔ nonempty (con_emb N M) :=
+begin
+  rw is_iminor_of, split, 
+  { rintro ⟨me⟩, exact ⟨me.to_con_emb⟩, },
+  { rintro ⟨ce⟩, exact ⟨ce.to_minor_emb⟩, }, 
+end
+
+
 
 lemma iminor_of_iff_exists_good_con_emb {N : matroid β}{M : matroid α}:
   N.is_iminor_of M ↔ ∃ em : con_emb N M, (M.is_indep em.C ∧ M.r em.C = M.r univ - N.r univ) :=
@@ -324,6 +341,8 @@ begin
   rw [← em.i.symm.on_rank, as_mat_r], 
   apply congr_arg, simp only [equiv.range_eq_univ, set.image_univ], unfold_coes, simp, 
 end
+
+
 
 
 
@@ -359,6 +378,10 @@ def minor_emb_of_minor_emb_of_isom {N : matroid α}{M' : matroid β}{M : matroid
   P := (M : matroid_in γ).to_minor_pair (i.equiv '' e.P.C) (i.equiv '' e.P.D),
   i := isom_to_matroid_of_isom ((e.P.minor_matroid_to_minor_iso i).symm.trans (isom_of_isom_to_matroid e.i))}
     
+lemma iminor_of_irestr {N : matroid α}{M : matroid β}(h : N.is_irestr_of M): 
+  N.is_iminor_of M :=
+let ⟨re⟩ := h in ⟨restr_emb.to_minor_emb re⟩ 
+
 lemma iminor_of_isom_iminor {N : matroid α}{N' : matroid β}{M : matroid γ}
 (hNN' : N.is_isom N' )(hN'M : N'.is_iminor_of M):
   N.is_iminor_of M := 

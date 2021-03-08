@@ -64,6 +64,7 @@ size_subtype_img X
 by {rw ← size_image_coe (coe ⁻¹' X : set E), simp, }
 
 
+
 end size_lemmas 
 
 instance coe_set_from_subtype {β : Type}{S : set β}: has_coe (set S) (set β) := ⟨λ X, coe '' X⟩ 

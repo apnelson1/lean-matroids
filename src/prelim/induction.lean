@@ -91,6 +91,22 @@ begin
   from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl,  
 end
 
+lemma min_counterexample_nonneg_int_param {α : Type}(P : α → Prop)(f : α → ℤ)(f_nonneg : ∀ a : α, 0 ≤ f a):
+  ¬ (∀ a, P a) → ∃ x, (¬ P x ∧ ∀ x', f x' < f x → P x') :=
+begin
+  contrapose!, 
+  refine λ h, nonneg_int_strong_induction_param P f f_nonneg 
+    (λ a ha, by_contra (λ hn, _)) 
+    (λ a ha h', by_contra (λ hn, (let ⟨a',h₁,h₂⟩ := h _ hn in h₂ (h' _ h₁)))),
+  obtain ⟨a', h', -⟩ :=  h _ hn,
+  have := f_nonneg a', 
+    -- linarith should work here before the rw but for some reason it doesn't. Look into this.
+  rw ha at h',
+  linarith,   
+end
+
+
+
 lemma induction_set_size_remove (P : set A → Prop): 
   (P ∅) → (∀ (X: set A)(e : X), P (X \ {e}) → P X) → (∀ X, P X) := 
 begin
@@ -128,6 +144,8 @@ begin
   convert h (X \ {e}) e _ (hX' _ _);
   simp [insert_eq_of_mem he, int.zero_lt_one,size_remove_mem he], 
 end
+
+
 
 
 end numbers 

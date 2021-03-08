@@ -37,7 +37,6 @@ iff.rfl
 def classes : set (set α) := 
   { X | S.is_class X }
 
-
 lemma mem_classes_iff_is_class {X : set α}: 
   X ∈ S.classes ↔ S.is_class X :=
 by simp [classes]
@@ -105,6 +104,8 @@ lemma cl_is_class (ha : S.rel a a):
 S.is_class_iff_rep.mpr ⟨a, ha, rfl⟩ 
 
 
+
+
 @[simp] lemma mem_classes_iff {X : set α}: 
   X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
 by rw [classes, mem_set_of_eq, is_class_iff_rep]
@@ -125,6 +126,13 @@ begin
   refine ext_iff.mpr (λ x, ⟨λ h, _, λ h, _⟩);
   {rw mem_cl_iff at *, transitivity; assumption}, 
 end 
+
+lemma class_eq_cl_mem (hs : S.is_class s)(ha : a ∈ s):
+  s = S.cl a := 
+begin
+  obtain ⟨b, hb, rfl⟩ := S.is_class_iff_rep.mp hs, 
+  exact (S.cl_eq_cl_of_rel (S.mem_cl_iff.mp ha)).symm, 
+end
 
 /-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α}(hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty): 
   C₁ = C₂ := 

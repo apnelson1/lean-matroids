@@ -33,14 +33,24 @@ begin
   rwa set.mem_empty_eq at hx, 
 end
 
+
+
 @[simp] lemma finsum_in_zero: 
   ∑ᶠ i in s, (0 : M) = 0 := 
 by {rw finsum_in_inter_support, convert finsum_in_empty, simp}
+
 
 @[simp] lemma finsum_zero: 
   ∑ᶠ (i : α), (0 : M) = 0 := 
 by rw [finsum_eq_finsum_in_univ, finsum_in_zero]
 
+@[simp] lemma finsum_fin_zero {f : fin 0 → M}: 
+  ∑ᶠ (i : fin 0), f i = 0 := 
+by {convert finsum_zero}
+
+@[simp] lemma finsum_fin_one {f : fin 1 → M}: 
+  ∑ᶠ (i : fin 1), f i = f (0 : fin 1) := 
+by {convert finsum_singleton, simp,} 
 
 lemma finsum_in_eq_of_eq (h : ∀ i ∈ s, f i = g i):
   ∑ᶠ i in s, f i = ∑ᶠ i in s, g i :=

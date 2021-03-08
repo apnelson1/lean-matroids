@@ -11,19 +11,27 @@ noncomputable theory
 
 namespace partition
 
-variables {α ι : Type}[fintype α](f : α → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+variables {α ι : Type}[fintype α](f : α → ι){b : ι → ℤ}
 
 /-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/
-def M : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
+def M (f : α → ι)(b : ι → ℤ) : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (b i))
 
-lemma indep_iff (X : set α) : 
-  (M f hb).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
-by {rw [M, idsum.indep_iff], simp_rw [unif.uniform_matroid_indep_iff, idsum.size_coe_eq]}
+lemma indep_iff (hb : ∀ i, 0 ≤ b i)(X : set α) : 
+  (M f b).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
+begin
+  simp_rw [M, idsum.indep_iff, ← idsum.size_coe_eq], 
+  refine ⟨λ h, λ i, _, λ h, λ i, _⟩, 
+  {exact (unif.uniform_matroid_indep_iff (hb i)).mp (h i), }, 
+  exact (unif.uniform_matroid_indep_iff (hb i)).mpr (h i), 
+end 
 
-lemma r_eq (X : set α): 
-  (M f hb).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
-by {rw [M, idsum.r_eq], simp_rw [unif.uniform_matroid_rank, idsum.size_coe_eq]}
+lemma r_eq (hb : ∀ i, 0 ≤ b i)(X : set α) : 
+  (M f b).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
+begin
+  simp_rw [M, idsum.r_eq, ← idsum.size_coe_eq],
+  convert rfl, ext i, rw unif.uniform_matroid_rank (hb i), 
+end 
 
 /- in the partition matroid where the upper bounds are all at most one
 (such as the parallel partition matroid), the rank of a set is the number of 
@@ -71,16 +79,18 @@ lemma partition_fn_nonneg:
   ∀ (X : set α), 0 ≤ partition_fn X := 
 λ X, by {unfold partition_fn, split_ifs; norm_num,}
 
-def M : matroid α := partition.M S.cl partition_fn_nonneg
+def M : matroid α := partition.M S.cl partition_fn
 
 lemma M_def : 
-  M S = partition.M S.cl partition_fn_nonneg := 
+  M S = partition.M S.cl partition_fn := 
 rfl 
 
 lemma r_eq (X : set α): 
   (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty}:= 
 begin
-  rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], swap, apply_instance, 
+  rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], 
+  rotate, apply_instance, apply partition_fn_nonneg, 
+  --{ swap, apply_instance} swap, apply partition_fn_nonneg}, 
   convert rfl, funext, 
   rw partition_fn, dsimp only [id.def], split_ifs, 
   { subst h, 
@@ -115,6 +125,7 @@ lemma indep_iff (I : set α):
   (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, size (I ∩ P) ≤ 1 :=
 begin
   rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 
+  swap, apply partition_fn_nonneg, 
   simp only [and_imp, presetoid.mem_classes_iff, exists_imp_distrib, S.mem_kernel_iff, not_imp_not], 
   refine ⟨λ h, ⟨by {simpa using h ∅}, _⟩, λ h P, _⟩, 
   { rintros P x hx rfl, 

@@ -7,7 +7,7 @@ open_locale classical
 open set 
 namespace matroid 
 
-variables {α β : Type}[fintype α][fintype β]
+variables {α β : Type}[fintype α][fintype β]{M : matroid α}{e f : α}{S X : set α}
 
 section simple 
 
@@ -30,6 +30,32 @@ lemma simple_of_subset_simple {M : matroid α}{S T : set α}(hT : M.is_simple_se
 
 def is_simple (M : matroid α) :=
   is_simple_set M univ 
+
+lemma rank_singleton_of_simple (h : M.is_simple)(e : α): 
+  M.r {e} = 1 :=
+by {rw [←size_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw size_singleton, norm_num }
+
+lemma rank_pair_of_simple (h : M.is_simple)(hef : e ≠ f): 
+  M.r {e,f} = 2 :=
+by rw [indep_iff_r.mp (h {e,f} (subset_univ _) (by rw size_pair hef)), size_pair hef]
+
+lemma eq_of_rank_one_simple (h : M.is_simple)(hef : M.r {e,f} = 1): 
+  e = f := 
+by_contra (λ hn, by {rw rank_pair_of_simple h hn at hef, norm_num at hef })
+
+lemma eq_of_rank_le_one_simple (h : M.is_simple)(hef : M.r {e,f} ≤ 1): 
+  e = f := 
+begin
+  refine eq_of_rank_one_simple h (le_antisymm hef _), 
+  rw ← rank_singleton_of_simple h e,
+  apply rank_mono, 
+  simp,  
+end
+
+
+lemma loopless_of_simple (hM : M.is_simple):
+  M.is_loopless := 
+λ X hX hs, hM X hX (by linarith)
 
 lemma simple_iff_univ_simple {M : matroid α}: 
   is_simple M ↔ is_simple_set M univ := 
@@ -71,6 +97,10 @@ lemma nonloop_of_mem_loopless_set {M : matroid α}{S : set α}{e : α}
   M.is_nonloop e := 
 by {rw loopless_set_iff_all_nonloops at h, tauto, }
 
+lemma nonloop_of_simple {M : matroid α}(hM : M.is_simple)(e : α): 
+  M.is_nonloop e :=
+nonloop_of_mem_loopless_set (loopless_of_simple hM) (mem_univ e)
+
 lemma exists_loop_of_not_loopless_set {M : matroid α}{S : set α}(hS : ¬M.is_loopless_set S): 
   ∃ e ∈ S, M.is_loop e :=
 begin
@@ -98,7 +128,7 @@ lemma simple_set_iff_no_loops_or_parallel_pairs {M : matroid α}{S : set α}:
 begin
   refine ⟨λ h, ⟨λ X hXS hX, h X hXS (by linarith [hX]),λ e f he hf hef, by_contra (λ hn, _)⟩, λ h, λ X hXS hX, _⟩, 
   { rcases hef with ⟨he,hf,hef⟩, 
-    have hef' := size_union_distinct_singles hn, 
+    have hef' := size_pair hn, 
     linarith [r_indep (h {e,f} (λ x, by {simp, rintros (rfl | rfl); assumption, }) (by linarith))]},
   rcases int.nonneg_le_two_iff (size_nonneg X) hX with (h0 | h1 | h2), 
   { rw size_zero_iff_empty at h0, rw h0, apply M.empty_indep, },
@@ -146,6 +176,8 @@ lemma si_r (M : matroid α) (S : set M.parallel_class):
   M.si.r S = M.r (union_parallel_classes S) := 
 rfl 
 
+
+
 /- it is more convenient to think of the simplification rank in terms of a fixed transversal of the parallel classes-/
 lemma si_r_transversal {M : matroid α}(f : M.transversal)(S : set M.parallel_class): 
   (si M).r S = M.r (f '' S) := 
@@ -176,6 +208,17 @@ begin
   let f := choose_transversal M, 
   exact ⟨⟨f, transversal_inj f⟩, λ S, by {rw [si_r_transversal f], refl}⟩, 
 end
+
+lemma si_is_iminor (M : matroid α): 
+  (si M).is_iminor_of M := 
+iminor_of_irestr M.si_is_irestr 
+
+lemma si_r_eq_r_parallel_cl_image (M : matroid α)(X : set α):
+  (si M).r (M.parallel_cl_image_of X) = M.r X :=
+by {rw [si_r, ← rank_eq_rank_parallel_cl_image_of]} 
+
+
+
 
 end simple 
 
@@ -227,13 +270,65 @@ begin
 end
 
 
-/- TODO - a simple matroid is a minor of M iff if it is a minor of si M . 
+/-- a simple matroid is a minor of M iff if it is a minor of si M . -/
 
 lemma iminor_iff_iminor_si {N : matroid β}{M : matroid α}(hN : N.is_simple):
-  N.is_iminor_of M ↔ N.is_iminor_of (si M) :=
+  N.is_iminor_of (si M) ↔ N.is_iminor_of M :=
 begin
-  sorry, 
-end -/ 
+  refine ⟨λ h, iminor_trans h M.si_is_iminor, λ h, iminor_of_iff_exists_embedding.mpr _⟩,
+  
+  obtain ⟨ce⟩ := iminor_of_iff_exists_con_emb.mp h, 
+  -- all elements of N map to nonloops of M...
+  have hnl : ∀ x, M.is_nonloop (ce.e x), from 
+    λ x, ce.nonloop_of_nonloop (nonloop_of_simple hN x), 
+  
+  -- so we can define a map φ' taking β to nonloops of M 
+  set φ' : β → M.nonloop := λ x, ⟨ce.e x, hnl x⟩ with hφ', 
+
+  -- the contract_set is the parallel_cl image of C
+  set C' := M.parallel_cl_image_of ce.C with hC', 
+
+  -- the contract map is basically (parallel_class_of) ∘ φ, modulo punctuation 
+  refine ⟨⟨λ b, parallel_class_of' (φ' b), λ x y hxy, _⟩, C', _, λ X, _⟩, 
+  
+  -- the contract map is injective 
+  { dsimp only at hxy, 
+    simp only [hφ', parallel_class_of'_eq, hφ', subtype.mk_eq_mk, subtype.coe_mk] at hxy, 
+    have hr := ce.rank_le_rank_image {x,y}, 
+    rw [image_pair, (parallel_of_parallel_cl_eq_left (hnl x) hxy).2.2]  at hr, 
+    exact eq_of_rank_le_one_simple hN hr},
+  
+  -- the contract set is disjoint from the contract map's range 
+  { simp only [parallel_class_of'_eq, function.embedding.coe_fn_mk, subtype.coe_mk, 
+      ←disjoint_iff_inter_eq_empty, disjoint_left,  forall_apply_eq_imp_iff', mem_range, 
+      exists_imp_distrib, hC', mem_parallel_cl_image_of_iff], 
+    rintros b ⟨a, ha⟩, 
+    rw [mem_inter_iff, mem_parallel_cl] at ha, 
+    have hr := ha.2.2.2, 
+    have hr' := ce.on_rank {b}, 
+    rw [rank_nonloop (nonloop_of_simple hN b), union_comm, image_singleton, union_singleton, 
+    rank_eq_rank_parallel_ext ha.1 ha.2] at hr', linarith,}, 
+
+  -- the rank functions agree. A bit nasty 
+  convert ce.on_rank X using 2, swap, 
+  { rw hC', exact M.si_r_eq_r_parallel_cl_image _, },  
+  rw [hC', ← M.si_r_eq_r_parallel_cl_image], 
+  convert rfl, 
+  ext P, rcases P with ⟨P, hP⟩,  
+  simp only [mem_parallel_cl_image_of_iff, mem_image, parallel_class_of'_eq, 
+  mem_union_eq, subtype.mk_eq_mk, function.embedding.coe_fn_mk, subtype.coe_mk, 
+  nonempty_inter_iff_exists_right], 
+  split, 
+  { rintro ⟨⟨x,hx⟩, (⟨b, hbX, hbx⟩  | hxc )⟩, 
+    { refine or.inl ⟨b, hbX, _⟩,
+      rw [hbx, subtype.coe_mk, parallel_class_eq_cl_mem hP hx]},
+    exact or.inr ⟨_, hxc⟩,}, 
+  rintro (⟨b, ⟨hb, rfl⟩⟩ | ⟨x, hx⟩), 
+  { refine ⟨⟨ce.e b,_⟩, or.inl ⟨b,hb,rfl⟩⟩,
+    rw [mem_parallel_cl, parallel_refl_iff_nonloop], 
+    apply ce.nonloop_of_nonloop (nonloop_of_simple hN _) }, 
+  exact ⟨x, or.inr hx⟩, 
+end 
 
 
 end simple_minor 

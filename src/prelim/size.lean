@@ -72,6 +72,15 @@ lemma size_set_subtype_eq_size_set (P Q : α → Prop):
 by {simp_rw ← finsum_ones_eq_size, apply finsum_set_subtype_eq_finsum_set (1 : α → ℤ)} 
 
 
+@[simp] lemma size_fin (n : ℕ): 
+  type_size (fin n) = n := 
+begin
+  rw [type_size, size], norm_num, 
+  convert fintype.card_fin n, --convert finset.card_fin n, 
+  rw fincard_eq_finset_card, 
+  convert finset.card_univ, 
+  convert set.to_finset_univ, 
+end
 
 
 -- size {P ∈ M.ps.classes | (X ∩ P).nonempty} = size {P : M.parallel_class | (X ∩ ↑P).nonempty}
@@ -190,6 +199,9 @@ lemma one_le_size_iff_nonempty {X : set α} : X.nonempty ↔ 1 ≤ size X :=
 lemma one_le_size_univ_of_nonempty (hα: nonempty α): 1 ≤ size (univ : set α) := 
 by rwa [nonempty_iff_univ_nonempty, one_le_size_iff_nonempty] at hα
   --one_le_size_iff_nonempty.mp hα 
+
+lemma one_le_type_size_of_nonempty (hα: nonempty α): 1 ≤ type_size α  := 
+one_le_size_univ_of_nonempty hα
 
 lemma size_strict_monotone {X Y : set α} : X ⊂ Y → size X < size Y := 
 λ hXY, by {rw [size_induced_partition Y X, inter_comm, subset_iff_inter_eq_left.mp hXY.1], 
@@ -339,7 +351,7 @@ lemma exchange_pair_sizes {X Y : set α}{e f : α}:
   size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
 λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_insert hf.1 he.2, size_remove_insert he.1 hf.2], exact h}
 
-lemma size_union_distinct_singles {e f : α}: 
+lemma size_pair {e f : α}: 
   e ≠ f → size ({e,f} : set α) = 2 :=
 begin
   intros hef, 
@@ -359,22 +371,22 @@ begin
     refine ⟨e,f,he,mem_of_mem_of_subset hf (diff_subset _ _), _⟩, 
     rintro rfl, simpa using hf,},
   rintro ⟨e,f,he,hf,hef⟩, 
-  rw ← size_union_distinct_singles hef, 
+  rw ← size_pair hef, 
   apply size_monotone, 
   rw pair_subset_iff, tauto, 
 end
 
-lemma size_union_singles_lb (e f : α): 
+lemma size_pair_lb (e f : α): 
   1 ≤ size ({e,f} : set α) := 
 by {rw ←union_singletons_eq_pair, 
     linarith [size_monotone (@subset_union_left α {e} {f}),size_singleton e],}
 
-lemma size_union_singles_ub (e f : α):
+lemma size_pair_ub (e f : α):
   size ({e,f} : set α) ≤ 2 := 
 begin
   by_cases e = f, 
   rw [h, pair_eq_singleton, size_singleton], linarith, 
-  linarith [size_union_distinct_singles h],
+  linarith [size_pair h],
 end 
 
 lemma equal_or_single_in_diff {X Y : set α} :
@@ -397,7 +409,7 @@ begin
   cases this with e he,
   refine ⟨e, ⟨this, λ x hx, _⟩⟩,
   by_contra, 
-  have hu := size_union_distinct_singles h, 
+  have hu := size_pair h, 
   have hss := union_subset_of_mem_of_mem hx he, 
   have hs := size_monotone hss,
   rw [union_singletons_eq_pair, hu, hX] at hs, 
@@ -427,11 +439,19 @@ begin
   obtain ⟨e,f,he,hf,hef⟩ := hn, exact hef (h e f he hf),   
 end
 
+
+lemma eq_of_pair_size_one {e f : α}(h : size ({e,f} : set α) = 1 ): 
+  e = f :=
+by {refine size_le_one_iff_mem_unique.mp (by rw h) _ _ _ _; simp} 
+
+
+
+
 lemma size_eq_two_iff_pair {X : set α}:
   size X = 2 ↔ ∃ (e f : α), e ≠ f ∧ X = {e,f} :=
 begin
   refine ⟨λ h, _, λ h, _⟩, swap, 
-  { rcases h with ⟨e,f,hef,rfl⟩, apply size_union_distinct_singles hef},
+  { rcases h with ⟨e,f,hef,rfl⟩, apply size_pair hef},
   cases size_pos_has_mem (by {rw h, norm_num} : 0 < size X) with e he,
   cases size_pos_has_mem (by {rw [size_remove_mem he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
   refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
@@ -440,6 +460,6 @@ begin
     apply union_of_subsets (singleton_subset_iff.mpr he),  
     simp only [set.mem_diff, set.mem_singleton_iff] at hf, 
     exact singleton_subset_iff.mpr hf.1, },
-  rwa [eq_comm, size_union_distinct_singles  (ne.symm (ne_of_mem_diff hf))],  
+  rwa [eq_comm, size_pair  (ne.symm (ne_of_mem_diff hf))],  
 end 
 

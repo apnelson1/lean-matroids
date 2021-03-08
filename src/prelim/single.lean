@@ -274,6 +274,11 @@ begin
   rw this, 
 end
 
+
+lemma pair_eq_union (e f : α):
+  ({e,f} : set α) = {e} ∪ {f} :=
+by {ext, simp, tauto, }
+
 lemma singleton_subset_pair_left (e f : α):
   ({e} : set α) ⊆ {e,f} := 
 λ x, or.intro_left _

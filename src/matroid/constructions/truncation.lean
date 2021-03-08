@@ -8,19 +8,19 @@ namespace trunc
 
 variables {α : Type}[fintype α]
 
-def indep (M : indep_family α) {n : ℤ}(hn : 0 ≤ n) : set α → Prop :=  
-  λ X, M.indep X ∧ size X ≤ n
+def indep (M : indep_family α) (n : ℤ) : set α → Prop :=  
+  λ X, M.indep X ∧ size X ≤ max 0 n 
 
-lemma I1 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n): 
-  satisfies_I1 (trunc.indep M hn) := 
-⟨M.I1, by {rw size_empty, assumption}⟩
+lemma I1 (M : indep_family α) (n : ℤ): 
+  satisfies_I1 (trunc.indep M n) := 
+⟨M.I1, by {rw size_empty, apply le_max_left, }⟩
 
-lemma I2 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n) : 
-  satisfies_I2 (trunc.indep M hn) := 
+lemma I2 (M : indep_family α) (n : ℤ) : 
+  satisfies_I2 (trunc.indep M n) := 
 λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
-lemma I3 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n): 
-  satisfies_I3 (trunc.indep M hn) := 
+lemma I3 (M : indep_family α) (n : ℤ): 
+  satisfies_I3 (trunc.indep M n) := 
 begin
   intros I J hIJ hI hJ, 
   cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
@@ -30,14 +30,15 @@ begin
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
-def tr (M : matroid α){n : ℤ}(hn : 0 ≤ n) : matroid α := 
+def tr (M : matroid α)(n : ℤ) : matroid α := 
   let M_ind := M.to_indep_family in 
-  matroid.of_indep_family ⟨indep M_ind hn, I1 M_ind hn, I2 M_ind hn, I3 M_ind hn⟩
+  matroid.of_indep_family ⟨indep M_ind n, I1 M_ind n, I2 M_ind n, I3 M_ind n⟩
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
 lemma r_eq (M : matroid α){n : ℤ}(hn : 0 ≤ n)(X : set α) :
-  (tr M hn).r X = min n (M.r X) :=
+  (tr M n).r X = min n (M.r X) :=
 begin
+  have hn' : max 0 n = n := max_eq_right hn, 
   apply indep_family.I_to_r_eq_iff.mpr, 
   unfold indep_family.is_set_basis trunc.indep matroid.to_indep_family, 
   simp only [and_imp, not_and, not_le, ne.def, ssubset_iff_subset_ne], 
@@ -47,6 +48,7 @@ begin
   by_cases n ≤ size B,
   rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
   rw hBS at h, 
+  simp_rw hn', 
   refine ⟨B₀, ⟨⟨_,⟨⟨matroid.indep_of_subset_indep hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
   from subset.trans hB₀ hBX, 
   linarith [size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
@@ -61,7 +63,7 @@ begin
 end
 
 lemma weak_image (M : matroid α){n : ℤ}(hn : 0 ≤ n) : 
-  (tr M hn) ≤ M := 
-λ X, by {rw r_eq, simp, tauto,}
+  (tr M n) ≤ M := 
+λ X, by {rw r_eq, simp, tauto, tauto }
 
 end trunc

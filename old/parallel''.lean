@@ -81,11 +81,11 @@ lemma parallel_nl_iff_dep {M: matroid α}{e f : nonloop M} :
   M.parallel_nl e f ↔ (e = f ∨ M.is_dep {e,f}) :=
 begin
   unfold parallel_nl, rw dep_iff_r,  refine ⟨λ h, ((or_iff_not_imp_left.mpr (λ hne, _))), λ h, _ ⟩,
-  have := size_union_distinct_singles (λ h', hne (subtype.ext h')) , 
+  have := size_pair (λ h', hne (subtype.ext h')) , 
   rw h, unfold_coes at *, linarith,  
   cases h, rw [h, pair_eq_singleton], exact f.property, 
   have := rank_two_nonloops_lb e f, 
-  have := size_union_singles_ub e.1 f.1,
+  have := size_pair_ub e.1 f.1,
   unfold_coes at *, rw ←int.le_sub_one_iff at h, linarith, 
 end
 
@@ -124,12 +124,12 @@ begin
   split, 
   { rintros ⟨-,-,hef⟩, 
     by_contra hn, push_neg at hn, cases hn with hne hef',  
-    rw [←indep_iff_not_dep, indep_iff_r, hef, size_union_distinct_singles hne] at hef',
+    rw [←indep_iff_not_dep, indep_iff_r, hef, size_pair hne] at hef',
     norm_num at hef', },
   rintros (heq | hef), rw heq, exact parallel_refl_nonloop hf,
   rw [dep_iff_r, ←int.le_sub_one_iff] at hef, 
   refine ⟨he,hf,_⟩,  
-  linarith [nonloop_iff_r.mp he, M.rank_mono (by tidy: {e} ⊆ {e,f}), size_union_singles_ub e f],   
+  linarith [nonloop_iff_r.mp he, M.rank_mono (by tidy: {e} ⊆ {e,f}), size_pair_ub e f],   
 end
 
 lemma parallel_iff_cct {M: matroid α}{e f : α}(he : M.is_nonloop e)(hf : M.is_nonloop f) : 
