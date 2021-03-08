@@ -12,7 +12,7 @@ noncomputable theory
 
 namespace unif
 
-variables (U : Type)[nonempty (fintype U)]
+variables (U : Type)[fintype U]
 
 def free_matroid_on : matroid U := 
 { r := size,
@@ -58,15 +58,15 @@ by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 def uniform_matroid_on {r : ℤ}(hr : 0 ≤ r) : matroid U := 
   trunc.tr (free_matroid_on U) hr 
 
-@[simp] lemma uniform_matroid_rank {U : Type}[nonempty (fintype U)]{r : ℤ}(hr : 0 ≤ r)(X : set U) :
+@[simp] lemma uniform_matroid_rank {r : ℤ}(hr : 0 ≤ r)(X : set U) :
   (uniform_matroid_on U hr).r X = min r (size X) := 
 by apply trunc.r_eq
 
-lemma uniform_matroid_indep_iff {U : Type}[nonempty (fintype U)](X : set U){r : ℤ}{hr : 0 ≤ r}  : 
+lemma uniform_matroid_indep_iff (X : set U){r : ℤ}{hr : 0 ≤ r}  : 
   is_indep (uniform_matroid_on U hr) X ↔ size X ≤ r := 
 by {rw [indep_iff_r, uniform_matroid_rank], finish}
 
-lemma uniform_dual {U : Type}[nonempty (fintype U)]{r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
+lemma uniform_dual {r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set U)): 
   dual (uniform_matroid_on U hr) 
   = uniform_matroid_on U (by linarith : 0 ≤ size (univ : set U) - r) :=
 begin
@@ -75,14 +75,14 @@ begin
   rw [←min_add_add_left, ←(min_sub_sub_right), min_comm], simp, 
 end
 
-def circuit_matroid_on (hU : nontriv U) : matroid U := 
-  uniform_matroid_on U (by linarith [nontriv_size hU] : 0 ≤ size (univ : set U) - 1)
+def circuit_matroid_on (hU : nonempty U) : matroid U := 
+  uniform_matroid_on U (by linarith [one_le_size_univ_of_nonempty hU] : 0 ≤ size (univ : set U) - 1)
 
-@[simp] lemma circuit_matroid_rank {U : Type}[nonempty (fintype U)](hU : nontriv U)(X : set U):
+@[simp] lemma circuit_matroid_rank (hU : nonempty U)(X : set U):
   (circuit_matroid_on U hU).r X = min (size (univ : set U) - 1) (size X) := 
-uniform_matroid_rank _ _ 
+uniform_matroid_rank U _ X
 
-lemma circuit_matroid_iff_univ_circuit (hU : nontriv U){M : matroid U}:
+lemma circuit_matroid_iff_univ_circuit (hU : nonempty U){M : matroid U}:
   M = circuit_matroid_on U hU ↔ is_circuit M univ := 
 begin
   refine ⟨λ h, _, λ h, _⟩, 

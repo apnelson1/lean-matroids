@@ -1,17 +1,21 @@
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax
-import .parallel .simple .constructions 
+import .parallel .simple matroid.constructions.partition 
 
 noncomputable theory 
 open_locale classical 
 
 open set matroid 
 
-variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
+variables {U V : Type}[fintype U][fintype V]
 
 /-- the 'parallel class matroid' on U in which the rank of a set is the number of parallel classes of M 
 that it intersects-/
 def pc_matroid (M : matroid U) := 
   partition.M M.parallel_cl M.rank_nonneg 
+
+lemma pc_matroid_def (M : matroid U):
+  pc_matroid M = partition.M M.parallel_cl M.rank_nonneg :=
+rfl 
 
 /-- the number of parallel classes that intersect a set X-/
 def matroid.ε (M : matroid U)(X : set U) := (pc_matroid M).r X 
@@ -19,6 +23,12 @@ def matroid.ε (M : matroid U)(X : set U) := (pc_matroid M).r X
 lemma ε_eq_pc_matroid_r (M : matroid U)(X : set U): 
   M.ε X = (pc_matroid M).r X := 
 rfl 
+
+lemma pc_matroid_indep_iff (M : matroid U)(X : set U): 
+  (pc_matroid M).is_indep X ↔ M.is_simple_set X  := 
+begin
+  rw [pc_matroid_def],
+end
 /-
 lemma pc_matroid_indep_iff (M : matroid U)(X : set U): 
   (pc_matroid M).is_indep X ↔ M.is_simple_set X  := 

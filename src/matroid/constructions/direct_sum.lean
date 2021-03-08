@@ -9,7 +9,7 @@ noncomputable theory
 
 namespace idsum 
 
-variables {U ι : Type}[nonempty (fintype U)](f : U → ι)
+variables {U ι : Type}[fintype U](f : U → ι)
 (Rs : ∀ (i : ι), matroid {x // f x = i})
 
 /-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
@@ -96,8 +96,7 @@ lemma indep_iff (X : set U):
   (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
 begin
   simp_rw [indep_iff_r, ← sum_size_fiber_eq_size X f, size_coe_eq, r_eq],
-  rw [finsum_eq_finsum_iff_of_le (rank_finite_supp _ _ _) (size_finite_supp _ _)],  
-    swap, apply_instance,
+  rw [finsum_eq_finsum_iff_of_le (rank_finite_supp _ _ X) (size_finite_supp _ X)],  
   simp_rw [← size_coe_eq], 
   exact λ x, rank_le_size _ _, 
 end

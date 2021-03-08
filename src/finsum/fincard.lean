@@ -1,5 +1,5 @@
 
-import .finsum_more .is_finite 
+import .finsum_more
 
 open_locale classical big_operators 
 noncomputable theory 
@@ -126,7 +126,7 @@ begin
 end
 
 --theorem fincard_univ_eq_sum_fincard_preimage {α β : Type}
---[nonempty (fintype α)]
+--[fintype α]
 
 /-
 

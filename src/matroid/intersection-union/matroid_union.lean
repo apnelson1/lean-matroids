@@ -15,7 +15,7 @@ open_locale classical big_operators
 noncomputable theory 
 open set matroid
 
-variables {U : Type}[nonempty (fintype U)]
+variables {U : Type}[fintype U]
 
 section intersections_of_bases
 
@@ -368,7 +368,7 @@ by {ext x, from classical.some_spec (exists_union_matroid Ms) x}
 lemma union_matroid_rank_eq_pi (Ms : fin n → matroid U):
   (union_matroid Ms).r univ = π Ms := 
 begin
-  unfold π, rw [rank_matroid_as_indep], 
+  unfold π, rw [r_univ_eq_max_size_indep], 
   set φ : (indep_tuple Ms) → (union_matroid Ms).indep := 
   λ Is, ⟨set.Union Is.val, by {rw union_matroid_indep_iff, use Is, }⟩ with hφ, 
   have hφ' : function.surjective φ, 

@@ -5,7 +5,7 @@ open set
 open matroid 
 
 namespace matroid 
-variables {U : Type}[nonempty (fintype U)]
+variables {U : Type}[fintype U]
 
 /-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
 Often more convenient than just contracting C  -/

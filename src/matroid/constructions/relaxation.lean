@@ -11,7 +11,7 @@ noncomputable theory
 
 
 section relax
-variables {U : Type}[nonempty (fintype U)] --[decidable_eq (set U)] 
+variables {U : Type}[fintype U] --[decidable_eq (set U)] 
 
 def relax.r (M : matroid U)(C : set U) : set U → ℤ := 
   λ X, ite (X = C) (M.r X + 1) (M.r X)

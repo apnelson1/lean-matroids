@@ -57,6 +57,11 @@ begin
   exact ⟨λ h, let ⟨x,hx⟩ := h in S.rel_self_of_rel (S.symm hx), λ h, ⟨_,h⟩⟩, 
 end
 
+@[simp] lemma cl_nonempty_iff: 
+  (S.cl a).nonempty ↔ S.rel a a := 
+by {rw [← ne_empty_iff_nonempty, ← @not_not (S.rel a a), not_iff_not], apply cl_eq_empty_iff}
+
+
 
 lemma rel_comm: 
   S.rel a b ↔ S.rel b a := 
@@ -69,6 +74,11 @@ by rw [cl, mem_set_of_eq]
 lemma rel_of_mems_cl (ha : a ∈ S.cl c)(hb : b ∈ S.cl c):
   S.rel a b :=
 S.trans (S.mem_cl_iff.mp ha) (S.symm (S.mem_cl_iff.mp hb))
+
+lemma rel_self_of_mem_class {s : set α}(hs : S.is_class s)(ha : a ∈ s):
+  S.rel a a :=
+by {obtain ⟨hb, ⟨b,rfl⟩⟩ := hs, exact S.rel_self_of_rel (S.mem_cl_iff.mp ha), }
+
 
 lemma rel_of_mems_class {s : set α}(hs : S.is_class s)(ha : a ∈ s)(hb : b ∈ s):
   S.rel a b :=
@@ -91,7 +101,6 @@ end
 @[simp] lemma mem_classes_iff {X : set α}: 
   X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
 by rw [classes, mem_set_of_eq, is_class_iff_rep]
-
 
 lemma cl_eq_cl_iff (ha : S.rel a a):
   S.cl a = S.cl b ↔ S.rel a b := 

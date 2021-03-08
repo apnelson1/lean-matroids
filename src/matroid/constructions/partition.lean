@@ -12,7 +12,7 @@ noncomputable theory
 namespace partition
 
 --finiteness assumption on ι could/should be removed 
-variables {U ι : Type}[nonempty (fintype U)][nonempty (fintype ι)](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+variables {U ι : Type}[fintype U](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
 
 /-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/
@@ -56,7 +56,7 @@ end partition
 
 section presetoid_class
 
-variables {U : Type}[nonempty (fintype U)](S : presetoid U)
+variables {U : Type}[fintype U](S : presetoid U)
 
 namespace presetoid_matroid
 
@@ -85,11 +85,11 @@ begin
   convert rfl, funext, 
   rw partition_fn, dsimp only [id.def], split_ifs, 
   { subst h, 
-    rw min_eq_left (size_nonneg _), 
+    rw min_eq_left (size_nonneg {x ∈ X | S.cl x = ∅}), 
     simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
     id.def, sep_in_eq_empty_iff, exists_imp_distrib], 
     rintros P x hx rfl - hx', 
-    exact S.cl_eq_empty_iff.mp hx' hx},
+    exact S.cl_eq_empty_iff.mp hx' hx, },
   by_cases hi : ∃ x ∈ X, S.cl x = i, swap,
   { convert (min_eq_right (zero_le_one : (0 :ℤ) ≤ 1 )).symm,  
     { simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 

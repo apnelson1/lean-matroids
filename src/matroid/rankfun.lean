@@ -12,7 +12,7 @@ open_locale big_operators
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
-variables {U : Type}[nonempty (fintype U)]
+variables {U : Type}[fintype U]
 
 section /- rank -/ rank
 
@@ -314,7 +314,8 @@ def indep (M : matroid U) := {I : set U // M.is_indep I}
 instance coe_indep {M : matroid U} : has_coe (M.indep) (set U) := 
   coe_subtype   
 
-instance fintype_indep {M : matroid U} : nonempty (fintype (M.indep)) := 
+
+instance fintype_indep {M : matroid U} : fintype (M.indep) := 
 by {unfold indep, apply_instance }
 
 
@@ -482,7 +483,7 @@ def to_indep_family (M : matroid U) : indep_family U :=
 instance nonempty_indep_subset_of (M : matroid U)(X : set U) : nonempty (indep_subset_of M X) :=
 by {apply nonempty_subtype.mpr, exact ⟨∅,⟨empty_subset _, M.empty_indep⟩ ⟩, }
 
-instance fintype_indep_subset_of (M : matroid U)(X : set U) : nonempty (fintype (indep_subset_of M X)) :=
+instance fintype_indep_subset_of (M : matroid U)(X : set U) : fintype (indep_subset_of M X) :=
 by {unfold indep_subset_of, apply_instance, } 
 
 
@@ -501,7 +502,7 @@ def circuit (M : matroid U) := { C : set U // M.is_circuit C }
 instance coe_circuit {M : matroid U} : has_coe (M.circuit) (set U) := 
   coe_subtype    
 
-instance fintype_circuit {M : matroid U} : nonempty (fintype (M.circuit)) := 
+instance fintype_circuit {M : matroid U} : fintype (M.circuit) := 
 by {unfold circuit, apply_instance }
 
 /-- is a cocircuit of M: circuit of the dual -/
@@ -513,7 +514,7 @@ def cocircuit (M : matroid U) := { C : set U // M.is_cocircuit C }
 
 instance coe_cocircuit {M : matroid U} : has_coe (cocircuit M) (set U) := 
   coe_subtype    
-instance fintype_cocircuit {M : matroid U} : nonempty (fintype (cocircuit M)) := 
+instance fintype_cocircuit {M : matroid U} : fintype (cocircuit M) := 
 by {unfold cocircuit, apply_instance}   
 
 lemma circuit_iff_i {M : matroid U}{X : set U} : 
@@ -704,7 +705,8 @@ def cl (M : matroid U) : set U → set U :=
 -- cl X is the (unique) maximal set that is spanned by X
 lemma cl_iff_max {M : matroid U}{X F : set U} : 
   M.cl X = F ↔ M.spans X F ∧ ∀ Y, F ⊂ Y → ¬M.spans X Y :=
-let huc := spanned_union_closed M X, h_eq := (union_closed_max_iff_in_and_ub huc F) in 
+let huc := spanned_union_closed M X, 
+   h_eq := (union_closed_max_iff_in_and_ub huc F) in 
 by {dsimp at h_eq, unfold is_maximal at h_eq, rw [h_eq], 
       unfold cl, rw [eq_comm, ←is_max_of_union_closed_iff huc]}
   
@@ -852,7 +854,7 @@ def flat (M : matroid U) := { F : set U // M.is_flat F }
 instance coe_flat {M : matroid U} : has_coe (M.flat) (set U) := 
   coe_subtype   
   
-instance fintype_flat {M : matroid U} : nonempty (fintype (flat M)) := 
+instance fintype_flat {M : matroid U} : fintype (flat M) := 
 by {unfold flat, apply_instance }
 
 
@@ -883,17 +885,17 @@ def is_hyperplane (M : matroid U) : set U → Prop :=
 
 def point (M : matroid U): Type := {P : set U // M.is_point P}
 
-instance point_fin {M : matroid U}: nonempty (fintype M.point) := 
+instance point_fin {M : matroid U}: fintype M.point := 
 by {unfold point, apply_instance}
 
 def line (M : matroid U): Type := {L : set U // M.is_line L}
 
-instance line_fin {M : matroid U}: nonempty (fintype M.line) := 
+instance line_fin {M : matroid U}: fintype M.line := 
 by {unfold line, apply_instance}
 
 def plane (M : matroid U): Type := {P : set U // M.is_plane P}
 
-instance plane_fin {M : matroid U}: nonempty (fintype M.plane) := 
+instance plane_fin {M : matroid U}: fintype M.plane := 
 by {unfold plane, apply_instance}
 
 
@@ -1189,7 +1191,7 @@ def nonloop (M : matroid U) : Type := { e : U // is_nonloop M e}
 instance coe_nonloop {M : matroid U} : has_coe (nonloop M) (U) := ⟨λ e, e.val⟩  
 --def noncoloop (M : matroid U) : Type := { e : U // is_nonloop (dual M) e}
 
-instance fin_nonloop {M : matroid U} : nonempty (fintype M.nonloop) := 
+instance fin_nonloop {M : matroid U} : fintype M.nonloop := 
 by {unfold nonloop, apply_instance}
 
 lemma eq_nonloop_coe {M : matroid U}{e : U}(h : M.is_nonloop e): 
@@ -1238,7 +1240,7 @@ def basis (M : matroid U) := {B : set U // M.is_basis B}
 instance coe_subtype_basis {M : matroid U} : has_coe (M.basis) (set U) :=
   coe_subtype
 
-instance finite_basis {M : matroid U} : nonempty (fintype (M.basis)) := 
+instance finite_basis {M : matroid U} : fintype (M.basis) := 
 by {unfold basis, apply_instance }
 
 /-- basis of set X type -/
@@ -1247,7 +1249,7 @@ def basis_of (M : matroid U)(X : set U) := {B : set U // M.is_basis_of B X}
 instance coe_subtype_basis_of {M : matroid U}(X : set U) : has_coe (M.basis_of X) (set U) :=
   coe_subtype
 
-instance fintype_basis_of {M : matroid U}(X : set U) : nonempty (fintype (M.basis_of X)) := 
+instance fintype_basis_of {M : matroid U}(X : set U) : fintype (M.basis_of X) := 
 by {unfold basis_of, apply_instance }
 
 
@@ -1468,8 +1470,9 @@ begin
   refine ⟨λ h, _, λ h, _⟩, 
   rcases M.exists_basis_of X with ⟨I, ⟨hI₁, hI₂, hI₃⟩⟩, 
   refine ⟨_, hI₁, hI₂, λ J hJx hJ, _⟩, 
-  rw [←hI₂, hI₃, ←h, ←indep_iff_r.mp hJ], from M.rank_mono hJx,
-  rw eq_comm, apply rank_eq_of_le_supset (subset_union_left _ _),
+  rw [←hI₂, hI₃, ←h, ←indep_iff_r.mp hJ], exact M.rank_mono hJx,
+  rw eq_comm, 
+  refine rank_eq_of_le_supset (subset_union_left _ _) _,
   rcases M.exists_basis_of (X ∪ {e}) with ⟨J, ⟨hJ₁, hJ₂, hJ₃⟩⟩, 
   rcases h with ⟨I,hI,⟨hIind,hIX⟩⟩,
   specialize hIX J hJ₁ hJ₂,   
@@ -1503,7 +1506,7 @@ begin
   exact ⟨union_singleton_subset_of_subset_mem h hz, indep_of_indep_aug h' hB⟩,
 end
 
-lemma rank_matroid_as_indep (M : matroid U):
+lemma r_univ_eq_max_size_indep (M : matroid U):
   M.r univ = max_val (λ I : M.indep, size I.val) :=
 begin
   rw rank_as_indep, 
@@ -1511,6 +1514,7 @@ begin
   have : function.surjective φ, 
     from λ X, by {use ⟨X.val, ⟨subset_univ X.val, X.property⟩⟩, rw hφ, simp,}, 
   rw [max_reindex φ this (λ X, size X.val)], 
+  refl, 
 end
 
 

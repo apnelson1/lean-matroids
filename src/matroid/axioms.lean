@@ -11,7 +11,7 @@ section rank
 def satisfies_R0 (r : set U → ℤ) : Prop := 
   ∀ X, 0 ≤ r X 
 
-def satisfies_R1 [nonempty (fintype U)](r : set U → ℤ) : Prop := 
+def satisfies_R1 (r : set U → ℤ) : Prop := 
   ∀ X, r X ≤ size X
 
 def satisfies_R2 (r : set U → ℤ) : Prop := 
@@ -20,7 +20,7 @@ def satisfies_R2 (r : set U → ℤ) : Prop :=
 def satisfies_R3 (r : set U → ℤ) : Prop := 
   ∀ X Y, r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y
 
-@[ext] structure rankfun (U : Type)[nonempty (fintype U)] :=
+@[ext] structure rankfun (U : Type) :=
   (r : set U → ℤ)
   (R0 : satisfies_R0 r)
   (R1 : satisfies_R1 r)
@@ -39,13 +39,13 @@ def satisfies_I1 (indep : set U → Prop) : Prop :=
 def satisfies_I2 (indep : set U → Prop) : Prop := 
   ∀ I J, I ⊆ J → indep J → indep I
 
-def satisfies_I3 [nonempty (fintype U)](indep : set U → Prop) : Prop := 
+def satisfies_I3 (indep : set U → Prop) : Prop := 
   ∀ I J, size I < size J → indep I → indep J → ∃ (e : U), e ∈ J \ I ∧ indep (I ∪ {e})
 
 --def satisfies_I3' : (set U → Prop) → Prop := 
 --  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → size B = r
 
-@[ext] structure indep_family (U : Type)[nonempty (fintype U)] := 
+@[ext] structure indep_family (U : Type) := 
   (indep : set U → Prop)
   (I1 : satisfies_I1 indep)
   (I2 : satisfies_I2 indep)
@@ -122,9 +122,9 @@ end cl
 
 end axiom_sets 
 
-def matroid (U : Type)[nonempty (fintype U)] := rankfun U 
+def matroid (U : Type) := rankfun U 
 
-variables {U₁ U₂ U₃ : Type}[nonempty (fintype U₁)][nonempty (fintype U₂)][nonempty (fintype U₃)]
+variables {U₁ U₂ U₃ : Type}
 
 namespace matroid
 

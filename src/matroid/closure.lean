@@ -4,7 +4,7 @@ import .rankfun .indep
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {U : Type}[nonempty (fintype U)]
+variables {U : Type}[fintype U]
 
 open set 
 

@@ -14,9 +14,6 @@ variables {A : Type}
 def symm_diff (X Y : set A) : set A := (X \ Y) ∪ (Y \ X)
 
 
-/-- Universe is nonempty -/
-def nontriv (A : Type) := (univ : set A).nonempty
-
 open set 
 
 -- univ/empty with unions and intersections 

@@ -8,7 +8,7 @@ noncomputable theory
 mk_simp_attribute coe_up "upwards coercion simp lemmas"
 
 section size_lemmas 
-variables {A B : Type}[nonempty (fintype A)][nonempty (fintype B)]
+variables {A B : Type}[fintype A][fintype B]
 
 lemma size_img_emb (f : A ↪ B)(X : set A): 
   size (f '' X) = size X := 
@@ -70,7 +70,7 @@ instance coe_set_from_subtype {B : Type}{S : set B}: has_coe (set S) (set B) := 
 /-- the intersection X ∩ S, viewed as a (set S) -/
 def inter_subtype {B : Type}(S X : set B): (set S) := coe ⁻¹' X 
 
-variables {A : Type}[nonempty (fintype A)]{S : set A}
+variables {A : Type}[fintype A]{S : set A}
 
 @[coe_up] lemma subtype_coe_singleton (e : S): 
   (({(e : S)} : set S) : set A) = {(e : A)} :=

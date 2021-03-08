@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
+variables {U V : Type}[fintype U][fintype V]
 
 section minor 
 
@@ -58,12 +58,8 @@ def minor_pair_to_as_mat (P : minor_pair N M):
     minor_pair ((M.as_mat : matroid_in M.E) / (coe ⁻¹' P.C) \ (coe ⁻¹' P.D)) M.as_mat :=
 {  minor := rfl, .. cd_pair.to_as_mat (coe P) }
 
-instance fintype : nonempty (fintype (minor_pair N M)) :=  
-begin
-  letI : fintype (M.cd_pair):= classical.choice (by apply_instance), 
-  exact ⟨fintype.of_injective 
-  (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})⟩,
-end 
+instance fintype : fintype (minor_pair N M) :=  
+fintype.of_injective (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})
 
 /-- constructs the trivial minor pair associated with M -/
 def trivial (M : matroid_in U) : minor_pair M M := 

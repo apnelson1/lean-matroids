@@ -7,7 +7,7 @@ noncomputable theory
 namespace matroid 
 
 section dual
-variables {U : Type}[nonempty (fintype U)]
+variables {U : Type}[fintype U]
  
 lemma rank_empt (M : matroid U) :
   M.r ∅ = 0 :=
@@ -50,7 +50,7 @@ fun M, {
     ... ≤ size X       + M.r Xᶜ        - M.r univ + (size Y       + M.r Yᶜ        - M.r univ) : by linarith [size_modular X Y, M.R3 Xᶜ Yᶜ]),
 }
 
--- The double dual of a matroid is itself.
+-- Duality is an involution 
 @[simp] lemma dual_dual (M : matroid U) :
   dual (dual M) = M :=
 begin
@@ -62,11 +62,15 @@ end
 
 lemma dual_inj {M₁ M₂ : matroid U} :
   dual M₁ = dual M₂ → M₁ = M₂ := 
-  λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
+λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
+
+lemma dual_inj_iff {M₁ M₂ : matroid U}:
+  dual M₁ = dual M₂ ↔ M₁ = M₂ := 
+⟨λ h, dual_inj h, λ h, by rw h⟩
 
 lemma dual_r (M : matroid U)(X : set U):
-   (dual M).r X = size X + M.r Xᶜ - M.r univ := 
-   rfl 
+  (dual M).r X = size X + M.r Xᶜ - M.r univ := 
+rfl 
 
 end /-section-/ dual
 

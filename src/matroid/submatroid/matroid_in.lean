@@ -7,13 +7,13 @@ noncomputable theory
 open matroid set 
 
 variables {U V U₁ U₂ U₃: Type}
-[nonempty (fintype U)][nonempty (fintype V)]
-[nonempty (fintype U₁)][nonempty (fintype U₂)][nonempty (fintype U₃)]
+[fintype U][fintype V]
+[fintype U₁][fintype U₂][fintype U₃]
 
 /-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
 
-structure matroid_in (U : Type)[nonempty (fintype U)] :=
+structure matroid_in (U : Type)[fintype U] :=
 (E : set U)
 (carrier : matroid U)
 (support : carrier.r Eᶜ = 0)
@@ -165,13 +165,13 @@ section defs
 /-- translates a property of sets defined on (matroid V) to the corresponding
 set property on (matroid_in U). -/
 def lift_mat_set_property 
-(P : Π {V : Type}[ft : nonempty (fintype V)], @matroid V ft → set V → Prop): 
+(P : Π {V : Type}[fintype V], matroid V → set V → Prop): 
   (matroid_in U → set U → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 
 ---------------------------------------------------------------------------
 
-def is_indep (M : matroid_in U)(X : set U): Prop := 
+def is_indep [f : fintype U](M : matroid_in U)(X : set U): Prop := 
   (lift_mat_set_property (@matroid.is_indep)) M X 
 
 lemma indep_iff_r (M : matroid_in U)(X : set U): 

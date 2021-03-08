@@ -7,7 +7,7 @@ open_locale classical
 open set 
 namespace matroid 
 
-variables {U V : Type}[nonempty (fintype U)][nonempty (fintype V)]
+variables {U V : Type}[fintype U][fintype V]
 
 section simple 
 
@@ -40,8 +40,7 @@ def simple_set (M : matroid U) := {X : set U // M.is_simple_set X}
 instance simple_set_nonempty {M : matroid U}: nonempty M.simple_set := 
   ⟨⟨∅, λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }⟩⟩ 
 
-instance simple_set_fintype {M : matroid U}: 
-nonempty (fintype M.simple_set) := 
+instance simple_set_fintype {M : matroid U}: fintype M.simple_set := 
   by {unfold simple_set, apply_instance,}
 
 def simple_subset_of (M : matroid U)(S : set U) := {X : set U // M.is_simple_set X ∧ X ⊆ S} 
@@ -49,8 +48,7 @@ def simple_subset_of (M : matroid U)(S : set U) := {X : set U // M.is_simple_set
 instance simple_subset_nonempty {M : matroid U}{S : set U}: nonempty (M.simple_subset_of S) := 
   ⟨⟨∅, ⟨λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }, empty_subset _⟩ ⟩⟩ 
 
-instance simple_subset_fintype {M : matroid U}{S : set U}: 
-  nonempty (fintype (M.simple_subset_of S)) := 
+instance simple_subset_fintype {M : matroid U}{S : set U}: fintype (M.simple_subset_of S) := 
 by {unfold simple_subset_of, apply_instance,}
 
 
