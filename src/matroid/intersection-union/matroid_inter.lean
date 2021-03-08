@@ -1,6 +1,6 @@
-/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on U, the size of the 
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size of the 
 largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ, taken over 
-all X ⊆ U. The proof is really by induction on the size of the ground set, but to make things easier we 
+all X ⊆ α. The proof is really by induction on the size of the ground set, but to make things easier we 
 instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
 projections of M₁ and M₂.  -/
 
@@ -12,24 +12,24 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
 
 section intersection 
 
 /-- the parameter ν is nonnegative -/
-lemma ν_nonneg (M₁ M₂ : matroid U) : 
+lemma ν_nonneg (M₁ M₂ : matroid α) : 
   0 ≤ ν M₁ M₂ := 
 by {apply lb_le_max, intro X, apply size_nonneg}
 
 /-- function that provides an upper bound on ν M₁ M₂ -/
-def matroid_intersection_ub_fn (M₁ M₂ : matroid U) : set U → ℤ := 
+def matroid_intersection_ub_fn (M₁ M₂ : matroid α) : set α → ℤ := 
   (λ X, M₁.r X + M₂.r Xᶜ)
 
 local notation `ub_fn` := matroid_intersection_ub_fn 
 
 /-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
-theorem matroid_intersection_pair_le {M₁ M₂ : matroid U}{I : common_ind M₁ M₂}(A : set U) : 
-  size (I : set U) ≤ M₁.r A + M₂.r Aᶜ := 
+theorem matroid_intersection_pair_le {M₁ M₂ : matroid α}{I : common_ind M₁ M₂}(A : set α) : 
+  size (I : set α) ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rcases I with ⟨I, ⟨h₁, h₂⟩⟩, 
   unfold_coes, dsimp only, 
@@ -41,7 +41,7 @@ begin
 end
 
 /-- the easy direction of matroid intersection, stated as an upper bound on ν -/
-lemma ν_ub (M₁ M₂ : matroid U): 
+lemma ν_ub (M₁ M₂ : matroid α): 
   ν M₁ M₂ ≤ min_val (matroid_intersection_ub_fn M₁ M₂)  := 
 begin
   rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩,
@@ -53,15 +53,15 @@ end
 /-- Edmonds' matroid intersection theorem: the size of a largest common independent set 
     is equal to the minimum value of a natural upper bound on the size of any such set. 
     Implies many other minmax theorems in combinatorics.                             -/
-theorem matroid_intersection (M₁ M₂ : matroid U): 
+theorem matroid_intersection (M₁ M₂ : matroid α): 
   ν M₁ M₂ = min_val (matroid_intersection_ub_fn M₁ M₂) := 
 begin
   --induction boilerplate (and ≥ suffices)
 
-  set lb_fn := λ (M₁ M₂ : matroid U), (λ (X : common_ind M₁ M₂), size X.val) with h_lb_fn, 
+  set lb_fn := λ (M₁ M₂ : matroid α), (λ (X : common_ind M₁ M₂), size X.val) with h_lb_fn, 
 
   set Q : ℤ → Prop := 
-    λ s, ∀ (M₁ M₂ : matroid U), size (loops M₁ ∪ loops M₂)ᶜ = s → 
+    λ s, ∀ (M₁ M₂ : matroid α), size (loops M₁ ∪ loops M₂)ᶜ = s → 
       min_val (ub_fn M₁ M₂) ≤ ν M₁ M₂,
   suffices : ∀ n₀, 0 ≤ n₀ → Q n₀, 
     from antisymm (ν_ub M₁ M₂) (this _ (size_nonneg _) M₁ M₂ rfl), 
@@ -191,7 +191,7 @@ begin
 end
 
 /-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/
-theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid U): 
+theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α): 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin
   rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 

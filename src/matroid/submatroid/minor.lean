@@ -8,36 +8,36 @@ open matroid set
 
 namespace matroid_in
 
-variables {U V : Type}[fintype U][fintype V]
+variables {α β : Type}[fintype α][fintype β]
 
 section minor 
 
 /- a structure whose existence certifies that N is a minor of M -/
-@[ext] structure minor_pair (N M : matroid_in U) extends cd_pair M :=
+@[ext] structure minor_pair (N M : matroid_in α) extends cd_pair M :=
 (minor : M / C \ D = N)
 
-instance coe_to_cd_pair (N M : matroid_in U): has_coe (minor_pair N M) (cd_pair M) := 
+instance coe_to_cd_pair (N M : matroid_in α): has_coe (minor_pair N M) (cd_pair M) := 
 ⟨λ x, x.to_cd_pair⟩  
 
-@[simp] lemma to_cd_pair_as_coe {N M : matroid_in U} (p : minor_pair M N):
+@[simp] lemma to_cd_pair_as_coe {N M : matroid_in α} (p : minor_pair M N):
   p.to_cd_pair = coe p := 
 rfl
 
-/-- minor relation on matroid_in U-/
-def is_minor (N M : matroid_in U) : Prop := 
+/-- minor relation on matroid_in α-/
+def is_minor (N M : matroid_in α) : Prop := 
   nonempty (minor_pair N M)
 
-def is_proper_minor (N M : matroid_in U) : Prop :=
+def is_proper_minor (N M : matroid_in α) : Prop :=
   is_minor N M ∧ N ≠ M 
 
-def is_restriction (N M : matroid_in U) : Prop := 
+def is_restriction (N M : matroid_in α) : Prop := 
   ∃ P: minor_pair N M, P.C = ∅ 
 
-def is_contraction_minor (N M : matroid_in U) : Prop := 
+def is_contraction_minor (N M : matroid_in α) : Prop := 
   ∃ P: minor_pair N M, P.D = ∅
 
 /-- constructs a minor pair from contract/delete sets C and D  -/
-def to_minor_pair (M : matroid_in U)(C D : set U):
+def to_minor_pair (M : matroid_in α)(C D : set α):
   minor_pair (M / C \ D) M :=
 { C := M.E ∩ C ,
   D := (M.E ∩ D) \ C,
@@ -51,7 +51,7 @@ def to_minor_pair (M : matroid_in U)(C D : set U):
 
 namespace minor_pair 
 
-variables {N M : matroid_in U}(mp : minor_pair N M)
+variables {N M : matroid_in α}(mp : minor_pair N M)
 
 /-- given a minor pair N M, returns the corresponding minor_pair in M.as_mat -/
 def minor_pair_to_as_mat (P : minor_pair N M): 
@@ -62,7 +62,7 @@ instance fintype : fintype (minor_pair N M) :=
 fintype.of_injective (to_cd_pair) (λ x y hxy, by {cases x, cases y, tidy})
 
 /-- constructs the trivial minor pair associated with M -/
-def trivial (M : matroid_in U) : minor_pair M M := 
+def trivial (M : matroid_in α) : minor_pair M M := 
 ⟨cd_pair.trivial M, by simp [cd_pair.trivial]⟩
 
 lemma union : mp.C ∪ mp.D = M.E \ N.E := 
@@ -76,12 +76,12 @@ end
 
 lemma minor_eq : M / mp.C \ mp.D = N := mp.minor 
 
-def of_restrict (M : matroid_in U){R : set U}(hR : R ⊆ M.E): 
+def of_restrict (M : matroid_in α){R : set α}(hR : R ⊆ M.E): 
   minor_pair (M ∣ R) M := 
 {minor := by {dsimp only [cd_pair.of_restr, restrict], rw [con_empty, diff_eq, ← del_eq_del_inter_E],} ,
  .. cd_pair.of_restr M hR}
 
-def of_contract_restrict (M : matroid_in U){C R : set U}(hC : C ⊆ M.E)(hR : R ⊆ M.E \ C): 
+def of_contract_restrict (M : matroid_in α){C R : set α}(hC : C ⊆ M.E)(hR : R ⊆ M.E \ C): 
   minor_pair (M / C ∣ R) M :=
 ⟨ cd_pair.of_con_restr M hC hR,  
   by {rw [matroid_in.restrict, del_eq_del_inter_E _ Rᶜ], 
@@ -149,7 +149,7 @@ def dual_equiv : minor_pair N M ≃ minor_pair N.dual M.dual :=
 @[simp, msimp] lemma dual_equiv_inv_C (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).C = p.D := rfl 
 @[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).D = p.C := rfl 
 
-lemma rank (p : minor_pair N M)(X : set U)(hX : X ⊆ N.E):
+lemma rank (p : minor_pair N M)(X : set α)(hX : X ⊆ N.E):
   N.r X = M.r (X ∪ p.C) - M.r p.C := 
 begin
   simp only [←p.minor] with msimp,  congr', 
@@ -162,7 +162,7 @@ lemma rank_subtype (p : minor_pair N M)(X : set N.E):
 by {rw rank, rintro x hx, obtain ⟨⟨x,h⟩,-,rfl⟩ := (mem_image _ _ _).mp hx, exact h, }
 
 /-- given minor pairs for M₁ M₂ and M₂ M₃, constructs a minor pair for M₁ M₃ -/
-def trans {M₁ M₂ M₃ : matroid_in U}(p₁₂ : minor_pair M₁ M₂)(p₂₃ : minor_pair M₂ M₃) : minor_pair M₁ M₃ := 
+def trans {M₁ M₂ M₃ : matroid_in α}(p₁₂ : minor_pair M₁ M₂)(p₂₃ : minor_pair M₂ M₃) : minor_pair M₁ M₃ := 
 have h₁ : p₁₂.C ∩ p₂₃.D = ∅ := disjoint_of_subset_left' p₁₂.C_ss_E p₂₃.NE_inter_D,
 have h₂ : p₂₃.C ∩ p₁₂.D = ∅ := disjoint_of_subset_right' p₁₂.D_ss_E p₂₃.C_inter_NE, 
 { C := p₁₂.C ∪ p₂₃.C,
@@ -177,7 +177,7 @@ have h₂ : p₂₃.C ∩ p₁₂.D = ∅ := disjoint_of_subset_right' p₁₂.D
 
 /-- given a minor pair C,D and a subset of C whose removal doesn't drop the rank of C, moves 
     that subset to D -/
-def move_to_delete (p : minor_pair N M){A : set U}
+def move_to_delete (p : minor_pair N M){A : set α}
 (h₁ : A ⊆ p.C) (h₂ : M.r (p.C \ A) = M.r p.C) : minor_pair N M := 
 let p' : cd_pair M := {
   C := p.C \ A,
@@ -195,7 +195,7 @@ let p' : cd_pair M := {
   end, ..p' } 
 
 /-- given a minor pair C,D and a subset of D that is spanned by C, moves that subset to C -/
-def move_to_contract (p : minor_pair N M){A : set U}
+def move_to_contract (p : minor_pair N M){A : set α}
 (h₁ : A ⊆ p.D)(h₂ : M.r (p.C ∪ A) = M.r p.C) : minor_pair N M :=
 let p' : cd_pair M := {
   C := p.C ∪ A,
@@ -216,7 +216,7 @@ let p' : cd_pair M := {
   end .. p' }
 
 /-- A minor pair C D with C dependent doesn't maximize r C + r* D -/
-lemma suboptimal_goodness {N M : matroid_in U}(p : minor_pair N M)(hdep : ¬is_indep M p.C): 
+lemma suboptimal_goodness {N M : matroid_in α}(p : minor_pair N M)(hdep : ¬is_indep M p.C): 
 ∃ p': minor_pair N M, M.r p.C + M.dual.r p.D < M.r p'.C + M.dual.r p'.D :=
 begin
   simp_rw [indep_iff_carrier, not_indep_iff_exists_removal, r_carrier_eq_r, ←singleton_subset_iff] at hdep, 
@@ -249,7 +249,7 @@ begin
 end
 
 /-- each minor can be represented by a indep/coindep contract_delete pair -/
-lemma minor_has_indep_coindep_pair {N M : matroid_in U}(h_minor : is_minor N M):
+lemma minor_has_indep_coindep_pair {N M : matroid_in α}(h_minor : is_minor N M):
    ∃ (p : minor_pair N M), (M.is_indep p.C) ∧ (M.dual.is_indep p.D) := 
 begin
   letI : nonempty _ := h_minor, 
@@ -270,7 +270,7 @@ end
 
 /-- each minor N has a minor pair (C,D) with C independent and of size r M - r N. (Latter condition 
 is equivalent to the coindependence of D in M) -/
-lemma minor_has_indep_coindep_pair' {N M : matroid_in U}(h_minor : is_minor N M):
+lemma minor_has_indep_coindep_pair' {N M : matroid_in α}(h_minor : is_minor N M):
    ∃ (p : minor_pair N M), M.is_indep p.C ∧ size p.C = M.r M.E - N.r N.E := 
 begin
   rcases minor_has_indep_coindep_pair h_minor with ⟨p,hC,hD⟩, 
@@ -286,15 +286,15 @@ end
 end minor_pair 
 
 
-lemma con_del_is_minor (M : matroid_in U)(C D : set U):
+lemma con_del_is_minor (M : matroid_in α)(C D : set α):
   (M / C \ D).is_minor M :=
 ⟨to_minor_pair M C D⟩  
 
-lemma con_restr_is_minor (M : matroid_in U)(C R : set U): 
+lemma con_restr_is_minor (M : matroid_in α)(C R : set α): 
   (M / C ∣ R).is_minor M := 
 con_del_is_minor _ _ _ 
 
-lemma minor_iff_dual_minor {M N : matroid_in U}:
+lemma minor_iff_dual_minor {M N : matroid_in α}:
   N.is_minor M ↔ N.dual.is_minor M.dual := 
 begin
   repeat {rw ←minor_pair.nonempty_iff}, 
@@ -303,36 +303,36 @@ begin
   cases a, apply nonempty.intro (a.of_dual), 
 end
 
-lemma del_con_is_minor (M : matroid_in U)(C D : set U):
+lemma del_con_is_minor (M : matroid_in α)(C D : set α):
    (M \ D / C).is_minor M :=
 by {rw [del_con_eq_con_del'], apply con_del_is_minor,  }
 
-lemma dual_minor_of_minor {M N : matroid_in U}: 
+lemma dual_minor_of_minor {M N : matroid_in α}: 
   N.is_minor M → N.dual.is_minor M.dual :=
 minor_iff_dual_minor.mp 
 
-lemma deletion_is_restriction (M : matroid_in U)(D : set U):
+lemma deletion_is_restriction (M : matroid_in α)(D : set α):
   (M \ D).is_restriction M := 
 by {nth_rewrite 0 ←con_empty M, refine ⟨to_minor_pair M ∅ D, by simp [to_minor_pair]⟩} 
 
-lemma restriction_to_is_restriction (M : matroid_in U)(R : set U): 
+lemma restriction_to_is_restriction (M : matroid_in α)(R : set α): 
   (M ∣ R).is_restriction M := 
 deletion_is_restriction M Rᶜ 
 
-lemma contraction_is_contraction_minor (M : matroid_in U)(C : set U):
+lemma contraction_is_contraction_minor (M : matroid_in α)(C : set α):
   (M / C).is_contraction_minor M := 
 by {rw ←del_empty (M / C), refine ⟨to_minor_pair M C ∅, by simp [to_minor_pair]⟩} 
 
-lemma restriction_is_minor (N M : matroid_in U): 
+lemma restriction_is_minor (N M : matroid_in α): 
   N.is_restriction M → N.is_minor M := 
 by {rintros ⟨h,-⟩, exact ⟨h⟩}
 
-lemma contraction_minor_is_minor (N M : matroid_in U): 
+lemma contraction_minor_is_minor (N M : matroid_in α): 
   N.is_contraction_minor M → N.is_minor M := 
 by {rintros ⟨h,-⟩, exact ⟨h⟩}
 
 lemma minor_antisymm: 
-  anti_symmetric (@is_minor U _) := 
+  anti_symmetric (@is_minor α _) := 
 begin
   rintros M₁ M₂ ⟨p₁⟩ ⟨p₂⟩, --rw is_minor at h₁ h₂, 
   have := p₁.minor, simp_rw ←p₂.minor at this ⊢,   
@@ -351,10 +351,10 @@ begin
 end
 
 lemma minor_trans: 
-  transitive (@is_minor U _) :=
+  transitive (@is_minor α _) :=
 by {rintros M₁ M₂ M₃ ⟨p₁⟩ ⟨p₂⟩, apply nonempty.intro (p₁.trans p₂)}
 
-lemma minor_iff_has_contract {N M : matroid_in U}:
+lemma minor_iff_has_contract {N M : matroid_in α}:
   N.is_minor M ↔ N.E ⊆ M.E ∧ ∃ C ⊆ M.E \ N.E, ∀ X ⊆ N.E, N.r X = M.r (X ∪ C) - M.r C := 
 begin
   split, 
@@ -374,7 +374,7 @@ begin
   { ext x, specialize @hC x, specialize @hE x, simp at *, tauto},
 end
 
-lemma con_or_del {N M : matroid_in U}{e : U}(h : is_minor N M)(he : e ∈ M.E \ N.E): 
+lemma con_or_del {N M : matroid_in α}{e : α}(h : is_minor N M)(he : e ∈ M.E \ N.E): 
   is_minor N (M / {e}) ∨ is_minor N (M \ {e}) :=
 begin
   rw is_minor at h, rcases h with ⟨p⟩, 

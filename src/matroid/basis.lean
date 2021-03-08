@@ -4,15 +4,15 @@ open ftype
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {U : ftype}
+variables {α : ftype}
 
-lemma basis_have_same_size (M : basis_family U) (B₁ B₂ : set U):
+lemma basis_have_same_size (M : basis_family α) (B₁ B₂ : set α):
   M.basis B₁ → M.basis B₂ → size B₁ = size B₂ := sorry
 
-def basis_to_indep (basis : set U → Prop) : (set U → Prop) :=
+def basis_to_indep (basis : set α → Prop) : (set α → Prop) :=
   λ I, ∃ B, basis B ∧ I ⊆ B.
 
-def B_to_empty_indep (M : basis_family U) : satisfies_empty_indep (basis_to_indep M.basis) :=
+def B_to_empty_indep (M : basis_family α) : satisfies_empty_indep (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep],
   have Hbasis := M.B1,
@@ -23,7 +23,7 @@ begin
       apply empty_subset,
 end
 
-def B_to_indep_of_subset_indep (M : basis_family U) : satisfies_indep_of_subset_indep (basis_to_indep M.basis) :=
+def B_to_indep_of_subset_indep (M : basis_family α) : satisfies_indep_of_subset_indep (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep, satisfies_indep_of_subset_indep, and_imp, exists_imp_distrib],
   intros I J HIJ B HB HindepJ,
@@ -33,7 +33,7 @@ begin
       apply subset.trans; tidy; assumption,
 end
 
-def B_to_I3 (M : basis_family U) : satisfies_I3 (basis_to_indep M.basis) :=
+def B_to_I3 (M : basis_family α) : satisfies_I3 (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep, satisfies_I3, and_imp, exists_imp_distrib],
   intros I₁ I₂ HI₁ltI₂ B₁ HB₁ HIB₁ B₂ HB₂ HJB₂,
@@ -72,9 +72,9 @@ begin
       -- equal
       cases Hcase1,
       {
-        have Hminimaldiff := @minimal_example U
-          (fun (X : set U), 
-            ∃ B : set U, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
+        have Hminimaldiff := @minimal_example α
+          (fun (X : set α), 
+            ∃ B : set α, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
           (B₂ \ (I₂ ∪ B₁))
           (begin
             use B₂, split,

@@ -11,24 +11,24 @@ noncomputable theory
 
 
 section relax
-variables {U : Type}[fintype U] --[decidable_eq (set U)] 
+variables {α : Type}[fintype α] --[decidable_eq (set α)] 
 
-def relax.r (M : matroid U)(C : set U) : set U → ℤ := 
+def relax.r (M : matroid α)(C : set α) : set α → ℤ := 
   λ X, ite (X = C) (M.r X + 1) (M.r X)
 
-lemma relax.r_of_C_eq_univ {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C_eq_univ {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r univ := 
   by {simp_rw [relax.r, if_pos rfl], linarith [circuit_hyperplane_rank hC]}
 
-lemma relax.r_of_C {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r C + 1 := 
   by {simp_rw [relax.r, if_pos rfl]}
 
-lemma relax.r_of_not_C {M : matroid U}{C X: set U}(hC : is_circuit_hyperplane M C)(hXC : X ≠ C):
+lemma relax.r_of_not_C {M : matroid α}{C X: set α}(hC : is_circuit_hyperplane M C)(hXC : X ≠ C):
   relax.r M C X = M.r X := 
   by {unfold relax.r, finish}
 
-lemma r_le_relax_r (M : matroid U)(C X : set U) :
+lemma r_le_relax_r (M : matroid α)(C X : set α) :
   M.r X ≤ relax.r M C X := 
 begin
   unfold relax.r, by_cases X = C, 
@@ -36,7 +36,7 @@ begin
   rw if_neg h,
 end
 
-lemma relax.r_le_univ {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C)(X : set U):
+lemma relax.r_le_univ {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C)(X : set α):
   relax.r M C X ≤ M.r univ := 
 begin
   by_cases h : X = C, 
@@ -45,11 +45,11 @@ begin
 end 
 
 
-lemma relax.R0 (M : matroid U)(C : set U) : 
+lemma relax.R0 (M : matroid α)(C : set α) : 
   satisfies_R0 (relax.r M C) := 
   λ X, le_trans (M.rank_nonneg X) (r_le_relax_r M C X)
 
-lemma relax.R1 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R1 {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) : 
   satisfies_R1 (relax.r M C) := 
 begin
   intro X, unfold relax.r, by_cases h : X = C, 
@@ -61,7 +61,7 @@ begin
   from M.rank_le_size X, 
 end
 
-lemma relax.R2 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R2 {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) : 
   satisfies_R2 (relax.r M C) :=
 begin
   intros X Y hXY,
@@ -74,7 +74,7 @@ begin
   linarith [relax.r_of_not_C hC h, r_le_relax_r M C Y, rank_mono M hXY],  
 end
 
-lemma relax.R3 {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) : 
+lemma relax.R3 {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) : 
   satisfies_R3 (relax.r M C) :=
 begin
   intros X Y, 
@@ -113,14 +113,14 @@ begin
 end
 
 /-- relaxation of the circuit_hyperplane C in M -/
-def relax (M : matroid U)(C : set U)(hC : is_circuit_hyperplane M C) : matroid U := 
+def relax (M : matroid α)(C : set α)(hC : is_circuit_hyperplane M C) : matroid α := 
   ⟨relax.r M C, relax.R0 M C, relax.R1 hC, relax.R2 hC, relax.R3 hC⟩ 
 
-lemma relax_weak_image (M : matroid U)(C : set U)(hC : is_circuit_hyperplane M C): 
+lemma relax_weak_image (M : matroid α)(C : set α)(hC : is_circuit_hyperplane M C): 
   M ≤ (relax M C hC) :=
 λ X, r_le_relax_r _ _ X 
 
-theorem relax.dual {M : matroid U}{C : set U}(hC : is_circuit_hyperplane M C) :
+theorem relax.dual {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) :
   dual (relax M C hC) = relax (dual M) Cᶜ (circuit_hyperplane_dual.mp hC) := 
 let hCc := circuit_hyperplane_dual.mp hC in 
 begin
@@ -135,7 +135,7 @@ begin
   rw relax.r_of_not_C hC hCuniv,  
 end
 
-theorem single_rank_neq_is_relaxation {M₁ M₂ : matroid U}{X : set U}(hr : M₁.r univ = M₂.r univ)
+theorem single_rank_neq_is_relaxation {M₁ M₂ : matroid α}{X : set α}(hr : M₁.r univ = M₂.r univ)
 (hX : M₁.r X < M₂.r X)(h_other : ∀ Y, Y ≠ X → M₁.r Y = M₂.r Y): 
   ∃ h : is_circuit_hyperplane M₁ X, M₂ = relax M₁ X h :=
 begin
@@ -186,9 +186,9 @@ begin
   from h_other Y hYX,  
 end
 
-lemma single_rank_disagreement_univ (hU : nontriv U){M₁ M₂ : matroid U}:
+lemma single_rank_disagreement_univ (hα : nontriv α){M₁ M₂ : matroid α}:
    M₁.r univ < M₂.r univ → (∀ X, X ≠ univ → M₁.r X = M₂.r X) → 
-    M₁ = unif.circuit_matroid_on U hU ∧ M₂ = unif.free_matroid_on U  := 
+    M₁ = unif.circuit_matroid_on α hα ∧ M₂ = unif.free_matroid_on α  := 
 begin
   intros huniv hother, 
   rw [unif.circuit_matroid_iff_univ_circuit, unif.free_iff_univ_indep], 

@@ -372,8 +372,8 @@ Define C i by induction on i : fin (n + 1) via induction on the underlying nat v
 --list α → β
 
 
---def union_over {n : ℕ}(Xs : fin n → set U) : set U := 
---  finset.fold (λ a b, a ∪ b) (∅ : set U) Xs (fin n)
+--def union_over {n : ℕ}(Xs : fin n → set α) : set α := 
+--  finset.fold (λ a b, a ∪ b) (∅ : set α) Xs (fin n)
 
 
 

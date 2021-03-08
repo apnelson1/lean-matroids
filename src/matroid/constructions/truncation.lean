@@ -6,20 +6,20 @@ open matroid set
 noncomputable theory 
 namespace trunc 
 
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
 
-def indep (M : indep_family U) {n : ℤ}(hn : 0 ≤ n) : set U → Prop :=  
+def indep (M : indep_family α) {n : ℤ}(hn : 0 ≤ n) : set α → Prop :=  
   λ X, M.indep X ∧ size X ≤ n
 
-lemma I1 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
+lemma I1 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I1 (trunc.indep M hn) := 
 ⟨M.I1, by {rw size_empty, assumption}⟩
 
-lemma I2 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n) : 
+lemma I2 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n) : 
   satisfies_I2 (trunc.indep M hn) := 
 λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
-lemma I3 (M : indep_family U) {n : ℤ} (hn : 0 ≤ n): 
+lemma I3 (M : indep_family α) {n : ℤ} (hn : 0 ≤ n): 
   satisfies_I3 (trunc.indep M hn) := 
 begin
   intros I J hIJ hI hJ, 
@@ -30,12 +30,12 @@ begin
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
-def tr (M : matroid U){n : ℤ}(hn : 0 ≤ n) : matroid U := 
+def tr (M : matroid α){n : ℤ}(hn : 0 ≤ n) : matroid α := 
   let M_ind := M.to_indep_family in 
   matroid.of_indep_family ⟨indep M_ind hn, I1 M_ind hn, I2 M_ind hn, I3 M_ind hn⟩
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
-lemma r_eq (M : matroid U){n : ℤ}(hn : 0 ≤ n)(X : set U) :
+lemma r_eq (M : matroid α){n : ℤ}(hn : 0 ≤ n)(X : set α) :
   (tr M hn).r X = min n (M.r X) :=
 begin
   apply indep_family.I_to_r_eq_iff.mpr, 
@@ -60,7 +60,7 @@ begin
   finish, 
 end
 
-lemma weak_image (M : matroid U){n : ℤ}(hn : 0 ≤ n) : 
+lemma weak_image (M : matroid α){n : ℤ}(hn : 0 ≤ n) : 
   (tr M hn) ≤ M := 
 λ X, by {rw r_eq, simp, tauto,}
 

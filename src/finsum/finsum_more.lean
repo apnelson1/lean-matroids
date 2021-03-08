@@ -93,6 +93,15 @@ begin
   rw finsum_eq_finsum_in_univ, 
   exact finsum_in_eq_finsum_in_subset (set.subset_univ _) (λ x _ hx, hf x hx),
 end 
+
+lemma finsum_set_subtype_eq_finsum_set (f : α → M)(P Q : α → Prop):
+  ∑ᶠ (x : {y // P y}) in {x : {y // P y} | Q (coe x)}, f x = ∑ᶠ x in { x | P x ∧ Q x }, f x := 
+by {convert (finsum_in_image _).symm, tidy,}
+
+
+
+
+
 end general 
 
 section nat 

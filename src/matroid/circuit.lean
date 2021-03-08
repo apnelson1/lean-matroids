@@ -7,26 +7,26 @@ noncomputable theory
 
 open set 
 
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
 
 namespace cct_family
 
-def C_to_I (M : cct_family U): (set U → Prop) := 
+def C_to_I (M : cct_family α): (set α → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
-lemma C_to_empty_indep (M : cct_family U) :
+lemma C_to_empty_indep (M : cct_family α) :
   satisfies_empty_indep (C_to_I M) :=
 by {intros X hX, rw subset_empty hX, from M.C1}
 
-lemma C_to_indep_of_subset_indep (M : cct_family U) :
+lemma C_to_indep_of_subset_indep (M : cct_family α) :
   satisfies_indep_of_subset_indep (C_to_I M) :=
 λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
-lemma new_circuit_contains_new_elem {M : cct_family U}{I C : set U}{e : U}:
+lemma new_circuit_contains_new_elem {M : cct_family α}{I C : set α}{e : α}:
   C_to_I M I → C ⊆ (I ∪ {e}) → M.cct C → e ∈ C :=
 λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonmem hCIe he) hC}
 
-lemma add_elem_unique_circuit {M : cct_family U} {I : set U} {e : U}:
+lemma add_elem_unique_circuit {M : cct_family α} {I : set α} {e : α}:
   C_to_I M I → ¬C_to_I M (I ∪ {e}) → ∃! C, M.cct C ∧ C ⊆ I ∪ {e} :=
 begin
   intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
@@ -38,7 +38,7 @@ begin
   from hI _ (subset.trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
 end 
 
-lemma add_elem_le_one_circuit {M : cct_family U} {I C C': set U} (e : U):
+lemma add_elem_le_one_circuit {M : cct_family α} {I C C': set α} (e : α):
   C_to_I M I → (M.cct C ∧ C ⊆ I ∪ {e}) → (M.cct C' ∧ C' ⊆ I ∪ {e}) → C = C' :=
 begin
   intros hI hC hC', 
@@ -48,18 +48,18 @@ begin
   from eq.trans (hC₀ _ hC) (hC₀ _ hC').symm, 
 end
 
-lemma C_to_I3 (M : cct_family U) :
+lemma C_to_I3 (M : cct_family α) :
   satisfies_I3 (C_to_I M) :=
 begin
   -- I3 states that there are no bad pairs 
-  let bad_pair : set U → set U → Prop := 
-    λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:U), e ∈ J \ I → ¬C_to_I M (I ∪ {e}), 
+  let bad_pair : set α → set α → Prop := 
+    λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:α), e ∈ J \ I → ¬C_to_I M (I ∪ {e}), 
   suffices : ∀ I J, ¬bad_pair I J, 
     push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
   by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
   
   --choose a bad pair with D = I-J minimal
-  let bad_pair_diff : set U → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
+  let bad_pair_diff : set α → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D, 
   have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
   rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,  
   rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
@@ -154,16 +154,16 @@ end
 end cct_family 
 
 
-def indep_family.of_cct_family (M : cct_family U) : indep_family U :=
+def indep_family.of_cct_family (M : cct_family α) : indep_family α :=
   ⟨M.C_to_I, M.C_to_empty_indep, M.C_to_indep_of_subset_indep, M.C_to_I3⟩ 
 
 
 namespace matroid 
 
-def of_cct_family (M : cct_family U) : matroid U :=
+def of_cct_family (M : cct_family α) : matroid α :=
   of_indep_family (indep_family.of_cct_family M)
  
-lemma cct_of_cct_family (M : cct_family U) :
+lemma cct_of_cct_family (M : cct_family α) :
   (of_cct_family M).is_circuit = M.cct :=  
 begin
   ext C, rw [is_circuit], 

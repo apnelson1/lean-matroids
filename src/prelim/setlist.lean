@@ -10,37 +10,37 @@ noncomputable theory
 namespace ftype 
 open set 
 
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
 
-def list_union : list (set U) → set U := 
+def list_union : list (set α) → set α := 
   λ Xs, (⋃ (X ∈ Xs), X) 
 
-def list_inter : list (set U) → set U := 
+def list_inter : list (set α) → set α := 
   λ Xs, (⋂ (X ∈ Xs), X)
 
-@[simp] lemma list_empty_union_eq_empty (Xs : list (set U)): 
+@[simp] lemma list_empty_union_eq_empty (Xs : list (set α)): 
   Xs = list.nil → list_union Xs = ∅ :=
 λ h, by {unfold list_union, rw h, simp,}
 
-@[simp] lemma list_empty_inter_eq_univ (Xs : list (set U)): 
+@[simp] lemma list_empty_inter_eq_univ (Xs : list (set α)): 
   Xs = list.nil → list_inter Xs = univ :=
 λ h, by {unfold list_inter, rw h, simp,}
 
-@[simp] lemma list_single_union (Xs : list (set U)):
+@[simp] lemma list_single_union (Xs : list (set α)):
   Xs.length = 1 → list_union Xs = Xs.head := 
 begin
   intro h, unfold list_union, rw list.eq_cons_of_length_one h, 
   ext, simp, 
 end
 
-@[simp] lemma list_single_inter (Xs : list (set U)):
+@[simp] lemma list_single_inter (Xs : list (set α)):
   Xs.length = 1 → list_inter Xs = Xs.head := 
 begin
   intro h, unfold list_inter, rw list.eq_cons_of_length_one h, 
   ext, simp, 
 end
 
-@[simp] lemma list_union_cons (Xs: list (set U))(Y : set U):
+@[simp] lemma list_union_cons (Xs: list (set α))(Y : set α):
   list_union (Y :: Xs) = Y ∪ list_union Xs := 
 begin
   unfold list_union, ext, 
@@ -49,7 +49,7 @@ begin
   refine ⟨λ h, _, λ h, _⟩; finish, 
 end
 
-@[simp] lemma list_inter_cons (Xs: list (set U))(Y : set U):
+@[simp] lemma list_inter_cons (Xs: list (set α))(Y : set α):
   list_inter (Y :: Xs) = Y ∩ list_inter Xs := 
 begin
   unfold list_inter, ext, 
@@ -61,16 +61,16 @@ end
 
 namespace seq
 
-@[simp] lemma fin_zero_Union (Xs : fin 0 → set U): 
+@[simp] lemma fin_zero_Union (Xs : fin 0 → set α): 
 set.Union Xs = ∅  := 
 by {rw [set.Union_eq_empty], exact λ i, fin_zero_elim i}
 
-@[simp] lemma fin_zero_Inter (Xs : fin 0 → set U): 
+@[simp] lemma fin_zero_Inter (Xs : fin 0 → set α): 
 set.Inter Xs = univ  := 
 by {rw [set.Inter_eq_univ], exact λ i, fin_zero_elim i}
 
 
-lemma Union_cons {n : ℕ}(Xs : fin n → set U)(Y : set U):
+lemma Union_cons {n : ℕ}(Xs : fin n → set α)(Y : set α):
 set.Union (fin.cons Y Xs) = set.Union Xs ∪ Y  :=
 begin
   ext, rw [iff.comm, set.mem_union, set.mem_Union, set.mem_Union],   
@@ -85,7 +85,7 @@ begin
   convert h, simp, 
 end
 
-lemma Inter_cons {n : ℕ}(Xs : fin n → set U)(Y : set U):
+lemma Inter_cons {n : ℕ}(Xs : fin n → set α)(Y : set α):
 set.Inter (fin.cons Y Xs) = set.Inter Xs ∩ Y  :=
 begin
   ext, rw [iff.comm, set.mem_inter_iff, set.mem_Inter, set.mem_Inter],   

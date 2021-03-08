@@ -5,22 +5,22 @@ open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
  
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
 
 /-namespace indep_family' 
 
-def r (M : indep_family' U) : (set U) → ℤ := 
+def r (M : indep_family' α) : (set α) → ℤ := 
   λ X, classical.some (M.I3' X)
 
 
-def basis_of (M : indep_family' U)(B X : set U) :=
+def basis_of (M : indep_family' α)(B X : set α) :=
   B ⊆ X ∧ M.indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬M.indep Y)
 
-lemma r_spec (M : indep_family' U) (X : set U): 
+lemma r_spec (M : indep_family' α) (X : set α): 
   ∀ B, M.basis_of B X → size B = M.r X :=
 classical.some_spec (M.I3' X)
 
-lemma extends_to_basis_of (M : indep_family' U)(I X : set U):
+lemma extends_to_basis_of (M : indep_family' α)(I X : set α):
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ M.basis_of B X :=
 begin
   intros hIX hI, 
@@ -30,7 +30,7 @@ begin
   from hB₂.2 Y hBY hYX hY, 
 end
 
-lemma exists_basis_of (M : indep_family' U)(X : set U):
+lemma exists_basis_of (M : indep_family' α)(X : set α):
   ∃ B, M.basis_of B X := 
 by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.empty_indep), finish,}
 
@@ -48,10 +48,10 @@ namespace indep_family
 /-
 
 /-- removing an element from an independent set preserves independence-/
-def satisfies_weak_indep_of_subset_indep : (set U → Prop) → Prop :=
-  λ indep, ∀ I (e : U), e ∉ I → indep (I ∪ {e}) → indep I 
+def satisfies_weak_indep_of_subset_indep : (set α → Prop) → Prop :=
+  λ indep, ∀ I (e : α), e ∉ I → indep (I ∪ {e}) → indep I 
 
-lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set U → Prop):  
+lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set α → Prop):  
   satisfies_weak_indep_of_subset_indep indep → satisfies_indep_of_subset_indep  indep :=
   begin
     intros hwindep_of_subset_indep I J hIJ hJ, 
@@ -63,10 +63,10 @@ lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set U → Pro
   end
 -/
 /-- B spans X and is independent -/
-def is_set_basis (M : indep_family U) := 
+def is_set_basis (M : indep_family α) := 
   λ B X, B ⊆ X ∧ M.indep B ∧ ∀ J, B ⊂ J → J ⊆ X → ¬M.indep J
 
-lemma extends_to_basis {M : indep_family U} {I X : set U} :
+lemma extends_to_basis {M : indep_family α} {I X : set α} :
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ M.is_set_basis B X :=
   begin
     intros h₁ h₂, 
@@ -75,35 +75,35 @@ lemma extends_to_basis {M : indep_family U} {I X : set U} :
   end 
 
 /-- choose extension of an independent set I to a basis of X-/
-def choose_extension_to_basis (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : set U := 
+def choose_extension_to_basis (M : indep_family α) {I X : set α} (hIX : I ⊆ X) (hInd : M.indep I) : set α := 
   classical.some (extends_to_basis hIX hInd)
 
 /-- choose a basis of X -/
-def choose_set_basis (M : indep_family U) (X : set U) :=
+def choose_set_basis (M : indep_family α) (X : set α) :=
   M.choose_extension_to_basis (empty_subset X) (M.I1)
 
 /-- properties of the choice of a basis of X-/
-def choose_extension_to_basis_spec (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : _ := 
+def choose_extension_to_basis_spec (M : indep_family α) {I X : set α} (hIX : I ⊆ X) (hInd : M.indep I) : _ := 
   classical.some_spec (extends_to_basis hIX hInd)
 
-lemma choice_of_extension_to_basis_is_valid (M : indep_family U) {I X : set U} (hIX : I ⊆ X) (hInd : M.indep I) : 
+lemma choice_of_extension_to_basis_is_valid (M : indep_family α) {I X : set α} (hIX : I ⊆ X) (hInd : M.indep I) : 
   I ⊆ (choose_extension_to_basis M hIX hInd) ∧ is_set_basis M (choose_extension_to_basis M hIX hInd) X :=
   classical.some_spec (extends_to_basis hIX hInd)
 
-lemma choice_of_set_basis_is_valid (M : indep_family U) (X : set U) : 
+lemma choice_of_set_basis_is_valid (M : indep_family α) (X : set α) : 
   is_set_basis M (M.choose_set_basis X) X :=
   (choice_of_extension_to_basis_is_valid M (empty_subset X) (M.I1)).2 
 
-lemma has_ext_to_basis (M : indep_family U) {I X : set U}: 
+lemma has_ext_to_basis (M : indep_family α) {I X : set α}: 
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ is_set_basis M B X := 
   λ hIX hI, by {use choose_extension_to_basis M hIX hI, 
                   from choice_of_extension_to_basis_is_valid M hIX hI}
 
-lemma has_basis (M : indep_family U) (X : set U):
+lemma has_basis (M : indep_family α) (X : set α):
   ∃ B, M.is_set_basis B X := 
   by {use choose_set_basis M X, from choice_of_set_basis_is_valid M X}
 
-lemma size_ind_le_size_set_basis {M : indep_family U}{I B X : set U}:
+lemma size_ind_le_size_set_basis {M : indep_family α}{I B X : set α}:
   I ⊆ X → M.indep I → M.is_set_basis B X → size I ≤ size B := 
   begin
     intros hIX hI hB, by_contra hlt, push_neg at hlt, 
@@ -113,7 +113,7 @@ lemma size_ind_le_size_set_basis {M : indep_family U}{I B X : set U}:
     from union_of_subsets hB.1 (subset_of_mem_of_subset h₁e.1 hIX),
   end
 
-lemma set_bases_equicardinal {M : indep_family U}{X B₁ B₂ : set U} :
+lemma set_bases_equicardinal {M : indep_family α}{X B₁ B₂ : set α} :
   M.is_set_basis B₁ X → M.is_set_basis B₂ X → size B₁ = size B₂ :=
 begin
   intros h₁ h₂, apply le_antisymm, 
@@ -121,17 +121,17 @@ begin
   from size_ind_le_size_set_basis h₂.1 h₂.2.1 h₁, 
 end 
 
---lemma basis_ext_inter_set {M : indep_family U}{X B₁ }
+--lemma basis_ext_inter_set {M : indep_family α}{X B₁ }
 
-def I_to_r (M : indep_family U) : (set U → ℤ) := 
+def I_to_r (M : indep_family α) : (set α → ℤ) := 
   λ X, size (M.choose_set_basis X)
 
-lemma I_to_r_max (M : indep_family U)(X : set U): 
+lemma I_to_r_max (M : indep_family α)(X : set α): 
   ∃ B, B ⊆ X ∧ M.indep B ∧ size B = M.I_to_r X := 
   by {use M.choose_set_basis X, have h := M.choice_of_set_basis_is_valid X, 
             from ⟨h.1,⟨h.2.1,rfl⟩⟩}
     
-lemma I_to_r_ub {M : indep_family U}{I X : set U}: 
+lemma I_to_r_ub {M : indep_family α}{I X : set α}: 
   I ⊆ X → M.indep I → size I ≤ M.I_to_r X := 
 begin
   intros hI hInd, by_contra a, push_neg at a, 
@@ -142,7 +142,7 @@ begin
   linarith, 
 end 
 
-lemma I_to_r_eq_iff {M : indep_family U}{X : set U}{n : ℤ} :
+lemma I_to_r_eq_iff {M : indep_family α}{X : set α}{n : ℤ} :
   M.I_to_r X = n ↔ ∃ B, M.is_set_basis B X ∧ size B = n :=
   let B₀ := M.choose_set_basis X, hB₀ := M.choice_of_set_basis_is_valid X in 
 begin
@@ -151,15 +151,15 @@ begin
   from (rfl.congr hBsize).mp (eq.symm (set_bases_equicardinal hB hB₀)), 
 end
 
-lemma has_set_basis_with_size (M : indep_family U)(X : set U) : 
+lemma has_set_basis_with_size (M : indep_family α)(X : set α) : 
   ∃ B, M.is_set_basis B X ∧ size B = M.I_to_r X :=
   I_to_r_eq_iff.mp (rfl : M.I_to_r X = M.I_to_r X)
  
-lemma I_to_r_of_set_basis {M : indep_family U}{B X : set U}:
+lemma I_to_r_of_set_basis {M : indep_family α}{B X : set α}:
   M.is_set_basis B X → M.I_to_r X = size B := 
   λ h, set_bases_equicardinal (M.choice_of_set_basis_is_valid X) h
 
-lemma has_nested_basis_pair (M : indep_family U){X Y : set U}:
+lemma has_nested_basis_pair (M : indep_family α){X Y : set α}:
   X ⊆ Y → ∃ BX BY, BX ⊆ BY ∧ M.is_set_basis BX X ∧ M.is_set_basis BY Y :=
 begin
   intro hXY, rcases M.has_basis X with ⟨BX,hBX⟩, 
@@ -169,56 +169,56 @@ end
 
 -----------------------------------------------------------------------
 
-lemma I_to_R0 (M : indep_family U): 
+lemma I_to_R0 (M : indep_family α): 
   satisfies_R0 M.I_to_r := 
 λ X, by {have := I_to_r_ub (empty_subset X) (M.I1), rw size_empty at this, assumption}
 
-lemma I_to_R1 (M : indep_family U): 
+lemma I_to_R1 (M : indep_family α): 
   satisfies_R1 M.I_to_r := 
 λ X, by {rcases M.I_to_r_max X with ⟨B, ⟨hBX, ⟨_, hsB⟩⟩⟩, from (eq.symm hsB).trans_le (size_monotone hBX)}
 
-lemma I_to_r_of_indep (M : indep_family U)(I : set U): 
+lemma I_to_r_of_indep (M : indep_family α)(I : set α): 
   M.indep I → M.I_to_r I = size I :=
 λ h, le_antisymm (M.I_to_R1 I) (I_to_r_ub (subset_refl I) h)
 
-lemma I_to_R2 (M : indep_family U): 
+lemma I_to_R2 (M : indep_family α): 
   satisfies_R2 M.I_to_r := 
 begin 
   intros X Y hXY, rcases M.I_to_r_max X with ⟨B,⟨hBX,⟨hIB,hsB⟩⟩⟩, 
   have := I_to_r_ub (subset.trans hBX hXY) hIB, rw hsB at this, assumption
 end 
 
-lemma I_to_r_eq_rank_basis_union {M : indep_family U}{B X: set U}(Y : set U):
+lemma I_to_r_eq_rank_basis_union {M : indep_family α}{B X: set α}(Y : set α):
   M.is_set_basis B X → M.I_to_r (B ∪ Y) = M.I_to_r (X ∪ Y) := 
 begin
   intro h, 
-  rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨BU, ⟨hUs, hUb⟩⟩,
-  have := I_to_r_ub (_ : BU ⊆ B ∪ Y) hUb.2.1,  
+  rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨Bα, ⟨hαs, hαb⟩⟩,
+  have := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1,  
   have := M.I_to_R2 _ _ (subset_union_subset_left B X Y h.1), 
-  have := I_to_r_of_set_basis hUb, linarith, 
-  have : B = BU ∩ X := by
+  have := I_to_r_of_set_basis hαb, linarith, 
+  have : B = Bα ∩ X := by
   {
-    have := I_to_r_ub (inter_subset_right BU X) (M.I2 _ _ (inter_subset_left BU X) hUb.2.1),
+    have := I_to_r_ub (inter_subset_right Bα X) (M.I2 _ _ (inter_subset_left Bα X) hαb.2.1),
     rw [I_to_r_of_set_basis h] at this, 
-    from eq_of_le_size_subset (subset_of_inter_mpr hUs h.1) this, 
+    from eq_of_le_size_subset (subset_of_inter_mpr hαs h.1) this, 
   },
-  have h' := subset_iff_inter_eq_left.mp hUb.1, rw [inter_distrib_left, ←this] at h', 
-  rw ←h', from subset_union_subset_right _ _ _ (inter_subset_right BU Y),
+  have h' := subset_iff_inter_eq_left.mp hαb.1, rw [inter_distrib_left, ←this] at h', 
+  rw ←h', from subset_union_subset_right _ _ _ (inter_subset_right Bα Y),
 end
 
 
-lemma I_to_R3 (M : indep_family U): 
+lemma I_to_R3 (M : indep_family α): 
   satisfies_R3 M.I_to_r := 
 begin
   intros X Y, 
   rcases M.has_nested_basis_pair (inter_subset_left X Y) with ⟨BI, BX, ⟨hss, ⟨hBI, hBX⟩⟩⟩,   
   rcases M.has_ext_to_basis (subset.trans hBI.1 (inter_subset_right X Y)) hBI.2.1 with ⟨BY, ⟨hBIBY,hBY⟩⟩, 
-  rcases M.has_ext_to_basis (subset_union_left BX BY) hBX.2.1 with ⟨BU, ⟨hBXBU,hBU⟩⟩, 
+  rcases M.has_ext_to_basis (subset_union_left BX BY) hBX.2.1 with ⟨Bα, ⟨hBXBα,hBα⟩⟩, 
   rw [←I_to_r_eq_rank_basis_union Y hBX, union_comm BX _, 
       ←I_to_r_eq_rank_basis_union BX hBY, union_comm BY, 
        I_to_r_of_set_basis hBI, I_to_r_of_set_basis hBX, 
-       I_to_r_of_set_basis hBU, I_to_r_of_set_basis hBY],
-  have := size_monotone hBU.1, have := size_monotone (subset_of_inter_mpr hss hBIBY),
+       I_to_r_of_set_basis hBα, I_to_r_of_set_basis hBY],
+  have := size_monotone hBα.1, have := size_monotone (subset_of_inter_mpr hss hBIBY),
   linarith[size_modular BX BY]
 end 
 
@@ -226,10 +226,10 @@ end indep_family
 
 namespace matroid 
 
-def of_indep_family (MI: indep_family U) : matroid U := 
+def of_indep_family (MI: indep_family α) : matroid α := 
   ⟨MI.I_to_r, MI.I_to_R0, MI.I_to_R1, MI.I_to_R2, MI.I_to_R3⟩  
 
-lemma indep_of_indep_family (MI : indep_family U) :
+lemma indep_of_indep_family (MI : indep_family α) :
   (matroid.of_indep_family MI).is_indep = MI.indep := 
 begin
   unfold is_indep of_indep_family, dsimp only, ext X, 

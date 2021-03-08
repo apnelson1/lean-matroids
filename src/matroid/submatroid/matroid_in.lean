@@ -6,28 +6,28 @@ noncomputable theory
 
 open matroid set 
 
-variables {U V U₁ U₂ U₃: Type}
-[fintype U][fintype V]
-[fintype U₁][fintype U₂][fintype U₃]
+variables {α β α₁ α₂ α₃: Type}
+[fintype α][fintype β]
+[fintype α₁][fintype α₂][fintype α₃]
 
-/-- a matroid_in U corresponds to a matroid defined on some subset E of U. 
+/-- a matroid_in α corresponds to a matroid defined on some subset E of α. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
 
-structure matroid_in (U : Type)[fintype U] :=
-(E : set U)
-(carrier : matroid U)
+structure matroid_in (α : Type)[fintype α] :=
+(E : set α)
+(carrier : matroid α)
 (support : carrier.r Eᶜ = 0)
 
 namespace matroid_in 
 
-/-- the rank of a set X wrt a matroid_in U. Elements of X outside the E of U are ignored -/
-def r (M : matroid_in U)(X : set U) := M.carrier.r X 
+/-- the rank of a set X wrt a matroid_in α. Elements of X outside the E of α are ignored -/
+def r (M : matroid_in α)(X : set α) := M.carrier.r X 
 
-lemma r_carrier_eq_r (M : matroid_in U)(X : set U): 
+lemma r_carrier_eq_r (M : matroid_in α)(X : set α): 
   M.carrier.r X = M.r X := 
 rfl 
 
-lemma r_eq_r_inter (M : matroid_in U)(X : set U):
+lemma r_eq_r_inter (M : matroid_in α)(X : set α):
   M.r X = M.r (X ∩ M.E) :=
 begin
   nth_rewrite 0 ←(inter_union_compl X M.E), 
@@ -35,15 +35,15 @@ begin
   exact rank_zero_of_inter_rank_zero _ M.support, 
 end
 
-lemma r_eq_inter_r (M : matroid_in U)(X : set U):
+lemma r_eq_inter_r (M : matroid_in α)(X : set α):
   M.r X = M.r (M.E ∩ X) :=
 by rw [r_eq_r_inter, inter_comm]
 
-lemma ext' {M M' : matroid_in U}(h : M.E = M'.E)(h' : M.carrier = M'.carrier): 
+lemma ext' {M M' : matroid_in α}(h : M.E = M'.E)(h' : M.carrier = M'.carrier): 
   M = M' :=
 by {cases M, cases M', dsimp only at *, induction h', induction h, refl,} 
 
-@[ext] lemma ext {M₁ M₂ : matroid_in U}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
+@[ext] lemma ext {M₁ M₂ : matroid_in α}(h_ground : M₁.E = M₂.E)(h_r : ∀ X ⊆ M₁.E, M₁.r X = M₂.r X):
   M₁ = M₂ := 
 begin
   apply ext' h_ground, ext X,
@@ -55,8 +55,8 @@ begin
   exact h_r, 
 end
 
-/-- a matroid_in U gives a matroid on a subtype -/
-def as_mat_on (M : matroid_in U)(E : set U) : matroid E := 
+/-- a matroid_in α gives a matroid on a subtype -/
+def as_mat_on (M : matroid_in α)(E : set α) : matroid E := 
 { r := λ X, M.r X,
   R0 := λ X, M.carrier.R0 _,
   R1 := λ X, by {dsimp only [r], rw ←size_subtype_img, apply M.carrier.R1},
@@ -64,19 +64,19 @@ def as_mat_on (M : matroid_in U)(E : set U) : matroid E :=
   R3 := λ X Y, by {dsimp only, convert M.carrier.R3 _ _, apply set.image_union, 
                    exact (set.image_inter subtype.val_injective).symm} }
 
-/-- a matroid_in U, viewed as a matroid on the subtype defined by its E -/
-def as_mat (M : matroid_in U) : matroid M.E := as_mat_on M M.E 
+/-- a matroid_in α, viewed as a matroid on the subtype defined by its E -/
+def as_mat (M : matroid_in α) : matroid M.E := as_mat_on M M.E 
 
 mk_simp_attribute msimp "minor simp lemmas"
 
 --attribute [msimp] diff_eq 
 
-@[simp, msimp] lemma as_mat_r (M : matroid_in U)(X : set (M.E)): 
-  M.as_mat.r X = M.r (X : set U) :=
+@[simp, msimp] lemma as_mat_r (M : matroid_in α)(X : set (M.E)): 
+  M.as_mat.r X = M.r (X : set α) :=
 rfl 
 
-/-- a matroid_in U, constructed from a matroid on a subtype of U -/
-def of_mat {E : set U}(N : matroid E) : matroid_in U := 
+/-- a matroid_in α, constructed from a matroid on a subtype of α -/
+def of_mat {E : set α}(N : matroid E) : matroid_in α := 
 { E := E,
   carrier := 
   { r := λ X, N.r (inter_subtype E X ),
@@ -87,15 +87,15 @@ def of_mat {E : set U}(N : matroid E) : matroid_in U :=
     R3 := λ X Y, N.R3 _ _, },
   support := by {simp [inter_subtype],} }
 
-@[simp, msimp] lemma of_mat_E {E : set U}(N : matroid E) : 
+@[simp, msimp] lemma of_mat_E {E : set α}(N : matroid E) : 
   (of_mat N).E = E :=
 rfl 
 
-@[simp, msimp] lemma of_mat_r {E : set U}(N : matroid E)(X : set U) : 
+@[simp, msimp] lemma of_mat_r {E : set α}(N : matroid E)(X : set α) : 
   (of_mat N).r X = N.r (inter_subtype E X) := 
 rfl 
 
-lemma r_of_mat {E : set U}(N : matroid E)(X : set E): 
+lemma r_of_mat {E : set α}(N : matroid E)(X : set E): 
   N.r X = (of_mat N).r X := 
 begin
   simp only [matroid_in.of_mat_r], convert rfl, 
@@ -104,7 +104,7 @@ begin
   tidy, 
 end
 
-@[simp,msimp] lemma as_mat_of_mat {E : set U}(N : matroid E) : 
+@[simp,msimp] lemma as_mat_of_mat {E : set α}(N : matroid E) : 
   as_mat (of_mat N) = N :=
 begin
   ext X, dsimp only [as_mat, as_mat_on, of_mat], convert rfl, ext x, 
@@ -114,12 +114,12 @@ begin
   cases x with x hx, rcases h with ⟨y,z, h⟩, convert h.1, convert h.2.symm, 
 end
 
-@[simp,msimp] lemma of_mat_as_mat (M : matroid_in U) : 
+@[simp,msimp] lemma of_mat_as_mat (M : matroid_in α) : 
   of_mat (as_mat M) = M :=
 ext (by simp) (λ X hX, by {simp only with msimp coe_up at *, congr', exact subset_iff_inter_eq_left.mp hX}) 
 
 
-lemma of_mat_as_mat_on {E E' : set U}(N : matroid E)(h : E' = E): 
+lemma of_mat_as_mat_on {E E' : set α}(N : matroid E)(h : E' = E): 
    of_mat ((of_mat N).as_mat_on E') = of_mat N := 
 begin
   ext : 1, convert rfl, 
@@ -130,51 +130,51 @@ begin
   simp [h] with coe_up, 
 end
 
-lemma of_mat_inj {R : set U}(N N' : matroid R):
+lemma of_mat_inj {R : set α}(N N' : matroid R):
   of_mat N = of_mat N' → N = N' := 
 λ h, by {ext, rw [r_of_mat,r_of_mat,h]}  
 
-def as_matroid_in (M : matroid U) : matroid_in U := ⟨univ, M, by simp⟩
+def as_matroid_in (M : matroid α) : matroid_in α := ⟨univ, M, by simp⟩
 
-instance coe_to_matroid_in : has_coe (matroid U) (matroid_in U) := ⟨λ M, as_matroid_in M⟩
+instance coe_to_matroid_in : has_coe (matroid α) (matroid_in α) := ⟨λ M, as_matroid_in M⟩
 
-@[simp, msimp] lemma as_matroid_in_E (M : matroid U): 
+@[simp, msimp] lemma as_matroid_in_E (M : matroid α): 
   (as_matroid_in M).E = univ 
 := rfl 
 
-@[simp, msimp] lemma coe_to_as_matroid_in_E (M : matroid U): 
-  (M : matroid_in U).E = univ 
+@[simp, msimp] lemma coe_to_as_matroid_in_E (M : matroid α): 
+  (M : matroid_in α).E = univ 
 := rfl 
 
-@[simp, msimp] lemma as_matroid_in_r (M : matroid U)(X : set U): 
+@[simp, msimp] lemma as_matroid_in_r (M : matroid α)(X : set α): 
   (as_matroid_in M).r X = M.r X 
 := rfl 
 
-@[simp, msimp] lemma coe_r (M : matroid U)(X : set U): 
-  (M : matroid_in U).r X = M.r X 
+@[simp, msimp] lemma coe_r (M : matroid α)(X : set α): 
+  (M : matroid_in α).r X = M.r X 
 := rfl 
 
-@[simp, msimp] lemma coe_E (M : matroid U): 
-  (M : matroid_in U).E = univ := 
+@[simp, msimp] lemma coe_E (M : matroid α): 
+  (M : matroid_in α).E = univ := 
 rfl 
 
 
 
 section defs 
 
-/-- translates a property of sets defined on (matroid V) to the corresponding
-set property on (matroid_in U). -/
+/-- translates a property of sets defined on (matroid β) to the corresponding
+set property on (matroid_in α). -/
 def lift_mat_set_property 
-(P : Π {V : Type}[fintype V], matroid V → set V → Prop): 
-  (matroid_in U → set U → Prop) :=
+(P : Π {β : Type}[fintype β], matroid β → set β → Prop): 
+  (matroid_in α → set α → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 
 ---------------------------------------------------------------------------
 
-def is_indep [f : fintype U](M : matroid_in U)(X : set U): Prop := 
+def is_indep [f : fintype α](M : matroid_in α)(X : set α): Prop := 
   (lift_mat_set_property (@matroid.is_indep)) M X 
 
-lemma indep_iff_r (M : matroid_in U)(X : set U): 
+lemma indep_iff_r (M : matroid_in α)(X : set α): 
   is_indep M X ↔ M.r X = size X := 
 begin
   rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r],  
@@ -189,22 +189,22 @@ begin
   apply inter_subset_left, 
 end
 
-lemma indep_iff_carrier {M : matroid_in U}{X : set U}:
+lemma indep_iff_carrier {M : matroid_in α}{X : set α}:
   M.is_indep X ↔ M.carrier.is_indep X :=
 by rw [indep_iff_r, matroid.indep_iff_r, r_carrier_eq_r]
 
-lemma indep_iff_subtype {M : matroid_in U}{X : set U}: 
+lemma indep_iff_subtype {M : matroid_in α}{X : set α}: 
   M.is_indep X ↔ X ⊆ M.E ∧ M.as_mat.is_indep (inter_subtype M.E X) :=
 by rw [is_indep, lift_mat_set_property]
 
-@[simp, msimp] lemma indep_iff_coe {M : matroid U}{X : set U}:
-  (M : matroid_in U).is_indep X ↔ M.is_indep X := 
+@[simp, msimp] lemma indep_iff_coe {M : matroid α}{X : set α}:
+  (M : matroid_in α).is_indep X ↔ M.is_indep X := 
 by {rw [matroid_in.indep_iff_r, matroid.indep_iff_r], simp,  }
 
-def is_circuit (M : matroid_in U)(C : set U) := 
+def is_circuit (M : matroid_in α)(C : set α) := 
   (lift_mat_set_property (@matroid.is_circuit)) M C 
 
-lemma circuit_iff_r {M : matroid_in U}{C : set U}:
+lemma circuit_iff_r {M : matroid_in α}{C : set α}:
   M.is_circuit C ↔ M.r C = size C - 1 ∧ (∀ Y, Y ⊂ C → M.r Y = size Y) ∧ C ⊆ M.E := 
 begin
   simp_rw [is_circuit, lift_mat_set_property, matroid.circuit_iff_r], 
@@ -227,18 +227,18 @@ begin
   refine subset.lt_of_lt_of_le hY (inter_subset_left _ _), 
 end
 
-lemma circuit_iff_carrier {M : matroid_in U}{C : set U}:
+lemma circuit_iff_carrier {M : matroid_in α}{C : set α}:
   M.is_circuit C ↔ M.carrier.is_circuit C ∧ C ⊆ M.E :=
 by {simp_rw [circuit_iff_r, matroid.circuit_iff_r, r_carrier_eq_r], tauto}  
 
-lemma circuit_iff_subtype {M : matroid_in U}{X : set U}:
+lemma circuit_iff_subtype {M : matroid_in α}{X : set α}:
   M.is_circuit X ↔ X ⊆ M.E ∧ M.as_mat.is_circuit (inter_subtype M.E X) := 
 by rw [is_circuit, lift_mat_set_property]
 
-def dual (M : matroid_in U) : matroid_in U := 
+def dual (M : matroid_in α) : matroid_in α := 
   of_mat (as_mat M).dual 
 
-@[simp, msimp] lemma dual_r (M : matroid_in U)(X : set U) :
+@[simp, msimp] lemma dual_r (M : matroid_in α)(X : set α) :
   (dual M).r X = size (X ∩ M.E) + M.r (M.E \ X) - M.r M.E  :=
 begin
   rw [dual, of_mat_r, matroid.dual_r], simp only with coe_up, convert rfl, 
@@ -247,27 +247,27 @@ begin
   simp only with coe_up, 
 end 
 
-lemma of_mat_dual {E : set U}(M : matroid E): 
+lemma of_mat_dual {E : set α}(M : matroid E): 
   of_mat M.dual = (of_mat M).dual := 
 by {unfold dual, convert rfl, simp}
 
-@[simp, msimp] lemma dual_ground (M : matroid_in U): 
+@[simp, msimp] lemma dual_ground (M : matroid_in α): 
   (dual M).E = M.E := 
 rfl 
 
-@[simp, msimp] lemma dual_dual (M : matroid_in U):
+@[simp, msimp] lemma dual_dual (M : matroid_in α):
   M.dual.dual = M := 
 by {simp_rw [dual,of_mat_dual, as_mat_of_mat, ←of_mat_dual, matroid.dual_dual, of_mat_as_mat]}
 
-lemma dual_inj {M M' : matroid_in U}(h : M.dual = M'.dual):
+lemma dual_inj {M M' : matroid_in α}(h : M.dual = M'.dual):
   M = M' := 
 by rw [←dual_dual M, ←dual_dual M',h]
 
-lemma dual_inj_iff {M M' : matroid_in U}:
+lemma dual_inj_iff {M M' : matroid_in α}:
   M = M' ↔ M.dual = M'.dual := 
 ⟨λ h, by {rw h}, λ h, dual_inj h⟩
 
-lemma coindep_iff_r {M : matroid_in U}{X : set U}: 
+lemma coindep_iff_r {M : matroid_in α}{X : set α}: 
   M.dual.is_indep X ↔ X ⊆ M.E ∧ M.r (M.E \ X) = M.r M.E :=
 begin
   simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_iff_inter_eq_left], 
@@ -283,10 +283,10 @@ end defs
 section isom 
 
 /-- isomorphism between two matroid_in. -/
-def isom (M : matroid_in U)(N : matroid_in V) := 
+def isom (M : matroid_in α)(N : matroid_in β) := 
   matroid.isom M.as_mat N.as_mat 
 
-def isom_equiv {M₁ M₂ : matroid_in U}{N₁ N₂ : matroid_in V}(hM : M₁ = M₂)(hN : N₁ = N₂)(i : isom M₁ N₁):
+def isom_equiv {M₁ M₂ : matroid_in α}{N₁ N₂ : matroid_in β}(hM : M₁ = M₂)(hN : N₁ = N₂)(i : isom M₁ N₁):
   isom M₂ N₂ := 
 {
   equiv := ((equiv.set.of_eq (by rw hM : M₂.E = M₁.E)).trans i.equiv).trans (equiv.set.of_eq (by rw hN : N₁.E = N₂.E)),
@@ -294,30 +294,30 @@ def isom_equiv {M₁ M₂ : matroid_in U}{N₁ N₂ : matroid_in V}(hM : M₁ = 
 }
 
 /-- there exists an isomorphism between two matroid_in -/
-def is_isom (M : matroid_in U)(N : matroid_in V) := 
+def is_isom (M : matroid_in α)(N : matroid_in β) := 
   nonempty (M.isom N)
 
 /-- isomorphism from a matroid_in to a matroid -/
-def isom_to_matroid (M : matroid_in U)(N : matroid V) := 
+def isom_to_matroid (M : matroid_in α)(N : matroid β) := 
   matroid.isom M.as_mat N 
 
 /-- there exists an isomorphism from a matroid_in to a matroid -/
-def is_isom_to_matroid (M : matroid_in U)(N : matroid V) := 
+def is_isom_to_matroid (M : matroid_in α)(N : matroid β) := 
   nonempty (M.isom_to_matroid N)
 
 
 /-- converts an isomorphism between (M : matroid_in) and (N : matroid) to one between 
 (M : matroid_in) and (↑N : matroid_in) -/
-def isom_of_isom_to_matroid {M : matroid_in U}{N : matroid V}(i : isom_to_matroid M N): 
-  isom M (N : matroid_in V) :=
-⟨ i.equiv.trans ((equiv.set.univ V).symm.trans (equiv.set.of_eq (coe_E N).symm)), 
+def isom_of_isom_to_matroid {M : matroid_in α}{N : matroid β}(i : isom_to_matroid M N): 
+  isom M (N : matroid_in β) :=
+⟨ i.equiv.trans ((equiv.set.univ β).symm.trans (equiv.set.of_eq (coe_E N).symm)), 
   λ X, by {rw [←i.on_rank X, as_mat_r, coe_r], congr', unfold_coes, ext, simp}⟩
 
 /-- converts an isomorphism between (M : matroid_in) and (↑N : matroid_in) to one between 
 (M : matroid_in) and (N : matroid) -/
-def isom_to_matroid_of_isom {M : matroid_in U}{N : matroid V}(i : isom M (N : matroid_in V)):
+def isom_to_matroid_of_isom {M : matroid_in α}{N : matroid β}(i : isom M (N : matroid_in β)):
   isom_to_matroid M N := 
-⟨ i.equiv.trans ((equiv.set.of_eq (coe_E N)).trans (equiv.set.univ V)),
+⟨ i.equiv.trans ((equiv.set.of_eq (coe_E N)).trans (equiv.set.univ β)),
   λ X, begin
     rw [←i.on_rank X, as_mat_r, coe_r], congr' 1, 
     unfold_coes, ext, 
@@ -328,22 +328,22 @@ def isom_to_matroid_of_isom {M : matroid_in U}{N : matroid V}(i : isom M (N : ma
     {rintros ⟨x,hx,⟨hxX, h'⟩⟩, refine ⟨x,hx,hxX,_⟩, try {rw h', simp}, try {rw ←h', simp},},       
   end ⟩ 
 
-lemma is_isom_to_matroid_iff_is_isom_to_coe {M : matroid_in U}{N : matroid V}:
-  is_isom_to_matroid M N ↔ is_isom M (N : matroid_in V) :=
+lemma is_isom_to_matroid_iff_is_isom_to_coe {M : matroid_in α}{N : matroid β}:
+  is_isom_to_matroid M N ↔ is_isom M (N : matroid_in β) :=
 begin
   split,
   rintros ⟨i⟩, exact ⟨isom_of_isom_to_matroid i⟩, 
   rintros ⟨i⟩, exact ⟨isom_to_matroid_of_isom i⟩, 
 end
 
-/-- for (M : matroid U), gives an matroid_in isomorphism from of_mat M to M -/
-def coe_isom (M : matroid U) : 
-isom_to_matroid (M : matroid_in U) M := 
+/-- for (M : matroid α), gives an matroid_in isomorphism from of_mat M to M -/
+def coe_isom (M : matroid α) : 
+isom_to_matroid (M : matroid_in α) M := 
 { equiv := equiv.subtype_univ_equiv (by tauto),
   on_rank := λ X, by {apply congr_arg, ext, exact iff.rfl, } }
 
-/-- for (M : matroid U), gives a matroid_in isomorphism from M to (M.as_mat : matroid_in M.E)-/
-def as_mat_isom (M : matroid_in U) : isom M (M.as_mat : matroid_in M.E) :=
+/-- for (M : matroid α), gives a matroid_in isomorphism from M to (M.as_mat : matroid_in M.E)-/
+def as_mat_isom (M : matroid_in α) : isom M (M.as_mat : matroid_in M.E) :=
 { equiv := (equiv.set.univ M.E).symm.trans (equiv.set.of_eq (coe_E M.as_mat).symm), 
   on_rank := λ X,  begin
     simp only [as_mat_r, coe_r,subtype.coe_mk,coe_E], 
@@ -358,8 +358,8 @@ end}
 
 /-- N is isomorphic to a matroid_in of M iff there is a suitable injection from N to M. 
 Yuck!  -/
-lemma isom_to_matroid_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
-  M.is_isom_to_matroid N ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
+lemma isom_to_matroid_iff_exists_embedding {M : matroid_in α}{N : matroid β}:
+  M.is_isom_to_matroid N ↔ ∃ φ : β ↪ α, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
 begin
   split, 
   begin
@@ -383,7 +383,7 @@ begin
   rintros ⟨φ, hrange, hr⟩, 
   set E := set.range φ with hE, 
 
-  set eqv : M.E ≃ V := 
+  set eqv : M.E ≃ β := 
     (equiv.trans (equiv.set.range φ φ.inj') (equiv.set.of_eq hrange)).symm with heqv, 
 
   refine nonempty.intro ⟨eqv, λ X, _⟩, 
@@ -401,8 +401,8 @@ begin
   all_goals {simp [heqv, equiv.set.apply_range_symm φ φ.inj']}, 
 end
 
-lemma isom_to_coe_iff_exists_embedding {M : matroid_in U}{N : matroid V}:
-  M.is_isom (N : matroid_in V) ↔ ∃ φ : V ↪ U, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
+lemma isom_to_coe_iff_exists_embedding {M : matroid_in α}{N : matroid β}:
+  M.is_isom (N : matroid_in β) ↔ ∃ φ : β ↪ α, range φ = M.E ∧ ∀ X, N.r X = M.r (φ '' X) := 
 by rw [←isom_to_matroid_iff_exists_embedding, is_isom_to_matroid_iff_is_isom_to_coe]
 
 end isom 

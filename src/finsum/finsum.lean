@@ -12,13 +12,13 @@ import data.finsupp
 /-!
 # Finite sums over types and sets
 
-We define sums over types and subsets of types, with no finiteness hypotheses. All infinite
+γe define sums over types and subsets of types, with no finiteness hypotheses. All infinite
 sums are defined to be junk values (i.e. zero). This approach is sometimes easier to use
 than `finset.sum` when issues arise with `finset` and `fintype` being data.
 
 ## Main definitions
 
-Variables:`
+βariables:`
 
 `(α : Type u)`
 `(s : set α)`
@@ -48,7 +48,7 @@ are all focussed on 0, and there are no analogous definitions for 1.
 
 ## Todo
 
-We did not add `is_finite (X : Type) : Prop`, because it is simply `nonempty (fintype X)`.
+γe did not add `is_finite (X : Type) : Prop`, because it is simply `nonempty (fintype X)`.
 There is work on `fincard` in the pipeline, which returns the cardinality of `X` if it
 is finite, and 0 otherwise.
 

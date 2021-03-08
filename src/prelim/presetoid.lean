@@ -1,6 +1,6 @@
 import tactic .single 
 
-/- WIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
+/- γIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
 that it is transitive and symmetric -/
 
 open_locale classical 
@@ -37,6 +37,11 @@ iff.rfl
 def classes : set (set α) := 
   { X | S.is_class X }
 
+
+lemma mem_classes_iff_is_class {X : set α}: 
+  X ∈ S.classes ↔ S.is_class X :=
+by simp [classes]
+
 @[trans] lemma trans (hab : S.rel a b)(hbc : S.rel b c) : 
   S.rel a c :=
 S.rel_transitive hab hbc
@@ -61,8 +66,6 @@ end
   (S.cl a).nonempty ↔ S.rel a a := 
 by {rw [← ne_empty_iff_nonempty, ← @not_not (S.rel a a), not_iff_not], apply cl_eq_empty_iff}
 
-
-
 lemma rel_comm: 
   S.rel a b ↔ S.rel b a := 
 by {split; {intro, symmetry, assumption}} 
@@ -78,7 +81,6 @@ S.trans (S.mem_cl_iff.mp ha) (S.symm (S.mem_cl_iff.mp hb))
 lemma rel_self_of_mem_class {s : set α}(hs : S.is_class s)(ha : a ∈ s):
   S.rel a a :=
 by {obtain ⟨hb, ⟨b,rfl⟩⟩ := hs, exact S.rel_self_of_rel (S.mem_cl_iff.mp ha), }
-
 
 lemma rel_of_mems_class {s : set α}(hs : S.is_class s)(ha : a ∈ s)(hb : b ∈ s):
   S.rel a b :=
@@ -97,6 +99,11 @@ begin
   obtain ⟨a, ⟨ha,rfl⟩⟩ := h, 
   exact ⟨⟨⟨a,S.mem_cl_iff.mpr ha⟩⟩,a,rfl⟩,
 end
+
+lemma cl_is_class (ha : S.rel a a):
+  S.is_class (S.cl a) :=
+S.is_class_iff_rep.mpr ⟨a, ha, rfl⟩ 
+
 
 @[simp] lemma mem_classes_iff {X : set α}: 
   X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=

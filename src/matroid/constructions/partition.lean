@@ -11,25 +11,24 @@ noncomputable theory
 
 namespace partition
 
---finiteness assumption on ι could/should be removed 
-variables {U ι : Type}[fintype U](f : U → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
+variables {α ι : Type}[fintype α](f : α → ι){b : ι → ℤ}(hb : ∀ i, 0 ≤ b i)
 
-/-- the partition matroid - given a partition of U encoded by a function f : U → ι, the independent sets are those
+/-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/
-def M : matroid U := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
+def M : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (hb i))
 
-lemma indep_iff (X : set U) : 
+lemma indep_iff (X : set α) : 
   (M f hb).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
 by {rw [M, idsum.indep_iff], simp_rw [unif.uniform_matroid_indep_iff, idsum.size_coe_eq]}
 
-lemma r_eq (X : set U): 
+lemma r_eq (X : set α): 
   (M f hb).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
 by {rw [M, idsum.r_eq], simp_rw [unif.uniform_matroid_rank, idsum.size_coe_eq]}
 
 /- in the partition matroid where the upper bounds are all at most one
 (such as the parallel partition matroid), the rank of a set is the number of 
 cells for which the bound is 1 that it insersects
-lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set U):
+lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set α):
   (M f hb).r X = size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} :=
 begin
   rw [r_eq],
@@ -56,29 +55,29 @@ end partition
 
 section presetoid_class
 
-variables {U : Type}[fintype U](S : presetoid U)
+variables {α : Type}[fintype α](S : presetoid α)
 
 namespace presetoid_matroid
 
-/- Given a presetoid S on U, we construct a matroid on U whose independent sets are those containing
-no elements of the kernel of U, and at most one element of each class of U -/
+/- Given a presetoid S on α, we construct a matroid on α whose independent sets are those containing
+no elements of the kernel of α, and at most one element of each class of α -/
 
 
 
-def partition_fn : set U → ℤ := 
+def partition_fn : set α → ℤ := 
   λ X, ite (X = ∅) 0 1 
 
 lemma partition_fn_nonneg: 
-  ∀ (X : set U), 0 ≤ partition_fn X := 
+  ∀ (X : set α), 0 ≤ partition_fn X := 
 λ X, by {unfold partition_fn, split_ifs; norm_num,}
 
-def M : matroid U := partition.M S.cl partition_fn_nonneg
+def M : matroid α := partition.M S.cl partition_fn_nonneg
 
 lemma M_def : 
   M S = partition.M S.cl partition_fn_nonneg := 
 rfl 
 
-lemma r_eq (X : set U): 
+lemma r_eq (X : set α): 
   (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty}:= 
 begin
   rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], swap, apply_instance, 
@@ -112,7 +111,7 @@ begin
   exact one_le_size_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
 end
 
-lemma indep_iff (I : set U):
+lemma indep_iff (I : set α):
   (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, size (I ∩ P) ≤ 1 :=
 begin
   rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 

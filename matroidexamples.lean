@@ -30,7 +30,7 @@ empty_mem_powerset _,
   λ e exy, ⟨e, exy, mem_powerset.mpr $ insert_subset.mpr
     ⟨mem_of_subset (mem_powerset.mp hy) (mem_sdiff.mp exy).1, mem_powerset.mp hx⟩⟩⟩
 
-/-- the uniform matroid U_k on `E : finset α` is the matroid whose
+/-- the uniform matroid α_k on `E : finset α` is the matroid whose
 independent sets are all subsets of `E` of size `k` or less; Example 1.2.7 in Oxley -/
 def uniform (k : ℕ) (E : finset α) : indep E :=
 ⟨(powerset E).filter (λ x, card x ≤ k),

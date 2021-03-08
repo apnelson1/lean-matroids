@@ -7,15 +7,15 @@ noncomputable theory
 namespace matroid 
 
 section dual
-variables {U : Type}[fintype U]
+variables {α : Type}[fintype α]
  
-lemma rank_empt (M : matroid U) :
+lemma rank_empt (M : matroid α) :
   M.r ∅ = 0 :=
-le_antisymm (calc M.r ∅ ≤ _ : M.R1 ∅ ... = 0 : size_empty U) (M.R0 ∅)
+le_antisymm (calc M.r ∅ ≤ _ : M.R1 ∅ ... = 0 : size_empty α) (M.R0 ∅)
 
 -- Every matroid has a dual.
 def dual :
-  matroid U → matroid U :=
+  matroid α → matroid α :=
 fun M, {
   r := (fun X, size X + M.r Xᶜ - M.r univ),
   R0 := (fun X,
@@ -51,7 +51,7 @@ fun M, {
 }
 
 -- Duality is an involution 
-@[simp] lemma dual_dual (M : matroid U) :
+@[simp] lemma dual_dual (M : matroid α) :
   dual (dual M) = M :=
 begin
   apply rankfun.ext, apply funext, intro X, calc
@@ -60,15 +60,15 @@ begin
   ...                 = M.r X                                                             : by linarith [size_compl X, rank_empt M]
 end
 
-lemma dual_inj {M₁ M₂ : matroid U} :
+lemma dual_inj {M₁ M₂ : matroid α} :
   dual M₁ = dual M₂ → M₁ = M₂ := 
 λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
 
-lemma dual_inj_iff {M₁ M₂ : matroid U}:
+lemma dual_inj_iff {M₁ M₂ : matroid α}:
   dual M₁ = dual M₂ ↔ M₁ = M₂ := 
 ⟨λ h, dual_inj h, λ h, by rw h⟩
 
-lemma dual_r (M : matroid U)(X : set U):
+lemma dual_r (M : matroid α)(X : set α):
   (dual M).r X = size X + M.r Xᶜ - M.r univ := 
 rfl 
 
