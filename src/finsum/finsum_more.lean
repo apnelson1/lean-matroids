@@ -1,4 +1,4 @@
-import finsum.finsum algebra.ring.basic 
+import finsum.finsum algebra.ring.basic prelim.intervals 
 
 open_locale big_operators classical 
 
@@ -364,8 +364,18 @@ begin
   exact λ x _, hfg x, 
 end
 
-
-
-
 end order
+
+section intervals 
+
+#check exists_pos_add_of_lt
+
+variables {M : Type v}[add_comm_monoid M]{f g : ℕ → M}
+
+lemma finsum_reindex_add_ℕ (l u d : ℕ): 
+  ∑ᶠ i in set.Icc l u, f (i + d) = ∑ᶠ i in set.Icc (l + d) (u + d), f i := 
+
+ 
+
+end intervals 
 

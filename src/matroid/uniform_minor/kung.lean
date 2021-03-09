@@ -1,5 +1,5 @@
 
-import data.set.intervals
+import prelim.intervals 
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax finsum.fin_api
 import matroid.submatroid.projection matroid.pointcount matroid.submatroid.minor_iso 
 
@@ -25,33 +25,24 @@ by {induction n with n ih, simp, simp [pg_size, ih, add_comm]  }
 
 --figure this out later. annoying reindexing
 
+
 lemma pg_size_eq_powsum (q : ℤ)(n : ℕ) : 
   pg_size q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
   induction n with n ih, simp, 
   rw [pg_size, ih, mul_distrib_finsum_in], 
-  conv in (_ * _) {rw ← pow_succ}, 
-  --have := set.bij_on nat.succ {i | i < n} t
-  --have := @finsum_in_eq_of_bij_on ℕ ℤ _ ℕ {i | i < n}, 
-  --have := @finsum_in_image ℕ ℤ _ ℕ (λ x, q^x) {i | i < n} (λ n, n+1) sorry, 
-  convert (congr_arg (λ x: ℤ, 1+x) this).symm, 
-  
-  
-  /-have hni : {i | i < n.succ} = insert n {i | i < n}, 
-  { ext, 
-    simp only [mem_set_of_eq, mem_insert_iff], 
-    refine ⟨λ h, _, _⟩, 
-      exact eq_or_lt_of_le (nat.le_of_lt_succ h),
-    rintros (rfl | hn), 
-      exact lt_add_one _, 
-    exact nat.lt_succ_of_lt hn},
-  conv_rhs {congr, rw hni, },
-  rw finsum_in_insert, -/
-  --simp_rw [hni, fin.finsum_in_insert],  
-  --simp_rw [pg_size, ih], 
-  --have := @finsum_in_image ℕ ℤ _ ℕ 
-  
-  
+  --conv in (_ * _) {rw ← pow_succ}, 
+  let f : ℕ → ℤ := λ i, q * q^i, 
+  have hf : ∀ i, f i = q * q^i := λ i, rfl, 
+  let g : ℕ → ℤ := λ i, q^i, 
+  have hg : ∀ i, g i = q^i := λ i, rfl, 
+  have h1 := @finsum_in_eq_of_bij_on _ _ _ _ _ _ f g _ 
+    (nat.Ico_add_bij 0 n 1) 
+    (λ x hx, by {simp [hf,hg, pow_succ] }), 
+  --rw hf at h1, 
+  rw [h1, nat.zero_add, ←pow_zero q, ←hg 0, ← finsum_in_insert g, 
+  nat.Ico_eq_Ioo, Ioo_insert_left_eq_Ico],  
+  simp, simp, simp, apply set.Ico_ℕ_finite, 
 end
 
 

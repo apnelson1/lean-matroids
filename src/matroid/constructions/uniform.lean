@@ -105,10 +105,10 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type)[fintype α](hα : 2 ≤ type_size α){r : ℤ}(hr : 0 ≤ r)(hr' : r ≤ type_size α): 
+lemma uniform_matroid_simple_iff (α : Type)[fintype α](hα : 2 ≤ type_size α){r : ℤ}(hr : 0 ≤ r): 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
-  rw type_size_eq at hα hr', 
+  rw type_size_eq at hα, 
   refine ⟨λ h, by_contra (λ hn, _), λ h, _⟩, 
   { push_neg at hn, 
     obtain ⟨X,hX⟩ := has_set_of_size  (by norm_num : (0 : ℤ) ≤ 2) hα, 
@@ -116,12 +116,12 @@ begin
     rw [indep_iff_r, hX] at h', 
     have h'' := rank_le_univ (uniform_matroid_on α r) X, 
 
-    rw [h', uniform_matroid_rank hr, min_eq_left hr'] at h'',  
-    linarith, 
-    
-    
-    },
-
+    rw [h', uniform_matroid_rank hr, min_eq_left] at h'';
+    linarith},
+  rintros X - hX, 
+  rw [indep_iff_r, uniform_matroid_rank hr, min_eq_right], 
+  -- linarith fails here - why???
+  exact le_trans hX h, 
 end
 
 end unif 
