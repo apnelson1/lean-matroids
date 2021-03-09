@@ -70,8 +70,6 @@ namespace presetoid_matroid
 /- Given a presetoid S on α, we construct a matroid on α whose independent sets are those containing
 no elements of the kernel of α, and at most one element of each class of α -/
 
-
-
 def partition_fn : set α → ℤ := 
   λ X, ite (X = ∅) 0 1 
 
@@ -86,7 +84,7 @@ lemma M_def :
 rfl 
 
 lemma r_eq (X : set α): 
-  (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty}:= 
+  (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty} := 
 begin
   rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], 
   rotate, apply_instance, apply partition_fn_nonneg, 

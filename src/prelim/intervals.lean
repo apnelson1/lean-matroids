@@ -2,9 +2,49 @@ import tactic .int_lemmas
 import data.set.intervals algebra.ordered_monoid
 
 
+universe u 
+
+
+/-- an add_comm_monoid with one-sided 'subtraction' in the sense that if a ≤ b, 
+there is some c for which a + c = b -/
+class ordered_cancel_add_comm_exists_sub_monoid (α : Type u)
+  extends ordered_cancel_add_comm_monoid α := 
+(exists_add_of_le : ∀ (a b : α), a ≤ b → ∃ (c : α), b = a + c)
+--(add_right_cancel : ∀ (a b c : α), a + c = b + c → a = b)
+
+instance ordered_add_comm_group.ordered_cancel_add_comm_exists_sub_monoid
+(α : Type u)[ordered_add_comm_group α]: 
+  ordered_cancel_add_comm_exists_sub_monoid α := 
+{ exists_add_of_le := λ a b hab, ⟨b - a, (add_sub_cancel'_right a b).symm⟩,
+  add_right_cancel := λ a b c, (add_left_inj _).mp, }
+
+instance nat.ordered_cancel_add_comm_exists_sub_monoid :
+  ordered_cancel_add_comm_exists_sub_monoid ℕ := 
+{ exists_add_of_le := λ a b hab, ⟨_, (nat.add_sub_of_le hab).symm⟩, 
+  add_right_cancel := λ a b c h, nat.add_right_cancel h}
+
+
+
+
 lemma set.bij_on.self {α : Type*}(s : set α):
   set.bij_on id s s :=
 by {refine ⟨λ x h, _, λ x hx y hy h, _, λ x h, _⟩; simpa using h} 
+
+
+lemma Ioo_add_bij {α : Type}[ordered_cancel_add_comm_exists_sub_monoid α](a b d : α): 
+  set.bij_on (+d) (set.Icc a b) (set.Icc (a+d) (b+d)) :=
+begin
+  refine ⟨λ x h, _, λ x hx y hy h, _, λ x h, _⟩, 
+  { rw [set.mem_Icc] at ⊢ h, 
+    exact ⟨add_le_add_right h.1 _, add_le_add_right h.2 _⟩},
+  { exact ordered_cancel_add_comm_exists_sub_monoid.add_right_cancel _ _ _ h},
+  rw set.mem_image, 
+  simp_rw set.mem_Icc at h ⊢, 
+  have : 
+  --obtain ⟨x, hx⟩ := ordered_cancel_add_comm_exists_sub_monoid.exists_add_of_le
+end
+
+
 
 
 open set 
@@ -107,7 +147,8 @@ begin
   refine ⟨x-d, ⟨_,_⟩ ,_⟩, 
   { exact (add_le_to_le_sub a hxd).mp ha, },
   { exact nat.sub_le_right_of_le_add hb, }, 
-  exact nat.sub_add_cancel hxd, 
+  exact nat.sub_
+  add_cancel hxd, 
 end
 
 lemma Ioo_add_bij (a b d : ℕ): 
@@ -234,5 +275,3 @@ end
 
 
 end insert 
-
-end nat_or_int

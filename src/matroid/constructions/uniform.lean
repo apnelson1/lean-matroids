@@ -54,7 +54,6 @@ lemma loopy_matroid_indep_iff_empty {X : set α}:
   (loopy α).is_indep X ↔ X = ∅ := 
 by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 
-
 def uniform_matroid_on (α : Type)[fintype α](r : ℤ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
 

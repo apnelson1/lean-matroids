@@ -24,7 +24,6 @@ lemma finsupp_of_finsum_in_nonzero (h : ∑ᶠ i in s, f i ≠ 0):
   (s ∩ function.support f).finite :=
 by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at h, exact h rfl, })
 
-
 @[simp] lemma finsum_empty_set_type:
   ∑ᶠ (i : ((∅ : set α) : Type)), f i = 0 :=
 begin
@@ -33,12 +32,9 @@ begin
   rwa set.mem_empty_eq at hx, 
 end
 
-
-
 @[simp] lemma finsum_in_zero: 
   ∑ᶠ i in s, (0 : M) = 0 := 
 by {rw finsum_in_inter_support, convert finsum_in_empty, simp}
-
 
 @[simp] lemma finsum_zero: 
   ∑ᶠ (i : α), (0 : M) = 0 := 
@@ -108,10 +104,6 @@ lemma finsum_set_subtype_eq_finsum_set (f : α → M)(P Q : α → Prop):
   ∑ᶠ (x : {y // P y}) in {x : {y // P y} | Q (coe x)}, f x = ∑ᶠ x in { x | P x ∧ Q x }, f x := 
 by {convert (finsum_in_image _).symm, tidy,}
 
-
-
-
-
 end general 
 
 section nat 
@@ -131,13 +123,11 @@ lemma nat.coe_int_distrib_finsum {α : Type u}(f : α → ℕ):
   (((∑ᶠ (i : α), f i) : ℕ ): ℤ) = ∑ᶠ (i : α), (f i : ℤ):= 
 by rw [finsum_eq_finsum_in_univ, nat.coe_int_distrib_finsum_in, ← finsum_eq_finsum_in_univ]
 
-
 end nat 
 
 section ring
 
 variables {α : Type u}{M: Type v}[comm_semiring M]{f g : α → M}{s : set α}
-
 
 lemma mul_distrib_finsum_in' 
 (hs : (s ∩ function.support f).finite) (c : M):
@@ -169,7 +159,6 @@ lemma mul_distrib_finsum [no_zero_divisors M](c : M):
 by {rw [finsum_eq_finsum_in_univ, finsum_eq_finsum_in_univ], apply mul_distrib_finsum_in}
   
 end ring 
-
 
 section group 
 
@@ -224,8 +213,6 @@ lemma nonneg_of_finsum_nonneg [ordered_add_comm_monoid M](hf : ∀ i, 0 ≤ f i)
   0 ≤ ∑ᶠ (i : α), f i := 
 by {rw finsum_eq_finsum_in_univ, exact nonneg_of_finsum_in_nonneg (λ i _, hf i)}
 
-
-
 lemma finsum_in_le_finsum_in' [ordered_add_comm_monoid M ](hfg : ∀ x ∈ s, f x ≤ g x)
 (hf : (s ∩ function.support f).finite)(hg : (s ∩ function.support g).finite): 
   ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
@@ -268,8 +255,6 @@ begin
   simp_rw finsum_eq_finsum_in_univ at *, 
   apply finsum_in_le_finsum_in_of_pos (λ x hx, hfg x) hg, 
 end
-
-
 
 lemma finsum_in_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
 (hs : (s ∩ function.support f).finite)(hf : ∀ x ∈ s, 0 ≤ f x): 
@@ -368,12 +353,13 @@ end order
 
 section intervals 
 
-#check exists_pos_add_of_lt
-
 variables {M : Type v}[add_comm_monoid M]{f g : ℕ → M}
 
-lemma finsum_reindex_add_ℕ (l u d : ℕ): 
+lemma finsum_Icc_add_ℕ (l u d : ℕ): 
   ∑ᶠ i in set.Icc l u, f (i + d) = ∑ᶠ i in set.Icc (l + d) (u + d), f i := 
+begin
+  
+end
 
  
 

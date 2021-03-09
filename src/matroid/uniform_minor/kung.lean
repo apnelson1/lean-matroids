@@ -1,4 +1,5 @@
 
+import .basic 
 import prelim.intervals 
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax finsum.fin_api
 import matroid.submatroid.projection matroid.pointcount matroid.submatroid.minor_iso 
@@ -25,7 +26,6 @@ by {induction n with n ih, simp, simp [pg_size, ih, add_comm]  }
 
 --figure this out later. annoying reindexing
 
-
 lemma pg_size_eq_powsum (q : ℤ)(n : ℕ) : 
   pg_size q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
@@ -45,4 +45,9 @@ begin
   simp, simp, simp, apply set.Ico_ℕ_finite, 
 end
 
+-- pg_size n q = 1 + q + q^2 + ... + q^{n-1}
 
+
+theorem point_count (q : ℤ){α : Type*}[fintype α](M : matroid α):
+  ¬ (canonical_unif 2 (q+2)).is_iminor_of M → ε M ≤ pg_size q (M.r univ).to_nat := 
+sorry 
