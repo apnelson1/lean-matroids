@@ -1,5 +1,7 @@
+
+import data.set.intervals
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax finsum.fin_api
-import .submatroid.projection .pointcount .submatroid.minor_iso 
+import matroid.submatroid.projection matroid.pointcount matroid.submatroid.minor_iso 
 
 noncomputable theory 
 open_locale classical big_operators 
@@ -20,15 +22,18 @@ by {induction n with n ih, simp, simp [pg_size, ih, add_comm]  }
 
 
 --theorem kung {q : ℤ}(hq : 1 ≤ q)
-/-
-figure this out later. annoying reindexing
+
+--figure this out later. annoying reindexing
 
 lemma pg_size_eq_powsum (q : ℤ)(n : ℕ) : 
-  pg_size q n = ∑ᶠ i in {i | i < n}, q^i  := 
+  pg_size q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
   induction n with n ih, simp, 
   rw [pg_size, ih, mul_distrib_finsum_in], 
-  have := @finsum_in_image ℕ ℤ _ ℕ (λ x, q^x) {i | i < n} (λ n, n+1) sorry, 
+  conv in (_ * _) {rw ← pow_succ}, 
+  --have := set.bij_on nat.succ {i | i < n} t
+  --have := @finsum_in_eq_of_bij_on ℕ ℤ _ ℕ {i | i < n}, 
+  --have := @finsum_in_image ℕ ℤ _ ℕ (λ x, q^x) {i | i < n} (λ n, n+1) sorry, 
   convert (congr_arg (λ x: ℤ, 1+x) this).symm, 
   
   
@@ -48,6 +53,5 @@ begin
   
   
 end
--/ 
 
 
