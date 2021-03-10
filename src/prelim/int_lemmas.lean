@@ -47,3 +47,13 @@ lemma lt_iff_succ_le {a b : ℕ}:
 ⟨λ h, succ_le_of_lt h, λ h, lt_of_succ_le h⟩ 
 
 end nat 
+
+/-- for integers `m` and `n`, `m^n` is defined as expected if `0 ≤ n`, and is zero otherwise. -/
+instance zpow : has_pow ℤ ℤ := ⟨λ x y, (x^(y.to_nat))⟩ 
+
+lemma zpow_eq_nat_pow (m k : ℤ)(hk : 0 ≤ k): m^k = m^(k.to_nat) := 
+  rfl 
+
+--lemma zpow_succ_left (m k : ℤ)(hk : 0 ≤ k): m^(k+1) = m*m^(k) :=
+--by {rw [zpow_eq_nat_pow, } 
+  

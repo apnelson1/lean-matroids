@@ -123,4 +123,12 @@ begin
   exact le_trans hX h, 
 end
 
+lemma unif_simple_of_two_le_r (α : Type)[fintype α]{r : ℤ}(hr : 2 ≤ r): 
+  (unif.uniform_matroid_on α r).is_simple :=
+begin
+  rintros X - hX, 
+  rw [indep_iff_r, uniform_matroid_rank (by linarith : 0 ≤ r), min_eq_right], 
+  exact le_trans hX hr, 
+end
+
 end unif 

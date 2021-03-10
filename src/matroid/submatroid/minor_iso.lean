@@ -438,4 +438,8 @@ begin
   exact ⟨this e₁ e₂⟩, 
 end 
 
+/-- the property of having an N-minor -/
+def has_iminor (M : matroid α)(N : matroid β) := 
+  N.is_iminor_of M 
+
 end matroid 

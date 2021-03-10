@@ -353,13 +353,25 @@ end order
 
 section intervals 
 
-variables {M : Type v}[add_comm_monoid M]{f g : ℕ → M}
+variables {α : Type u}[ordered_cancel_add_comm_monoid α][has_exists_add_of_le α]
+{M : Type v}[add_comm_monoid M]
 
-lemma finsum_Icc_add_ℕ (l u d : ℕ): 
-  ∑ᶠ i in set.Icc l u, f (i + d) = ∑ᶠ i in set.Icc (l + d) (u + d), f i := 
-begin
-  
-end
+lemma finsum_Icc_shift (a b d : α)(f : α → M): 
+  ∑ᶠ i in set.Icc a b, f (i + d) = ∑ᶠ i in set.Icc (a + d) (b + d), f i := 
+finsum_in_eq_of_bij_on _ (Icc_add_bij _ _ _) (λ _ _, rfl)
+
+lemma finsum_Ico_shift (a b d : α)(f : α → M): 
+  ∑ᶠ i in set.Ico a b, f (i + d) = ∑ᶠ i in set.Ico (a + d) (b + d), f i := 
+finsum_in_eq_of_bij_on _ (Ico_add_bij _ _ _) (λ _ _, rfl)
+
+lemma finsum_Ioc_shift (a b d : α)(f : α → M): 
+  ∑ᶠ i in set.Ioc a b, f (i + d) = ∑ᶠ i in set.Ioc (a + d) (b + d), f i := 
+finsum_in_eq_of_bij_on _ (Ioc_add_bij _ _ _) (λ _ _, rfl)
+
+lemma finsum_Ioo_shift (a b d : α)(f : α → M): 
+  ∑ᶠ i in set.Ioo a b, f (i + d) = ∑ᶠ i in set.Ioo (a + d) (b + d), f i := 
+finsum_in_eq_of_bij_on _ (Ioo_add_bij _ _ _) (λ _ _, rfl)
+
 
  
 
