@@ -7,7 +7,7 @@ noncomputable theory
 
 open set 
 
-variables {α : Type}[fintype α]
+variables {α : Type}
 /- ----------------------------------------------------------
 
 γe define size simply as the cast of fincard to int. 
@@ -26,6 +26,10 @@ def type_size (α : Type) : ℤ := size (univ : set α)
 
 lemma type_size_eq (α : Type):
   type_size α = size (univ : set α) := rfl 
+
+lemma type_size_eq_fincard_t (α : Type): 
+  type_size α = fincard_t α :=
+by {rw [type_size, size_def], norm_num, refl,  }
 
 @[simp] lemma size_empty (α : Type) :
    size (∅ : set α) = 0 := 
@@ -47,6 +51,10 @@ lemma size_nonneg (X : set α) :
   0 ≤ size X := 
 by {simp only [size], norm_cast, apply zero_le}  
 
+lemma type_size_nonneg (α : Type) : 
+  0 ≤ type_size α := 
+size_nonneg _
+
 @[simp] lemma finsum_ones_eq_size {α : Type}(X : set α) : 
   ∑ᶠ x in X, (1 : ℤ) = size X := 
 by {rw [size, fincard, nat.coe_int_distrib_finsum_in], refl}
@@ -63,23 +71,62 @@ by rw [← mul_one b, ← finsum_ones_eq_type_size, ← mul_distrib_finsum, mul_
   ∑ᶠ x in X, b = b * size X := 
 by rw [← mul_one b, ← finsum_ones_eq_size, ← mul_distrib_finsum_in, mul_one]
 
-lemma sum_size_fiber_eq_size {ι : Type}(s : set α)(f : α → ι):
+lemma sum_size_fiber_eq_size {ι : Type} [fintype α] (s : set α) (f : α → ι):
   ∑ᶠ (i : ι), size {a ∈ s | f a = i} = size s := 
 by simp_rw [size_def, ← nat.coe_int_distrib_finsum, fin.sum_fincard_fiber_eq_fincard s f]
+
+lemma sum_size_fiber_eq_size_of_finite {ι : Type} {s : set α} (hs : s.finite) (f : α → ι):
+  ∑ᶠ (i : ι), size {a ∈ s | f a = i} = size s := 
+by simp_rw [size_def, ← nat.coe_int_distrib_finsum, sum_fincard_fiber_eq_fincard f hs]
+
+
+--sum_fincard_fiber_eq_fincard
 
 lemma size_set_subtype_eq_size_set (P Q : α → Prop):
   size {x : {y // P y} | Q (coe x)} = size { x | P x ∧ Q x } := 
 by {simp_rw ← finsum_ones_eq_size, apply finsum_set_subtype_eq_finsum_set (1 : α → ℤ)} 
 
+/-- the same as fin, but defined for all integers (empty if `n < 0`)-/
+def fin' (n : ℤ) := fin (n.to_nat)
+
+lemma fin'_eq_fin {n : ℕ} : 
+  fin' n = fin n := rfl 
+/-
+lemma fincard_t_fin (n : ℕ) :
+  fincard_t (fin n) = n := 
+by simp [fincard_t_eq_fintype_card]
+
+lemma fincard_t_eq_iff_equiv [fintype α] [fintype β]: 
+  fincard_t α = fincard_t β ↔ nonempty (α ≃ β) :=
+by simp_rw [fincard_t_eq_fintype_card, fintype.card_eq]
+
+lemma fincard_t_eq_iff_fin_equiv [fintype α]{n : ℕ}: 
+  fincard_t α = n ↔ nonempty (α ≃ fin n) := 
+by {nth_rewrite 0 ← fincard_t_fin n, apply fincard_t_eq_iff_equiv} 
+
+lemma equiv_fin_fincard_t [fintype α]: 
+  nonempty (α ≃ fin (fincard_t α)) := 
+fincard_t_eq_iff_fin_equiv.mp rfl 
+
+/-- chooses a bijection between α and fin (fincard α) -/
+def choose_fin_bij [fintype α]: 
+  α ≃ fin (fincard_t α) :=
+classical.choice equiv_fin_fincard_t 
+-/
 
 @[simp] lemma size_fin (n : ℕ): 
   type_size (fin n) = n := 
+by {rw [type_size_eq_fincard_t], norm_num}
+
+lemma size_fin' (n : ℤ)(hn : 0 ≤ n): 
+  type_size (fin' n) = n := 
+by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
+
+lemma type_size_eq_iff_equiv_fin' {α : Type}[fintype α] {n : ℤ}(hn : 0 ≤ n): 
+  type_size α = n ↔ nonempty (equiv α (fin' n)) :=
 begin
-  rw [type_size, size], norm_num, 
-  convert fintype.card_fin n, --convert finset.card_fin n, 
-  rw fincard_eq_finset_card, 
-  convert finset.card_univ, 
-  convert set.to_finset_univ, 
+  obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le hn, 
+  rw [fin'_eq_fin, ← fincard_t_eq_iff_fin_equiv, type_size_eq_fincard_t, int.coe_nat_inj'],
 end
 
 
@@ -87,11 +134,14 @@ end
 -------------------------------------------------------------
 open set 
 
+variables [fintype α]
+
 -- Size 
 
 lemma compl_size (X : set α) : size Xᶜ = size (univ : set α) - size X :=
   calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
-  ...          = size (univ : set α)  + size (∅ : set α)  - size X : by rw [union_compl_self X, inter_compl_self X]
+  ...          = size (univ : set α)  + size (∅ : set α)  - size X : by rw [union_compl_self X, 
+                                                                                inter_compl_self X]
   ...          = size (univ : set α) - size X                  : by linarith [size_empty α]
 
 lemma size_compl (X : set α) : size X = size (univ : set α) - size(Xᶜ) := 

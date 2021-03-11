@@ -20,10 +20,24 @@ section /- rank -/ rank
 
 def rank (M : matroid α) := M.r univ 
 
+def r_nat (M : matroid α)(X : set α) := (M.r X).to_nat 
+
+def rank_nat (M : matroid α) := M.r_nat univ
+
+@[simp] lemma rank_eq (M : matroid α): M.rank = M.r univ := rfl 
+
 /-- rank is nonnegative -/
 lemma rank_nonneg (M : matroid α)(X : set α):
   0 ≤ M.r X := 
 M.R0 X 
+
+@[simp] lemma coe_r_nat (M : matroid α)(X : set α) :
+  (M.r_nat X : ℤ) = M.r X := 
+int.to_nat_of_nonneg (M.rank_nonneg X)
+
+@[simp] lemma coe_rank_nat (M : matroid α) :
+  (M.rank_nat : ℤ) = M.r univ := 
+int.to_nat_of_nonneg (M.rank_nonneg _)
 
 /-- rank is bounded above by size -/
 lemma rank_le_size (M : matroid α)(X : set α):

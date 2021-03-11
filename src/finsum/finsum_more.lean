@@ -100,6 +100,15 @@ begin
   exact finsum_in_eq_finsum_in_subset (set.subset_univ _) (λ x _ hx, hf x hx),
 end 
 
+@[simp] lemma finsum_subtype_eq_finsum_in (f : α → M) (s : set α):
+ ∑ᶠ (x : s), f x = ∑ᶠ x in s, f x  :=
+begin
+  rw finsum_eq_finsum_in_univ, 
+  convert (finsum_in_eq_of_bij_on subtype.val _ (λ _ _, rfl)), 
+  convert set.inj_on.bij_on_image (set.inj_on_of_injective (subtype.val_injective) _), 
+  rw [set.image_univ, subtype.range_val],
+end 
+
 lemma finsum_set_subtype_eq_finsum_set (f : α → M)(P Q : α → Prop):
   ∑ᶠ (x : {y // P y}) in {x : {y // P y} | Q (coe x)}, f x = ∑ᶠ x in { x | P x ∧ Q x }, f x := 
 by {convert (finsum_in_image _).symm, tidy,}
