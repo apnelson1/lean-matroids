@@ -255,9 +255,12 @@ begin
         ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)],
   
   refine iminor_of_iff_exists_embedding.mpr ⟨φ, C ∪ C', _, λ X, _⟩, 
-  {rw disjoint_iff_subset_compl at *, 
-   refine subset.trans (subset_inter hrange hrange') _, 
-   intros x, simp only [and_imp, compl_union, mem_inter_eq, mem_compl_eq], tauto},
+  { rw [disjoint_iff_inter_eq_empty] at *, 
+    rw disjoint_iff_subset_compl at *, 
+    refine subset.trans (subset_inter hrange hrange') _, 
+    intros x, 
+    simp only [and_imp, compl_union, mem_inter_eq, mem_compl_eq], 
+    tauto},
   
   have h' : ∀ Z: set α, Z ∩ (C' ∪ D') = ∅ → D' ∩ Z = ∅, 
   { intros Z hZ, rw inter_comm, apply disjoint_of_subset_right' (subset_union_right C' D') hZ, }, 

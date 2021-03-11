@@ -83,15 +83,14 @@ begin
 end
 
 
--- size {P ∈ M.ps.classes | (X ∩ P).nonempty} = size {P : M.parallel_class | (X ∩ ↑P).nonempty}
--------------------------------------------------------------
 open set 
 
 -- Size 
 
 lemma compl_size (X : set α) : size Xᶜ = size (univ : set α) - size X :=
   calc size Xᶜ = size (X ∪ Xᶜ) + size (X ∩ Xᶜ) - size X : by linarith [size_modular X Xᶜ]
-  ...          = size (univ : set α)  + size (∅ : set α)  - size X : by rw [union_compl_self X, inter_compl_self X]
+  ...          = size (univ : set α)  + size (∅ : set α)  - size X : by rw [union_compl_self X, 
+                                                                              inter_compl_self X]
   ...          = size (univ : set α) - size X                  : by linarith [size_empty α]
 
 lemma size_compl (X : set α) : size X = size (univ : set α) - size(Xᶜ) := 
@@ -103,10 +102,8 @@ begin
   from ⟨{e},⟨set.singleton_subset_iff.mpr he, size_singleton e⟩⟩, 
 end
 
-
 lemma ssubset_size {X Y : set α} : (X ⊆ Y) → (size X < size Y) → (X ⊂ Y) := 
   λ h h', by {rw ssubset_iff_subset_ne, from ⟨h, λ h'', by {rw h'' at h', linarith}⟩}
-
 
 lemma size_monotone {X Y: set α} (hXY : X ⊆ Y) : size X ≤ size Y := 
   by {have := size_modular X (Y \ X), rw union_diff_of_subset  hXY at this      , 
@@ -116,8 +113,8 @@ lemma size_subadditive {X Y : set α} : size (X ∪ Y) ≤ size X + size Y :=
   by linarith [size_modular X Y, size_nonneg (X ∩ Y)] 
 
 lemma compl_inter_size (X Y : set α) : size (X ∩ Y) + size (Xᶜ ∩ Y) = size Y := 
-  by rw [←size_modular, ←inter_distrib_right, union_compl_self, univ_inter, ←inter_distrib_inter_left, 
-  inter_compl_self, empty_inter, size_empty]; ring
+  by rw [←size_modular, ←inter_distrib_right, union_compl_self, univ_inter, 
+  ←inter_distrib_inter_left, inter_compl_self, empty_inter, size_empty]; ring
 
 lemma compl_inter_size_subset {X Y : set α} : 
   X ⊆ Y → size (Xᶜ ∩ Y) = size Y - size X := 
@@ -132,10 +129,10 @@ lemma size_diff_le_size (X Y : set α) : size (X \ Y) ≤ size X :=
 lemma size_disjoint_sum {X Y : set α}: X ∩ Y = ∅ → size (X ∪ Y) = size X + size Y := 
   λ hXY, by {have := size_modular X Y, rw [hXY, size_empty] at this, linarith}
 
-lemma size_modular_diff (X Y : set α) : size (X ∪ Y) = size (X \ Y) + size (Y \ X) + size (X ∩ Y) :=
-  by {rw [←size_disjoint_sum (diffs_disj X Y)], have := (symm_diff_alt X Y), 
-        unfold symm_diff at this,rw this, linarith [diff_size (inter_subset_union X Y)]  }
-
+lemma size_modular_diff (X Y : set α) : 
+  size (X ∪ Y) = size (X \ Y) + size (Y \ X) + size (X ∩ Y) :=
+by {rw [←size_disjoint_sum (diffs_disj X Y)], have := (symm_diff_alt X Y), 
+      unfold symm_diff at this,rw this, linarith [diff_size (inter_subset_union X Y)]  }
 
 lemma size_induced_partition (X Y : set α) : size X = size (X ∩ Y) + size (X \ Y) := 
   by {nth_rewrite 0 ←diff_union X Y, refine size_disjoint_sum _, apply partition_inter}
@@ -255,7 +252,11 @@ lemma size_pos_has_mem {X : set α}:
 
 lemma size_pos_iff_has_mem {X : set α}: 
   0 < size X ↔ ∃ e, e ∈ X := 
-⟨λ h, size_pos_has_mem h, λ h, by {cases h with e he, have := size_monotone (singleton_subset_iff.mpr he), rw size_singleton at this, linarith}⟩ 
+⟨λ h, size_pos_has_mem h, λ h, by 
+  {cases h with e he, 
+    have := size_monotone (singleton_subset_iff.mpr he), 
+    rw size_singleton at this, 
+    linarith}⟩ 
 
 
 lemma one_le_size_iff_has_mem {X : set α}: 
@@ -349,7 +350,8 @@ by linarith [size_insert_nonmem hf, size_remove_mem (mem_union_of_mem_left {f} h
 
 lemma exchange_pair_sizes {X Y : set α}{e f : α}: 
   size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
-λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_insert hf.1 he.2, size_remove_insert he.1 hf.2], exact h}
+λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_insert hf.1 he.2, 
+  size_remove_insert he.1 hf.2], exact h}
 
 lemma size_pair {e f : α}: 
   e ≠ f → size ({e,f} : set α) = 2 :=

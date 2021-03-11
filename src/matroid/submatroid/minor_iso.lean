@@ -84,19 +84,8 @@ def image_minor_pair {N M : matroid_in α}{M' : matroid_in β}
   minor_pair (M' / (i.equiv '' (coe ⁻¹' P.C)) \ (i.equiv '' (coe ⁻¹' P.D))) M' := 
 { minor := rfl, .. cd_pair.from_as_mat (image_cd_pair (cd_pair.to_as_mat (coe P)) i) }
 
-/- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, constructs the corresponding
-minor pair N' M'
-def minor_pair_matroid_to_minor_pair_iso {M : matroid α}{M' : matroid β}{N : matroid_in α}
-(P : minor_pair N M)(i : M.isom M'):
-  minor_pair ((M' : matroid_in β) / (i.equiv '' P.C) \ (i.equiv '' P.D)) M' := 
-{ C := (i.equiv '' P.C),
-  D := (i.equiv '' P.D),
-  disj := by rw [image_inter i.equiv.injective, P.disj, image_empty],
-  union := by {simp only with msimp, rw [diff_diff, ←image_union, P.union], simp,},
-  minor := rfl }-/
-
-/-- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, gives an isomorphism from 
-N to the corresponding minor N' of M' -/
+/-- given a matroid M, a minor_pair N M, and a matroid M' isomorphic to M, gives an isomorphism 
+from N to the corresponding minor N' of M' -/
 def minor_matroid_to_minor_iso {M : matroid α}{M' : matroid β}{N : matroid_in α}
   (P : minor_pair N M)(i : M.isom M'):
   N.isom ((M' : matroid_in β) / (i.equiv '' P.C) \ (i.equiv '' P.D)) := 
@@ -135,9 +124,12 @@ let iN := minor_isom_minor_as_mat P,
     i' := minor_matroid_to_minor_iso P' i in 
     have h : (
       ↑(M'.as_mat) / ⇑(i.equiv) '' P'.C \ ⇑(i.equiv) '' P'.D 
-          = (M'.as_mat : matroid_in M'.E) / coe ⁻¹' (image_minor_pair i P).C \ coe ⁻¹' (image_minor_pair i P).D) :=
-      by {dsimp only [P', minor_pair_to_as_mat, image_minor_pair, cd_pair.to_as_mat, cd_pair.from_as_mat, image_cd_pair], 
-      unfold_coes, congr; {ext, simp,}}, 
+          = (M'.as_mat : matroid_in M'.E) 
+              / coe ⁻¹' (image_minor_pair i P).C 
+              \ coe ⁻¹' (image_minor_pair i P).D) :=
+      by {dsimp only [P', minor_pair_to_as_mat, image_minor_pair, cd_pair.to_as_mat, 
+          cd_pair.from_as_mat, image_cd_pair], 
+          unfold_coes, congr; {ext, simp,}}, 
   (iN.trans (matroid_in.isom_equiv rfl h i')).trans iN'.symm 
 
 
@@ -162,16 +154,17 @@ variables {α β γ : Type}
 @[ext] structure con_emb (N : matroid β)(M : matroid α) :=
 (e : β ↪ α)
 (C : set α)
-(disj : range e ∩ C = ∅)
+(disj : disjoint (range e) C)
 (on_rank : ∀ X : set β, N.r X = M.r (e '' X ∪ C) - M.r C)
 
 def minor_emb.to_con_emb {N : matroid β}{M : matroid α}(me : minor_emb N M): con_emb N M := 
 { e := ⟨λ v, me.i.equiv.symm v, λ v v' hvv', by simpa using subtype.val_injective hvv'⟩,
   C := me.P.C,
   disj := by {
-    dsimp only, ext, 
-    simp only [not_exists, mem_empty_eq, mem_inter_eq, not_and, mem_range, function.embedding.coe_fn_mk, 
-    iff_false, equiv.inv_fun_as_coe, to_cd_pair_as_coe, exists_imp_distrib], 
+    simp only [disjoint_iff_inter_eq_empty], ext, 
+    simp only [not_exists, mem_empty_eq, mem_inter_eq, not_and, mem_range, 
+      function.embedding.coe_fn_mk, iff_false, equiv.inv_fun_as_coe, to_cd_pair_as_coe, 
+      exists_imp_distrib], 
     rintros y rfl hxy, 
     cases me.i.equiv.symm y with z hz,  
     exact ne_empty_iff_has_mem.mpr ⟨_,(mem_inter hz hxy)⟩ me.P.NE_inter_C, },
@@ -179,8 +172,9 @@ def minor_emb.to_con_emb {N : matroid β}{M : matroid α}(me : minor_emb N M): c
     cases me with N' P i, dsimp only, 
     rw [←i.symm.on_rank, as_mat_r, P.rank_subtype, coe_r], congr', 
     unfold_coes, ext, 
-    simp only [mem_image, equiv.to_fun_as_coe, equiv.apply_eq_iff_eq, set_coe.exists, exists_and_distrib_right, 
-    exists_eq_right, subtype.coe_mk, subtype.val_eq_coe, equiv.inv_fun_as_coe], 
+    simp only [mem_image, equiv.to_fun_as_coe, equiv.apply_eq_iff_eq, set_coe.exists, 
+      exists_and_distrib_right, exists_eq_right, subtype.coe_mk, subtype.val_eq_coe, 
+      equiv.inv_fun_as_coe], 
     split, 
     { rintros ⟨hx,y,hy,hy'⟩, refine ⟨y,hy,_⟩, dsimp only [isom.symm] at hy', rw hy', refl,  },
     rintros ⟨y, hy, rfl⟩, exact ⟨((i.equiv.symm) y).property,y,⟨hy, by {ext, refl}⟩⟩,
@@ -191,23 +185,26 @@ def con_emb.to_minor_emb {N : matroid β}{M : matroid α}(ce : con_emb N M) : (m
   P := minor_pair.of_contract_restrict 
     (M : matroid_in α) 
     (subset_univ ce.C) 
-    (by {rw [univ_diff, ←disjoint_iff_subset_compl], exact ce.disj, } : range ce.e ⊆ univ \ ce.C),
+    (by {rw [univ_diff, ←disjoint_iff_subset_compl, ← disjoint_iff_inter_eq_empty], 
+          exact ce.disj, } : range ce.e ⊆ univ \ ce.C),
   i := 
   let e1 := equiv.set.range ce.e ce.e.inj', 
       h := @contr_restr_E _ _ (M : matroid_in α) ce.C (range ce.e)
-        (by {rw [coe_E, univ_diff, ←disjoint_iff_subset_compl], exact ce.disj}),
+        (by {rw [coe_E, univ_diff, ←disjoint_iff_subset_compl, ← disjoint_iff_inter_eq_empty], 
+          exact ce.disj}),
       e2 := (equiv.set.of_eq h).symm in 
   matroid.isom.symm ⟨e1.trans e2, λ X, 
   begin
     simp only [e1,e2, as_mat_r] with msimp, 
     rw ce.on_rank, congr, unfold_coes, ext, 
-    simp only [mem_image, equiv.to_fun_as_coe, exists_prop, mem_range_self, restr_E, equiv.set.range_apply, 
-    con_E, mem_inter_eq, set_coe.exists, mem_range, function.embedding.to_fun_eq_coe, function.comp_app, 
-    subtype.mk_eq_mk, equiv.coe_trans, equiv.set.of_eq_symm_apply, subtype.coe_mk, coe_E, univ_diff,
-    mem_compl_eq, subtype.val_eq_coe], 
+    simp only [mem_image, equiv.to_fun_as_coe, exists_prop, mem_range_self, restr_E, 
+      equiv.set.range_apply, con_E, mem_inter_eq, set_coe.exists, mem_range, 
+      function.embedding.to_fun_eq_coe, function.comp_app, subtype.mk_eq_mk, equiv.coe_trans, 
+      equiv.set.of_eq_symm_apply, subtype.coe_mk, coe_E, univ_diff, mem_compl_eq, 
+      subtype.val_eq_coe], 
     split, {rintro ⟨⟨_,-, h,rfl⟩,-,-⟩, exact h},
     rintro ⟨v,hv,rfl⟩,  refine ⟨⟨ce.e v,⟨⟨_,⟨_,rfl⟩⟩,⟨⟨_,hv,rfl⟩,rfl⟩⟩⟩,⟨v,rfl⟩⟩, 
-    exact nonmem_of_mem_disjoint (mem_range_self _) (ce.disj), 
+    exact nonmem_of_mem_disjoint (mem_range_self _) (disjoint_iff_inter_eq_empty.mp ce.disj), 
   end⟩}
 
 lemma con_emb.rank_le_rank_image {N : matroid β}{M : matroid α}(emb : con_emb N M)(X : set β):
@@ -217,7 +214,8 @@ by {rw emb.on_rank, linarith [M.rank_subadditive (emb.e '' X) emb.C ]}
 lemma con_emb.nonloop_of_nonloop {N : matroid β}{M : matroid α}(emb : con_emb N M)
 {x : β}(he : N.is_nonloop x) :
   M.is_nonloop (emb.e x) := 
-nonloop_of_one_le_rank (by {rw [←rank_nonloop he, ← image_singleton], apply emb.rank_le_rank_image,  })
+nonloop_of_one_le_rank 
+  (by {rw [←rank_nonloop he, ← image_singleton], apply emb.rank_le_rank_image, })
 
 /-- an embedding of N into M as a restriction -/
 @[ext] structure restr_emb (N : matroid β)(M : matroid α) := 
@@ -248,8 +246,8 @@ def inj_emb.to_restr_emb {N : matroid β}{M : matroid α}{ie : inj_emb N M }: re
     simp only [mem_image, equiv.to_fun_as_coe, exists_prop, mem_range_self, 
     equiv.set.of_eq_apply, restr_E, equiv.set.range_apply, mem_inter_eq, set_coe.exists, mem_range,
     function.embedding.to_fun_eq_coe, eq_self_iff_true, subtype.mk_eq_mk, exists_exists_and_eq_and, 
-    exists_exists_eq_and, exists_and_distrib_left, exists_true_left, subtype.coe_mk, coe_E, univ_inter, 
-    subtype.val_eq_coe, exists_apply_eq_apply], 
+    exists_exists_eq_and, exists_and_distrib_left, exists_true_left, subtype.coe_mk, coe_E, 
+    univ_inter, subtype.val_eq_coe, exists_apply_eq_apply], 
     split; tidy, 
   end ⟩ } 
 
@@ -272,17 +270,17 @@ lemma irestr_of_iff (N : matroid β)(M : matroid α) :
 by {split, rintros ⟨N',P,hP,i⟩, exact ⟨N',⟨P,hP⟩,⟨i⟩⟩, rintros ⟨N',⟨P,hP⟩,⟨i⟩⟩, exact ⟨⟨P,hP,i⟩⟩}
 
 lemma iminor_of_iff_exists_embedding {N : matroid β}{M : matroid α}:
-  N.is_iminor_of M ↔ ∃ (φ : β ↪ α)(C : set α), (set.range φ) ∩ C = ∅ 
+  N.is_iminor_of M ↔ ∃ (φ : β ↪ α)(C : set α), disjoint (set.range φ) C 
                          ∧ ∀ X, N.r X = M.r (φ '' X ∪ C) - M.r C := 
 begin
   simp_rw [iminor_of_iff, matroid_in.isom_to_matroid_iff_exists_embedding], 
   split, 
   { rintros ⟨M,⟨P⟩, ⟨φ, ⟨hrange, hr⟩⟩⟩, 
     refine ⟨φ, P.C,_, λ X, _⟩, 
-    { rw hrange, exact P.NE_inter_C, },
+    { rw hrange, exact P.NE_disj_C, },
     { rw [hr X, P.rank (φ '' X) (by {rw ←hrange, apply image_subset_range})], refl, }},
   rintros ⟨φ,C, hrange, hr⟩, 
-  rw [disjoint_iff_inter_compl_eq_left, inter_comm] at hrange, 
+  rw [disjoint_iff_inter_eq_empty, disjoint_iff_inter_compl_eq_left, inter_comm] at hrange, 
   exact ⟨((M : matroid_in α) / C) ∣ 
     range φ, 
     matroid_in.con_restr_is_minor _ _ _, 
@@ -376,7 +374,8 @@ def minor_emb_of_minor_emb_of_isom {N : matroid α}{M' : matroid β}{M : matroid
   N.minor_emb M :=
 { N' := (M : matroid_in γ) / (i.equiv '' e.P.C) \ (i.equiv '' e.P.D),
   P := (M : matroid_in γ).to_minor_pair (i.equiv '' e.P.C) (i.equiv '' e.P.D),
-  i := isom_to_matroid_of_isom ((e.P.minor_matroid_to_minor_iso i).symm.trans (isom_of_isom_to_matroid e.i))}
+  i := isom_to_matroid_of_isom ((e.P.minor_matroid_to_minor_iso i).symm.trans 
+                                                  (isom_of_isom_to_matroid e.i))}
     
 lemma iminor_of_irestr {N : matroid α}{M : matroid β}(h : N.is_irestr_of M): 
   N.is_iminor_of M :=
@@ -415,9 +414,11 @@ let ⟨e₁,C₁,h₁,hr₁⟩ := eLM.to_con_emb,
 con_emb.to_minor_emb ({
   e := e₁.trans e₂, 
   C := (e₂ '' C₁) ∪ C₂, 
-  disj := by {rw [inter_distrib_left, union_empty_iff, function.embedding.trans],  
+  disj := by {rw [disjoint_iff_inter_eq_empty, inter_distrib_left, 
+                          union_empty_iff, function.embedding.trans],  
     unfold_coes at ⊢ h₁ h₂, dsimp only,  split, 
-    { rwa [range_comp, image_inter e₂.inj', image_eq_empty]},
+    { rwa [range_comp, image_inter e₂.inj', image_eq_empty, ← disjoint_iff_inter_eq_empty]},
+    rw disjoint_iff_inter_eq_empty at h₂, 
     exact disjoint_of_subset_left' (range_comp_subset_range _ _) h₂, },
   on_rank := λ X, 
   begin
@@ -441,5 +442,8 @@ end
 /-- the property of having an N-minor -/
 def has_iminor (M : matroid α)(N : matroid β) := 
   N.is_iminor_of M 
+
+def has_irestr (M : matroid α) (N : matroid β) :=
+  N.is_irestr_of M 
 
 end matroid 

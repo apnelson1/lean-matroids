@@ -30,7 +30,6 @@ lemma type_size_eq_type_size_equiv (f : α ≃ β):
   type_size α = type_size β := 
 by rw [type_size, type_size, ← size_img_equiv f, ← f.range_eq_univ, image_univ]
 
-
 @[simp] lemma equiv.image_mem_image_iff_mem {f : α ≃ β}{x : α}{X : set α}: 
   f x ∈ f '' X ↔ x ∈ X := 
 begin
@@ -46,6 +45,14 @@ begin
   rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
   convert size_img_emb (f.symm.to_embedding) X, 
 end
+
+lemma size_preimage_embed_subset_range (f : α ↪ β)(X : set β)(hX : X ⊆ range f): 
+  size (f ⁻¹' X) = size X := 
+begin
+  suffices h: f '' (f ⁻¹' X) = X, 
+  { rw eq_comm, nth_rewrite 0 ← h, apply size_img_emb}, 
+  apply image_preimage_eq_of_subset hX, 
+end 
 
 lemma size_subtype_img {E : set α}(X : set E): 
   size (subtype.val '' X) = size X :=
