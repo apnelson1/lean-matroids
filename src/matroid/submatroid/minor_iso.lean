@@ -443,7 +443,8 @@ end
 def has_iminor (M : matroid α)(N : matroid β) := 
   N.is_iminor_of M 
 
-def has_irestr (M : matroid α) (N : matroid β) :=
+/-- the property of having an N-restriction -/
+def has_irestr (M : matroid α)(N : matroid β) := 
   N.is_irestr_of M 
 
 end matroid 

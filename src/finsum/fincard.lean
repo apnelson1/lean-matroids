@@ -18,6 +18,10 @@ lemma fincard_def (s : set α) :
   fincard s = ∑ᶠ x in s, 1 := 
 rfl 
 
+lemma fincard_t_def (α : Type*) : 
+  fincard_t α = fincard (set.univ : set α):= 
+rfl 
+
 lemma fincard_t_eq_sum_ones (α : Type*): 
   fincard_t α = ∑ᶠ (x : α), 1 := 
 by rw [fincard_t, fincard_def, finsum_eq_finsum_in_univ]
@@ -35,6 +39,14 @@ begin
   convert (finset.card_eq_sum_ones (s.to_finset)).symm, 
   exact finsum_in_eq_finset_sum' (1 : α → ℕ) _, 
 end
+
+lemma fincard_t_eq_fintype_card [fintype α]:
+  fincard_t α = fintype.card α := 
+by {rw [fincard_t_def, fincard_eq_finset_card, ← finset.card_univ, ← to_finset_univ], congr', }
+
+lemma fincard_t_subtype_eq_fincard (s : set α):
+  fincard_t s = fincard s := 
+by {rw [fincard_t_eq_sum_ones], exact finsum_subtype_eq_finsum_in (1) s}
 
 @[simp] lemma support_const [has_zero β]{b : β}(hb : b ≠ 0): 
   function.support (λ x : α, b) = univ :=
@@ -60,6 +72,26 @@ begin
   exact ⟨λ h, by {ext, simp at *, tauto,}, λ h, by {rw h, simp,}⟩,
 end
 
+@[simp] lemma fincard_t_fin (n : ℕ) :
+  fincard_t (fin n) = n := 
+by simp [fincard_t_eq_fintype_card]
+
+lemma fincard_t_eq_iff_equiv [fintype α] [fintype β]: 
+  fincard_t α = fincard_t β ↔ nonempty (α ≃ β) :=
+by simp_rw [fincard_t_eq_fintype_card, fintype.card_eq]
+
+lemma fincard_t_eq_iff_fin_equiv [fintype α]{n : ℕ}: 
+  fincard_t α = n ↔ nonempty (α ≃ fin n) := 
+by {nth_rewrite 0 ← fincard_t_fin n, apply fincard_t_eq_iff_equiv} 
+
+lemma equiv_fin_fincard_t [fintype α]: 
+  nonempty (α ≃ fin (fincard_t α)) := 
+fincard_t_eq_iff_fin_equiv.mp rfl 
+
+/-- chooses a bijection between α and fin (fincard α) -/
+def choose_fin_bij [fintype α]: 
+  α ≃ fin (fincard_t α) :=
+classical.choice equiv_fin_fincard_t 
 
 @[simp] lemma fincard_singleton (e : α): 
   fincard ({e}: set α) = 1 := 
