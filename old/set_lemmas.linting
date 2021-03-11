@@ -417,7 +417,7 @@ lemma diff_subset_diff {X Y : set α} (Z : set α) : X ⊆ Y → X \ Z ⊆ Y \ Z
 @[simp] lemma partition_inter (X Y : set α) : (X ∩ Y) ∩ (X \ Y) = ∅ := 
   by rw [inter_assoc, inter_diff, inter_empty]
 
-@[simp] lemma diffs_disj (X Y : set α) : (X \ Y) ∩ (Y \ X) = ∅ := 
+@[simp] lemma inter_diffs_eq_empty (X Y : set α) : (X \ Y) ∩ (Y \ X) = ∅ := 
   by {simp only [diff_eq], rw [inter_assoc, ←inter_assoc Yᶜ], simp}
 
 lemma diff_empty_subset (X Y : set α) : X \ Y = ∅ → X ⊆ Y := 

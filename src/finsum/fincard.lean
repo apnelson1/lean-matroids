@@ -60,6 +60,10 @@ lemma fincard_of_infinite {s : set α}(hs : s.infinite):
   fincard s = 0 := 
 by {rw [fincard, finsum_in_eq_zero_of_infinite], simpa using hs,}
 
+lemma finite_of_fincard_pos {s : set α}(hs : 0 < fincard s):
+  s.finite := 
+by_contra (λ hn, by {rw fincard_of_infinite hn at hs, exact lt_irrefl _ hs, })
+
 @[simp] lemma fincard_empty :
   fincard (∅ : set α) = 0 := 
 by simp [fincard]

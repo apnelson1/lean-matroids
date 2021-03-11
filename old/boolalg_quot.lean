@@ -25,7 +25,7 @@ def quotient_alg (A : boolalg) {r : single A → single A → Prop} (hr : equiva
   size_bot_ax := _,
   size_nonneg_ax := _,
   size_modular_ax := _,
-  single_subset_ax := _,
+  single_subset'_ax := _,
   inter_comm_ax := _,
   union_comm_ax := _,
   union_distrib_right_ax := _,

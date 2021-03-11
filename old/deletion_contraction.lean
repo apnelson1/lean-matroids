@@ -153,7 +153,7 @@ lemma dual_restrict {U : boolalg} (E : U) (M : rankfun U) :
   dual (restrict E M) = corestrict E (dual M) :=
 begin
   apply rankfun.ext, apply funext, intro X,
-  have h₁ : size (X.val ∪ Eᶜ) = size X.val + size Eᶜ := size_disjoint_sum (calc
+  have h₁ : size (X.val ∪ Eᶜ) = size X.val + size Eᶜ := size_union_of_inter_empty (calc
     X.val ∩ Eᶜ = (X.val ∩ {e}) ∩ Eᶜ : by rw [(eq.symm X.prop : X.val ∩ {e} = X.val)]
     ...        = X.val ∩ (E ∩ Eᶜ) : by apply inter_assoc
     ...        = X.val ∩ ⊥        : by rw [inter_compl_self]

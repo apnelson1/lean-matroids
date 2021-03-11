@@ -1599,7 +1599,7 @@ begin
   rw not_indep_iff_r, rcases exists_basis_of M X with ⟨B, ⟨h,h',h''⟩⟩, 
   refine ⟨λ h1, _, λ h1,_⟩, 
   { rw [←h'', h'] at h1,
-    rcases elem_diff_of_size_lt h1 with ⟨e,he1,he2⟩, 
+    rcases mem_diff_of_size_lt h1 with ⟨e,he1,he2⟩, 
     refine ⟨e,he1,_⟩, 
     apply rank_eq_of_le_supset, intro x, simp, tauto,  
     rw [←h'',diff_eq], 

@@ -38,7 +38,7 @@ begin
   exact λ hx, ⟨x, hx, rfl⟩, 
 end
 
-lemma size_preimg_equiv (f : α ≃ β)(X : set β):
+@[simp] lemma size_preimg_equiv (f : α ≃ β)(X : set β):
   size (f ⁻¹' X) = size X :=
 begin
   unfold_coes, 
@@ -57,7 +57,8 @@ end
 lemma size_subtype_img {E : set α}(X : set E): 
   size (subtype.val '' X) = size X :=
 begin
-  let f : E ↪ α := ⟨subtype.val, λ x y hxy, by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
+  let f : E ↪ α := ⟨subtype.val, λ x y hxy, 
+    by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
   apply size_img_emb f, 
 end
 

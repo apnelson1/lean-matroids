@@ -3,8 +3,10 @@ import .set
 
 open set 
 
+universes u v w 
+
 open_locale classical 
-variables {α : Type}
+variables {α : Type u}
   
 
 
@@ -225,7 +227,7 @@ lemma subset_remove_nonmem_of_subset {X Y : set α}{e : α}(hXY : X ⊆ Y)(he : 
 λ x hx, by {simp, refine ⟨hXY hx, λ h, _⟩, rw h at hx, exact he hx} 
 
 
-lemma remove_single_subset (X : set α) (e : α) : 
+lemma remove_single_subset' (X : set α) (e : α) : 
   X \ {e} ⊆ X := 
 diff_subset X {e} 
 
