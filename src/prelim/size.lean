@@ -73,6 +73,25 @@ lemma size_pos_has_mem (h : 0 < size s):
   ∃ e, e ∈ s := 
 (ne_empty_iff_has_mem.mp (λ hs, lt_irrefl _ (by {rwa [hs, size_empty] at h})))
 
+@[simp] lemma finsum_ones_eq_size (s : set α) : 
+  ∑ᶠ x in s, (1 : ℤ) = size s := 
+by {rw [size, fincard, nat.coe_int_distrib_finsum_in], refl}
+
+lemma size_one_iff_eq_singleton {s : set α}:
+  size s = 1 ↔ ∃ e, s = {e} := 
+begin
+  refine ⟨λ h, _, λ h, _⟩, swap,  
+    cases h with e he, rw he, apply size_singleton, 
+  
+  obtain ⟨e,he⟩ := size_pos_has_mem (by linarith : 0 < size s), 
+  use e, 
+  ext, 
+  simp only [set.mem_singleton_iff],
+  refine ⟨λ h', _, λ h', by {rwa ← h' at he}⟩, 
+  rw ← finsum_ones_eq_size at h,
+  
+end
+
 
 end basic 
 
@@ -82,9 +101,6 @@ section sums
 
 variables {α : Type u}
 
-@[simp] lemma finsum_ones_eq_size (s : set α) : 
-  ∑ᶠ x in s, (1 : ℤ) = size s := 
-by {rw [size, fincard, nat.coe_int_distrib_finsum_in], refl}
 
 @[simp] lemma finsum_ones_eq_type_size (α : Type u) : 
   ∑ᶠ (x : α), (1 : ℤ) = type_size α := 
@@ -444,19 +460,6 @@ begin
   rw [not_le] at hn, replace hn := int.add_one_le_of_lt hn, norm_num at hn,
   rw two_le_size_iff_has_distinct at hn, 
   obtain ⟨e,f,he,hf,hef⟩ := hn, exact hef (h e f he hf),   
-end
-
-lemma size_one_iff_eq_singleton {s : set α}:
-  size s = 1 ↔ ∃ e, s = {e} := 
-begin
-  refine ⟨λ hX, _, λ h, _⟩, swap,  
-    cases h with e he, rw he, apply size_singleton, 
-  obtain ⟨e,he⟩ := size_pos_has_mem (by linarith : 0 < size s), 
-  use e, 
-  ext, 
-  simp only [set.mem_singleton_iff],
-  refine ⟨λ h', _, λ h', by {rwa ← h' at he}⟩, 
-  
 end
 
 

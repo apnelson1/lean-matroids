@@ -55,7 +55,6 @@ by {apply @finsum_in_eq_of_bij_on α M _ α s s f g id, tidy}
 lemma finsum_eq_of_eq (h : ∀ i, f i = g i):
   ∑ᶠ i, f i = ∑ᶠ i, g i :=
 by {repeat {rw finsum_eq_finsum_in_univ}, exact finsum_in_eq_of_eq (λ i _, h i)}
-  
 
 lemma finsum_in_eq_finset_sum_filter_union [add_comm_monoid M] 
 (hf: (s ∩ function.support f).finite)(hg: (s ∩ function.support g).finite):
@@ -273,6 +272,15 @@ begin
   simp_rw [set.finite.mem_to_finset, set.mem_inter_iff], tauto, 
 end
 
+
+lemma finsum_in_le_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+(hs : (s ∩ function.support f).finite)(hf : ∀ x ∈ s, 0 ≤ f x): 
+  ∑ᶠ x in s, f x ≤ 0 ↔ ∀ x ∈ s, f x = 0 := 
+begin
+  convert finsum_in_eq_zero_iff_of_nonneg hs hf, 
+  exact iff_iff_eq.mp ⟨λ h, le_antisymm h (nonneg_of_finsum_in_nonneg hf), λ h, by rw h⟩ , 
+end
+
 lemma finsum_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
 (h : (function.support f).finite)(hf : ∀ x, 0 ≤ f x): 
   ∑ᶠ x, f x = 0 ↔ ∀ x, f x = 0 := 
@@ -280,6 +288,15 @@ begin
   rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_iff_of_nonneg], 
   tauto, rwa [set.univ_inter], tauto,  
 end
+
+lemma finsum_le_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+(h : (function.support f).finite)(hf : ∀ x, 0 ≤ f x): 
+  ∑ᶠ x, f x ≤ 0 ↔ ∀ x, f x = 0 := 
+begin
+  convert finsum_eq_zero_iff_of_nonneg h hf, 
+  exact iff_iff_eq.mp ⟨λ h, le_antisymm h (nonneg_of_finsum_nonneg hf), λ h, by rw h⟩ , 
+end
+
 
 @[simp] lemma finsum_in_eq_zero_iff [canonically_ordered_add_monoid M] 
 (hs : (s ∩ function.support f).finite): 
@@ -347,6 +364,15 @@ begin
   exact ne_of_lt (finsum_in_lt_finsum_in hf hg hfg ⟨i, hi, (ne.le_iff_lt hn).mp (hfg i hi)⟩) h, 
 end
 
+lemma finsum_in_ge_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
+(hf : (s ∩ function.support f).finite)(hg : (s ∩ function.support g).finite)
+(hfg : ∀ x ∈ s, f x ≤ g x): 
+  ∑ᶠ i in s, g i ≤ ∑ᶠ i in s, f i ↔ ∀ i ∈ s, f i = g i := 
+begin
+  convert finsum_in_eq_finsum_in_iff_of_le hf hg hfg, 
+  refine iff_iff_eq.mp ⟨λ h, le_antisymm (finsum_in_le_finsum_in' hfg hf hg) h, λ h, by rw h⟩,
+end
+
 lemma finsum_eq_finsum_iff_of_le [ordered_cancel_add_comm_monoid M]
 (hf : (function.support f).finite)(hg : (function.support g).finite)
 (hfg : ∀ x, f x ≤ g x): 
@@ -356,6 +382,44 @@ begin
   { apply set.finite.subset hf _, exact set.inter_subset_right _ _, },
   { apply set.finite.subset hg _, exact set.inter_subset_right _ _, }, 
   exact λ x _, hfg x, 
+end
+
+
+lemma finsum_in_subset_le_finsum_in_of_nonneg [ordered_add_comm_monoid M] 
+(ht : (t ∩ (function.support f)).finite)
+(hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x):
+  ∑ᶠ x in s, f x ≤ ∑ᶠ x in t, f x :=
+begin 
+  have hs := set.finite.subset ht ((function.support f).inter_subset_inter_left hst),
+  have hs' := set.finite.subset ht 
+    ((function.support f).inter_subset_inter_left (set.diff_subset t s)),
+  have h' := finsum_in_union' hs hs' (set.disjoint_diff), 
+  rw (set.union_diff_cancel hst) at h', 
+  rw h', 
+  exact le_add_of_nonneg_right (nonneg_of_finsum_in_nonneg (λ i hi, hf i (set.mem_of_mem_diff hi)))
+end
+
+lemma eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg [ordered_cancel_add_comm_monoid M] 
+(ht : (t ∩ (function.support f)).finite)
+(hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x):
+  ∀ x ∈ t \ s, f x = 0 :=
+begin
+  have hs := set.finite.subset ht ((function.support f).inter_subset_inter_left hst),
+  have hs' := set.finite.subset ht 
+    ((function.support f).inter_subset_inter_left (set.diff_subset t s)),
+  have h' := finsum_in_union' hs hs' (set.disjoint_diff), 
+  rw (set.union_diff_cancel hst) at h', 
+  rwa [h', add_le_iff_nonpos_right, finsum_in_le_zero_iff_of_nonneg hs'] at h, 
+  exact λ x hx, hf x (set.mem_of_mem_diff hx), 
+end
+
+lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg' [ordered_cancel_add_comm_monoid M] 
+(ht : t.finite)
+(hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x):
+  ∀ x ∈ t \ s, f x = 0 :=
+begin
+  refine eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg _ hst hf h,
+  apply set.finite.subset ht (set.inter_subset_left _ _), 
 end
 
 end order
