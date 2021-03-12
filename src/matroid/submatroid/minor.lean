@@ -227,7 +227,7 @@ begin
 
   have h : size ((p.D ∪ {e}) ∩ M.E) = size (p.D ∩ M.E) + 1, 
   { rw [inter_distrib_right, subset_iff_inter_eq_left.mp (subset.trans heC p.C_ss_E)], 
-    apply size_insert_nonmem, 
+    apply size_union_nonmem_singleton, 
     by_contra hn, 
     rw singleton_subset_iff at heC, 
     have := eq_empty_iff_forall_not_mem.mp p.disj e,   
@@ -381,10 +381,10 @@ begin
   rw [← p.union, mem_union] at he, 
   rw ←p.minor, 
   cases he, 
-  { rw [←add_elem he, union_comm, ←con_con], 
+  { rw [←union_mem_singleton he, union_comm, ←con_con], 
     let Me := matroid_in.contract M {e}, 
     exact or.inl (con_del_is_minor (M / {e}) _ _),  },
-  right, rw [con_del_eq_del_con _ _ _ p.disj, ←add_elem he, union_comm, ←del_del ],
+  right, rw [con_del_eq_del_con _ _ _ p.disj, ←union_mem_singleton he, union_comm, ←del_del ],
   apply del_con_is_minor,   
 end
 

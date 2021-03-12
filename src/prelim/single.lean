@@ -179,9 +179,13 @@ by {refine ⟨λ h, ssub_of_add_nonmem h, λ h, λ hex, _⟩,
     rw hex at h, 
     exact ssubset_irrefl _ h}
 
-lemma add_elem {X : set α} {e : α}: 
+lemma union_mem_singleton {X : set α} {e : α}: 
   e ∈ X → X ∪ {e} = X := 
 λ h, by {tidy,}
+
+lemma remove_nonmem {X : set α } {e : α} (he : e ∉ X):
+  X \ {e} = X := 
+by tidy 
 
 lemma elem_diff_ssubset {X Y : set α} : 
   X ⊂ Y → ∃ e, e ∈ Y \ X :=
@@ -199,7 +203,7 @@ lemma compl_single_remove {X : set α} {e : α} :
   e ∈ X → (X \ {e})ᶜ = Xᶜ ∪ {e} := 
 λ _, by rw [diff_eq, compl_inter, compl_compl]
 
-lemma remove_add_elem {X : set α} {e : α}: 
+lemma remove_union_mem_singleton {X : set α} {e : α}: 
   e ∈ X → (X \ {e}) ∪ {e} = X := 
 λ heX, by {rw [←singleton_subset_iff, subset_iff_union_eq_left,union_comm] at heX, 
           rw [diff_eq, union_distrib_right, compl_union_self, inter_univ, heX]}
@@ -263,7 +267,7 @@ begin
   rcases elem_only_larger_ssubset hXY with ⟨e, ⟨heY, heX⟩⟩, 
   refine ⟨Y \ {e}, e, ⟨subset_of_removal hXY.1 heX ,⟨ _, _⟩ ⟩⟩,
   from ssubset_of_remove_mem heY, 
-  from remove_add_elem heY, 
+  from remove_union_mem_singleton heY, 
 end 
 
 lemma exchange_comm {X : set α}{e f : α} : 

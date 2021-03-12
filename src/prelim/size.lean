@@ -1,6 +1,6 @@
 
 import tactic 
-import .int_lemmas .set .single finsum.fin_api
+import .int_lemmas .set .single finsum.fin_api  
 
 open_locale classical big_operators 
 noncomputable theory 
@@ -31,9 +31,9 @@ end defs
 
 section basic 
 
-variable {α : Type u}
+variables {α : Type u} {s t : set α} {e f : α}
 
-lemma size_def {α : Type u}(s : set α): 
+lemma size_def (s : set α): 
   size s = fincard s := 
 rfl 
 
@@ -54,37 +54,24 @@ by {simp only [size], norm_cast, apply zero_le}
 lemma type_size_nonneg (α : Type u) : 0 ≤ type_size α := 
 size_nonneg _
 
-lemma size_zero_of_infinite {s : set α}(hs : s.infinite): 
+lemma size_zero_of_infinite (hs : s.infinite): 
   size s = 0 := 
 by rw [size, fincard_of_infinite hs, int.coe_nat_zero]
 
-lemma finite_of_size_pos {s : set α}(hs : 0 < size s): 
+lemma finite_of_size_pos (hs : 0 < size s): 
   s.finite := 
 by {rw size at hs, norm_num at hs, exact finite_of_fincard_pos hs, }
 
-lemma nonempty_of_size_pos {s : set α} (hs : 0 < size s):
+lemma nonempty_of_size_pos (hs : 0 < size s):
   s.nonempty := 
 by {rw ← set.ne_empty_iff_nonempty, rintro rfl, linarith [size_empty α], }
 
 lemma contains_singleton {s : set α}: s.nonempty → (∃ t, t ⊆ s ∧ size t = 1) :=
 λ ⟨e,he⟩, ⟨{e},⟨set.singleton_subset_iff.mpr he, size_singleton e⟩⟩
 
-
-lemma single_subset' {s : set α} (hs : s.nonempty) : 
-  (∃ t t', t ∩ t' = ∅ ∧ t ∪ t' = s ∧ size t = 1) := 
-begin
-  obtain ⟨t,ht⟩ := contains_singleton hs,
-  refine ⟨t, s \ t, set.inter_diff _ _,  _, ht.2⟩, 
-  rw [set.union_diff_self, set.subset_iff_union_eq_left.mp ht.1], 
-end
-
-lemma single_subset {s : set α} (hs : s.nonempty) : 
-  (∃ t t', disjoint t t' ∧ t ∪ t' = s ∧ size t = 1) := 
-by {simp_rw set.disjoint_iff_inter_eq_empty, exact single_subset' hs}
-
-lemma size_pos_has_mem {s : set α}: 
-  0 < size s → ∃ e, e ∈ s := 
-λ h, (ne_empty_iff_has_mem.mp (λ hs, lt_irrefl _ (by {rwa [hs, size_empty] at h})))
+lemma size_pos_has_mem (h : 0 < size s): 
+  ∃ e, e ∈ s := 
+(ne_empty_iff_has_mem.mp (λ hs, lt_irrefl _ (by {rwa [hs, size_empty] at h})))
 
 
 end basic 
@@ -111,11 +98,11 @@ by rw [← mul_one b, ← finsum_ones_eq_type_size, ← mul_distrib_finsum, mul_
   ∑ᶠ x in s, b = b * size s := 
 by rw [← mul_one b, ← finsum_ones_eq_size, ← mul_distrib_finsum_in, mul_one]
 
-lemma sum_size_fiber_eq_size {ι : Type} [fintype α] (s : set α) (f : α → ι):
+lemma sum_size_fiber_eq_size {ι : Type v} [fintype α] (s : set α) (f : α → ι):
   ∑ᶠ (i : ι), size {a ∈ s | f a = i} = size s := 
 by simp_rw [size_def, ← nat.coe_int_distrib_finsum, fin.sum_fincard_fiber_eq_fincard s f]
 
-lemma finite.sum_size_fiber_eq_size {ι : Type} {s : set α} (hs : s.finite) (f : α → ι):
+lemma finite.sum_size_fiber_eq_size {ι : Type v} {s : set α} (hs : s.finite) (f : α → ι):
   ∑ᶠ (i : ι), size {a ∈ s | f a = i} = size s := 
 by simp_rw [size_def, ← nat.coe_int_distrib_finsum, sum_fincard_fiber_eq_fincard f hs]
 
@@ -166,14 +153,14 @@ by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
   size (set.univ : set (fin' n)) = n := 
 by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
 
-lemma type_size_eq_iff_equiv_fin' {α : Type} [fintype α] {n : ℤ} (hn : 0 ≤ n): 
+lemma type_size_eq_iff_equiv_fin' {α : Type u} [fintype α] {n : ℤ} (hn : 0 ≤ n): 
   type_size α = n ↔ nonempty (equiv α (fin' n)) :=
 begin
   obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le hn, 
   rw [fin'_eq_fin, ← fincard_t_eq_iff_fin_equiv, type_size_eq_fincard_t, int.coe_nat_inj'],
 end
 
-def choose_equiv_to_fin {α : Type} [fintype α] :
+def choose_equiv_to_fin {α : Type u} [fintype α] :
   equiv α (fin' (type_size α)) :=
 classical.choice ((type_size_eq_iff_equiv_fin' (type_size_nonneg α)).mp rfl)
 
@@ -181,16 +168,24 @@ end fin'
 
 section finite
 
-namespace set.finite
+variables {α : Type u}{s t : set α}{e f : α}
 
 open set 
 
-variables {α : Type u}{s t : set α}{e f : α}
+lemma set.infinite_of_finite_diff (hs : s.finite)(ht : t.infinite):
+  (t \ s).infinite := 
+λ h, ht (by {refine finite.subset (finite.union hs h) _, simp, })
+
+lemma set.infinite_of_union (hs : s.infinite)(t : set α): 
+  (s ∪ t).infinite := 
+set.infinite_mono (subset_union_left _ _) hs 
+
+namespace set.finite
 
 lemma of_diff (hs : s.finite) (t : set α): (s \ t).finite :=  
   set.finite.subset hs (diff_subset _ _)
 
-lemma of_inter_left (hs : s.finite) (t : set α): (s ∩ t).finite := 
+lemma of_inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
   set.finite.subset hs (inter_subset_left _ _)
 
 lemma of_inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
@@ -255,7 +250,7 @@ begin
   repeat {apply of_diff, assumption}, 
 end
 
-lemma size_induced_partition (hs : s.finite) (s t : set α) :
+lemma size_induced_partition (s t : set α) (hs : s.finite)  :
   size s = size (s ∩ t) + size (s \ t) := 
 begin
   nth_rewrite 0 ←diff_union s t, 
@@ -368,24 +363,101 @@ begin
   suffices h' : 0 < size (t \ s), 
     obtain ⟨e, he⟩ := size_pos_has_mem h', tauto, 
   have ht := finite_of_size_pos (lt_of_le_of_lt (size_nonneg _) hst), 
-  linarith [size_induced_partition ht t s, size_mono_inter_right Y X], 
+  linarith [size_induced_partition t s ht, size_mono_inter_right t s hs], 
 end 
 
-lemma size_insert_mem_compl {X : set α} {e : α} :
-  e ∈ Xᶜ → size (X ∪ {e}) = size X + 1 := 
+lemma size_union_singleton_compl (hs : s.finite) (hes : e ∈ sᶜ):
+  size (s ∪ {e}) = size s + 1 := 
 begin
-  intro hXe, have := size_modular X {e}, 
-  rw [inter_comm X, nonmem_disjoint (by rwa ←mem_compl_iff), size_singleton, size_empty] at this, 
-  linarith, 
+  have := size_modular s {e} hs (finite_singleton e), 
+  rwa [inter_comm s, nonmem_disjoint (by rwa ←mem_compl_iff), size_singleton, 
+  size_empty, add_zero] at this, 
 end
 
-lemma size_insert_ub {X : set α}{e : α}:
-  size (X ∪ {e}) ≤ size X + 1 := 
-by linarith [size_nonneg (X ∩ {e}), size_modular X {e}, size_singleton e]
+lemma size_union_nonmem_singleton (hs : s.finite) (he : e ∉ s): 
+  size (s ∪ {e}) = size s + 1 := 
+by {apply size_union_singleton_compl hs, rwa ←mem_compl_iff at he, }
 
-lemma size_insert_nonmem {X : set α} {e : α}: 
-  e ∉ X → size (X ∪ {e}) = size X + 1 := 
-λ hXe, by {apply size_insert_mem_compl, rwa ←mem_compl_iff at hXe}
+lemma size_insert_nonmem (hs : s.finite) (he : e ∉ s): 
+  size (has_insert.insert e s) = size s + 1 := 
+by {convert size_union_nonmem_singleton hs he, rw union_singleton}
+
+lemma size_remove_mem (hs : s.finite) (he : e ∈ s) :
+  size (s \ {e}) = size s - 1 := 
+begin
+  have h' : has_insert.insert e (s \ {e}) = s, 
+  { ext, simp, rintro rfl, assumption},
+  nth_rewrite 1 ← h', 
+  rw [size_insert_nonmem], 
+    ring, 
+  apply of_diff hs _, 
+  simp,  
+end
+
+lemma has_sub_one_size_ssubset_of_ne_empty (hs : s.finite) (hne : s ≠ ∅):
+  ∃ t, t ⊂ s ∧ size t = size s - 1 := 
+by {cases ne_empty_has_mem hne with e he, 
+exact ⟨s \ {e}, ⟨ssubset_of_remove_mem he, size_remove_mem hs he⟩ ⟩}
+
+lemma has_sub_one_size_ssubset_of_nonempty (hs : s.finite) (hne : s.nonempty):
+  ∃ t, t ⊂ s ∧ size t = size s - 1 := 
+has_sub_one_size_ssubset_of_ne_empty hs (ne_empty_iff_nonempty.mpr hne)
+
+lemma ne_univ_has_add_one_size_ssupset (hs : s.finite) (hne : s ≠ univ):
+  ∃ t, s ⊂ t ∧ size t = size s + 1 := 
+let ⟨e,he⟩ := ne_univ_iff_has_nonmem.mp hne in 
+  ⟨has_insert.insert e s, ssubset_insert he, size_insert_nonmem hs he⟩
+
+lemma ne_univ_has_add_one_size_ssupset_element (hs : s.finite) (hne : s ≠ univ):
+  ∃ e, s ⊂ s ∪ {e} ∧ size (s ∪ {e}) = size s + 1 := 
+let ⟨e,he⟩ := ne_univ_iff_has_nonmem.mp hne in 
+   ⟨e, by {rw union_singleton, exact ssubset_insert he}, size_union_nonmem_singleton hs he⟩ 
+
+lemma equal_or_single_in_diff (ht : t.finite) (hst : size s = size t) :
+  s = t ∨ ∃ e, e ∈ s \ t :=
+begin
+  by_contra h, rw not_or_distrib at h, cases h with h1 h2, 
+  rw ←ne_empty_iff_has_mem at h2, push_neg at h2,  
+  rw diff_empty_iff_subset at h2, 
+  refine h1 (eq_of_eq_size_subset ht h2 hst),
+end
+
+lemma size_le_one_iff_empty_or_singleton (hs : s.finite):
+  size s ≤ 1 ↔ s = ∅ ∨ ∃ e, s = {e} :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, swap, 
+  { unfreezingI {rcases h with (rfl | ⟨e, rfl⟩)}; 
+  simp only [size_singleton, size_empty], norm_num,},
+  by_cases h' : size s ≤ 0, 
+  { left, rw ←size_zero_iff_empty hs, linarith [size_nonneg s],},
+  right, rw ←size_one_iff_eq_singleton, 
+  exact le_antisymm h (by linarith), 
+end
+
+lemma size_le_one_iff_mem_unique {X : set α}: 
+  size X ≤ 1 ↔ ∀ e f ∈ X, e = f := 
+begin
+  split, 
+  { rw size_le_one_iff_empty_or_singleton, 
+    rintros (rfl | ⟨e,rfl⟩); simp [mem_singleton_iff], rintros e f rfl rfl, refl,},
+  refine λ h, by_contra (λ hn, _), 
+  rw [not_le] at hn, replace hn := int.add_one_le_of_lt hn, norm_num at hn,
+  rw two_le_size_iff_has_distinct at hn, 
+  obtain ⟨e,f,he,hf,hef⟩ := hn, exact hef (h e f he hf),   
+end
+
+lemma size_one_iff_eq_singleton {s : set α}:
+  size s = 1 ↔ ∃ e, s = {e} := 
+begin
+  refine ⟨λ hX, _, λ h, _⟩, swap,  
+    cases h with e he, rw he, apply size_singleton, 
+  obtain ⟨e,he⟩ := size_pos_has_mem (by linarith : 0 < size s), 
+  use e, 
+  ext, 
+  simp only [set.mem_singleton_iff],
+  refine ⟨λ h', _, λ h', by {rwa ← h' at he}⟩, 
+  
+end
 
 
 
@@ -393,6 +465,143 @@ lemma size_insert_nonmem {X : set α} {e : α}:
 end set.finite 
 
 end finite 
+
+/-! Lemmas that don't need any finiteness assumptions. Some are proved by splitting into
+finite and infinite cases, which is why these lemmas need to appear after the previous 
+section -/
+section general
+
+variables {α : Type u}{s t : set α}{e f : α}
+
+open set 
+
+lemma size_union_singleton_ub :
+  size (s ∪ {e}) ≤ size s + 1 := 
+begin
+  by_cases hs : s.finite, 
+    linarith [size_nonneg (s ∩ {e}), 
+      finite.size_modular s {e} hs (finite_singleton e), 
+      size_singleton e], 
+  rw [size_zero_of_infinite (infinite_mono (subset_union_left s {e}) hs)], 
+  linarith [size_nonneg s], 
+end 
+
+lemma size_insert_ub : 
+  size (insert e s) ≤ size s + 1 := 
+by {rw ← union_singleton, apply size_union_singleton_ub, }
+
+lemma single_subset' (hs : s.nonempty) : 
+  (∃ t t', t ∩ t' = ∅ ∧ t ∪ t' = s ∧ size t = 1) := 
+begin
+  obtain ⟨t,ht⟩ := contains_singleton hs,
+  refine ⟨t, s \ t, set.inter_diff _ _,  _, ht.2⟩, 
+  rw [set.union_diff_self, set.subset_iff_union_eq_left.mp ht.1], 
+end
+
+lemma single_subset (hs : s.nonempty) : 
+  (∃ t t', disjoint t t' ∧ t ∪ t' = s ∧ size t = 1) := 
+by {simp_rw set.disjoint_iff_inter_eq_empty, exact single_subset' hs}
+
+lemma size_remove_union_singleton (he : e ∈ s)(hf : f ∉ s) : 
+  size ((s \ {e}) ∪ {f}) = size s := 
+begin
+  by_cases hs : s.finite, 
+  { have h1 := hs.size_remove_mem he, 
+    have h2 := finite.size_union_nonmem_singleton 
+      (hs.of_diff _) 
+      (nonmem_diff_of_nonmem {e} hf), 
+    linarith},
+  rw [size_zero_of_infinite hs, size_zero_of_infinite _], 
+  apply infinite_of_union, 
+  exact infinite_of_finite_diff (finite_singleton e) hs, 
+end
+
+lemma size_union_singleton_remove (he : e ∈ s)(hf : f ∉ s) : 
+  size ((s ∪ {f}) \ {e}) = size s :=
+begin
+  convert size_remove_union_singleton he hf, 
+  rw [union_diff_distrib], 
+  convert rfl,
+  rw remove_nonmem, 
+  simp only [mem_singleton_iff], 
+  rintro rfl, 
+  exact hf he, 
+end  
+
+---- below is todo 
+
+
+lemma exchange_pair_sizes (hst : size s = size t): 
+  size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
+λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_union_singleton hf.1 he.2, 
+  size_remove_union_singleton he.1 hf.2], exact h}
+
+lemma eq_of_pair_size_one {e f : α}(h : size ({e,f} : set α) = 1): 
+  e = f :=
+by {refine size_le_one_iff_mem_unique.mp (by rw h) _ _ _ _; simp} 
+
+lemma size_eq_two_iff_pair {X : set α}:
+  size X = 2 ↔ ∃ (e f : α), e ≠ f ∧ X = {e,f} :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, swap, 
+  { rcases h with ⟨e,f,hef,rfl⟩, apply size_pair hef},
+  cases size_pos_has_mem (by {rw h, norm_num} : 0 < size X) with e he,
+  cases size_pos_has_mem (by {rw [size_remove_mem he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
+  refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
+  rw eq_comm, apply eq_of_eq_size_subset, 
+  { rw ←union_singletons_eq_pair, 
+    apply union_of_subsets (singleton_subset_iff.mpr he),  
+    simp only [set.mem_diff, set.mem_singleton_iff] at hf, 
+    exact singleton_subset_iff.mpr hf.1, },
+  rwa [eq_comm, size_pair  (ne.symm (ne_of_mem_diff hf))],  
+end 
+
+lemma size_pair {e f : α}: 
+  e ≠ f → size ({e,f} : set α) = 2 :=
+begin
+  intros hef, 
+  have : e ∉ ({f} : set α) := by {rw ←singleton_subset_iff, from λ h, hef (nested_singletons_eq h)}, 
+  have := size_union_nonmem_singleton this, 
+  rw [union_comm, size_singleton, union_singletons_eq_pair] at this, 
+  linarith, 
+end 
+
+lemma two_le_size_iff_has_distinct {X : set α}:
+  2 ≤ size X ↔ ∃ e f ∈ X, e ≠ f :=
+begin
+  split, 
+  { intro h, 
+    obtain ⟨e,he⟩ := @size_pos_has_mem _ _ X (by linarith),
+    obtain ⟨f,hf⟩ := @size_pos_has_mem _ _ (X \ {e}) (by linarith [size_remove_mem he]), 
+    refine ⟨e,f,he,mem_of_mem_of_subset hf (diff_subset _ _), _⟩, 
+    rintro rfl, simpa using hf,},
+  rintro ⟨e,f,he,hf,hef⟩, 
+  rw ← size_pair hef, 
+  apply size_monotone, 
+  rw pair_subset_iff, tauto, 
+end
+
+lemma size_pair_lb (e f : α): 
+  1 ≤ size ({e,f} : set α) := 
+by {rw ←union_singletons_eq_pair, 
+    linarith [size_monotone (@subset_union_left α {e} {f}),size_singleton e],}
+
+lemma size_pair_ub (e f : α):
+  size ({e,f} : set α) ≤ 2 := 
+begin
+  by_cases e = f, 
+  rw [h, pair_eq_singleton, size_singleton], linarith, 
+  linarith [size_pair h],
+end 
+
+
+end general 
+
+/-!
+This section (nearly) contains only copies of lemmas, but with the finiteness assumptions
+wrapped in a `fintype` instance, as well as a couple of lemmas about type sizes which need
+`fintype` for the statement to even be sensible. All lemmas fail without finiteness. 
+-/
 
 section fintype  
 
@@ -478,9 +687,8 @@ by {apply finite.nonempty_iff_size_pos, apply finite.of_fintype, }
 lemma one_le_size_iff_nonempty [fintype α] : s.nonempty ↔ 1 ≤ size s := 
   nonempty_iff_size_pos
 
-lemma one_le_size_univ_of_nonempty [fintype α] (hα: nonempty α): 1 ≤ size (univ : set α) := 
+lemma one_le_size_univ_of_nonempty [fintype α] (hα : nonempty α): 1 ≤ size (univ : set α) := 
 by rwa [nonempty_iff_univ_nonempty, one_le_size_iff_nonempty] at hα
-  --one_le_size_iff_nonempty.mp hα 
 
 lemma one_le_type_size_of_nonempty [fintype α] (hα: nonempty α): 1 ≤ type_size α  := 
 one_le_size_univ_of_nonempty hα
@@ -519,140 +727,50 @@ lemma size_le_zero_iff_has_no_mem [fintype α]:
   size s ≤ 0 ↔ ¬ ∃ e, e ∈ s := 
 by {rw finite.size_le_zero_iff_has_no_mem, apply finite.of_fintype}
 
-lemma mem_diff_of_size_lt {X Y : set α}(h : size X < size Y):
-  ∃ (e : α), e ∈ Y ∧ e ∉ X :=
-begin
-  suffices : 0 < size (Y \ X), rw [size_pos_iff_has_mem] at this, tauto, 
-  rw diff_eq, linarith [size_induced_partition_inter Y X, size_mono_inter_right Y X], 
-end 
+lemma mem_diff_of_size_lt [fintype α](h : size s < size t):
+  ∃ (e : α), e ∈ t ∧ e ∉ s :=
+by {apply finite.mem_diff_of_size_lt _ h, apply finite.of_fintype}
 
-lemma size_insert_mem_compl {X : set α} {e : α} :
-  e ∈ Xᶜ → size (X ∪ {e}) = size X + 1 := 
-begin
-  intro hXe, have := size_modular X {e}, 
-  rw [inter_comm X, nonmem_disjoint (by rwa ←mem_compl_iff), size_singleton, size_empty] at this, 
-  linarith, 
-end
+lemma size_union_singleton_compl [fintype α] (he : e ∈ sᶜ):
+  size (s ∪ {e}) = size s + 1 := 
+by {apply finite.size_union_singleton_compl _ he, apply finite.of_fintype}
 
-lemma size_insert_ub {X : set α}{e : α}:
-  size (X ∪ {e}) ≤ size X + 1 := 
-by linarith [size_nonneg (X ∩ {e}), size_modular X {e}, size_singleton e]
+lemma size_union_nonmem_singleton [fintype α](hes : e ∉ s): 
+  size (s ∪ {e}) = size s + 1 := 
+by {apply finite.size_union_singleton_compl _ hes, apply finite.of_fintype}
 
-lemma size_insert_nonmem {X : set α} {e : α}: 
-  e ∉ X → size (X ∪ {e}) = size X + 1 := 
-λ hXe, by {apply size_insert_mem_compl, rwa ←mem_compl_iff at hXe}
+lemma size_remove_mem [fintype α] (he : e ∈ s) :
+  size (s \ {e}) = size s - 1 := 
+by {apply finite.size_remove_mem _ he, apply finite.of_fintype}
 
+lemma has_sub_one_size_ssubset_of_ne_empty [fintype α] (hne : s ≠ ∅):
+  ∃ t, t ⊂ s ∧ size t = size s - 1 := 
+by {apply finite.has_sub_one_size_ssubset_of_ne_empty _ hne, apply finite.of_fintype}
 
-lemma size_remove_mem {X : set α}{e : α} :
-  e ∈ X → size (X \ {e}) = size X - 1 := 
-begin
-  intro heX, 
-  have h: e ∈ (X \ {e})ᶜ := by 
-  { rw [←singleton_subset_iff, compl_single_remove heX], 
-    apply subset_union_right}, 
-  nth_rewrite 1 ←remove_add_elem  heX, 
-  linarith [size_insert_mem_compl h], 
-end
+lemma has_sub_one_size_ssubset_of_nonempty [fintype α] (hne : s.nonempty):
+  ∃ t, t ⊂ s ∧ size t = size s - 1 := 
+by {apply finite.has_sub_one_size_ssubset_of_nonempty _ hne, apply finite.of_fintype}
 
+lemma ne_univ_has_add_one_size_ssupset [fintype α](hne : s ≠ univ):
+  ∃ t, s ⊂ t ∧ size t = size s + 1 := 
+by {apply finite.ne_univ_has_add_one_size_ssupset _ hne, apply finite.of_fintype}
 
-lemma nonempty_has_sub_one_size_ssubset {X : set α}:
-  X ≠ ∅ → ∃ Y : set α, Y ⊂ X ∧ size Y = size X - 1 := 
-λ hX, by {cases ne_empty_has_mem hX with e he, 
-exact ⟨X \ {e}, ⟨ssubset_of_remove_mem he,size_remove_mem he⟩ ⟩}
-
-lemma ne_univ_has_add_one_size_ssupset {X : set α}:
-  X ≠ univ → ∃ Y, X ⊂ Y ∧ size Y = size X + 1 := 
-begin
-  intro hX, rcases nonempty_has_sub_one_size_ssubset (λ h, _ : Xᶜ ≠ ∅) with ⟨Y, ⟨h₁,h₂⟩ ⟩, 
-  refine ⟨Yᶜ , ⟨scompl_subset_comm.mpr h₁, _⟩⟩,
-  linarith [size_compl X, size_compl Y], 
-  exact hX (compl_empty_iff.mp h), 
-end
-
-lemma ne_univ_has_add_one_size_ssupset_element {X : set α}:
-  X ≠ univ → ∃ (e:α), X ⊂ X ∪ {e} ∧ size (X ∪ {e}) = size X + 1 := 
-begin
-  intro hX, 
-  rcases elem_only_larger_ssubset (ssubset_univ_of_ne_univ hX) with ⟨e,⟨_,he⟩⟩, 
-  refine ⟨e, ⟨ssub_of_add_nonmem he, size_insert_nonmem he⟩⟩, 
-end
-
-lemma size_remove_insert {X : set α}{e f : α}(he : e ∈ X)(hf : f ∉ X) : 
-  size ((X \ {e}) ∪ {f}) = size X := 
-by linarith [size_insert_nonmem (nonmem_diff_of_nonmem {e} hf),size_remove_mem he]
-
-lemma size_insert_remove {X : set α}{e f : α}(he : e ∈ X)(hf : f ∉ X) : 
-  size ((X ∪ {f}) \ {e}) = size X := 
-by linarith [size_insert_nonmem hf, size_remove_mem (mem_union_of_mem_left {f} he)]
+lemma ne_univ_has_add_one_size_ssupset_element [fintype α] (hne : s ≠ univ):
+  ∃ e, s ⊂ s ∪ {e} ∧ size (s ∪ {e}) = size s + 1 := 
+by {apply finite.ne_univ_has_add_one_size_ssupset_element _ hne, apply finite.of_fintype}   
 
 lemma exchange_pair_sizes {X Y : set α}{e f : α}: 
   size X = size Y → e ∈ X\Y → f ∈ Y \ X → size ((X\{e}) ∪ {f}) = size ((Y \ {f}) ∪ {e}) :=
-λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_insert hf.1 he.2, 
-  size_remove_insert he.1 hf.2], exact h}
-
-lemma size_pair {e f : α}: 
-  e ≠ f → size ({e,f} : set α) = 2 :=
-begin
-  intros hef, 
-  have : e ∉ ({f} : set α) := by {rw ←singleton_subset_iff, from λ h, hef (nested_singletons_eq h)}, 
-  have := size_insert_nonmem this, 
-  rw [union_comm, size_singleton, union_singletons_eq_pair] at this, 
-  linarith, 
-end 
-
-lemma two_le_size_iff_has_distinct {X : set α}:
-  2 ≤ size X ↔ ∃ e f ∈ X, e ≠ f :=
-begin
-  split, 
-  { intro h, 
-    obtain ⟨e,he⟩ := @size_pos_has_mem _ _ X (by linarith),
-    obtain ⟨f,hf⟩ := @size_pos_has_mem _ _ (X \ {e}) (by linarith [size_remove_mem he]), 
-    refine ⟨e,f,he,mem_of_mem_of_subset hf (diff_subset _ _), _⟩, 
-    rintro rfl, simpa using hf,},
-  rintro ⟨e,f,he,hf,hef⟩, 
-  rw ← size_pair hef, 
-  apply size_monotone, 
-  rw pair_subset_iff, tauto, 
-end
-
-lemma size_pair_lb (e f : α): 
-  1 ≤ size ({e,f} : set α) := 
-by {rw ←union_singletons_eq_pair, 
-    linarith [size_monotone (@subset_union_left α {e} {f}),size_singleton e],}
-
-lemma size_pair_ub (e f : α):
-  size ({e,f} : set α) ≤ 2 := 
-begin
-  by_cases e = f, 
-  rw [h, pair_eq_singleton, size_singleton], linarith, 
-  linarith [size_pair h],
-end 
+λ h he hf, by {rw elem_diff_iff at he hf, rw [size_remove_union_singleton hf.1 he.2, 
+  size_remove_union_singleton he.1 hf.2], exact h}
 
 lemma equal_or_single_in_diff {X Y : set α} :
-  size X = size Y → X = Y ∨  ∃ e, e ∈ X \ Y :=
+  size X = size Y → X = Y ∨ ∃ e, e ∈ X \ Y :=
 begin
   intros hs, by_contra h, rw not_or_distrib at h, cases h with h1 h2, 
   rw ←ne_empty_iff_has_mem at h2, push_neg at h2,  
   rw diff_empty_iff_subset at h2, 
   from h1 (eq_of_eq_size_subset h2 hs),
-end
-
-lemma size_one_iff_eq_singleton {X : set α}:
-  size X = 1 ↔ ∃ e, X = {e} := 
-begin
-  refine ⟨λ hX, _, λ h, _⟩, swap,  
-    cases h with e he, rw he, apply size_singleton, 
-  simp_rw eq_singleton_iff_nonempty_unique_mem,
-  have := nonempty_iff_size_pos.mpr (by linarith : 0 < size X), 
-  have := this, 
-  cases this with e he,
-  refine ⟨e, ⟨this, λ x hx, _⟩⟩,
-  by_contra, 
-  have hu := size_pair h, 
-  have hss := union_subset_of_mem_of_mem hx he, 
-  have hs := size_monotone hss,
-  rw [union_singletons_eq_pair, hu, hX] at hs, 
-  norm_num at hs, 
 end
 
 lemma size_le_one_iff_empty_or_singleton {X : set α}:
@@ -678,29 +796,6 @@ begin
   obtain ⟨e,f,he,hf,hef⟩ := hn, exact hef (h e f he hf),   
 end
 
-
-lemma eq_of_pair_size_one {e f : α}(h : size ({e,f} : set α) = 1 ): 
-  e = f :=
-by {refine size_le_one_iff_mem_unique.mp (by rw h) _ _ _ _; simp} 
-
-
-
-
-lemma size_eq_two_iff_pair {X : set α}:
-  size X = 2 ↔ ∃ (e f : α), e ≠ f ∧ X = {e,f} :=
-begin
-  refine ⟨λ h, _, λ h, _⟩, swap, 
-  { rcases h with ⟨e,f,hef,rfl⟩, apply size_pair hef},
-  cases size_pos_has_mem (by {rw h, norm_num} : 0 < size X) with e he,
-  cases size_pos_has_mem (by {rw [size_remove_mem he,h], norm_num } : 0 < size (X \ {e})) with f hf, 
-  refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
-  rw eq_comm, apply eq_of_eq_size_subset, 
-  { rw ←union_singletons_eq_pair, 
-    apply union_of_subsets (singleton_subset_iff.mpr he),  
-    simp only [set.mem_diff, set.mem_singleton_iff] at hf, 
-    exact singleton_subset_iff.mpr hf.1, },
-  rwa [eq_comm, size_pair  (ne.symm (ne_of_mem_diff hf))],  
-end 
 
 
 end fintype 

@@ -262,7 +262,7 @@ begin
   replace h_con : ∀ (z:α), z ∈ X ∪ Z → M.r (X ∪ {z}) = M.r X := 
   by {
         intros z hz, rw elem_union_iff at hz, cases hz, 
-        rw add_elem hz, 
+        rw union_mem_singleton hz, 
         from (rank_eq_of_le_supset (subset_union_left _ _) (h_con z hz)).symm
         },
 
@@ -426,7 +426,7 @@ begin
   intros hI h, 
   rw indep_iff_r at *, 
   apply le_antisymm (M.rank_le_size _ ),
-  refine le_trans (size_insert_ub) _, 
+  refine le_trans (size_union_singleton_ub) _, 
   rw hI at h, convert h, 
 end
 
@@ -543,7 +543,7 @@ begin
   unfold is_circuit,
   rw not_indep_iff_r, simp_rw indep_iff_r, 
   split, rintros ⟨hr, hmin⟩,
-  split, rcases nonempty_has_sub_one_size_ssubset (rank_lt_size_ne_empty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
+  split, rcases has_sub_one_size_ssubset_of_ne_empty (rank_lt_size_ne_empty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
   linarith [M.rank_mono hY₁.1],  
   intros Y hY, exact hmin _ hY, 
   rintros ⟨h₁, h₂⟩, refine ⟨by linarith, λ Y hY, _ ⟩,  
@@ -564,7 +564,7 @@ begin
   simp_rw [is_cocircuit, is_circuit, not_coindep_iff_r, coindep_iff_r],
   split, rintros ⟨h₁, h₂⟩, split, 
   have h_nonempty : X ≠ ∅ := by {intros h, rw [h,compl_empty] at h₁, exact int.lt_irrefl _ h₁}, 
-  rcases (nonempty_has_sub_one_size_ssubset h_nonempty) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
+  rcases (has_sub_one_size_ssubset_of_ne_empty h_nonempty) with ⟨Y,⟨hY₁, hY₂⟩⟩ ,
   specialize h₂ _ hY₁,  
   rw [←compl_compl Y, ←compl_compl X, compl_size, compl_size Xᶜ] at hY₂, 
   linarith[M.rank_diff_le_size_diff (compl_subset_compl.mpr hY₁.1)], 
@@ -840,7 +840,7 @@ lemma nonmem_cl_iff_nonspans :
 
 lemma rank_removal_iff_closure (X : set α)(e : α)(h : e ∈ X):
   M.r (X \ {e}) = M.r X ↔ e ∈ M.cl (X \ {e}) :=
-by rw [mem_cl_iff_r, remove_add_elem h, eq_comm]
+by rw [mem_cl_iff_r, remove_union_mem_singleton h, eq_comm]
   
 
 lemma cl4 (M : matroid α)(X : set α)(e f : α) : 
@@ -1385,14 +1385,14 @@ begin
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he hi, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩ ⟩⟩, 
   rw indep_iff_r at hi, 
   rw elem_diff_iff at he, 
-  linarith [h.2.2 e he.1, size_insert_nonmem he.2], 
+  linarith [h.2.2 e he.1, size_union_nonmem_singleton he.2], 
   by_cases heB: e ∈ B, 
-  rw (add_elem heB), 
+  rw (union_mem_singleton heB), 
   have : e ∈ X \ B := by {rw elem_diff_iff, from ⟨he,heB⟩},
   have := h.2.2 _ this, 
   rw not_indep_iff_r at this, 
   have hi := h.2.1, rw indep_iff_r at hi, 
-  linarith [size_insert_nonmem heB, M.rank_mono (subset_union_left B {e})], 
+  linarith [size_union_nonmem_singleton heB, M.rank_mono (subset_union_left B {e})], 
 end 
 
 lemma basis_iff_augment_i : 
@@ -1455,7 +1455,7 @@ begin
   rw h'' at hf, 
   cases elem_diff_iff.mp hf with hf₁ hf₂, 
   refine ⟨f, hf, hf_aug, _⟩, 
-  rw size_remove_insert he₁ hf₂, exact hB₁.2, 
+  rw size_remove_union_singleton he₁ hf₂, exact hB₁.2, 
 end  
 
 lemma extends_to_basis_of :

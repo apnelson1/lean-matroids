@@ -26,7 +26,7 @@ lemma new_circuit_contains_new_elem {M : cct_family α}{I C : set α}{e : α}:
   C_to_I M I → C ⊆ (I ∪ {e}) → M.cct C → e ∈ C :=
 λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonmem hCIe he) hC}
 
-lemma add_elem_unique_circuit {M : cct_family α} {I : set α} {e : α}:
+lemma union_mem_singleton_unique_circuit {M : cct_family α} {I : set α} {e : α}:
   C_to_I M I → ¬C_to_I M (I ∪ {e}) → ∃! C, M.cct C ∧ C ⊆ I ∪ {e} :=
 begin
   intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
@@ -38,13 +38,13 @@ begin
   from hI _ (subset.trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
 end 
 
-lemma add_elem_le_one_circuit {M : cct_family α} {I C C': set α} (e : α):
+lemma union_mem_singleton_le_one_circuit {M : cct_family α} {I C C': set α} (e : α):
   C_to_I M I → (M.cct C ∧ C ⊆ I ∪ {e}) → (M.cct C' ∧ C' ⊆ I ∪ {e}) → C = C' :=
 begin
   intros hI hC hC', 
   by_cases h': C_to_I M (I ∪ {e}), 
   exfalso, from h' _ hC.2 hC.1,
-  rcases (add_elem_unique_circuit hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
+  rcases (union_mem_singleton_unique_circuit hI h') with ⟨ C₀,⟨ _,hC₀⟩⟩ , 
   from eq.trans (hC₀ _ hC) (hC₀ _ hC').symm, 
 end
 
@@ -103,7 +103,7 @@ begin
     cases ne_empty_has_mem this with f hf,
     refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,  
     apply mem_of_mem_of_subset hf (inter_subset_right _ _), 
-    rw ←(add_elem_le_one_circuit e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
+    rw ←(union_mem_singleton_le_one_circuit e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
     from mem_of_mem_of_subset hf (inter_subset_left _ _), 
   end,
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
@@ -126,7 +126,7 @@ begin
 
   have hJ's : size I < size J', 
   { rw mem_diff at he hFJI, 
-    rwa [hdefJ', size_insert_remove hFJI.1 he.2], },
+    rwa [hdefJ', size_union_singleton_remove hFJI.1 he.2], },
   
   have hJ'ssu : I \ J' ⊂ I \ J,
   { rw hdefJ',

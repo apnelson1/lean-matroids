@@ -123,7 +123,7 @@ begin
     rw [hk, ν, ν, ←hIc_eq_max], 
     have := max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Ic ∪ {e}, _⟩, 
     dsimp only at this ⊢,
-    linarith only [size_insert_nonmem heIc, this], 
+    linarith only [size_union_nonmem_singleton heIc, this], 
     split, all_goals {apply indep_union_project_set_of_project_indep}, 
     exact hIc_ind.1, exact (nonloop_iff_indep.mp h_e_nl.1), 
     exact hIc_ind.2, exact (nonloop_iff_indep.mp h_e_nl.2),                                                               
@@ -137,7 +137,7 @@ begin
       (loopify_makes_loops N₂ {e}), 
     rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
-    rw [size_insert_mem_compl he, ←hN₁d, ←hN₂d] at this, 
+    rw [size_union_singleton_compl he, ←hN₁d, ←hN₂d] at this, 
     rw [compl_size] at ⊢ hsize, linarith,  
   },
 
@@ -149,7 +149,7 @@ begin
       (project_makes_loops N₂ {e}), 
     rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
-    rw [size_insert_mem_compl he, ←hN₁c, ←hN₂c] at this, 
+    rw [size_union_singleton_compl he, ←hN₁c, ←hN₂c] at this, 
     rw [compl_size] at ⊢ hsize, linarith,  
   },  
 

@@ -294,7 +294,7 @@ begin
   rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
   push_neg at h₃, 
   --rw elem_iff at h₁e, 
-  from a (by linarith [size_insert_nonmem h₂e, 
+  from a (by linarith [size_union_nonmem_singleton h₂e, 
                         h₃ e h₂e (union_of_subsets h₁ (singleton_subset_iff.mpr h₁e ))]), 
   rw h at h₂ ⊢, 
   linarith, -/

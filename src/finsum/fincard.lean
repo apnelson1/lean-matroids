@@ -12,17 +12,17 @@ open set
 
 def fincard (s : set α) : ℕ := ∑ᶠ x in s, 1  
 
-def fincard_t (α : Type*) := fincard (set.univ : set α)
+def fincard_t (α : Type u) := fincard (set.univ : set α)
 
 lemma fincard_def (s : set α) : 
   fincard s = ∑ᶠ x in s, 1 := 
 rfl 
 
-lemma fincard_t_def (α : Type*) : 
+lemma fincard_t_def (α : Type u) : 
   fincard_t α = fincard (set.univ : set α):= 
 rfl 
 
-lemma fincard_t_eq_sum_ones (α : Type*): 
+lemma fincard_t_eq_sum_ones (α : Type u): 
   fincard_t α = ∑ᶠ (x : α), 1 := 
 by rw [fincard_t, fincard_def, finsum_eq_finsum_in_univ]
 

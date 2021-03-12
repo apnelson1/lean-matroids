@@ -1,7 +1,7 @@
 
 -- various flavours of induction 
 
-import .size .int_lemmas 
+import  .int_lemmas .size
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 
@@ -106,6 +106,7 @@ begin
   rw ha at h',
   linarith,   
 end
+
 
 lemma induction_set_size_remove (P : set α → Prop): 
   (P ∅) → (∀ (X : set α) (e : X), P (X \ {e}) → P X) → (∀ X, P X) := 

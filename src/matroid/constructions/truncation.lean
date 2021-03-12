@@ -26,7 +26,7 @@ begin
   cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
   refine ⟨e, ⟨he.1, ⟨he.2,_ ⟩ ⟩⟩, 
   by_contra h_con, push_neg at h_con, 
-  rw [(size_insert_nonmem (elem_diff_iff.mp he.1).2)] at h_con, 
+  rw [(size_union_nonmem_singleton (elem_diff_iff.mp he.1).2)] at h_con, 
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
