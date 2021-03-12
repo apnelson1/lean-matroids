@@ -4,7 +4,7 @@ import .rankfun .indep
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 open set 
 
@@ -14,12 +14,12 @@ lemma monotone (M : clfun α){X Y : set α} :
   X ⊆ Y → M.cl X ⊆ M.cl Y :=
   λ h, M.cl3 _ _ h
 
-lemma subset_union (M : clfun α)(X Y : set α) :
+lemma subset_union (M : clfun α) (X Y : set α) :
   M.cl X ∪ M.cl Y ⊆ M.cl (X ∪ Y) :=
   union_of_subsets (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
   
 
-lemma cl_union_both (M : clfun α)(X Y : set α) :
+lemma cl_union_both (M : clfun α) (X Y : set α) :
   M.cl (X ∪ Y) = M.cl(M.cl X ∪ M.cl Y) :=
   begin
     apply subset.antisymm, 
@@ -29,11 +29,11 @@ lemma cl_union_both (M : clfun α)(X Y : set α) :
   end
 
 
-lemma union_pair {M : clfun α}{X Y : set α} (Z: set α): 
+lemma union_pair {M : clfun α} {X Y : set α} (Z: set α) : 
   M.cl X = M.cl Y → M.cl (X ∪ Z) = M.cl (Y ∪ Z) :=
   λ h, by rw [cl_union_both _ X, cl_union_both _ Y, h]
 
-lemma cl_union_left (M : clfun α)(X Y : set α) :
+lemma cl_union_left (M : clfun α) (X Y : set α) :
   M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y)  :=
   clfun.union_pair Y (M.cl2 X)
 
@@ -41,19 +41,19 @@ def is_indep (M : clfun α) : set α → Prop :=
   λ I, ∀ (e:α), e ∈ I → M.cl (I \ {e}) ≠ M.cl I 
 
 /-- all sets spanning X -/
-def spans (M : clfun α)(X : set α) : Type := 
+def spans (M : clfun α) (X : set α) : Type := 
   {A : set α // X ⊆ M.cl A} 
 
-instance spans_fin (M : clfun α)(X : set α): fintype (M.spans X) :=
+instance spans_fin (M : clfun α) (X : set α) : fintype (M.spans X) :=
   by {unfold spans, apply_instance}
 
-instance spans_nonempty (M : clfun α)(X : set α) : nonempty (M.spans X) := 
+instance spans_nonempty (M : clfun α) (X : set α) : nonempty (M.spans X) := 
   by {apply nonempty_subtype.mpr, from ⟨X, M.cl1 X⟩}
 
 def r (M : clfun α) : set α → ℤ := 
   λ X, min_val (λ (A : M.spans X), size A.val) 
 
-lemma R1 (M : clfun α):
+lemma R1 (M : clfun α) :
   satisfies_R1 M.r := 
 begin
   intros X, unfold clfun.r, 
@@ -61,7 +61,7 @@ begin
   rw ←hB₁, from hB₂ ⟨X, M.cl1 X⟩,
 end
 
-lemma R2 (M : clfun α):
+lemma R2 (M : clfun α) :
   satisfies_R2 M.r := 
 begin
   intros X Y hXY, 
@@ -70,7 +70,7 @@ begin
   from min_is_lb (λ (A : M.spans X), size A.val) ⟨BY,trans hXY hBY⟩, 
 end
 
-lemma R3 (M : clfun α):
+lemma R3 (M : clfun α) :
   satisfies_R3 M.r :=
 begin
   intros X Y, 

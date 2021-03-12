@@ -94,7 +94,7 @@ lemma on_times : forall {n : nat} (V : vector A n) (a b : freealg n),
 
 ----------------------------------------------------------------
 
-lemma foo (X : A):  Xᶜᶜᶜᶜ = X :=
+lemma foo (X : A) :  Xᶜᶜᶜᶜ = X :=
 begin
   let vars := vector.cons X (vector.nil),
   set_to_ring_eqn,
@@ -145,7 +145,7 @@ meta def tactic.interactive.introduce_varmap_rewrite (vname : parse ident) (vars
       (list_with_idx names 0),
     return ()
 
-meta def tactic.interactive.simplify_sets (sets : parse ids_list): tactic unit :=
+meta def tactic.interactive.simplify_sets (sets : parse ids_list) : tactic unit :=
   do
     -- TODO: actually check the goal is of the form of some boolalg equation
     --       also -- do something about hypotheses...
@@ -172,7 +172,7 @@ end
 --set_option pp.implicit false
 
 
-lemma bar {A : boolalg} (X Y Z P Q W: A): (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
+lemma bar {A : boolalg} (X Y Z P Q W: A) : (X ∪ (Y ∪ Z)) ∪ ((W ∩ P ∩ Q)ᶜ ∪ (P ∪ W ∪ Q)) = ⊤ :=
 begin
   simplify_sets [X, Y, Z, P, Q, W],
 end

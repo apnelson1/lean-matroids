@@ -7,11 +7,11 @@ noncomputable theory
 
 open set 
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 namespace cct_family
 
-def C_to_I (M : cct_family α): (set α → Prop) := 
+def C_to_I (M : cct_family α) : (set α → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
 lemma C_to_empty_indep (M : cct_family α) :
@@ -22,23 +22,23 @@ lemma C_to_indep_of_subset_indep (M : cct_family α) :
   satisfies_indep_of_subset_indep (C_to_I M) :=
 λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
-lemma new_circuit_contains_new_elem {M : cct_family α}{I C : set α}{e : α}:
+lemma new_circuit_contains_new_elem {M : cct_family α} {I C : set α} {e : α} :
   C_to_I M I → C ⊆ (I ∪ {e}) → M.cct C → e ∈ C :=
 λ hI hCIe hC, by {by_contra he, from hI C (subset_of_subset_add_nonmem hCIe he) hC}
 
-lemma union_mem_singleton_unique_circuit {M : cct_family α} {I : set α} {e : α}:
+lemma union_mem_singleton_unique_circuit {M : cct_family α} {I : set α} {e : α} :
   C_to_I M I → ¬C_to_I M (I ∪ {e}) → ∃! C, M.cct C ∧ C ⊆ I ∪ {e} :=
 begin
   intros hI hIe, unfold C_to_I at hI hIe, push_neg at hIe, 
   rcases hIe with ⟨C, ⟨hCI, hC⟩⟩, refine ⟨C,⟨⟨hC,hCI⟩,λ C' hC', _⟩⟩,
-  have := elem_inter (new_circuit_contains_new_elem hI hCI hC) 
+  have := mem_inter (new_circuit_contains_new_elem hI hCI hC) 
                               (new_circuit_contains_new_elem hI hC'.2 hC'.1),
   by_contra hCC', 
   cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
   from hI _ (subset.trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
 end 
 
-lemma union_mem_singleton_le_one_circuit {M : cct_family α} {I C C': set α} (e : α):
+lemma union_mem_singleton_le_one_circuit {M : cct_family α} {I C C': set α} (e : α) :
   C_to_I M I → (M.cct C ∧ C ⊆ I ∪ {e}) → (M.cct C' ∧ C' ⊆ I ∪ {e}) → C = C' :=
 begin
   intros hI hC hC', 
@@ -72,7 +72,7 @@ begin
   have hIJ_nonempty : I \ J ≠ ∅ := by 
   {
     intro h, rw diff_empty_iff_subset at h, 
-    cases size_pos_has_mem hJI_nonempty with e he,
+    cases exists_mem_of_size_pos hJI_nonempty with e he,
     refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
     from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _)), 
   },
@@ -83,7 +83,7 @@ begin
   have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ {e} → M.cct C → f ∈ C := by
   begin
     by_cases hJe : C_to_I M (J ∪ {e}) , -- Either J ∪ {e} has a circuit or doesn't
-    { cases size_pos_has_mem hJI_nonempty with f hf, 
+    { cases exists_mem_of_size_pos hJI_nonempty with f hf, 
       exact ⟨f, ⟨hf, λ C hCJe hC, false.elim ((hJe _ hCJe) hC)⟩ ⟩},
      
     -- let Ce be a circuit contained in J ∪ {e}
@@ -142,12 +142,12 @@ begin
   by_cases g ∈ J \ I,
   from h_non_aug g h hg₂, 
   rw [←mem_compl_iff] at h,  
-  have := elem_inter hg₁ h, 
+  have := mem_inter hg₁ h, 
   rw [diff_eq, diff_eq, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
       inter_assoc _ I _ ,inter_compl_self, inter_empty, union_empty, hdefJ', diff_eq, inter_assoc, inter_right_comm, 
       inter_distrib_right, ←inter_assoc, inter_compl_self, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
   have := mem_of_mem_of_subset this (inter_subset_right _ _),
-  have := (elem_inter (mem_of_mem_of_subset hg₁ hJ'₀) this),
+  have := (mem_inter (mem_of_mem_of_subset hg₁ hJ'₀) this),
   rw inter_compl_self at this, from not_mem_empty g this, 
 end 
 

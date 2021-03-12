@@ -12,7 +12,7 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 section intersection 
 
@@ -28,7 +28,7 @@ def matroid_intersection_ub_fn (M₁ M₂ : matroid α) : set α → ℤ :=
 local notation `ub_fn` := matroid_intersection_ub_fn 
 
 /-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
-theorem matroid_intersection_pair_le {M₁ M₂ : matroid α}{I : common_ind M₁ M₂}(A : set α) : 
+theorem matroid_intersection_pair_le {M₁ M₂ : matroid α} {I : common_ind M₁ M₂} (A : set α) : 
   size (I : set α) ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rcases I with ⟨I, ⟨h₁, h₂⟩⟩, 
@@ -41,7 +41,7 @@ begin
 end
 
 /-- the easy direction of matroid intersection, stated as an upper bound on ν -/
-lemma ν_ub (M₁ M₂ : matroid α): 
+lemma ν_ub (M₁ M₂ : matroid α) : 
   ν M₁ M₂ ≤ min_val (matroid_intersection_ub_fn M₁ M₂)  := 
 begin
   rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩,
@@ -53,7 +53,7 @@ end
 /-- Edmonds' matroid intersection theorem: the size of a largest common independent set 
     is equal to the minimum value of a natural upper bound on the size of any such set. 
     Implies many other minmax theorems in combinatorics.                             -/
-theorem matroid_intersection (M₁ M₂ : matroid α): 
+theorem matroid_intersection (M₁ M₂ : matroid α) : 
   ν M₁ M₂ = min_val (matroid_intersection_ub_fn M₁ M₂) := 
 begin
   --induction boilerplate (and ≥ suffices)
@@ -81,11 +81,11 @@ begin
   -- and that there is at least one common nonloop; call it e. 
   set k := ν N₁ N₂ with hk, 
   rw ←hsize at hn, 
-  cases size_pos_has_mem hn with e he, 
+  cases exists_mem_of_size_pos hn with e he, 
 
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
-    rw [nonloop_iff_not_elem_loops, ←mem_compl_iff], 
+    rw [nonloop_iff_not_mem_loops, ←mem_compl_iff], 
     refine mem_of_mem_of_subset he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
@@ -105,7 +105,7 @@ begin
   have heIc : e ∉ Ic := λ heIc, by 
   {
     have := projected_set_rank_zero N₁ {e}, 
-    rw [←hN₁c, elem_indep_r heIc hIc_ind.1] at this, 
+    rw [←hN₁c, mem_indep_r heIc hIc_ind.1] at this, 
     exact one_ne_zero this, 
   },
   
@@ -191,7 +191,7 @@ begin
 end
 
 /-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/
-theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α): 
+theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α) : 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin
   rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 

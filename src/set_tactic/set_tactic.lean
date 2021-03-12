@@ -2,7 +2,7 @@ import data.set.basic
 import .extensionality
 
 namespace extensionality
-instance set_ext_lemmas (T : Type):
+instance set_ext_lemmas (T : Type) :
   (boolalg_ext_lemmas (set T) T) :=
 {
   simpl_eq := by tidy,

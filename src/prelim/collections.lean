@@ -1,4 +1,4 @@
-import .size .induction algebra.big_operators.order finsum.fin_api .embed
+import .size .induction_size algebra.big_operators.order finsum.fin_api .embed
 ----------------------------------------------------------------
 open_locale classical 
 open_locale big_operators 
@@ -8,7 +8,7 @@ noncomputable theory
 open set 
 
 section extrema 
-variables {α: Type}[fintype α]
+variables {α: Type} [fintype α]
 
 
 def is_lb (P : set α → Prop) (X : set α) : Prop := ∀ Y, P Y → X ⊆ Y 
@@ -33,11 +33,11 @@ lemma down_closed_iff_negation_up_closed (P : set α → Prop) :
   down_closed P ↔ up_closed (λ X, ¬P X) := 
 by {unfold down_closed up_closed, simp_rw not_imp_not}
 
-lemma contains_min {P : set α → Prop} {X : set α}:
+lemma contains_min {P : set α → Prop} {X : set α} :
   P X → ∃ Y, Y ⊆ X ∧ is_minimal P Y := 
 minimal_example P 
 
-lemma max_contains {P : set α → Prop} {X : set α}:
+lemma max_contains {P : set α → Prop} {X : set α} :
   P X → ∃ Y, X ⊆ Y ∧ is_maximal P Y :=  
 maximal_example P  
  
@@ -67,7 +67,7 @@ lemma inter_closed_min_unique (P : set α → Prop) :
 by {intros hP _ _ h₁ h₂, replace hP := hP.2 _ _ h₁.1 h₂.1, by_contra a, 
     cases ssubset_inter a, exact (h₁.2 _ h) hP, exact (h₂.2 _ h) hP} 
 
-lemma inter_closed_min_iff_in_and_lb {P : set α → Prop}(hP : inter_closed P) (X : set α):
+lemma inter_closed_min_iff_in_and_lb {P : set α → Prop} (hP : inter_closed P) (X : set α) :
   is_minimal P X ↔ P X ∧ is_lb P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
@@ -90,7 +90,7 @@ lemma union_closed_max_unique (P : set α → Prop) :
     rw [←compl_compl X₁, ←compl_compl X₂, inter_closed_min_unique _ h _ _ h₁ h₂],
   end 
 
-lemma union_closed_max_iff_in_and_ub {P : set α → Prop}(hP : union_closed P) (X : set α):
+lemma union_closed_max_iff_in_and_ub {P : set α → Prop} (hP : union_closed P) (X : set α) :
   is_maximal P X ↔ P X ∧ is_ub P X := 
   begin
     refine ⟨λ h, ⟨h.1, λ Z pZ,_⟩, λ h,⟨h.1, λ Y hY hPY, _⟩⟩, 
@@ -105,11 +105,11 @@ def min_of_inter_closed {P : set α → Prop} (h : inter_closed P) : set α :=
 def max_of_union_closed {P : set α → Prop} (h : union_closed P) : set α := 
   classical.some (union_closed_exists_max P h) 
 
-lemma min_of_inter_closed_in {P : set α → Prop}(h : inter_closed P) :
+lemma min_of_inter_closed_in {P : set α → Prop} (h : inter_closed P) :
   P (min_of_inter_closed h) := 
   (classical.some_spec (inter_closed_exists_min P h)).1 
 
-lemma min_of_inter_closed_is_lb {P : set α → Prop}(h : inter_closed P): 
+lemma min_of_inter_closed_is_lb {P : set α → Prop} (h : inter_closed P) : 
   is_lb P (min_of_inter_closed h) :=
   begin
     intros X hX, rcases contains_min hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,  
@@ -117,11 +117,11 @@ lemma min_of_inter_closed_is_lb {P : set α → Prop}(h : inter_closed P):
       ((classical.some_spec (inter_closed_exists_min P h))) at hY₁, 
   end
 
-/-lemma min_of_inter_closed_is_min {P : set α → Prop}(h : inter_closed P) : 
+/-lemma min_of_inter_closed_is_min {P : set α → Prop} (h : inter_closed P) : 
   is_minimal P (min_of_inter_closed h) :=
   (classical.some_spec (inter_closed_exists_min P h))-/
 
-lemma is_min_of_inter_closed {P : set α → Prop}(h : inter_closed P) {X : set α}:
+lemma is_min_of_inter_closed {P : set α → Prop} (h : inter_closed P) {X : set α} :
   P X → is_lb P X → X = min_of_inter_closed h := 
 begin
   intros hX hlb, 
@@ -132,7 +132,7 @@ begin
   exact (min_of_inter_closed_is_lb h) _ hX,
 end
 
-lemma is_min_of_inter_closed_iff {P : set α → Prop}(hic : inter_closed P) (X : set α):
+lemma is_min_of_inter_closed_iff {P : set α → Prop} (hic : inter_closed P) (X : set α) :
   X = min_of_inter_closed hic ↔ P X ∧ is_lb P X := 
 begin
   refine ⟨λ h, _, λ h, is_min_of_inter_closed hic h.1 h.2 ⟩ , 
@@ -143,7 +143,7 @@ lemma max_of_union_closed_in {P : set α → Prop} (h : union_closed P) :
   P (max_of_union_closed h) := 
   (classical.some_spec (union_closed_exists_max P h)).1 
 
-lemma max_of_union_closed_is_ub {P : set α → Prop}(h : union_closed P) : 
+lemma max_of_union_closed_is_ub {P : set α → Prop} (h : union_closed P) : 
   is_ub P (max_of_union_closed h) :=
 begin
   intros X hX, rcases max_contains hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,  
@@ -151,7 +151,7 @@ begin
     P h _ _  hY₂ ((classical.some_spec (union_closed_exists_max P h))) at hY₁
 end
 
-lemma is_max_of_union_closed {P : set α → Prop}(h : union_closed P) {X : set α}:
+lemma is_max_of_union_closed {P : set α → Prop} (h : union_closed P) {X : set α} :
   P X → is_ub P X → X = max_of_union_closed h := 
 begin
   intros hX hub, 
@@ -162,7 +162,7 @@ begin
   exact (max_of_union_closed_is_ub h) _ hX,
 end
 
-lemma is_max_of_union_closed_iff {P : set α → Prop}(huc : union_closed P) (X : set α):
+lemma is_max_of_union_closed_iff {P : set α → Prop} (huc : union_closed P) (X : set α) :
   X = max_of_union_closed huc ↔ P X ∧ is_ub P X := 
 begin
   refine ⟨λ h, _, λ h, is_max_of_union_closed huc h.1 h.2 ⟩ , 
@@ -185,33 +185,33 @@ def inter_all (P : set α → Prop) : set α := max_of_union_closed (lb_union_cl
 
 def union_all (P : set α → Prop) : set α := min_of_inter_closed (ub_inter_closed P)
 
-lemma subset_inter_all_iff (P : set α → Prop) (X : set α):
+lemma subset_inter_all_iff (P : set α → Prop) (X : set α) :
   X ⊆ inter_all P ↔ is_lb P X :=
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, max_of_union_closed_is_ub (lb_union_closed P) _ h ⟩,
     exact subset.trans h (max_of_union_closed_in (lb_union_closed P) Y hY), 
   end
 
-lemma union_all_subset_iff (P : set α → Prop) (X : set α): 
+lemma union_all_subset_iff (P : set α → Prop) (X : set α) : 
   union_all P ⊆ X ↔ is_ub P X := 
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, min_of_inter_closed_is_lb (ub_inter_closed P) _ h ⟩,
     exact subset.trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h,  
   end
 
-lemma union_all_ub (P : set α → Prop):
+lemma union_all_ub (P : set α → Prop) :
   is_ub P (union_all P) :=
   (union_all_subset_iff P _).mp (subset_refl _ )
   
 end extrema 
 section size 
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 
 
-lemma size_sUnion_of_common_inter {I : set α}{S : set (set α)}
-(hne : S.nonempty)(h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I): 
+lemma size_sUnion_of_common_inter {I : set α} {S : set (set α)}
+(hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) : 
   size (⋃₀ S) = size I + ∑ᶠ X in S, (size X - size I) :=
 begin
   revert S, 
@@ -239,8 +239,8 @@ begin
   exact ⟨hx.1, hxX₁⟩,
 end
 
-lemma size_sUnion_of_common_inter' {I : set α}{S : set (set α)}
-(hne : S.nonempty)(h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I): 
+lemma size_sUnion_of_common_inter' {I : set α} {S : set (set α)}
+(hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) : 
   size (⋃₀ S) =  ∑ᶠ X in S, size X - (size S - 1) * (size I)  := 
 begin
   rw [size_sUnion_of_common_inter hne h],  
@@ -264,59 +264,3 @@ end
 
 
 end size 
-
-section subsets
-
-variables {α : Type}
-
-lemma has_subset_of_size {X : set α} {n : ℤ} (hn : 0 ≤ n) (hnx : n ≤ size X):
-  ∃ Y ⊆ X, size Y = n :=
---let P := λ Y, Y ⊆ X ∧ size Y ≤ n in 
-begin
-  rcases eq_or_lt_of_le hn with (rfl | hn'), 
-    exact ⟨∅, empty_subset _, size_empty _⟩,  
-  have hfin := finite_of_size_pos (lt_of_lt_of_le hn' hnx), clear hn', 
-  revert X, revert n, 
-  refine nonneg_int_induction _ 
-    (λ _ _ _, ⟨∅, empty_subset _, size_empty _⟩) 
-    (λ n hn ih X hX hX', _), 
-  
-  
-  sorry, 
-
-
-  /-intros hn hnX, 
-  rcases maximal_example_aug P (⟨empty_subset X, by linarith [size_empty α]⟩ : P ∅) 
-    with ⟨Y, ⟨_,⟨⟨h₁,h₂⟩, h₃⟩⟩⟩, 
-  refine ⟨Y, ⟨h₁,_⟩⟩, 
-  cases subset_ssubset_or_eq h₁, 
-  by_contra a, 
-  rcases elem_only_larger_ssubset h with ⟨e, ⟨h₁e, h₂e⟩⟩, 
-  push_neg at h₃, 
-  --rw elem_iff at h₁e, 
-  from a (by linarith [size_union_nonmem_singleton h₂e, 
-                        h₃ e h₂e (union_of_subsets h₁ (singleton_subset_iff.mpr h₁e ))]), 
-  rw h at h₂ ⊢, 
-  linarith, -/
-end
--- fintype not needed below
-lemma has_set_of_size {n : ℤ}(h : 0 ≤ n)(h' : n ≤ type_size α):
-  ∃ (Y : set α), size Y = n :=
-by {rw type_size_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h h', tauto}
-
-#check @has_set_of_size
-
-lemma type_size_ge_iff_fin'_has_inj {α : Type}{n : ℤ}: 
-  n ≤ type_size α ↔ nonempty ((fin' n) ↪ α) := 
-begin
-  by_cases hn : n ≤ 0, 
-  { refine ⟨λ _, ⟨_⟩, λ h, le_trans hn (type_size_nonneg _)⟩, 
-      exact ⟨λ x, false.elim (fin'_le_zero_elim hn x), λ x, false.elim (fin'_le_zero_elim hn x)⟩},
-  push_neg at hn, 
-  refine ⟨λ h, _, λ h, _⟩, 
-  sorry, sorry, 
-  --{ have := has_set_of_size  (le_of_lt hn), sorry,}, 
-  --sorry,  
-end
-
-end subsets

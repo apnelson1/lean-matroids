@@ -21,7 +21,7 @@ rfl
   pg_size 1 n = n := 
 by {induction n with n ih, simp, simp [pg_size, ih, add_comm]  }
 
-lemma pg_size_eq_powsum (q : ℤ)(n : ℕ) : 
+lemma pg_size_eq_powsum (q : ℤ) (n : ℕ) : 
   pg_size q n = ∑ᶠ i in Ico 0 n ,q^i  := 
 begin
   induction n with n ih, 
@@ -33,7 +33,7 @@ begin
   simp [set.Ioo_ℕ_finite],  
 end
 
-lemma pg_size_rat (q : ℤ)(n : ℕ)(hq : 2 ≤ q): 
+lemma pg_size_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) : 
   (pg_size q n : ℚ) = (q^n - 1)/(q - 1) := 
 begin
   induction n with n ih, 
@@ -44,6 +44,6 @@ begin
   ring,
 end
 
-theorem point_count (q : ℤ){α : Type*}[fintype α](M : matroid α):
+theorem point_count (q : ℤ){α : Type*} [fintype α] (M : matroid α) :
   ¬ (canonical_unif 2 (q+2)).is_iminor_of M → ε M ≤ pg_size q (M.rank_nat) := 
 sorry 

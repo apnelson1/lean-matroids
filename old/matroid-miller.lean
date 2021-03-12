@@ -7,11 +7,11 @@ noncomputable theory
 open_locale classical
 open finset
 
-def size{β : Type*}(X: finset β) := ((card X) : ℤ )
+def size{β : Type*} (X: finset β) := ((card X) : ℤ )
 
 #check subtype.val
 
-@[simp] lemma size_subtype{β : Type*}{Y: set β}{X : finset Y} : size (X.image subtype.val)  = size X := 
+@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X := 
 begin
     unfold size,
     simp only [int.coe_nat_inj'],
@@ -89,7 +89,7 @@ variables {α : Type v} [matroids α]
 -- Accessor functions for terms that have a matroid representation
 
 def E (M : α) := matroids.E M
---def groundset {M: α}: (set (E M))
+--def groundset {M: α} : (set (E M))
 def r {M : α} (X : finset (E M)) : ℤ := (matroids.to_matroid M).r X
 def R1 (M : α) (X : finset (E M)) : 0 ≤ r X ∧ r X ≤ X.card := (matroids.to_matroid M).R1 X
 def R2 (M : α) {X Y : finset (E M)} (h : X ⊆ Y) : r X ≤ r Y := (matroids.to_matroid M).R2 h
@@ -133,7 +133,7 @@ example : (@submatroid my_α my_instance the_unit) := { F := my_finite_subset }
 --Type ?m1 -> Type ?m1 + 1 
 -- END TOY ***************************
 
-@[simp] def raise{β : Type*}{Y: set β}(X : finset Y) := X.image subtype.val
+@[simp] def raise{β : Type*} {Y: set β} (X : finset Y) := X.image subtype.val
 
 instance submatroid.matroid (M : α) : matroids (submatroid M) :=
 { E := λ (M' : submatroid M), M'.F,
@@ -185,7 +185,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         let X' := X.image subtype.val,
         let Y' := Y.image subtype.val,
         have : X' ⊆ Y', exact image_subset_image hXY,
-        have := R2 M ((union_subset_union_left this): (X' ∪ M'.C ⊆ Y' ∪ M'.C)),
+        have := R2 M ((union_subset_union_left this) : (X' ∪ M'.C ⊆ Y' ∪ M'.C)),
         linarith,
     end,
     R3 := 

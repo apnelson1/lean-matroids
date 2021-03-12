@@ -11,7 +11,7 @@ universes u v
 
 def size {γ : Type u} (X: set γ) := (sorry : ℤ) -- need to fix this to actually be the size 
 
-lemma finsize {γ : Type u}{hfin: fintype γ}(X: set γ) : size X = (fintype.card ↥X : ℤ) := sorry 
+lemma finsize {γ : Type u} {hfin: fintype γ} (X: set γ) : size X = (fintype.card ↥X : ℤ) := sorry 
 
 
 
@@ -30,7 +30,7 @@ class matroids (α : Type v)  :=
 -- (γ M) is the 'ground type' of the matroid M; 
 --the function to_matroid maps the name M to the structure of -- matroid M (i.e. a rank function and proofs of axioms). 
 
-instance matroid_on.matroids (γ  : Type u)[h: fintype γ]  : matroids (matroid_on γ):=
+instance matroid_on.matroids (γ  : Type u)[h: fintype γ]  : matroids (matroid_on γ) :=
 { type_map := λ (M: matroid_on γ), ⟨γ, h⟩, 
   to_matroid := id }
 
@@ -42,7 +42,7 @@ variables {α : Type v} [matroids α]
 -- Accessor functions for terms that have a matroid representation
 
 def γ (M : α) := (matroids.type_map M).1 -- matroid elements have type γ 
-def E (M: α): (set (γ M)) := set.univ  -- E is the ground set viewed as a set, not a type. 
+def E (M: α) : (set (γ M)) := set.univ  -- E is the ground set viewed as a set, not a type. 
 def r (M : α) (X : set (γ M) ) : ℤ := (matroids.to_matroid M).r X  
 def R1l (M : α) (X : set (γ M)) : 0 ≤ r M X := (matroids.to_matroid M).R1l X
 def R1u (M:  α) (X: set (γ M))  : r M X ≤ size X := (matroids.to_matroid M).R1u X
@@ -71,18 +71,18 @@ lemma r_le_union_right (M : α) (X Y : set (γ M)) : r M Y ≤ r M (X ∪ Y) :=
 by { rw union_comm, apply r_le_union }
 
 
-instance coe_subtype_set {α : Type*}{Y: set α} :
+instance coe_subtype_set {α : Type*} {Y: set α} :
     has_coe (set Y) (set α) := ⟨λ X, X.image subtype.val⟩ 
 
 
-@[simp] lemma coe_subtype_size {α : Type*}{Y: set α}(X: set Y) : 
+@[simp] lemma coe_subtype_size {α : Type*} {Y: set α} (X: set Y) : 
     size X = size (X: set α) := sorry
 
-@[simp] lemma coe_subtype_union {α: Type*}{Y: set α}(X₁ X₂ : set Y) :
-    (((X₁ ∪ X₂ : set Y)):set α ) = X₁ ∪ X₂ := by apply image_union
+@[simp] lemma coe_subtype_union {α: Type*} {Y: set α} (X₁ X₂ : set Y) :
+    (((X₁ ∪ X₂ : set Y)) :set α ) = X₁ ∪ X₂ := by apply image_union
  
-@[simp] lemma coe_subtype_inter {α: Type*}{Y: set α}(X₁ X₂ : set Y) :
-    (((X₁ ∩ X₂ : set Y)):set α) = X₁ ∩ X₂ := 
+@[simp] lemma coe_subtype_inter {α: Type*} {Y: set α} (X₁ X₂ : set Y) :
+    (((X₁ ∩ X₂ : set Y)) :set α) = X₁ ∩ X₂ := 
 begin
     sorry, 
 end
@@ -198,7 +198,7 @@ def dual (M : α) [fintype (γ M)] : matroid_on (γ M) :=
                         ...      ≥ size X - r X                          : by linarith [lambda_conn_nonegative M X]
                         ...      ≥ 0                                     : by linarith [(R1 M X).2],
 
-    linarith[ R2 M ((by simp):(Xᶜ ⊆ E M))], -/
+    linarith[ R2 M ((by simp) :(Xᶜ ⊆ E M))], -/
   end,
   R2 := sorry,
   R3 := sorry }

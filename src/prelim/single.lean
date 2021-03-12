@@ -10,31 +10,31 @@ variables {α : Type u}
   
 
 
-lemma elem_coe_inj_iff {e f : α} :
+lemma mem_coe_inj_iff {e f : α} :
   ({e} : set α) = ({f}  : set α) ↔ e = f := 
 by {exact singleton_eq_singleton_iff}
 
-lemma singleton_nonmem_iff {e : α}{X : set α} : 
-  e ∉ X ↔ ¬({e}: set α) ⊆ X := 
+lemma singleton_nonmem_iff {e : α} {X : set α} : 
+  e ∉ X ↔ ¬({e} : set α) ⊆ X := 
 by rw [not_iff_not, singleton_subset_iff]
 
 lemma singleton_ne_empty (e : α) : 
-  ({e}: set α) ≠ ∅ := 
+  ({e} : set α) ≠ ∅ := 
 λ h, by {rw set.ext_iff at h, exact not_mem_empty e ((h e).mp (by simp))}
 
 @[simp] lemma singleton_nonmem_compl_self (e : α) :
-  e ∉ ({e}: set α)ᶜ := 
+  e ∉ ({e} : set α)ᶜ := 
 λ h, by {rw ←singleton_subset_iff at h, from singleton_ne_empty e (subset_own_compl h)}
 
-lemma subset_of_mem_of_subset {e : α}{X Y : set α}(h : e ∈ X)(h' : X ⊆ Y): 
+lemma subset_of_mem_of_subset {e : α} {X Y : set α} (h : e ∈ X) (h' : X ⊆ Y) : 
   {e} ⊆ Y := 
 singleton_subset_iff.mpr (mem_of_mem_of_subset h h')
 
-lemma union_subset_of_mem_of_mem {e f : α}{X : set α}:
+lemma union_subset_of_mem_of_mem {e f : α} {X : set α} :
   e ∈ X → f ∈ X → ({e} ∪ {f} : set α) ⊆ X := 
 λ he hf, by {refine union_of_subsets _ _, tidy} 
 
-lemma union_singleton_subset_of_subset_mem {X Y : set α}{e : α}:
+lemma union_singleton_subset_of_subset_mem {X Y : set α} {e : α} :
   X ⊆ Y → e ∈ Y → X ∪ {e} ⊆ Y := 
 by {rw ←singleton_subset_iff, apply union_of_subsets } 
 
@@ -46,69 +46,61 @@ lemma ne_empty_iff_has_mem {X : set α} :
   X ≠ ∅ ↔ ∃ e, e ∈ X :=
 ⟨λ h, ne_empty_has_mem h, λ h, λ hb, by {cases h with e he, rw hb at he, exact not_mem_empty e he}⟩ 
 
-lemma ne_univ_iff_has_nonmem {X : set α}:
+lemma ne_univ_iff_has_nonmem {X : set α} :
   X ≠ univ ↔ ∃ e, e ∉ X := 
 by {rw [←not_forall, not_iff_not], refine ⟨λ h x, _, λ h, _⟩, rw h, from mem_univ x, ext, tidy}
 
-lemma nested_singletons_eq {e f: α} (hef : ({e}: set α) ⊆ ({f} : set α)):
+lemma nested_singletons_eq {e f: α} (hef : ({e} : set α) ⊆ ({f} : set α)) :
    e = f :=
 by rwa [singleton_subset_iff, mem_singleton_iff] at hef 
   
-lemma nonmem_disjoint {e : α} {X : set α}: 
+lemma nonmem_disjoint {e : α} {X : set α} : 
   e ∉ X → ({e} ∩ X : set α) = ∅ :=
 by tidy
 
-@[simp] lemma set.sep_eq_empty_iff {P : α → Prop}: 
+@[simp] lemma set.sep_eq_empty_iff {P : α → Prop} : 
   {x | P x} = ∅ ↔ ∀ x, ¬P x :=
 by {rw ext_iff, simp, }
 
-@[simp] lemma set.sep_in_eq_empty_iff {P : α → Prop}{X : set α}: 
+@[simp] lemma set.sep_in_eq_empty_iff {P : α → Prop} {X : set α} : 
   {x ∈ X | P x} = ∅ ↔ ∀ x ∈ X, ¬P x :=
 by {rw ext_iff, simp, }
 
-lemma set.empty_iff_has_no_mem {X : set α}:
+lemma set.empty_iff_has_no_mem {X : set α} :
   X = ∅ ↔ ∀ x, x ∉ X :=
 by {split, rintro rfl, simp, intro h, ext, simp, exact h x,   }
 
-lemma nonmem_disjoint_iff {e : α} {X : set α}: 
+lemma nonmem_disjoint_iff {e : α} {X : set α} : 
   e ∉ X ↔ {e} ∩ X = ∅ := 
 by {refine ⟨λ h, nonmem_disjoint h, λ h he, _⟩, 
   rw [←singleton_subset_iff, subset_iff_inter_eq_left,h] at he, 
   exact singleton_ne_empty e he.symm,}
 
-lemma inter_distinct_singles {e f : α}: 
+lemma inter_distinct_singles {e f : α} : 
   e ≠ f → ({e} ∩ {f} : set α) = ∅ := 
 λ hef, nonmem_disjoint (λ h, hef (nested_singletons_eq (singleton_subset_iff.mpr h)))
 
-lemma mem_union_of_mem_left {e : α}{X : set α}(Y : set α)(h : e ∈ X) : 
+lemma mem_union_of_mem_left {e : α} {X : set α} (Y : set α) (h : e ∈ X) : 
   e ∈ X ∪ Y :=
 mem_of_mem_of_subset h (subset_union_left X Y)
 
-lemma mem_union_of_mem_right {e : α}{X : set α}(Y : set α)(h : e ∈ Y) : 
+lemma mem_union_of_mem_right {e : α} {X : set α} (Y : set α) (h : e ∈ Y) : 
   e ∈ X ∪ Y :=
 mem_of_mem_of_subset h (subset_union_right X Y)
 
-lemma singleton_nonmem_compl_self_iff {X : set α}{e : α} :
+lemma singleton_nonmem_compl_self_iff {X : set α} {e : α} :
   e ∉ Xᶜ ↔ e ∈ X  := 
 by {rw ←mem_compl_iff, rw [compl_compl]}
 
-lemma elem_union_iff {e : α} {X Y : set α} : 
+lemma mem_union_iff {e : α} {X Y : set α} : 
   e ∈ X ∪ Y ↔ e ∈ X ∨ e ∈ Y :=
 by simp only [mem_union_eq]
 
-lemma elem_inter_iff {e : α}{X Y : set α}: 
-  e ∈ X ∩ Y ↔ e ∈ X ∧ e ∈ Y := 
-mem_inter_iff e X Y
-
-lemma elem_inter {e : α}{X Y : set α} : 
-  e ∈ X → e ∈ Y → e ∈ X ∩ Y := 
-mem_inter
-
 lemma nonmem_inter_iff {e : α} {X Y : set α} :
    e ∉ X ∩ Y ↔ e ∉ X ∨ e ∉ Y := 
-by rw [←mem_compl_iff, compl_inter, elem_union_iff, mem_compl_iff, mem_compl_iff] 
+by rw [←mem_compl_iff, compl_inter, mem_union_iff, mem_compl_iff, mem_compl_iff] 
 
-lemma elem_diff_iff {e : α}{X Y : set α} : 
+lemma mem_diff_iff {e : α} {X Y : set α} : 
   e ∈ X \ Y ↔ e ∈ X ∧ e ∉ Y :=
 by simp only [mem_diff]
   
@@ -116,32 +108,35 @@ lemma subset_iff_elems_contained {X Y : set α} :
   X ⊆ Y ↔ ∀ e, e ∈ X → e ∈ Y := 
 by refl 
 
-lemma elem_of_subset {X Y: set α}{e : α}:
+lemma mem_of_subset {X Y: set α} {e : α} :
   X ⊆ Y → e ∈ X → e ∈ Y := 
 λ h he, subset_iff_elems_contained.mp h e he 
 
-
-lemma nonmem_of_nonmem_diff {X Y : set α}{e : α} :
+lemma nonmem_of_nonmem_diff {X Y : set α} {e : α} :
   e ∉ X \ Y → e ∉ Y → e ∉ X := 
 by tidy
 
-lemma nonmem_diff_of_nonmem {X : set α}(Y : set α){e : α}: 
+lemma nonmem_diff_of_nonmem {X : set α} (Y : set α){e : α} : 
   e ∉ X → e ∉ X\Y :=
 by tidy 
+
+lemma nonmem_of_nonmem_supset {s t : set α} {e : α} : 
+   e ∉ t → s ⊆ t → e ∉ s := 
+by tidy  
 
 lemma eq_iff_same_elems {X Y : set α} :
   X = Y ↔ ∀ e, e ∈ X ↔ e ∈ Y :=
 ⟨λ h e, by rw h, λ h, by {ext, from h x}⟩
 
-lemma nonmem_removal (X : set α)(e : α) :
+lemma nonmem_removal (X : set α) (e : α) :
   e ∉ X \ {e} := 
 by tidy 
 
-lemma subset_of_removal {X Y : set α}{e : α} :
+lemma subset_of_removal {X Y : set α} {e : α} :
   X ⊆ Y → e ∉ X → X ⊆ Y \ {e} :=
 by tidy
   
-lemma subset_of_subset_add_nonmem {X Y: set α}{e : α} :
+lemma subset_of_subset_add_nonmem {X Y: set α} {e : α} :
   X ⊆ Y ∪ {e} → e ∉ X → X ⊆ Y :=
 begin
   intros hXY heX, 
@@ -151,7 +146,7 @@ begin
   from hXY, 
 end
 
-lemma removal_subset_of {X Y : set α}{e : α} :
+lemma removal_subset_of {X Y : set α} {e : α} :
   X ⊆ Y ∪ {e} → X \ {e} ⊆ Y :=
 begin
   intro h, 
@@ -168,7 +163,7 @@ begin
   cases hXe, solve_by_elim,
 end 
 
-lemma ssub_of_add_nonmem {X : set α} {e : α}: 
+lemma ssub_of_add_nonmem {X : set α} {e : α} : 
   e ∉ X → X ⊂ X ∪ {e} := 
 λ hXe, ssub_of_add_compl (by {rwa mem_compl_iff })
 
@@ -179,36 +174,36 @@ by {refine ⟨λ h, ssub_of_add_nonmem h, λ h, λ hex, _⟩,
     rw hex at h, 
     exact ssubset_irrefl _ h}
 
-lemma union_mem_singleton {X : set α} {e : α}: 
+lemma union_mem_singleton {X : set α} {e : α} : 
   e ∈ X → X ∪ {e} = X := 
 λ h, by {tidy,}
 
-lemma remove_nonmem {X : set α } {e : α} (he : e ∉ X):
+lemma remove_nonmem {X : set α } {e : α} (he : e ∉ X) :
   X \ {e} = X := 
 by tidy 
 
-lemma elem_diff_ssubset {X Y : set α} : 
+lemma mem_diff_ssubset {X Y : set α} : 
   X ⊂ Y → ∃ e, e ∈ Y \ X :=
 λ h, ssubset_diff_nonempty h
     
-lemma elem_only_larger_ssubset {X Y : set α} :
+lemma mem_only_larger_ssubset {X Y : set α} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
-λ h, by {have := elem_diff_ssubset h, simp_rw elem_diff_iff at this, assumption}
+λ h, by {have := mem_diff_ssubset h, simp_rw mem_diff_iff at this, assumption}
 
-lemma nonmem_of_mem_disjoint {e : α}{X Y : set α}(he : e ∈ X)(hXY : X ∩ Y = ∅) :
+lemma nonmem_of_mem_disjoint {e : α} {X Y : set α} (he : e ∈ X) (hXY : X ∩ Y = ∅) :
   e ∉ Y := 
-λ hf, by {have h := mem_inter he hf,  rw hXY at h, exact not_mem_empty e h,  }
+λ hf, by {have h := set.mem_inter he hf,  rw hXY at h, exact not_mem_empty e h,  }
 
 lemma compl_single_remove {X : set α} {e : α} : 
   e ∈ X → (X \ {e})ᶜ = Xᶜ ∪ {e} := 
 λ _, by rw [diff_eq, compl_inter, compl_compl]
 
-lemma remove_union_mem_singleton {X : set α} {e : α}: 
+lemma remove_union_mem_singleton {X : set α} {e : α} : 
   e ∈ X → (X \ {e}) ∪ {e} = X := 
 λ heX, by {rw [←singleton_subset_iff, subset_iff_union_eq_left,union_comm] at heX, 
           rw [diff_eq, union_distrib_right, compl_union_self, inter_univ, heX]}
    
-lemma add_remove_nonmem {X : set α} {e : α}: 
+lemma add_remove_nonmem {X : set α} {e : α} : 
   e ∉ X → (X ∪ {e}) \ {e} = X := 
 begin
   intro h, 
@@ -219,14 +214,14 @@ begin
   from h, 
 end
 
-lemma subset_of_remove_mem_diff {X Y: set α}{e : α}(hXY : X ⊆ Y)(he : e ∈ Y \ X): 
+lemma subset_of_remove_mem_diff {X Y: set α} {e : α} (hXY : X ⊆ Y) (he : e ∈ Y \ X) : 
   X ⊆ Y \ {e} := 
 begin
   intros x hx, rw [mem_diff, mem_singleton_iff] at *, 
   exact ⟨mem_of_mem_of_subset hx hXY, by {rintro ⟨rfl⟩, exact he.2 hx,}⟩,
 end
 
-lemma subset_remove_nonmem_of_subset {X Y : set α}{e : α}(hXY : X ⊆ Y)(he : e ∉ X): 
+lemma subset_remove_nonmem_of_subset {X Y : set α} {e : α} (hXY : X ⊆ Y) (he : e ∉ X) : 
   X ⊆ Y \ {e} := 
 λ x hx, by {simp, refine ⟨hXY hx, λ h, _⟩, rw h at hx, exact he hx} 
 
@@ -235,15 +230,15 @@ lemma remove_single_subset' (X : set α) (e : α) :
   X \ {e} ⊆ X := 
 diff_subset X {e} 
 
-lemma nonmem_of_subset_remove_single (X : set α) (e : α):
+lemma nonmem_of_subset_remove_single (X : set α) (e : α) :
   X ⊆ X \ {e} → e ∉ X :=
 by {rw diff_eq, tidy} 
 
-lemma ne_of_mem_diff {X : set α}{e f: α}(h : e ∈ X \ {f}):
+lemma ne_of_mem_diff {X : set α} {e f: α} (h : e ∈ X \ {f}) :
   e ≠ f := 
 λ h', by {rw h' at h, apply nonmem_removal _ _ h,}
 
-lemma ssubset_of_remove_mem {X : set α} {e : α}(heX : e ∈ X) :
+lemma ssubset_of_remove_mem {X : set α} {e : α} (heX : e ∈ X) :
    X \ {e} ⊂ X := 
 ssubset_of_subset_ne 
   (diff_subset _ _) 
@@ -264,13 +259,13 @@ lemma aug_of_ssubset {X Y : set α} :
   X ⊂ Y → ∃ Z (e : α), X ⊆ Z ∧ Z ⊂ Y ∧ Z ∪ {e} = Y :=
 begin
   intro hXY, 
-  rcases elem_only_larger_ssubset hXY with ⟨e, ⟨heY, heX⟩⟩, 
+  rcases mem_only_larger_ssubset hXY with ⟨e, ⟨heY, heX⟩⟩, 
   refine ⟨Y \ {e}, e, ⟨subset_of_removal hXY.1 heX ,⟨ _, _⟩ ⟩⟩,
   from ssubset_of_remove_mem heY, 
   from remove_union_mem_singleton heY, 
 end 
 
-lemma exchange_comm {X : set α}{e f : α} : 
+lemma exchange_comm {X : set α} {e f : α} : 
   e ∈ X → f ∉ X → (X \ {e}) ∪ {f} = (X ∪ {f}) \ {e} := 
 begin
   intros he hf, 
@@ -281,35 +276,35 @@ begin
 end
 
 
-lemma pair_eq_union (e f : α):
+lemma pair_eq_union (e f : α) :
   ({e,f} : set α) = {e} ∪ {f} :=
 by {ext, simp, tauto, }
 
-lemma singleton_subset_pair_left (e f : α):
+lemma singleton_subset_pair_left (e f : α) :
   ({e} : set α) ⊆ {e,f} := 
 λ x, or.intro_left _
 
-lemma singleton_subset_pair_right (e f : α):
+lemma singleton_subset_pair_right (e f : α) :
   ({f} : set α) ⊆ {e,f} := 
 λ x, or.intro_right _
 
-lemma singleton_ssubset_pair_left {e f : α}(h : e ≠ f):
+lemma singleton_ssubset_pair_left {e f : α} (h : e ≠ f) :
   ({e} : set α) ⊂ {e,f} :=
 by {rw [pair_comm, ssubset_iff_insert], refine ⟨f,_,subset_refl _⟩, tauto, }
 
-lemma singleton_ssubset_pair_right {e f : α}(h : e ≠ f):
+lemma singleton_ssubset_pair_right {e f : α} (h : e ≠ f) :
   ({f} : set α) ⊂ {e,f} :=
 by {rw [ssubset_iff_insert], refine ⟨e,_,subset_refl _⟩, tauto, }
 
-lemma union_singletons_eq_pair {e f : α}:
+lemma union_singletons_eq_pair {e f : α} :
   ({e} : set α) ∪ ({f} : set α) = {e,f} :=
 singleton_union
 
-lemma remove_remove_single (X : set α)(e f : α):
+lemma remove_remove_single (X : set α) (e f : α) :
   X \ {e} \ {f} = X \ {e,f} :=
 by rw [diff_diff, union_singletons_eq_pair]
 
-lemma subset_singleton_eq_singleton_or_empty {e : α}{X : set α} :
+lemma subset_singleton_eq_singleton_or_empty {e : α} {X : set α} :
   X ⊆ {e} → X = ∅ ∨ X = {e} := 
 begin
   rw subset_singleton_iff,  intro h', 
@@ -321,7 +316,7 @@ begin
   exact λ h, h'' (by rwa ←(h' _ h)),
 end
 
-lemma subset_singleton_iff_self_or_empty {e : α}{X : set α} :
+lemma subset_singleton_iff_self_or_empty {e : α} {X : set α} :
   X ⊆ {e} ↔ X = ∅ ∨ X = {e} := 
 begin
   refine ⟨λ h, subset_singleton_eq_singleton_or_empty h, λ h, _⟩,
@@ -329,14 +324,14 @@ begin
 end
 
 
-lemma ssubset_singleton_iff_empty {e : α}{X : set α}:
+lemma ssubset_singleton_iff_empty {e : α} {X : set α} :
   X ⊂ {e} ↔ X = ∅ := 
 begin
   rw [ssubset_iff_subset_ne, subset_singleton_iff_self_or_empty], 
   exact ⟨λ h, by tauto, λ h, ⟨by {left, assumption}, by {rw h, apply (singleton_ne_empty e).symm}⟩⟩,   
 end
 
-lemma ssubset_pair {e f : α}{X : set α}:
+lemma ssubset_pair {e f : α} {X : set α} :
   X ⊂ {e,f} → X = ∅ ∨ (X = {e}) ∨ (X = {f}) :=
 begin
   intro h, rw [ssubset_iff_subset_ne, ←union_singletons_eq_pair] at h, 
@@ -352,7 +347,7 @@ begin
   rw [h_1, h] at hs, exfalso, exact hne hs.symm, 
 end
 
-lemma pair_subset_iff {e f : α}{X : set α}: 
+lemma pair_subset_iff {e f : α} {X : set α} : 
   {e,f} ⊆ X ↔ e ∈ X ∧ f ∈ X := 
 by {refine ⟨λ h, ⟨_,_⟩, λ h, λ x hx, _⟩, 
   repeat {apply singleton_subset_iff.mp, apply subset.trans _ h, simp, }, 

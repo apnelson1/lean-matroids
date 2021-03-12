@@ -11,32 +11,32 @@ noncomputable theory
 
 
 section relax
-variables {α : Type}[fintype α] --[decidable_eq (set α)] 
+variables {α : Type} [fintype α] --[decidable_eq (set α)] 
 
-def relax.r (M : matroid α)(C : set α)(X : set α) : ℤ:= 
+def relax.r (M : matroid α) (C : set α) (X : set α) : ℤ:= 
   ite (X = C ∧ M.is_circuit_hyperplane C) (M.r X + 1) (M.r X)
 
-lemma relax_r_eq {M : matroid α}{C : set α}(hC : M.is_circuit_hyperplane C)(X : set α): 
+lemma relax_r_eq {M : matroid α} {C : set α} (hC : M.is_circuit_hyperplane C) (X : set α) : 
   relax.r M C X = ite (X = C) (M.r X + 1) (M.r X) := 
 by {rcases em (X = C) with (rfl | hX), simp [relax.r], tauto, rw [relax.r, if_neg, if_neg]; tauto}
 
-lemma relax_junk_r_eq {M : matroid α}{C : set α}(hC : ¬M.is_circuit_hyperplane C)(X : set α): 
+lemma relax_junk_r_eq {M : matroid α} {C : set α} (hC : ¬M.is_circuit_hyperplane C) (X : set α) : 
   relax.r M C X = M.r X := 
 by {rw [relax.r, if_neg _], tauto,}
 
-lemma relax.r_of_C_eq_univ {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C_eq_univ {M : matroid α} {C : set α} (hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r univ := 
   by {rw [relax_r_eq hC, if_pos rfl], linarith [circuit_hyperplane_rank hC]}
 
-lemma relax.r_of_C {M : matroid α}{C : set α}(hC : is_circuit_hyperplane M C) :
+lemma relax.r_of_C {M : matroid α} {C : set α} (hC : is_circuit_hyperplane M C) :
   relax.r M C C = M.r C + 1 := 
   by {rw [relax_r_eq hC, if_pos rfl]}
 
-lemma relax.r_of_not_C (M : matroid α){C X: set α}(hXC : X ≠ C):
+lemma relax.r_of_not_C (M : matroid α){C X: set α} (hXC : X ≠ C) :
   relax.r M C X = M.r X := 
   by {unfold relax.r, finish, }
 
-lemma r_le_relax_r (M : matroid α)(C X : set α) :
+lemma r_le_relax_r (M : matroid α) (C X : set α) :
   M.r X ≤ relax.r M C X := 
 begin
   by_cases hC:  (M.is_circuit_hyperplane C), 
@@ -46,7 +46,7 @@ begin
   rw relax_junk_r_eq hC, 
 end
 
-lemma relax.r_le_univ {M : matroid α}{C : set α}(X : set α):
+lemma relax.r_le_univ {M : matroid α} {C : set α} (X : set α) :
   relax.r M C X ≤ M.r univ := 
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
@@ -57,11 +57,11 @@ begin
 end 
 
 
-lemma relax.R0 (M : matroid α)(C : set α) : 
+lemma relax.R0 (M : matroid α) (C : set α) : 
   satisfies_R0 (relax.r M C) := 
   λ X, le_trans (M.rank_nonneg X) (r_le_relax_r M C X)
 
-lemma relax.R1 {M : matroid α}{C : set α} : 
+lemma relax.R1 {M : matroid α} {C : set α} : 
   satisfies_R1 (relax.r M C) := 
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
@@ -75,7 +75,7 @@ begin
   from M.rank_le_size X, 
 end
 
-lemma relax.R2 {M : matroid α}{C : set α}: 
+lemma relax.R2 {M : matroid α} {C : set α} : 
   satisfies_R2 (relax.r M C) :=
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
@@ -90,7 +90,7 @@ begin
   linarith [relax.r_of_not_C M h, r_le_relax_r M C Y, rank_mono M hXY],  
 end
 
-lemma relax.R3 {M : matroid α}{C : set α} : 
+lemma relax.R3 {M : matroid α} {C : set α} : 
   satisfies_R3 (relax.r M C) :=
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
@@ -131,18 +131,18 @@ begin
 end
 
 /-- relaxation of the circuit_hyperplane C in M -/
-def relax (M : matroid α)(C : set α): matroid α := 
+def relax (M : matroid α) (C : set α) : matroid α := 
   ⟨relax.r M C, relax.R0 M C, relax.R1, relax.R2, relax.R3⟩ 
 
-lemma relax_r_def (M : matroid α)(C : set α): 
+lemma relax_r_def (M : matroid α) (C : set α) : 
   (relax M C).r = relax.r M C := 
 rfl 
 
-lemma relax_weak_image (M : matroid α)(C : set α): 
+lemma relax_weak_image (M : matroid α) (C : set α) : 
   M ≤ (relax M C) :=
 λ X, r_le_relax_r _ _ X 
 
-theorem relax.dual {M : matroid α}{C : set α} :
+theorem relax.dual {M : matroid α} {C : set α} :
   dual (relax M C) = relax (dual M) Cᶜ := 
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
@@ -162,8 +162,8 @@ begin
     relax.r_of_not_C M h', relax.r_of_not_C M hCuniv ],
 end
 
-theorem single_rank_neq_is_relaxation {M₁ M₂ : matroid α}{X : set α}(hr : M₁.r univ = M₂.r univ)
-(hX : M₁.r X < M₂.r X)(h_other : ∀ Y, Y ≠ X → M₁.r Y = M₂.r Y): 
+theorem single_rank_neq_is_relaxation {M₁ M₂ : matroid α} {X : set α} (hr : M₁.r univ = M₂.r univ)
+(hX : M₁.r X < M₂.r X) (h_other : ∀ Y, Y ≠ X → M₁.r Y = M₂.r Y) : 
   is_circuit_hyperplane M₁ X ∧ M₂ = relax M₁ X :=
 begin
   have hne : M₁ ≠ M₂ := λ h, by {rw h at hX, from lt_irrefl _ hX },
@@ -213,7 +213,7 @@ begin
   from h_other Y hYX,  
 end
 
-lemma single_rank_disagreement_univ (hα : nonempty α){M₁ M₂ : matroid α}:
+lemma single_rank_disagreement_univ (hα : nonempty α){M₁ M₂ : matroid α} :
    M₁.r univ < M₂.r univ → (∀ X, X ≠ univ → M₁.r X = M₂.r X) → 
     M₁ = unif.circuit_matroid_on α ∧ M₂ = unif.free_matroid_on α  := 
 begin

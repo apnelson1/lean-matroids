@@ -164,7 +164,7 @@ def my_factorial : nat → nat :=
     (fun n recur, (n+1) * recur)
 
 
-def foo (a b : nat): Prop := (a = b)
+def foo (a b : nat) : Prop := (a = b)
 --set_option pp.all true
 #print foo
 

@@ -10,16 +10,16 @@ noncomputable theory
 
 section general_fintype 
 
-variables {α α' β β': Type}[fintype α][nonempty α][linear_order β][linear_order β']
+variables {α α' β β': Type} [fintype α][nonempty α][linear_order β][linear_order β']
 
 --instance fin_α : fintype α := by {letI := classical.choice _inst_1, apply_instance, }
 
 /- theorem set.finite.exists_maximal_wrt {α : Type u} {β : Type v} [partial_order β]
-(f : α → β)(s : set α) (h : s.finite) :
+(f : α → β) (s : set α) (h : s.finite) :
 s.nonempty → (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') -/
 
 
-lemma exists_max (f : α → β): 
+lemma exists_max (f : α → β) : 
   ∃ x, ∀ y, f y ≤ f x := 
 fintype.exists_max f
   /-letI := classical.choice _inst_1, 
@@ -31,7 +31,7 @@ fintype.exists_max f
   exact le_of_eq (ha x (set.mem_univ _) h).symm, -/
 --end
 
-lemma exists_min (f : α → β): 
+lemma exists_min (f : α → β) : 
   ∃ x, ∀ y, f x ≤ f y := 
 let f' : _ → (order_dual β) := f in exists_max f'  
 
@@ -51,15 +51,15 @@ lemma min_spec (f : α → β) :
   ∃ x, f x = min_val f ∧ ∀ y, f x ≤ f y :=
 ⟨classical.some (exists_min f), ⟨rfl, classical.some_spec (exists_min f) ⟩⟩
 
-lemma max_is_ub (f : α → β)(x : α): 
+lemma max_is_ub (f : α → β) (x : α) : 
   f x ≤ max_val f := 
 by {cases max_spec f with y hy, rw ←hy.1, apply hy.2}
 
-lemma min_is_lb (f : α → β)(x : α): 
+lemma min_is_lb (f : α → β) (x : α) : 
   min_val f ≤ f x := 
 by {cases min_spec f with y hy, rw ←hy.1, apply hy.2}
 
-lemma max_of_le_is_le (f f' : α → β)(hff' : ∀ a, f a ≤ f' a):
+lemma max_of_le_is_le (f f' : α → β) (hff' : ∀ a, f a ≤ f' a) :
   max_val f ≤ max_val f' := 
 begin
   cases max_spec f with a ha, 
@@ -68,7 +68,7 @@ begin
   from le_trans (hff' _) (ha'.2 _), 
 end
 
-lemma min_of_le_is_le (f f' : α → β)(hff' : ∀ a, f a ≤ f' a):
+lemma min_of_le_is_le (f f' : α → β) (hff' : ∀ a, f a ≤ f' a) :
   min_val f ≤ min_val f' := 
 begin
   cases min_spec f with a ha, 
@@ -81,7 +81,7 @@ end
 
 /-- taking a max over one type is equivalent to taking one over another, 
 given a bijection between them -/
-lemma max_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
+lemma max_reindex (φ : α → α') (hφ : function.surjective φ) (f : α' → β) :
   max_val (f ∘ φ) = @max_val _ _ (fintype.of_surjective φ hφ)  (nonempty.map φ _inst_2) _ f := 
 begin
   rcases @max_spec _ _ (fintype.of_surjective φ hφ ) (nonempty.map φ _inst_2) _ f 
@@ -95,7 +95,7 @@ end
 
 /-- taking a min over one type is equivalent to taking one over another, 
 given a bijection between them -/
-lemma min_reindex (φ : α → α')(hφ : function.surjective φ)(f : α' → β):
+lemma min_reindex (φ : α → α') (hφ : function.surjective φ) (f : α' → β) :
   min_val (f ∘ φ) = @min_val _ _ (fintype.of_surjective φ hφ ) (nonempty.map φ _inst_2) _ f := 
 begin
   rcases @min_spec _ _ (fintype.of_surjective φ hφ ) (nonempty.map φ _inst_2) _ f 
@@ -108,7 +108,7 @@ begin
 end
 
 /-- max commutes with composing by a monotone function -/
-lemma max_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
+lemma max_compose_mono (f : α → β) (g : β → β') (hg : monotone g) :
   g (max_val f) = max_val (g ∘ f) := 
 begin
   rcases max_spec f with ⟨X, hX₁, hX₂⟩, 
@@ -118,7 +118,7 @@ begin
 end
 
 /-- min commutes with composing by a monotone function-/
-lemma min_compose_mono (f : α → β)(g : β → β')(hg : monotone g):
+lemma min_compose_mono (f : α → β) (g : β → β') (hg : monotone g) :
   g (min_val f) = min_val (g ∘ f) := 
 begin
   rcases min_spec f with ⟨X, hX₁, hX₂⟩, 
@@ -130,27 +130,27 @@ end
 
 
 /-- the max is at most a given upper bound for f -/
-lemma max_le_ub {f : α → β}{b : β}(h_ub : ∀ x : α, f x ≤ b):
+lemma max_le_ub {f : α → β} {b : β} (h_ub : ∀ x : α, f x ≤ b) :
   max_val f ≤ b := 
 by {cases max_spec f with X hX, rw [←hX.1], apply h_ub}
 
 /-- a given lower bound for f is at most the max of f-/
-lemma lb_le_max {f : α → β}(b : β)(h_lb : ∀ x : α, b ≤ f x):
+lemma lb_le_max {f : α → β} (b : β) (h_lb : ∀ x : α, b ≤ f x) :
    b ≤ max_val f := 
 by {cases max_spec f with X hX, rw [←hX.1], apply h_lb, }
 
 /-- the min of x is at most a given upper bound for f-/
-lemma min_le_ub {f : α → β}{b : β}(h_ub : ∀ x : α, f x ≤ b):
+lemma min_le_ub {f : α → β} {b : β} (h_ub : ∀ x : α, f x ≤ b) :
   min_val f ≤ b := 
 by {cases min_spec f with X hX, rw [←hX.1], apply h_ub}
 
 /-- a given lower bound for x is at most the min of x-/
-lemma lb_le_min {f : α → β}{b : β}(h_lb : ∀ x : α, b ≤ f x):
+lemma lb_le_min {f : α → β} {b : β} (h_lb : ∀ x : α, b ≤ f x) :
    b ≤ min_val f := 
 by {cases min_spec f with X hX, rw [←hX.1], apply h_lb}
 
 /-- an upper bound that is attained by f must be the max -/
-lemma attained_ub_is_max (f : α → β)(a : α):
+lemma attained_ub_is_max (f : α → β) (a : α) :
   (∀ x, f x ≤ f a) → max_val f = f a := 
 begin
   intros h_ub, 
@@ -159,12 +159,12 @@ begin
   rw [←hX.1], apply hX.2, 
 end
 
-lemma attained_ub_is_max' (f : α → β)(a : α)(b : β):
+lemma attained_ub_is_max' (f : α → β) (a : α) (b : β) :
   f a = b → (∀ x, f x ≤ b) → max_val f = b :=
 λ hab hub, by {rw ←hab at hub ⊢, apply attained_ub_is_max, from hub}
 
 /-- a lower bound attained by f must be the min -/
-lemma attained_lb_is_min (f : α → β)(a : α):
+lemma attained_lb_is_min (f : α → β) (a : α) :
   (∀ x, f a ≤ f x) → min_val f = f a  := 
 begin
   intros h_lb, 
@@ -173,24 +173,24 @@ begin
   rw [←hX.1], apply hX.2, 
 end
 
-lemma attained_lb_is_min' (f : α → β)(a : α)(b : β):
+lemma attained_lb_is_min' (f : α → β) (a : α) (b : β) :
   f a = b → (∀ x, b ≤ f x) → min_val f = b :=
 λ hab hub, by {rw ←hab at hub ⊢, apply attained_lb_is_min, from hub}
 
 /-- the max of a constant function -/
-lemma max_const (b : β): 
+lemma max_const (b : β) : 
   max_val (λ (x : α), b) = b := 
 by {rcases max_spec (λ (x : α), b) with ⟨x, hx⟩, rw ←hx.1 }
 
 /-- the min of a constant function -/
-lemma min_const (b : β): 
+lemma min_const (b : β) : 
   min_val (λ (x : α), b) = b := 
 by {rcases min_spec (λ (x : α), b) with ⟨x, hx⟩, rw ←hx.1 }
 
 
 /-- given a bound f(x) ≤ f(x') for all x,x', a pair a,a' for which f(a) = f(a') determines
 the max and min of f,f' respectively  -/
-lemma minmax_eq_cert [nonempty α'][fintype α'](f : α → β)(f' : α' → β):
+lemma minmax_eq_cert [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) :
   (∃ a a', f a = f' a') → (∀ x x', f x ≤ f' x') → max_val f = min_val f' := 
 begin
   rintros ⟨a, a', heq⟩ hbound, 
@@ -201,7 +201,7 @@ begin
   rw [hub, hlb, heq],
 end
 
-lemma max_compose_le_max [non_empt : nonempty α][fintype α'](φ : α → α')(f : α' → β): 
+lemma max_compose_le_max [non_empt : nonempty α][fintype α'] (φ : α → α') (f : α' → β) : 
   max_val (f ∘ φ) ≤ @max_val _ _ _ (nonempty.map φ non_empt) _ f := 
 begin
   rcases max_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -210,7 +210,7 @@ begin
   apply ha'₂,  
 end
 
-lemma min_le_min_compose [non_empt : nonempty α][fintype α'](φ : α → α')(f : α' → β): 
+lemma min_le_min_compose [non_empt : nonempty α][fintype α'] (φ : α → α') (f : α' → β) : 
   @min_val _ _ _ (nonempty.map φ non_empt) _ f  ≤ min_val (f ∘ φ) := 
 begin
   rcases min_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -223,8 +223,8 @@ end
 --by { apply_instance, } 
 
 /-- a bimonotone function of two maxima is a maximum over a product type -/
-lemma max_zip [nonempty α'][fintype α'](f : α → β)(f' : α' → β)(g : β × β → β')
-                (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩): 
+lemma max_zip [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
+                (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩) : 
   g ⟨max_val f, max_val f'⟩ = max_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
 begin
@@ -237,8 +237,8 @@ begin
 end
 
 /-- a bimonotone function of two minima is a minimum over a product type -/
-lemma min_zip [nonempty α'][fintype α'](f : α → β)(f' : α' → β)(g : β × β → β')
-                (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩): 
+lemma min_zip [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
+                (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩) : 
   g ⟨min_val f, min_val f'⟩ = min_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
 begin
@@ -257,9 +257,9 @@ end general_fintype
 
 section adding -- lemmas with a little more structure (eg addition) on β 
 
-variables {α α' β : Type}[nonempty α][fintype α][nonempty α'][fintype α'][linear_ordered_semiring β]
+variables {α α' β : Type} [nonempty α][fintype α][nonempty α'][fintype α'][linear_ordered_semiring β]
 
-lemma max_add_commute (f : α → β)(s : β): 
+lemma max_add_commute (f : α → β) (s : β) : 
   (max_val f) + s = max_val (λ x, f x + s) := 
 begin
   set g : β → β := λ x, x + s with hg,
@@ -269,7 +269,7 @@ begin
   congr', 
 end 
 
-lemma min_add_commute (f : α → β)(s : β): 
+lemma min_add_commute (f : α → β) (s : β) : 
   (min_val f) + s = min_val (λ x, f x + s) := 
 begin
   set g : β → β := λ x, x + s with hg,
@@ -279,11 +279,11 @@ begin
   congr', 
 end 
 
-lemma sum_of_max (f : α → β)(f' : α' → β):
+lemma sum_of_max (f : α → β) (f' : α' → β) :
   max_val f + max_val f' = max_val (λ a : α × α', f a.1 + f' a.2) :=
 max_zip f f' (λ (b : β × β), b.1+b.2) (λ _ _ _ _ h₁ h₂, add_le_add h₁ h₂) 
   
-lemma sum_of_min (f : α → β)(f' : α' → β):
+lemma sum_of_min (f : α → β) (f' : α' → β) :
   min_val f + min_val f' = min_val (λ a : α × α', f a.1 + f' a.2) :=
 min_zip f f' (λ (b : β × β), b.1+b.2) (λ _ _ _ _ h₁ h₂, add_le_add h₁ h₂) 
 
@@ -298,7 +298,7 @@ emphasis is on being able to reindex -/
 
 /-
 
-variables {α β γ: Type}[fintype α](op: β → β → β)[is_commutative β op][is_associative β op]
+variables {α β γ: Type} [fintype α] (op: β → β → β)[is_commutative β op][is_associative β op]
 
 /-- returns a list of elements of pairs (a,f(a)) for a in α -/
 def as_list (f : α → β) : list (α × β) := 
@@ -310,11 +310,11 @@ def val_list (f : α → β) : list β :=
 
 /-- folds the commutative, associative operation op over the elements of β indexed by α 
 starting at b -/
-def fold (b : β)(f : α → β) : β := 
+def fold (b : β) (f : α → β) : β := 
   let fs := (infer_instance : fintype α).elems in fs.fold op b f
 
 /-- fintype folding can be written as a list folding (for induction)-/
-lemma fold_eq_fold_list (b : β)(f : α → β) : 
+lemma fold_eq_fold_list (b : β) (f : α → β) : 
   fold op b f = (as_list f).foldr (λ p q, op p.2 q) b := 
 begin
   simp only [fold, as_list, finset.fold], 
@@ -332,10 +332,10 @@ end
 
 
 
-def Sum [add_comm_monoid β](f : α → β) : β := 
+def Sum [add_comm_monoid β] (f : α → β) : β := 
   fold (+) (0 : β) f 
 
-def Prod [comm_monoid β](f : α → β) : β := 
+def Prod [comm_monoid β] (f : α → β) : β := 
   fold (*) (1 : β) f 
 
 def Union (f : α → set γ) : set γ := 
@@ -344,7 +344,7 @@ def Union (f : α → set γ) : set γ :=
 def Inter (f : α → set γ) : set γ := 
   fold (∩) univ f 
 
-lemma Inter_eq_setInter (f : α → set γ):
+lemma Inter_eq_setInter (f : α → set γ) :
   Inter f = set.Inter f := 
 begin
   rw  [Inter, fold_eq_fold_list],  
@@ -372,7 +372,7 @@ Define C i by induction on i : fin (n + 1) via induction on the underlying nat v
 --list α → β
 
 
---def union_over {n : ℕ}(Xs : fin n → set α) : set α := 
+--def union_over {n : ℕ} (Xs : fin n → set α) : set α := 
 --  finset.fold (λ a b, a ∪ b) (∅ : set α) Xs (fin n)
 
 

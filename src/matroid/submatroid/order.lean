@@ -6,17 +6,17 @@ noncomputable theory
 
 open matroid set list 
 
-variables {α : Type}[fintype α]{N M : matroid α}
+variables {α : Type} [fintype α] {N M : matroid α}
 
 section weak_image 
 /- M is a weak image N if the rank in N is upper-bounded by the rank in M -/
-def is_weak_image (N M : matroid α):= 
+def is_weak_image (N M : matroid α) := 
   ∀ X, N.r X ≤ M.r X 
 
 instance weak_image_le : has_le (matroid α) := 
 ⟨λ N M, is_weak_image N M⟩
 
-lemma weak_image_r_set (h : N ≤ M)(X : set α):
+lemma weak_image_r_set (h : N ≤ M) (X : set α) :
   N.r X ≤ M.r X :=
 h X
 
@@ -30,7 +30,7 @@ begin
   exact le_trans (by rw [h _ hN2, ←hN3, hN2]) (M.rank_mono hN1),  
 end
 
-lemma indep_of_weak_image_indep (h : N ≤ M){I : set α}(hI : N.is_indep I):
+lemma indep_of_weak_image_indep (h : N ≤ M){I : set α} (hI : N.is_indep I) :
   M.is_indep I := 
 weak_image_iff_indep.mp h I hI
 
@@ -66,19 +66,19 @@ begin
 end
 /- that was fun! -/
 
-lemma weak_image_rank_zero_of_rank_zero (h : N ≤ M){X : set α}(hX : M.r X = 0):
+lemma weak_image_rank_zero_of_rank_zero (h : N ≤ M){X : set α} (hX : M.r X = 0) :
   N.r X = 0 :=
 by {apply rank_eq_zero_of_le_zero, rw ←hX, apply h}
 
-lemma weak_image_loop_of_loop (h : N ≤ M){e : α}(he : M.is_loop e):
+lemma weak_image_loop_of_loop (h : N ≤ M){e : α} (he : M.is_loop e) :
   N.is_loop e :=
 weak_image_rank_zero_of_rank_zero h he 
 
-lemma nonloop_of_weak_image_nonloop (h : N ≤ M){e : α}(he : N.is_nonloop e):
+lemma nonloop_of_weak_image_nonloop (h : N ≤ M){e : α} (he : N.is_nonloop e) :
   M.is_nonloop e :=
 by {rw is_nonloop at *, linarith [rank_single_ub M e, h {e}], }
 
-lemma loops_weak_image (h : N ≤ M): 
+lemma loops_weak_image (h : N ≤ M) : 
   loops M ⊆ loops N := 
 by {intro e, simp only [←loop_iff_mem_loops], apply weak_image_loop_of_loop h }
 
@@ -98,7 +98,7 @@ lemma quotient_iff_r :
   N ≼ M ↔ ∀ X Y, X ⊆ Y → N.r Y - N.r X ≤ M.r Y - M.r X := 
 by rw is_quotient
 
-lemma rank_diff_of_quotient (hNM : N ≼ M) {X Y : set α}(h : X ⊆ Y):
+lemma rank_diff_of_quotient (hNM : N ≼ M) {X Y : set α} (h : X ⊆ Y) :
   N.r Y - N.r X ≤ M.r Y - M.r X :=
 hNM _ _ h 
 
@@ -118,7 +118,7 @@ begin
     rw [size_zero_iff_empty, diff_empty_iff_subset] at hs, 
     rw [subset.antisymm hXY hs, sub_self, sub_self],  }, 
   rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,   
-  cases size_pos_has_mem h_size with e he,
+  cases exists_mem_of_size_pos h_size with e he,
   specialize h' ⟨X, Y \ {e}⟩ _ _, 
   { dsimp only, rw [diff_right_comm, size_remove_mem he], linarith}, 
   { dsimp only, apply subset_of_remove_mem_diff; assumption,},
@@ -128,7 +128,7 @@ begin
   { rw [rank_eq_sub_one_of_ne_remove _ _ _ hY], linarith [rank_remove_single_lb N Y e]  },
   rw [hY, sub_self], 
   rw [eq_comm, rank_removal_iff_closure _ _ he.1]  at hY, 
-  have hN := elem_of_subset (h _) hY, rw [←rank_removal_iff_closure _ _ he.1] at hN, 
+  have hN := mem_of_subset (h _) hY, rw [←rank_removal_iff_closure _ _ he.1] at hN, 
   linarith, 
 end
 
@@ -165,11 +165,11 @@ lemma quotient_iff_flat :
   N ≼ M ↔ ∀ F, N.is_flat F → M.is_flat F :=
 by apply @tfae.out _ quotient_tfae 0 1 
 
-lemma flat_of_quotient_flat (h : N ≼ M){F : set α}(hF : N.is_flat F):
+lemma flat_of_quotient_flat (h : N ≼ M){F : set α} (hF : N.is_flat F) :
   M.is_flat F :=
 (quotient_iff_flat.mp h) F hF 
 
-lemma indep_of_quotient_indep (h : N ≼ M){I : set α}(hI : N.is_indep I):
+lemma indep_of_quotient_indep (h : N ≼ M){I : set α} (hI : N.is_indep I) :
   M.is_indep I := 
 indep_of_weak_image_indep (weak_image_of_quotient h) hI 
 
@@ -177,23 +177,23 @@ lemma quotient_iff_cl :
   N ≼ M ↔ ∀ X, M.cl X ⊆ N.cl X :=
 by apply @tfae.out _ quotient_tfae 0 3 
 
-lemma quotient_rank_zero_of_rank_zero (h : N ≼ M){X : set α}(hX : M.r X = 0):
+lemma quotient_rank_zero_of_rank_zero (h : N ≼ M){X : set α} (hX : M.r X = 0) :
   N.r X = 0 :=
 weak_image_rank_zero_of_rank_zero (weak_image_of_quotient h) hX 
 
-lemma quotient_loop_of_loop (h : N ≼ M){e : α}(he : M.is_loop e):
+lemma quotient_loop_of_loop (h : N ≼ M){e : α} (he : M.is_loop e) :
   N.is_loop e :=
 weak_image_loop_of_loop (weak_image_of_quotient h) he
 
-lemma nonloop_of_quotient_nonloop (h : N ≼ M){e : α}(he : N.is_nonloop e):
+lemma nonloop_of_quotient_nonloop (h : N ≼ M){e : α} (he : N.is_nonloop e) :
   M.is_nonloop e :=
 nonloop_of_weak_image_nonloop (weak_image_of_quotient h) he
 
-lemma loops_quotient (h : N ≼ M): 
+lemma loops_quotient (h : N ≼ M) : 
   loops M ⊆ loops N := 
 loops_weak_image (weak_image_of_quotient h)
 
-lemma eq_of_eq_rank_quotient (h : N ≼ M)(hr : N.r univ = M.r univ):
+lemma eq_of_eq_rank_quotient (h : N ≼ M) (hr : N.r univ = M.r univ) :
   N = M :=
 begin
   ext X, by_contra hn,

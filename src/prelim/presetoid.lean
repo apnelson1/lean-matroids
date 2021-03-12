@@ -13,7 +13,7 @@ structure presetoid (α : Type) :=
 (rel_transitive : transitive rel)
 (rel_symmetric : symmetric rel)
 
-variables {α : Type}{a b c : α}{s : set α}(S : presetoid α) 
+variables {α : Type} {a b c : α} {s : set α} (S : presetoid α) 
 
 namespace presetoid 
 
@@ -30,26 +30,26 @@ def cl (a : α) : set α :=
 def is_class (s : set α) : Prop := 
   nonempty s ∧ ∃ a, s = S.cl a 
 
-lemma is_class_def {s : set α}: 
+lemma is_class_def {s : set α} : 
   S.is_class s ↔ (nonempty s ∧ ∃ a, s = S.cl a) :=
 iff.rfl 
 
 def classes : set (set α) := 
   { X | S.is_class X }
 
-lemma mem_classes_iff_is_class {X : set α}: 
+lemma mem_classes_iff_is_class {X : set α} : 
   X ∈ S.classes ↔ S.is_class X :=
 by simp [classes]
 
-@[trans] lemma trans (hab : S.rel a b)(hbc : S.rel b c) : 
+@[trans] lemma trans (hab : S.rel a b) (hbc : S.rel b c) : 
   S.rel a c :=
 S.rel_transitive hab hbc
 
-@[symm] lemma symm (hab : S.rel a b):
+@[symm] lemma symm (hab : S.rel a b) :
   S.rel b a :=
 S.rel_symmetric hab 
 
-def rel_self_of_rel (ha : S.rel a b): 
+def rel_self_of_rel (ha : S.rel a b) : 
   S.rel a a := 
 S.trans ha (S.symm ha)
 
@@ -73,15 +73,15 @@ lemma mem_cl_iff:
   a ∈ S.cl b ↔ S.rel a b := 
 by rw [cl, mem_set_of_eq]
 
-lemma rel_of_mems_cl (ha : a ∈ S.cl c)(hb : b ∈ S.cl c):
+lemma rel_of_mems_cl (ha : a ∈ S.cl c) (hb : b ∈ S.cl c) :
   S.rel a b :=
 S.trans (S.mem_cl_iff.mp ha) (S.symm (S.mem_cl_iff.mp hb))
 
-lemma rel_self_of_mem_class {s : set α}(hs : S.is_class s)(ha : a ∈ s):
+lemma rel_self_of_mem_class {s : set α} (hs : S.is_class s) (ha : a ∈ s) :
   S.rel a a :=
 by {obtain ⟨hb, ⟨b,rfl⟩⟩ := hs, exact S.rel_self_of_rel (S.mem_cl_iff.mp ha), }
 
-lemma rel_of_mems_class {s : set α}(hs : S.is_class s)(ha : a ∈ s)(hb : b ∈ s):
+lemma rel_of_mems_class {s : set α} (hs : S.is_class s) (ha : a ∈ s) (hb : b ∈ s) :
   S.rel a b :=
 by {obtain ⟨-, x, rfl⟩ := hs, exact S.rel_of_mems_cl ha hb}
 
@@ -89,7 +89,7 @@ lemma mem_cl_self_iff:
   a ∈ S.cl a ↔ S.rel a a := 
 by rw mem_cl_iff 
 
-lemma is_class_iff_rep {X : set α}: 
+lemma is_class_iff_rep {X : set α} : 
   S.is_class X ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
@@ -99,18 +99,18 @@ begin
   exact ⟨⟨⟨a,S.mem_cl_iff.mpr ha⟩⟩,a,rfl⟩,
 end
 
-lemma cl_is_class (ha : S.rel a a):
+lemma cl_is_class (ha : S.rel a a) :
   S.is_class (S.cl a) :=
 S.is_class_iff_rep.mpr ⟨a, ha, rfl⟩ 
 
 
 
 
-@[simp] lemma mem_classes_iff {X : set α}: 
+@[simp] lemma mem_classes_iff {X : set α} : 
   X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
 by rw [classes, mem_set_of_eq, is_class_iff_rep]
 
-lemma cl_eq_cl_iff (ha : S.rel a a):
+lemma cl_eq_cl_iff (ha : S.rel a a) :
   S.cl a = S.cl b ↔ S.rel a b := 
 begin
   simp_rw [cl, ext_iff, mem_set_of_eq],
@@ -119,7 +119,7 @@ begin
   split; {intro, transitivity; assumption}, 
 end
 
-def cl_eq_cl_of_rel (h : S.rel a b): 
+def cl_eq_cl_of_rel (h : S.rel a b) : 
   S.cl a = S.cl b :=
 begin
   have := S.symm h, 
@@ -127,14 +127,14 @@ begin
   {rw mem_cl_iff at *, transitivity; assumption}, 
 end 
 
-lemma class_eq_cl_mem (hs : S.is_class s)(ha : a ∈ s):
+lemma class_eq_cl_mem (hs : S.is_class s) (ha : a ∈ s) :
   s = S.cl a := 
 begin
   obtain ⟨b, hb, rfl⟩ := S.is_class_iff_rep.mp hs, 
   exact (S.cl_eq_cl_of_rel (S.mem_cl_iff.mp ha)).symm, 
 end
 
-/-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α}(hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty): 
+/-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α} (hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty) : 
   C₁ = C₂ := 
 begin
   cases C₁ with C₁ hC₁, cases C₂ with C₂ hC₂, 

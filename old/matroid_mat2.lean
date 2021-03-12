@@ -241,7 +241,7 @@ def fin_bool_alg.opposite (A : fin_bool_alg) : fin_bool_alg := {
   size_bot_ := (by linarith),
 }
 
-def fin_bool_alg.interval (A : fin_bool_alg) (small big : A): (small ⊆ big) → fin_bool_alg := fun H, {
+def fin_bool_alg.interval (A : fin_bool_alg) (small big : A) : (small ⊆ big) → fin_bool_alg := fun H, {
   subset := {X : A // (small ⊆ X) ∧ (X ⊆ big)}, -- there is unfortunately a coercion from this to A
   contained := (fun X Y, X.val ⊆ Y.val),
   bot := ⟨small, A.refl, H⟩,

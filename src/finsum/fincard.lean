@@ -6,7 +6,7 @@ noncomputable theory
 
 universes u v w
 
-variables {α : Type u}{β : Type v}
+variables {α : Type u} {β : Type v}
 
 open set 
 
@@ -19,14 +19,14 @@ lemma fincard_def (s : set α) :
 rfl 
 
 lemma fincard_t_def (α : Type u) : 
-  fincard_t α = fincard (set.univ : set α):= 
+  fincard_t α = fincard (set.univ : set α) := 
 rfl 
 
-lemma fincard_t_eq_sum_ones (α : Type u): 
+lemma fincard_t_eq_sum_ones (α : Type u) : 
   fincard_t α = ∑ᶠ (x : α), 1 := 
 by rw [fincard_t, fincard_def, finsum_eq_finsum_in_univ]
 
-lemma fincard_eq_finset_card' (s : set α)(hs : s.finite):
+lemma fincard_eq_finset_card' (s : set α) (hs : s.finite) :
   fincard s = finset.card (hs.to_finset) :=
 begin
   convert (finset.card_eq_sum_ones (hs.to_finset)).symm, 
@@ -44,11 +44,11 @@ lemma fincard_t_eq_fintype_card [fintype α]:
   fincard_t α = fintype.card α := 
 by {rw [fincard_t_def, fincard_eq_finset_card, ← finset.card_univ, ← to_finset_univ], congr', }
 
-lemma fincard_t_subtype_eq_fincard (s : set α):
+lemma fincard_t_subtype_eq_fincard (s : set α) :
   fincard_t s = fincard s := 
 by {rw [fincard_t_eq_sum_ones], exact finsum_subtype_eq_finsum_in (1) s}
 
-@[simp] lemma support_const [has_zero β]{b : β}(hb : b ≠ 0): 
+@[simp] lemma support_const [has_zero β] {b : β} (hb : b ≠ 0) : 
   function.support (λ x : α, b) = univ :=
 by {ext, simp [hb], }
 
@@ -56,11 +56,11 @@ by {ext, simp [hb], }
   function.support (1 : α → ℕ) = univ :=
 support_const (by simp : 1 ≠ 0)
 
-lemma fincard_of_infinite {s : set α}(hs : s.infinite):
+lemma fincard_of_infinite {s : set α} (hs : s.infinite) :
   fincard s = 0 := 
 by {rw [fincard, finsum_in_eq_zero_of_infinite], simpa using hs,}
 
-lemma finite_of_fincard_pos {s : set α}(hs : 0 < fincard s):
+lemma finite_of_fincard_pos {s : set α} (hs : 0 < fincard s) :
   s.finite := 
 by_contra (λ hn, by {rw fincard_of_infinite hn at hs, exact lt_irrefl _ hs, })
 
@@ -68,7 +68,7 @@ by_contra (λ hn, by {rw fincard_of_infinite hn at hs, exact lt_irrefl _ hs, })
   fincard (∅ : set α) = 0 := 
 by simp [fincard]
 
-lemma fincard_eq_zero_iff_empty {s : set α}(hs : s.finite): 
+lemma fincard_eq_zero_iff_empty {s : set α} (hs : s.finite) : 
   fincard s = 0 ↔ s = ∅ := 
 begin
   rw [fincard_def, finsum_in_eq_zero_iff _], 
@@ -84,7 +84,7 @@ lemma fincard_t_eq_iff_equiv [fintype α] [fintype β]:
   fincard_t α = fincard_t β ↔ nonempty (α ≃ β) :=
 by simp_rw [fincard_t_eq_fintype_card, fintype.card_eq]
 
-lemma fincard_t_eq_iff_fin_equiv [fintype α]{n : ℕ}: 
+lemma fincard_t_eq_iff_fin_equiv [fintype α] {n : ℕ} : 
   fincard_t α = n ↔ nonempty (α ≃ fin n) := 
 by {nth_rewrite 0 ← fincard_t_fin n, apply fincard_t_eq_iff_equiv} 
 
@@ -97,18 +97,18 @@ def choose_fin_bij [fintype α]:
   α ≃ fin (fincard_t α) :=
 classical.choice equiv_fin_fincard_t 
 
-@[simp] lemma fincard_singleton (e : α): 
-  fincard ({e}: set α) = 1 := 
+@[simp] lemma fincard_singleton (e : α) : 
+  fincard ({e} : set α) = 1 := 
 by simp [fincard]
 
-lemma fincard_modular {s t : set α} (hs : s.finite)(ht : t.finite): 
+lemma fincard_modular {s t : set α} (hs : s.finite) (ht : t.finite) : 
   fincard (s ∪ t) + fincard (s ∩ t) = fincard s + fincard t :=
 by simp [fincard, finsum_in_union_inter hs ht]
 
 lemma fincard_nonneg (s : set α) : 0 ≤ fincard s := 
 nonneg_of_finsum_nonneg (λ i, by {split_ifs; simp})
 
-lemma fincard_img_emb (f : α ↪ β)(s : set α): 
+lemma fincard_img_emb (f : α ↪ β) (s : set α) : 
   fincard (f '' s) = fincard s := 
 begin
   by_cases hs : s.finite,
@@ -119,15 +119,15 @@ begin
   exact (set.inj_on_of_injective f.inj' _), 
 end
 
-lemma fincard_of_finite_eq_card {s : set α}(hs : s.finite): 
+lemma fincard_of_finite_eq_card {s : set α} (hs : s.finite) : 
   fincard s = (hs.to_finset).card := 
 begin
   rw [fincard_def, finset.card_eq_sum_ones, finsum_in_eq_finset_sum],  simp,
   exact set.finite.subset hs (inter_subset_left _ _), 
 end
 
-theorem fincard_preimage_eq_sum' (f : α → β){s : set α}{t : set β}
-(hs : s.finite)(ht : t.finite) :
+theorem fincard_preimage_eq_sum' (f : α → β){s : set α} {t : set β}
+(hs : s.finite) (ht : t.finite) :
 fincard (s ∩ f⁻¹' t) = ∑ᶠ y in t, fincard {x ∈ s | f x = y} := 
 begin
   simp_rw fincard, 
@@ -140,7 +140,7 @@ begin
 end
 
 theorem fincard_preimage_eq_sum (f : α → β){t : set β}
-(ht : t.finite)(ht' : (f ⁻¹' t).finite) :
+(ht : t.finite) (ht' : (f ⁻¹' t).finite) :
 fincard (f⁻¹' t) = ∑ᶠ y in t, fincard {x | f x = y} := 
 begin
   have := fincard_preimage_eq_sum' f ht' ht, rw inter_self at this,  
@@ -150,16 +150,16 @@ begin
   ext, simp, rintro rfl, assumption,  
 end
 
-@[simp] lemma nat.finsum_const_eq_mul_fincard_t (b : ℕ): 
+@[simp] lemma nat.finsum_const_eq_mul_fincard_t (b : ℕ) : 
   ∑ᶠ (i : α), b = b * (fincard_t α) := 
 by rw [← mul_one b, ← mul_distrib_finsum, fincard_t_eq_sum_ones, mul_one]
 
-@[simp] lemma nat.finsum_in_const_eq_mul_fincard (b : ℕ){s : set α}: 
+@[simp] lemma nat.finsum_in_const_eq_mul_fincard (b : ℕ){s : set α} : 
   ∑ᶠ i in s, b = b * (fincard s) := 
 by rw [← mul_one b, ← mul_distrib_finsum_in, fincard_def, mul_one]
 
-lemma sum_fincard_fiber_eq_fincard {s : set α}(f : α → β)
-(hs : s.finite): 
+lemma sum_fincard_fiber_eq_fincard {s : set α} (f : α → β)
+(hs : s.finite) : 
 ∑ᶠ (b : β), fincard {a ∈ s | f a = b} = fincard s := 
 begin
   set t := f '' s with ht, 

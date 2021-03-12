@@ -7,7 +7,7 @@ noncomputable theory
 namespace matroid 
 
 section dual
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
  
 lemma rank_empt (M : matroid α) :
   M.r ∅ = 0 :=
@@ -64,11 +64,11 @@ lemma dual_inj {M₁ M₂ : matroid α} :
   dual M₁ = dual M₂ → M₁ = M₂ := 
 λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
 
-lemma dual_inj_iff {M₁ M₂ : matroid α}:
+lemma dual_inj_iff {M₁ M₂ : matroid α} :
   dual M₁ = dual M₂ ↔ M₁ = M₂ := 
 ⟨λ h, dual_inj h, λ h, by rw h⟩
 
-lemma dual_r (M : matroid α)(X : set α):
+lemma dual_r (M : matroid α) (X : set α) :
   (dual M).r X = size X + M.r Xᶜ - M.r univ := 
 rfl 
 

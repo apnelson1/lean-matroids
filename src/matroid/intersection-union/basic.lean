@@ -7,7 +7,7 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 -- setting up the various types we are minimizing/maximizing over, and associated nonempty/fintype instances 
 section prelim 
@@ -28,7 +28,7 @@ def indep_pair (M₁ M₂ : matroid α) := {p : set α × set α // is_indep_pai
 def basis_pair (M₁ M₂ : matroid α) := {p : set α × set α // is_basis_pair M₁ M₂ p }
 
 /-- type of pairs of independent sets that are both contained in a subset X -/
-def indep_pair_of_subset (M₁ M₂ : matroid α)(X : set α) := {p : set α × set α // is_indep_pair M₁ M₂ p ∧ (p.1 ⊆ X ∧ p.2 ⊆ X) }
+def indep_pair_of_subset (M₁ M₂ : matroid α) (X : set α) := {p : set α × set α // is_indep_pair M₁ M₂ p ∧ (p.1 ⊆ X ∧ p.2 ⊆ X) }
 
 /-- size of the intersection of a pair of sets -/
 def inter_size (pair : (set α × set α)) : ℤ := size (pair.1 ∩ pair.2)
@@ -91,14 +91,14 @@ begin
   from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩ ⟩ , 
 end 
 
-instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid α}{X : set α} : 
+instance indep_pair_of_subset_nonempty {M₁ M₂ : matroid α} {X : set α} : 
   nonempty (indep_pair_of_subset M₁ M₂ X) := 
 begin
   simp only [indep_pair_of_subset, nonempty_subtype, prod.exists], 
   from ⟨∅, ∅, ⟨M₁.empty_indep, M₂.empty_indep⟩, ⟨empty_subset _, empty_subset _⟩ ⟩ , 
 end 
 
-instance indep_pair_of_subset_fintype {M₁ M₂ : matroid α}{X : set α} : 
+instance indep_pair_of_subset_fintype {M₁ M₂ : matroid α} {X : set α} : 
   nonempty (fintype (indep_pair_of_subset M₁ M₂ X)) := 
 begin
   unfold indep_pair_of_subset, apply_instance, 
@@ -112,7 +112,7 @@ begin
   from ⟨B₁, B₂, hB₁, hB₂⟩,  
 end 
 
-lemma exists_inter_bases (M₁ M₂ : matroid α):
+lemma exists_inter_bases (M₁ M₂ : matroid α) :
   ∃ I, (is_inter_bases M₁ M₂ I) := 
 begin
   cases exists_basis M₁ with B₁ hB₁, 
@@ -134,7 +134,7 @@ by {unfold disjoint_indep_pair, refine nonempty_subtype.mpr _, use ⟨⟨∅,∅
 instance nonempty_common_ind (M₁ M₂ : matroid α) : nonempty (common_ind M₁ M₂) := 
 by {apply nonempty_subtype.mpr, from ⟨∅, ⟨empty_indep M₁, empty_indep M₂⟩⟩}
 
-instance fintype_common_ind (M₁ M₂ : matroid α ): nonempty (fintype (common_ind M₁ M₂)) := 
+instance fintype_common_ind (M₁ M₂ : matroid α ) : nonempty (fintype (common_ind M₁ M₂)) := 
   by {unfold common_ind, apply_instance}
 
 instance coe_common_ind (M₁ M₂ : matroid α) : has_coe (common_ind M₁ M₂) (set α) :=
@@ -162,7 +162,7 @@ open_locale big_operators
 variables {n : ℕ}
 
 
-def is_indep_tuple (Ms : fin n → matroid α)(Xs : fin n → set α) :=
+def is_indep_tuple (Ms : fin n → matroid α) (Xs : fin n → set α) :=
   ∀ i, (Ms i).is_indep (Xs i)
 
 def indep_tuple (Ms : fin n → matroid α) := 
@@ -175,10 +175,10 @@ instance indep_tuple_fintype (Ms : fin n → matroid α) : nonempty (fintype (in
   by {letI := classical.choice _inst_1, unfold indep_tuple, exact ⟨by apply_instance⟩,  }
 
 /-- size of largest partitionable set wrt a tuple of matroids -/
-def π {n : ℕ}(Ms : fin n → matroid α) : ℤ := 
+def π {n : ℕ} (Ms : fin n → matroid α) : ℤ := 
   max_val (λ Is : (indep_tuple Ms), size (set.Union Is.val)) 
 
-def is_union_indep_tuple {n : ℕ}(Ms : fin n → matroid α) : (set α) → Prop := 
+def is_union_indep_tuple {n : ℕ} (Ms : fin n → matroid α) : (set α) → Prop := 
   λ X, ∃ (Is : indep_tuple Ms), X = set.Union Is.val
 
 
@@ -211,18 +211,18 @@ def is_union_indep_list' (Ms : list (matroid α)) : set α → Prop :=
   λ Y, ∃ (Ps : indep_pair_list), Ps.val.unzip.1 = Ms ∧ list_union Ps.val.unzip.2 = Y 
 
 /- sum of ranks of a list of sets in a list of matroids -/
-def sum_of_ranks_of_sets (Ms : list (matroid α))(Xs : list (set α)): ℤ := 
+def sum_of_ranks_of_sets (Ms : list (matroid α)) (Xs : list (set α)) : ℤ := 
   list.sum (list.map (matroid_set_pair_to_rank) (Ms.zip Xs)) 
 
 /- sum of ranks of a fixed set in a list of matroids -/
 def sum_of_ranks_of_set (Ms : list (matroid α)) (X : set α) :ℤ := 
   sum_of_ranks_of_sets Ms (list.repeat X Ms.length)
 
-@[simp] lemma sum_ranks_sets_empty_list (X : list (set α)): 
+@[simp] lemma sum_ranks_sets_empty_list (X : list (set α)) : 
   sum_of_ranks_of_sets (list.nil) X = 0 := 
 by {unfold sum_of_ranks_of_sets, simp, }
 
-@[simp] lemma sum_ranks_set_empty_list (X : set α): 
+@[simp] lemma sum_ranks_set_empty_list (X : set α) : 
   sum_of_ranks_of_set (list.nil) X = 0 := 
 by {unfold sum_of_ranks_of_set, simp, }
 
@@ -243,23 +243,23 @@ end
 
 instance indep_list_fintype (Ms : list (matroid α)) : fintype (indep_list Ms) := 
 begin
-  set f : indep_list Ms → vector (set α) (Ms.length):= λ Xs, ⟨Xs.val, Xs.property.1⟩ with hf, 
+  set f : indep_list Ms → vector (set α) (Ms.length) := λ Xs, ⟨Xs.val, Xs.property.1⟩ with hf, 
   refine fintype.of_injective f (λ x x' hxx', _), 
   dsimp [f] at hxx', cases x, cases x', 
   rw subtype.mk_eq_mk at ⊢ hxx', from hxx', 
   -- likewise 
 end
 
-lemma indep_list_nil_elim {Xs : list (set α)}:
+lemma indep_list_nil_elim {Xs : list (set α)} :
   is_indep_list (list.nil : list (matroid α)) Xs → Xs = list.nil := 
 by {rintros ⟨hx,hx'⟩, simp [list.length_eq_zero] at hx, from hx,} 
 
-lemma indep_list_nil_iff_nil {Xs : list (set α)}:
+lemma indep_list_nil_iff_nil {Xs : list (set α)} :
   is_indep_list (list.nil : list (matroid α)) Xs ↔ Xs = list.nil := 
 by {refine ⟨λ h, indep_list_nil_elim h, λ h,_⟩, unfold is_indep_list, rw h, simp, } 
 
 
-lemma indep_list_nil_elim_subtype (Xs : indep_list (list.nil : list (matroid α))):
+lemma indep_list_nil_elim_subtype (Xs : indep_list (list.nil : list (matroid α))) :
   Xs.val = list.nil := 
 indep_list_nil_elim Xs.property 
 
@@ -274,14 +274,14 @@ instance indep_nil_list_subsingleton :
 
 -- These next two lemmas are TODO - they should be provable and useful. Commented to avoid sorries  
 
-/-lemma indep_list_iff_exists_zip (Ms : list (matroid α))(X : set α):
+/-lemma indep_list_iff_exists_zip (Ms : list (matroid α)) (X : set α) :
   is_union_indep_list Ms X ↔ 
     (∃ zMs : list ((matroid α) × (set α)),
     ( 
       ∀ p ∈ zMs, is_matroid_indep_pair p) ∧ 
       (list.unzip zMs).1 = Ms ∧ 
       list_union (list.unzip zMs).2 = X 
-    ):=
+    ) :=
 begin
   
 end
@@ -289,7 +289,7 @@ end
 
 
 
-lemma union_of_indep_cons (Ms : list (matroid α))(N : matroid α)(X : set α):
+lemma union_of_indep_cons (Ms : list (matroid α)) (N : matroid α) (X : set α) :
   is_union_indep_list (N :: Ms) X ↔ ∃ Y X₀, is_indep N Y ∧ is_union_indep_list Ms X₀ ∧ Y ∪ X₀ = X := 
 begin
   unfold is_union_indep_list, 
@@ -305,7 +305,7 @@ end-/
 
 
 /-
-@[simp] lemma union_fin_zero (a : fin 0 → set α):
+@[simp] lemma union_fin_zero (a : fin 0 → set α) :
   (⋃ i, a i) = ∅ := 
 
 -/

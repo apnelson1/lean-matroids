@@ -5,7 +5,7 @@ open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
  
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 /-namespace indep_family' 
 
@@ -13,14 +13,14 @@ def r (M : indep_family' α) : (set α) → ℤ :=
   λ X, classical.some (M.I3' X)
 
 
-def basis_of (M : indep_family' α)(B X : set α) :=
+def basis_of (M : indep_family' α) (B X : set α) :=
   B ⊆ X ∧ M.indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬M.indep Y)
 
-lemma r_spec (M : indep_family' α) (X : set α): 
+lemma r_spec (M : indep_family' α) (X : set α) : 
   ∀ B, M.basis_of B X → size B = M.r X :=
 classical.some_spec (M.I3' X)
 
-lemma extends_to_basis_of (M : indep_family' α)(I X : set α):
+lemma extends_to_basis_of (M : indep_family' α) (I X : set α) :
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ M.basis_of B X :=
 begin
   intros hIX hI, 
@@ -30,7 +30,7 @@ begin
   from hB₂.2 Y hBY hYX hY, 
 end
 
-lemma exists_basis_of (M : indep_family' α)(X : set α):
+lemma exists_basis_of (M : indep_family' α) (X : set α) :
   ∃ B, M.basis_of B X := 
 by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.empty_indep), finish,}
 
@@ -51,7 +51,7 @@ namespace indep_family
 def satisfies_weak_indep_of_subset_indep : (set α → Prop) → Prop :=
   λ indep, ∀ I (e : α), e ∉ I → indep (I ∪ {e}) → indep I 
 
-lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set α → Prop):  
+lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set α → Prop) :  
   satisfies_weak_indep_of_subset_indep indep → satisfies_indep_of_subset_indep  indep :=
   begin
     intros hwindep_of_subset_indep I J hIJ hJ, 
@@ -94,26 +94,26 @@ lemma choice_of_set_basis_is_valid (M : indep_family α) (X : set α) :
   is_set_basis M (M.choose_set_basis X) X :=
   (choice_of_extension_to_basis_is_valid M (empty_subset X) (M.I1)).2 
 
-lemma has_ext_to_basis (M : indep_family α) {I X : set α}: 
+lemma has_ext_to_basis (M : indep_family α) {I X : set α} : 
   I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ is_set_basis M B X := 
   λ hIX hI, by {use choose_extension_to_basis M hIX hI, 
                   from choice_of_extension_to_basis_is_valid M hIX hI}
 
-lemma has_basis (M : indep_family α) (X : set α):
+lemma has_basis (M : indep_family α) (X : set α) :
   ∃ B, M.is_set_basis B X := 
   by {use choose_set_basis M X, from choice_of_set_basis_is_valid M X}
 
-lemma size_ind_le_size_set_basis {M : indep_family α}{I B X : set α}:
+lemma size_ind_le_size_set_basis {M : indep_family α} {I B X : set α} :
   I ⊆ X → M.indep I → M.is_set_basis B X → size I ≤ size B := 
   begin
     intros hIX hI hB, by_contra hlt, push_neg at hlt, 
     rcases M.I3 B I hlt hB.2.1 hI with ⟨e, ⟨h₁e, h₂e⟩ ⟩, 
-    rw elem_diff_iff at h₁e, refine hB.2.2 (B ∪ {e}) _ _ h₂e, 
+    rw mem_diff_iff at h₁e, refine hB.2.2 (B ∪ {e}) _ _ h₂e, 
     from ssub_of_add_nonmem h₁e.2, 
     from union_of_subsets hB.1 (subset_of_mem_of_subset h₁e.1 hIX),
   end
 
-lemma set_bases_equicardinal {M : indep_family α}{X B₁ B₂ : set α} :
+lemma set_bases_equicardinal {M : indep_family α} {X B₁ B₂ : set α} :
   M.is_set_basis B₁ X → M.is_set_basis B₂ X → size B₁ = size B₂ :=
 begin
   intros h₁ h₂, apply le_antisymm, 
@@ -121,17 +121,17 @@ begin
   from size_ind_le_size_set_basis h₂.1 h₂.2.1 h₁, 
 end 
 
---lemma basis_ext_inter_set {M : indep_family α}{X B₁ }
+--lemma basis_ext_inter_set {M : indep_family α} {X B₁ }
 
 def I_to_r (M : indep_family α) : (set α → ℤ) := 
   λ X, size (M.choose_set_basis X)
 
-lemma I_to_r_max (M : indep_family α)(X : set α): 
+lemma I_to_r_max (M : indep_family α) (X : set α) : 
   ∃ B, B ⊆ X ∧ M.indep B ∧ size B = M.I_to_r X := 
   by {use M.choose_set_basis X, have h := M.choice_of_set_basis_is_valid X, 
             from ⟨h.1,⟨h.2.1,rfl⟩⟩}
     
-lemma I_to_r_ub {M : indep_family α}{I X : set α}: 
+lemma I_to_r_ub {M : indep_family α} {I X : set α} : 
   I ⊆ X → M.indep I → size I ≤ M.I_to_r X := 
 begin
   intros hI hInd, by_contra a, push_neg at a, 
@@ -142,7 +142,7 @@ begin
   linarith, 
 end 
 
-lemma I_to_r_eq_iff {M : indep_family α}{X : set α}{n : ℤ} :
+lemma I_to_r_eq_iff {M : indep_family α} {X : set α} {n : ℤ} :
   M.I_to_r X = n ↔ ∃ B, M.is_set_basis B X ∧ size B = n :=
   let B₀ := M.choose_set_basis X, hB₀ := M.choice_of_set_basis_is_valid X in 
 begin
@@ -151,15 +151,15 @@ begin
   from (rfl.congr hBsize).mp (eq.symm (set_bases_equicardinal hB hB₀)), 
 end
 
-lemma has_set_basis_with_size (M : indep_family α)(X : set α) : 
+lemma has_set_basis_with_size (M : indep_family α) (X : set α) : 
   ∃ B, M.is_set_basis B X ∧ size B = M.I_to_r X :=
   I_to_r_eq_iff.mp (rfl : M.I_to_r X = M.I_to_r X)
  
-lemma I_to_r_of_set_basis {M : indep_family α}{B X : set α}:
+lemma I_to_r_of_set_basis {M : indep_family α} {B X : set α} :
   M.is_set_basis B X → M.I_to_r X = size B := 
   λ h, set_bases_equicardinal (M.choice_of_set_basis_is_valid X) h
 
-lemma has_nested_basis_pair (M : indep_family α){X Y : set α}:
+lemma has_nested_basis_pair (M : indep_family α){X Y : set α} :
   X ⊆ Y → ∃ BX BY, BX ⊆ BY ∧ M.is_set_basis BX X ∧ M.is_set_basis BY Y :=
 begin
   intro hXY, rcases M.has_basis X with ⟨BX,hBX⟩, 
@@ -169,26 +169,26 @@ end
 
 -----------------------------------------------------------------------
 
-lemma I_to_R0 (M : indep_family α): 
+lemma I_to_R0 (M : indep_family α) : 
   satisfies_R0 M.I_to_r := 
 λ X, by {have := I_to_r_ub (empty_subset X) (M.I1), rw size_empty at this, assumption}
 
-lemma I_to_R1 (M : indep_family α): 
+lemma I_to_R1 (M : indep_family α) : 
   satisfies_R1 M.I_to_r := 
 λ X, by {rcases M.I_to_r_max X with ⟨B, ⟨hBX, ⟨_, hsB⟩⟩⟩, from (eq.symm hsB).trans_le (size_monotone hBX)}
 
-lemma I_to_r_of_indep (M : indep_family α)(I : set α): 
+lemma I_to_r_of_indep (M : indep_family α) (I : set α) : 
   M.indep I → M.I_to_r I = size I :=
 λ h, le_antisymm (M.I_to_R1 I) (I_to_r_ub (subset_refl I) h)
 
-lemma I_to_R2 (M : indep_family α): 
+lemma I_to_R2 (M : indep_family α) : 
   satisfies_R2 M.I_to_r := 
 begin 
   intros X Y hXY, rcases M.I_to_r_max X with ⟨B,⟨hBX,⟨hIB,hsB⟩⟩⟩, 
   have := I_to_r_ub (subset.trans hBX hXY) hIB, rw hsB at this, assumption
 end 
 
-lemma I_to_r_eq_rank_basis_union {M : indep_family α}{B X: set α}(Y : set α):
+lemma I_to_r_eq_rank_basis_union {M : indep_family α} {B X: set α} (Y : set α) :
   M.is_set_basis B X → M.I_to_r (B ∪ Y) = M.I_to_r (X ∪ Y) := 
 begin
   intro h, 
@@ -207,7 +207,7 @@ begin
 end
 
 
-lemma I_to_R3 (M : indep_family α): 
+lemma I_to_R3 (M : indep_family α) : 
   satisfies_R3 M.I_to_r := 
 begin
   intros X Y, 

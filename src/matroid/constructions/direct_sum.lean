@@ -9,18 +9,18 @@ noncomputable theory
 
 namespace idsum 
 
-variables {α ι : Type}[fintype α](f : α → ι)
+variables {α ι : Type} [fintype α] (f : α → ι)
 (Rs : ∀ (i : ι), matroid {x // f x = i})
 
 /-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
 def r (X : set α) := 
 ∑ᶠ (i : ι), (Rs i).r (coe ⁻¹' X)
 
-lemma size_coe_eq (i : ι)(X : set α): 
+lemma size_coe_eq (i : ι) (X : set α) : 
   size (coe ⁻¹' X : set {x // f x = i}) = size ({ x ∈ X | f x = i}) := 
 by {rw size_preimage_coe, congr'}  
 
-lemma size_finite_supp (X : set α):
+lemma size_finite_supp (X : set α) :
   (function.support (λ (i : ι), size ({ x ∈ X | f x = i}))).finite := 
 begin
   by_cases he : size X = 0,
@@ -28,7 +28,7 @@ begin
   apply finsupp_of_finsum_nonzero, convert he, apply sum_size_fiber_eq_size, 
 end 
 
-lemma rank_finite_supp (X : set α):
+lemma rank_finite_supp (X : set α) :
   (function.support (λ (i : ι), (Rs i).r (coe ⁻¹' X))).finite :=
 begin
   by_cases he : size X = 0, 
@@ -40,8 +40,8 @@ begin
   simpa using hx, 
 end
 
-lemma sum_finite_supp {α : Type}{f g : α → ℤ}
-  (hf : (function.support f).finite) (hg : (function.support g).finite):
+lemma sum_finite_supp {α : Type} {f g : α → ℤ}
+  (hf : (function.support f).finite) (hg : (function.support g).finite) :
 (function.support (f + g)).finite :=
 begin
   apply @set.finite.subset _ ((function.support f) ∪ (function.support g)), 
@@ -92,7 +92,7 @@ lemma r_eq (X : set α) :
 rfl 
 
 
-lemma indep_iff (X : set α): 
+lemma indep_iff (X : set α) : 
   (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
 begin
   simp_rw [indep_iff_r, ← sum_size_fiber_eq_size X f, size_coe_eq, r_eq],

@@ -46,7 +46,7 @@ def foo [fintype β]: set β → ℕ  := sizeof
 
 lemma empty_rank_zero {E : finset α} (M: rank_matroid E) : M.r ∅ (em_ss) = (0 : ℤ) := 
 begin
-  cases M.R1 ((by exact em_ss):(∅ ⊆ E)),
+  cases M.R1 ((by exact em_ss) :(∅ ⊆ E)),
   rw size_empt at right,
   linarith,
 end
@@ -56,7 +56,7 @@ begin
     linarith [M.R3 hA hB, (M.R1 (inter_subset hA hB)).1]
 end
 
-def restriction {E: finset α} (M: rank_matroid E) (R: finset α) (hR : R ⊆ E): rank_matroid (R) :=
+def restriction {E: finset α} (M: rank_matroid E) (R: finset α) (hR : R ⊆ E) : rank_matroid (R) :=
     let UssE := (λ {U : finset α} (hU: U ⊆ R) , subset.trans hU hR) in 
     ⟨ 
     λ X hX, M.r X (UssE hX), 
@@ -65,10 +65,10 @@ def restriction {E: finset α} (M: rank_matroid E) (R: finset α) (hR : R ⊆ E)
     λ X Y hX hY, M.R3 (UssE hX) (UssE hY),
     ⟩ -- all just trivial
 
-def deletion {E: finset α} (M: rank_matroid E) (D: finset α) (hD : D ⊆ E): rank_matroid (E \ D) := restriction M (E \ D) (sdiff_subset E D)
+def deletion {E: finset α} (M: rank_matroid E) (D: finset α) (hD : D ⊆ E) : rank_matroid (E \ D) := restriction M (E \ D) (sdiff_subset E D)
 
 
-lemma eq_ss {A B E: finset α}: (A ⊆ E) → (A = B)  → (B ⊆ E) :=
+lemma eq_ss {A B E: finset α} : (A ⊆ E) → (A = B)  → (B ⊆ E) :=
     begin
         finish [finset.subset_iff],
     end
@@ -86,16 +86,16 @@ def rank {E : finset α} (M: rank_matroid E) := M.r E (subset.refl E)
 
 @[simp] def is_loop {E : finset α} (M: rank_matroid E) (e : α) (he : e ∈ E) := (M.r {e} (singleton_subset_iff.mpr he) = 0)
 
-@[simp] lemma l1 {E: finset α}(M: rank_matroid E) (e: α) (he : e ∈ E) (hr: M.r {e} (by tidy) ≤ 0) : is_loop M e (by tidy) := 
+@[simp] lemma l1 {E: finset α} (M: rank_matroid E) (e: α) (he : e ∈ E) (hr: M.r {e} (by tidy) ≤ 0) : is_loop M e (by tidy) := 
 begin
-  --have := (by simp):({e} ⊆ E),
+  --have := (by simp) :({e} ⊆ E),
   have := (M.R1 (by tidy : {e} ⊆ E) ).1,
   simp, 
   linarith,
 end 
 
 
-def is_flat {E : finset α} (M: rank_matroid E) (F : finset α) (hF : F ⊆ E) := ∀ {X : finset α}(hX : X ⊆ E), F ⊂ X → M.r F hF < M.r X hX
+def is_flat {E : finset α} (M: rank_matroid E) (F : finset α) (hF : F ⊆ E) := ∀ {X : finset α} (hX : X ⊆ E), F ⊂ X → M.r F hF < M.r X hX
 
 def is_indep {E: finset α} (M: rank_matroid E) (X : finset α) (hX : X ⊆ E) :=  
     M.r X hX = size X
@@ -104,17 +104,17 @@ def is_dep {E: finset α} (M: rank_matroid E) (X : finset α) (hX : X ⊆ E) := 
 
 def is_spanning {E: finset α} (M: rank_matroid E) (X : finset α) (hX : X ⊆ E) := (M.r X hX = M.r E (subset.refl E))  
 
-def is_hyperplane {E : finset α} (M: rank_matroid E) (H: finset α)(hH : H ⊆ E) := is_flat M H hH ∧ M.r H hH = M.r E (subset.refl E) - 1
+def is_hyperplane {E : finset α} (M: rank_matroid E) (H: finset α) (hH : H ⊆ E) := is_flat M H hH ∧ M.r H hH = M.r E (subset.refl E) - 1
 
-def is_circuit {E : finset α} (M: rank_matroid E) (C: finset α)(hC : C ⊆ E) := (is_dep M C hC) ∧ ∀ X ⊂ C, is_indep M X 
+def is_circuit {E : finset α} (M: rank_matroid E) (C: finset α) (hC : C ⊆ E) := (is_dep M C hC) ∧ ∀ X ⊂ C, is_indep M X 
 (by tidy : X ⊆ E)
 
 def is_basis {E : finset α} (M: rank_matroid E) (B : finset α) (hB : B ⊆ E) :=
     is_indep M B hB ∧ (∀ {X: finset α} (hbX : B ⊂ X) (hX : X ⊆ E), ¬ is_indep M X hX)
 
---def is_isomorphism {E₁ E₂ : finset α} (ϕ : (fintype.of_finset E₁ → fintype.of_finset E₂))(M₁ : rank_matroid E₁)(M₂ : rank_matroid E₂) := false 
+--def is_isomorphism {E₁ E₂ : finset α} (ϕ : (fintype.of_finset E₁ → fintype.of_finset E₂)) (M₁ : rank_matroid E₁) (M₂ : rank_matroid E₂) := false 
 
---def isomorphic {E₁ E₂ : finset α}(M₁ : rank_matroid M₁)(M₂ : rank_matroid M₂): ∃ ϕ : 
+--def isomorphic {E₁ E₂ : finset α} (M₁ : rank_matroid M₁) (M₂ : rank_matroid M₂) : ∃ ϕ : 
 
 
 def dual {E: finset α} (M: rank_matroid E) : rank_matroid E := 
@@ -202,8 +202,8 @@ in
 ⟩ 
 
 
-def rw_ground_set {E E': finset α}(M: rank_matroid E) (hEE': E = E') : rank_matroid E' := 
-let ss := λ {X: finset α}(hX: X ⊆ E'), ((ss_eq hX (hEE'.symm)):(X ⊆ E)) in 
+def rw_ground_set {E E': finset α} (M: rank_matroid E) (hEE': E = E') : rank_matroid E' := 
+let ss := λ {X: finset α} (hX: X ⊆ E'), ((ss_eq hX (hEE'.symm)) :(X ⊆ E)) in 
 ⟨ 
     λ X hX, M.r X (ss hX),
     λ X hX , M.R1 (ss hX),
@@ -211,7 +211,7 @@ let ss := λ {X: finset α}(hX: X ⊆ E'), ((ss_eq hX (hEE'.symm)):(X ⊆ E)) in
     λ X Y hX hY, M.R3 (ss hX) (ss hY),
 ⟩
 
-def contraction {E: finset α} (M: rank_matroid E) (C: finset α )(hC: C ⊆ E): rank_matroid (E \ C) := 
+def contraction {E: finset α} (M: rank_matroid E) (C: finset α ) (hC: C ⊆ E) : rank_matroid (E \ C) := 
     let UssE := (λ {U : finset α} (hU: U ⊆ E \ C) , subset.trans hU sdiff_subset_self),
     UCssE := (λ {U : finset α} (hU: U ⊆ E \ C) , union_subset (UssE hU) (hC) ) in
         --(union_subset hU hC) sdiff_subset_self) in 
@@ -276,7 +276,7 @@ def contraction {E: finset α} (M: rank_matroid E) (C: finset α )(hC: C ⊆ E):
         end,
     ⟩
 
-lemma same_ranks_same_matroid {E : finset α}(M₁ M₂: rank_matroid E): 
+lemma same_ranks_same_matroid {E : finset α} (M₁ M₂: rank_matroid E) : 
   (∀ (X : finset α) (hX: X ⊆ E), M₁.r X hX = M₂.r X hX)  → (M₁ = M₂) := 
 begin
   intros h,
@@ -287,19 +287,19 @@ begin
   exact h X hX,
 end
 
---def corestriction {E: finset α} (M: rank_matroid E) (X: finset α )(hX: X ⊆ E): rank_matroid (X) := rw_ground_set (contraction M (E \ X) sorry) (sorry: E \ (E \ X) = X) 
+--def corestriction {E: finset α} (M: rank_matroid E) (X: finset α ) (hX: X ⊆ E) : rank_matroid (X) := rw_ground_set (contraction M (E \ X) sorry) (sorry: E \ (E \ X) = X) 
 
 
 
-lemma rank_con {E C: finset α}(M: rank_matroid E)(hC: C ⊆ E) : rank (contraction M C hC) = rank M - M.r C hC := 
+lemma rank_con {E C: finset α} (M: rank_matroid E) (hC: C ⊆ E) : rank (contraction M C hC) = rank M - M.r C hC := 
 begin
   calc rank (contraction M C hC) = (contraction M C hC).r (E \ C) _         : by trivial 
                           ...    = M.r ((E \ C) ∪ C) _  - M.r C hC          : by trivial
-                          ...    = M.r (E) _  - M.r C hC                    : by linarith [eq_r M ((sorry):((E \ C) ∪ C ⊆ E)) ((sorry):((E \ C) ∪ C = E))],
+                          ...    = M.r (E) _  - M.r C hC                    : by linarith [eq_r M ((sorry) :((E \ C) ∪ C ⊆ E)) ((sorry) :((E \ C) ∪ C = E))],
 end
 
 
-lemma loopy_rank_zero {E: finset α }(M : rank_matroid E) : ( ∀ (e : α)( he : e ∈ E), M.r {e} sorry = 0)  → rank M = 0 := 
+lemma loopy_rank_zero {E: finset α } (M : rank_matroid E) : ( ∀ (e : α) ( he : e ∈ E), M.r {e} sorry = 0)  → rank M = 0 := 
 begin
   unfold rank,
   intros hloops,
@@ -342,7 +342,7 @@ begin
   linarith,
 end
 
-lemma subset_of_indep_indep {I J E: finset α} (M : rank_matroid E)(hIJ : I ⊆ J){hJ: J ⊆ E}(J_ind: is_indep M J hJ): is_indep M I (subset.trans hIJ hJ) := 
+lemma subset_of_indep_indep {I J E: finset α} (M : rank_matroid E) (hIJ : I ⊆ J){hJ: J ⊆ E} (J_ind: is_indep M J hJ) : is_indep M I (subset.trans hIJ hJ) := 
 begin
   unfold is_indep at J_ind,
   have hI:= subset.trans hIJ hJ,
@@ -362,7 +362,7 @@ begin
 end
 
 
-lemma con_del_dual {E : finset α}(M : rank_matroid E)(X : finset α)(hX : X ⊆ E): contraction (dual M) X hX = dual (deletion M X hX) := 
+lemma con_del_dual {E : finset α} (M : rank_matroid E) (X : finset α) (hX : X ⊆ E) : contraction (dual M) X hX = dual (deletion M X hX) := 
 begin
   let MconX := contraction M X hX,
   let MdelX := deletion M X hX,
@@ -409,7 +409,7 @@ begin
   
 end
 
-lemma basis_full_rank {E: finset α}(M: rank_matroid E) {B: finset α} {hB: B ⊆ E} : (is_basis M B hB) → size B = M.r E (subset.refl E) :=
+lemma basis_full_rank {E: finset α} (M: rank_matroid E) {B: finset α} {hB: B ⊆ E} : (is_basis M B hB) → size B = M.r E (subset.refl E) :=
 begin
   intros Bbasis,
   cases Bbasis with Bind Bmax,
@@ -439,12 +439,12 @@ begin
           ...   > 0                         : by linarith,
   },
 
-  have N_loopy:  ∀ (e : α)( he : e ∈ E \ B), is_loop N e he,
+  have N_loopy:  ∀ (e : α) ( he : e ∈ E \ B), is_loop N e he,
   {
     intros e he,
     have he' := singleton_subset_iff.mpr he,
     have hsize: size (B ∪ {e}) = size B +1, sorry,
-    specialize Bmax ((sorry):(B ⊂ B ∪ {e})) (sorry),
+    specialize Bmax ((sorry) :(B ⊂ B ∪ {e})) (sorry),
     rw dep_or_indep at Bmax,
     unfold is_dep at Bmax,
     unfold is_loop,
@@ -459,10 +459,10 @@ begin
 
 end 
 
-lemma basis_of_dual {E B : finset α} (M: rank_matroid E)(hB: B ⊆ E): is_basis M B hB ↔ is_basis (dual M) (E \ B) (sorry: E \ B ⊆ E) := 
+lemma basis_of_dual {E B : finset α} (M: rank_matroid E) (hB: B ⊆ E) : is_basis M B hB ↔ is_basis (dual M) (E \ B) (sorry: E \ B ⊆ E) := 
 begin
   -- Suffices to prove one direction by duality.
-  suffices : ∀ (M': rank_matroid E){B' : finset α}(hB': B' ⊆ E), is_basis M' B' hB' → is_basis (dual M') (E \ B') (sorry), 
+  suffices : ∀ (M': rank_matroid E){B' : finset α} (hB': B' ⊆ E), is_basis M' B' hB' → is_basis (dual M') (E \ B') (sorry), 
   {
     split,
     intros h,
@@ -511,7 +511,7 @@ begin
   },
 end
 
-lemma extends_to_basis_of_superset {E: finset α}(M: rank_matroid E)(I X: finset α){hI: I ⊆ E}(I_ind: is_indep M I hI)(hIX: I ⊆ X)(hX: X ⊆ E):
+lemma extends_to_basis_of_superset {E: finset α} (M: rank_matroid E) (I X: finset α){hI: I ⊆ E} (I_ind: is_indep M I hI) (hIX: I ⊆ X) (hX: X ⊆ E) :
    ∃(B : finset α) (hB: B ⊆ E) (hBX: B ⊆ X), (I ⊆ B) ∧ is_basis (restriction M X hX) B hBX := 
 begin
   let is_indep_prop := λ (U: finset α), (∃ (hU : U ⊆ E), is_indep M U hU),
@@ -534,11 +534,11 @@ begin
   intros Y hBY hYX,
   have Y_dep := B_maximal Y hYX hBY, 
   push_neg at Y_dep,
-  specialize Y_dep ((subset.trans hYX hX):(Y ⊆ E)),
+  specialize Y_dep ((subset.trans hYX hX) :(Y ⊆ E)),
   trivial,
 end
 
-lemma set_has_basis {E: finset α}(M: rank_matroid E)(X: finset α)(hX: X ⊆ E):
+lemma set_has_basis {E: finset α} (M: rank_matroid E) (X: finset α) (hX: X ⊆ E) :
    ∃(B : finset α) (hB: B ⊆ E) (hBX: B ⊆ X), is_basis (restriction M X hX) B hBX :=  
 begin
   have emp_ind : is_indep M ∅ em_ss, exact empty_rank_zero M, 
@@ -547,7 +547,7 @@ begin
 end
 
    
-lemma extends_to_basis {E: finset α}(M: rank_matroid E)(I: finset α){hI: I ⊆ E}(I_ind: is_indep M I hI): ∃(B : finset α) (hB: B ⊆ E), (I ⊆ B) ∧ is_basis M B hB := 
+lemma extends_to_basis {E: finset α} (M: rank_matroid E) (I: finset α){hI: I ⊆ E} (I_ind: is_indep M I hI) : ∃(B : finset α) (hB: B ⊆ E), (I ⊆ B) ∧ is_basis M B hB := 
 begin
   have hE := subset.refl E,
   have : M = restriction M E hE,
@@ -642,7 +642,7 @@ begin
 
   linarith [loopy_rank_zero N Nloopy],
 end 
-lemma coind_iff_comp_spanning {E X : finset α}(M: rank_matroid E)(hX: X ⊆ E): (is_indep (dual M) X hX) ↔ is_spanning M (E \ X) (sdiff_subset E X) := 
+lemma coind_iff_comp_spanning {E X : finset α} (M: rank_matroid E) (hX: X ⊆ E) : (is_indep (dual M) X hX) ↔ is_spanning M (E \ X) (sdiff_subset E X) := 
 begin
   unfold is_indep is_spanning,
   have hE := subset.refl E,
@@ -655,12 +655,12 @@ begin
   linarith,
 end
 
-def rank_ub {E X: finset α}(M: rank_matroid E)(hX: X ⊆ E) := M.R2 hX (subset.refl E)
+def rank_ub {E X: finset α} (M: rank_matroid E) (hX: X ⊆ E) := M.R2 hX (subset.refl E)
 
 
 
 
-lemma hyperplane_iff_maximal_nonspanning {E H : finset α}(M: rank_matroid E)(hH: H ⊆ E): (is_hyperplane M H hH) ↔ (¬ is_spanning M H hH) ∧ (∀ (X : finset α)(hX : X ⊆ E), H ⊂ X → is_spanning M X hX) :=
+lemma hyperplane_iff_maximal_nonspanning {E H : finset α} (M: rank_matroid E) (hH: H ⊆ E) : (is_hyperplane M H hH) ↔ (¬ is_spanning M H hH) ∧ (∀ (X : finset α) (hX : X ⊆ E), H ⊂ X → is_spanning M X hX) :=
 begin
   sorry,
   /-unfold is_hyperplane,
@@ -706,7 +706,7 @@ begin
   calc M.r H hH ≥ M.r (H ∪ {a}) sorry - M.r {a} hA : linarith [rank_superadditive M hH ((this a).left)] -/
 end
 
-lemma cocircuit_iff_complement_hyperplane {E K : finset α}(M: rank_matroid E)(hK: K ⊆ E): (is_circuit (dual M) K hK) ↔ is_hyperplane M (E \ K) (sdiff_subset E K) := 
+lemma cocircuit_iff_complement_hyperplane {E K : finset α} (M: rank_matroid E) (hK: K ⊆ E) : (is_circuit (dual M) K hK) ↔ is_hyperplane M (E \ K) (sdiff_subset E K) := 
 begin
   split,
   intros K_cocircuit,
@@ -724,9 +724,9 @@ begin
 
 end
 
-def is_point {E : finset α}(M : rank_matroid E)(P : finset α)(hP: P ⊆ E) := is_flat M P hP ∧ M.r P hP = 1
+def is_point {E : finset α} (M : rank_matroid E) (P : finset α) (hP: P ⊆ E) := is_flat M P hP ∧ M.r P hP = 1
 
-lemma flats_intersection {E F F': finset α}(M: rank_matroid E){hF : F ⊆ E}{hF' : F' ⊆ E}(F_flat : is_flat M F hF)(F'_flat : is_flat M F' hF') : is_flat M (F ∩ F') sorry :=
+lemma flats_intersection {E F F': finset α} (M: rank_matroid E){hF : F ⊆ E} {hF' : F' ⊆ E} (F_flat : is_flat M F hF) (F'_flat : is_flat M F' hF') : is_flat M (F ∩ F') sorry :=
 begin
   unfold is_flat,
   intros X hX hFF'X,
@@ -742,13 +742,13 @@ begin
 end
 
 
-lemma points_skew {E P P': finset α}(M: rank_matroid E){hP: P ⊆ E}{hP': P' ⊆ E} (Ppoint: is_point M P hP) (P'point: is_point M P' hP')(hne: P ≠ P'): 
+lemma points_skew {E P P': finset α} (M: rank_matroid E){hP: P ⊆ E} {hP': P' ⊆ E} (Ppoint: is_point M P hP) (P'point: is_point M P' hP') (hne: P ≠ P') : 
   (is_flat M (P ∩ P') sorry ) ∧ (M.r (P ∩ P') sorry = 0) :=
 begin
   sorry,
 end
 
---def ε : {E: finset α}(M : rank_matroid E) := size filter()
+--def ε : {E: finset α} (M : rank_matroid E) := size filter()
 
 
 

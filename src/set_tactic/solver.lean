@@ -69,7 +69,7 @@ meta def boolean_algebra_types_in_expr (consider_function_types := ff) : expr �
     e_outer <- get_boolalg_typ consider_function_types e,
     return (e_inner ++ e_outer)
 
-def unique_list {T: Type}[decidable_eq T]: list T -> list T 
+def unique_list {T: Type} [decidable_eq T]: list T -> list T 
 | [] := []
 | (x :: xs) := let tl := unique_list xs in
                 if list.mem x tl then tl else x :: tl
@@ -129,7 +129,7 @@ meta def set_ext (consider_function_types := ff) : (tactic unit) := do
   types.mmap rewrite_for_type,
   tactic.skip 
 
-meta def set_solver (consider_function_types := ff): (tactic unit) := do
+meta def set_solver (consider_function_types := ff) : (tactic unit) := do
   set_ext consider_function_types,
   `[finish]
 
@@ -186,11 +186,11 @@ begin
   tactic.timetac "slow" $  set_solver,
 end
  
-example (α : Type)(C E : set α)(hCE : C ⊓ E = ∅):
+example (α : Type) (C E : set α) (hCE : C ⊓ E = ∅) :
   C ⊔ (E ⊔ C)ᶜ = Eᶜ := 
 by {set_solver, }
 
-example (α : Type)(C E : set α)(h : C ⊓ E = ⊥) : 
+example (α : Type) (C E : set α) (h : C ⊓ E = ⊥) : 
   C ⊓ (C ⊔ E)ᶜ = ∅ := 
 by {set_solver, } 
 

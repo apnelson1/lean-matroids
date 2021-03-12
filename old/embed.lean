@@ -16,16 +16,16 @@ def subftype {A : ftype} (ground : set A) : ftype :=
 
 instance emb_to_fn {A B : ftype} : has_coe_to_fun (embed A B) := {F := λ _, A → B.E, coe := embed.f}
 
-def embed.img {A B : ftype}(emb : embed A B): set A → set B := 
+def embed.img {A B : ftype} (emb : embed A B) : set A → set B := 
   λ X, (X.image emb)
 
---instance emb_to_set_fn {A B : ftype} : has_coe (embed A B) (set A → set B.E):= ⟨embed.img⟩
+--instance emb_to_set_fn {A B : ftype} : has_coe (embed A B) (set A → set B.E) := ⟨embed.img⟩
 
 lemma embed.on_subset {A B : ftype} (emb : embed A B) {X Y : set A} :
   (X ⊆ Y) → (emb.img X) ⊆ (emb.img Y) := 
   λ h, by tidy
 
-lemma embed.on_size {A B : ftype} (emb : embed A B) (X : set A):
+lemma embed.on_size {A B : ftype} (emb : embed A B) (X : set A) :
   size (emb.img X) = size X := 
 begin
   simp only [size, size_nat, int.coe_nat_inj'], 
@@ -42,45 +42,45 @@ lemma embed.on_union {A B : ftype} (emb : embed A B) {X Y : set A} :
   set.image_union _ _ _
 
 
-def embed.id {A : ftype}: embed A A := 
+def embed.id {A : ftype} : embed A A := 
   ⟨id, function.injective_id⟩
 
 def embed.compose {A B C: ftype} : (embed A B) → (embed B C) → (embed A C) := λ e1 e2,
   ⟨e2.f ∘ e1.f, λ x x' h, e1.f_inj (e2.f_inj h)⟩
 
-def embed.from_subftype {A : ftype}(X : set A) : embed (subftype X) A := 
+def embed.from_subftype {A : ftype} (X : set A) : embed (subftype X) A := 
   ⟨λ e, e.val, by tidy⟩
  
-def embed.from_nested_pair {A : ftype}{X₁ X₂ : set A} (hX₁X₂ : X₁ ⊆ X₂) : embed (subftype X₁) (subftype X₂) := 
+def embed.from_nested_pair {A : ftype} {X₁ X₂ : set A} (hX₁X₂ : X₁ ⊆ X₂) : embed (subftype X₁) (subftype X₂) := 
   ⟨λ x, ⟨x.1, by tidy⟩, by tidy⟩
 
-lemma embed.compose_subset_nested_pair {A : ftype}(X₁ X₂ : set A) (hX₁X₂ : X₁ ⊆ X₂) :
+lemma embed.compose_subset_nested_pair {A : ftype} (X₁ X₂ : set A) (hX₁X₂ : X₁ ⊆ X₂) :
  (embed.compose (embed.from_nested_pair hX₁X₂) (embed.from_subftype X₂)) = embed.from_subftype X₁ := rfl 
 
-lemma embed.compose_nested_triple {A : ftype}(X₁ X₂ X₃ : set A) (h₁₂ : X₁ ⊆ X₂) (h₂₃ : X₂ ⊆ X₃) :
+lemma embed.compose_nested_triple {A : ftype} (X₁ X₂ X₃ : set A) (h₁₂ : X₁ ⊆ X₂) (h₂₃ : X₂ ⊆ X₃) :
   (embed.compose (embed.from_nested_pair h₁₂) (embed.from_nested_pair h₂₃)) = embed.from_nested_pair (subset.trans h₁₂ h₂₃) := rfl
 
 
 --Subalgebra coercion 
 
 
---instance coe_to_coe_set {α β: Type}[has_coe α β] : has_coe (set α) (set β) := ⟨λ X, coe '' X⟩
+--instance coe_to_coe_set {α β: Type} [has_coe α β] : has_coe (set α) (set β) := ⟨λ X, coe '' X⟩
 
-instance coe_elem_from_subftype {A : ftype} {S : set A} : has_coe (subftype S) A := ⟨subtype.val⟩
+instance coe_mem_from_subftype {A : ftype} {S : set A} : has_coe (subftype S) A := ⟨subtype.val⟩
 
 instance coe_set_from_subftype {A : ftype} {S : set A} : has_coe (set (subftype S)) (set A) := ⟨λ X, coe '' X⟩ 
 
 
 --instance coe_single_from_subftype {A : ftype} {S : set A} : has_coe (single (subftype S)) (single A) := ⟨(embed.from_subset S).single_emb⟩ 
 
---@[simp] lemma coe_single_subftype_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: single A): set A) = (e : set A) := rfl  
---lemma coe_subftype_single_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: subftype S): set A) = (e : set A) := rfl  
+--@[simp] lemma coe_single_subftype_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: single A) : set A) = (e : set A) := rfl  
+--lemma coe_subftype_single_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: subftype S) : set A) = (e : set A) := rfl  
 
 @[simp] lemma subftype_coe_size {A : ftype} {S : set A} (X : set (subftype S)) : size X = size (X : set A) := 
   ((embed.from_subftype S).on_size X).symm 
 
 
-@[simp] lemma subftype_coe_subset {A : ftype} {S : set A} {X Y : set (subftype S)}: (X ⊆ Y) ↔ ((X: set A) ⊆ (Y: set A)) :=
+@[simp] lemma subftype_coe_subset {A : ftype} {S : set A} {X Y : set (subftype S)} : (X ⊆ Y) ↔ ((X: set A) ⊆ (Y: set A)) :=
 begin
   refine ⟨λ h, (embed.from_subftype S).on_subset h, λ h, _⟩,
   have h1 : ∀ (Z : set (subftype S)), (Z : set A) = (coe '' Z) := λ Z, rfl, 
@@ -90,15 +90,15 @@ begin
   assumption, 
 end
 
-@[simp] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)}: 
+@[simp] lemma subftype_coe_union {A : ftype} {S : set A} {X Y : set (subftype S)} : 
   (((X ∪ Y) : set (subftype S)) : set A) = ((X: set A) ∪ (Y:set A)) := 
   (embed.from_subftype S).on_union
  
-@[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)}:
+@[simp] lemma subftype_coe_inter {A : ftype} {S : set A} {X Y : set (subftype S)} :
   (((X ∩ Y) : set (subftype S)) : set A) = ((X: set A) ∩ (Y:set A)) := 
   (embed.from_subftype S).on_inter
 
-@[simp] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)}:
+@[simp] lemma subftype_coe_compl {A : ftype} {S : set A} {X : set (subftype S)} :
   (((Xᶜ : set (subftype S))) : set A) = S \ (X : set A)  := 
 begin
   -- Fix this garbage! 
@@ -117,15 +117,15 @@ by tidy
   ((∅ : set (subftype S)) : set A) = ∅ :=
 by tidy 
 
-@[simp] lemma coe_set_is_subset {A : ftype} {S : set A} (X : set (subftype S)):
+@[simp] lemma coe_set_is_subset {A : ftype} {S : set A} (X : set (subftype S)) :
   (X : set A) ⊆ S := 
 by tidy
 
-@[simp] lemma coe_img_set {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(X : set (subftype Y)) :
+@[simp] lemma coe_img_set {A : ftype} {Y Y' : set A} (hYY' : Y ⊆ Y') (X : set (subftype Y)) :
   (((embed.from_nested_pair hYY').img X) : set A) = (X : set A) := 
 by {simp only [embed.img], unfold_coes, tidy}
 
-@[simp] lemma coe_img_elem {A : ftype} {Y Y' : set A}(hYY' : Y ⊆ Y')(x : subftype Y) :
+@[simp] lemma coe_img_elem {A : ftype} {Y Y' : set A} (hYY' : Y ⊆ Y') (x : subftype Y) :
   (((embed.from_nested_pair hYY') x ) : A) = (x : A) := 
 by {unfold_coes, tidy}
 

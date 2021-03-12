@@ -201,7 +201,7 @@ begin
   congr, ext, finish
 end
 
-lemma finsum_in_eq_finset_sum' [fintype α] (f : α → M) (s : set α):
+lemma finsum_in_eq_finset_sum' [fintype α] (f : α → M) (s : set α) :
   ∑ᶠ i in s, f i = ∑ i in s.to_finset, f i :=
 begin
   rw finsum_in_eq_finset_sum'' f s (set.finite.of_fintype _),

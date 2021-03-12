@@ -12,7 +12,7 @@ noncomputable theory
 
 namespace unif
 
-variables {α : Type}[fintype α]
+variables {α : Type} [fintype α]
 
 def free_matroid_on (α : Type)[fintype α]: matroid α := 
 { r := size,
@@ -25,7 +25,7 @@ lemma free_indep (X : set α) :
   (free_matroid_on α).is_indep X  := 
 by rw [free_matroid_on, indep_iff_r]
 
-lemma free_iff_univ_indep {M : matroid α}: 
+lemma free_iff_univ_indep {M : matroid α} : 
    M = free_matroid_on α ↔ is_indep M univ := 
 begin
   refine ⟨λ h, _, λ h,_⟩, 
@@ -40,7 +40,7 @@ def loopy (α : Type)[fintype α]: matroid α :=
   R2 := λ X Y hXY, le_refl 0, 
   R3 := λ X Y, rfl.ge }
 
-lemma loopy_iff_univ_rank_zero {M : matroid α}:
+lemma loopy_iff_univ_rank_zero {M : matroid α} :
   M = loopy α ↔ M.r univ = 0 := 
 begin
   refine ⟨λ h, by finish, λ h,_⟩,  
@@ -50,26 +50,26 @@ begin
   linarith [M.rank_nonneg X], 
 end
 
-lemma loopy_matroid_indep_iff_empty {X : set α}:
+lemma loopy_matroid_indep_iff_empty {X : set α} :
   (loopy α).is_indep X ↔ X = ∅ := 
 by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 
-def uniform_matroid_on (α : Type)[fintype α](r : ℤ) : matroid α := 
+def uniform_matroid_on (α : Type)[fintype α] (r : ℤ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
 
-lemma uniform_matroid_rank {r : ℤ}(hr : 0 ≤ r)(X : set α) :
+lemma uniform_matroid_rank {r : ℤ} (hr : 0 ≤ r) (X : set α) :
   (uniform_matroid_on α r).r X = min r (size X) := 
 trunc.r_eq _ hr _ 
 
-lemma uniform_matroid_rank_univ {r : ℤ}(hr : 0 ≤ r)(hr' : r ≤ size (univ : set α)): 
+lemma uniform_matroid_rank_univ {r : ℤ} (hr : 0 ≤ r) (hr' : r ≤ size (univ : set α)) : 
   (uniform_matroid_on α r).r univ = r :=
 by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
  
-lemma uniform_matroid_indep_iff {X : set α}{r : ℤ}(hr : 0 ≤ r)  : 
+lemma uniform_matroid_indep_iff {X : set α} {r : ℤ} (hr : 0 ≤ r)  : 
   is_indep (uniform_matroid_on α r) X ↔ size X ≤ r := 
 by {rw [indep_iff_r, uniform_matroid_rank hr], finish}
 
-lemma uniform_dual {r : ℤ}(hr : 0 ≤ r)(hrn : r ≤ size (univ : set α)): 
+lemma uniform_dual {r : ℤ} (hr : 0 ≤ r) (hrn : r ≤ size (univ : set α)) : 
   dual (uniform_matroid_on α r) 
   = uniform_matroid_on α (size (univ : set α) - r) :=
 begin
@@ -84,11 +84,11 @@ end
 def circuit_matroid_on (α : Type)[fintype α]: matroid α := 
   uniform_matroid_on α (type_size α - 1)
 
-@[simp] lemma circuit_matroid_rank (hα : nonempty α)(X : set α):
+@[simp] lemma circuit_matroid_rank (hα : nonempty α) (X : set α) :
   (circuit_matroid_on α).r X = min (size (univ : set α) - 1) (size X) := 
 by {convert uniform_matroid_rank  _ X, linarith [one_le_type_size_of_nonempty hα]}
 
-lemma circuit_matroid_iff_univ_circuit (hα : nonempty α){M : matroid α}:
+lemma circuit_matroid_iff_univ_circuit (hα : nonempty α){M : matroid α} :
   M = circuit_matroid_on α ↔ is_circuit M univ := 
 begin
   refine ⟨λ h, _, λ h, _⟩, 
@@ -104,7 +104,7 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type)[fintype α](hα : 2 ≤ type_size α){r : ℤ}(hr : 0 ≤ r): 
+lemma uniform_matroid_simple_iff (α : Type)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
   rw type_size_eq at hα, 
@@ -123,7 +123,7 @@ begin
   exact le_trans hX h, 
 end
 
-lemma unif_simple_of_two_le_r (α : Type)[fintype α]{r : ℤ}(hr : 2 ≤ r): 
+lemma unif_simple_of_two_le_r (α : Type)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple :=
 begin
   rintros X - hX, 

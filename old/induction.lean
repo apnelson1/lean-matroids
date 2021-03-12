@@ -80,7 +80,7 @@ The crucial part of the proof that weak induction implies strong induction.
 
 Consider the subalg of elements below Y, and the subalg of elements below (e ∪ Y).
 Because of subset_singlet, we know that (subalg (e ∪ Y)) is covered by two
-copies of (subalg Y): the elements of the form X ⊆ Y, and the elements of
+copies of (subalg Y) : the elements of the form X ⊆ Y, and the elements of
 the form (e ∪ X) for X ⊆ Y.
 
 So, we package up the pair of propositions (P X) and (P (e ∪ X)) as a new

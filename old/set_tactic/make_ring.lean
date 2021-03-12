@@ -3,7 +3,7 @@ import order.boolean_algebra
 import tactic 
 open boolean_algebra 
 
-variables {α : Type*}[boolean_algebra α]
+variables {α : Type*} [boolean_algebra α]
 
 
 @[simp] def symm_diff (X Y : α) : α := (X \ Y) ⊔ (Y \ X) 
@@ -45,10 +45,10 @@ end
 lemma inf_distrib_diff (X Y Z : α) : X ⊓ (Y \ Z) = (X ⊓ Y) \ (X ⊓ Z) := 
   by {simp only [sdiff_eq, compl_inf, inf_sup_left], rw [inf_right_comm _ Y, ←inf_assoc], simp,  }
 
-lemma symm_diff_distrib_inf_left (X Y Z : α): X ⊓ (symm_diff Y Z)  = symm_diff (X ⊓ Y) (X ⊓ Z) := 
+lemma symm_diff_distrib_inf_left (X Y Z : α) : X ⊓ (symm_diff Y Z)  = symm_diff (X ⊓ Y) (X ⊓ Z) := 
   by simp only [symm_diff, inf_sup_left, inf_sup_right, inf_distrib_diff] 
     
-lemma symm_diff_distrib_inf_right (X Y Z : α): (symm_diff X Y) ⊓ Z  = symm_diff (X ⊓ Z) (Y ⊓ Z) := 
+lemma symm_diff_distrib_inf_right (X Y Z : α) : (symm_diff X Y) ⊓ Z  = symm_diff (X ⊓ Z) (Y ⊓ Z) := 
   by {rw [inf_comm', inf_comm' X, inf_comm' Y], apply symm_diff_distrib_inf_left}
 
 lemma symm_diff_inter (X Y : α) : 
@@ -109,7 +109,7 @@ lemma add_one (X : α) : X + 1 = Xᶜ :=
 
 lemma top_to_ring: (⊤ : α) = (1 : α) := rfl
 
-lemma bot_to_ring : (⊥ : α) = (0 : α):= rfl
+lemma bot_to_ring : (⊥ : α) = (0 : α) := rfl
 
 lemma symm_diff_to_ring {X Y : α} : (X \ Y) ⊔ (Y \ X) = X + Y := rfl 
 
@@ -138,7 +138,7 @@ lemma diff_to_ring {X Y : α} :
   by rw [add_one, ←inf_to_ring, sdiff_eq]
 ---------------------
 
-@[simp] lemma mul_idem (X : α): 
+@[simp] lemma mul_idem (X : α) : 
   X*X = X := 
   inf_idem 
 
@@ -147,11 +147,11 @@ lemma diff_to_ring {X Y : α} :
   let h : (2:α) = (1:α) + (1:α) := rfl in
   by rw [h, one_add, ←top_to_ring, ←bot_to_ring, compl_top]
 
-@[simp] lemma add_self (X : α): 
+@[simp] lemma add_self (X : α) : 
   X + X = 0 := 
   by {ring SOP, rw two_eq_zero, from mul_zero X}
 
-lemma add_self_left (X Y : α):
+lemma add_self_left (X Y : α) :
    X + (X + Y) = Y :=  
    by rw [←add_assoc, add_self, zero_add]
 
@@ -159,7 +159,7 @@ lemma add_self_left (X Y : α):
   by {ring SOP, simp}
   
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : α} : 
-  (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
+  (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1) :=
   begin
     simp only [←mul_assoc, mul_comm _ S, prod_comp_cancel, mul_idem, left_distrib, right_distrib, mul_one],
     ring SOP, 

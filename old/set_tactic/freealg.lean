@@ -10,7 +10,7 @@ namespace freealg
 
 ------------------------------------------------------------------------------------/
 
-variables {α : Type*}[boolean_algebra α]
+variables {α : Type*} [boolean_algebra α]
 
 def freealg : nat → Type
 | 0 := bool

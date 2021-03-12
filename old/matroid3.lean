@@ -363,7 +363,7 @@ begin
   sorry, 
 end
 
---lemma something {C: finset γ}{D: finset γ}(h: C ∩ D = ∅) : D ∩ C = ∅ := 
+--lemma something {C: finset γ} {D: finset γ} (h: C ∩ D = ∅) : D ∩ C = ∅ := 
 
 
 def make_minor (M : matroid γ) (C D : finset γ) (h : C ∩ D = ∅) : minor M :=

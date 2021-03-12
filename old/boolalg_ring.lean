@@ -33,10 +33,10 @@ begin
     repeat {rw ←inter_assoc}
 end
 
-lemma symm_diff_distrib_inter_left (X Y Z : A): X ∩ (symm_diff Y Z)  = symm_diff (X ∩ Y) (X ∩ Z) := 
+lemma symm_diff_distrib_inter_left (X Y Z : A) : X ∩ (symm_diff Y Z)  = symm_diff (X ∩ Y) (X ∩ Z) := 
   by {unfold symm_diff, rw [inter_distrib_left, inter_distrib_diff, ←inter_distrib_diff, ←inter_distrib_diff]}
 
-lemma symm_diff_distrib_inter_right (X Y Z : A): (symm_diff X Y) ∩ Z  = symm_diff (X ∩ Z) (Y ∩ Z) := 
+lemma symm_diff_distrib_inter_right (X Y Z : A) : (symm_diff X Y) ∩ Z  = symm_diff (X ∩ Z) (Y ∩ Z) := 
   by {rw [inter_comm, inter_comm X, inter_comm Y], apply symm_diff_distrib_inter_left}
 
 lemma symm_diff_inter (X Y : A) : 
@@ -80,7 +80,7 @@ lemma plus_one (X : A) : X + 1 = Xᶜ :=
 
 lemma top_to_boolalg : (⊤ : A) = (1 : A) := rfl
 
-lemma bot_to_boolalg : (⊥ : A) = (0 : A):= rfl
+lemma bot_to_boolalg : (⊥ : A) = (0 : A) := rfl
 
 lemma symm_diff_to_boolalg {X Y : A} :  (X \ Y) ∪ (Y \ X) = X + Y := rfl 
 
@@ -108,19 +108,19 @@ lemma diff_to_boolalg {X Y : A} : X \ Y = X*(Y + 1) :=
 
 mk_simp_attribute ba_simp "ba_simplg"
 
-@[simp, ba_simp] lemma times_idem (X : A): X*X = X := inter_idem X 
-@[simp, ba_simp] lemma plus_zero (X : A): X+0 = X := add_zero X 
-@[simp, ba_simp] lemma zero_plus (X : A): 0+X = X := zero_add X   
-@[simp, ba_simp] lemma times_zero (X : A): X*0 = 0 := inter_bot X 
-@[simp, ba_simp] lemma zero_times (X : A): 0*X = 0 := bot_inter X
-@[simp, ba_simp] lemma times_one (X : A): X*1 = X := inter_top X 
-@[simp, ba_simp] lemma one_times (X : A): 1*X = X := top_inter X 
-@[simp, ba_simp] lemma times_comm (X Y : A): X*Y = Y*X := mul_comm X Y 
-@[simp, ba_simp] lemma times_assoc (X Y Z : A): X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
-@[simp, ba_simp] lemma plus_comm (X Y : A): X+Y=Y+X := add_comm X Y
-@[simp, ba_simp] lemma plus_assoc (X Y Z : A): X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
+@[simp, ba_simp] lemma times_idem (X : A) : X*X = X := inter_idem X 
+@[simp, ba_simp] lemma plus_zero (X : A) : X+0 = X := add_zero X 
+@[simp, ba_simp] lemma zero_plus (X : A) : 0+X = X := zero_add X   
+@[simp, ba_simp] lemma times_zero (X : A) : X*0 = 0 := inter_bot X 
+@[simp, ba_simp] lemma zero_times (X : A) : 0*X = 0 := bot_inter X
+@[simp, ba_simp] lemma times_one (X : A) : X*1 = X := inter_top X 
+@[simp, ba_simp] lemma one_times (X : A) : 1*X = X := top_inter X 
+@[simp, ba_simp] lemma times_comm (X Y : A) : X*Y = Y*X := mul_comm X Y 
+@[simp, ba_simp] lemma times_assoc (X Y Z : A) : X*Y*Z = X*(Y*Z) := mul_assoc X Y Z
+@[simp, ba_simp] lemma plus_comm (X Y : A) : X+Y=Y+X := add_comm X Y
+@[simp, ba_simp] lemma plus_assoc (X Y Z : A) : X+Y+Z = X+(Y+Z)  := add_assoc X Y Z
 
-@[simp, ba_simp] lemma rmult_cancel (X Y : A): X*(X*Y) = X*Y := 
+@[simp, ba_simp] lemma rmult_cancel (X Y : A) : X*(X*Y) = X*Y := 
   by rw [←mul_assoc, times_idem]
 
 
@@ -132,18 +132,18 @@ mk_simp_attribute ba_simp "ba_simplg"
   end
 
 
-@[simp, ba_simp] lemma two_times (X : A): 2*X = 0 := by simp
+@[simp, ba_simp] lemma two_times (X : A) : 2*X = 0 := by simp
 
-@[simp, ba_simp] lemma times_two (X : A): X*2 = 0 := by simp
+@[simp, ba_simp] lemma times_two (X : A) : X*2 = 0 := by simp
 
 
 lemma neg_self (X : A) : X = -X := 
   by {have := calc X + X = X*2 : by ring ... = 0 : by simp, ring, }
 
-@[simp, ba_simp] lemma plus_self (X : A): X + X = 0 := 
+@[simp, ba_simp] lemma plus_self (X : A) : X + X = 0 := 
   by {ring SOP, rw two_eq_zero, ring}
 
-@[simp, ba_simp] lemma plus_self_left (X Y : A): X + (X + Y )= Y := 
+@[simp, ba_simp] lemma plus_self_left (X Y : A) : X + (X + Y )= Y := 
   by {ring, rw two_eq_zero, ring}
 
 @[simp, ba_simp] lemma power_cancel (X : A) (n : nat) : X^(n.succ) = X := 
@@ -153,7 +153,7 @@ lemma neg_self (X : A) : X = -X :=
   by {rw[←left_distrib], simp only [plus_self_left, times_one]} 
 
 
---@[simp, ba_simp] lemma one_sandwich (X : A): 1 + (X+1) = X := sorry 
+--@[simp, ba_simp] lemma one_sandwich (X : A) : 1 + (X+1) = X := sorry 
 
 
 --@[simp, ba_simp] lemma mul_cancel_left (S X: A) : S*(S*X) = S*X := sorry 
@@ -166,7 +166,7 @@ lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 :=
 @[simp, ba_simp] lemma prod_comp_cancel (X : A) : X*(X+1) = 0 := 
   by {ring SOP, simp }
   
-lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1):=
+lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1) :=
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 
 

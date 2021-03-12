@@ -8,14 +8,14 @@ variables {U : ftype}
 section intersection 
 
 /--independence in both M₁ and M₂ -/
-def is_common_ind (M₁ M₂ : rankfun U)(X : set U) := 
+def is_common_ind (M₁ M₂ : rankfun U) (X : set U) := 
   is_indep M₁ X ∧ is_indep M₂ X 
 
-lemma empty_is_common_ind (M₁ M₂ : rankfun U): 
+lemma empty_is_common_ind (M₁ M₂ : rankfun U) : 
   is_common_ind M₁ M₂ (∅ : set U) := 
   ⟨empty_indep M₁, empty_indep M₂⟩ 
 
-lemma exists_common_ind {M₁ M₂ : rankfun U}: 
+lemma exists_common_ind {M₁ M₂ : rankfun U} : 
   set.nonempty (is_common_ind M₁ M₂) := 
   ⟨∅, empty_is_common_ind M₁ M₂⟩
 
@@ -35,7 +35,7 @@ lemma max_common_ind_is_common_ind (M₁ M₂ : rankfun U) :
   is_common_ind M₁ M₂ (max_common_ind M₁ M₂) := 
   (arg_max_over_attains _ _ _).1 
 
-lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : set U} :
+lemma size_common_ind_le_nu {M₁ M₂ : rankfun U} {X : set U} :
   is_common_ind M₁ M₂ X → size X ≤ ν M₁ M₂ := 
   λ h, (max_over_is_ub _ _ _ X h)
 
@@ -51,7 +51,7 @@ lemma nu_nonneg (M₁ M₂ : rankfun U) :
 def matroid_intersection_ub_fn (M₁ M₂ : rankfun U) : set U → ℤ := 
   (λ X, M₁.r X + M₂.r Xᶜ)
 
-theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : set U}(A : set U) : 
+theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U} {I : set U} (A : set U) : 
   is_common_ind M₁ M₂ I → size I ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rintros ⟨h₁,h₂⟩, 
@@ -62,7 +62,7 @@ begin
   linarith [R2 M₁ (inter_subset_left A I), R2 M₂ (inter_subset_left Aᶜ I)], 
 end
 
-lemma matroid_intersection_ub (M₁ M₂ : rankfun U): 
+lemma matroid_intersection_ub (M₁ M₂ : rankfun U) : 
   ν M₁ M₂ ≤ min_val (λ X, M₁.r X + M₂.r Xᶜ) := 
 begin
   set ub_fn := λ X, M₁.r X + M₂.r Xᶜ with h_ub_fn, 
@@ -75,7 +75,7 @@ end
 /-- Edmonds' matroid intersection theorem: the size of a largest common independent set 
     is equal to the minimum value of a natural upper bound on the size of any such set. 
     Implies many other minmax theorems in combinatorics.                             -/
-theorem matroid_intersection (M₁ M₂ : rankfun U): 
+theorem matroid_intersection (M₁ M₂ : rankfun U) : 
   ν M₁ M₂ = min_val (λ X, M₁.r X + M₂.r Xᶜ) := 
 begin
 set ub_fn := λ (N₁ N₂ : rankfun U) X, N₁.r X + N₂.r Xᶜ with h_ub_fn, 
@@ -101,11 +101,11 @@ linarith [nu_nonneg N₁ N₂, min_is_lb (ub_fn N₁ N₂) (loops N₁)],
 --inductive step 
 set k := ν N₁ N₂ with hk, 
 rw ←hsize at hn, 
-cases size_pos_has_mem hn with e he, 
+cases exists_mem_of_size_pos hn with e he, 
 
 have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
 {
-  rw [nonloop_iff_not_elem_loops, ←mem_compl_iff], 
+  rw [nonloop_iff_not_mem_loops, ←mem_compl_iff], 
   refine mem_of_mem_of_subset he _, 
   simp only [compl_union, inter_subset_left, inter_subset_right],
 }, 
@@ -123,7 +123,7 @@ let hIc' : is_common_ind N₁c N₂c Ic := by apply max_common_ind_is_common_ind
 have heIc : e ∉ Ic := λ heIc, by 
 {
   have := projected_set_rank_zero N₁ e, 
-  rw [←hN₁c, elem_indep_r heIc hIc'.1] at this, 
+  rw [←hN₁c, mem_indep_r heIc hIc'.1] at this, 
   from one_ne_zero this, 
 },
 
@@ -205,7 +205,7 @@ rw [union_union_diff, union_inter_diff] at sm1 sm2,
 linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
 
-theorem matroid_intersection_exists_pair_eq (M₁ M₂ : rankfun U): 
+theorem matroid_intersection_exists_pair_eq (M₁ M₂ : rankfun U) : 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin
   set I := max_common_ind M₁ M₂ with hI, 
@@ -230,7 +230,7 @@ def is_inter_bases (M₁ M₂ : rankfun U) :=
 def subset_inter_bases (M₁ M₂ : rankfun U) := 
   λ X, ∃ Y, is_inter_bases M₁ M₂ Y ∧ X ⊆ Y 
 
-lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U}{I : set U} :
+lemma subset_inter_bases_is_common_ind {M₁ M₂ : rankfun U} {I : set U} :
   subset_inter_bases M₁ M₂ I → is_common_ind M₁ M₂ I :=
 begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩, 
@@ -241,7 +241,7 @@ begin
   apply inter_subset_right,
 end
 
-lemma common_ind_iff_subset_inter_bases {M₁ M₂ : rankfun U}{I : set U}:
+lemma common_ind_iff_subset_inter_bases {M₁ M₂ : rankfun U} {I : set U} :
   is_common_ind M₁ M₂ I ↔ subset_inter_bases M₁ M₂ I :=
 begin
   refine ⟨λ h, _, subset_inter_bases_is_common_ind⟩, 
@@ -250,7 +250,7 @@ begin
   from ⟨B₁ ∩ B₂, ⟨B₁, B₂, hB₁, hB₂, rfl⟩, subset_inter hIB₁ hIB₂⟩, 
 end
 
-lemma exists_inter_bases {M₁ M₂ : rankfun U}:
+lemma exists_inter_bases {M₁ M₂ : rankfun U} :
   set.nonempty (is_inter_bases M₁ M₂) := 
 begin
   cases exists_basis M₁ with B₁ hB₁, 
@@ -259,7 +259,7 @@ begin
 end
 
 
-lemma max_common_indep_inter_bases (M₁ M₂ : rankfun U):
+lemma max_common_indep_inter_bases (M₁ M₂ : rankfun U) :
   ν M₁ M₂ = max_val_over (is_inter_bases M₁ M₂) exists_inter_bases size :=
 begin
   rcases exists_max_common_ind M₁ M₂ 
@@ -312,7 +312,7 @@ end
 def is_subset_union_two_bases (M₁ M₂ : rankfun U) := 
   λ X, ∃ Y, is_union_two_bases M₁ M₂ Y ∧ X ⊆ Y 
 
-lemma two_partitionable_iff_subset_union_two_bases {M₁ M₂ : rankfun U}:
+lemma two_partitionable_iff_subset_union_two_bases {M₁ M₂ : rankfun U} :
   is_two_partitionable M₁ M₂ = is_subset_union_two_bases M₁ M₂ := 
 begin
   rw [two_partitionable_iff_union_two_indep], ext X, 
@@ -330,23 +330,23 @@ begin
   from hXY, 
 end
 
-lemma union_two_bases_is_subset_union_two_bases (M₁ M₂ : rankfun U): 
+lemma union_two_bases_is_subset_union_two_bases (M₁ M₂ : rankfun U) : 
   ∀ X, is_union_two_bases M₁ M₂ X → ∃ Y, is_union_two_bases M₁ M₂ Y ∧ X ⊆ Y :=
 λ X hX, ⟨X, ⟨hX, subset_refl _⟩⟩ 
 
-lemma exists_two_partitionable (M₁ M₂ : rankfun U): 
+lemma exists_two_partitionable (M₁ M₂ : rankfun U) : 
   ∃ X, is_two_partitionable M₁ M₂ X := 
 ⟨∅, ∅, ∅, empty_indep M₁, empty_indep M₂, by rw union_self, by rw inter_idem⟩
 
-lemma exists_union_two_indep (M₁ M₂ : rankfun U): 
+lemma exists_union_two_indep (M₁ M₂ : rankfun U) : 
   ∃ X, is_union_two_indep M₁ M₂ X := 
 ⟨∅, ∅, ∅, empty_indep M₁, empty_indep M₂, by rw union_self⟩
 
-lemma exists_union_two_bases (M₁ M₂ : rankfun U): 
+lemma exists_union_two_bases (M₁ M₂ : rankfun U) : 
   ∃ X, is_union_two_bases M₁ M₂ X := 
 by {cases exists_basis M₁ with B₁ h₁, cases exists_basis M₂ with B₂ h₂, from ⟨_, B₁, B₂, h₁, h₂, rfl⟩}
 
-lemma exists_subset_union_two_bases (M₁ M₂ : rankfun U): 
+lemma exists_subset_union_two_bases (M₁ M₂ : rankfun U) : 
   ∃ X, is_subset_union_two_bases M₁ M₂ X := 
 by {cases exists_union_two_bases M₁ M₂ with Y hY, from ⟨Y,Y,hY, subset_refl Y⟩,  }
 
@@ -354,7 +354,7 @@ by {cases exists_union_two_bases M₁ M₂ with Y hY, from ⟨Y,Y,hY, subset_ref
 def exists_common_basis (M₁ M₂ : rankfun U) :=
   ∃ B, is_basis M₁ B ∧ is_basis M₂ B 
 
-lemma univ_partitionable_iff_dual_common_basis {M₁ M₂ : rankfun U}:
+lemma univ_partitionable_iff_dual_common_basis {M₁ M₂ : rankfun U} :
   is_two_basis_partitionable M₁ M₂ (univ : set U) ↔ exists_common_basis M₁ (dual M₂) :=
 begin
   refine ⟨λ h, _, λ h,_⟩,
@@ -418,7 +418,7 @@ def basis_pairs (M₁ M₂ : rankfun U) := {B : set U // is_basis M₁ B} × {B 
 
 
 
-def  bp_fin {M₁ M₂ : rankfun U}: fintype (basis_pairs M₁ M₂) := 
+def  bp_fin {M₁ M₂ : rankfun U} : fintype (basis_pairs M₁ M₂) := 
 begin
   letI := U.fin, 
   unfold basis_pairs, apply_instance,
@@ -487,7 +487,7 @@ end
  
 
 /-
-lemma intersection_max_inter_bases (M₁ M₂ : rankfun U): 
+lemma intersection_max_inter_bases (M₁ M₂ : rankfun U) : 
   ν M₁ M₂ = 
     max_val_over 
       (is_basis M₁)

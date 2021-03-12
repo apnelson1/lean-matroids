@@ -7,7 +7,7 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
 
  def size (A: finset α) := (card A: ℤ)
 
- lemma union_subset_union_left {s₁ s₂ : finset α} (t) (h : s₁ ⊆ s₂): s₁ ∪ t ⊆ s₂ ∪ t := 
+ lemma union_subset_union_left {s₁ s₂ : finset α} (t) (h : s₁ ⊆ s₂) : s₁ ∪ t ⊆ s₂ ∪ t := 
     begin
         intros x hx ,
         simp,
@@ -19,27 +19,27 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
         exact hx,
     end
 
-    lemma eq_ss {A B E: finset α}: (A ⊆ E) → (A = B)  → (B ⊆ E) :=
+    lemma eq_ss {A B E: finset α} : (A ⊆ E) → (A = B)  → (B ⊆ E) :=
     begin
         finish [finset.subset_iff],
     end
 
-    lemma ss_eq {A E E': finset α}: (A ⊆ E) → (E = E') → (A ⊆ E') := 
+    lemma ss_eq {A E E': finset α} : (A ⊆ E) → (E = E') → (A ⊆ E') := 
     begin
         intros h h',
         rw ← h',
         exact h,
     end
 
-    lemma comp_int (X E: finset α): (X ∩ (E \ X)) = ∅ := sorry
+    lemma comp_int (X E: finset α) : (X ∩ (E \ X)) = ∅ := sorry
 
-    lemma card_comp {X E: finset α}: (X ⊆ E) → (card X + card (E \ X) = card E) :=
+    lemma card_comp {X E: finset α} : (X ⊆ E) → (card X + card (E \ X) = card E) :=
     begin
       have := finset.card_union_add_card_inter X (E \ X),
       sorry,
     end
 
-    lemma finset_eq {A B: finset α}: (A = B) ↔ ((∀ x ∈ A, x ∈ B) ∧ (∀ x ∈ B, x ∈ A)) := 
+    lemma finset_eq {A B: finset α} : (A = B) ↔ ((∀ x ∈ A, x ∈ B) ∧ (∀ x ∈ B, x ∈ A)) := 
     begin
       split, 
       intros h,
@@ -56,14 +56,14 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
       exact h2 b hb,
     end
     
-    lemma em_ss {E : finset α}: ∅ ⊆ E :=
+    lemma em_ss {E : finset α} : ∅ ⊆ E :=
     begin
         exact empty_subset E,
     end 
 
     def inter_subset {A B E: finset α} (hA : A ⊆ E) (hB : B ⊆ E) := subset.trans (inter_subset_left A B) hA
 
-    lemma finset_card (A B : finset α): (card A: ℤ )  + (card B :ℤ )  = (card (A ∪ B) : ℤ )  + (card (A ∩ B) : ℤ ) :=
+    lemma finset_card (A B : finset α) : (card A: ℤ )  + (card B :ℤ )  = (card (A ∪ B) : ℤ )  + (card (A ∩ B) : ℤ ) :=
     begin
       sorry,
     end
@@ -77,34 +77,34 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
     lemma size_empt : size (∅ : finset α) = 0 := sorry
 
     
-    lemma maximal_ss (S: finset α)(C ⊆ powerset S)(hempt: ∅ ∈ C): ∃ X ∈ C, (∀ Y ∈ powerset S, X ⊂ Y → ¬ Y ∈ C) := 
+    lemma maximal_ss (S: finset α) (C ⊆ powerset S) (hempt: ∅ ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, X ⊂ Y → ¬ Y ∈ C) := 
     begin
       sorry,
     end
 
-    lemma minimal_ss (S: finset α)(C ⊆ powerset S)(h_full : S ∈ C): ∃ X ∈ C, (∀ Y ∈ powerset S, Y ⊂ X → ¬ Y ∈ C) := 
+    lemma minimal_ss (S: finset α) (C ⊆ powerset S) (h_full : S ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, Y ⊂ X → ¬ Y ∈ C) := 
     begin
       sorry,
     end
 
-    lemma maximal_ss_property (S: finset α){P: finset α → Prop}(hempt: P ∅): ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
+    lemma maximal_ss_property (S: finset α){P: finset α → Prop} (hempt: P ∅) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
     begin
       sorry,
     end
 
-    lemma minimal_ss_property (S: finset α){P: finset α → Prop}(hfull: P S): ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, Y ⊂ X → ¬ (P Y)) := 
+    lemma minimal_ss_property (S: finset α){P: finset α → Prop} (hfull: P S) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, Y ⊂ X → ¬ (P Y)) := 
     begin
       sorry,
     end
 
-    lemma extends_to_maximal_property (S: finset α){X₀ : finset α}{P: finset α → Prop}(hempt: P X₀): ∃ (X ⊆ S), (X₀ ⊆ X) ∧ (P X) ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
+    lemma extends_to_maximal_property (S: finset α){X₀ : finset α} {P: finset α → Prop} (hempt: P X₀) : ∃ (X ⊆ S), (X₀ ⊆ X) ∧ (P X) ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
     begin
       sorry,
     end
 
-    @[simp] lemma m0 {E: finset α}{e : α} : e ∈ E → {e} ⊆ E := (singleton_subset_iff.symm).mp 
+    @[simp] lemma m0 {E: finset α} {e : α} : e ∈ E → {e} ⊆ E := (singleton_subset_iff.symm).mp 
 
-    example {E: finset α}{e : α} : e ∈ E → {e} ⊆ E :=
+    example {E: finset α} {e : α} : e ∈ E → {e} ⊆ E :=
     begin
       simp, 
     end
@@ -121,10 +121,10 @@ lemma subset_iff_sdiff_eq_empty {x y : finset α} : x ⊆ y ↔ x \ y = ∅ :=
 by simp only [sdiff_eq_filter, eq_empty_iff_forall_not_mem, subset_iff, not_and,
   not_not, finset.mem_filter]
 
-lemma empty_sdiff (E : finset α): E \ ∅ = E :=
+lemma empty_sdiff (E : finset α) : E \ ∅ = E :=
     sorry
 
-lemma sdiff_subset (A B : finset α): A \ B ⊆ A :=
+lemma sdiff_subset (A B : finset α) : A \ B ⊆ A :=
 (empty_sdiff A).subst $ sdiff_subset_sdiff (subset.refl A) $ empty_subset B
 
 lemma sdiff_eq_sdiff_inter (A B : finset α) : A \ B = A \ (A ∩ B) :=

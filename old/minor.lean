@@ -73,7 +73,7 @@ let
 
 --- Below here still needs refactor
 
-def matroid_on {U : ftype}(E : set U) := rankfun (subftype E)
+def matroid_on {U : ftype} (E : set U) := rankfun (subftype E)
 
 section minor 
 
@@ -93,11 +93,11 @@ def to_minor : Π {E : set U}, minor_on E → rankfun U → matroid_on E
 
 /--simplified minor expression \ corestrict to Z, then restrict to A -/
 
-lemma restrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
+lemma restrict_rank {M : rankfun U} (A : set U) (X : set (subftype A)) : 
   (to_minor (restrict A (subset_univ A) self) M).r X = M.r X :=
 by simp [to_minor]
 
-lemma corestrict_rank {M : rankfun U}(A : set U)(X : set (subftype A)): 
+lemma corestrict_rank {M : rankfun U} (A : set U) (X : set (subftype A)) : 
   (to_minor (corestrict A (subset_univ A) self) M).r X = M.r (X ∪ (univ \ A)) - M.r (univ \ A) :=
 by simp [to_minor]
 

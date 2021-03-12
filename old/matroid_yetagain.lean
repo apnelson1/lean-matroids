@@ -7,7 +7,7 @@ open finset
 
 variables (α : Type*)[decidable_eq α]
 
-def size {β : Type*}(X: set β) := (0 : ℤ)
+def size {β : Type*} (X: set β) := (0 : ℤ)
 
 
 
@@ -20,9 +20,9 @@ structure matroid :=
 (R2 : ∀ {X Y : set E }, X ⊆ Y → r X ≤ r Y)
 (R3 : ∀ {X Y : set E}, r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y)
 
-def submatroid (M : matroid α) {F: set α}{hF: F ⊆ M.E} : matroid α :=
+def submatroid (M : matroid α) {F: set α} {hF: F ⊆ M.E} : matroid α :=
 {   E := F, 
-    r := λ s, M.r $ ((by library_search):),
+    r := λ s, M.r $ ((by library_search) :),
     R1 := λ s, le_trans (M.R1 _) card_image_le,
     R2 := λ s₁ s₂ hs, M.R2 $ image_subset_image hs,
     R3 := λ s₁ s₂, by { rw [image_union, image_inter], apply M.R3, exact λ _ _, subtype.ext } }

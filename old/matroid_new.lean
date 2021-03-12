@@ -54,7 +54,7 @@ R2 := sorry,
 R3 := sorry,
 }-/
 
---def E_type (E: finset α) := (sorry):()
+--def E_type (E: finset α) := (sorry) :()
 
 --def sigma_matroid : Σ E : (finset α) , (r : finset E → ℕ)
 
@@ -94,7 +94,7 @@ def submatroid (M : matroid E) (F : set E) [decidable_pred F] : matroid (subtype
 
 -- end
 
-lemma easy (M : matroid E)(F: set E)[decidable_pred F] : (submatroid E M F).r (univ) ≤ M.r (univ) := 
+lemma easy (M : matroid E) (F: set E)[decidable_pred F] : (submatroid E M F).r (univ) ≤ M.r (univ) := 
 begin
   -- convert M.R2 F univ (subset_univ F),
     -- sorry,
@@ -114,7 +114,7 @@ end
 --def restriction (M: matroid E) (X: set E) : matroid (set_fintype X) := ⟨sorry,sorry,sorry,sorry,⟩ 
 
 
---variables {M: Type*}[matroid M]
+--variables {M: Type*} [matroid M]
 
 /-lemma empty_rank_zero (M : matroid E) : M.r ∅ = 0 := 
 begin

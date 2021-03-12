@@ -8,25 +8,25 @@ open_locale classical big_operators
 
 open set matroid 
 
-variables {α : Type}[fintype α]{M : matroid α}
+variables {α : Type} [fintype α] {M : matroid α}
 
 /-- the rank-a uniform matroid on b elements with fin' set (fin b). Junk unless 0 ≤ a ≤ b -/
-def canonical_unif (a b : ℤ): 
+def canonical_unif (a b : ℤ) : 
   matroid (fin' b) := 
 unif.uniform_matroid_on (fin' b) a
 
-lemma canonical_unif_simple_iff {a b : ℤ}(ha : 0 ≤ a)(hb : 2 ≤ b): 
+lemma canonical_unif_simple_iff {a b : ℤ} (ha : 0 ≤ a) (hb : 2 ≤ b) : 
   (canonical_unif a b).is_simple ↔ 2 ≤ a := 
 begin
  convert unif.uniform_matroid_simple_iff (fin' b) _ ha, 
  rwa fin'_type_size (by linarith : 0 ≤ b), 
 end
 
-lemma canonical_unif_simple_of_two_le_r {a b : ℤ}(ha : 2 ≤ a): 
+lemma canonical_unif_simple_of_two_le_r {a b : ℤ} (ha : 2 ≤ a) : 
   (canonical_unif a b).is_simple :=
 unif.unif_simple_of_two_le_r _ ha
 
-@[simp] lemma canonical_unif_r {a b : ℤ}(ha : 0 ≤ a)(X : set (fin' b)):
+@[simp] lemma canonical_unif_r {a b : ℤ} (ha : 0 ≤ a) (X : set (fin' b)) :
   (canonical_unif a b).r X = min a (size X) :=
 unif.uniform_matroid_rank ha _
 
@@ -42,7 +42,7 @@ lemma has_unif_minor_def' {M : matroid α} {a b : ℤ} :
   M.has_unif_minor a b ↔ M.has_iminor (canonical_unif a b) := 
 iff.rfl 
 
-lemma has_unif_minor_iff_embedding {M : matroid α} {a b : ℤ}(ha : 0 ≤ a)(hab : a ≤ b) :
+lemma has_unif_minor_iff_embedding {M : matroid α} {a b : ℤ} (ha : 0 ≤ a) (hab : a ≤ b) :
   M.has_unif_minor a b ↔ 
     ∃ S C : set α,  disjoint S C 
                   ∧ size S = b 

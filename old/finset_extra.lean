@@ -8,9 +8,9 @@ namespace finset
 
 variables {α : Type*} {β : Type*} [decidable_eq α]
 
-def size{β : Type*}(X: finset β) := ((card X) : ℤ)
+def size{β : Type*} (X: finset β) := ((card X) : ℤ)
 
-def subset_fintype{β: Type*}(hβ : fintype β)(X: finset β) := fintype 
+def subset_fintype{β: Type*} (hβ : fintype β) (X: finset β) := fintype 
 
 
 @[simp] lemma empt_size{β : Type*} : size (∅ : finset β) = 0 := 
@@ -18,7 +18,7 @@ begin
     sorry,
 end
 
-@[simp] lemma partition_univ {β : Type*}[fintype β](X: finset β) : X ∪ Xᶜ = univ := 
+@[simp] lemma partition_univ {β : Type*} [fintype β] (X: finset β) : X ∪ Xᶜ = univ := 
 begin
     apply subset.antisymm,
     exact subset_univ _, 
@@ -36,7 +36,7 @@ begin
     --yuck.... 
 end
 
-@[simp] lemma size_subtype{β : Type*}{Y: set β}{X : finset Y} : size (X.image subtype.val)  = size X := 
+@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X := 
 begin
     unfold size,
     simp only [int.coe_nat_inj'],
@@ -58,12 +58,12 @@ begin
     exact hx,
 end
 
-@[simp] lemma union_unions{X Y A: finset α}:(X ∪ A) ∪ (Y ∪ A) = (X ∪ Y ∪ A) :=
+@[simp] lemma union_unions{X Y A: finset α} :(X ∪ A) ∪ (Y ∪ A) = (X ∪ Y ∪ A) :=
 begin
     sorry,
 end
 
-@[simp] lemma inter_unions{X Y A: finset α}:(X ∪ A) ∩ (Y ∪ A) = (X ∩ Y) ∪ A :=
+@[simp] lemma inter_unions{X Y A: finset α} :(X ∪ A) ∩ (Y ∪ A) = (X ∩ Y) ∪ A :=
 begin
     sorry,
 end

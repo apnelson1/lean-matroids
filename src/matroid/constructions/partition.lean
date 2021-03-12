@@ -11,13 +11,13 @@ noncomputable theory
 
 namespace partition
 
-variables {α ι : Type}[fintype α](f : α → ι){b : ι → ℤ}
+variables {α ι : Type} [fintype α] (f : α → ι){b : ι → ℤ}
 
 /-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent sets are those
 whose intersection with each cell i has size at most b i -/
-def M (f : α → ι)(b : ι → ℤ) : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (b i))
+def M (f : α → ι) (b : ι → ℤ) : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (b i))
 
-lemma indep_iff (hb : ∀ i, 0 ≤ b i)(X : set α) : 
+lemma indep_iff (hb : ∀ i, 0 ≤ b i) (X : set α) : 
   (M f b).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
 begin
   simp_rw [M, idsum.indep_iff, ← idsum.size_coe_eq], 
@@ -26,7 +26,7 @@ begin
   exact (unif.uniform_matroid_indep_iff (hb i)).mpr (h i), 
 end 
 
-lemma r_eq (hb : ∀ i, 0 ≤ b i)(X : set α) : 
+lemma r_eq (hb : ∀ i, 0 ≤ b i) (X : set α) : 
   (M f b).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
 begin
   simp_rw [M, idsum.r_eq, ← idsum.size_coe_eq],
@@ -36,7 +36,7 @@ end
 /- in the partition matroid where the upper bounds are all at most one
 (such as the parallel partition matroid), the rank of a set is the number of 
 cells for which the bound is 1 that it insersects
-lemma r_eq_num (hb' : ∀ i, b i ≤ 1)(X : set α):
+lemma r_eq_num (hb' : ∀ i, b i ≤ 1) (X : set α) :
   (M f hb).r X = size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} :=
 begin
   rw [r_eq],
@@ -63,7 +63,7 @@ end partition
 
 section presetoid_class
 
-variables {α : Type}[fintype α](S : presetoid α)
+variables {α : Type} [fintype α] (S : presetoid α)
 
 namespace presetoid_matroid
 
@@ -83,7 +83,7 @@ lemma M_def :
   M S = partition.M S.cl partition_fn := 
 rfl 
 
-lemma r_eq (X : set α): 
+lemma r_eq (X : set α) : 
   (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty} := 
 begin
   rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], 
@@ -119,7 +119,7 @@ begin
   exact one_le_size_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
 end
 
-lemma indep_iff (I : set α):
+lemma indep_iff (I : set α) :
   (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, size (I ∩ P) ≤ 1 :=
 begin
   rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 

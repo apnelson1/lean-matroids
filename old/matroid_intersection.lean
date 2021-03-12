@@ -4,14 +4,14 @@ namespace ftype
 
 variables {U : ftype}
 
-def is_common_ind (M₁ M₂ : rankfun U)(X : U) := 
+def is_common_ind (M₁ M₂ : rankfun U) (X : U) := 
   is_indep M₁ X ∧ is_indep M₂ X 
 
-lemma bot_is_common_ind (M₁ M₂ : rankfun U): 
+lemma bot_is_common_ind (M₁ M₂ : rankfun U) : 
   is_common_ind M₁ M₂ ⊥ := 
   ⟨empty_indep M₁, empty_indep M₂⟩ 
 
-lemma exists_common_ind {M₁ M₂ : rankfun U}: 
+lemma exists_common_ind {M₁ M₂ : rankfun U} : 
   ∃ X, is_common_ind M₁ M₂ X := 
   ⟨⊥, bot_is_common_ind M₁ M₂⟩
 
@@ -30,7 +30,7 @@ lemma largest_common_ind_is_common_ind (M₁ M₂ : rankfun U) :
   is_common_ind M₁ M₂ (largest_common_ind M₁ M₂) := 
   (arg_max_over_attains _ _ _).1 
 
-lemma size_common_ind_le_nu {M₁ M₂ : rankfun U}{X : U} :
+lemma size_common_ind_le_nu {M₁ M₂ : rankfun U} {X : U} :
   is_common_ind M₁ M₂ X → size X ≤ ν M₁ M₂ := 
   λ h, (max_over_is_ub _ _ _ X h)
 
@@ -41,7 +41,7 @@ lemma nu_nonneg (M₁ M₂ : rankfun U) :
 def matroid_intersection_ub_fn (M₁ M₂ : rankfun U) : U → ℤ := 
   (λ X, M₁.r X + M₂.r Xᶜ)
 
-theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U}{I : U}(A : U) : 
+theorem matroid_intersection_pair_le {M₁ M₂ : rankfun U} {I : U} (A : U) : 
   is_common_ind M₁ M₂ I → size I ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rintros ⟨h₁,h₂⟩, 
@@ -52,7 +52,7 @@ begin
   linarith [R2 M₁ (inter_subset_left A I), R2 M₂ (inter_subset_left Aᶜ I)], 
 end
 
-lemma matroid_intersection_ub (M₁ M₂ : rankfun U): 
+lemma matroid_intersection_ub (M₁ M₂ : rankfun U) : 
   ν M₁ M₂ ≤ min_val (λ X, M₁.r X + M₂.r Xᶜ) := 
 begin
   set ub_fn := λ X, M₁.r X + M₂.r Xᶜ with h_ub_fn, 
@@ -62,7 +62,7 @@ begin
   from matroid_intersection_pair_le A (largest_common_ind_is_common_ind M₁ M₂)
 end
 
-theorem matroid_intersection (M₁ M₂ : rankfun U): 
+theorem matroid_intersection (M₁ M₂ : rankfun U) : 
   ν M₁ M₂ = min_val (λ X, M₁.r X + M₂.r Xᶜ) := 
 begin
   set ub_fn := λ (N₁ N₂ : rankfun U) X, N₁.r X + N₂.r Xᶜ with h_ub_fn, 
@@ -87,11 +87,11 @@ begin
   --inductive step 
   set k := ν N₁ N₂ with hk, 
   rw ←hsize at hn, 
-  cases size_pos_has_mem hn with e he, 
+  cases exists_mem_of_size_pos hn with e he, 
   
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split; 
   {
-    rw [nonloop_iff_not_elem_loops, ←mem_compl_iff], 
+    rw [nonloop_iff_not_mem_loops, ←mem_compl_iff], 
     refine subset.trans he _, 
     simp only [compl_union, inter_subset_left, inter_subset_right],
   }, 
@@ -109,7 +109,7 @@ begin
   have heIc : e ∉ Ic := λ heIc, by 
   {
     have := projected_set_rank_zero N₁ e, 
-    rw [←hN₁c, elem_indep_r heIc hIc'.1] at this, 
+    rw [←hN₁c, mem_indep_r heIc hIc'.1] at this, 
     from one_ne_zero this, 
   },
   
@@ -191,7 +191,7 @@ begin
   linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
 
-theorem matroid_intersection_exists_pair_eq (M₁ M₂ : rankfun U): 
+theorem matroid_intersection_exists_pair_eq (M₁ M₂ : rankfun U) : 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin
   set I := largest_common_ind M₁ M₂ with hI, 

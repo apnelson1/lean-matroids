@@ -88,7 +88,7 @@ meta def get_sets_in_expr : expr → tactic (list name)
   | _ := do return []
   end
 
-def keep_unique {T: Type}[decidable_eq T]: list T -> list T 
+def keep_unique {T: Type} [decidable_eq T]: list T -> list T 
 | [] := []
 | (x :: xs) := let tl := keep_unique xs in
                 if list.mem x tl then tl else x :: tl
@@ -123,7 +123,7 @@ they are sometimes dummy values. Use `tactic.infer_type` instead. -/
 meta def dummy : tactic unit :=
   do tactic.trace "Hello World"
 
-meta def tactic.interactive.simplify_sets (extra_sets : (parse (optional ids_list))): tactic unit :=
+meta def tactic.interactive.simplify_sets (extra_sets : (parse (optional ids_list))) : tactic unit :=
   do
     -- TODO: actually check the goal is of the form of some boolalg equation
     --       also -- do something about hypotheses...

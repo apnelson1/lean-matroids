@@ -5,14 +5,14 @@ open_locale classical
 
 universes u v
 
-variables {α : Type u}{β : Type v}
+variables {α : Type u} {β : Type v}
 
 
 
-instance is_finite_of_subset_type [i : nonempty (fintype α)]{S : set α} : nonempty (fintype S) := 
+instance is_finite_of_subset_type [i : nonempty (fintype α)] {S : set α} : nonempty (fintype S) := 
 by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
 
-instance is_finite_of_subtype [i : nonempty (fintype α)]{P : α → Prop} : nonempty (fintype {x // P x}) := 
+instance is_finite_of_subtype [i : nonempty (fintype α)] {P : α → Prop} : nonempty (fintype {x // P x}) := 
 by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
 
 instance is_finite_of_set_type [i : nonempty (fintype α)] : nonempty (fintype (set α)) := 

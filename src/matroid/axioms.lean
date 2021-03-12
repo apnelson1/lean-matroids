@@ -128,36 +128,36 @@ variables {α₁ α₂ α₃ : Type}
 
 namespace matroid
 
-structure isom (M₁ : matroid α₁)(M₂ : matroid α₂) := 
+structure isom (M₁ : matroid α₁) (M₂ : matroid α₂) := 
 (equiv : α₁ ≃ α₂)
 (on_rank : ∀ X, M₂.r (equiv '' X) = M₁.r X)
 
-instance coe_to_equiv {M₁ : matroid α₁}{M₂ : matroid α₂}: has_coe_to_fun (M₁.isom M₂) := 
+instance coe_to_equiv {M₁ : matroid α₁} {M₂ : matroid α₂} : has_coe_to_fun (M₁.isom M₂) := 
 { F := _,
   coe := λ i, i.equiv } 
 
-def isom.refl (M₁ : matroid α₁): 
+def isom.refl (M₁ : matroid α₁) : 
 M₁.isom M₁ := 
 { equiv := equiv.refl α₁,
   on_rank := by simp  }
 
-def isom.trans {M₁ : matroid α₁}{M₂ : matroid α₂}{M₃ : matroid α₃}(I12 : M₁.isom M₂)(I23 : M₂.isom M₃): 
+def isom.trans {M₁ : matroid α₁} {M₂ : matroid α₂} {M₃ : matroid α₃} (I12 : M₁.isom M₂) (I23 : M₂.isom M₃) : 
 M₁.isom M₃ :=
 { equiv := I12.equiv.trans I23.equiv ,
   on_rank := λ X, by {rw [←I12.on_rank, ←I23.on_rank], apply congr_arg, ext, simp  }  } 
 
-def isom.symm {M₁ : matroid α₁}{M₂ : matroid α₂}(i : M₁.isom M₂) : M₂.isom M₁ := 
+def isom.symm {M₁ : matroid α₁} {M₂ : matroid α₂} (i : M₁.isom M₂) : M₂.isom M₁ := 
 { equiv := i.equiv.symm,
   on_rank := λ X, by {rw ←i.on_rank, apply congr_arg, ext, simp,  } }
 
-def is_isom (M₁ : matroid α₁)(M₂ : matroid α₂) := 
+def is_isom (M₁ : matroid α₁) (M₂ : matroid α₂) := 
   nonempty (M₁.isom M₂)
 
-lemma isom.inv_on_rank {M₁ : matroid α₁}{M₂ : matroid α₂}(i : isom M₁ M₂)(X : set α₂):
+lemma isom.inv_on_rank {M₁ : matroid α₁} {M₂ : matroid α₂} (i : isom M₁ M₂) (X : set α₂) :
   M₂.r X = M₁.r (i.equiv.symm '' X) :=
 by {rw ←i.symm.on_rank X, refl} 
 
-def isom_equiv {M₁ N₁ : matroid α₁}{M₂ N₂ : matroid α₂}(h₁ : M₁ = N₁)(h₂ : M₂ = N₂)(i : isom M₁ M₂): 
+def isom_equiv {M₁ N₁ : matroid α₁} {M₂ N₂ : matroid α₂} (h₁ : M₁ = N₁) (h₂ : M₂ = N₂) (i : isom M₁ M₂) : 
   isom N₁ N₂ := 
 { equiv := i.equiv,
   on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }

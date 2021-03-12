@@ -6,7 +6,7 @@ noncomputable theory
 
 variables {α : ftype}
 
-lemma basis_have_same_size (M : basis_family α) (B₁ B₂ : set α):
+lemma basis_have_same_size (M : basis_family α) (B₁ B₂ : set α) :
   M.basis B₁ → M.basis B₂ → size B₁ = size B₂ := sorry
 
 def basis_to_indep (basis : set α → Prop) : (set α → Prop) :=
@@ -40,7 +40,7 @@ begin
   
   -- B₁ = B₂ 
 
-  have HB_case := equal_or_single_in_diff (basis_have_same_size M B₂ B₁ HB₂ HB₁),
+  have HB_case := eq_or_exists_mem_diff_of_size_eq (basis_have_same_size M B₂ B₁ HB₂ HB₁),
   cases HB_case,
     {
       -- Here I and J are part of the same basis B, so we can add any element

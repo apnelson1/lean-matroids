@@ -31,7 +31,7 @@ lemma empty_unique (s : set α) : (∀ t, t ∪ s = t) → s = ∅ :=
 lemma empty_of_has_no_mem (hs : ¬ ∃ x, x ∈ s) : s = ∅ := 
 by {rw eq_empty_iff_forall_not_mem, push_neg at hs, exact hs, }
 
-@[simp] lemma empty_of_ss_empty {P : α → Prop}:
+@[simp] lemma empty_of_ss_empty {P : α → Prop} :
   {x ∈ (∅ : set α) | P x} = ∅ :=
 by {ext, simp, }
 
@@ -120,7 +120,7 @@ lemma ssubset_empty (s : set α) : ¬ s ⊂ ∅ :=
 lemma empty_of_subset_compl (h : s ⊆ sᶜ) : s = ∅ := 
 by rwa [subset_iff_inter_eq_left, inter_compl_self, eq_comm] at h
 
-lemma disjoint_compl_subset (h : s ∩ t = ∅): s ⊆ tᶜ := 
+lemma disjoint_compl_subset (h : s ∩ t = ∅) : s ⊆ tᶜ := 
 by rw [subset_iff_inter_eq_left, ← empty_union (s ∩ tᶜ), ←h, 
             ←inter_distrib_left, union_compl_self, inter_univ]
 
@@ -142,7 +142,7 @@ disjoint_iff_inter_compl_eq_left
 lemma subset_iff_diff_empty (s t : set α) : s ⊆ t ↔ s \ t = ∅ :=
 by {rw [←compl_compl t, ←disjoint_iff_subset_compl], simp [diff_eq],}
 
-lemma subset_iff_partition (s t : set α) : s ⊆ t ↔ t = s ∪ (t \ s):= 
+lemma subset_iff_partition (s t : set α) : s ⊆ t ↔ t = s ∪ (t \ s) := 
 begin
   refine ⟨λ h, _, λ h, _⟩, 
   { nth_rewrite 0 ←(subset_iff_union_eq_left.mp h),
@@ -153,13 +153,13 @@ end
 lemma subset_iff_disjoint_compl : s ⊆ t ↔ s ∩ tᶜ = ∅ :=
 by rw [subset_iff_diff_empty, diff_eq]
 
-lemma disjoint_of_subset_left' (hst : s ⊆ t) (htr : t ∩ r = ∅): s ∩ r = ∅ :=
+lemma disjoint_of_subset_left' (hst : s ⊆ t) (htr : t ∩ r = ∅) : s ∩ r = ∅ :=
 by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset_left hst htr}
 
 lemma disjoint_of_subset_right' (hst : s ⊆ t) (hrt : r ∩ t = ∅) : r ∩ s = ∅ :=
 by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset_right hst hrt, }
 
-lemma disjoint_of_subsets (hss' : s ⊆ s') (htt' : t ⊆ t') (hst : s' ∩ t' = ∅):
+lemma disjoint_of_subsets (hss' : s ⊆ s') (htt' : t ⊆ t') (hst : s' ∩ t' = ∅) :
   s ∩ t = ∅ :=
 by {rw ←disjoint_iff_inter_eq_empty at *, exact disjoint_of_subset hss' htt' hst, }
 
@@ -167,7 +167,7 @@ lemma cover_compl_subset :  s ∪ t = univ → sᶜ ⊆ t :=
 λ h, by rw [subset_iff_union_eq_left, ←univ_inter (sᶜ ∪ t), ←h, 
               ←union_distrib_right, inter_compl_self, empty_union]
 
-lemma compl_inj (h : sᶜ = tᶜ): s = t := 
+lemma compl_inj (h : sᶜ = tᶜ) : s = t := 
 by rw [←compl_compl s, ←compl_compl t, h]
 
 @[simp] lemma union_compl_union  (s t : set α) : s ∪ (sᶜ ∪ t) = univ :=  
@@ -285,16 +285,16 @@ lemma subset_of_set_and_compl : s ⊆ t → s ⊆ tᶜ → s = ∅ :=
   λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl_self at this, 
   exact subset_empty this}
 
-@[trans] lemma subset.lt_of_le_of_lt (_ : s ⊆ t) (_ : t ⊂ r): s ⊂ r := 
+@[trans] lemma subset.lt_of_le_of_lt (_ : s ⊆ t) (_ : t ⊂ r) : s ⊂ r := 
 lt_of_le_of_lt ‹s ≤ t› ‹t < r› 
 
-@[trans] lemma subset.lt_of_lt_of_le (_ : s ⊂ t) (_ : t ⊆ r): s ⊂ r := 
+@[trans] lemma subset.lt_of_lt_of_le (_ : s ⊂ t) (_ : t ⊆ r) : s ⊂ r := 
 lt_of_lt_of_le ‹s < t› ‹t ≤ r›
 
 lemma ssubset_not_supset (h : s ⊂ t) : ¬(t ⊆ s) :=
 λ h', ssubset_irrefl _ (subset.lt_of_lt_of_le h h') 
 
-lemma subset_not_ssupset (h: s ⊆ t): ¬(t ⊂ s) := 
+lemma subset_not_ssupset (h: s ⊆ t) : ¬(t ⊂ s) := 
 λ h', ssubset_irrefl _ (subset.lt_of_le_of_lt h h')
 
 lemma eq_of_subset_not_ssubset  : s ⊆ t → ¬(s ⊂ t) → s = t := 
@@ -304,7 +304,7 @@ lemma inter_of_ssubsets (s t r : set α) : (s ⊂ r) → (s ∩ t ⊂ r) :=
 λ h, ssubset_of_subset_ne (inter_of_subsets s t r h.1)
      (λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) })
 
-@[trans] lemma ssubset.trans {s t r : set α}: s ⊂ t → t ⊂ r → s ⊂ r := 
+@[trans] lemma ssubset.trans {s t r : set α} : s ⊂ t → t ⊂ r → s ⊂ r := 
 λ hst htr, subset.lt_of_le_of_lt hst.1 htr
 
 lemma ssubset_inter : s ≠ t → s ∩ t ⊂ s ∨ s ∩ t ⊂ t :=
@@ -328,7 +328,7 @@ by rw [←diff_eq, union_union_diff]
 lemma union_inter_diff (s t r : set α) : (s ∪ r) ∩ (t \ r) = (s ∩ t) \ r :=
 by {rw [diff_eq, diff_eq, inter_distrib_right], simp [←inter_assoc, inter_right_comm r t rᶜ] }
 
-lemma subset_of_subset_diff (h : s ⊆ t \ r): s ⊆ t :=
+lemma subset_of_subset_diff (h : s ⊆ t \ r) : s ⊆ t :=
 λ x hx, by {have := h hx, rw mem_diff at this, exact this.1,  }
 
 lemma eq_of_union_eq_inter : s ∪ t = s ∩ t → s = t := 
@@ -341,10 +341,10 @@ end
 lemma union_of_disjoint : s ∩ t = ∅ → s ∩ r = ∅ → s ∩ (t ∪ r) = ∅ :=
   λ ht hr, by {rw [inter_distrib_left, ht, hr], simp }
 
-@[simp] lemma diff_union (s t : set α): (s ∩ t) ∪ (s \ t) = s := 
+@[simp] lemma diff_union (s t : set α) : (s ∩ t) ∪ (s \ t) = s := 
 by rw [diff_eq, ←inter_distrib_left, union_compl_self, inter_univ]
 
-@[simp] lemma inter_diff (s t : set α): s ∩ (t \ s)  = ∅ := 
+@[simp] lemma inter_diff (s t : set α) : s ∩ (t \ s)  = ∅ := 
 by rw [diff_eq, ←inter_assoc, inter_right_comm, inter_compl_self, empty_inter]
 
 @[simp] lemma partition_inter (s t : set α) : (s ∩ t) ∩ (s \ t) = ∅ := 
@@ -353,7 +353,7 @@ by rw [inter_assoc, inter_diff, inter_empty]
 @[simp] lemma inter_diffs_eq_empty (s t : set α) : (s \ t) ∩ (t \ s) = ∅ := 
 by {simp only [diff_eq], rw [inter_assoc, ←inter_assoc tᶜ], simp}
 
-lemma pair_move {s r : set α} (t : set α) (hst : r ⊆ s): (s \ r) ∪ (t ∪ r) = s ∪ t := 
+lemma pair_move {s r : set α} (t : set α) (hst : r ⊆ s) : (s \ r) ∪ (t ∪ r) = s ∪ t := 
 by {ext, simp, tauto, }
 
 lemma diff_empty_subset (s t : set α) : s \ t = ∅ → s ⊆ t := 
@@ -377,7 +377,7 @@ lemma ssubset_diff_nonempty : s ⊂ t → (t \ s).nonempty :=
 lemma union_diff_of_subset  : s ⊆ t → s ∪ (t \ s) = t := 
 λ h, by {rw [subset_iff_inter_eq_left, inter_comm] at h, have := diff_union t s, rwa h at this}
 
-lemma diff_eq_self_of_subset_diff (h : s ⊆ r \ t): s \ t = s :=
+lemma diff_eq_self_of_subset_diff (h : s ⊆ r \ t) : s \ t = s :=
 by {rw [←disjoint_iff_diff_eq_left, disjoint_iff_subset_compl], 
         refine subset.trans h _, simp [diff_eq],  }
 
@@ -444,7 +444,7 @@ lemma ssubset_univ_of_ne_univ: s ≠ univ → s ⊂ univ :=
 by {rw ssubset_iff_subset_ne, tauto} 
 
 lemma pairwise_disjoint_inter_sUnion {S S₁ S₂: set (set α)} 
-(hdj : pairwise_disjoint S) (h₁ : S₁ ⊆ S) (h₂ : S₂ ⊆ S):
+(hdj : pairwise_disjoint S) (h₁ : S₁ ⊆ S) (h₂ : S₂ ⊆ S) :
   sUnion (S₁ ∩ S₂) = sUnion S₁ ∩ sUnion S₂ := 
 begin
   ext, simp only [mem_inter_iff, mem_sUnion], split, 
