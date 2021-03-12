@@ -5,15 +5,17 @@
 import matroid.axioms  matroid.dual 
 import prelim.collections prelim.minmax 
 open set 
---open ftype_induction 
+
+universes u
 
 open_locale classical 
 open_locale big_operators 
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
-variables {α : Type} [fintype α] {M : matroid α} {e f x y z : α}
+variables {α : Type u} [fintype α] {M : matroid α} {e f x y z : α}
 {X Y Z X' Y' Z' F B I C C₁ C₂ F₁ F₂ P : set α}
+
 -- probably split up these set notations by section...
 
 section /- rank -/ rank
@@ -151,7 +153,8 @@ lemma rank_eq_of_union_eq_rank_subset (Z: set α) :
 begin
   intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
   have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_iff_inter_eq_left.mp hXY] ,
-  have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, subset_iff_union_eq_left.mp hXY ],
+  have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, 
+                                      subset_iff_union_eq_left.mp hXY ],
   linarith [M.rank_submod (X ∪ Z) Y , M.rank_mono_union_left X (Z ∩ Y) ], 
 end 
 
@@ -160,19 +163,6 @@ lemma rank_eq_of_union_eq_rank_subsets (hX : X ⊆ X') (hY : Y ⊆ Y')
   M.r (X ∪ Y) = M.r (X' ∪ Y') :=
 by rw [rank_eq_of_union_eq_rank_subset Y hX hXX', union_comm, union_comm _ Y',
        rank_eq_of_union_eq_rank_subset _ hY hYY']  
-
-
-
-/-
-lemma rank_union_eq_of_rank_union_supset_eq {X S T : set α} (hXT : M.r (X ∪ T) = M.r X)
-(hST : S ⊆ T) :
-  M.r (X ∪ S) = M.r X :=
-begin
-  have : X ∪ S ⊆ X ∪ T := sorry,  
-  have := rank_eq_of_union_eq_rank_subset X this,  
-  --have := rank_eq_of_union_eq_rank_subset (_ : )  
-end
--/
 
 lemma rank_eq_of_inter_union (X Y A : set α) :
   M.r (X ∩ A) = M.r X → M.r ((X ∩ A) ∪ Y) = M.r (X ∪ Y) :=
@@ -537,17 +527,21 @@ lemma circuit_iff_i :
   M.is_circuit X ↔ ¬is_indep M X ∧  ∀ Y: set α, Y ⊂ X → M.is_indep Y :=
 by rw is_circuit 
 
-
 lemma circuit_iff_r  (X : set α) :
   M.is_circuit X ↔ (M.r X = size X - 1) ∧ (∀ Y: set α, Y ⊂ X → M.r Y = size Y) := 
 begin
   unfold is_circuit,
-  rw not_indep_iff_r, simp_rw indep_iff_r, 
-  split, rintros ⟨hr, hmin⟩,
-  split, rcases has_sub_one_size_ssubset_of_ne_empty (rank_lt_size_ne_empty hr) with ⟨Y, ⟨hY₁, hY₂⟩⟩, specialize hmin Y hY₁,
-  linarith [M.rank_mono hY₁.1],  
-  intros Y hY, exact hmin _ hY, 
-  rintros ⟨h₁, h₂⟩, refine ⟨by linarith, λ Y hY, _ ⟩,  
+  rw not_indep_iff_r, 
+  simp_rw indep_iff_r, 
+  split, 
+  { rintros ⟨hr, hmin⟩,
+    split, 
+    { obtain ⟨Y, ⟨hY₁, hY₂⟩⟩ := has_sub_one_size_ssubset_of_ne_empty (rank_lt_size_ne_empty hr), 
+      specialize hmin Y hY₁,  
+      linarith [M.rank_mono hY₁.1]},
+    exact λ Y hY, hmin _ hY},
+  rintros ⟨h₁, h₂⟩, 
+  refine ⟨by linarith, λ Y hY, _ ⟩,  
   from h₂ _ hY, 
 end
 
@@ -637,29 +631,24 @@ begin
   rw ←subset_iff_inter_eq_left at h, exact hC₁C₂ (nested_circuits_equal M h hC₁ hC₂ ),
 end
 
-lemma circuit_elim : 
-   C₁ ≠ C₂ → M.is_circuit C₁ → M.is_circuit C₂ → e ∈ C₁ ∩ C₂ → ∃ C, M.is_circuit C ∧ C ⊆ ((C₁ ∪ C₂) \ {e}) := 
+lemma circuit_elim (hC₁C₂ : C₁ ≠ C₂) (hC₁ : M.is_circuit C₁) (hC₂ : M.is_circuit C₂)
+(he : e ∈ C₁ ∩ C₂): 
+   ∃ C, M.is_circuit C ∧ C ⊆ ((C₁ ∪ C₂) \ {e}) := 
 begin
-  intros hC₁C₂ hC₁ hC₂ he, 
   rw [←dep_iff_contains_circuit, dep_iff_r], 
   have hI : C₁ ∩ C₂ ⊂ C₁ := inter_circuits_ssubset hC₁ hC₂ hC₁C₂, 
   have heα := mem_of_mem_of_subset he (inter_subset_union C₁ C₂),
   have hcalc : M.r ((C₁ ∪ C₂) \ {e}) ≤ size ((C₁ ∪ C₂) \ {e}) -1 := 
   by linarith [M.rank_mono (diff_subset (C₁ ∪ C₂) {e} ), M.rank_submod C₁ C₂, 
         r_cct hC₁, r_cct hC₂, r_cct_ssub hC₁ hI, size_modular C₁ C₂, size_remove_mem heα],
-  from int.le_sub_one_iff.mp hcalc,
+  exact int.le_sub_one_iff.mp hcalc,
 end 
-
-/-lemma circuit_elemination_subtype  {C₁ C₂ : circuit M} : 
-  C₁ ≠ C₂ → e ∈ (C₁ ∩ C₂ : set α) → ∃ (C : circuit M), (C : set α) ⊆ (C₁ ∪ C₂) \ {e} := 
-  by{intros hne he, cases circuit_elemination _ C₁.2 C₂.2 he with C hC, use ⟨C, hC.1⟩, exact hC.2, exact λ h, hne (subtype.eq h)}-/
 
 def matroid_to_cct_family (M : matroid α) : cct_family α := 
   ⟨λ X, M.is_circuit X, 
    empty_not_cct M, 
    λ C₁ C₂, circuit_not_ssubset_circuit, 
    λ C₁ C₂ h, circuit_elim ⟩
-
 
 end circuit
 
@@ -683,13 +672,15 @@ by refl
 
 lemma not_spans_iff_r : 
   ¬M.spans X Y ↔ M.r X < M.r (X ∪ Y) :=
-by {rw [spans_iff_r, eq_comm], exact ⟨λ h, lt_of_le_of_ne (rank_mono_union_left M _ _) h, λ h, ne_of_lt h⟩}
+by {rw [spans_iff_r, eq_comm], 
+    exact ⟨λ h, lt_of_le_of_ne (rank_mono_union_left M _ _) h, λ h, ne_of_lt h⟩}
 
 lemma spanned_union (M : matroid α){X Y Y' : set α} :
   M.spans X Y → M.spans X Y' → M.spans X (Y ∪ Y') := 
 begin
   unfold spans, intros h h', 
-  linarith [submod_three_sets M X Y Y', M.rank_mono_union_left X (Y ∩ Y'), M.rank_mono_union_left X (Y ∪ Y')],
+  linarith [submod_three_sets M X Y Y', M.rank_mono_union_left X (Y ∩ Y'), 
+    M.rank_mono_union_left X (Y ∪ Y')],
 end
 
 lemma spanned_union_closed (M : matroid α) (X : set α) :
@@ -903,19 +894,19 @@ def is_plane (M : matroid α) : set α → Prop :=
 def is_hyperplane (M : matroid α) : set α → Prop := 
   λ H, M.is_rank_k_flat (M.r univ - 1) H 
 
-def point (M : matroid α) : Type := {P : set α // M.is_point P}
+def point (M : matroid α)  := {P : set α // M.is_point P}
 
 instance point_fin : fintype M.point := 
 by {unfold point, apply_instance}
 
 instance point_coe : has_coe M.point (set α) := ⟨subtype.val⟩ 
 
-def line (M : matroid α) : Type := {L : set α // M.is_line L}
+def line (M : matroid α) := {L : set α // M.is_line L}
 
 instance line_fin : fintype M.line := 
 by {unfold line, apply_instance}
 
-def plane (M : matroid α) : Type := {P : set α // M.is_plane P}
+def plane (M : matroid α) := {P : set α // M.is_plane P}
 
 instance plane_fin : fintype M.plane := 
 by {unfold plane, apply_instance}
@@ -1252,7 +1243,7 @@ end
   
 
 /-- nonloop as subtype -/
-def nonloop (M : matroid α) : Type := { e : α // is_nonloop M e}
+def nonloop (M : matroid α) := { e : α // is_nonloop M e}
 
 instance coe_nonloop : has_coe (nonloop M) (α) := ⟨λ e, e.val⟩  
 --def noncoloop (M : matroid α) : Type := { e : α // is_nonloop (dual M) e}

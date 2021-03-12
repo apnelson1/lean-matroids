@@ -8,8 +8,6 @@ universes u v w
 open_locale classical 
 variables {α : Type u}
   
-
-
 lemma mem_coe_inj_iff {e f : α} :
   ({e} : set α) = ({f}  : set α) ↔ e = f := 
 by {exact singleton_eq_singleton_iff}

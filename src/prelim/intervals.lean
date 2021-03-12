@@ -23,7 +23,7 @@ instance canonically_ordered_add_monoid.has_exists_add_of_le
 
 section has_exists_add_of_le 
 
-variables {α : Type u} [ordered_cancel_add_comm_monoid α][has_exists_add_of_le α] (l u x : α)
+variables {α : Type u} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α] (l u x : α)
 
 open has_exists_add_of_le
 

@@ -25,7 +25,7 @@ lemma finsupp_of_finsum_in_nonzero (h : ∑ᶠ i in s, f i ≠ 0) :
 by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at h, exact h rfl, })
 
 @[simp] lemma finsum_empty_set_type:
-  ∑ᶠ (i : ((∅ : set α) : Type)), f i = 0 :=
+  ∑ᶠ (i : ((∅ : set α) : Type u)), f i = 0 :=
 begin
   rw [finsum_eq_finsum_in_univ, set.univ_eq_empty_iff.mpr, finsum_in_empty],  
   by_contra, obtain ⟨x,hx⟩ := h, 
@@ -436,7 +436,7 @@ end order
 
 section intervals 
 
-variables {α : Type u} [ordered_cancel_add_comm_monoid α][has_exists_add_of_le α]
+variables {α : Type u} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α]
 {M : Type v} [add_comm_monoid M]
 
 lemma finsum_Icc_shift (a b d : α) (f : α → M) : 

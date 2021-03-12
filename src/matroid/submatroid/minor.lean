@@ -8,7 +8,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {α β : Type} [fintype α][fintype β]
+variables {α β : Type u} [fintype α] [fintype β]
 
 section minor 
 

@@ -4,16 +4,18 @@ import matroid.rankfun matroid.dual
 open_locale classical 
 noncomputable theory
 
+universes u v w
+
 open matroid set 
 
-variables {α β α₁ α₂ α₃: Type}
-[fintype α][fintype β]
-[fintype α₁][fintype α₂][fintype α₃]
+variables {α β α₁ α₂ α₃: Type u}
+[fintype α] [fintype β]
+[fintype α₁] [fintype α₂] [fintype α₃]
 
 /-- a matroid_in α corresponds to a matroid defined on some subset E of α. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
 
-structure matroid_in (α : Type)[fintype α] :=
+structure matroid_in (α : Type u)[fintype α] :=
 (E : set α)
 (carrier : matroid α)
 (support : carrier.r Eᶜ = 0)
@@ -59,7 +61,7 @@ end
 def as_mat_on (M : matroid_in α) (E : set α) : matroid E := 
 { r := λ X, M.r X,
   R0 := λ X, M.carrier.R0 _,
-  R1 := λ X, by {dsimp only [r], rw ←size_subtype_img, apply M.carrier.R1},
+  R1 := λ X, by {dsimp only [r], rw ←size_subtype_image, apply M.carrier.R1},
   R2 := λ X Y hXY, by {apply M.carrier.R2, apply set.image_subset _ hXY, },
   R3 := λ X Y, by {dsimp only, convert M.carrier.R3 _ _, apply set.image_union, 
                    exact (set.image_inter subtype.val_injective).symm} }
@@ -165,7 +167,7 @@ section defs
 /-- translates a property of sets defined on (matroid β) to the corresponding
 set property on (matroid_in α). -/
 def lift_mat_set_property 
-(P : Π {β : Type} [fintype β], matroid β → set β → Prop) : 
+(P : Π {β : Type u} [fintype β], matroid β → set β → Prop) : 
   (matroid_in α → set α → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 

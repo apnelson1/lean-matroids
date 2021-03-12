@@ -5,6 +5,9 @@ import tactic
 import tactic.interactive
 import .set_tactic
 
+
+universe u
+
 /-meta def simpl_tactic : tactic unit :=
 `[simp only [simpl_sdiff, simpl_eq, ext_le, ext_bot, ext_top, ext_meet, ext_join, ext_compl] at *; tauto!]-/
 
@@ -69,7 +72,7 @@ meta def boolean_algebra_types_in_expr (consider_function_types := ff) : expr �
     e_outer <- get_boolalg_typ consider_function_types e,
     return (e_inner ++ e_outer)
 
-def unique_list {T: Type} [decidable_eq T]: list T -> list T 
+def unique_list {T: Type u} [decidable_eq T]: list T -> list T 
 | [] := []
 | (x :: xs) := let tl := unique_list xs in
                 if list.mem x tl then tl else x :: tl
@@ -133,32 +136,32 @@ meta def set_solver (consider_function_types := ff) : (tactic unit) := do
   set_ext consider_function_types,
   `[finish]
 
-example (α : Type) [boolean_algebra α] (X Y Z P Q W : α) :
+example (α : Type u) [boolean_algebra α] (X Y Z P Q W : α) :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
 begin
   set_solver,
 end
 
-example (T : Type) [fintype T] [decidable_eq T] (X Y Z P Q W : finset T)  :
+example (T : Type u) [fintype T] [decidable_eq T] (X Y Z P Q W : finset T)  :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
 begin
   set_solver,
 end
 
 -- note the lack of fintype T here
-example (T : Type) [decidable_eq T] (X Y Z P Q W : finset T)  :
+example (T : Type u) [decidable_eq T] (X Y Z P Q W : finset T)  :
   (X ∪ Y) ≥ X :=
 begin
   set_solver,
 end
 
-example (T : Type) [decidable_eq T] (x z : T) (Y : set T) :
+example (T : Type u) [decidable_eq T] (x z : T) (Y : set T) :
   x ∈ ({z} : set T) → x = z :=
 begin
   set_solver,
 end
 
-example (α : Type) [boolean_algebra α]  (A B C D E F G : α) :
+example (α : Type u) [boolean_algebra α]  (A B C D E F G : α) :
   A ≤ B →
   B ≤ C →
   C ≤ D ⊓ E →
@@ -176,7 +179,7 @@ begin
   specialize (H4 e); tauto!],
 end
 
-example (α : Type) [boolean_algebra α]  (A B C D E F G : α) :
+example (α : Type u) [boolean_algebra α]  (A B C D E F G : α) :
   A ≤ B →
   B ≤ C →
   C ≤ D ⊓ E →
@@ -186,11 +189,11 @@ begin
   tactic.timetac "slow" $  set_solver,
 end
  
-example (α : Type) (C E : set α) (hCE : C ⊓ E = ∅) :
+example (α : Type u) (C E : set α) (hCE : C ⊓ E = ∅) :
   C ⊔ (E ⊔ C)ᶜ = Eᶜ := 
 by {set_solver, }
 
-example (α : Type) (C E : set α) (h : C ⊓ E = ⊥) : 
+example (α : Type u) (C E : set α) (h : C ⊓ E = ⊥) : 
   C ⊓ (C ⊔ E)ᶜ = ∅ := 
 by {set_solver, } 
 

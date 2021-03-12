@@ -1,4 +1,5 @@
---try the set tactic on the sorrys below (line 102 )
+
+
 
 import prelim.induction prelim.collections .rankfun .indep set_tactic.solver
 
@@ -7,19 +8,23 @@ noncomputable theory
 
 open set 
 
-variables {α : Type} [fintype α]
+universe u 
+
+variables {α : Type u} [fintype α]
 
 namespace cct_family
+
+-- This needs fixing 
 
 def C_to_I (M : cct_family α) : (set α → Prop) := 
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
 lemma C_to_empty_indep (M : cct_family α) :
-  satisfies_empty_indep (C_to_I M) :=
-by {intros X hX, rw subset_empty hX, from M.C1}
+  satisfies_C1 (C_to_I M) :=
+by {intro X, rw subset_empty hX, from M.C1}
 
 lemma C_to_indep_of_subset_indep (M : cct_family α) :
-  satisfies_indep_of_subset_indep (C_to_I M) :=
+  satisfies_C2 (C_to_I M) :=
 λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
 lemma new_circuit_contains_new_elem {M : cct_family α} {I C : set α} {e : α} :

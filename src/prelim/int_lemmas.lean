@@ -2,7 +2,7 @@ import data.set.intervals
 import tactic 
 
 -- some very mild additions to the int API in mathlib  
-
+universes u v w 
 open_locale classical 
 
 open set 
@@ -37,6 +37,10 @@ begin
   push_neg at h2', rw int.le_sub_one_iff.symm at h2', 
   cases nonneg_le_one_iff h0 h2', {left, exact h}, {right, left, exact h},
 end 
+
+lemma to_nat_zero_of_nonpos {x : ℤ} (hx : x ≤ 0): 
+  x.to_nat = 0 := 
+by {rcases em (x = 0) with (rfl | hx'), simp, apply to_nat_zero_of_neg (lt_of_le_of_ne hx hx'), }
 
 end int
 

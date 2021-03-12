@@ -11,10 +11,10 @@ noncomputable theory
 
 namespace partition
 
-variables {α ι : Type} [fintype α] (f : α → ι){b : ι → ℤ}
+variables {α ι : Type u} [fintype α] (f : α → ι){b : ι → ℤ}
 
-/-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent sets are those
-whose intersection with each cell i has size at most b i -/
+/-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent 
+sets are those whose intersection with each cell i has size at most b i -/
 def M (f : α → ι) (b : ι → ℤ) : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (b i))
 
 lemma indep_iff (hb : ∀ i, 0 ≤ b i) (X : set α) : 
@@ -33,37 +33,11 @@ begin
   convert rfl, ext i, rw unif.uniform_matroid_rank (hb i), 
 end 
 
-/- in the partition matroid where the upper bounds are all at most one
-(such as the parallel partition matroid), the rank of a set is the number of 
-cells for which the bound is 1 that it insersects
-lemma r_eq_num (hb' : ∀ i, b i ≤ 1) (X : set α) :
-  (M f hb).r X = size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} :=
-begin
-  rw [r_eq],
-  rw ← sum_size_fiber_eq_size {i | b i = 1 ∧ ∃ x ∈ X, f x = i} id, 
-  congr', ext i, 
-  have hi : b i = 0 ∨ b i = 1 := int.nonneg_le_one_iff (hb i) (hb' i), 
-  rcases (hi) with (h0 | h1), 
-  { rw [h0, min_eq_left_iff.mpr (size_nonneg _), eq_comm, size_zero_iff_has_no_mem],
-    have : b i ≠ 1 := λ hn, by {rw h0 at hn, exact int.zero_ne_one hn}, 
-    tidy, },
-  by_cases hi : ∃ x ∈ X, f x = i, swap, 
-  { convert (min_eq_right_of_lt (int.zero_lt_one)); {rw size_zero_iff_has_no_mem, tidy},},
-  convert (λ x hx, by {rw min_eq_left_iff.mpr hx} : ∀ x : ℤ, 1 ≤ x → min (1 : ℤ) x = 1) _ _, 
-  { rw size_one_iff_eq_singleton, 
-    refine ⟨i, _⟩, ext, 
-    simp only [sep_set_of, exists_prop, mem_singleton_iff, 
-    and_iff_right_iff_imp, id.def, mem_set_of_eq],
-    rintro rfl, 
-    tauto,   }, 
-  rw one_le_size_iff_has_mem, tidy, 
-end -/
-
 end partition
 
 section presetoid_class
 
-variables {α : Type} [fintype α] (S : presetoid α)
+variables {α : Type u} [fintype α] (S : presetoid α)
 
 namespace presetoid_matroid
 

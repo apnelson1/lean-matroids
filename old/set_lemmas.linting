@@ -3,7 +3,7 @@ import tactic
 open set 
 
 -- Commutativity
-variables {α : Type}
+variables {α : Type u}
 
 def symm_diff  (X Y : set α) : set α := (X \ Y) ∪ (Y \ X)
 

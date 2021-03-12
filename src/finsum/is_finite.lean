@@ -22,4 +22,4 @@ instance is_finite_option_type [i : nonempty (fintype α)] :
   nonempty (fintype (option α)) := 
 by {letI := classical.choice i, exact nonempty.intro (by apply_instance),  }
 
---instance is_finite_of_fn [i : nonempty (fintype α)][j : nonempty (fintype β)] : nonempty (fintype )
+--instance is_finite_of_fn [i : nonempty (fintype α)] [j : nonempty (fintype β)] : nonempty (fintype )

@@ -1,4 +1,7 @@
+/- This whole file is ancient and todo -/
+
 import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+
 open ftype 
 
 local attribute [instance] classical.prop_decidable

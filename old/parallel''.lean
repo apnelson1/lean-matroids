@@ -515,10 +515,10 @@ begin
 end
 
 
-lemma size_img_transversal {M : matroid α} (f : M.transversal)
+lemma size_image_transversal {M : matroid α} (f : M.transversal)
 (S : set M.parallel_class) :
   size (f '' S) = size S := 
-size_img_inj (transversal_inj f) S
+size_image_inj (transversal_inj f) S
 
 lemma rank_img_transversal {M : matroid α} (f : M.transversal)
 (S : set M.parallel_class) :

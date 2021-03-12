@@ -401,11 +401,11 @@ end
 
 ----------------------------- Trying to make summation manipulations more versatile ----------------
 
-def prop_pairs {α : Type} (P₁ P₂ : α → Prop) := {x : α // P₁ x} × {x : α // P₂ x}
+def prop_pairs {α : Type u} (P₁ P₂ : α → Prop) := {x : α // P₁ x} × {x : α // P₂ x}
 
 
 
-instance pp_fin {α : Type} [fintype α] {P₁ P₂ : α → Prop} : fintype (prop_pairs P₁ P₂) := 
+instance pp_fin {α : Type u} [fintype α] {P₁ P₂ : α → Prop} : fintype (prop_pairs P₁ P₂) := 
 begin
   --letI empty_indep: fintype {x : α // P₁ x} := infer_instance, 
   --letI indep_of_subset_indep: fintype {x : α // P₂ x} := infer_instance,  

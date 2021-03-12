@@ -243,7 +243,7 @@ def rep_preimage (hN : ⟦N₀⟧ = N) (X : set N.ground) :=
 
 lemma rep_preimage_on_size (hN : ⟦N₀⟧ = N) (X : set N.ground) : 
   size (rep_preimage hN X) = size X := 
-by {apply size_preimg_equiv} 
+by {apply size_preimage_equiv} 
 
 lemma rep_preimage_on_subset (hN : ⟦N₀⟧ = N){X Y : set N.ground} :
   X ⊆ Y → rep_preimage hN X ⊆ rep_preimage hN Y := 

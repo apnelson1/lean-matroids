@@ -8,7 +8,7 @@ variables {α : Type*}
 
 open set 
 
-lemma set.insert_inter_of_mem {α : Type} {s₁ s₂ : set α} {a : α} (h : a ∈ s₂) :
+lemma set.insert_inter_of_mem {α : Type u} {s₁ s₂ : set α} {a : α} (h : a ∈ s₂) :
   insert a s₁ ∩ s₂ = insert a (s₁ ∩ s₂) :=
 by simp [set.insert_inter, h]
 

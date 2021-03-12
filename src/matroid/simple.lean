@@ -4,10 +4,12 @@ import .parallel
 noncomputable theory 
 open_locale classical 
 
+universes u v w 
+
 open set 
 namespace matroid 
 
-variables {α β : Type} [fintype α][fintype β] {M : matroid α} {e f : α} {S X : set α}
+variables {α β : Type u} [fintype α] [fintype β] {M : matroid α} {e f : α} {S X : set α}
 
 section simple 
 
@@ -158,7 +160,7 @@ def si (M : matroid α) : matroid (M.parallel_class) :=
   R0 := λ X, by {apply M.R0 },
   R1 := λ X, begin 
     let f := choose_transversal M, 
-    simp only [rank_img_transversal f, ←size_img_transversal f],
+    simp only [rank_img_transversal f, ←size_image_transversal f],
     apply M.R1, 
   end,
   R2 := λ X Y hXY, begin
@@ -176,8 +178,6 @@ lemma si_r (M : matroid α) (S : set M.parallel_class) :
   M.si.r S = M.r (union_parallel_classes S) := 
 rfl 
 
-
-
 /- it is more convenient to think of the simplification rank in terms of a fixed transversal of the parallel classes-/
 lemma si_r_transversal {M : matroid α} (f : M.transversal) (S : set M.parallel_class) : 
   (si M).r S = M.r (f '' S) := 
@@ -188,7 +188,6 @@ lemma si_is_loopless (M : matroid α) :
 let f := M.choose_transversal in 
   loopless_iff_all_nonloops.mpr (λ S, by 
   { rw [nonloop_iff_r, si_r_transversal f, image_singleton, ←nonloop_iff_r], apply nonloop_of_range_transversal,  }) 
-
 
 lemma si_is_simple (M : matroid α) : 
   (si M).is_simple :=

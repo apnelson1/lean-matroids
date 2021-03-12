@@ -40,6 +40,10 @@ lemma type_size_eq (α : Type u) : type_size α = size (set.univ : set α) := rf
 lemma type_size_eq_fincard_t (α : Type u) : type_size α = fincard_t α := 
 by {rw [type_size, size_def], norm_num, refl,  }
 
+lemma type_size_subtype_eq_size (s : set α) :
+  type_size s = size s := 
+by rw [type_size_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
+
 @[simp] lemma size_empty (α : Type u) : size (∅ : set α) = 0 := 
 by simp [size]
 
@@ -123,7 +127,6 @@ section sums
 
 variables {α : Type u}
 
-
 @[simp] lemma finsum_ones_eq_type_size (α : Type u) : 
   ∑ᶠ (x : α), (1 : ℤ) = type_size α := 
 by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
@@ -152,7 +155,7 @@ an empty type whenever `n ≤ 0`. -/
 section fin'
 
 /-- the same as fin, but defined for all integers (empty if `n < 0`)-/
-def fin' (n : ℤ) := fin (n.to_nat)
+def fin' (n : ℤ) : Type := fin (n.to_nat)
 
 lemma fin'_eq_fin {n : ℕ} :
   fin' n = fin n := 
@@ -198,6 +201,20 @@ end
 def choose_equiv_to_fin' (α : Type u) [fintype α] :
   equiv α (fin' (type_size α)) :=
 classical.choice ((type_size_eq_iff_equiv_fin' (type_size_nonneg α)).mp rfl)
+
+
+lemma type_size_le_zero_elim {α : Type u} [fintype α] (hα : type_size α ≤ 0) (e : α): 
+  false :=
+begin
+  let bij := choose_equiv_to_fin' α, 
+  apply nat.not_lt_zero (bij e).val,
+  convert (bij e).property, 
+  rw int.to_nat_zero_of_nonpos hα,   
+end
+
+lemma type_size_lt_zero_elim {α : Type u} (hα : type_size α < 0) (e : α): 
+  false :=
+by linarith [type_size_nonneg α]
 
 end fin' 
 
@@ -640,31 +657,9 @@ end
 lemma has_set_of_size {n : ℤ} (h : 0 ≤ n) (h' : n ≤ type_size α) :
   ∃ (Y : set α), size Y = n :=
 by {rw type_size_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h h', tauto}
-
-lemma nonempty_fin'_emb_of_type_size {n : ℤ} (hα : n ≤ type_size α ) : 
-  nonempty ((fin' n) ↪ α) := 
-begin
-  by_cases hn : n ≤ 0, 
-  { exact ⟨⟨λ x, false.elim (fin'_le_zero_elim hn x), λ x, false.elim (fin'_le_zero_elim hn x)⟩⟩},
-  push_neg at hn, 
-  obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le (le_of_lt hn), 
-  rw fin'_eq_fin, 
-  
-  obtain ⟨s,hs⟩ := has_set_of_size (le_of_lt hn) hα, 
-  rw [size_def, int.coe_nat_inj'] at hs,
-  subst hs, 
-  letI := fintype_of_type_size_pos (lt_of_lt_of_le hn hα), 
-  have bij := (@choose_fin_bij ↥s _).symm, 
-  exact ⟨⟨ 
-      λ x, (bij ⟨x, by {rw fincard_t_subtype_eq_fincard, exact x.property,}⟩).val ,
-      λ x y hxy, by {convert subtype.val_injective hxy, tidy,}⟩⟩,
-end
  
-def choose_fin'_inj_of_type_size {n : ℤ} (hα : n ≤ type_size α) :
-  (fin' n) ↪ α :=
-classical.choice (nonempty_fin'_emb_of_type_size hα)
-
 end general 
+
 
 /-!
 This section (nearly) contains only copies of lemmas above, but with the finiteness assumptions
@@ -764,10 +759,10 @@ by {apply finite.size_mono_union_right, apply finite.of_fintype}
 lemma empty_of_size_zero (hsize : size s = 0) : s = ∅ := 
 by {apply finite.empty_of_size_zero _ hsize, apply finite.of_fintype, }
 
-lemma size_zero_iff_empty : (size s = 0) ↔ (s = ∅) := 
+@[simp] lemma size_zero_iff_empty : (size s = 0) ↔ (s = ∅) := 
 by {apply finite.size_zero_iff_empty, apply finite.of_fintype, }
 
-lemma size_le_zero_iff_eq_empty : size s ≤ 0 ↔ s = ∅ := 
+@[simp] lemma size_le_zero_iff_eq_empty : size s ≤ 0 ↔ s = ∅ := 
 by {apply finite.size_le_zero_iff_eq_empty, apply finite.of_fintype, }
 
 lemma size_nonempty (hne : s.nonempty) : 0 < size s  := 
@@ -864,3 +859,136 @@ lemma size_le_one_iff_mem_unique :
 by {apply finite.size_le_one_iff_mem_unique, apply finite.of_fintype}
 
 end fintype 
+
+section embeddings
+
+open set 
+
+variables {α : Type u}{β : Type v} 
+
+lemma size_image_emb (f : α ↪ β) (X : set α) : 
+  size (f '' X) = size X := 
+by {simp_rw [size], norm_cast, apply fincard_img_emb, }
+
+lemma type_size_le_type_size_inj [fintype β] (f : α ↪ β) : 
+  type_size α ≤ type_size β := 
+begin
+  rw [type_size, type_size, ← size_image_emb f], 
+  apply size_monotone, 
+  apply subset_univ, 
+end 
+
+lemma size_image_inj {f : α → β} (hf : function.injective f) (X : set α) : 
+  size (f '' X) = size X := 
+size_image_emb ⟨f , hf⟩ X
+
+lemma size_image_equiv (f : α ≃ β) (X : set α) :
+  size (f '' X) = size X :=
+size_image_emb (f.to_embedding) X 
+
+lemma type_size_eq_type_size_equiv (f : α ≃ β) : 
+  type_size α = type_size β := 
+by rw [type_size, type_size, ← size_image_equiv f, ← f.range_eq_univ, image_univ]
+
+@[simp] lemma equiv.image_mem_image_iff_mem {f : α ≃ β} {x : α} {X : set α} : 
+  f x ∈ f '' X ↔ x ∈ X := 
+begin
+  rw mem_image, split, 
+  { rintros ⟨y, hy, hyx⟩, rw equiv.apply_eq_iff_eq at hyx, rwa ←hyx},
+  exact λ hx, ⟨x, hx, rfl⟩, 
+end
+
+@[simp] lemma size_preimage_equiv (f : α ≃ β) (X : set β) :
+  size (f ⁻¹' X) = size X :=
+begin
+  unfold_coes, 
+  rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
+  convert size_image_emb (f.symm.to_embedding) X, 
+end
+
+lemma size_preimage_embed_subset_range (f : α ↪ β) (X : set β) (hX : X ⊆ range f) : 
+  size (f ⁻¹' X) = size X := 
+begin
+  suffices h: f '' (f ⁻¹' X) = X, 
+  { rw eq_comm, nth_rewrite 0 ← h, apply size_image_emb}, 
+  apply image_preimage_eq_of_subset hX, 
+end 
+
+lemma size_subtype_image {E : set α} (X : set E) : 
+  size (subtype.val '' X) = size X :=
+begin
+  let f : E ↪ α := ⟨subtype.val, λ x y hxy, 
+    by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
+  apply size_image_emb f, 
+end
+
+@[simp] lemma size_image_coe {E : set α} (X : set E) : 
+  size (coe '' X : set α) = size X := 
+size_subtype_image X 
+
+@[simp] lemma size_preimage_coe {E : set α} (X : set α) : 
+  size (coe ⁻¹' X : set E) = size (X ∩ E) := 
+by {rw ← size_image_coe (coe ⁻¹' X : set E), simp, }
+
+
+lemma nonempty_fin'_emb_of_type_size {n : ℤ} (hα : n ≤ type_size α ) : 
+  nonempty ((fin' n) ↪ α) := 
+begin
+  by_cases hn : n ≤ 0, 
+  { exact ⟨⟨λ x, false.elim (fin'_le_zero_elim hn x), λ x, false.elim (fin'_le_zero_elim hn x)⟩⟩},
+  push_neg at hn, 
+  obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le (le_of_lt hn), 
+  rw fin'_eq_fin, 
+  
+  obtain ⟨s,hs⟩ := has_set_of_size (le_of_lt hn) hα, 
+  rw [size_def, int.coe_nat_inj'] at hs,
+  subst hs, 
+  letI := fintype_of_type_size_pos (lt_of_lt_of_le hn hα), 
+  have bij := (@choose_fin_bij ↥s _).symm, 
+  exact ⟨⟨ 
+      λ x, (bij ⟨x, by {rw fincard_t_subtype_eq_fincard, exact x.property,}⟩).val ,
+      λ x y hxy, by {convert subtype.val_injective hxy, tidy,}⟩⟩,
+end
+
+/-- an embedding from `fin' n` into `α`, provided that `n ≤ type_size α` -/
+def choose_fin'_inj_of_type_size {n : ℤ} (hα : n ≤ type_size α) :
+  (fin' n) ↪ α :=
+classical.choice (nonempty_fin'_emb_of_type_size hα)
+
+/-- an embedding from `α` into `β`, provided that `type_size α ≤ type_size β` and `α` is finite.
+A little scary as this takes a `fintype` and outputs data, so could cause instance issues. Maybe 
+a `nonempty` version is safer. -/
+def choose_emb_of_size_le_size {α : Type u} {β : Type v} [fintype α]
+(hsize : type_size α ≤ type_size β ) : 
+  (α ↪ β) := 
+(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_type_size β _ hsize) 
+
+lemma exists_emb_of_type_size_le_size_set {α : Type u} [fintype α] {β : Type v} {s : set β} 
+(hsize : type_size α ≤ size s ) : 
+  ∃ (emb : α ↪ β), set.range emb ⊆ s := 
+begin
+  rw ← type_size_subtype_eq_size at hsize, 
+  let emb := choose_emb_of_size_le_size hsize, 
+  exact ⟨emb.trans ⟨subtype.val, subtype.val_injective ⟩, λ x, by tidy⟩, 
+end
+
+lemma set.finite.exists_emb_of_type_size_eq_size_set {α : Type u} [fintype α] {β : Type v} 
+{s : set β} (hs : s.finite) (hsize : type_size α = size s ) : 
+  ∃ (emb : α ↪ β), set.range emb = s := 
+begin
+  convert exists_emb_of_type_size_le_size_set (le_of_eq hsize), 
+  ext emb, 
+  split, 
+  { unfreezingI {rintro rfl}, exact subset_refl _, }, 
+  intros hss, 
+  apply finite.eq_of_eq_size_subset hs hss,
+  rw [← image_univ, size_image_emb],  
+  convert hsize, 
+end
+
+lemma exists_emb_of_type_size_eq_size_set {α : Type u} [fintype α] {β : Type v} [fintype β]
+{s : set β} (hsize : type_size α = size s ) : 
+  ∃ (emb : α ↪ β), set.range emb = s := 
+by {apply set.finite.exists_emb_of_type_size_eq_size_set _ hsize, apply finite.of_fintype }
+
+end embeddings 

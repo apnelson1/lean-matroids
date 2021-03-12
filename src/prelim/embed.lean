@@ -6,87 +6,21 @@ open set
 open_locale classical 
 noncomputable theory 
 mk_simp_attribute coe_up "upwards coercion simp lemmas"
- 
-section size_lemmas 
-variables {α β : Type} [fintype α][fintype β]
 
-lemma size_img_emb (f : α ↪ β) (X : set α) : 
-  size (f '' X) = size X := 
-by {simp_rw [size], norm_cast, apply fincard_img_emb, }
+universes u v w 
 
-lemma type_size_le_type_size_inj (f : α ↪ β) : 
-  type_size α ≤ type_size β := 
-by {rw [type_size, type_size, ← size_img_emb f], apply size_monotone, apply subset_univ, }
-
-lemma size_img_inj {f : α → β} (hf : function.injective f) (X : set α) : 
-  size (f '' X) = size X := 
-size_img_emb ⟨f , hf⟩ X
-
-lemma size_img_equiv (f : α ≃ β) (X : set α) :
-  size (f '' X) = size X :=
-size_img_emb (f.to_embedding) X 
-
-lemma type_size_eq_type_size_equiv (f : α ≃ β) : 
-  type_size α = type_size β := 
-by rw [type_size, type_size, ← size_img_equiv f, ← f.range_eq_univ, image_univ]
-
-@[simp] lemma equiv.image_mem_image_iff_mem {f : α ≃ β} {x : α} {X : set α} : 
-  f x ∈ f '' X ↔ x ∈ X := 
-begin
-  rw mem_image, split, 
-  { rintros ⟨y, hy, hyx⟩, rw equiv.apply_eq_iff_eq at hyx, rwa ←hyx},
-  exact λ hx, ⟨x, hx, rfl⟩, 
-end
-
-@[simp] lemma size_preimg_equiv (f : α ≃ β) (X : set β) :
-  size (f ⁻¹' X) = size X :=
-begin
-  unfold_coes, 
-  rw ←set.image_eq_preimage_of_inverse f.right_inv f.left_inv, 
-  convert size_img_emb (f.symm.to_embedding) X, 
-end
-
-lemma size_preimage_embed_subset_range (f : α ↪ β) (X : set β) (hX : X ⊆ range f) : 
-  size (f ⁻¹' X) = size X := 
-begin
-  suffices h: f '' (f ⁻¹' X) = X, 
-  { rw eq_comm, nth_rewrite 0 ← h, apply size_img_emb}, 
-  apply image_preimage_eq_of_subset hX, 
-end 
-
-lemma size_subtype_img {E : set α} (X : set E) : 
-  size (subtype.val '' X) = size X :=
-begin
-  let f : E ↪ α := ⟨subtype.val, λ x y hxy, 
-    by {cases x, cases y, simp only [subtype.mk_eq_mk], exact hxy}⟩, 
-  apply size_img_emb f, 
-end
-
-
-@[simp] lemma size_image_coe {E : set α} (X : set E) : 
-  size (coe '' X : set α) = size X := 
-size_subtype_img X 
-
-@[simp] lemma size_preimage_coe {E : set α} (X : set α) : 
-  size (coe ⁻¹' X : set E) = size (X ∩ E) := 
-by {rw ← size_image_coe (coe ⁻¹' X : set E), simp, }
-
-
-
-end size_lemmas 
-
-instance coe_set_from_subtype {β : Type} {S : set β} : has_coe (set S) (set β) := ⟨λ X, coe '' X⟩ 
+instance coe_set_from_subtype {β : Type u} {S : set β} : has_coe (set S) (set β) := ⟨λ X, coe '' X⟩ 
 /-- the intersection X ∩ S, viewed as a (set S) -/
-def inter_subtype {β : Type} (S X : set β) : (set S) := coe ⁻¹' X 
+def inter_subtype {β : Type u} (S X : set β) : (set S) := coe ⁻¹' X 
 
-variables {α : Type} [fintype α] {S : set α}
+variables {α : Type u} [fintype α] {S : set α}
 
 @[coe_up] lemma subtype_coe_singleton (e : S) : 
   (({(e : S)} : set S) : set α) = {(e : α)} :=
 image_singleton 
 
 @[coe_up] lemma subtype_coe_size (X : set S) : size X = size (X : set α) := 
-(size_subtype_img X).symm
+(size_subtype_image X).symm
 
 @[coe_up] lemma subtype_coe_subset {X Y : set S} : 
   (X ⊆ Y) ↔ ((X: set α) ⊆ (Y: set α)) :=
@@ -145,10 +79,10 @@ by rw [subtype_coe_size, coNE_inter_subtype]
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S) :=
 by rw [←subtype_set_coe_inj, coNE_inter_subtype, coNE_inter_subtype]
  
-@[simp] lemma function.embedding.image_trans {α β C : Type} (e₁ : α ↪ β) (e₂ : β ↪ C) (X : set α) :
+@[simp] lemma function.embedding.image_trans {α β C : Type u} (e₁ : α ↪ β) (e₂ : β ↪ C) (X : set α) :
   (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
 by {unfold function.embedding.trans, rw ← image_comp, refl,   }
 
-@[simp] lemma equiv.image_trans {α β γ : Type} (e₁ : α ≃ β) (e₂ : β ≃ γ) (X : set α) :
+@[simp] lemma equiv.image_trans {α β γ : Type u} (e₁ : α ≃ β) (e₂ : β ≃ γ) (X : set α) :
   (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
 by {unfold equiv.trans, rw ← image_comp, refl,   }

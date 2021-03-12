@@ -6,7 +6,7 @@ open matroid set
 noncomputable theory 
 namespace trunc 
 
-variables {α : Type} [fintype α]
+variables {α : Type u} [fintype α]
 
 def indep (M : indep_family α) (n : ℤ) : set α → Prop :=  
   λ X, M.indep X ∧ size X ≤ max 0 n 

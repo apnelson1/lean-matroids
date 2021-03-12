@@ -15,7 +15,7 @@ open_locale classical big_operators
 noncomputable theory 
 open set matroid
 
-variables {α : Type} [fintype α]
+variables {α : Type u} [fintype α]
 
 section intersections_of_bases
 

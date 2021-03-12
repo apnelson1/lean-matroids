@@ -174,18 +174,3 @@ begin
   rw [mem_sep_eq, mem_empty_eq], 
   exact ⟨λ h, hx ⟨y,h⟩, λ h, false.elim h⟩, 
 end
-
---theorem fincard_univ_eq_sum_fincard_preimage {α β : Type}
---[fintype α]
-
-/-
-
-@[simp] lemma finsum_in_image' {s : set β} {g : β → α} (hs : s.finite) (hg : set.inj_on g s) :
-  ∑ᶠ j in (g '' s), f j = ∑ᶠ i in s, (f ∘ g) i :=
-begin
-  rw [finsum_in_eq_finset_sum''' (f ∘ g) hs, finsum_in_eq_finset_sum''' f (set.finite.image g hs),
-    ←finset.sum_image
-    (λ x hx y hy hxy, hg ((set.finite.mem_to_finset hs).1 hx) ((set.finite.mem_to_finset hs).1 hy) hxy)],
-  congr, ext, simp
-end
--/

@@ -4,7 +4,9 @@ import .rankfun .indep
 local attribute [instance] classical.prop_decidable
 noncomputable theory 
 
-variables {α : Type} [fintype α]
+universe u 
+
+variables {α : Type u} [fintype α]
 
 open set 
 
@@ -28,7 +30,6 @@ lemma cl_union_both (M : clfun α) (X Y : set α) :
     rw M.cl2 at this, assumption
   end
 
-
 lemma union_pair {M : clfun α} {X Y : set α} (Z: set α) : 
   M.cl X = M.cl Y → M.cl (X ∪ Z) = M.cl (Y ∪ Z) :=
   λ h, by rw [cl_union_both _ X, cl_union_both _ Y, h]
@@ -41,7 +42,7 @@ def is_indep (M : clfun α) : set α → Prop :=
   λ I, ∀ (e:α), e ∈ I → M.cl (I \ {e}) ≠ M.cl I 
 
 /-- all sets spanning X -/
-def spans (M : clfun α) (X : set α) : Type := 
+def spans (M : clfun α) (X : set α) := 
   {A : set α // X ⊆ M.cl A} 
 
 instance spans_fin (M : clfun α) (X : set α) : fintype (M.spans X) :=

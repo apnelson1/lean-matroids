@@ -4,6 +4,8 @@ import tactic.ext
 import .extensionality
 open_locale classical
 
+universe u
+
 namespace order.boolean_algebra
 
 variables {α : Type*} [boolean_algebra α] {x y : α}
@@ -211,7 +213,7 @@ lemma rw_sdiff : u ∈ x \ y ↔ u ∈ x ∧ u ∉ y := begin
   rw rw_inf,
 end
 
-instance boolalg_base_ext_lemmas (α : Type) [boolean_algebra α] 
+instance boolalg_base_ext_lemmas (α : Type u) [boolean_algebra α] 
   : (boolalg_ext_lemmas α (ultrafilter α)) := 
 {
   simpl_eq := by apply rw_eq,
@@ -223,13 +225,13 @@ instance boolalg_base_ext_lemmas (α : Type) [boolean_algebra α]
   ext_join := by apply rw_inf,
 }
 
-instance boolalg_base_ext_lemmas_compl (α : Type) [boolean_algebra α]  :
+instance boolalg_base_ext_lemmas_compl (α : Type u) [boolean_algebra α]  :
   (boolalg_ext_lemmas_compl  α (ultrafilter α)) :=
 {
   ext_compl := by apply rw_compl,
 }
 
-instance boolalg_base_ext_lemmas_top (α : Type) [boolean_algebra α]  :
+instance boolalg_base_ext_lemmas_top (α : Type u) [boolean_algebra α]  :
   (boolalg_ext_lemmas_top  α (ultrafilter α)) :=
 {
   ext_top := by apply rw_top,

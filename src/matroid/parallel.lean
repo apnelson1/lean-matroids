@@ -5,11 +5,14 @@ import .rankfun matroid.submatroid.minor_iso
 noncomputable theory 
 open_locale classical 
 
+universes u v w
+
 open set 
 namespace matroid 
 
 
-variables {α β : Type} [fintype α][fintype β] {M : matroid α} {e f : α} {X Y P : set α}
+variables {α : Type u} {β : Type v} [fintype α] [fintype β]
+{M : matroid α} {e f : α} {X Y P : set α}
 
 /-- relation of being both nonloops and having a rank-one union. Irreflexive at loops; 
     an equivalence relation when restricted to nonloops -/
@@ -77,7 +80,9 @@ lemma parallel_irrefl_of_loop (h : M.is_loop e) :
 
 lemma parallel_refl_iff_nonloop :
   M.parallel e e ↔ M.is_nonloop e :=
-⟨λ h, nonloop_iff_not_loop.mpr (λ hl, (parallel_irrefl_of_loop hl) h), λ h, parallel_refl_of_nonloop h⟩ 
+⟨λ h, nonloop_iff_not_loop.mpr 
+  (λ hl, (parallel_irrefl_of_loop hl) h), 
+  λ h, parallel_refl_of_nonloop h⟩ 
 
 lemma parallel_irrefl_iff_loop :
   ¬M.parallel e e ↔ M.is_loop e :=
@@ -234,7 +239,7 @@ lemma rank_eq_rank_of_parallel_covered (h₁ : M.parallel_covered X Y) (h₂ : M
 by {apply le_antisymm; exact rank_le_rank_of_parallel_covered (by assumption), }
 
 
-def parallel_class (M : matroid α) : Type := {X : set α // M.is_parallel_class X}
+def parallel_class (M : matroid α) := {X : set α // M.is_parallel_class X}
 
 def parallel_class_of (e : α) (he : M.is_nonloop e) : M.parallel_class := 
 ⟨M.parallel_cl e, parallel_class_iff_is_parallel_cl.mpr ⟨e,he,rfl⟩⟩ 
@@ -292,7 +297,8 @@ begin
     rw [mem_cl_iff_r,he, ←nonloop_iff_not_mem_loops, nonloop_iff_r] at h,
     linarith[h.1, h.2, M.rank_mono_union_right {e} {x}], },
   ext x, 
-  simp only [mem_diff, mem_set_of_eq, mem_cl_iff_r, rank_nonloop he, union_singleton, ←nonloop_iff_not_mem_loops], 
+  simp only [mem_diff, mem_set_of_eq, mem_cl_iff_r, rank_nonloop he, 
+    union_singleton, ←nonloop_iff_not_mem_loops], 
   split, { rintros ⟨hx,he,hxe⟩, split; assumption,  }, 
   rintros ⟨hxe,hx⟩, exact ⟨hx,he,hxe⟩, 
 end
@@ -306,7 +312,8 @@ end
 
 lemma rank_parallel_cl (he : M.is_nonloop e) : 
   M.r (M.parallel_cl e) = 1 := 
-by rwa [parallel_cl_eq_cl_minus_loops, rank_eq_rank_diff_rank_zero _ M.rank_loops, rank_cl, ←nonloop_iff_r]
+by rwa [parallel_cl_eq_cl_minus_loops, rank_eq_rank_diff_rank_zero _ M.rank_loops, 
+        rank_cl, ←nonloop_iff_r]
 
 lemma parallel_class_eq_cl_nonloop_diff_loops : 
   M.is_parallel_class P ↔ P.nonempty ∧ (∀ e ∈ P, P = M.cl {e} \ M.loops ) := 
@@ -364,7 +371,8 @@ lemma parallel_class_nonempty (P : M.parallel_class) :
   set.nonempty (P : set α) := 
 (parallel_class_eq_cl_nonloop_diff_loops.mp P.property).1
 
-lemma nonloop_of_parallel_cl_is_parallel_class {P : M.parallel_class} (h : (P : set α) = (M.parallel_cl e)) : 
+lemma nonloop_of_parallel_cl_is_parallel_class {P : M.parallel_class} 
+(h : (P : set α) = (M.parallel_cl e)) : 
   M.is_nonloop e := 
 begin
   by_contra hn, 
@@ -389,7 +397,11 @@ end
 
 lemma parallel_class_is_parallel_cl_nonloop (P : M.parallel_class) :
   ∃ e ∈ (P : set α), M.is_nonloop e ∧ (P : set α) = M.parallel_cl e :=
-by {have := parallel_class_is_cl_diff_loops P, simp_rw ←parallel_cl_eq_cl_minus_loops at this, assumption}
+begin
+  have := parallel_class_is_cl_diff_loops P, 
+  simp_rw ←parallel_cl_eq_cl_minus_loops at this,
+  assumption
+end 
 
 lemma parallel_class_is_parallel_cl (P : M.parallel_class) :
   ∃ e, (P : set α) = M.parallel_cl e :=
@@ -405,9 +417,14 @@ end
 
 lemma rank_parallel_class (M : matroid α) (P : M.parallel_class ) : 
   M.r P = 1 := 
-by {obtain ⟨e,heP,he, hP⟩ := parallel_class_is_parallel_cl_nonloop P, rw hP, apply rank_parallel_cl he}
+begin 
+  obtain ⟨e,heP,he, hP⟩ := parallel_class_is_parallel_cl_nonloop P, 
+  rw hP, 
+  apply rank_parallel_cl he
+end 
 
-lemma parallel_class_eq_of_nonempty_inter {P₁ P₂ : M.parallel_class} (h : set.nonempty (P₁ ∩ P₂ : set α)) : 
+lemma parallel_class_eq_of_nonempty_inter {P₁ P₂ : M.parallel_class} 
+(h : set.nonempty (P₁ ∩ P₂ : set α)) : 
   P₁ = P₂ :=
 begin
   rcases h with ⟨x,hx⟩, 
@@ -497,7 +514,8 @@ by simp [parallel_cl_image_of]
 lemma rank_eq_rank_parallel_cl_image_of (M : matroid α) (X : set α) :
   M.r X = M.r (union_parallel_classes (M.parallel_cl_image_of X)) :=
 begin
-  refine rank_eq_rank_of_parallel_covered (λ x hx hnl, ⟨x, _, parallel_refl_of_nonloop hnl⟩) (λ y hy hnl, _), 
+  refine rank_eq_rank_of_parallel_covered 
+    (λ x hx hnl, ⟨x, _, parallel_refl_of_nonloop hnl⟩) (λ y hy hnl, _), 
   { simp_rw [mem_union_parallel_classes, mem_parallel_cl_image_of_iff], 
     exact ⟨hnl, ⟨x, mem_inter hx (by simpa [mem_parallel_cl] using parallel_refl_of_nonloop hnl)⟩⟩}, 
   simp_rw [mem_union_parallel_classes, mem_parallel_cl_image_of_iff] at hy, 
@@ -572,10 +590,10 @@ begin
 end
 
 
-lemma size_img_transversal (f : M.transversal)
+lemma size_image_transversal (f : M.transversal)
 (S : set M.parallel_class) :
   size (f '' S) = size S := 
-size_img_inj (transversal_inj f) S
+size_image_inj (transversal_inj f) S
 
 lemma rank_img_transversal (f : M.transversal)
 (S : set M.parallel_class) :
@@ -589,9 +607,6 @@ begin
   simp_rw [PY, subtype.coe_mk], 
   rwa [parallel_comm, ← mem_parallel_cl, transversal_def, coe_parallel_class_of, mem_parallel_cl,
   parallel_refl_iff_nonloop], 
-  --simp [← mem_parallel_cl],  
-  --simp_rw [subtype.coe_mk, parallel_comm, ←mem_parallel_cl, transversal_def f PY, hPY, parallel_cl', subtype.coe_mk, mem_parallel_cl],
-  --apply parallel_refl_nonloop hy_nl,   
 end
 
 end matroid 

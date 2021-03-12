@@ -4,9 +4,11 @@ import matroid.rankfun matroid.dual
 open_locale classical 
 noncomputable theory
 
+universes u v w 
+
 open matroid set list 
 
-variables {α : Type} [fintype α] {N M : matroid α}
+variables {α : Type u} [fintype α] {N M : matroid α}
 
 section weak_image 
 /- M is a weak image N if the rank in N is upper-bounded by the rank in M -/
@@ -33,7 +35,6 @@ end
 lemma indep_of_weak_image_indep (h : N ≤ M){I : set α} (hI : N.is_indep I) :
   M.is_indep I := 
 weak_image_iff_indep.mp h I hI
-
 
 lemma weak_image_iff_dep:
   N ≤ M ↔ ∀ X, M.is_dep X → N.is_dep X := 

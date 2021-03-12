@@ -11,7 +11,7 @@ noncomputable theory
 
 
 section relax
-variables {α : Type} [fintype α] --[decidable_eq (set α)] 
+variables {α : Type u} [fintype α] --[decidable_eq (set α)] 
 
 def relax.r (M : matroid α) (C : set α) (X : set α) : ℤ:= 
   ite (X = C ∧ M.is_circuit_hyperplane C) (M.r X + 1) (M.r X)

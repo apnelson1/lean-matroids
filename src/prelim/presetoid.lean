@@ -2,18 +2,19 @@ import tactic .single
 
 /- γIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
 that it is transitive and symmetric -/
+universes u v w
 
 open_locale classical 
 noncomputable theory 
 
 open set function 
 
-structure presetoid (α : Type) := 
+structure presetoid (α : Type u) := 
 (rel : α → α → Prop)
 (rel_transitive : transitive rel)
 (rel_symmetric : symmetric rel)
 
-variables {α : Type} {a b c : α} {s : set α} (S : presetoid α) 
+variables {α : Type u} {a b c : α} {s : set α} (S : presetoid α) 
 
 namespace presetoid 
 

@@ -8,17 +8,17 @@ open freealg
 
 ------------------------- Conversion Tactic: [(finset α) or (set α) or boolean_lattice] to [boolean_ring] 
 
-lemma finset.inter_is_inf (α : Type) [decidable_eq α] (X Y : finset α) : X ∩ Y = X ⊓ Y := rfl
-lemma finset.union_is_sup (α : Type) [decidable_eq α] (X Y : finset α) : X ∪ Y = X ⊔ Y := rfl
-lemma finset.empt_is_bot (α : Type) [decidable_eq α] : (finset.has_emptyc.emptyc : finset α) = ⊥ := rfl
-lemma finset.subset_is_le (α : Type) [decidable_eq α] (X Y : finset α) : (X ⊆ Y) = (X ≤ Y) := rfl 
---lemma finset.univ_is_top (α : Type) [decidable_eq α] : (finset.order_top : finset α) = ⊤ := 
+lemma finset.inter_is_inf (α : Type u) [decidable_eq α] (X Y : finset α) : X ∩ Y = X ⊓ Y := rfl
+lemma finset.union_is_sup (α : Type u) [decidable_eq α] (X Y : finset α) : X ∪ Y = X ⊔ Y := rfl
+lemma finset.empt_is_bot (α : Type u) [decidable_eq α] : (finset.has_emptyc.emptyc : finset α) = ⊥ := rfl
+lemma finset.subset_is_le (α : Type u) [decidable_eq α] (X Y : finset α) : (X ⊆ Y) = (X ≤ Y) := rfl 
+--lemma finset.univ_is_top (α : Type u) [decidable_eq α] : (finset.order_top : finset α) = ⊤ := 
 
-lemma set.union_is_sup (α : Type) (X Y : set α) : X ∪ Y = X ⊔ Y := rfl
-lemma set.inter_is_inf (α : Type) (X Y : set α) : X ∩ Y = X ⊓ Y := rfl
-lemma set.empt_is_bot (α : Type) : (set.has_emptyc.emptyc : set α) = ⊥ := rfl 
-lemma set.univ_is_top (α : Type) : (set.univ : set α) = ⊤ := rfl 
-lemma set.subset_is_le (α : Type) (X Y : set α) : (X ⊆ Y) = (X ≤ Y) := rfl 
+lemma set.union_is_sup (α : Type u) (X Y : set α) : X ∪ Y = X ⊔ Y := rfl
+lemma set.inter_is_inf (α : Type u) (X Y : set α) : X ∩ Y = X ⊓ Y := rfl
+lemma set.empt_is_bot (α : Type u) : (set.has_emptyc.emptyc : set α) = ⊥ := rfl 
+lemma set.univ_is_top (α : Type u) : (set.univ : set α) = ⊤ := rfl 
+lemma set.subset_is_le (α : Type u) (X Y : set α) : (X ⊆ Y) = (X ≤ Y) := rfl 
 
 meta def to_ring_eqn : tactic unit := do
 `[try {simp only

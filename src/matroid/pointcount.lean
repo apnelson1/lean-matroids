@@ -6,7 +6,7 @@ open_locale classical
 
 open set matroid 
 
-variables {α β : Type} [fintype α][fintype β]
+variables {α β : Type u} [fintype α] [fintype β]
 
 /-- the 'parallel class matroid' on α in which the rank of a set is the number of parallel 
 classes of M that it intersects-/
@@ -41,7 +41,6 @@ begin
   { rw M.ps.mem_cl_iff, exact M.ps.rel_self_of_rel hef}, 
   rw M.ps.mem_cl_iff, symmetry, assumption, 
 end
-
 
 lemma ε_eq_largest_simple_subset (M : matroid α) (X : set α) : 
   M.ε X = max_val (λ (S : M.simple_subset_of X), size S.val) :=
@@ -81,7 +80,7 @@ lemma ε_eq_num_points_inter (M : matroid α) (X : set α) :
   M.ε X = size {P : M.point | ((P.val \ M.loops) ∩ X).nonempty } :=
 begin
   rw ε_eq_num_parallel_classes_inter, 
-  convert (size_img_inj M.parallel_class_point_equiv.injective _).symm, 
+  convert (size_image_inj M.parallel_class_point_equiv.injective _).symm, 
   ext P, cases P with P hP, 
   simp only [mem_set_of_eq, subtype.val_eq_coe],  
   split,

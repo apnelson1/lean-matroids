@@ -6,10 +6,11 @@ import  .int_lemmas
 open_locale classical 
 noncomputable theory 
 
+universe u 
 
 open set 
 
-variables {α : Type} [fintype α]
+variables {α : Type u} 
 
 section numbers 
 
@@ -78,7 +79,7 @@ end
 /-- Proves that P holds for all elements of a type α by 
     strong induction on the value of a nonnegative parameter f on α -/
 
-lemma nonneg_int_strong_induction_param {α : Type} (P : α → Prop) (f : α → ℤ)
+lemma nonneg_int_strong_induction_param (P : α → Prop) (f : α → ℤ)
 (f_nonneg : ∀ a : α, 0 ≤ f a) :
   (∀ a, f a = 0 → P a) → (∀ a : α, 0 < f a → (∀ a', f a' < f a → P a') → P a) → (∀ a, P a) :=
 begin
@@ -92,7 +93,7 @@ begin
   from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl,  
 end
 
-lemma min_counterexample_nonneg_int_param {α : Type} (P : α → Prop) (f : α → ℤ)
+lemma min_counterexample_nonneg_int_param (P : α → Prop) (f : α → ℤ)
 (f_nonneg : ∀ a : α, 0 ≤ f a) :
   ¬ (∀ a, P a) → ∃ x, (¬ P x ∧ ∀ x', f x' < f x → P x') :=
 begin

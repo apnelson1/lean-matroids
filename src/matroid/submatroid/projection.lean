@@ -4,8 +4,10 @@ import matroid.rankfun set_tactic.solver matroid.submatroid.order
 open set 
 open matroid 
 
+universes u v w 
+
 namespace matroid 
-variables {α : Type} [fintype α]
+variables {α : Type u} [fintype α]
 
 /-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
 Often more convenient than just contracting C  -/
@@ -218,8 +220,8 @@ end
 
 section pminor
 
-/-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising from loopifications and/or
-projections of M  -/
+/-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising 
+from loopifications and/or projections of M  -/
 def is_pminor_of (N M : matroid α) := 
   ∃ C D, N = M ⟋ C ⟍ D 
 

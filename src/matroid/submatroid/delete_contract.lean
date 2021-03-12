@@ -4,12 +4,13 @@ import matroid.rankfun matroid.dual .projection .matroid_in
 open_locale classical 
 noncomputable theory
 
+universes u v w
+
 open matroid set 
 
 namespace matroid_in
 
-variables {α β : Type} [fintype α][fintype β]
-
+variables {α β : Type u} [fintype α] [fintype β]
 
 /-- the contraction of C in M. Implemented as a projection -/
 def contract (M : matroid_in α) (C : set α) : matroid_in α := 
@@ -219,7 +220,14 @@ be abstracted away from matroids completely -/
 (D_ss_E : D ⊆ M.E)
 
 instance cd_pair.fintype (M : matroid_in α) : fintype (cd_pair M) := 
-by {tactic.mk_fintype_instance}
+begin
+  letI : fintype (set α × set α) := by apply_instance, 
+  set emb : M.cd_pair → (set α × set α) := λ e, ⟨e.C, e.D⟩ with hemb, 
+  refine fintype.of_injective emb (λ p₁ p₂ h, _),
+  rw hemb at h, dsimp only at h, 
+  ext : 1,  
+  tidy,   
+end
 
 def cd_pair.trivial (M : matroid_in α) : cd_pair M := 
 ⟨∅, ∅, by rw inter_self, empty_subset _, empty_subset _⟩ 
@@ -261,7 +269,6 @@ def cd_pair.of_con_restr (M : matroid_in α){C R : set α} (hC : C ⊆ M.E) (hR 
   C_ss_E := hC, 
   D_ss_E := diff_subset _ _,
   disj := by {ext, simp, tauto}}
-
 
 /-- maps a cd_pair M to the corresponding pair in M.as_mat-/
 def cd_pair.to_as_mat {M : matroid_in α} (p : cd_pair M) : cd_pair (M.as_mat : matroid_in M.E) := 

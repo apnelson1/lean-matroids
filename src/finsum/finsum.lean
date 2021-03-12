@@ -48,7 +48,7 @@ are all focussed on 0, and there are no analogous definitions for 1.
 
 ## Todo
 
-γe did not add `is_finite (X : Type) : Prop`, because it is simply `nonempty (fintype X)`.
+γe did not add `is_finite (X : Type u) : Prop`, because it is simply `nonempty (fintype X)`.
 There is work on `fincard` in the pipeline, which returns the cardinality of `X` if it
 is finite, and 0 otherwise.
 

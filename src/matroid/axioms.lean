@@ -1,12 +1,12 @@
 import prelim.size
 
+universes u u₁ u₂ u₃
+
 section axiom_sets 
 
-variable {α : Type}
+variable {α : Type u}
 
 section rank 
-
-
 
 def satisfies_R0 (r : set α → ℤ) : Prop := 
   ∀ X, 0 ≤ r X 
@@ -20,7 +20,7 @@ def satisfies_R2 (r : set α → ℤ) : Prop :=
 def satisfies_R3 (r : set α → ℤ) : Prop := 
   ∀ X Y, r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y
 
-@[ext] structure rankfun (α : Type) :=
+@[ext] structure rankfun (α : Type u) :=
   (r : set α → ℤ)
   (R0 : satisfies_R0 r)
   (R1 : satisfies_R1 r)
@@ -30,8 +30,6 @@ def satisfies_R3 (r : set α → ℤ) : Prop :=
 end rank 
 
 section indep 
-
-
 
 def satisfies_I1 (indep : set α → Prop) : Prop := 
   indep ∅ 
@@ -45,23 +43,21 @@ def satisfies_I3 (indep : set α → Prop) : Prop :=
 --def satisfies_I3' : (set α → Prop) → Prop := 
 --  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → size B = r
 
-@[ext] structure indep_family (α : Type) := 
+@[ext] structure indep_family (α : Type u) := 
   (indep : set α → Prop)
   (I1 : satisfies_I1 indep)
   (I2 : satisfies_I2 indep)
   (I3 : satisfies_I3 indep)
 
-/-@[ext] structure indep_family' (α : Type) := 
+/-@[ext] structure indep_family' (α : Type u) := 
   (indep : set α → Prop)
   (I1 : satisfies_I1 indep)
   (I2 : satisfies_I2 indep)
   (I3' : satisfies_I3' indep)-/
 
-
 end indep 
 
 section cct 
-
 
 def satisfies_C1 (cct : set α → Prop) : Prop := 
   ¬ cct ∅ 
@@ -73,7 +69,7 @@ def satisfies_C3 (cct : set α → Prop) : Prop:=
   ∀ C₁ C₂ (e : α), C₁ ≠ C₂ → cct C₁ → cct C₂ 
     → e ∈ (C₁ ∩ C₂) → ∃ C₀ , cct C₀ ∧ C₀ ⊆ (C₁ ∪ C₂) \ {e}
 
-@[ext] structure cct_family (α : Type) :=
+@[ext] structure cct_family (α : Type u) :=
   (cct : set α → Prop)
   (C1 : satisfies_C1 cct)
   (C2 : satisfies_C2 cct)
@@ -90,7 +86,7 @@ def satisfies_B2 (basis : set α → Prop) : Prop :=
   ∀ B₁ B₂, basis B₁ → basis B₂ 
     → ∀ (b₁ : α), b₁ ∈ B₁ \ B₂ → ∃ b₂, (b₂ ∈ B₂ \ B₁) ∧ basis (B₁ \ {b₁} ∪ {b₂}) 
 
-@[ext] structure basis_family (α : Type) :=
+@[ext] structure basis_family (α : Type u) :=
   (basis : set α → Prop)
   (B1 : satisfies_B1 basis)
   (B2 : satisfies_B2 basis)
@@ -111,7 +107,7 @@ def satisfies_cl3 : (set α → set α) → Prop :=
 def satisfies_cl4 : (set α → set α) → Prop :=
   λ cl, ∀ X (e f : α), (e ∈ cl (X ∪ {f}) \ X) → (f ∈ cl (X ∪ {e}) \ X)
 
-structure clfun (α : Type) := 
+structure clfun (α : Type u) := 
   (cl : set α → set α)
   (cl1 : satisfies_cl1 cl)
   (cl2 : satisfies_cl2 cl)
@@ -122,9 +118,9 @@ end cl
 
 end axiom_sets 
 
-def matroid (α : Type) := rankfun α 
+def matroid (α : Type u) := rankfun α 
 
-variables {α₁ α₂ α₃ : Type}
+variables {α₁ : Type u₁}{α₂ : Type u₂}{α₃ : Type u₃}
 
 namespace matroid
 
@@ -141,7 +137,8 @@ M₁.isom M₁ :=
 { equiv := equiv.refl α₁,
   on_rank := by simp  }
 
-def isom.trans {M₁ : matroid α₁} {M₂ : matroid α₂} {M₃ : matroid α₃} (I12 : M₁.isom M₂) (I23 : M₂.isom M₃) : 
+def isom.trans {M₁ : matroid α₁} {M₂ : matroid α₂} {M₃ : matroid α₃} 
+(I12 : M₁.isom M₂) (I23 : M₂.isom M₃) : 
 M₁.isom M₃ :=
 { equiv := I12.equiv.trans I23.equiv ,
   on_rank := λ X, by {rw [←I12.on_rank, ←I23.on_rank], apply congr_arg, ext, simp  }  } 
@@ -157,11 +154,11 @@ lemma isom.inv_on_rank {M₁ : matroid α₁} {M₂ : matroid α₂} (i : isom M
   M₂.r X = M₁.r (i.equiv.symm '' X) :=
 by {rw ←i.symm.on_rank X, refl} 
 
-def isom_equiv {M₁ N₁ : matroid α₁} {M₂ N₂ : matroid α₂} (h₁ : M₁ = N₁) (h₂ : M₂ = N₂) (i : isom M₁ M₂) : 
+def isom_equiv {M₁ N₁ : matroid α₁} {M₂ N₂ : matroid α₂} 
+(h₁ : M₁ = N₁) (h₂ : M₂ = N₂) (i : isom M₁ M₂) : 
   isom N₁ N₂ := 
 { equiv := i.equiv,
   on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }
  
-
 end matroid 
 

@@ -4,13 +4,14 @@ import .size .induction .single
 open_locale classical 
 noncomputable theory 
 
-
+universes u u' v v' w
 -- Lemmas applying for a general nonempty fintype 
 -- TODO - lemmas about folding, so sum etc is also subsumed 
 
 section general_fintype 
 
-variables {α α' β β': Type} [fintype α][nonempty α][linear_order β][linear_order β']
+variables {α : Type u}{α' : Type u'}{β : Type v}{β': Type v'} 
+[fintype α] [nonempty α] [linear_order β] [linear_order β']
 
 --instance fin_α : fintype α := by {letI := classical.choice _inst_1, apply_instance, }
 
@@ -190,7 +191,7 @@ by {rcases min_spec (λ (x : α), b) with ⟨x, hx⟩, rw ←hx.1 }
 
 /-- given a bound f(x) ≤ f(x') for all x,x', a pair a,a' for which f(a) = f(a') determines
 the max and min of f,f' respectively  -/
-lemma minmax_eq_cert [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) :
+lemma minmax_eq_cert [nonempty α'] [fintype α'] (f : α → β) (f' : α' → β) :
   (∃ a a', f a = f' a') → (∀ x x', f x ≤ f' x') → max_val f = min_val f' := 
 begin
   rintros ⟨a, a', heq⟩ hbound, 
@@ -201,7 +202,7 @@ begin
   rw [hub, hlb, heq],
 end
 
-lemma max_compose_le_max [non_empt : nonempty α][fintype α'] (φ : α → α') (f : α' → β) : 
+lemma max_compose_le_max [non_empt : nonempty α] [fintype α'] (φ : α → α') (f : α' → β) : 
   max_val (f ∘ φ) ≤ @max_val _ _ _ (nonempty.map φ non_empt) _ f := 
 begin
   rcases max_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -210,7 +211,7 @@ begin
   apply ha'₂,  
 end
 
-lemma min_le_min_compose [non_empt : nonempty α][fintype α'] (φ : α → α') (f : α' → β) : 
+lemma min_le_min_compose [non_empt : nonempty α] [fintype α'] (φ : α → α') (f : α' → β) : 
   @min_val _ _ _ (nonempty.map φ non_empt) _ f  ≤ min_val (f ∘ φ) := 
 begin
   rcases min_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩, 
@@ -223,7 +224,7 @@ end
 --by { apply_instance, } 
 
 /-- a bimonotone function of two maxima is a maximum over a product type -/
-lemma max_zip [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
+lemma max_zip [nonempty α'] [fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
                 (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩) : 
   g ⟨max_val f, max_val f'⟩ = max_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
@@ -237,7 +238,7 @@ begin
 end
 
 /-- a bimonotone function of two minima is a minimum over a product type -/
-lemma min_zip [nonempty α'][fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
+lemma min_zip [nonempty α'] [fintype α'] (f : α → β) (f' : α' → β) (g : β × β → β')
                 (g_mono : ∀ b₁ b₂ b₁' b₂', b₁ ≤ b₁' → b₂ ≤ b₂' → g ⟨b₁,b₂⟩ ≤ g ⟨b₁',b₂'⟩) : 
   g ⟨min_val f, min_val f'⟩ = min_val (λ a : α × α', g ⟨f a.1,f' a.2⟩) :=
 let f_prod := (λ a : α × α', g ⟨f a.1,f' a.2⟩) in 
@@ -257,7 +258,7 @@ end general_fintype
 
 section adding -- lemmas with a little more structure (eg addition) on β 
 
-variables {α α' β : Type} [nonempty α][fintype α][nonempty α'][fintype α'][linear_ordered_semiring β]
+variables {α α' β : Type u} [nonempty α] [fintype α] [nonempty α'] [fintype α'] [linear_ordered_semiring β]
 
 lemma max_add_commute (f : α → β) (s : β) : 
   (max_val f) + s = max_val (λ x, f x + s) := 
@@ -298,7 +299,7 @@ emphasis is on being able to reindex -/
 
 /-
 
-variables {α β γ: Type} [fintype α] (op: β → β → β)[is_commutative β op][is_associative β op]
+variables {α β γ: Type u} [fintype α] (op: β → β → β)[is_commutative β op] [is_associative β op]
 
 /-- returns a list of elements of pairs (a,f(a)) for a in α -/
 def as_list (f : α → β) : list (α × β) := 

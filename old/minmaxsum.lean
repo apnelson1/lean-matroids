@@ -8,7 +8,7 @@ namespace ftype
 -- The operations needed on the ftype A.
 section minmax
 
-variables {U : ftype} {α : Type} [linear_order α]
+variables {U : ftype} {α : Type u} [linear_order α]
 
 -- Proving this stuff probably needs fintype etc for ftype. 
 

@@ -1,13 +1,16 @@
 import matroid.axioms  
 import prelim.collections prelim.size 
 
+universes u 
+
 ----------------------------------------------------------------
 open set 
 noncomputable theory 
+
 namespace matroid 
 
 section dual
-variables {α : Type} [fintype α]
+variables {α : Type u} [fintype α]
  
 lemma rank_empt (M : matroid α) :
   M.r ∅ = 0 :=

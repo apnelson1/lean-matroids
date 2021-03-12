@@ -1,68 +1,17 @@
 import prelim.induction prelim.collections .rankfun 
 open set 
 
+universe u 
+
 open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
  
-variables {α : Type} [fintype α]
-
-/-namespace indep_family' 
-
-def r (M : indep_family' α) : (set α) → ℤ := 
-  λ X, classical.some (M.I3' X)
-
-
-def basis_of (M : indep_family' α) (B X : set α) :=
-  B ⊆ X ∧ M.indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬M.indep Y)
-
-lemma r_spec (M : indep_family' α) (X : set α) : 
-  ∀ B, M.basis_of B X → size B = M.r X :=
-classical.some_spec (M.I3' X)
-
-lemma extends_to_basis_of (M : indep_family' α) (I X : set α) :
-  I ⊆ X → M.indep I → ∃ B, I ⊆ B ∧ M.basis_of B X :=
-begin
-  intros hIX hI, 
-  rcases maximal_example (λ B, B ⊆ X ∧ M.indep B) ⟨hIX, hI⟩ with ⟨B, hB₁, hB₂⟩,
-  refine ⟨B, hB₁, hB₂.1.1, hB₂.1.2, λ Y hBY hYX hY, _⟩, 
-  push_neg at hB₂,
-  from hB₂.2 Y hBY hYX hY, 
-end
-
-lemma exists_basis_of (M : indep_family' α) (X : set α) :
-  ∃ B, M.basis_of B X := 
-by {have := M.extends_to_basis_of ∅ X (empty_subset _) (M.empty_indep), finish,}
-
-
-end indep_family'-/
-
+variables {α : Type u} [fintype α]
 
 namespace indep_family  
 
 
-
---def from_indep_family' (M : indep_family') := 
-
-
-/-
-
-/-- removing an element from an independent set preserves independence-/
-def satisfies_weak_indep_of_subset_indep : (set α → Prop) → Prop :=
-  λ indep, ∀ I (e : α), e ∉ I → indep (I ∪ {e}) → indep I 
-
-lemma weak_indep_of_subset_indep_to_indep_of_subset_indep (indep : set α → Prop) :  
-  satisfies_weak_indep_of_subset_indep indep → satisfies_indep_of_subset_indep  indep :=
-  begin
-    intros hwindep_of_subset_indep I J hIJ hJ, 
-    rcases minimal_example (λ K, I ⊆ K ∧ indep K) ⟨hIJ, hJ⟩ with ⟨K,⟨hKs,⟨⟨hIK,hKind⟩,hmin⟩⟩⟩,
-    by_cases I = K, rw ←h at hKind, assumption, 
-    rcases aug_of_ssubset (ssubset_of_subset_ne hIK h) with ⟨K',e,hIK',hK'K,hK'e⟩,
-    have heK' : e ∉ K' := by {rw ssubset_of_add_nonmem_iff, rw hK'e, from hK'K },
-    from false.elim (hmin K' hK'K ⟨hIK', by {rw ←hK'e at hKind, from hwindep_of_subset_indep _ _ heK' hKind}⟩ )
-  end
--/
-/-- B spans X and is independent -/
 def is_set_basis (M : indep_family α) := 
   λ B X, B ⊆ X ∧ M.indep B ∧ ∀ J, B ⊂ J → J ⊆ X → ¬M.indep J
 
