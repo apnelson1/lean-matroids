@@ -4,7 +4,7 @@ import order.boolean_algebra
 universe u 
 
 class boolalg_ext_lemmas
-  (T : Type u) (E : Type u) 
+  (T : Type*) (E : Type*) 
   [has_mem E T] 
   [has_sup T] 
   [has_inf T]
@@ -22,13 +22,13 @@ class boolalg_ext_lemmas
   (ext_join : ∀ {A B : T} {e}, e ∈ (A ⊓ B) ↔ e ∈ A ∧ e ∈ B)
 
 class boolalg_ext_lemmas_compl
-  (T : Type u) (E : Type u)
+  (T : Type*) (E : Type*)
   [has_compl T]
   [has_mem E T] :=
   (ext_compl : ∀ {A : T} {e}, e ∈ Aᶜ ↔ ¬ e ∈ A)
 
 class boolalg_ext_lemmas_top
-  (T : Type u) (E : Type u)
+  (T : Type*) (E : Type*)
   [has_mem E T]
   [has_top T] :=
   (ext_top : ∀ {e}, e ∈ (⊤ : T) ↔ true)

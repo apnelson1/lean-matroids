@@ -10,7 +10,7 @@ section general
 
 -- lemmas in this section maybe belong in the mathlib api 
 
-variables {α : Type u} {M: Type v} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
+variables {α : Type*} {M: Type*} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
 
 lemma finsum_eq_zero_of_infinite 
   (hs : ¬ (function.support f).finite) : ∑ᶠ i, f i = 0 :=
@@ -25,7 +25,7 @@ lemma finsupp_of_finsum_in_nonzero (h : ∑ᶠ i in s, f i ≠ 0) :
 by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at h, exact h rfl, })
 
 @[simp] lemma finsum_empty_set_type:
-  ∑ᶠ (i : ((∅ : set α) : Type u)), f i = 0 :=
+  ∑ᶠ (i : ((∅ : set α) : Type*)), f i = 0 :=
 begin
   rw [finsum_eq_finsum_in_univ, set.univ_eq_empty_iff.mpr, finsum_in_empty],  
   by_contra, obtain ⟨x,hx⟩ := h, 
@@ -116,7 +116,7 @@ end general
 
 section nat 
 
-lemma nat.coe_int_distrib_finsum_in {α : Type u} (f : α → ℕ) (s : set α) : 
+lemma nat.coe_int_distrib_finsum_in {α : Type*} (f : α → ℕ) (s : set α) : 
   (((∑ᶠ i in s, f i) : ℕ ) : ℤ) = ∑ᶠ i in s, (f i : ℤ) := 
 begin
   by_cases hs : (s ∩ function.support f).finite, 
@@ -127,7 +127,7 @@ begin
   convert hs using 2, ext, simp, 
 end
 
-lemma nat.coe_int_distrib_finsum {α : Type u} (f : α → ℕ) : 
+lemma nat.coe_int_distrib_finsum {α : Type*} (f : α → ℕ) : 
   (((∑ᶠ (i : α), f i) : ℕ ) : ℤ) = ∑ᶠ (i : α), (f i : ℤ) := 
 by rw [finsum_eq_finsum_in_univ, nat.coe_int_distrib_finsum_in, ← finsum_eq_finsum_in_univ]
 
@@ -135,7 +135,7 @@ end nat
 
 section ring
 
-variables {α : Type u} {M: Type v} [comm_semiring M] {f g : α → M} {s : set α}
+variables {α : Type*} {M: Type*} [comm_semiring M] {f g : α → M} {s : set α}
 
 lemma mul_distrib_finsum_in' 
 (hs : (s ∩ function.support f).finite) (c : M) :
@@ -170,7 +170,7 @@ end ring
 
 section group 
 
-variables {α : Type u} {M: Type v} [add_comm_group M] {f g : α → M} {s : set α}
+variables {α : Type*} {M: Type*} [add_comm_group M] {f g : α → M} {s : set α}
 
 lemma finsum_in_neg_distrib (f : α → M) (s : set α) : 
   ∑ᶠ i in s, - f i = - ∑ᶠ i in s, f i :=   
@@ -211,7 +211,7 @@ section order
 
 open_locale big_operators 
 
-variables {α : Type u} {M: Type v} {f g : α → M} {s t : set α}
+variables {α : Type*} {M: Type*} {f g : α → M} {s t : set α}
 
 lemma nonneg_of_finsum_in_nonneg [ordered_add_comm_monoid M] (hf : ∀ i ∈ s, 0 ≤ f i) : 
   0 ≤ ∑ᶠ i in s, f i := 
@@ -436,8 +436,8 @@ end order
 
 section intervals 
 
-variables {α : Type u} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α]
-{M : Type v} [add_comm_monoid M]
+variables {α : Type*} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α]
+{M : Type*} [add_comm_monoid M]
 
 lemma finsum_Icc_shift (a b d : α) (f : α → M) : 
   ∑ᶠ i in set.Icc a b, f (i + d) = ∑ᶠ i in set.Icc (a + d) (b + d), f i := 

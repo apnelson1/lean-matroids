@@ -7,7 +7,7 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 -- setting up the various types we are minimizing/maximizing over, and associated nonempty/fintype instances 
 section prelim 

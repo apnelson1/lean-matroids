@@ -2,7 +2,7 @@ import .induction .size
 
 universes u v w
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 open set 
 
 lemma induction_set_size_remove (P : set α → Prop) : 

@@ -113,15 +113,40 @@ begin
   rw [size_image_emb, canonical_unif_r ha], 
 end
 
-lemma matroid.has_unif_minor_iff_si_has_unif_minor {M : matroid α} {a b : ℤ} {ha : 2 ≤ a} :
+lemma matroid.has_unif_minor_iff_si_has_unif_minor (ha : 2 ≤ a) :
   M.has_unif_minor a b ↔ (si M).has_unif_minor a b := 
 (iminor_iff_iminor_si (canonical_unif_simple_of_two_le_r ha)).symm
+
+lemma has_uniform_minor_of_has_unif_restriction (h : M.has_unif_restr a b): 
+  M.has_unif_minor a b :=
+iminor_of_irestr h
 
 end uniform
 
 section line
 
-variables {α : Type u} [fintype α] {M : matroid α} {a b : ℤ} 
+variables {α : Type*} [fintype α] {M : matroid α} {l a b: ℤ} {X Y L : set α} 
+
+lemma line_restr_of_simple_set (hl : 2 ≤ l) (hr : M.r L ≤ 2) (hL : M.is_simple_set L) 
+(hsize : l ≤ size L):
+  M.has_unif_restr 2 l := 
+begin
+  rw has_unif_restr_iff (by norm_num : (0 : ℤ) ≤ 2) hl, 
+  obtain ⟨L', hL', hsizeL'⟩ := has_subset_of_size (by linarith : 0 ≤ l) hsize, 
+  refine ⟨L', hsizeL', λ X hXL', _⟩, 
+  rcases le_or_lt (size X) 2 with (hX | hX), 
+  { rw [rank_subset_simple_set hL (subset.trans hXL' hL') hX, min_eq_right hX]},
+  rw min_eq_left (le_of_lt hX), 
+  refine le_antisymm (le_trans (M.rank_mono (subset.trans hXL' hL')) hr) _,  
+  convert rank_subset_simple_set_lb hL (subset.trans hXL' hL'), 
+  rw min_eq_left (le_of_lt hX), 
+end
+
+lemma line_restr_of_ε {X : set α}(hr : M.r X ≤ 2)(hX : l ≤ M.ε X): 
+  M.has_unif_restr 2 l :=
+begin
+  sorry, 
+end
 
 
 end line 

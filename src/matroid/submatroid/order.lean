@@ -8,7 +8,7 @@ universes u v w
 
 open matroid set list 
 
-variables {α : Type u} [fintype α] {N M : matroid α}
+variables {α : Type*} [fintype α] {N M : matroid α}
 
 section weak_image 
 /- M is a weak image N if the rank in N is upper-bounded by the rank in M -/

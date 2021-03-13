@@ -10,7 +10,7 @@ noncomputable theory
 namespace matroid 
 
 section dual
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
  
 lemma rank_empt (M : matroid α) :
   M.r ∅ = 0 :=

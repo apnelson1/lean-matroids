@@ -11,7 +11,7 @@ noncomputable theory
 
 namespace partition
 
-variables {α ι : Type u} [fintype α] (f : α → ι){b : ι → ℤ}
+variables {α ι : Type*} [fintype α] (f : α → ι){b : ι → ℤ}
 
 /-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent 
 sets are those whose intersection with each cell i has size at most b i -/
@@ -37,7 +37,7 @@ end partition
 
 section presetoid_class
 
-variables {α : Type u} [fintype α] (S : presetoid α)
+variables {α : Type*} [fintype α] (S : presetoid α)
 
 namespace presetoid_matroid
 

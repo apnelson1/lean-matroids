@@ -20,9 +20,9 @@ than `finset.sum` when issues arise with `finset` and `fintype` being data.
 
 βariables:`
 
-`(α : Type u)`
+`(α : Type*)`
 `(s : set α)`
-`(M : Type v) [add_comm_monoid M]`
+`(M : Type*) [add_comm_monoid M]`
 `(f : α → M)`
 
 Definitions in this file:
@@ -48,7 +48,7 @@ are all focussed on 0, and there are no analogous definitions for 1.
 
 ## Todo
 
-γe did not add `is_finite (X : Type u) : Prop`, because it is simply `nonempty (fintype X)`.
+γe did not add `is_finite (X : Type*) : Prop`, because it is simply `nonempty (fintype X)`.
 There is work on `fincard` in the pipeline, which returns the cardinality of `X` if it
 is finite, and 0 otherwise.
 
@@ -67,15 +67,15 @@ namespace finset
 
 /-- `univ' α` is the finset corresponding to all of α if α is finite, and the empty set otherwise.
 Note that it is noncomputable -/
-noncomputable def univ' (α : Type u) : finset α :=
+noncomputable def univ' (α : Type*) : finset α :=
 if h : nonempty (fintype α) then (classical.choice h).elems else ∅
 
 /-- `set.to_finset s` is the finset corresponding to `s` if `s` is finite, and the empty set
     otherwise -/
-noncomputable def set.to_finset {α : Type u} (s : set α) : finset α :=
+noncomputable def set.to_finset {α : Type*} (s : set α) : finset α :=
 if h : s.finite then h.to_finset else ∅
 
-variable {α : Type u}
+variable {α : Type*}
 
 /-- `univ' α` is finset.univ if `α` is a fintype. -/
 lemma univ'_eq_univ [h : fintype α] : univ' α = univ :=
@@ -93,7 +93,7 @@ end finset
 
 section finsum
 
-variables {α : Type u} {M : Type v} [add_comm_monoid M]
+variables {α : Type*} {M : Type*} [add_comm_monoid M]
 
 /-- Sum of `f x` as `x` ranges over the elements of the support of `f`, if it's finite. Zero
   otherwise. -/
@@ -120,13 +120,13 @@ lemma finsum_in_def (s : set α) (f : α → M) :
 
 -- function.support doesn't import data.finsupp and vice versa
 -- so the lemmas can't go in either place
-lemma function.support_eq_support {α : Type u} {β : Type v} [has_zero β] (f : α →₀ β) :
+lemma function.support_eq_support {α : Type*} {β : Type*} [has_zero β] (f : α →₀ β) :
   function.support f = f.support :=
 set.ext $ λ x, finsupp.mem_support_iff.symm
 
 namespace finsupp
 
-variables {β : Type v} [has_zero β]
+variables {β : Type*} [has_zero β]
 
 lemma support_finite (f : α →₀ β) : (function.support f).finite :=
 by { rw function.support_eq_support, exact f.support.finite_to_set }
@@ -250,7 +250,7 @@ end
 lemma finsum_eq_finsum_in_univ (f : α → M) : ∑ᶠ i : α, f i = ∑ᶠ i in set.univ, f i :=
 by { rw finsum_in_def, congr, funext, rw if_pos (set.mem_univ _) }
 
-variables {β : Type w} {f g : α → M} {a b : α} {s t : set α}
+variables {β : Type*} {f g : α → M} {a b : α} {s t : set α}
 
 @[congr]
 lemma finsum_in_congr (h₀ : s = t) (h₁ : ∀ x ∈ t, f x = g x) : finsum_in s f = finsum_in t g :=

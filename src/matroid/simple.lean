@@ -9,7 +9,7 @@ universes u v w
 open set 
 namespace matroid 
 
-variables {α β : Type u} [fintype α] [fintype β] {M : matroid α} {e f : α} {S X : set α}
+variables {α β : Type*} [fintype α] [fintype β] {M : matroid α} {e f : α} {S X : set α}
 
 section simple 
 
@@ -33,6 +33,11 @@ lemma simple_of_subset_simple {M : matroid α} {S T : set α} (hT : M.is_simple_
 def is_simple (M : matroid α) :=
   is_simple_set M univ 
 
+lemma rank_subset_simple (h : M.is_simple) (hX : size X ≤ 2) :
+  M.r X = size X := 
+h X (subset_univ _) hX
+
+
 lemma rank_singleton_of_simple (h : M.is_simple) (e : α) : 
   M.r {e} = 1 :=
 by {rw [←size_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw size_singleton, norm_num }
@@ -40,6 +45,43 @@ by {rw [←size_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw siz
 lemma rank_pair_of_simple (h : M.is_simple) (hef : e ≠ f) : 
   M.r {e,f} = 2 :=
 by rw [indep_iff_r.mp (h {e,f} (subset_univ _) (by rw size_pair hef)), size_pair hef]
+
+lemma rank_mem_simple_set (h : M.is_simple_set S) (he : e ∈ S) : 
+  M.r {e} = 1 :=
+begin
+  rw [←size_singleton e, ← indep_iff_r], 
+  apply h _ (singleton_subset_iff.mpr he), 
+  rw size_singleton, 
+  norm_num,
+end 
+
+lemma rank_pair_of_simple_set (h : M.is_simple_set S) (hef : e ≠ f) (he : e ∈ S) (hf : f ∈ S): 
+  M.r {e,f} = 2 :=
+begin
+  rw [indep_iff_r.mp (h {e,f} _ (by rw size_pair hef)), size_pair hef], 
+  rw ← singleton_subset_iff at he hf,   
+  convert union_of_subsets he hf, 
+end 
+
+lemma rank_subset_simple_set (h : M.is_simple_set S) (hX : X ⊆ S) (hX' : size X ≤ 2):
+  M.r X = size X :=
+by convert h X hX hX'
+
+
+lemma rank_subset_simple_set_lb (h : M.is_simple_set S) (hX : X ⊆ S): 
+  min 2 (size X) ≤ M.r X := 
+begin
+  cases le_or_lt (size X) 2 with h1 h2, 
+  { rwa [min_eq_right h1, rank_subset_simple_set h hX]}, 
+  rw min_eq_left (le_of_lt h2), 
+  obtain ⟨X₀, hX₀, hX₀'⟩ := has_subset_of_size (by norm_num : (0 : ℤ) ≤ 2) (le_of_lt h2), 
+  rw [← hX₀', ← (rank_subset_simple_set h (subset.trans hX₀ hX) (le_of_eq hX₀'))],
+  exact rank_mono _ hX₀, 
+end 
+
+lemma rank_subset_simple_lb (h : M.is_simple) (X : set α): 
+  min 2 (size X) ≤ M.r X := 
+rank_subset_simple_set_lb h (subset_univ _)
 
 lemma eq_of_rank_one_simple (h : M.is_simple) (hef : M.r {e,f} = 1) : 
   e = f := 
@@ -53,7 +95,6 @@ begin
   apply rank_mono, 
   simp,  
 end
-
 
 lemma loopless_of_simple (hM : M.is_simple) :
   M.is_loopless := 

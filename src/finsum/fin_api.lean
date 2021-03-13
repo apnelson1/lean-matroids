@@ -10,7 +10,7 @@ universes u v w
 
 namespace fin
 
-variables {α : Type u} {β : Type v} [fintype α] {M: Type v} {f g : α → M} {s t : set α} {a b : α}
+variables {α : Type*} {β : Type*} [fintype α] {M: Type*} {f g : α → M} {s t : set α} {a b : α}
 
 lemma finsum_le_finsum [ordered_add_comm_monoid M] (hfg : ∀ x, f x ≤ g x) :
   ∑ᶠ (i : α), f i ≤ ∑ᶠ (i : α), g i := 

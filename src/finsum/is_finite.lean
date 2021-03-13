@@ -5,7 +5,7 @@ open_locale classical
 
 universes u v
 
-variables {α : Type u} {β : Type v}
+variables {α : Type*} {β : Type*}
 
 
 

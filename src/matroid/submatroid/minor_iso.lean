@@ -9,7 +9,7 @@ universes u v w
 
 namespace matroid_in.minor_pair
 
-variables {α β : Type u} [fintype α] [fintype β]
+variables {α β : Type*} [fintype α] [fintype β]
 {N M : matroid_in α}
 
 -- The next few definitions relate a minor pair N M to a minor pair N' M.as_mat 
@@ -136,7 +136,7 @@ namespace matroid
 
 open matroid_in.minor_pair 
 
-variables {α β γ : Type u}
+variables {α β γ : Type*}
 [fintype α] [fintype β] [fintype γ]
 
 /-- an embedding of N into M as a minor-/

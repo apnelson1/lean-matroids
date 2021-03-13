@@ -10,7 +10,7 @@ open set
 
 universe u 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 namespace cct_family
 

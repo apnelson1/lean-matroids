@@ -10,7 +10,7 @@ universes u v w
 
 namespace set 
 
-variables {α : Type u} {s s' t t' r r': set α}
+variables {α : Type*} {s s' t t' r r': set α}
 
 /-- the symmetric difference of two sets -/
 def symm_diff (s t : set α) : set α := (s \ t) ∪ (t \ s)

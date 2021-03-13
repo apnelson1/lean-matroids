@@ -9,7 +9,7 @@ universes u v w
 open set 
 
 section extrema 
-variables {α: Type u} [fintype α]
+variables {α: Type*} [fintype α]
 
 
 def is_lb (P : set α → Prop) (X : set α) : Prop := ∀ Y, P Y → X ⊆ Y 
@@ -207,7 +207,7 @@ lemma union_all_ub (P : set α → Prop) :
 end extrema 
 section size 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 
 

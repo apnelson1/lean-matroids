@@ -9,11 +9,11 @@ mk_simp_attribute coe_up "upwards coercion simp lemmas"
 
 universes u v w 
 
-instance coe_set_from_subtype {β : Type u} {S : set β} : has_coe (set S) (set β) := ⟨λ X, coe '' X⟩ 
+instance coe_set_from_subtype {β : Type*} {S : set β} : has_coe (set S) (set β) := ⟨λ X, coe '' X⟩ 
 /-- the intersection X ∩ S, viewed as a (set S) -/
-def inter_subtype {β : Type u} (S X : set β) : (set S) := coe ⁻¹' X 
+def inter_subtype {β : Type*} (S X : set β) : (set S) := coe ⁻¹' X 
 
-variables {α : Type u} [fintype α] {S : set α}
+variables {α : Type*} [fintype α] {S : set α}
 
 @[coe_up] lemma subtype_coe_singleton (e : S) : 
   (({(e : S)} : set S) : set α) = {(e : α)} :=
@@ -79,10 +79,10 @@ by rw [subtype_coe_size, coNE_inter_subtype]
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S) :=
 by rw [←subtype_set_coe_inj, coNE_inter_subtype, coNE_inter_subtype]
  
-@[simp] lemma function.embedding.image_trans {α β C : Type u} (e₁ : α ↪ β) (e₂ : β ↪ C) (X : set α) :
+@[simp] lemma function.embedding.image_trans {α β C : Type*} (e₁ : α ↪ β) (e₂ : β ↪ C) (X : set α) :
   (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
 by {unfold function.embedding.trans, rw ← image_comp, refl,   }
 
-@[simp] lemma equiv.image_trans {α β γ : Type u} (e₁ : α ≃ β) (e₂ : β ≃ γ) (X : set α) :
+@[simp] lemma equiv.image_trans {α β γ : Type*} (e₁ : α ≃ β) (e₂ : β ≃ γ) (X : set α) :
   (e₁.trans e₂) '' X = e₂ '' (e₁ '' X) := 
 by {unfold equiv.trans, rw ← image_comp, refl,   }

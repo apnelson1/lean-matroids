@@ -8,14 +8,14 @@ universes u v w
 
 open matroid set 
 
-variables {α β α₁ α₂ α₃: Type u}
+variables {α β α₁ α₂ α₃: Type*}
 [fintype α] [fintype β]
 [fintype α₁] [fintype α₂] [fintype α₃]
 
 /-- a matroid_in α corresponds to a matroid defined on some subset E of α. 
 Implemented as a matroid on which the nonelements of E are all loops. -/
 
-structure matroid_in (α : Type u)[fintype α] :=
+structure matroid_in (α : Type*)[fintype α] :=
 (E : set α)
 (carrier : matroid α)
 (support : carrier.r Eᶜ = 0)
@@ -167,7 +167,7 @@ section defs
 /-- translates a property of sets defined on (matroid β) to the corresponding
 set property on (matroid_in α). -/
 def lift_mat_set_property 
-(P : Π {β : Type u} [fintype β], matroid β → set β → Prop) : 
+(P : Π {β : Type*} [fintype β], matroid β → set β → Prop) : 
   (matroid_in α → set α → Prop) :=
   λ M, (λ X, X ⊆ M.E ∧ (P M.as_mat) (inter_subtype M.E X))
 

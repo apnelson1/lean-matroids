@@ -10,7 +10,7 @@ universe u
 
 open set 
 
-variables {α : Type u} 
+variables {α : Type*} 
 
 section numbers 
 

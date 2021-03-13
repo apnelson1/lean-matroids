@@ -7,7 +7,7 @@ open matroid
 universes u v w 
 
 namespace matroid 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 /-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
 Often more convenient than just contracting C  -/
@@ -99,9 +99,23 @@ lemma loopify_loopify (M : matroid α) (D D' : set α) :
    M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
 by {ext X, simp [diff_eq, ←inter_assoc, inter_right_comm]}
 
-lemma loopify_makes_loops (M : matroid α) (D : set α) : 
-  loops M ∪ D ⊆ loops (M ⟍ D) := 
-by {rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], tidy,}
+lemma loops_loopify (M : matroid α) (D : set α) : 
+  loops M ∪ D = loops (M ⟍ D) := 
+begin
+  refine subset.antisymm _ (λ x hx, _), 
+  { rw [←rank_zero_iff_subset_loops, loopify_r, rank_zero_iff_subset_loops], tidy,},
+  
+  rw [← loop_iff_mem_loops, loop_iff_r, loopify_r] at hx, 
+  by_contra hn, 
+  rw [mem_union_eq, not_or_distrib, ← nonloop_iff_not_mem_loops, nonloop_iff_r] at hn, 
+  have hxD : {x} \ D = {x},
+  { ext, 
+    simp only [mem_singleton_iff, and_iff_left_iff_imp, mem_diff], 
+    rintro rfl,  
+    exact hn.2},
+  rw [hxD,hn.1] at hx, 
+  exact one_ne_zero hx, 
+end
 
 lemma loopify_rank_zero_eq {M : matroid α} {D : set α} (h : M.r D = 0) :
   M ⟍ D = M := 

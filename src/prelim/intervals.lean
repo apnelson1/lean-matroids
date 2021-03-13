@@ -8,22 +8,22 @@ open set
 
 /-- an `ordered_cancel_add_comm_monoid` with one-sided 'subtraction' in the sense that if `a ≤ b`, 
 there is some `c` for which `a + c = b` -/
-class has_exists_add_of_le (α : Type u)[ordered_add_comm_monoid α] := 
+class has_exists_add_of_le (α : Type*)[ordered_add_comm_monoid α] := 
 (exists_add_of_le : ∀ (a b : α), a ≤ b → ∃ (c : α), b = a + c)
 
 instance ordered_add_comm_group.has_exists_add_of_le
-(α : Type u)[ordered_add_comm_group α] : 
+(α : Type*)[ordered_add_comm_group α] : 
   has_exists_add_of_le α := 
 ⟨λ a b hab, ⟨b - a, (add_sub_cancel'_right a b).symm⟩⟩
 
 instance canonically_ordered_add_monoid.has_exists_add_of_le 
-(α : Type u)[canonically_ordered_add_monoid α]:
+(α : Type*)[canonically_ordered_add_monoid α]:
   has_exists_add_of_le α := 
 ⟨λ a b hab, le_iff_exists_add.mp hab⟩
 
 section has_exists_add_of_le 
 
-variables {α : Type u} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α] (l u x : α)
+variables {α : Type*} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α] (l u x : α)
 
 open has_exists_add_of_le
 
@@ -93,7 +93,7 @@ end has_exists_add_of_le
 
 section ordered_add_comm_group
 
-variables {α : Type u} [ordered_add_comm_group α] (u x : α)
+variables {α : Type*} [ordered_add_comm_group α] (u x : α)
 
 lemma Iic_add_bij :
   bij_on (+x) (Iic u) (Iic (u + x)) :=
@@ -230,7 +230,7 @@ end int
 
 section insert 
 
-variables {α : Type u} [partial_order α] {l u : α}
+variables {α : Type*} [partial_order α] {l u : α}
 
 
 @[simp] lemma Ioc_insert_left_eq_Icc (hle : l ≤ u) : 

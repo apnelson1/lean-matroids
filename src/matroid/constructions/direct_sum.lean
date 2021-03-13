@@ -9,7 +9,7 @@ noncomputable theory
 
 namespace idsum 
 
-variables {α ι : Type u} [fintype α] (f : α → ι)
+variables {α ι : Type*} [fintype α] (f : α → ι)
 (Rs : ∀ (i : ι), matroid {x // f x = i})
 
 /-- the rank of a set is the sum of the direct-summand ranks of its intersection with the cells of the partition -/
@@ -40,7 +40,7 @@ begin
   simpa using hx, 
 end
 
-lemma sum_finite_supp {α : Type u} {f g : α → ℤ}
+lemma sum_finite_supp {α : Type*} {f g : α → ℤ}
   (hf : (function.support f).finite) (hg : (function.support g).finite) :
 (function.support (f + g)).finite :=
 begin

@@ -11,7 +11,7 @@ open set
 namespace matroid 
 
 
-variables {α : Type u} {β : Type v} [fintype α] [fintype β]
+variables {α : Type*} {β : Type*} [fintype α] [fintype β]
 {M : matroid α} {e f : α} {X Y P : set α}
 
 /-- relation of being both nonloops and having a rank-one union. Irreflexive at loops; 

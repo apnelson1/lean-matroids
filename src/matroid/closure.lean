@@ -6,7 +6,7 @@ noncomputable theory
 
 universe u 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 open set 
 

@@ -10,12 +10,12 @@ universes u u' v v' w
 
 section general_fintype 
 
-variables {α : Type u}{α' : Type u'}{β : Type v}{β': Type v'} 
+variables {α : Type*}{α' : Type*}{β : Type*}{β': Type*} 
 [fintype α] [nonempty α] [linear_order β] [linear_order β']
 
 --instance fin_α : fintype α := by {letI := classical.choice _inst_1, apply_instance, }
 
-/- theorem set.finite.exists_maximal_wrt {α : Type u} {β : Type v} [partial_order β]
+/- theorem set.finite.exists_maximal_wrt {α : Type*} {β : Type*} [partial_order β]
 (f : α → β) (s : set α) (h : s.finite) :
 s.nonempty → (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') -/
 
@@ -258,7 +258,7 @@ end general_fintype
 
 section adding -- lemmas with a little more structure (eg addition) on β 
 
-variables {α α' β : Type u} [nonempty α] [fintype α] [nonempty α'] [fintype α'] [linear_ordered_semiring β]
+variables {α α' β : Type*} [nonempty α] [fintype α] [nonempty α'] [fintype α'] [linear_ordered_semiring β]
 
 lemma max_add_commute (f : α → β) (s : β) : 
   (max_val f) + s = max_val (λ x, f x + s) := 
@@ -299,7 +299,7 @@ emphasis is on being able to reindex -/
 
 /-
 
-variables {α β γ: Type u} [fintype α] (op: β → β → β)[is_commutative β op] [is_associative β op]
+variables {α β γ: Type*} [fintype α] (op: β → β → β)[is_commutative β op] [is_associative β op]
 
 /-- returns a list of elements of pairs (a,f(a)) for a in α -/
 def as_list (f : α → β) : list (α × β) := 
@@ -369,7 +369,7 @@ Define C i by induction on i : fin (n + 1) via induction on the underlying nat v
 
 
 
--- def list.foldr {α : Type u} {β : Type v} (f : α → β → β) (b : β) :
+-- def list.foldr {α : Type*} {β : Type*} (f : α → β → β) (b : β) :
 --list α → β
 
 

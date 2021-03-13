@@ -9,12 +9,12 @@ noncomputable theory
 
 open set function 
 
-structure presetoid (α : Type u) := 
+structure presetoid (α : Type*) := 
 (rel : α → α → Prop)
 (rel_transitive : transitive rel)
 (rel_symmetric : symmetric rel)
 
-variables {α : Type u} {a b c : α} {s : set α} (S : presetoid α) 
+variables {α : Type*} {a b c : α} {s : set α} (S : presetoid α) 
 
 namespace presetoid 
 

@@ -14,9 +14,9 @@ noncomputable theory
 
 namespace unif
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
-def free_matroid_on (α : Type u) [fintype α]: matroid α := 
+def free_matroid_on (α : Type*) [fintype α]: matroid α := 
 { r := size,
   R0 := size_nonneg,
   R1 := λ X, le_refl (size X),
@@ -35,7 +35,7 @@ begin
   ext X, simp_rw [free_matroid_on, ←indep_iff_r, indep_of_subset_indep (subset_univ X) h], 
 end
 
-def loopy (α : Type u) [fintype α]: matroid α := 
+def loopy (α : Type*) [fintype α]: matroid α := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
   R1 := λ X, size_nonneg X, 
@@ -56,7 +56,7 @@ lemma loopy_matroid_indep_iff_empty {X : set α} :
   (loopy α).is_indep X ↔ X = ∅ := 
 by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 
-def uniform_matroid_on (α : Type u) [fintype α] (r : ℤ) : matroid α := 
+def uniform_matroid_on (α : Type*) [fintype α] (r : ℤ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
 
 lemma uniform_matroid_rank {r : ℤ} (hr : 0 ≤ r) (X : set α) :
@@ -83,7 +83,7 @@ begin
   all_goals {linarith}, 
 end
 
-def circuit_matroid_on (α : Type u) [fintype α]: matroid α := 
+def circuit_matroid_on (α : Type*) [fintype α]: matroid α := 
   uniform_matroid_on α (type_size α - 1)
 
 @[simp] lemma circuit_matroid_rank (hα : nonempty α) (X : set α) :
@@ -106,7 +106,7 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type u)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
+lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
   rw type_size_eq at hα, 
@@ -125,7 +125,7 @@ begin
   exact le_trans hX h, 
 end
 
-lemma unif_simple_of_two_le_r (α : Type u)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
+lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple :=
 begin
   rintros X - hX, 

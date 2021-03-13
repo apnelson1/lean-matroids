@@ -11,7 +11,7 @@ universes u v w
 namespace ftype 
 open set 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 def list_union : list (set α) → set α := 
   λ Xs, (⋃ (X ∈ Xs), X) 
@@ -105,11 +105,11 @@ end ftype
 
 namespace list
 
-lemma nil_of_unzip_nil_left {α β : Type u} (L : list (α × β)) : 
+lemma nil_of_unzip_nil_left {α β : Type*} (L : list (α × β)) : 
   L.unzip.1 = list.nil → L = list.nil := 
 λ h, by {rw [←L.zip_unzip, h], simp only [zip_nil_left]} 
 
-lemma nil_of_unzip_nil_right {α β : Type u} (L : list (α × β)) : 
+lemma nil_of_unzip_nil_right {α β : Type*} (L : list (α × β)) : 
   L.unzip.2 = list.nil → L = list.nil := 
 λ h, by {rw [←L.zip_unzip, h], simp only [zip_nil_right]} 
 

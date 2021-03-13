@@ -12,7 +12,7 @@ open_locale classical
 noncomputable theory 
 open matroid set 
 
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 section intersection 
 
@@ -133,8 +133,8 @@ begin
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
     have h_add_e := union_subset_union 
-      (loopify_makes_loops N₁ {e}) 
-      (loopify_makes_loops N₂ {e}), 
+      (loops_loopify N₁ {e}) 
+      (loops_loopify N₂ {e}), 
     rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
     rw [size_union_singleton_compl he, ←hN₁d, ←hN₂d] at this, 

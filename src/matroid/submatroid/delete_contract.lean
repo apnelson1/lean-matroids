@@ -10,7 +10,7 @@ open matroid set
 
 namespace matroid_in
 
-variables {α β : Type u} [fintype α] [fintype β]
+variables {α β : Type*} [fintype α] [fintype β]
 
 /-- the contraction of C in M. Implemented as a projection -/
 def contract (M : matroid_in α) (C : set α) : matroid_in α := 

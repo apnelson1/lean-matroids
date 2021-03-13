@@ -7,7 +7,7 @@ open_locale classical
 noncomputable theory 
 ----------------------------------------------------------------
  
-variables {α : Type u} [fintype α]
+variables {α : Type*} [fintype α]
 
 namespace indep_family  
 

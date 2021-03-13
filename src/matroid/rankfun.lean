@@ -13,7 +13,7 @@ open_locale big_operators
 noncomputable theory 
 ----------------------------------------------------------------
 namespace matroid 
-variables {α : Type u} [fintype α] {M : matroid α} {e f x y z : α}
+variables {α : Type*} [fintype α] {M : matroid α} {e f x y z : α}
 {X Y Z X' Y' Z' F B I C C₁ C₂ F₁ F₂ P : set α}
 
 -- probably split up these set notations by section...

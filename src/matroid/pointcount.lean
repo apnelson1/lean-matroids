@@ -6,7 +6,7 @@ open_locale classical
 
 open set matroid 
 
-variables {α β : Type u} [fintype α] [fintype β]
+variables {α β : Type*} [fintype α] [fintype β]
 
 /-- the 'parallel class matroid' on α in which the rank of a set is the number of parallel 
 classes of M that it intersects-/
