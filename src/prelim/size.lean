@@ -1,6 +1,6 @@
 
 import tactic 
-import .int_lemmas .set .single finsum.fin_api  .induction 
+import .num_lemmas .set .single finsum.fin_api  .induction 
 
 open_locale classical big_operators 
 noncomputable theory 
@@ -44,6 +44,10 @@ lemma type_size_subtype_eq_size (s : set α) :
   type_size s = size s := 
 by rw [type_size_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
 
+lemma type_size_subtype_eq_size_set_of (P : α → Prop): 
+  type_size {x // P x} = size {x | P x} :=
+type_size_subtype_eq_size P
+
 @[simp] lemma size_empty (α : Type*) : size (∅ : set α) = 0 := 
 by simp [size]
 
@@ -73,6 +77,10 @@ lemma nonempty_of_size_pos (hs : 0 < size s) :
   s.nonempty := 
 by {rw ← set.ne_empty_iff_nonempty, rintro rfl, linarith [size_empty α], }
 
+lemma nonempty_of_type_size_pos (hα : 0 < type_size α): 
+  nonempty α := 
+by {rw set.nonempty_iff_univ_nonempty, rw type_size_eq at hα, exact nonempty_of_size_pos hα, }
+
 lemma contains_singleton {s : set α} : s.nonempty → (∃ t, t ⊆ s ∧ size t = 1) :=
 λ ⟨e,he⟩, ⟨{e},⟨set.singleton_subset_iff.mpr he, size_singleton e⟩⟩
 
@@ -83,6 +91,14 @@ lemma exists_mem_of_size_pos (h : 0 < size s) :
 @[simp] lemma finsum_ones_eq_size (s : set α) : 
   ∑ᶠ x in s, (1 : ℤ) = size s := 
 by {rw [size, fincard, nat.coe_int_distrib_finsum_in], refl}
+
+@[simp] lemma finsum_ones_eq_type_size (α : Type*) : 
+  ∑ᶠ (x : α), (1 : ℤ) = type_size α := 
+by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
+
+lemma size_set_of_eq_size_subtype (P : α → Prop):
+  size {x | P x} = type_size {x // P x} :=
+by rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, ← finsum_subtype_eq_finsum_in_set_of]
 
 end basic 
 
@@ -104,7 +120,7 @@ begin
   simp only [set.mem_singleton_iff],
   refine ⟨λ h', _, λ h', by {rwa ← h' at he}⟩, 
   rw ← finsum_ones_eq_size at h,
-  have hs' := finsum_in_subset_le_finsum_in_of_nonneg' hs 
+  have hs' := finsum_in_subset_le_finsum_in_of_nonneg hs 
     (_ : {e,x} ⊆ s) (λ x hx, (by norm_num: (0 : ℤ ) ≤ 1)), 
   { by_contra hxe, 
     rw [finsum_pair (ne.symm hxe), h, add_le_iff_nonpos_right] at hs',
@@ -126,10 +142,6 @@ end general
 section sums 
 
 variables {α : Type*}
-
-@[simp] lemma finsum_ones_eq_type_size (α : Type*) : 
-  ∑ᶠ (x : α), (1 : ℤ) = type_size α := 
-by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
 
 @[simp] lemma int.finsum_const_eq_mul_type_size (α : Type*) (b : ℤ) :
   ∑ᶠ (x : α), b = b * type_size α := 
@@ -160,24 +172,7 @@ variables {α : Type*} {s t : set α} {e f : α}
 
 open set 
 
-lemma set.infinite_of_finite_diff (hs : s.finite) (ht : t.infinite) :
-  (t \ s).infinite := 
-λ h, ht (by {refine finite.subset (finite.union hs h) _, simp, })
-
-lemma set.infinite_of_union (hs : s.infinite) (t : set α) : 
-  (s ∪ t).infinite := 
-set.infinite_mono (subset_union_left _ _) hs 
-
 namespace set.finite
-
-lemma of_diff (hs : s.finite) (t : set α) : (s \ t).finite :=  
-  set.finite.subset hs (diff_subset _ _)
-
-lemma of_inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
-  set.finite.subset hs (inter_subset_left _ _)
-
-lemma of_inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
-  set.finite.subset ht (inter_subset_right _ _)
 
 lemma size_modular (s t : set α) (hs : s.finite) (ht : t.finite) : 
   size (s ∪ t) + size (s ∩ t) = size s + size t :=
@@ -190,7 +185,7 @@ by linarith [size_modular s t hs ht]
 lemma size_monotone (ht : t.finite) (hst : s ⊆ t) : size s ≤ size t := 
 begin
   have hs := subset ht hst, 
-  have := size_modular s (t \ s) hs (of_diff ht s), 
+  have := size_modular s (t \ s) hs (ht.diff s), 
   rw [union_diff_of_subset hst, inter_diff] at this, 
   linarith [size_nonneg (t \ s), size_empty α],
 end 
@@ -206,7 +201,7 @@ lemma compl_inter_size (s t : set α) (ht : t.finite) :
   size (s ∩ t) + size (sᶜ ∩ t) = size t := 
 by {rw [←size_modular, ←inter_distrib_right, union_compl_self, univ_inter, 
   ←inter_distrib_inter_left, inter_compl_self, empty_inter, size_empty, add_zero];
-  exact of_inter_right (by assumption) _, }
+  exact inter_right (by assumption) _, }
 
 lemma compl_inter_size_subset (ht : t.finite) (hst : s ⊆ t) : 
   size (sᶜ ∩ t) = size t - size s := 
@@ -235,14 +230,14 @@ begin
     unfold symm_diff at this,
     rw this, 
     linarith [diff_size (union hs ht) (inter_subset_union s t)]}, 
-  repeat {apply of_diff, assumption}, 
+  repeat {apply diff, assumption}, 
 end
 
 lemma size_induced_partition (s t : set α) (hs : s.finite)  :
   size s = size (s ∩ t) + size (s \ t) := 
 begin
   nth_rewrite 0 ←diff_union s t, 
-  refine size_union_of_inter_empty (of_inter_left hs _) (of_diff hs _) (partition_inter _ _), 
+  refine size_union_of_inter_empty (inter_left hs _) (diff hs _) (partition_inter _ _), 
 end 
 
 lemma size_induced_partition_inter (s t : set α) (hs : s.finite) :
@@ -298,10 +293,14 @@ end
 lemma one_le_size_iff_nonempty (hs : s.finite) : s.nonempty ↔ 1 ≤ size s := 
   nonempty_iff_size_pos hs 
 
+
+lemma one_le_size_of_nonempty (hs : s.nonempty) (hs' : s.finite) : 1 ≤ size s := 
+  (one_le_size_iff_nonempty hs').mp hs 
+
 lemma size_strict_monotone (ht : t.finite) (hst : s ⊂ t) : size s < size t := 
 begin
   rw [size_induced_partition t s ht, inter_comm, subset_iff_inter_eq_left.mp hst.1], 
-  linarith [size_nonempty (of_diff ht _) (ssubset_diff_nonempty hst)], 
+  linarith [size_nonempty (diff ht _) (ssubset_diff_nonempty hst)], 
 end 
 
 lemma eq_of_eq_size_subset (ht : t.finite) (hst : s ⊆ t) (hsize : size s = size t) :
@@ -378,7 +377,7 @@ begin
   nth_rewrite 1 ← h', 
   rw [size_insert_nonmem], 
     ring, 
-  apply of_diff hs _, 
+  apply diff hs _, 
   simp,  
 end
 
@@ -453,6 +452,44 @@ begin
   exact hef (h e f he hf),   
 end
 
+variables {k : set (set α)}
+
+lemma size_sUnion (hk : k.finite) (hk' : ∀ s ∈ k, set.finite s) (hdisj : pairwise_disjoint k) : 
+  size (⋃₀ k) = ∑ᶠ s in k, size s := 
+by {convert finsum_in_sUnion' (1 : α → ℤ) hk hk' hdisj; {simp_rw ← finsum_ones_eq_size, refl}}
+
+lemma size_collection_le_size_union (hk : ∀ s ∈ k, set.finite s) 
+(hk' : ∀ s ∈ k, set.nonempty s) (hdisj : pairwise_disjoint k): 
+  (size k ≤ size (⋃₀ k)) := 
+begin
+  by_cases hk'' : k.finite, swap,
+  { convert size_nonneg _, rw size_zero_of_infinite hk''},
+  rw [size_sUnion hk'' hk hdisj, ← finsum_ones_eq_size], 
+  refine finsum_in_le_finsum_in hk'' (λ x hx, _),  
+  rw ← (one_le_size_iff_nonempty (hk x hx)), 
+  exact hk' x hx, 
+end
+
+lemma singletons_of_size_collection_eq_size_union (hk : k.finite) (hk' : ∀ s ∈ k, set.finite s)
+(hk'' : ∀ s ∈ k, set.nonempty s) (hdisj : pairwise_disjoint k) (hsize : size k = size (⋃₀ k)): 
+  ∀ s ∈ k, size s = 1 :=
+begin
+  rw [size_sUnion hk hk' hdisj, ← finsum_ones_eq_size] at hsize,
+  conv in (_ = _) {rw eq_comm}, 
+  convert (finsum_in_eq_finsum_in_iff_of_le hk (λ x hx, _)).mp hsize, 
+  apply one_le_size_of_nonempty (hk'' _ hx) (hk' _ hx), 
+end
+
+lemma size_collection_eq_size_union_iff (hk : k.finite) (hk' : ∀ s ∈ k, set.finite s)
+(hk'' : ∀ s ∈ k, set.nonempty s) (hdisj : pairwise_disjoint k) :
+  size k = size (⋃₀ k) ↔ ∀ s ∈ k, size s = 1 :=
+begin
+  refine ⟨λ h, singletons_of_size_collection_eq_size_union hk hk' hk'' hdisj h, λ h, _⟩, 
+  rw [size_sUnion hk hk' hdisj, ← finsum_ones_eq_size, eq_comm], 
+  exact finsum_in_eq_of_eq h, 
+end
+
+
 
 end set.finite 
 
@@ -466,6 +503,13 @@ section general
 variables {α : Type*} {s t : set α} {e f : α}
 
 open set 
+
+lemma compl_nonempty_of_size_lt_type_size (hs : size s < type_size α):  
+  sᶜ.nonempty :=
+begin
+  rw type_size_eq at hs,
+  refine nonempty_compl.mpr (λ h, lt_irrefl (size s) (by {rwa ← h at hs})), 
+end
 
 lemma size_union_singleton_ub :
   size (s ∪ {e}) ≤ size s + 1 := 
@@ -500,7 +544,7 @@ begin
   by_cases hs : s.finite, 
   { have h1 := hs.size_remove_mem he, 
     have h2 := finite.size_union_nonmem_singleton 
-      (hs.of_diff _) 
+      (hs.diff _) 
       (nonmem_diff_of_nonmem {e} hf), 
     linarith},
   rw [size_zero_of_infinite hs, size_zero_of_infinite _], 
@@ -574,7 +618,7 @@ begin
     (λ _ _ _, ⟨∅, empty_subset _, size_empty _⟩) 
     (λ n hn ih t ht ht', _), 
   obtain ⟨e,he⟩ := exists_mem_of_size_pos (by linarith : 0 < size t), 
-  obtain ⟨s, hst, hs⟩ := @ih (t \ {e}) _ (finite.of_diff ht' _), swap,
+  obtain ⟨s, hst, hs⟩ := @ih (t \ {e}) _ (finite.diff ht' _), swap,
   { rw finite.size_remove_mem ht' he, exact le_sub_iff_add_le.mpr ht },
   refine ⟨has_insert.insert e s, λ x, _, _⟩, 
   { simp only [mem_insert_iff],
@@ -589,6 +633,7 @@ lemma has_set_of_size {n : ℤ} (h : 0 ≤ n) (h' : n ≤ type_size α) :
   ∃ (Y : set α), size Y = n :=
 by {rw type_size_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h h', tauto}
  
+
 end general 
 
 
@@ -707,7 +752,8 @@ lemma nonempty_iff_size_pos : s.nonempty ↔ 0 < size s :=
 by {apply finite.nonempty_iff_size_pos, apply finite.of_fintype, }
 
 lemma one_le_size_iff_nonempty : s.nonempty ↔ 1 ≤ size s := 
-  nonempty_iff_size_pos
+nonempty_iff_size_pos
+
 
 lemma one_le_size_univ_of_nonempty (hα : nonempty α) : 1 ≤ size (univ : set α) := 
 by rwa [nonempty_iff_univ_nonempty, one_le_size_iff_nonempty] at hα
@@ -796,6 +842,60 @@ by {apply finite.size_le_one_iff_empty_or_singleton, apply finite.of_fintype,}
 lemma size_le_one_iff_mem_unique : 
   size s ≤ 1 ↔ ∀ e f ∈ s, e = f := 
 by {apply finite.size_le_one_iff_mem_unique, apply finite.of_fintype}
+
+lemma size_sUnion {k : set (set α)} (hdisj : pairwise_disjoint k) : 
+  size (⋃₀ k) = ∑ᶠ s in k, size s := 
+by {apply finite.size_sUnion _ (λ b hb, _) hdisj; apply finite.of_fintype, } 
+
+lemma eq_univ_of_size_eq_type_size (hs : size s = type_size α):
+  s = univ :=
+begin
+  rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, finsum_eq_finsum_in_univ] at hs, 
+  have h := fin.eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg
+    (subset_univ s) (λ _ _, int.zero_lt_one.le) hs.symm.le,
+  simp only [one_ne_zero, univ_diff, mem_compl_eq, imp_false, not_not] at h, 
+  ext, 
+  tauto,
+end
+
+
+
+variables {k : set (set α)}
+
+lemma size_collection_le_size_union (hk : ∀ s ∈ k, set.nonempty s) (hdisj : pairwise_disjoint k): 
+  (size k ≤ size (⋃₀ k)) := 
+finite.size_collection_le_size_union (λ _ _, finite.of_fintype _) hk hdisj
+
+lemma singletons_of_size_collection_eq_size_union (hk : ∀ s ∈ k, set.nonempty s) 
+(hdisj : pairwise_disjoint k) (hsize : size k = size (⋃₀ k)): 
+  ∀ s ∈ k, size s = 1 :=
+by apply finite.singletons_of_size_collection_eq_size_union _ (λ _ _, _) hk hdisj hsize;
+   apply finite.of_fintype 
+
+lemma size_collection_eq_size_union_iff 
+(hk : ∀ s ∈ k, set.nonempty s) (hdisj : pairwise_disjoint k): 
+  size k = size (⋃₀ k) ↔ ∀ s ∈ k, size s = 1 := 
+by apply finite.size_collection_eq_size_union_iff _ (λ _ _, _) hk hdisj; apply finite.of_fintype
+
+lemma size_disjoint_collection_le_type_size {k : set (set α)} (hk' : ∀ s ∈ k, set.nonempty s)
+(hdisj : pairwise_disjoint k): 
+  size k ≤ type_size α :=
+le_trans (size_collection_le_size_union hk' hdisj) (size_le_type_size _)
+
+lemma size_disjoint_collection_eq_type_size_iff (hk : ∀ s ∈ k, set.nonempty s)
+(hdisj : pairwise_disjoint k): 
+  size k = type_size α ↔ ⋃₀ k = univ ∧ ∀ s ∈ k, size s = 1 := 
+begin
+  refine ⟨λ h, _, λ h, _⟩,  
+  {  obtain ⟨h₁, h₂⟩ := squeeze_le_trans 
+      (size_collection_le_size_union hk hdisj) 
+      (size_le_type_size _) 
+      h, 
+    exact ⟨eq_univ_of_size_eq_type_size h₂, 
+            singletons_of_size_collection_eq_size_union hk hdisj h₁⟩},
+  rw [(size_collection_eq_size_union_iff hk hdisj).mpr h.2, h.1, type_size_eq], 
+end
+
 
 end fintype 
 
@@ -988,9 +1088,20 @@ def choose_fin'_inj_of_type_size {n : ℤ} (hα : n ≤ type_size α) :
   (fin' n) ↪ α :=
 classical.choice (nonempty_fin'_emb_of_type_size hα)
 
+def emb_nonempty_of_size_le_size {α : Type*} {β : Type*} [fintype α]
+(hsize : type_size α ≤ type_size β ) : 
+  nonempty (α ↪ β) := 
+⟨(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_type_size β _ hsize)⟩ 
+
+
+lemma type_size_le_iff_emb {α β : Type* } [fintype α] [fintype β] : 
+  type_size α ≤ type_size β ↔ nonempty (α ↪ β) :=
+⟨ λ h, emb_nonempty_of_size_le_size h, 
+  λ ⟨emb⟩, eq.trans_le (size_range_emb emb).symm (size_le_type_size (range emb)), ⟩
+
 /-- an embedding from `α` into `β`, provided that `type_size α ≤ type_size β` and `α` is finite.
 A little scary as this takes a `fintype` and outputs data, so could cause instance issues. Maybe 
-a `nonempty` version is safer. -/
+the `nonempty` version is safer. -/
 def choose_emb_of_size_le_size {α : Type*} {β : Type*} [fintype α]
 (hsize : type_size α ≤ type_size β ) : 
   (α ↪ β) := 
@@ -1035,6 +1146,16 @@ begin
   rw [size_insert_nonmem hb, size_range_emb] at h', 
   linarith [size_le_type_size (eq '' insert b (range ⇑emb))], 
 end
+
+lemma type_size_lt_iff_exists_proper_emb {α β : Type*} [fintype α] [fintype β] : 
+  type_size α < type_size β ↔ ∃ (emb : α ↪ β) (b : β), b ∉ range emb := 
+begin
+  refine ⟨λ h, _, λ ⟨emb, b, hb⟩, type_size_lt_of_nonmem_range_emb emb hb⟩,
+  obtain ⟨emb⟩ := emb_nonempty_of_size_le_size (le_of_lt h), 
+  refine ⟨emb, compl_nonempty_iff_exists_nonmem.mp (compl_nonempty_of_size_lt_type_size _)⟩,
+  rwa size_range_emb, 
+end
+
 
 
 end embeddings 

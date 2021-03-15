@@ -1,9 +1,10 @@
 import data.set.intervals 
 import tactic 
 
--- some very mild additions to the int API in mathlib  
 universes u v w 
 open_locale classical 
+
+/-! Some simple additions to the api -/
 
 open set 
 
@@ -12,7 +13,6 @@ namespace int
 lemma le_sub_one_of_le_of_ne {x y : ℤ} : 
   x ≤ y → x ≠ y → x ≤ y - 1 :=
   λ h h', int.le_sub_one_of_lt (lt_of_le_of_ne h h')
-
 
 lemma le_of_not_gt' {x y : ℤ} : 
   ¬ (y < x) → x ≤ y := 
@@ -24,11 +24,9 @@ by {by_cases h : x ≤ 0, left, apply le_antisymm h h0,
     push_neg at h, rw int.le_sub_one_iff.symm at h, 
     right, linarith, }
 
-
 lemma nat_le_two_iff {x : ℕ} (h2 : x ≤ 2) : 
   x = 0 ∨ x = 1 ∨ x = 2 :=
 by {cases x, tauto, cases x, tauto, cases x, tauto, repeat {rw nat.succ_eq_add_one at h2}, linarith} 
-
 
 lemma nonneg_le_two_iff {x : ℤ} (h0 : 0 ≤ x) (h2 : x ≤ 2) :
   x = 0 ∨ x = 1 ∨ x = 2 :=
@@ -52,12 +50,22 @@ lemma lt_iff_succ_le {a b : ℕ} :
 
 end nat 
 
-/-- for integers `m` and `n`, `m^n` is defined as expected if `0 ≤ n`, and is zero otherwise. -/
-instance zpow : has_pow ℤ ℤ := ⟨λ x y, (x^(y.to_nat))⟩ 
 
-lemma zpow_eq_nat_pow (m k : ℤ) (hk : 0 ≤ k) : m^k = m^(k.to_nat) := 
-  rfl 
 
---lemma zpow_succ_left (m k : ℤ) (hk : 0 ≤ k) : m^(k+1) = m*m^(k) :=
---by {rw [zpow_eq_nat_pow, } 
-  
+section order
+
+variables {α : Type*} [partial_order α] {a b c : α}
+
+lemma squeeze_le_trans_left (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
+  a = b := 
+le_antisymm hab (hbc.trans hac.symm.le)
+
+lemma squeeze_le_trans_right (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
+  b = c := 
+le_antisymm hbc (hac.symm.le.trans hab)
+
+lemma squeeze_le_trans (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
+  a = b  ∧ b = c := 
+⟨squeeze_le_trans_left hab hbc hac, squeeze_le_trans_right hab hbc hac⟩ 
+
+end order 

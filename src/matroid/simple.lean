@@ -37,7 +37,6 @@ lemma rank_subset_simple (h : M.is_simple) (hX : size X ≤ 2) :
   M.r X = size X := 
 h X (subset_univ _) hX
 
-
 lemma rank_singleton_of_simple (h : M.is_simple) (e : α) : 
   M.r {e} = 1 :=
 by {rw [←size_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw size_singleton, norm_num }
@@ -66,7 +65,6 @@ end
 lemma rank_subset_simple_set (h : M.is_simple_set S) (hX : X ⊆ S) (hX' : size X ≤ 2):
   M.r X = size X :=
 by convert h X hX hX'
-
 
 lemma rank_subset_simple_set_lb (h : M.is_simple_set S) (hX : X ⊆ S): 
   min 2 (size X) ≤ M.r X := 
@@ -119,7 +117,6 @@ instance simple_subset_nonempty {M : matroid α} {S : set α} : nonempty (M.simp
 
 instance simple_subset_fintype {M : matroid α} {S : set α} : fintype (M.simple_subset_of S) := 
 by {unfold simple_subset_of, apply_instance,}
-
 
 lemma loopless_set_iff_all_nonloops {M : matroid α} {S : set α} : 
   M.is_loopless_set S ↔ ∀ e ∈ S, M.is_nonloop e :=
@@ -187,7 +184,6 @@ begin
     rwa [←dep_iff_not_indep] at hn, 
   all_goals {apply nonloop_of_mem_loopless_set h.1, assumption,  },
 end
-
 
 lemma simple_iff_no_loops_or_parallel_pairs {M : matroid α} :
   M.is_simple ↔ M.is_loopless ∧ ∀ (e f : α), M.parallel e f → e = f :=

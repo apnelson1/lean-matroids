@@ -46,7 +46,7 @@ lemma has_unif_minor_def' :
   M.has_unif_minor a b ↔ M.has_iminor (canonical_unif a b) := 
 iff.rfl 
 
-lemma has_unif_minor_iff (ha : 0 ≤ a) (hab : a ≤ b) :
+lemma has_unif_minor_iff (ha : 0 ≤ a) (hb : 0 ≤ b) :
   M.has_unif_minor a b ↔ 
     ∃ S C : set α,  disjoint S C 
                   ∧ size S = b 
@@ -56,12 +56,12 @@ begin
   split, 
   { rintros ⟨ φ, C, hdisj, hr⟩, 
     refine ⟨range φ, C, hdisj, _, λ X hX, _⟩,
-    { rw [← image_univ, size_image_emb, size_fin'_univ], exact le_trans ha hab,  },
+    { rwa [← image_univ, size_image_emb, size_fin'_univ],  },
     convert hr (φ ⁻¹' X), 
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],
     rw image_preimage_eq_of_subset hX, },
   rintros ⟨S, C, hdisj, hsize, hr⟩, 
-  rw [eq_comm, ← size_fin' _ (le_trans ha hab)] at hsize, 
+  rw [eq_comm, ← size_fin' _ hb] at hsize, 
   obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,   
   refine ⟨φ, C, hdisj, λ F, _⟩, 
   convert hr (φ '' F) (λ x, by tidy), 
@@ -94,19 +94,19 @@ lemma has_unif_restr_def :
   M.has_unif_restr a b ↔ (canonical_unif a b).is_irestr_of M := 
 iff.rfl 
 
-lemma has_unif_restr_iff (ha : 0 ≤ a) (hab : a ≤ b) :
+lemma has_unif_restr_iff (ha : 0 ≤ a) (hb : 0 ≤ b) :
   M.has_unif_restr a b ↔ ∃ S : set α, (size S = b) ∧ (∀ X ⊆ S, M.r X = min a (size X)) :=
 begin
   rw [has_unif_restr_def, irestr_of_iff_exists_map],  
   split, 
   { rintros ⟨φ, hr⟩, 
     refine ⟨range φ, _, λ X hX, _⟩,
-    { rw [← image_univ, size_image_emb], convert size_fin' _ (le_trans ha hab)},
+    { rw [← image_univ, size_image_emb], convert size_fin' _ hb},
     convert (hr (φ ⁻¹' X)).symm using 1,
     rw image_preimage_eq_of_subset hX, 
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],  }, 
   rintros ⟨S, hsize, hr⟩, 
-  rw [eq_comm, ← size_fin' _ (le_trans ha hab)] at hsize, 
+  rw [eq_comm, ← size_fin' _ hb] at hsize, 
   obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,   
   refine ⟨φ, λ F, _⟩, 
   convert (hr (φ '' F) (λ x, by tidy)).symm using 1, 
@@ -127,7 +127,7 @@ section line
 
 variables {α : Type*} [fintype α] {M : matroid α} {l a b: ℤ} {X Y L : set α} 
 
-lemma line_restr_of_simple_set (hl : 2 ≤ l) (hr : M.r L ≤ 2) (hL : M.is_simple_set L) 
+lemma line_restr_of_simple_set (hl : 0 ≤ l)(hr : M.r L ≤ 2) (hL : M.is_simple_set L) 
 (hsize : l ≤ size L):
   M.has_unif_restr 2 l := 
 begin
@@ -142,10 +142,13 @@ begin
   rw min_eq_left (le_of_lt hX), 
 end
 
-lemma line_restr_of_ε {X : set α}(hr : M.r X ≤ 2)(hX : l ≤ M.ε X): 
+lemma line_restr_of_ε {L : set α}(hl : 0 ≤ l)(hr : M.r L ≤ 2)(hL : l ≤ M.ε L): 
   M.has_unif_restr 2 l :=
 begin
-  sorry, 
+  rw ε_eq_largest_simple_subset at hL, 
+  obtain ⟨⟨L₀,hL₀⟩, h', -⟩ := max_spec (λ (S : M.simple_subset_of L), size S.val), 
+  rw ← h' at hL, 
+  exact line_restr_of_simple_set hl (le_trans (M.rank_mono hL₀.2) hr) hL₀.1 hL,
 end
 
 

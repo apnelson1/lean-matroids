@@ -1,7 +1,7 @@
 
 -- various flavours of induction 
 
-import  .int_lemmas 
+import  .num_lemmas 
 ----------------------------------------------------------------
 open_locale classical 
 noncomputable theory 

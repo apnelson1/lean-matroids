@@ -212,6 +212,10 @@ begin
   from h, 
 end
 
+lemma compl_nonempty_iff_exists_nonmem {s : set α}:
+  sᶜ.nonempty ↔ ∃ x, x ∉ s := 
+by tidy 
+
 lemma subset_of_remove_mem_diff {X Y: set α} {e : α} (hXY : X ⊆ Y) (he : e ∈ Y \ X) : 
   X ⊆ Y \ {e} := 
 begin

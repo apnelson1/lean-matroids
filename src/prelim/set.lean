@@ -1,6 +1,6 @@
 
 import tactic 
-import .int_lemmas 
+import .num_lemmas 
 import data.set.basic 
 
 open_locale classical 

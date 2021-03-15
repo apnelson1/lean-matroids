@@ -1,6 +1,6 @@
-import tactic .single 
+import tactic .single .size
 
-/- γIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
+/- WIP - the idea here is to clean up the definition of parallel in simple.lean using the fact 
 that it is transitive and symmetric -/
 universes u v w
 
@@ -14,7 +14,7 @@ structure presetoid (α : Type*) :=
 (rel_transitive : transitive rel)
 (rel_symmetric : symmetric rel)
 
-variables {α : Type*} {a b c : α} {s : set α} (S : presetoid α) 
+variables {α : Type*} {a b c : α} {s X : set α} (S : presetoid α) 
 
 namespace presetoid 
 
@@ -100,12 +100,17 @@ begin
   exact ⟨⟨⟨a,S.mem_cl_iff.mpr ha⟩⟩,a,rfl⟩,
 end
 
+lemma class_has_rep {X : set α} : 
+  S.is_class X → (∃ a, (S.rel a a) ∧ X = S.cl a) :=
+S.is_class_iff_rep.mp 
+
+lemma class_nonempty (hX : S.is_class X):
+  X.nonempty := 
+by {obtain ⟨a,h₁,rfl⟩ := S.class_has_rep hX, exact ⟨a, S.mem_cl_self_iff.mp h₁⟩,  }
+
 lemma cl_is_class (ha : S.rel a a) :
   S.is_class (S.cl a) :=
 S.is_class_iff_rep.mpr ⟨a, ha, rfl⟩ 
-
-
-
 
 @[simp] lemma mem_classes_iff {X : set α} : 
   X ∈ S.classes ↔ (∃ a, (S.rel a a) ∧ X = S.cl a) :=
@@ -135,20 +140,8 @@ begin
   exact (S.cl_eq_cl_of_rel (S.mem_cl_iff.mp ha)).symm, 
 end
 
-/-lemma classes_eq_of_nonempty_inter {C₁ C₂ : eqv_class α} (hC₁C₂ : (C₁ ∩ C₂ : set α).nonempty) : 
-  C₁ = C₂ := 
-begin
-  cases C₁ with C₁ hC₁, cases C₂ with C₂ hC₂, 
-  obtain ⟨x₁, hx₁, rfl⟩ := hC₁, obtain ⟨x₂, hx₂, rfl⟩ := hC₂,  
-  obtain ⟨ ⟨x,h₁⟩,h₂⟩ := nonempty_inter_iff_exists_left.mp hC₁C₂,
-  dsimp only [subtype.coe_mk] at *,  
-  rw [subtype.mk_eq_mk, class_of_eq_class_of_iff hx₁], 
-  rw mem_class_of_iff at h₁ h₂, 
-  transitivity, exact symm h₁, assumption, 
-end-/
-
 lemma eqv_classes_pairwise_disj : 
-  pairwise_disjoint (S.classes) :=
+  S.classes.pairwise_disjoint :=
 begin
   intros C₁ hC₁ C₂ hC₂ hC₁C₂, 
   refine disjoint_left.mpr (λ a ha₁ ha₂, hC₁C₂ _), 
@@ -169,11 +162,40 @@ begin
   exact λ hx, ⟨S.cl x, ⟨_, hx,rfl⟩ , S.mem_cl_iff.mp hx⟩, 
 end
 
+section simple
+
+/-- X is simple if it contains no kernel elements of S and no related pairs of S -/
+def is_simple_set (S : presetoid α) (X : set α) :=
+  ∀ x y ∈ X, S.rel x y ↔ x = y 
+
+lemma simple_set_iff {S : presetoid α} {X : set α} : 
+  S.is_simple_set X ↔ disjoint X S.kernel ∧ ∀ P, S.is_class P → size (X ∩ P) ≤ 1 :=
+begin
+  refine ⟨λ h, _, λ h, _⟩, 
+  { by_contra hn, rw [not_and_distrib, not_disjoint_iff, not_forall] at hn, 
+    obtain (⟨x, hxX, hxK⟩ | ⟨P, hP⟩) := hn, 
+    { rw mem_kernel_iff at hxK, exact hxK ((h x x hxX hxX).mpr rfl),  },
+    rw [not_imp] at hP, 
+    
+     }, 
+end
+
+end simple
+
+section size 
+
+variables [fintype α]
+
+lemma size_classes_le_type_size:
+  size (S.classes) ≤ type_size α := 
+size_disjoint_collection_le_type_size 
+  (λ s hs, S.class_nonempty (S.mem_classes_iff_is_class.mpr hs))
+  (S.eqv_classes_pairwise_disj)
+
+--lemma size_classes_eq_type_size_i
 
 
-
-
-
+end size 
 
 
 

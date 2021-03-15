@@ -1,4 +1,4 @@
-import tactic .int_lemmas 
+import tactic .num_lemmas 
 import data.set.intervals data.real.nnreal 
 
 universe u 

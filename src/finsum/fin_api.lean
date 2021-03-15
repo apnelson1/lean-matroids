@@ -18,7 +18,7 @@ by {apply finsum_le_finsum hfg; {apply set.finite.of_fintype}}
 
 lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M] (hfg : ∀ x ∈ s, f x ≤ g x) : 
   ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i  := 
-by {apply finsum_in_le_finsum_in hfg, apply set.finite.of_fintype}
+by {apply finsum_in_le_finsum_in _ hfg, apply set.finite.of_fintype}
 
 @[simp] lemma finsum_in_eq_zero_iff [canonically_ordered_add_monoid M]:
   ∑ᶠ x in s, f x = 0 ↔ ∀ x ∈ s, f x = 0 := 
@@ -67,7 +67,7 @@ by {exact sum_fincard_fiber_eq_fincard _ (set.finite.of_fintype _),}
 lemma finsum_in_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
 (hlt : ∑ᶠ x in s, f x < ∑ᶠ x in s, g x) : 
   ∃ i ∈ s, f i < g i := 
-by {apply finsum_in_exists_lt_of_finsum_lt _ _ hlt; 
+by {apply finsum_in_exists_lt_of_finsum_lt _ hlt; 
     apply set.finite.of_fintype, }
 
 lemma finsum_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
@@ -79,7 +79,7 @@ by {apply finsum_exists_lt_of_finsum_lt _ _ hlt;
 lemma finsum_in_lt_finsum_in [ordered_cancel_add_comm_monoid M]
 (hle : ∀ i ∈ s, f i ≤ g i) (hlt : ∃ i ∈ s, f i < g i) : 
   ∑ᶠ i in s, f i < ∑ᶠ i in s, g i := 
-by {apply finsum_in_lt_finsum_in _ _ hle hlt; 
+by {apply finsum_in_lt_finsum_in _ hle hlt; 
     apply (set.finite.of_fintype _); apply_instance, }
 
 lemma finsum_lt_finsum [ordered_cancel_add_comm_monoid M]
@@ -91,7 +91,7 @@ by {apply finsum_lt_finsum _ _ hle hlt;
 lemma finsum_in_eq_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
 (hfg : ∀ x ∈ s, f x ≤ g x) : 
   ∑ᶠ i in s, f i = ∑ᶠ i in s, g i ↔ ∀ i ∈ s, f i = g i := 
-by {apply finsum_in_eq_finsum_in_iff_of_le _ _ hfg; 
+by {apply finsum_in_eq_finsum_in_iff_of_le _ hfg; 
     apply set.finite.of_fintype, }
 
 lemma finsum_eq_finsum_iff_of_le [ordered_cancel_add_comm_monoid M]
@@ -100,6 +100,18 @@ lemma finsum_eq_finsum_iff_of_le [ordered_cancel_add_comm_monoid M]
 by {apply finsum_eq_finsum_iff_of_le _ _ hfg; 
     apply set.finite.of_fintype, }
 
+lemma finsum_in_sUnion [add_comm_monoid M] {t : set (set α)} 
+(h : set.pairwise_disjoint t) : 
+  ∑ᶠ i in (⋃₀ t), f i = ∑ᶠ s in t, (∑ᶠ i in s, f i) :=
+finsum_in_sUnion (set.finite.of_fintype _) (λ _, set.finite.of_fintype _) h
+
+lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg [ordered_cancel_add_comm_monoid M] 
+(hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x) :
+  ∀ x ∈ t \ s, f x = 0 :=
+begin
+  apply eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg _ hst hf h, 
+  apply set.finite.of_fintype, 
+end
 
 
 

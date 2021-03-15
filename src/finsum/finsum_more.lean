@@ -12,6 +12,24 @@ section general
 
 variables {α : Type*} {M: Type*} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
 
+lemma set.infinite_of_finite_diff (hs : s.finite) (ht : t.infinite) :
+  (t \ s).infinite := 
+λ h, ht (by {refine (hs.union h).subset _, rw set.union_diff_self, apply set.subset_union_right, })
+
+lemma set.infinite_of_union (hs : s.infinite) (t : set α) : 
+  (s ∪ t).infinite := 
+set.infinite_mono (set.subset_union_left _ _) hs 
+
+lemma set.finite.diff (hs : s.finite) (t : set α) : (s \ t).finite :=  
+  set.finite.subset hs (set.diff_subset _ _)
+
+lemma set.finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
+  set.finite.subset hs (set.inter_subset_left _ _)
+
+lemma set.finite.inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
+  set.finite.subset ht (set.inter_subset_right _ _)
+
+
 lemma finsum_eq_zero_of_infinite 
   (hs : ¬ (function.support f).finite) : ∑ᶠ i, f i = 0 :=
 by {rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_of_infinite], rwa set.univ_inter}
@@ -99,6 +117,7 @@ begin
   exact finsum_in_eq_finsum_in_subset (set.subset_univ _) (λ x _ hx, hf x hx),
 end 
 
+
 @[simp] lemma finsum_subtype_eq_finsum_in (f : α → M) (s : set α) :
  ∑ᶠ (x : s), f x = ∑ᶠ x in s, f x  :=
 begin
@@ -108,9 +127,30 @@ begin
   rw [set.image_univ, subtype.range_val],
 end 
 
+lemma finsum_subtype_eq_finsum_in_set_of (f : α → M)(P : α → Prop) :
+  ∑ᶠ (i : {x // P x}), f i = ∑ᶠ i in {x | P x}, f i := 
+finsum_subtype_eq_finsum_in f _
+
 lemma finsum_set_subtype_eq_finsum_set (f : α → M) (P Q : α → Prop) :
   ∑ᶠ (x : {y // P y}) in {x : {y // P y} | Q (coe x)}, f x = ∑ᶠ x in { x | P x ∧ Q x }, f x := 
 by {convert (finsum_in_image _).symm, tidy,}
+
+/-- A fixed version of `finsum_in_bUnion` in which `t` is a finite set of `set α`s. -/
+lemma finsum_in_sUnion' (f : α → M) {t : set (set α)} (ht₀ : t.finite)
+  (ht₁ : ∀ x ∈ t, set.finite x) (h : set.pairwise_disjoint t):
+  ∑ᶠ i in (⋃₀ t), f i = ∑ᶠ s in t, (∑ᶠ i in s, f i) :=
+begin
+  rw [set.sUnion_eq_bUnion], 
+  have h' := @finsum_in_bUnion _ _ _ _ f _ _ 
+    (set.univ_finite_iff_nonempty_fintype.mpr ⟨ht₀.fintype⟩) 
+    (λ s, ht₁ s.1 s.2) 
+    (λ x hx y hy hxy, h x.1 x.2 y.1 y.2 (λ hn, hxy (subtype.val_injective hn))),
+  rw [← finsum_eq_finsum_in_univ] at h', 
+  nth_rewrite 1 ← finsum_subtype_eq_finsum_in, 
+  erw ← h', 
+  congr' 1,
+  ext, simp,
+end 
 
 end general 
 
@@ -231,7 +271,7 @@ begin
   exact λ x hx, hfg _ (finset.mem_filter.mp hx).2, 
 end
 
-lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M] (hfg : ∀ x ∈ s, f x ≤ g x) (hs : s.finite) : 
+lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M] (hs : s.finite) (hfg : ∀ x ∈ s, f x ≤ g x):  
   ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i := 
 by {apply finsum_in_le_finsum_in' hfg;  exact set.finite.subset hs (set.inter_subset_left _ _)}
 
@@ -264,7 +304,7 @@ begin
   apply finsum_in_le_finsum_in_of_pos (λ x hx, hfg x) hg, 
 end
 
-lemma finsum_in_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+lemma finsum_in_eq_zero_iff_of_nonneg_supp [ordered_add_comm_monoid M] 
 (hs : (s ∩ function.support f).finite) (hf : ∀ x ∈ s, 0 ≤ f x) : 
   ∑ᶠ x in s, f x = 0 ↔ ∀ x ∈ s, f x = 0 := 
 begin
@@ -272,20 +312,29 @@ begin
   simp_rw [set.finite.mem_to_finset, set.mem_inter_iff], tauto, 
 end
 
+lemma finsum_in_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+(hs : s.finite) (hf : ∀ x ∈ s, 0 ≤ f x) : 
+  ∑ᶠ x in s, f x = 0 ↔ ∀ x ∈ s, f x = 0 := 
+finsum_in_eq_zero_iff_of_nonneg_supp (hs.inter_left _) hf
 
-lemma finsum_in_le_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+lemma finsum_in_le_zero_iff_of_nonneg_supp [ordered_add_comm_monoid M] 
 (hs : (s ∩ function.support f).finite) (hf : ∀ x ∈ s, 0 ≤ f x) : 
   ∑ᶠ x in s, f x ≤ 0 ↔ ∀ x ∈ s, f x = 0 := 
 begin
-  convert finsum_in_eq_zero_iff_of_nonneg hs hf, 
+  convert finsum_in_eq_zero_iff_of_nonneg_supp hs hf, 
   exact iff_iff_eq.mp ⟨λ h, le_antisymm h (nonneg_of_finsum_in_nonneg hf), λ h, by rw h⟩ , 
 end
+
+lemma finsum_in_le_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
+(hs : s.finite) (hf : ∀ x ∈ s, 0 ≤ f x) : 
+  ∑ᶠ x in s, f x ≤ 0 ↔ ∀ x ∈ s, f x = 0 := 
+finsum_in_le_zero_iff_of_nonneg_supp (hs.inter_left _) hf
 
 lemma finsum_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] 
 (h : (function.support f).finite) (hf : ∀ x, 0 ≤ f x) : 
   ∑ᶠ x, f x = 0 ↔ ∀ x, f x = 0 := 
 begin
-  rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_iff_of_nonneg], 
+  rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_iff_of_nonneg_supp], 
   tauto, rwa [set.univ_inter], tauto,  
 end
 
@@ -297,22 +346,26 @@ begin
   exact iff_iff_eq.mp ⟨λ h, le_antisymm h (nonneg_of_finsum_nonneg hf), λ h, by rw h⟩ , 
 end
 
-
 @[simp] lemma finsum_in_eq_zero_iff [canonically_ordered_add_monoid M] 
 (hs : (s ∩ function.support f).finite) : 
   ∑ᶠ x in s, f x = 0 ↔ ∀ x ∈ s, f x = 0 := 
-finsum_in_eq_zero_iff_of_nonneg hs (by simp)
+finsum_in_eq_zero_iff_of_nonneg_supp hs (by simp)
 
 @[simp] lemma finsum_eq_zero_iff [canonically_ordered_add_monoid M] 
 (h : (function.support f).finite) : 
   ∑ᶠ x, f x = 0 ↔ ∀ x, f x = 0 := 
 finsum_eq_zero_iff_of_nonneg h (by simp)
 
-lemma finsum_in_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
+lemma finsum_in_exists_lt_of_finsum_lt_supp [linear_ordered_cancel_add_comm_monoid M]
 (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite)
 (hlt : ∑ᶠ x in s, f x < ∑ᶠ x in s, g x) : 
   ∃ i ∈ s, f i < g i := 
 by_contra (λ hn, by {push_neg at hn, exact not_lt_of_le (finsum_in_le_finsum_in' hn hg hf) hlt})
+
+lemma finsum_in_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
+(hs : s.finite) (hlt : ∑ᶠ x in s, f x < ∑ᶠ x in s, g x) : 
+  ∃ i ∈ s, f i < g i := 
+finsum_in_exists_lt_of_finsum_lt_supp (hs.inter_left _) (hs.inter_left _) hlt
 
 lemma finsum_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
 (hf : (function.support f).finite) (hg : (function.support g).finite)
@@ -320,12 +373,12 @@ lemma finsum_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
   ∃ i, f i < g i := 
 begin 
   repeat {rw finsum_eq_finsum_in_univ at hlt},
-  obtain ⟨i,-,hi⟩ := finsum_in_exists_lt_of_finsum_lt _ _ hlt, exact ⟨i,hi⟩,
-  { apply set.finite.subset hf _, exact set.inter_subset_right _ _, },
-  apply set.finite.subset hg _, exact set.inter_subset_right _ _, 
+  obtain ⟨i,-,hi⟩ := finsum_in_exists_lt_of_finsum_lt_supp 
+    (hf.inter_right _) (hg.inter_right _) hlt, 
+  exact ⟨i,hi⟩,
 end 
 
-lemma finsum_in_lt_finsum_in [ordered_cancel_add_comm_monoid M]
+lemma finsum_in_lt_finsum_in_supp [ordered_cancel_add_comm_monoid M]
 (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite)
 (hle : ∀ i ∈ s, f i ≤ g i) (hlt : ∃ i ∈ s, f i < g i) : 
   ∑ᶠ i in s, f i < ∑ᶠ i in s, g i := 
@@ -343,49 +396,64 @@ begin
   exact lt_irrefl _ hi,
 end
 
+lemma finsum_in_lt_finsum_in [ordered_cancel_add_comm_monoid M]
+(hs : s.finite) (hle : ∀ i ∈ s, f i ≤ g i) (hlt : ∃ i ∈ s, f i < g i) : 
+  ∑ᶠ i in s, f i < ∑ᶠ i in s, g i := 
+finsum_in_lt_finsum_in_supp (hs.inter_left _) (hs.inter_left _) hle hlt
+
 lemma finsum_lt_finsum [ordered_cancel_add_comm_monoid M]
 (hf : (function.support f).finite) (hg : (function.support g).finite)
 (hle : ∀ i, f i ≤ g i) (hlt : ∃ i, f i < g i) : 
   ∑ᶠ i, f i < ∑ᶠ i, g i := 
 begin
-  repeat {rw finsum_eq_finsum_in_univ}, apply finsum_in_lt_finsum_in, 
+  repeat {rw finsum_eq_finsum_in_univ}, apply finsum_in_lt_finsum_in_supp, 
   { apply set.finite.subset hf _, exact set.inter_subset_right _ _, },
   { apply set.finite.subset hg _, exact set.inter_subset_right _ _, }, 
   { exact λ i hi, hle i, },
   exact (let ⟨i, hi⟩ := hlt in ⟨i, set.mem_univ _, hi⟩),   
 end
 
-lemma finsum_in_eq_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
+lemma finsum_in_eq_finsum_in_iff_of_le_supp [ordered_cancel_add_comm_monoid M]
 (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite)
 (hfg : ∀ x ∈ s, f x ≤ g x) : 
   ∑ᶠ i in s, f i = ∑ᶠ i in s, g i ↔ ∀ i ∈ s, f i = g i := 
 begin
   refine ⟨λ h, λ i hi, by_contra (λ hn, _), finsum_in_eq_of_eq⟩, 
-  exact ne_of_lt (finsum_in_lt_finsum_in hf hg hfg ⟨i, hi, (ne.le_iff_lt hn).mp (hfg i hi)⟩) h, 
+  exact (finsum_in_lt_finsum_in_supp hf hg hfg ⟨i, hi, (ne.le_iff_lt hn).mp (hfg i hi)⟩).ne h, 
 end
 
-lemma finsum_in_ge_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
+lemma finsum_in_eq_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
+(hs : s.finite) (hfg : ∀ x ∈ s, f x ≤ g x) : 
+  ∑ᶠ i in s, f i = ∑ᶠ i in s, g i ↔ ∀ i ∈ s, f i = g i := 
+finsum_in_eq_finsum_in_iff_of_le_supp (hs.inter_left _) (hs.inter_left _) hfg
+
+lemma finsum_in_ge_finsum_in_iff_of_le_supp [ordered_cancel_add_comm_monoid M]
 (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite)
 (hfg : ∀ x ∈ s, f x ≤ g x) : 
   ∑ᶠ i in s, g i ≤ ∑ᶠ i in s, f i ↔ ∀ i ∈ s, f i = g i := 
 begin
-  convert finsum_in_eq_finsum_in_iff_of_le hf hg hfg, 
+  convert finsum_in_eq_finsum_in_iff_of_le_supp hf hg hfg, 
   refine iff_iff_eq.mp ⟨λ h, le_antisymm (finsum_in_le_finsum_in' hfg hf hg) h, λ h, by rw h⟩,
 end
+
+lemma finsum_in_ge_finsum_in_iff_of_le [ordered_cancel_add_comm_monoid M]
+(hs : s.finite) (hfg : ∀ x ∈ s, f x ≤ g x) : 
+  ∑ᶠ i in s, g i ≤ ∑ᶠ i in s, f i ↔ ∀ i ∈ s, f i = g i := 
+finsum_in_ge_finsum_in_iff_of_le_supp (hs.inter_left _) (hs.inter_left _) hfg
 
 lemma finsum_eq_finsum_iff_of_le [ordered_cancel_add_comm_monoid M]
 (hf : (function.support f).finite) (hg : (function.support g).finite)
 (hfg : ∀ x, f x ≤ g x) : 
   ∑ᶠ i, f i = ∑ᶠ i, g i ↔ ∀ i, f i = g i := 
 begin
-  repeat {rw finsum_eq_finsum_in_univ}, rw finsum_in_eq_finsum_in_iff_of_le, tauto, 
+  repeat {rw finsum_eq_finsum_in_univ}, rw finsum_in_eq_finsum_in_iff_of_le_supp, tauto, 
   { apply set.finite.subset hf _, exact set.inter_subset_right _ _, },
   { apply set.finite.subset hg _, exact set.inter_subset_right _ _, }, 
   exact λ x _, hfg x, 
 end
 
 
-lemma finsum_in_subset_le_finsum_in_of_nonneg [ordered_add_comm_monoid M] 
+lemma finsum_in_subset_le_finsum_in_of_nonneg_supp [ordered_add_comm_monoid M] 
 (ht : (t ∩ (function.support f)).finite)
 (hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) :
   ∑ᶠ x in s, f x ≤ ∑ᶠ x in t, f x :=
@@ -399,17 +467,13 @@ begin
   exact le_add_of_nonneg_right (nonneg_of_finsum_in_nonneg (λ i hi, hf i (set.mem_of_mem_diff hi)))
 end
 
-lemma finsum_in_subset_le_finsum_in_of_nonneg' [ordered_add_comm_monoid M] 
+lemma finsum_in_subset_le_finsum_in_of_nonneg [ordered_add_comm_monoid M] 
 (ht : t.finite)
 (hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) :
   ∑ᶠ x in s, f x ≤ ∑ᶠ x in t, f x :=
-begin 
-  refine finsum_in_subset_le_finsum_in_of_nonneg _ hst hf, 
-  apply set.finite.subset ht (set.inter_subset_left _ _), 
-end
+finsum_in_subset_le_finsum_in_of_nonneg_supp (ht.inter_left _) hst hf
 
-
-lemma eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg [ordered_cancel_add_comm_monoid M] 
+lemma eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg_supp [ordered_cancel_add_comm_monoid M] 
 (ht : (t ∩ (function.support f)).finite)
 (hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x) :
   ∀ x ∈ t \ s, f x = 0 :=
@@ -419,18 +483,15 @@ begin
     ((function.support f).inter_subset_inter_left (set.diff_subset t s)),
   have h' := finsum_in_union' hs hs' (set.disjoint_diff), 
   rw (set.union_diff_cancel hst) at h', 
-  rwa [h', add_le_iff_nonpos_right, finsum_in_le_zero_iff_of_nonneg hs'] at h, 
+  rwa [h', add_le_iff_nonpos_right, finsum_in_le_zero_iff_of_nonneg_supp hs'] at h, 
   exact λ x hx, hf x (set.mem_of_mem_diff hx), 
 end
 
-lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg' [ordered_cancel_add_comm_monoid M] 
+lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg [ordered_cancel_add_comm_monoid M] 
 (ht : t.finite)
 (hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x) :
   ∀ x ∈ t \ s, f x = 0 :=
-begin
-  refine eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg _ hst hf h,
-  apply set.finite.subset ht (set.inter_subset_left _ _), 
-end
+eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg_supp (ht.inter_left _) hst hf h
 
 end order
 

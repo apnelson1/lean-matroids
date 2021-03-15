@@ -1,6 +1,6 @@
 
 import tactic 
-import .size .int_lemmas 
+import .size .num_lemmas 
 
 open_locale classical 
 open_locale big_operators 
