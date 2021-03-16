@@ -14,7 +14,7 @@ section uniform
 
 variables {α : Type*} [fintype α] {M : matroid α} {a b : ℤ} 
 
-/-- the rank-a uniform matroid on b elements with ground set `fin' b`. Junk unless `0 ≤ a ≤ b` -/
+/-- the rank-a uniform matroid on b elements with ground set `fin' b`. Junk unless `0 ≤ a ≤ b`. -/
 def canonical_unif (a b : ℤ) : 
   matroid (fin' b) := 
 unif.uniform_matroid_on (fin' b) a

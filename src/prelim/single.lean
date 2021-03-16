@@ -201,6 +201,10 @@ lemma remove_union_mem_singleton {X : set α} {e : α} :
 λ heX, by {rw [←singleton_subset_iff, subset_iff_union_eq_left,union_comm] at heX, 
           rw [diff_eq, union_distrib_right, compl_union_self, inter_univ, heX]}
    
+lemma exists_mem_diff_of_finite_infinite {X Y : set α} (hX : X.finite) (hY : Y.infinite) :
+  ∃ e ∈ Y, e ∉ X := 
+by {by_contra hn, push_neg at hn, exact hY (hX.subset hn)}
+  
 lemma add_remove_nonmem {X : set α} {e : α} : 
   e ∉ X → (X ∪ {e}) \ {e} = X := 
 begin

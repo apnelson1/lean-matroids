@@ -37,7 +37,10 @@ end partition
 
 section presetoid_class
 
+open presetoid 
+
 variables {α : Type*} [fintype α] (S : presetoid α)
+
 
 namespace presetoid_matroid
 
@@ -62,7 +65,6 @@ lemma r_eq (X : set α) :
 begin
   rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], 
   rotate, apply_instance, apply partition_fn_nonneg, 
-  --{ swap, apply_instance} swap, apply partition_fn_nonneg}, 
   convert rfl, funext, 
   rw partition_fn, dsimp only [id.def], split_ifs, 
   { subst h, 
@@ -70,7 +72,7 @@ begin
     simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
     id.def, sep_in_eq_empty_iff, exists_imp_distrib], 
     rintros P x hx rfl - hx', 
-    exact S.cl_eq_empty_iff.mp hx' hx, },
+    exact cl_eq_empty_iff.mp hx' hx, },
   by_cases hi : ∃ x ∈ X, S.cl x = i, swap,
   { convert (min_eq_right (zero_le_one : (0 :ℤ) ≤ 1 )).symm,  
     { simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
@@ -78,7 +80,7 @@ begin
       rintros s x hx rfl hxX rfl,
       obtain ⟨x',hx'⟩ := hxX, 
       rw mem_inter_iff at hx', 
-      exact hi ⟨x', hx'.1, S.cl_eq_cl_of_rel (S.mem_cl_iff.mp hx'.2)⟩ }, 
+      exact hi ⟨x', hx'.1, cl_eq_cl_of_rel (mem_cl_iff.mp hx'.2)⟩ }, 
     simp only [size_zero_iff_empty, sep_in_eq_empty_iff], 
     exact λ x hx hS, hi ⟨x,hx,hS⟩},
   obtain ⟨x,hx,rfl⟩ := hi, 
@@ -89,7 +91,7 @@ begin
     simp only [mem_sep_eq, presetoid.mem_classes_iff, mem_singleton_iff, 
     and_iff_right_iff_imp],  
     rintros rfl, 
-    exact ⟨⟨x, h, rfl⟩,⟨x,mem_inter hx (S.mem_cl_iff.mpr h)⟩⟩}, 
+    exact ⟨⟨x, h, rfl⟩,⟨x,mem_inter hx (mem_cl_iff.mpr h)⟩⟩}, 
   exact one_le_size_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
 end
 
@@ -98,21 +100,21 @@ lemma indep_iff (I : set α) :
 begin
   rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 
   swap, apply partition_fn_nonneg, 
-  simp only [and_imp, presetoid.mem_classes_iff, exists_imp_distrib, S.mem_kernel_iff, not_imp_not], 
+  simp only [and_imp, presetoid.mem_classes_iff, exists_imp_distrib, mem_kernel_iff, not_imp_not], 
   refine ⟨λ h, ⟨by {simpa using h ∅}, _⟩, λ h P, _⟩, 
   { rintros P x hx rfl, 
     convert h (S.cl x),
-    { ext, rw [eq_comm, S.cl_eq_cl_iff hx, S.rel_comm, ← S.mem_cl_iff], refl},
+    { ext, rw [eq_comm, cl_eq_cl_iff hx, rel_comm, ← mem_cl_iff], refl},
     suffices : (S.cl x) ≠ ∅, split_ifs; tauto,   
-    simp_rw [ne_empty_iff_has_mem, S.mem_cl_iff], 
+    simp_rw [ne_empty_iff_has_mem, mem_cl_iff], 
     exact ⟨x,hx⟩ },
   by_cases hP : ∃ x, P = S.cl x, 
   { obtain ⟨x,rfl⟩ := hP, 
     by_cases hx : S.rel x x, 
     { convert h.2 (S.cl x) _ hx rfl, 
-      {ext y, rw [eq_comm, S.cl_eq_cl_iff hx, S.rel_comm, S.mem_cl_iff]},
+      {ext y, rw [eq_comm, cl_eq_cl_iff hx, rel_comm, mem_cl_iff]},
       simpa using hx},
-    rw [S.cl_eq_empty_iff.mpr hx], 
+    rw [cl_eq_empty_iff.mpr hx], 
     simpa using h.1},
   convert (λ Q, by {split_ifs; norm_num} : ∀ Q: Prop, (0 : ℤ) ≤ ite Q (0 : ℤ) 1) _ , 
   rw [size_zero_iff_empty, sep_in_eq_empty_iff], 

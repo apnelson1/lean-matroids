@@ -456,4 +456,21 @@ begin
   subst this, use t, tidy, 
 end
 
+lemma infinite_of_finite_diff (hs : s.finite) (ht : t.infinite) :
+  (t \ s).infinite := 
+λ h, ht (by {refine (hs.union h).subset _, rw set.union_diff_self, apply set.subset_union_right, })
+
+lemma infinite_of_union (hs : s.infinite) (t : set α) : 
+  (s ∪ t).infinite := 
+set.infinite_mono (set.subset_union_left _ _) hs 
+
+lemma finite.diff (hs : s.finite) (t : set α) : (s \ t).finite :=  
+  set.finite.subset hs (set.diff_subset _ _)
+
+lemma finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
+  set.finite.subset hs (set.inter_subset_left _ _)
+
+lemma finite.inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
+  set.finite.subset ht (set.inter_subset_right _ _)
+
 end set 

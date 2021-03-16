@@ -9,6 +9,8 @@ open_locale classical big_operators
 
 open set matroid 
 
+/-- the size of a projective geometry over a `q`-element field. This is currently defined for 
+integers `q`, but really `q` can live in any ring and it still makes sense. -/
 def pg_size : ℤ → ℕ → ℤ 
 | q 0     := 0
 | q (n+1) := 1 + q * (pg_size q n)
@@ -22,7 +24,7 @@ rfl
 by {induction n with n ih, simp, simp [pg_size, ih, add_comm]  }
 
 lemma pg_size_eq_powsum (q : ℤ) (n : ℕ) : 
-  pg_size q n = ∑ᶠ i in Ico 0 n ,q^i  := 
+  pg_size q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
   induction n with n ih, 
     simp, 
@@ -44,6 +46,15 @@ begin
   ring,
 end
 
+#check min_counterexample_nonneg_int_param
+
 theorem point_count (q : ℤ){α : Type*} [fintype α] (M : matroid α) :
   ¬ (canonical_unif 2 (q+2)).is_iminor_of M → ε M ≤ pg_size q (M.rank_nat) := 
-sorry 
+begin
+  revert M, unfreezingI {revert α},
+  have := @min_counterexample_nonneg_int_param 
+    (sigma (λ (α : Type*), (fintype α) × (matroid α)))  
+    ( λ ⟨α, ⟨ft, M⟩⟩, @matroid.is_simple α ft M)  , 
+    --(λ pair , pair.2.is_simple), 
+  --generalize : M.rank_nat,  Σ
+end

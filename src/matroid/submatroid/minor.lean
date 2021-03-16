@@ -146,8 +146,10 @@ def dual_equiv : minor_pair N M ≃ minor_pair N.dual M.dual :=
 
 @[simp, msimp] lemma dual_equiv_C (p : minor_pair N M) : (dual_equiv p).C = p.D := rfl  
 @[simp, msimp] lemma dual_equiv_D (p : minor_pair N M) : (dual_equiv p).D = p.C := rfl 
-@[simp, msimp] lemma dual_equiv_inv_C (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).C = p.D := rfl 
-@[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : (dual_equiv.inv_fun p).D = p.C := rfl 
+@[simp, msimp] lemma dual_equiv_inv_C (p : minor_pair N.dual M.dual) : 
+  (dual_equiv.inv_fun p).C = p.D := rfl 
+@[simp, msimp] lemma dual_equiv_inv_D (p : minor_pair N.dual M.dual) : 
+  (dual_equiv.inv_fun p).D = p.C := rfl 
 
 lemma rank (p : minor_pair N M) (X : set α) (hX : X ⊆ N.E) :
   N.r X = M.r (X ∪ p.C) - M.r p.C := 
@@ -162,7 +164,8 @@ lemma rank_subtype (p : minor_pair N M) (X : set N.E) :
 by {rw rank, rintro x hx, obtain ⟨⟨x,h⟩,-,rfl⟩ := (mem_image _ _ _).mp hx, exact h, }
 
 /-- given minor pairs for M₁ M₂ and M₂ M₃, constructs a minor pair for M₁ M₃ -/
-def trans {M₁ M₂ M₃ : matroid_in α} (p₁₂ : minor_pair M₁ M₂) (p₂₃ : minor_pair M₂ M₃) : minor_pair M₁ M₃ := 
+def trans {M₁ M₂ M₃ : matroid_in α} (p₁₂ : minor_pair M₁ M₂) (p₂₃ : minor_pair M₂ M₃) : 
+  minor_pair M₁ M₃ := 
 have h₁ : p₁₂.C ∩ p₂₃.D = ∅ := disjoint_of_subset_left' p₁₂.C_ss_E p₂₃.NE_inter_D,
 have h₂ : p₂₃.C ∩ p₁₂.D = ∅ := disjoint_of_subset_right' p₁₂.D_ss_E p₂₃.C_inter_NE, 
 { C := p₁₂.C ∪ p₂₃.C,

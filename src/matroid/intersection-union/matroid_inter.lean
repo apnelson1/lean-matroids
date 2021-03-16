@@ -1,8 +1,8 @@
-/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size of the 
-largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ, taken over 
-all X ⊆ α. The proof is really by induction on the size of the ground set, but to make things easier we 
-instead do induction on the number of nonloops, applying the induction hypothesis to loopifications and 
-projections of M₁ and M₂.  -/
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size 
+of the largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ,
+taken over all X ⊆ α. The proof is really by induction on the size of the ground set, but to make 
+things easier we instead do induction on the number of nonloops, applying the induction hypothesis 
+to loopifications and projections of M₁ and M₂.  -/
 
 import matroid.submatroid.projection 
 import prelim.minmax 

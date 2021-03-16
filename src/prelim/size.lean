@@ -129,6 +129,13 @@ begin
   convert set.union_of_subsets he h', 
 end
 
+lemma eq_of_mems_size_one (hs : size s = 1) (he : e ∈ s) (hf : f ∈ s):
+  e = f := 
+begin
+  obtain ⟨x, rfl⟩ := size_one_iff_eq_singleton.mp hs, 
+  rw set.mem_singleton_iff at he hf, 
+  rw [he,hf], 
+end
 
 lemma size_pair (hef : e ≠ f) : 
   size ({e,f} : set α) = 2 :=
@@ -575,6 +582,13 @@ lemma eq_of_pair_size_one (h : size ({e,f} : set α) = 1) :
   e = f :=
 by_contra (λ hn, by {rw size_pair hn at h, norm_num at h})
 
+lemma size_eq_one_iff_nonempty_unique_mem : 
+  size s = 1 ↔ s.nonempty ∧ ∀ x y ∈ s, x = y := 
+begin
+  rw size_one_iff_eq_singleton, 
+  split, { rintros ⟨e,rfl⟩, tidy, }, rintros ⟨⟨e,he⟩, h⟩, use e, tidy, 
+end
+
 lemma size_eq_two_iff_pair {s : set α} :
   size s = 2 ↔ ∃ (e f : α), e ≠ f ∧ s = {e,f} :=
 begin
@@ -607,6 +621,14 @@ begin
   rw size_pair hef,
 end 
 
+lemma has_distinct_of_two_le_size (hs : 2 ≤ size s):
+  ∃ e f ∈ s, e ≠ f := 
+(finite.two_le_size_iff_has_distinct (finite_of_size_pos (by linarith))).mp hs 
+
+lemma has_distinct_of_one_lt_size (hs : 1 < size s):
+  ∃ e f ∈ s, e ≠ f := 
+(finite.two_le_size_iff_has_distinct (finite_of_size_pos (by linarith))).mp hs 
+  
 lemma has_subset_of_size {n : ℤ} (hn : 0 ≤ n) (hnx : n ≤ size t) :
   ∃ s ⊆ t, size s = n :=
 begin
@@ -633,6 +655,33 @@ lemma has_set_of_size {n : ℤ} (h : 0 ≤ n) (h' : n ≤ type_size α) :
   ∃ (Y : set α), size Y = n :=
 by {rw type_size_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h h', tauto}
  
+lemma has_subset_of_size_of_infinite {n : ℤ} (hn : 0 ≤ n) (ht : t.infinite) :
+  ∃ s ⊆ t, size s = n :=
+begin
+  revert n, 
+  refine nonneg_int_induction _ ⟨∅, empty_subset _, size_empty _⟩ _, 
+  rintros n hn ⟨s, hs, hs'⟩, 
+  by_cases hf : s.finite, 
+  { obtain ⟨e, he⟩ := set.infinite.nonempty (set.infinite_of_finite_diff hf ht), 
+    refine ⟨s ∪ {e}, union_singleton_subset_of_subset_mem hs (mem_of_mem_diff he), _⟩, 
+    rw ← hs', refine finite.size_union_nonmem_singleton hf (not_mem_of_mem_diff he)},
+  obtain ⟨e,he⟩ := set.infinite.nonempty ht, 
+  refine ⟨{e}, singleton_subset_iff.mpr he, _⟩, 
+  rw [size_singleton, ← hs', size_zero_of_infinite hf], 
+  refl, 
+end
+
+lemma has_distinct_mems_of_infinite (ht : t.infinite) : 
+  ∃ e f ∈ t, e ≠ f := 
+begin
+  obtain ⟨s,hst, hs⟩ := has_subset_of_size_of_infinite (by norm_num : (0 : ℤ) ≤ 2) ht, 
+  obtain ⟨e, f, hef, rfl⟩ := size_eq_two_iff_pair.mp hs, 
+  refine ⟨e,f,_,_,hef⟩,
+  { rw [← singleton_subset_iff], apply subset.trans (singleton_subset_pair_left _ _) hst},
+  rw [← singleton_subset_iff], apply subset.trans (singleton_subset_pair_right _ _) hst,
+end
+
+
 
 end general 
 

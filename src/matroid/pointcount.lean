@@ -36,10 +36,10 @@ begin
   convert iff.rfl, 
   refine iff_iff_eq.mp ⟨λ h P hP e f he hf, h _ _ he.1 hf.1 _, 
                         λ h e f he hf hef, h (M.ps.cl e) _ e f ⟨he, _⟩ ⟨hf,_⟩ ⟩,  
-  { obtain ⟨a, ha, rfl⟩ := hP, exact M.ps.rel_of_mems_cl he.2 hf.2  }, 
-  { exact ⟨e, M.ps.rel_self_of_rel hef, rfl⟩ },
-  { rw M.ps.mem_cl_iff, exact M.ps.rel_self_of_rel hef}, 
-  rw M.ps.mem_cl_iff, symmetry, assumption, 
+  { obtain ⟨a, ha, rfl⟩ := hP, exact presetoid.rel_of_mems_cl he.2 hf.2  }, 
+  { exact ⟨e, presetoid.rel_self_of_rel hef, rfl⟩ },
+  { rw presetoid.mem_cl_iff, exact  presetoid.rel_self_of_rel hef}, 
+  rw presetoid.mem_cl_iff, symmetry, assumption, 
 end
 
 lemma ε_eq_largest_simple_subset (M : matroid α) (X : set α) : 

@@ -93,8 +93,7 @@ begin
   from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl,  
 end
 
-lemma min_counterexample_nonneg_int_param (P : α → Prop) (f : α → ℤ)
-(f_nonneg : ∀ a : α, 0 ≤ f a) :
+lemma min_counterexample_nonneg_int_param (P : α → Prop) (f : α → ℤ) (f_nonneg : ∀ a : α, 0 ≤ f a) :
   ¬ (∀ a, P a) → ∃ x, (¬ P x ∧ ∀ x', f x' < f x → P x') :=
 begin
   contrapose!, 
@@ -107,6 +106,9 @@ begin
   rw ha at h',
   linarith,   
 end
+
+
+
 
 end numbers 
 

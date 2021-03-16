@@ -161,18 +161,17 @@ lemma ps_kernel_eq_loops (M : matroid α) :
   M.ps.kernel = M.loops :=
 by {ext, rw [presetoid.mem_kernel_iff, ← loop_iff_mem_loops, ← parallel_irrefl_iff_loop], refl}
 
-
 @[symm] lemma parallel_symm' (hef : M.parallel e f) :
   M.parallel f e := 
-M.ps.symm hef 
+@presetoid.symm _ _ _ M.ps hef
 
 lemma parallel_comm :
   M.parallel e f ↔ M.parallel f e :=
-M.ps.rel_comm 
+@presetoid.rel_comm _ _ _ M.ps
 
 @[trans] lemma parallel_trans' {e f g : α} (hef : M.parallel e f) (hfg : M.parallel f g) : 
   M.parallel e g := 
-M.ps.trans hef hfg
+@presetoid.trans _ _ _ _ M.ps hef hfg 
 
 /-- the parallel class containing e. Empty if e is a loop -/
 def parallel_cl (M : matroid α) (e : α) : set α := 
@@ -184,7 +183,7 @@ by {rw [parallel_cl, presetoid.cl_eq_empty_iff], rwa ← parallel_irrefl_iff_loo
 
 lemma mem_parallel_cl : 
   e ∈ M.parallel_cl f ↔ M.parallel e f := 
-M.ps.mem_cl_iff
+@presetoid.mem_cl_iff _ _ _ _
 
 lemma parallel_cl_nonempty_of_nonloop (he : M.is_nonloop e) : 
   (M.parallel_cl e).nonempty := 
@@ -196,7 +195,7 @@ by {rw [parallel_cl, presetoid.cl_eq_empty_iff, ← parallel_irrefl_iff_loop], r
 
 lemma parallel_cl_nonempty_iff_nonloop : 
   (M.parallel_cl e).nonempty ↔ M.is_nonloop e:= 
-⟨ λ h, by {rw [parallel_cl, M.ps.cl_nonempty_iff] at h, rwa ← parallel_refl_iff_nonloop, }, 
+⟨ λ h, by {rw [parallel_cl, presetoid.cl_nonempty_iff] at h, rwa ← parallel_refl_iff_nonloop, }, 
   λ h, parallel_cl_nonempty_of_nonloop h⟩ 
 
 def is_parallel_class (M : matroid α) (P : set α)  := 
@@ -204,7 +203,7 @@ def is_parallel_class (M : matroid α) (P : set α)  :=
 
 lemma parallel_class_iff_is_parallel_cl :
   M.is_parallel_class P ↔ (∃ a, M.is_nonloop a ∧ P = M.parallel_cl a) :=
-by {simp_rw [is_parallel_class, M.ps.is_class_iff_rep, ← parallel_refl_iff_nonloop], refl} 
+by {simp_rw [is_parallel_class, presetoid.is_class_iff_rep, ← parallel_refl_iff_nonloop], refl} 
 
 lemma rep_parallel_class (hP : M.is_parallel_class P) :
   (∃ a, M.is_nonloop a ∧ P = M.parallel_cl a) := 
@@ -212,7 +211,7 @@ by rwa ← parallel_class_iff_is_parallel_cl
 
 lemma parallel_cl_is_parallel_class (he : M.is_nonloop e) :
   M.is_parallel_class (M.parallel_cl e) :=
-M.ps.cl_is_class (parallel_refl_iff_nonloop.mpr he)
+presetoid.cl_is_class (parallel_refl_iff_nonloop.mpr he)
 
 
 /-- the property that X ⊆ Y, up to parallel -/
@@ -253,12 +252,13 @@ rfl
 
 lemma parallel_cl_eq_of_parallel (hef : M.parallel e f) :
    M.parallel_cl e = M.parallel_cl f :=
-M.ps.cl_eq_cl_of_rel hef 
+presetoid.cl_eq_cl_of_rel hef 
 
 lemma parallel_of_parallel_cl_eq_left (he : M.is_nonloop e)
 (hef : M.parallel_cl e = M.parallel_cl f) : 
   M.parallel e f :=
-by rwa [parallel_cl, parallel_cl, M.ps.cl_eq_cl_iff (parallel_refl_of_nonloop he)] at hef
+by {rw [parallel_cl, parallel_cl, presetoid.cl_eq_cl_iff ] at hef, 
+    exact hef, exact parallel_refl_of_nonloop he}
 
 instance coe_parallel_class_to_set : has_coe (M.parallel_class) (set α) := 
   ⟨subtype.val⟩ 
@@ -276,16 +276,16 @@ rfl
 lemma parallel_of_mems_parallel_class 
 (hP : M.is_parallel_class P) (he : e ∈ P) (hf : f ∈ P) : 
   M.parallel e f := 
-M.ps.rel_of_mems_class hP he hf
+presetoid.rel_of_mems_class hP he hf
 
 lemma nonloop_of_mem_parallel_class 
 (heP : e ∈ P) (h : M.is_parallel_class P) :
   M.is_nonloop e := 
-parallel_refl_iff_nonloop.mp (M.ps.rel_self_of_mem_class h heP)
+parallel_refl_iff_nonloop.mp (presetoid.rel_self_of_mem_class h heP)
 
 lemma parallel_class_eq_cl_mem (hP : M.is_parallel_class P) (he : e ∈ P) :
   P = M.parallel_cl e := 
-M.ps.class_eq_cl_mem hP he 
+presetoid.class_eq_cl_mem hP he 
 
 lemma parallel_cl_eq_cl_minus_loops (M : matroid α) (e : α) : 
   M.parallel_cl e = M.cl {e} \ M.loops :=
@@ -411,7 +411,7 @@ lemma mem_parallel_class_iff_parallel_cl  {P : M.parallel_class} :
   e ∈ (P : set α) ↔ (P : set α) = M.parallel_cl e :=
 begin
   refine ⟨λ h, parallel_class_eq_parallel_cl_of_mem h, λ h, _⟩, 
-  rw [h, parallel_cl, M.ps.mem_cl_iff],--, mem_set_of_eq], 
+  rw [h, parallel_cl, presetoid.mem_cl_iff],--, mem_set_of_eq], 
   exact parallel_refl_of_nonloop (nonloop_of_parallel_cl_is_parallel_class h),
 end 
 

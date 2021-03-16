@@ -1,4 +1,4 @@
-import finsum.finsum algebra.ring.basic prelim.intervals 
+import prelim.set finsum.finsum algebra.ring.basic prelim.intervals 
 
 open_locale big_operators classical 
 
@@ -11,24 +11,6 @@ section general
 -- lemmas in this section maybe belong in the mathlib api 
 
 variables {α : Type*} {M: Type*} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
-
-lemma set.infinite_of_finite_diff (hs : s.finite) (ht : t.infinite) :
-  (t \ s).infinite := 
-λ h, ht (by {refine (hs.union h).subset _, rw set.union_diff_self, apply set.subset_union_right, })
-
-lemma set.infinite_of_union (hs : s.infinite) (t : set α) : 
-  (s ∪ t).infinite := 
-set.infinite_mono (set.subset_union_left _ _) hs 
-
-lemma set.finite.diff (hs : s.finite) (t : set α) : (s \ t).finite :=  
-  set.finite.subset hs (set.diff_subset _ _)
-
-lemma set.finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
-  set.finite.subset hs (set.inter_subset_left _ _)
-
-lemma set.finite.inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
-  set.finite.subset ht (set.inter_subset_right _ _)
-
 
 lemma finsum_eq_zero_of_infinite 
   (hs : ¬ (function.support f).finite) : ∑ᶠ i, f i = 0 :=

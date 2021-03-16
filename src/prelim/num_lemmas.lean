@@ -10,6 +10,7 @@ open set
 
 namespace int 
 
+
 lemma le_sub_one_of_le_of_ne {x y : ℤ} : 
   x ≤ y → x ≠ y → x ≤ y - 1 :=
   λ h h', int.le_sub_one_of_lt (lt_of_le_of_ne h h')
@@ -42,6 +43,8 @@ by {rcases em (x = 0) with (rfl | hx'), simp, apply to_nat_zero_of_neg (lt_of_le
 
 end int
 
+
+
 namespace nat
 
 lemma lt_iff_succ_le {a b : ℕ} : 
@@ -65,7 +68,7 @@ lemma squeeze_le_trans_right (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
 le_antisymm hbc (hac.symm.le.trans hab)
 
 lemma squeeze_le_trans (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
-  a = b  ∧ b = c := 
+  a = b ∧ b = c := 
 ⟨squeeze_le_trans_left hab hbc hac, squeeze_le_trans_right hab hbc hac⟩ 
 
 end order 
