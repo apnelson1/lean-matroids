@@ -1,10 +1,8 @@
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax
-import .parallel 
+import .parallel matroid.submatroid.projection
 
 noncomputable theory 
 open_locale classical 
-
-universes u v w 
 
 open set 
 namespace matroid 
@@ -110,13 +108,18 @@ instance simple_set_nonempty {M : matroid α} : nonempty M.simple_set :=
 instance simple_set_fintype {M : matroid α} : fintype M.simple_set := 
   by {unfold simple_set, apply_instance,}
 
+instance {M : matroid α} : has_coe M.simple_set (set α) := ⟨subtype.val⟩ 
+
 def simple_subset_of (M : matroid α) (S : set α) := {X : set α // M.is_simple_set X ∧ X ⊆ S} 
 
-instance simple_subset_nonempty {M : matroid α} {S : set α} : nonempty (M.simple_subset_of S) := 
+instance simple_subset.ne {M : matroid α} {S : set α} : nonempty (M.simple_subset_of S) := 
   ⟨⟨∅, ⟨λ X hX _, by {rw eq_empty_of_subset_empty hX, apply empty_indep, }, empty_subset _⟩ ⟩⟩ 
 
-instance simple_subset_fintype {M : matroid α} {S : set α} : fintype (M.simple_subset_of S) := 
+instance simple_subset.fin {M : matroid α} {S : set α} : fintype (M.simple_subset_of S) := 
 by {unfold simple_subset_of, apply_instance,}
+
+instance simple_subset.coe {M : matroid α} {S : set α} : 
+  has_coe (M.simple_subset_of S) (set α) := ⟨subtype.val⟩ 
 
 lemma loopless_set_iff_all_nonloops {M : matroid α} {S : set α} : 
   M.is_loopless_set S ↔ ∀ e ∈ S, M.is_nonloop e :=
@@ -166,7 +169,8 @@ by {rw [←nonloop_iff_r], apply nonloop_of_loopless e h,  }
 lemma simple_set_iff_no_loops_or_parallel_pairs {M : matroid α} {S : set α} :
   M.is_simple_set S ↔ M.is_loopless_set S ∧ ∀ (e f ∈ S), M.parallel e f → e = f := 
 begin
-  refine ⟨λ h, ⟨λ X hXS hX, h X hXS (by linarith [hX]),λ e f he hf hef, by_contra (λ hn, _)⟩, λ h, λ X hXS hX, _⟩, 
+  refine ⟨λ h, ⟨λ X hXS hX, h X hXS (by linarith [hX]),λ e f he hf hef, by_contra (λ hn, _)⟩,
+  λ h, λ X hXS hX, _⟩, 
   { rcases hef with ⟨he,hf,hef⟩, 
     have hef' := size_pair hn, 
     linarith [r_indep (h {e,f} (λ x, by {simp, rintros (rfl | rfl); assumption, }) (by linarith))]},
@@ -189,9 +193,55 @@ lemma simple_iff_no_loops_or_parallel_pairs {M : matroid α} :
   M.is_simple ↔ M.is_loopless ∧ ∀ (e f : α), M.parallel e f → e = f :=
 by {rw [simple_iff_univ_simple, simple_set_iff_no_loops_or_parallel_pairs], tidy, }  
 
+lemma simple_set_exchange (hS : M.is_simple_set S) (he : e ∈ S) (hp : M.parallel e f) : 
+  M.is_simple_set (S \ {e} ∪ {f}) := 
+begin
+  rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at ⊢ hS,  
+  simp only [mem_union_iff, mem_diff, mem_singleton_iff, mem_singleton_iff], 
+  refine ⟨λ x hxS, _, λ x y hxS hyS hxy, _⟩, 
+  { obtain (⟨hxS, -⟩ | rfl) := hxS, exact hS.1 x hxS, exact hp.nonloop_right},
+  obtain (⟨hxS, hxe⟩ | rfl) := hxS; obtain (⟨hyS, hye⟩ | rfl) := hyS, 
+  { exact hS.2 _ _ hxS hyS hxy},
+  { exact false.elim ((ne.symm hxe) (hS.2 e x he hxS (hp.trans hxy.symm)))},  
+  { exact false.elim ((ne.symm hye) (hS.2 e y he hyS (hp.trans hxy)))}, 
+  refl, 
+end
 
-/- The simple matroid associated with M (simplification of M). Its elements are the parallel classes of M, and 
-the rank of a set of parallel classes is just the rank in M of their union. -/
+lemma simple_set_exchange' (hS : M.is_simple_set S) (hf : f ∈ S) (hp : M.parallel e f) : 
+  M.is_simple_set ((S ∪ {e}) \ {f}) := 
+begin
+  rcases em (e = f) with (rfl | hef),  
+  rw [union_mem_singleton hf], 
+  exact simple_of_subset_simple hS (diff_subset _ _), 
+  rw ← exchange_comm (ne.symm hef), 
+  exact simple_set_exchange hS hf hp.symm, 
+end
+
+lemma loopify_simple_set_of_simple_set (hS : M.is_simple_set S) (hX : disjoint S X): 
+  (M ⟍ X).is_simple_set S := 
+begin
+  intros Y hY hsize, 
+  rw indep_loopify_iff, 
+  refine ⟨hS Y hY hsize, _⟩, 
+  rw [← disjoint_iff_inter_eq_empty], 
+  exact disjoint_of_subset_left hY hX,  
+end
+
+lemma loopify_simple_iff_simple_disjoint : 
+  (M ⟍ X).is_simple_set S ↔ M.is_simple_set S ∧ disjoint S X := 
+begin
+  refine ⟨λ h, ⟨ λ X hX hsize, _ ,_⟩, λ h, loopify_simple_set_of_simple_set h.1 h.2⟩, 
+  { exact indep_of_loopify_indep (h X hX hsize)},
+  by_contra hn, 
+  obtain ⟨e, hx, hx'⟩ :=  not_disjoint_iff.mp hn, 
+  simp_rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops,
+    nonloop_iff_not_loop] at h, 
+  exact h.1 e hx (loop_of_loopify _ hx'),  
+end
+
+
+/- The simple matroid associated with M (simplification of M). Its elements are the parallel classes
+ of M, and the rank of a set of parallel classes is the rank in M of their union. -/
 def si (M : matroid α) : matroid (M.parallel_class) := 
 { r := λ X, M.r (union_parallel_classes X),
   R0 := λ X, by {apply M.R0 },
@@ -252,7 +302,6 @@ iminor_of_irestr M.si_is_irestr
 lemma si_r_eq_r_parallel_cl_image (M : matroid α) (X : set α) :
   (si M).r (M.parallel_cl_image_of X) = M.r X :=
 by {rw [si_r, ← rank_eq_rank_parallel_cl_image_of]} 
-
 
 
 

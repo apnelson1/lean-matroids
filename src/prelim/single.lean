@@ -271,16 +271,13 @@ begin
   from remove_union_mem_singleton heY, 
 end 
 
-lemma exchange_comm {X : set α} {e f : α} : 
-  e ∈ X → f ∉ X → (X \ {e}) ∪ {f} = (X ∪ {f}) \ {e} := 
+lemma exchange_comm {X : set α} {e f : α} (hef : e ≠ f): 
+  (X \ {e}) ∪ {f} = (X ∪ {f}) \ {e} := 
 begin
-  intros he hf, 
-  simp only [diff_eq], rw [inter_distrib_right],
-  have : ({f} ∩ {e}ᶜ : set α) = {f} := 
-    by {rw [←subset_iff_inter_eq_left, ←disjoint_iff_subset_compl, inter_distinct_singles], by_contra h, push_neg at h, rw h at hf, from hf he},
-  rw this, 
+  ext, simp only [mem_union, mem_diff, mem_singleton_iff], 
+  rcases em (x = e) with (rfl | hxe); rcases em (x = f) with (rfl | hxf), 
+  exact false.elim (hef rfl), simpa, simpa, tauto, 
 end
-
 
 lemma pair_eq_union (e f : α) :
   ({e,f} : set α) = {e} ∪ {f} :=

@@ -46,15 +46,32 @@ begin
   ring,
 end
 
-#check min_counterexample_nonneg_int_param
-
-theorem point_count (q : ℤ){α : Type*} [fintype α] (M : matroid α) :
-  ¬ (canonical_unif 2 (q+2)).is_iminor_of M → ε M ≤ pg_size q (M.rank_nat) := 
+theorem kung {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] (M : matroid α) :
+  M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.rank_nat) := 
 begin
-  revert M, unfreezingI {revert α},
-  have := @min_counterexample_nonneg_int_param 
-    (sigma (λ (α : Type*), (fintype α) × (matroid α)))  
-    ( λ ⟨α, ⟨ft, M⟩⟩, @matroid.is_simple α ft M)  , 
-    --(λ pair , pair.2.is_simple), 
-  --generalize : M.rank_nat,  Σ
+  revert M, 
+  by_contra hn, 
+  obtain ⟨M,hM⟩ := min_counterexample_nonneg_int_param 
+    _ (λ (M : matroid α), size (M.nonloops)) (λ s, size_nonneg _) hn, 
+  push_neg at hM, rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩,  
+  
+  have no_parallel : ∀ (e f : α)(hne : e ≠ f), ¬ M.parallel e f, 
+  { by_contra hn', push_neg at hn', obtain ⟨e,f,hne,hef⟩ := hn', 
+    set M' := M ⟍ {f} with hM', 
+    specialize hM_min M' 
+      (size_strict_monotone (loopify_nonloop_fewer_nonloops hef.nonloop_right))
+      (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (lp_is_pminor M {f}) hMq), 
+    rw [rank_nat, r_nat] at hM_min hMs, 
+    rw [hM', rank_eq_rank_loopify_parallel hef hne, 
+          ε_loopify_parallel _ (ne.symm hne) (hef.symm)] at hM_min, 
+    exact lt_irrefl _ (lt_of_le_of_lt hM_min hMs)},
+
+
+  
+  --rw [not_le] at hMs, 
+  --dsimp only at hM hmin, 
+  --obtain ⟨hMq, hMs⟩ := not_imp.mp hM , 
+  
+
+
 end

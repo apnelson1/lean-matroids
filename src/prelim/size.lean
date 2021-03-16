@@ -803,7 +803,6 @@ by {apply finite.nonempty_iff_size_pos, apply finite.of_fintype, }
 lemma one_le_size_iff_nonempty : s.nonempty ↔ 1 ≤ size s := 
 nonempty_iff_size_pos
 
-
 lemma one_le_size_univ_of_nonempty (hα : nonempty α) : 1 ≤ size (univ : set α) := 
 by rwa [nonempty_iff_univ_nonempty, one_le_size_iff_nonempty] at hα
 

@@ -160,9 +160,10 @@ begin
   rw [←hX.1], apply hX.2, 
 end
 
-lemma attained_ub_is_max' (f : α → β) (a : α) (b : β) :
-  f a = b → (∀ x, f x ≤ b) → max_val f = b :=
-λ hab hub, by {rw ←hab at hub ⊢, apply attained_ub_is_max, from hub}
+lemma attained_ub_is_max' (f : α → β) (a : α) (b : β) (hba : b ≤ f a) (hub : ∀ x, f x ≤ b):
+  max_val f = b :=
+by {rw ← le_antisymm (hub a) hba, exact attained_ub_is_max _ _ (λ x, le_trans (hub x) hba)}
+
 
 /-- a lower bound attained by f must be the min -/
 lemma attained_lb_is_min (f : α → β) (a : α) :
@@ -174,9 +175,10 @@ begin
   rw [←hX.1], apply hX.2, 
 end
 
-lemma attained_lb_is_min' (f : α → β) (a : α) (b : β) :
-  f a = b → (∀ x, b ≤ f x) → min_val f = b :=
-λ hab hub, by {rw ←hab at hub ⊢, apply attained_lb_is_min, from hub}
+lemma attained_lb_is_min' (f : α → β) (a : α) (b : β) (hab : f a ≤ b) (hlb : ∀ x, b ≤ f x) :
+  min_val f = b :=
+by {rw ← le_antisymm hab (hlb a), exact attained_lb_is_min _ _ (λ x, le_trans hab (hlb x))} 
+
 
 /-- the max of a constant function -/
 lemma max_const (b : β) : 
@@ -197,8 +199,8 @@ begin
   rintros ⟨a, a', heq⟩ hbound, 
   rcases max_spec f with ⟨x,hx⟩, 
   rcases min_spec f' with ⟨y,hy'⟩, 
-  have hub := attained_ub_is_max' f a (f' a') heq (λ x, hbound x a'),
-  have hlb := attained_lb_is_min' f' a' (f a) heq.symm (λ x', hbound a x'), 
+  have hub := attained_ub_is_max' f a (f' a') heq.symm.le (λ x, hbound x a'),
+  have hlb := attained_lb_is_min' f' a' (f a) heq.symm.le (λ x', hbound a x'), 
   rw [hub, hlb, heq],
 end
 

@@ -125,6 +125,24 @@ begin
   exact le_trans hX h, 
 end
 
+
+lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℤ} (hr : 0 ≤ r) 
+(hα : 1 ≤ type_size α):
+  (unif.uniform_matroid_on α r).is_loopless ↔ 1 ≤ r := 
+begin
+  simp_rw [loopless_iff_all_nonloops, nonloop_iff_r], 
+  by_cases (r ≤ 0), 
+  { rw [le_antisymm h hr], 
+    norm_num, 
+    obtain ⟨e⟩ :=  nonempty_of_type_size_pos hα, 
+    exact ⟨e, by {rw [uniform_matroid_rank, min_eq_left (size_nonneg _)]; norm_num,  }⟩}, 
+  have : 1 ≤ r, rwa not_le at h, 
+  convert (iff_true _).mpr _, simpa only [iff_true, eq_iff_iff], 
+  intro e,
+  rw uniform_matroid_rank hr, 
+  rw [size_singleton, min_eq_right this], 
+end
+
 lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple :=
 begin

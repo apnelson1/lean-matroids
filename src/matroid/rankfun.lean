@@ -1139,8 +1139,15 @@ def is_coloop (M : matroid α) : α → Prop :=
 def is_noncoloop (M : matroid α) : α → Prop := 
   is_coloop (dual M)
 
+def nonloops (M : matroid α) : set α := 
+  { e : α | M.is_nonloop e }
+
 lemma nonloop_iff_r :
   M.is_nonloop e ↔ M.r {e} = 1 := 
+iff.rfl 
+
+lemma nonloop_iff_mem_nonloops : 
+  M.is_nonloop e ↔ e ∈ M.nonloops := 
 iff.rfl 
 
 lemma loop_iff_r :
@@ -1187,6 +1194,10 @@ begin
   have := M.rank_le_size {e}, rw size_singleton at this,       
   linarith [(ne.le_iff_lt (ne.symm h)).mp (M.rank_nonneg {e})],  
 end
+
+lemma nonloops_eq_compl_loops : 
+  M.nonloops = M.loopsᶜ := 
+by {ext, rw [← nonloop_iff_mem_nonloops, nonloop_iff_not_mem_loops ],  refl}
 
 lemma loop_iff_not_nonloop  : 
   M.is_loop e ↔ ¬ M.is_nonloop e := 

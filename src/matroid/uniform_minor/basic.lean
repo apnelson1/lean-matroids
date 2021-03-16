@@ -12,7 +12,7 @@ universes u v w
 
 section uniform 
 
-variables {α : Type*} [fintype α] {M : matroid α} {a b : ℤ} 
+variables {α : Type*} [fintype α] {M N : matroid α} {a b : ℤ} 
 
 /-- the rank-a uniform matroid on b elements with ground set `fin' b`. Junk unless `0 ≤ a ≤ b`. -/
 def canonical_unif (a b : ℤ) : 
@@ -26,6 +26,13 @@ begin
  rwa size_fin' b (by linarith : 0 ≤ b), 
 end
 
+lemma canonical_unif_loopless_iff (ha : 0 ≤ a) (hb : 1 ≤ b): 
+  (canonical_unif a b).is_loopless ↔ 1 ≤ a := 
+begin
+  convert unif.uniform_matroid_loopless_iff (fin' b) _ _, 
+  assumption, 
+  convert hb, rw size_fin' b (by linarith : 0 ≤ b), 
+end
 lemma canonical_unif_simple_of_two_le_r (ha : 2 ≤ a) : 
   (canonical_unif a b).is_simple :=
 unif.unif_simple_of_two_le_r _ ha
@@ -121,11 +128,26 @@ lemma has_uniform_minor_of_has_unif_restriction (h : M.has_unif_restr a b):
   M.has_unif_minor a b :=
 iminor_of_irestr h
 
+def matroid.has_no_uniform_minor (M : matroid α)(a b : ℤ) := 
+  ¬ M.has_unif_minor a b 
+
+def pseudominor_has_no_uniform_minor (ha : 1 ≤ a) (hb : 2 ≤ b) (hNM : N.is_pminor_of M): 
+  (M.has_no_uniform_minor a b) → (N.has_no_uniform_minor a b) :=
+begin
+  simp_rw [matroid.has_no_uniform_minor, matroid.has_unif_minor], contrapose!, intro hN, 
+  apply iminor_of_iminor_of_pminor _ hN hNM, 
+  rwa canonical_unif_loopless_iff (by linarith : 0 ≤ a) (by linarith : 1 ≤ b), 
+end
+
 end uniform
 
 section line
 
 variables {α : Type*} [fintype α] {M : matroid α} {l a b: ℤ} {X Y L : set α} 
+
+/-- the property of not having a rank-2 uniform matroid on n elements as a minor -/
+def matroid.has_no_line_minor (M : matroid α) (n : ℤ) := 
+  ¬ M.has_unif_minor 2 n 
 
 lemma line_restr_of_simple_set (hl : 0 ≤ l)(hr : M.r L ≤ 2) (hL : M.is_simple_set L) 
 (hsize : l ≤ size L):
@@ -146,10 +168,14 @@ lemma line_restr_of_ε {L : set α}(hl : 0 ≤ l)(hr : M.r L ≤ 2)(hL : l ≤ M
   M.has_unif_restr 2 l :=
 begin
   rw ε_eq_largest_simple_subset at hL, 
-  obtain ⟨⟨L₀,hL₀⟩, h', -⟩ := max_spec (λ (S : M.simple_subset_of L), size S.val), 
+  obtain ⟨⟨L₀,hL₀⟩, h', -⟩ := max_spec (λ (S : M.simple_subset_of L), size (S : set α)), 
   rw ← h' at hL, 
   exact line_restr_of_simple_set hl (le_trans (M.rank_mono hL₀.2) hr) hL₀.1 hL,
 end
+
+
+
+
 
 
 end line 

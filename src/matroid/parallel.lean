@@ -1,6 +1,6 @@
 
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax prelim.presetoid
-import .rankfun matroid.submatroid.minor_iso
+import .rankfun matroid.submatroid.minor_iso matroid.submatroid.project 
 
 noncomputable theory 
 open_locale classical 
@@ -12,12 +12,20 @@ namespace matroid
 
 
 variables {α : Type*} {β : Type*} [fintype α] [fintype β]
-{M : matroid α} {e f : α} {X Y P : set α}
+{M : matroid α} {e f g : α} {X Y P : set α}
 
 /-- relation of being both nonloops and having a rank-one union. Irreflexive at loops; 
     an equivalence relation when restricted to nonloops -/
 def parallel (M : matroid α) (e f : α) : Prop := 
   M.is_nonloop e ∧ M.is_nonloop f ∧ M.r {e,f} = 1 
+
+lemma parallel.nonloop_left (h : M.parallel e f): 
+  M.is_nonloop e := 
+h.1 
+
+lemma parallel.nonloop_right (h : M.parallel e f): 
+  M.is_nonloop f := 
+h.2.1 
 
 lemma parallel_of_rank_le_one 
 (he : M.is_nonloop e) (hf : M.is_nonloop f) (hef : M.r {e,f} ≤ 1) :
@@ -144,9 +152,17 @@ begin
   linarith, 
 end
 
+lemma parallel.trans {M : matroid α}(h : M.parallel e f)(h' : M.parallel f g):
+  M.parallel e g :=
+parallel_trans M h h' 
+
 lemma parallel_symm (M : matroid α) : 
   symmetric M.parallel :=
 by {rintros e f ⟨he,hf,hef⟩, refine ⟨hf,he,_⟩, rwa pair_comm}
+
+lemma parallel.symm {M : matroid α}(h : M.parallel e f):
+  M.parallel f e :=
+parallel_symm M h 
 
 /-- the presetoid given by α and the parallel relation. Equivalence classes are the 
 parallel classes of M, and the kernel is the set of loops of M -/
@@ -236,6 +252,17 @@ end
 lemma rank_eq_rank_of_parallel_covered (h₁ : M.parallel_covered X Y) (h₂ : M.parallel_covered Y X) :
   M.r X = M.r Y :=
 by {apply le_antisymm; exact rank_le_rank_of_parallel_covered (by assumption), }
+
+lemma rank_eq_rank_loopify_parallel (h : M.parallel e f) (hef : e ≠ f): 
+  (M ⟍ {f}).r univ = M.r univ := 
+begin
+  rw loopify_r, 
+  refine le_antisymm (rank_mono _ (subset_univ _)) (rank_le_rank_of_parallel_covered _), 
+  rintros x - hx, 
+  rcases em (x = f) with (rfl | hx'), 
+  { exact ⟨e, by simpa, h.symm⟩, },  
+  exact ⟨x, by simpa, parallel_refl_of_nonloop hx⟩, 
+end
 
 
 def parallel_class (M : matroid α) := {X : set α // M.is_parallel_class X}
