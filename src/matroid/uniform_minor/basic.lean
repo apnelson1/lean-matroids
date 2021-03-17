@@ -173,6 +173,15 @@ begin
   exact line_restr_of_simple_set hl (le_trans (M.rank_mono hL₀.2) hr) hL₀.1 hL,
 end
 
+lemma line_restr_ub_ε (hl : 0 ≤ l){L : set α}(hM : M.has_no_line_minor (l+2))(hL : M.is_line L): 
+  M.ε L ≤ l+1 :=
+begin
+  by_contra hn, push_neg at hn, 
+  refine hM (has_uniform_minor_of_has_unif_restriction 
+    (line_restr_of_ε (by linarith : 0 ≤ l+2) (hL.r.le) _)),
+  have := (int.add_one_le_of_lt hn),  
+  rwa [add_assoc] at this, 
+end
 
 
 

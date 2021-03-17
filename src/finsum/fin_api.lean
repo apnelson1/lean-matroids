@@ -105,6 +105,11 @@ lemma finsum_in_sUnion [add_comm_monoid M] {t : set (set α)}
   ∑ᶠ i in (⋃₀ t), f i = ∑ᶠ s in t, (∑ᶠ i in s, f i) :=
 finsum_in_sUnion (set.finite.of_fintype _) (λ _, set.finite.of_fintype _) h
 
+lemma finsum_in_Union [fintype β] [add_comm_monoid M] {t : β → set α} 
+  (h : ∀ x y, x ≠ y → disjoint (t x) (t y)) :
+  ∑ᶠ i in (⋃ x : β, t x), f i = ∑ᶠ i, (∑ᶠ j in (t i), f j) :=
+finsum_in_Union (λ _ ,set.finite.of_fintype _) h
+
 lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg [ordered_cancel_add_comm_monoid M] 
 (hst : s ⊆ t) (hf : ∀ x ∈ t, 0 ≤ f x) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x) :
   ∀ x ∈ t \ s, f x = 0 :=

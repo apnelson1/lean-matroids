@@ -60,6 +60,36 @@ begin
     _ (λ (M : matroid α), size (M.nonloops)) (λ s, size_nonneg _) hn, 
   push_neg at hM, rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩,  
   
+  by_cases hr : M.r univ ≤ 0, 
+    linarith [pg_size_nonneg q M.rank_nat, ε_eq_r_of_r_le_one (by linarith: M.r univ ≤ 1)], 
+  obtain ⟨e,-,he⟩ := contains_nonloop_of_one_le_rank (lt_of_not_ge' hr), 
+
+  rw ε_as_ε_proj_nonloop he at hMs, 
+
+  set lines := {L : set α | M.is_line L ∧ e ∈ L} with hlines, 
+  have h_L_ub : ∀ L ∈ lines, M.ε L -1 ≤ q, 
+  { rintros L ⟨hL,-⟩, exact int.sub_right_le_of_le_add (line_restr_ub_ε (by linarith) hMq hL),  },
+
+  have h_le : ∑ᶠ (L : set α) in lines, (M.ε L - 1) ≤  q * ((M ⟋ {e}).ε univ) , 
+  { convert fin.finsum_in_le_finsum_in h_L_ub, 
+    rw [int.finsum_in_const_eq_mul_size, hlines, ε_proj_nonloop _ he],  }, 
+  
+  specialize hM_min (M ⟋ {e}) 
+    (size_strict_monotone (project_nonloop_fewer_nonloops he))
+    (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq),
+  
+  have := lt_of_lt_of_le hMs (add_le_add_left h_le 1), 
+
+  have := calc 
+    pg_size q M.rank_nat 
+        < 1 + ∑ᶠ (L : set α) in lines, (M.ε L - 1) : hMs 
+    ... ≤ 1 + q * (M ⟋ {e}).ε univ                 : add_le_add_left h_le 1
+    ... = 1 + q * (pg_size q (M ⟋ {e}).rank_nat)   : add_le_add_left 1 (by sorry)
+    ... = 0 : sorry, 
+
+
+
+  /-
   have no_parallel : ∀ e f, M.parallel e f → e = f, 
   { by_contra hn', push_neg at hn', obtain ⟨e,f,hef,hne⟩ := hn', 
     set M' := M ⟍ {f} with hM', 
@@ -78,20 +108,24 @@ begin
   clear no_parallel hn, 
 
   by_cases hr : M.r univ ≤ 0, 
-    linarith [pg_size_nonneg q M.rank_nat, ε_eq_rank_of_rank_le_one (by linarith: M.r univ ≤ 1)], 
+    linarith [pg_size_nonneg q M.rank_nat, ε_eq_r_of_r_le_one (by linarith: M.r univ ≤ 1)], 
   obtain ⟨e,-,he⟩ := contains_nonloop_of_one_le_rank (lt_of_not_ge' hr), 
   specialize hM_min (M ⟋ {e}) 
     (size_strict_monotone (project_nonloop_fewer_nonloops he))
     (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq), 
-  rw [matroid.rank_nat_eq] at hM_min hMs,
-  rw [project_r, univ_union, rank_nonloop he] at hM_min,  
+  
+  rw [rank_nat_eq, project_r, univ_union, rank_nonloop he, ε_univ_eq_num_points ] at hM_min,  
+  rw [ε_eq_ε_inter_nonloops, univ_inter, ε_eq_size_iff_simple_set.mpr h', rank_nat_eq] at hMs, 
+
+  have hPL : (M ⟋ {e}).point = { L : set α // M.is_line L ∧ e ∈ L}, 
+  { },
 
     
   
   --rw [not_le] at hMs, 
   --dsimp only at hM hmin, 
   --obtain ⟨hMq, hMs⟩ := not_imp.mp hM , 
-  
+  -/
 
 
 end

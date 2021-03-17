@@ -46,6 +46,15 @@ lemma rank_one_of_mem_parallel_pair (hef : M.parallel e f) :
   M.r {e} = 1 :=
 rank_nonloop hef.1 
 
+lemma rank_two_of_not_parallel (he : M.is_nonloop e)(hf : M.is_nonloop f)( h : ¬ M.parallel e f): 
+  M.r {e,f} = 2 := 
+begin
+  refine le_antisymm (le_trans (M.rank_le_size {e,f}) (size_pair_ub _ _)) _, 
+  by_contra hn, push_neg at hn, 
+  exact h (parallel_of_rank_le_one he hf (int.le_sub_one_of_lt hn)), 
+end
+  
+
 lemma rank_eq_rank_parallel_ext (he : e ∈ X) (hef : M.parallel e f) : 
   M.r (insert f X) = M.r X :=
 begin
@@ -234,6 +243,15 @@ presetoid.cl_is_class (parallel_refl_iff_nonloop.mpr he)
 def parallel_covered (M : matroid α) (X Y : set α) :=
   ∀ x ∈ X, M.is_nonloop x → ∃ y ∈ Y, M.parallel x y 
 
+lemma parallel_covered_of_insert (h : M.parallel e f) (heX : e ∈ X): 
+  M.parallel_covered (insert f X) X :=
+begin
+  intros x hx hx', 
+  rcases mem_insert_iff.mp hx with (rfl | he),
+  { exact ⟨e, heX, h.symm⟩, }, 
+  exact ⟨x, he, parallel_refl_of_nonloop hx'⟩, 
+end 
+
 lemma parallel_covered_apply (hXY : M.parallel_covered X Y) (heX : e ∈ X) (he : M.is_nonloop e) :
   ∃ y ∈ Y, M.parallel e y := 
 hXY e heX he 
@@ -264,6 +282,14 @@ begin
   exact ⟨x, by simpa, parallel_refl_of_nonloop hx⟩, 
 end
 
+lemma mem_flat_of_parallel {F : set α} (hF : M.is_flat F) (h : M.parallel e f) (he : e ∈ F) : 
+  f ∈ F := 
+begin
+  simp_rw [flat_iff_add_r, union_singleton] at hF, 
+  by_contra hn, specialize hF f hn, 
+  rw rank_eq_rank_parallel_ext he h at hF,
+  exact lt_irrefl _ hF,   
+end
 
 def parallel_class (M : matroid α) := {X : set α // M.is_parallel_class X}
 
@@ -286,6 +312,12 @@ lemma parallel_of_parallel_cl_eq_left (he : M.is_nonloop e)
   M.parallel e f :=
 by {rw [parallel_cl, parallel_cl, presetoid.cl_eq_cl_iff ] at hef, 
     exact hef, exact parallel_refl_of_nonloop he}
+
+lemma parallel_iff_parallel_cl_eq_left (he : M.is_nonloop e):
+  M.parallel e f ↔ M.parallel_cl e = M.parallel_cl f :=  
+by {convert (presetoid.cl_eq_cl_iff _).symm, refl, exact parallel_refl_of_nonloop he}
+
+
 
 instance coe_parallel_class_to_set : has_coe (M.parallel_class) (set α) := 
   ⟨subtype.val⟩ 
@@ -337,6 +369,16 @@ begin
   apply loops_subset_cl, 
 end
 
+lemma parallel_of_mem_cl ( h : e ∈ M.cl {f} ) (he : M.is_nonloop e):
+  M.parallel e f := 
+begin
+  rw cl_eq_parallel_cl_union_loops at h,
+  cases h, 
+  rwa ← mem_parallel_cl, 
+  rw [← loop_iff_mem_loops, loop_iff_not_nonloop] at h, 
+  exact false.elim (h he), 
+end
+
 lemma rank_parallel_cl (he : M.is_nonloop e) : 
   M.r (M.parallel_cl e) = 1 := 
 by rwa [parallel_cl_eq_cl_minus_loops, rank_eq_rank_diff_rank_zero _ M.rank_loops, 
@@ -356,6 +398,17 @@ begin
   obtain rfl := h e he,  
   rw [mem_parallel_cl, parallel_refl_iff_nonloop] at he, 
   exact ⟨e, he, rfl⟩, 
+end
+
+lemma cl_eq_cl_iff_parallel_cl_eq_parallel_cl : 
+  M.cl {e} = M.cl {f} ↔ M.parallel_cl e = M.parallel_cl f := 
+begin
+  repeat {rw cl_eq_parallel_cl_union_loops}, 
+  refine ⟨λ h, _, λ h, by rw h⟩, 
+  ext x, 
+  simp_rw [ext_iff, mem_union, mem_parallel_cl, ← loop_iff_mem_loops, loop_iff_not_nonloop] at h, 
+  rw [mem_parallel_cl, mem_parallel_cl], 
+  unfold parallel at *, finish, 
 end
 
 /-- the natural equivalence between points and parallel classes in a matroid -/

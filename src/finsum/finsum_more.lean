@@ -10,7 +10,7 @@ section general
 
 -- lemmas in this section maybe belong in the mathlib api 
 
-variables {α : Type*} {M: Type*} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
+variables {α β : Type*} {M: Type*} [add_comm_monoid M] {f g : α → M} {s t : set α} {x y : α}
 
 lemma finsum_eq_zero_of_infinite 
   (hs : ¬ (function.support f).finite) : ∑ᶠ i, f i = 0 :=
@@ -133,6 +133,7 @@ begin
   congr' 1,
   ext, simp,
 end 
+
 
 end general 
 

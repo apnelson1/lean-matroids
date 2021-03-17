@@ -44,7 +44,7 @@ lemma type_size_coe_set_eq_size (s : set α) :
   type_size s = size s := 
 by rw [type_size_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
 
-lemma type_size_coe_set_eq_size_set_of (P : α → Prop): 
+lemma type_size_type_of_eq_size_set_of (P : α → Prop): 
   type_size {x // P x} = size {x | P x} :=
 type_size_coe_set_eq_size P
 
@@ -99,6 +99,13 @@ by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
 lemma size_set_of_eq_size_subtype (P : α → Prop):
   size {x | P x} = type_size {x // P x} :=
 by rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, ← finsum_subtype_eq_finsum_in_set_of]
+
+
+lemma size_set_of_push (P Q : α → Prop) :
+  size {x : {y // P y} | Q (x : α)} = size { x | P x ∧ Q x } := 
+by {rw [← finsum_ones_eq_size, ← finsum_ones_eq_size], 
+    convert finsum_set_subtype_eq_finsum_set (1 : α → ℤ) P Q,  }
+
 
 end basic 
 
@@ -698,7 +705,7 @@ section fintype
 
 open set 
 
-variables {α : Type*} [fintype α] {s t : set α} {e f : α}
+variables {α β : Type*} [fintype α] [fintype β] {s t : set α} {e f : α}
 
 lemma size_monotone (hst : s ⊆ t) : 
   size s ≤ size t :=
@@ -894,6 +901,22 @@ by {apply finite.size_le_one_iff_mem_unique, apply finite.of_fintype}
 lemma size_sUnion {k : set (set α)} (hdisj : pairwise_disjoint k) : 
   size (⋃₀ k) = ∑ᶠ s in k, size s := 
 by {apply finite.size_sUnion _ (λ b hb, _) hdisj; apply finite.of_fintype, } 
+
+lemma size_Union {t : β → set α} 
+(h : ∀ x y, x ≠ y → disjoint (t x) (t y)) :
+  size (⋃ x : β, t x) = ∑ᶠ i, (size (t i)) :=
+by {simp_rw [← finsum_ones_eq_size], apply fin.finsum_in_Union h, }
+
+lemma size_bUnion {t : β → set α} {b : set β} 
+(h : ∀ x y ∈ b, x ≠ y → disjoint (t x) (t y)):  
+  size (⋃ (x : β) (H : x ∈ b), t x) = ∑ᶠ i in b, size (t i) :=
+begin
+  rw [← finsum_subtype_eq_finsum_in, ← size_Union], simp,  
+  rintros ⟨x,hx⟩ ⟨y,hy⟩ hxy, 
+  refine h x y hx hy _,
+  simpa using hxy, 
+end
+
 
 lemma eq_univ_of_size_eq_type_size (hs : size s = type_size α):
   s = univ :=

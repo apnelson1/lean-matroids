@@ -121,6 +121,10 @@ by {unfold simple_subset_of, apply_instance,}
 instance simple_subset.coe {M : matroid α} {S : set α} : 
   has_coe (M.simple_subset_of S) (set α) := ⟨subtype.val⟩ 
 
+lemma simple_of_indep {M : matroid α} {I : set α} (hI : M.is_indep I): 
+  M.is_simple_set I := 
+λ _ hX _, indep_of_subset_indep hX hI
+
 lemma loopless_set_iff_all_nonloops {M : matroid α} {S : set α} : 
   M.is_loopless_set S ↔ ∀ e ∈ S, M.is_nonloop e :=
 begin

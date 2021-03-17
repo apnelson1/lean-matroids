@@ -14,7 +14,7 @@ noncomputable theory
 ----------------------------------------------------------------
 namespace matroid 
 variables {α : Type*} [fintype α] {M : matroid α} {e f x y z : α}
-{X Y Z X' Y' Z' F B I C C₁ C₂ F₁ F₂ P : set α}
+{X Y Z X' Y' Z' F B I C C₁ C₂ F₁ F₂ P  L₁ L₂ : set α}
 
 -- probably split up these set notations by section...
 
@@ -100,6 +100,10 @@ rank_eq_zero_of_le_zero (by {convert M.rank_le_size _, rw size_empty })
 lemma rank_lt_size_ne_empty : 
   M.r X < size X → X ≠ ∅ := 
 λ h hX, by {rw [hX, size_empty, rank_empty] at h, from lt_irrefl _ h,  }
+
+lemma nonempty_of_r_nonzero (M : matroid α) : 
+  M.r X ≠ 0 → X.nonempty := 
+by {contrapose!, intro h, rw not_nonempty_iff_eq_empty at h, rw [h, rank_empty],  } 
 
 lemma rank_single_ub (M : matroid α) (e : α) :
   M.r {e} ≤ 1 := 
@@ -885,7 +889,6 @@ rfl
 def is_point (M : matroid α) : set α → Prop := 
   λ F, M.is_rank_k_flat 1 F
 
-
 /-- is a rank-two flat -/
 def is_line (M : matroid α) : set α → Prop := 
   λ F, M.is_rank_k_flat 2 F
@@ -898,23 +901,34 @@ def is_plane (M : matroid α) : set α → Prop :=
 def is_hyperplane (M : matroid α) : set α → Prop := 
   λ H, M.is_rank_k_flat (M.r univ - 1) H 
 
+
+
+lemma is_point.r (h : M.is_point P): M.r P = 1 := h.2 
+lemma is_point.flat (h : M.is_point P) : M.is_flat P := h.1 
+
+lemma is_line.r (h : M.is_line X) : M.r X = 2 := h.2 
+lemma is_line.flat (h : M.is_line P) : M.is_flat P := h.1 
+
+lemma is_plane.r (h : M.is_plane X) : M.r X = 3 := h.2
+lemma is_plane.flat (h : M.is_plane P) : M.is_flat P := h.1 
+
 def point (M : matroid α)  := {P : set α // M.is_point P}
-
-instance point_fin : fintype M.point := 
-by {unfold point, apply_instance}
-
+instance point_fin : fintype M.point := by {unfold point, apply_instance}
 instance point_coe : has_coe M.point (set α) := ⟨subtype.val⟩ 
+lemma point.r (P : M.point): M.r P = 1 := P.2.r 
+lemma point.flat (P : M.point) : M.is_flat P := P.2.flat 
 
 def line (M : matroid α) := {L : set α // M.is_line L}
+instance line_fin : fintype M.line := by {unfold line, apply_instance}
+instance line_coe : has_coe M.line (set α) := ⟨subtype.val⟩ 
+lemma line.r (P : M.line): M.r P = 2 := P.2.r 
+lemma line.flat (P : M.line) : M.is_flat P := P.2.flat 
 
-instance line_fin : fintype M.line := 
-by {unfold line, apply_instance}
-
-def plane (M : matroid α) := {P : set α // M.is_plane P}
-
-instance plane_fin : fintype M.plane := 
-by {unfold plane, apply_instance}
-
+def plane (M : matroid α) := {L : set α // M.is_plane L}
+instance plane_fin : fintype M.plane := by {unfold plane, apply_instance}
+instance plane_coe : has_coe M.plane (set α) := ⟨subtype.val⟩ 
+lemma plane.r (P : M.plane): M.r P = 3 := P.2.r 
+lemma plane.flat (P : M.plane) : M.is_flat P := P.2.flat 
 
 lemma rank_loops (M: matroid α) : 
   M.r (M.loops) = 0 := 
@@ -1001,6 +1015,10 @@ lemma flat_iff_add :
   M.is_flat F ↔ ∀ (e : α), e ∉ F → ¬M.spans F {e} := 
 by {rw [flat_iff_add_r], simp_rw not_spans_iff_r}
 
+lemma univ_is_flat (M : matroid α) : 
+  M.is_flat univ := 
+by {rw [flat_iff_own_cl, cl_univ]}
+
 lemma fullrank_flat_is_univ :
   M.is_flat F → M.r F = M.r univ → F = univ := 
 begin
@@ -1023,6 +1041,8 @@ begin
     flat_iff_add_r.mp hF₁ _ h₁, 
     M.rank_mono (union_subset hF₁F₂ (singleton_subset_iff.mpr h₂))], 
 end
+
+
 
 lemma hyperplane_iff_r  (X : set α) :
   M.is_hyperplane X ↔ M.r X = M.r univ - 1 ∧ ∀ Y, X ⊂ Y → M.r Y = M.r univ := 
@@ -1087,6 +1107,30 @@ begin
   intros h₁ h₂ e he, rw nonmem_inter_iff at he, cases he, 
   exact λ h, (h₁ e he) (mem_of_mem_of_subset h (cl_monotone M (inter_subset_left F₁ F₂))), 
   exact λ h, (h₂ e he) (mem_of_mem_of_subset h (cl_monotone M (inter_subset_right F₁ F₂))), 
+end
+
+lemma rank_inter_eq_rank_flats_lt
+(hF₁ : M.is_flat F₁) (hF₂ : M.is_flat F₂) (hr : M.r F₁ = M.r F₂) (hF₁F₂ : F₁ ≠ F₂):
+  M.r (F₁ ∩ F₂) < M.r F₁ := 
+begin
+  by_contra hn, apply hF₁F₂, 
+  push_neg at hn, 
+  replace hn := rank_eq_of_le_supset (inter_subset_left _ _) hn, 
+  apply subset.antisymm, 
+  { rw subset_iff_inter_eq_left, 
+    exact flats_eq_of_nested_ge_rank (M.inter_flats_is_flat _ _ hF₁ hF₂) hF₁ 
+      (inter_subset_left _ _) (by rw hn)},
+  rw hr at hn, rw subset_iff_inter_eq_right, 
+  apply flats_eq_of_nested_ge_rank (M.inter_flats_is_flat _ _ hF₁ hF₂) hF₂
+    (inter_subset_right _ _) (by rw hn),  
+end
+
+lemma rank_inter_lines_le_one (hL₁ : M.is_line L₁) (hL₂ : M.is_line L₂) (h : L₁ ≠ L₂): 
+  M.r (L₁ ∩ L₂) ≤ 1 := 
+begin
+  apply int.le_of_lt_add_one, 
+  convert rank_inter_eq_rank_flats_lt hL₁.flat hL₂.flat (by {rw [hL₁.r, hL₂.r]}) h, 
+  rw hL₁.r, norm_num,  
 end
 
 /-- is both a circuit and a hyperplane -/
@@ -1223,10 +1267,13 @@ lemma rank_eq_rank_remove_loop (X : set α) (he : M.is_loop e) :
   M.r (X \ {e}) = M.r X := 
 rank_eq_rank_diff_rank_zero _ (loop_iff_r.mp he)
 
+@[simp] lemma rank_eq_rank_diff_loops (X : set α) :
+  M.r (X \ M.loops) = M.r X := 
+rank_eq_rank_diff_rank_zero _ (M.rank_loops)
+
 lemma nonloop_of_one_le_rank (h : 1 ≤ M.r {e}) : 
   M.is_nonloop e :=
 by {rw [nonloop_iff_r, eq_comm], exact le_antisymm h (by {convert M.rank_le_size _, simp, })} 
-
 
 lemma nonloop_of_rank_lt_insert (h : M.r X < M.r (X ∪ {e})) :
   M.is_nonloop e :=
@@ -1349,18 +1396,31 @@ instance fintype_basis_of (X : set α) : fintype (M.basis_of X) :=
 by {unfold basis_of, apply_instance }
 
 
+lemma is_basis_of.size_eq_r (h : M.is_basis_of B X) : 
+  size B = M.r X := 
+by rw [← h.2.2, ← h.2.1]
 
-lemma size_basis_of  {B X : set α} :
-  M.is_basis_of B X → size B = M.r X :=
-  λ h, by {rw is_basis_of at h, linarith}
+lemma is_basis_of.indep (h : M.is_basis_of B X): 
+  M.is_indep B := 
+by rw [indep_iff_r, h.2.1] 
+
+lemma is_basis_of.size_eq_r_self (h : M.is_basis_of B X) : 
+  size B = M.r B := 
+by rw [h.size_eq_r, h.2.2]
+
+lemma is_basis_of.is_subset_of (h : M.is_basis_of B X): 
+  B ⊆ X := 
+h.1 
 
 lemma size_basis :
   M.is_basis B → size B = M.r univ := 
-size_basis_of 
+is_basis_of.size_eq_r 
+
+
 
 lemma bases_of_equicardinal (M : matroid α){B₁ B₂ X: set α} :
   M.is_basis_of B₁ X → M.is_basis_of B₂ X → size B₁ = size B₂ := 
-λ h₁ h₂, by rw[size_basis_of h₁, size_basis_of h₂]
+λ h₁ h₂, by rw[is_basis_of.size_eq_r h₁, is_basis_of.size_eq_r h₂]
 
 lemma bases_equicardinal (M : matroid α){B₁ B₂ : set α} :
   M.is_basis B₁ → M.is_basis B₂ → size B₁ = size B₂ := 
@@ -1549,6 +1609,9 @@ begin
   exact ⟨{e}, by {rwa ←nonloop_iff_indep}, ⟨e,rfl⟩, rfl⟩, 
 end
 
+lemma point_of_cl_nonloop (he : M.is_nonloop e):
+  M.is_point (M.cl {e}) := 
+point_iff_cl_nonloop.mpr ⟨e,he,rfl⟩
 
 lemma indep_iff_contained_in_basis :
   M.is_indep X ↔ ∃ B, X ⊆ B ∧ M.is_basis B := 
@@ -1581,7 +1644,7 @@ lemma rank_eq_iff_exists_basis_of (M : matroid α) (X : set α){n : ℤ} :
 begin
   refine ⟨λ h, _, λ h, _⟩, 
   subst h, cases exists_basis_of M X with B hB,
-  exact ⟨B, hB, size_basis_of hB⟩, 
+  exact ⟨B, hB, is_basis_of.size_eq_r hB⟩, 
   rcases h with ⟨B,⟨⟨h₁,h₂⟩,h₃⟩⟩, 
   rw [←h₂.2, h₂.1], exact h₃, 
 end
@@ -1646,11 +1709,11 @@ lemma indep_ext :
 begin
   intro h, ext X,
   cases exists_basis_of M₁ X with B hB, 
-  rw ←size_basis_of hB, 
+  rw ←is_basis_of.size_eq_r hB, 
   rw basis_of_iff_augment_i at hB, 
   simp_rw h at hB, 
   rw ←basis_of_iff_augment_i at hB, 
-  rw ←size_basis_of hB, 
+  rw ←is_basis_of.size_eq_r hB, 
 end
 
 lemma circuit_ext : 

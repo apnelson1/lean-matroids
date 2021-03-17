@@ -271,6 +271,21 @@ begin
   exact h.1 _ hFY, 
 end
 
+lemma point_project_nonloop_iff {M : matroid α} { e : α } (he : M.is_nonloop e){X : set α}:
+  (M ⟋ {e}).is_point X ↔ M.is_line X ∧ e ∈ X := 
+begin
+  dsimp only  [is_point, is_line, is_rank_k_flat, project_r], 
+  rw [flat_project_iff, rank_nonloop he, singleton_subset_iff], 
+  split, 
+  { rintros ⟨⟨hF,he⟩,hX⟩, 
+    rw [union_mem_singleton he] at hX, 
+    exact ⟨⟨hF, eq_add_of_sub_eq hX⟩, he⟩ },
+  rintros ⟨⟨hF, hX⟩, he⟩, 
+  rw [union_mem_singleton he, hX], 
+  tidy, 
+end
+  
+
 section pminor
 
 /-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising 
