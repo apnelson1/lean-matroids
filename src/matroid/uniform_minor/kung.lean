@@ -2,15 +2,16 @@
 import .basic 
 import prelim.intervals 
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax finsum.fin_api
-import matroid.submatroid.projection matroid.pointcount matroid.submatroid.minor_iso 
+import matroid.pointcount matroid.submatroid.minor_iso 
 
 noncomputable theory 
 open_locale classical big_operators 
 
 open set matroid 
 
-/-- the size of a projective geometry over a `q`-element field. This is currently defined for 
-integers `q`, but really `q` can live in any ring and it still makes sense. -/
+/-- the size of a projective geometry over a `q`-element field; i.e `1 + q + q^2 + ... + q^{n-1}`.
+This is currently defined for integers `q`, but really `q` can live in any ring and it still 
+makes sense. -/
 def pg_size : ℤ → ℕ → ℤ 
 | q 0     := 0
 | q (n+1) := 1 + q * (pg_size q n)
@@ -35,6 +36,10 @@ begin
   simp [set.Ioo_ℕ_finite],  
 end
 
+lemma pg_size_nonneg (q : ℤ) (n : ℕ):
+  0 ≤ pg_size q n :=
+sorry 
+
 lemma pg_size_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) : 
   (pg_size q n : ℚ) = (q^n - 1)/(q - 1) := 
 begin
@@ -55,8 +60,8 @@ begin
     _ (λ (M : matroid α), size (M.nonloops)) (λ s, size_nonneg _) hn, 
   push_neg at hM, rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩,  
   
-  have no_parallel : ∀ (e f : α)(hne : e ≠ f), ¬ M.parallel e f, 
-  { by_contra hn', push_neg at hn', obtain ⟨e,f,hne,hef⟩ := hn', 
+  have no_parallel : ∀ e f, M.parallel e f → e = f, 
+  { by_contra hn', push_neg at hn', obtain ⟨e,f,hef,hne⟩ := hn', 
     set M' := M ⟍ {f} with hM', 
     specialize hM_min M' 
       (size_strict_monotone (loopify_nonloop_fewer_nonloops hef.nonloop_right))
@@ -66,7 +71,22 @@ begin
           ε_loopify_parallel _ (ne.symm hne) (hef.symm)] at hM_min, 
     exact lt_irrefl _ (lt_of_le_of_lt hM_min hMs)},
 
+  have h' : M.is_simple_set (M.nonloops),
+  { rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_subset_nonloops], 
+     refine ⟨subset.refl _, λ e f _ _ hef, no_parallel e f hef⟩},
 
+  clear no_parallel hn, 
+
+  by_cases hr : M.r univ ≤ 0, 
+    linarith [pg_size_nonneg q M.rank_nat, ε_eq_rank_of_rank_le_one (by linarith: M.r univ ≤ 1)], 
+  obtain ⟨e,-,he⟩ := contains_nonloop_of_one_le_rank (lt_of_not_ge' hr), 
+  specialize hM_min (M ⟋ {e}) 
+    (size_strict_monotone (project_nonloop_fewer_nonloops he))
+    (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq), 
+  rw [matroid.rank_nat_eq] at hM_min hMs,
+  rw [project_r, univ_union, rank_nonloop he] at hM_min,  
+
+    
   
   --rw [not_le] at hMs, 
   --dsimp only at hM hmin, 

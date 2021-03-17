@@ -40,13 +40,13 @@ lemma type_size_eq (α : Type*) : type_size α = size (set.univ : set α) := rfl
 lemma type_size_eq_fincard_t (α : Type*) : type_size α = fincard_t α := 
 by {rw [type_size, size_def], norm_num, refl,  }
 
-lemma type_size_subtype_eq_size (s : set α) :
+lemma type_size_coe_set_eq_size (s : set α) :
   type_size s = size s := 
 by rw [type_size_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
 
-lemma type_size_subtype_eq_size_set_of (P : α → Prop): 
+lemma type_size_coe_set_eq_size_set_of (P : α → Prop): 
   type_size {x // P x} = size {x | P x} :=
-type_size_subtype_eq_size P
+type_size_coe_set_eq_size P
 
 @[simp] lemma size_empty (α : Type*) : size (∅ : set α) = 0 := 
 by simp [size]
@@ -1159,7 +1159,7 @@ lemma exists_emb_of_type_size_le_size_set {α : Type*} [fintype α] {β : Type*}
 (hsize : type_size α ≤ size s ) : 
   ∃ (emb : α ↪ β), set.range emb ⊆ s := 
 begin
-  rw ← type_size_subtype_eq_size at hsize, 
+  rw ← type_size_coe_set_eq_size at hsize, 
   let emb := choose_emb_of_size_le_size hsize, 
   exact ⟨emb.trans ⟨subtype.val, subtype.val_injective ⟩, λ x, by tidy⟩, 
 end

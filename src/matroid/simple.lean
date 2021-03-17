@@ -131,6 +131,10 @@ begin
   rw [size_singleton, h e (singleton_subset_iff.mp hX)],  
 end
 
+lemma loopless_set_iff_subset_nonloops {M : matroid α} {S : set α} :
+  M.is_loopless_set S ↔ S ⊆ M.nonloops := 
+by {rw [loopless_set_iff_all_nonloops, nonloops], tauto}
+
 lemma loopless_iff_all_nonloops {M : matroid α} :
   M.is_loopless ↔ ∀ e, M.is_nonloop e :=
 by {rw [loopless_iff_univ_loopless, loopless_set_iff_all_nonloops], tauto}

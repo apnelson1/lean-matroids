@@ -29,6 +29,10 @@ def rank_nat (M : matroid α) := M.r_nat univ
 
 @[simp] lemma rank_eq (M : matroid α) : M.rank = M.r univ := rfl 
 
+lemma r_nat_eq : M.r_nat X = (M.r X).to_nat := rfl
+
+lemma rank_nat_eq : M.rank_nat = (M.r univ).to_nat := rfl 
+
 /-- rank is nonnegative -/
 lemma rank_nonneg (M : matroid α) (X : set α) :
   0 ≤ M.r X := 
@@ -1174,6 +1178,10 @@ lemma cl_loop_eq_loops (he : M.is_loop e) :
   M.cl {e} = M.loops := 
 rank_zero_iff_cl_eq_loops.mp (rank_loop he)
 
+lemma loop_of_mem_rank_zero (he : e ∈ X) (hX : M.r X = 0) :
+  M.is_loop e :=
+by {rw loop_iff_r, apply rank_zero_of_subset_rank_zero (singleton_subset_iff.mpr he) hX,  } 
+
 lemma loop_iff_mem_loops  : 
   M.is_loop e ↔ e ∈ M.loops := 
 by {simp_rw [is_loop, ←singleton_subset_iff], from rank_zero_iff_subset_loops}  
@@ -1218,6 +1226,7 @@ rank_eq_rank_diff_rank_zero _ (loop_iff_r.mp he)
 lemma nonloop_of_one_le_rank (h : 1 ≤ M.r {e}) : 
   M.is_nonloop e :=
 by {rw [nonloop_iff_r, eq_comm], exact le_antisymm h (by {convert M.rank_le_size _, simp, })} 
+
 
 lemma nonloop_of_rank_lt_insert (h : M.r X < M.r (X ∪ {e})) :
   M.is_nonloop e :=
@@ -1298,6 +1307,15 @@ begin
   rw rank_eq_rank_insert_loop _ hz' at hr, 
   exact lt_irrefl _ hr, 
 end
+
+
+lemma contains_nonloop_of_one_le_rank (h : 1 ≤ M.r X): 
+  ∃ e ∈ X, M.is_nonloop e :=
+begin
+  obtain ⟨z, hz, hz', -⟩ := rank_augment_nonloop (by {rw rank_empty, linarith} : M.r ∅ < M.r X), 
+  exact ⟨z,hz,hz'⟩, 
+end
+
 
 end loopnonloop
 

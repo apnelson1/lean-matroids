@@ -246,7 +246,7 @@ lemma ne_of_mem_diff {X : set α} {e f: α} (h : e ∈ X \ {f}) :
 
 lemma ssubset_of_remove_mem {X : set α} {e : α} (heX : e ∈ X) :
    X \ {e} ⊂ X := 
-ssubset_of_subset_ne 
+ssubset_of_subset_ne
   (diff_subset _ _) 
   (λ h, by {rw [ext_iff] at h, specialize h e, rw mem_diff at h, tauto,  })
 

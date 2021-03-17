@@ -76,14 +76,66 @@ lemma ε_eq_size_iff_simple_set {M : matroid α} {X : set α} :
 by rw [ε_eq_pc_matroid_r, ← indep_iff_r, pc_matroid_indep_iff]
 
 lemma ε_eq_size_univ_iff_simple {M : matroid α} :
-  M.ε univ = size (univ :set α) ↔ M.is_simple :=
+  M.ε univ = size (univ : set α) ↔ M.is_simple :=
 ε_eq_size_iff_simple_set
+
 
 lemma ε_eq_num_parallel_classes_inter (M : matroid α) (X : set α) :
   M.ε X = size {P : M.parallel_class | (X ∩ P).nonempty } :=
 begin
   simp_rw [ε_eq_pc_matroid_r, pc_matroid_def, presetoid_matroid.r_eq], 
   exact (size_set_subtype_eq_size_set _ _).symm, 
+end
+
+/-- Golfing needed-/
+lemma ε_eq_rank_of_rank_le_one {M : matroid α} {X : set α} (h : M.r X ≤ 1):
+  M.ε X = M.r X := 
+begin
+  rw [ε_eq_num_parallel_classes_inter], 
+  by_cases hX : M.r X < 1,
+  { have hX' : M.r X = 0, linarith [M.rank_nonneg X],
+    rw [hX', size_zero_iff_has_no_mem],
+    simp only [not_exists, mem_set_of_eq],
+    rintros ⟨P,hP⟩, 
+    by_contra hn, 
+    obtain ⟨e,⟨he₁,he₂⟩⟩ := hn, 
+    apply nonloop_iff_not_loop.mp (nonloop_of_mem_parallel_class he₂ hP), 
+    apply loop_of_mem_rank_zero he₁ hX'}, 
+  have hX' : M.r X = 1 := le_antisymm h (le_of_not_lt hX), 
+  rw [hX', size_eq_one_iff_nonempty_unique_mem], 
+  obtain ⟨x,hxX, hxl⟩ := contains_nonloop_of_one_le_rank (hX'.symm.le), 
+  simp only [mem_set_of_eq],
+  refine ⟨⟨⟨M.parallel_cl x, parallel_cl_is_parallel_class hxl⟩, ⟨x,hxX,_⟩⟩, λ P P' hP hP', _⟩,   
+  { rw [subtype.coe_mk, mem_parallel_cl], exact parallel_refl_of_nonloop hxl }, 
+  rcases P with ⟨P,hPp⟩, rcases P' with ⟨P', hPp'⟩,  
+  obtain ⟨e, he, rfl⟩ := rep_parallel_class hPp, 
+  obtain ⟨e', he', rfl⟩ := rep_parallel_class hPp', 
+  obtain ⟨⟨x,⟨hx,hxp⟩⟩,⟨x',⟨hx',hxp'⟩⟩⟩ := ⟨hP,hP'⟩, 
+  rw [subtype.mk_eq_mk], 
+  apply parallel_cl_eq_of_parallel, 
+  rw [subtype.coe_mk, mem_parallel_cl] at hxp hxp', 
+  have := parallel_of_rank_le_one hxp.nonloop_left hxp'.nonloop_left _, 
+  { exact (hxp.symm.trans this).trans hxp',  },
+  rw ← hX', apply rank_mono, 
+  intros a ha, 
+  simp only [mem_singleton_iff, mem_insert_iff] at ha, 
+  rcases ha with (rfl | rfl); tauto,   
+end
+  
+
+lemma ε_eq_ε_inter_nonloops {M : matroid α} {X : set α}:
+  M.ε X = M.ε (X ∩ M.nonloops) := 
+begin
+  rw [nonloops_eq_compl_loops, ← diff_eq], 
+  convert (rank_eq_rank_diff_rank_zero X _).symm, 
+  rw rank_zero_iff_subset_loops, 
+  intros e he, 
+  rw [← loop_iff_mem_loops, loop_iff_r, ← ε_eq_pc_matroid_r, ε_eq_rank_of_rank_le_one],
+  { rwa [← loop_iff_r, loop_iff_mem_loops],}, 
+  
+  exact rank_single_ub M e, 
+  -- What the hell? VVV 
+  recover, apply_instance, 
 end
 
 lemma ε_eq_num_points_inter (M : matroid α) (X : set α) : 
@@ -109,6 +161,15 @@ begin
   simp only [mem_union, mem_inter_iff, mem_diff, 
   subtype.coe_mk, ← nonloop_iff_not_mem_loops] at ⊢ hx, 
   have := nonloop_of_mem_parallel_class hx.2 hQ, tauto, 
+end
+
+lemma ε_univ_eq_num_points (M : matroid α):
+  M.ε univ = type_size M.point :=
+begin
+  simp only [ε_eq_num_points_inter M univ, point, type_size_eq], 
+  congr', ext, 
+  simp only [inter_univ, iff_true, subtype.val_eq_coe], 
+  
 end
 
 /- This should be changed to being stated in terms of M ⟍ {f} rather than M ⟍ {e}  to be consistent
@@ -139,5 +200,4 @@ begin
   rw loopify_simple_iff_simple_disjoint at hS₀, 
   exact hS'' ⟨S₀, hS₀.1⟩, 
 end
-
---def point_partition_matroid (M : mat
+ 

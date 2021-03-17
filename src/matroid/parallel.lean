@@ -1,6 +1,6 @@
 
 import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax prelim.presetoid
-import .rankfun matroid.submatroid.minor_iso matroid.submatroid.project 
+import .rankfun matroid.submatroid.minor_iso matroid.submatroid.projection
 
 noncomputable theory 
 open_locale classical 
