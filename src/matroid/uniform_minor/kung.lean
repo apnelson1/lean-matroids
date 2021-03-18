@@ -52,8 +52,8 @@ begin
 end
 
 /- the size of a rank-`n` projective geometry over `GF(q)`, or equivalently the value of the sum
-`1 + q + q² + q³ + ... + q^{n-1}` For convenience, this is defined for all integers `n`, and is 
-takes the value `0` if `n ≤ 0`.  -/
+`1 + q + q² + q³ + ... + q^{n-1}` For convenience, this is defined for all integers `n`, taking 
+the value `0` if `n ≤ 0`.  -/
 def pg_size (q n : ℤ) := pg_size' q n.to_nat 
 
 lemma pg_size_eq_zero (q n : ℤ)(hn : n ≤ 0) : 
@@ -89,6 +89,8 @@ begin
   exact pow_nonneg hq i, 
 end 
 
+/- Kung's lemma - the number of points in a rank-`r` matroid with no `U_{2,q+2}`-minor is at most 
+`1 + q + q^2 + ... + q^{n-1}`. -/
 theorem kung {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] (M : matroid α) :
   M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.r univ) := 
 begin
