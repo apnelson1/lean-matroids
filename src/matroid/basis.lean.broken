@@ -1,4 +1,4 @@
-/- This whole file is ancient and todo -/
+/- Basis Axioms. This whole file is ancient and todo -/
 
 import ftype.basic ftype.induction ftype.collections .rankfun .indep 
 

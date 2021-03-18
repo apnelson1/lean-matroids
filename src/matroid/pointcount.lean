@@ -298,3 +298,14 @@ begin
   exact hS'' ⟨S₀, hS₀.1⟩, 
 end
  
+lemma ε_loopify_to_eq_ε (M : matroid α) (X : set α) : 
+  (M ‖ X).ε univ = M.ε X := 
+begin
+  repeat {rw ε_eq_largest_simple_subset}, 
+  set φ : (M ‖ X).simple_subset_of univ → M.simple_subset_of X := 
+    λ S, ⟨S.val, by {obtain ⟨S, hS₁, hS₂⟩ := S, dsimp only, rwa  ←simple_loopify_to_iff, }⟩ with hφ, 
+  have hsurj : function.surjective φ, 
+  { rintro ⟨S, hS₁, hS₂⟩, exact ⟨⟨S, ⟨simple_loopify_to_iff.mpr ⟨hS₁, hS₂⟩, subset_univ _⟩⟩, rfl⟩},
+  convert max_reindex φ hsurj (λ (S : M.simple_subset_of X), size ↑S), 
+  ext, refl, 
+end

@@ -346,6 +346,10 @@ lemma indep_iff_r :
   M.is_indep X ↔ M.r X = size X := 
 by refl 
 
+lemma indep_iff_size_le_r : 
+  M.is_indep X ↔ size X ≤ M.r X := 
+by {rw [indep_iff_r], exact ⟨λ h, by rw h, λ h, le_antisymm (M.rank_le_size X) h⟩} 
+
 lemma r_indep :
   M.is_indep X → M.r X = size X :=
 indep_iff_r.mp 

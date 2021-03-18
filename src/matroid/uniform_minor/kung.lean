@@ -11,26 +11,19 @@ open set matroid
 
 variables {β : Type*}[comm_semiring β][no_zero_divisors β]
 
-/-- the size of a projective geometry over a `q`-element field; i.e `1 + q + q^2 + ... + q^{n-1}`.
-This is currently defined for integers `q`, but really `q` can live in any ring and it still 
-makes sense. -/
+/-- the size of a projective geometry over a `q`-element field; i.e `1 + q + q^2 + ... + q^{n-1}` -/
 def pg_size' : β → ℕ → β
 | q 0     := 0
 | q (n+1) := 1 + q * (pg_size' q n)
 
-@[simp] lemma pg_size'_zero (q : β) :
-  pg_size' q 0 = 0 := 
-rfl 
+@[simp] lemma pg_size'_zero (q : β) : pg_size' q 0 = 0 := rfl 
 
-@[simp] lemma pg_size'_succ {q : β}{n : ℕ}: 
-  pg_size' q n.succ = 1 + q * (pg_size' q n) := rfl 
+@[simp] lemma pg_size'_succ {q : β}{n : ℕ}: pg_size' q n.succ = 1 + q * (pg_size' q n) := rfl 
 
-@[simp] lemma pg_size'_order_one (n : ℕ) : 
-  pg_size' (1 : ℤ) n = n := 
+@[simp] lemma pg_size'_order_one (n : ℕ) : pg_size' (1 : ℤ) n = n := 
 by {induction n with n ih, simp, simp [pg_size', ih, add_comm]  }
 
-lemma pg_size'_eq_powsum (q : β) (n : ℕ) : 
-  pg_size' q n = ∑ᶠ i in Ico 0 n , q^i  := 
+lemma pg_size'_eq_powsum (q : β) (n : ℕ) : pg_size' q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
   induction n with n ih, 
     simp, 
@@ -41,8 +34,7 @@ begin
   simp [set.Ioo_ℕ_finite],  
 end
 
-lemma pg_size'_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) : 
-  (pg_size' q n : ℚ) = (q^n - 1)/(q - 1) := 
+lemma pg_size'_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) : (pg_size' q n : ℚ) = (q^n - 1)/(q - 1) := 
 begin
   induction n with n ih, 
     simp, 
@@ -56,12 +48,10 @@ end
 the value `0` if `n ≤ 0`.  -/
 def pg_size (q n : ℤ) := pg_size' q n.to_nat 
 
-lemma pg_size_eq_zero (q n : ℤ)(hn : n ≤ 0) : 
-  pg_size q n = 0 := 
+lemma pg_size_eq_zero (q n : ℤ)(hn : n ≤ 0) : pg_size q n = 0 := 
 by {rw pg_size, convert pg_size'_zero q, rw int.to_nat_zero_of_nonpos hn, }
 
-lemma pg_size_rec (q : ℤ) {n : ℤ} (hn : 1 ≤ n): 
-  pg_size q n = 1 + q * (pg_size q (n-1)) :=
+lemma pg_size_rec (q : ℤ) {n : ℤ} (hn : 1 ≤ n) : pg_size q n = 1 + q * (pg_size q (n-1)) :=
 begin
   rw [pg_size, pg_size], 
   obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le (by linarith : 0 ≤ n), 
@@ -69,8 +59,7 @@ begin
   cases m, exfalso, norm_num at hn, refl, 
 end
 
-lemma pg_size_eq_powsum (q n : ℤ): 
-  pg_size q n = ∑ᶠ i in Ico 0 n.to_nat, q^i  := 
+lemma pg_size_eq_powsum (q n : ℤ) : pg_size q n = ∑ᶠ i in Ico 0 n.to_nat, q^i  := 
 begin
   cases le_or_lt n 0 with hn hn', 
   { convert finsum_in_empty.symm, 
@@ -80,18 +69,12 @@ begin
   convert pg_size'_eq_powsum q n.to_nat, 
 end
 
-lemma pg_size_nonneg (q n : ℤ)(hq : 0 ≤ q):
-  0 ≤ pg_size q n :=
-begin
-  rw pg_size_eq_powsum, 
-  apply nonneg_of_finsum_in_nonneg, 
-  intros i hi, 
-  exact pow_nonneg hq i, 
-end 
+lemma pg_size_nonneg (q n : ℤ)(hq : 0 ≤ q): 0 ≤ pg_size q n :=
+by {rw pg_size_eq_powsum, exact nonneg_of_finsum_in_nonneg (λ i hi, pow_nonneg hq i)}
 
 /- Kung's lemma - the number of points in a rank-`r` matroid with no `U_{2,q+2}`-minor is at most 
 `1 + q + q^2 + ... + q^{n-1}`. -/
-theorem kung {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] (M : matroid α) :
+theorem rank_le_rank_pg_of_no_line {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] {M : matroid α} :
   M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.r univ) := 
 begin
   /- If the result fails, we can choose M to be a minimal counterexample-/
@@ -122,10 +105,10 @@ begin
   { convert fin.finsum_in_le_finsum_in h_L_ub, 
     rw [int.finsum_in_const_eq_mul_size, hlines, ε_proj_nonloop _ he]}, 
   
-  /- Since `M ⟋ e` isn't a counterxample, it doesn't have too many points  -/
+  /- Since `M ⟋ e` isn't a counterexample, it doesn't have too many points  -/
   specialize hM_min (M ⟋ {e}) 
     (size_strict_monotone (project_nonloop_fewer_nonloops he))
-    (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq),
+    (pminor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq),
   
   /- Now `M`, being a counterexample, has lots of points, whereas `M ⟋ e` doesn't have too many.
   This is a contradiction. -/
@@ -141,6 +124,17 @@ begin
   exact lt_irrefl _ hlt, 
 end
 
+theorem rank_set_le_rank_pg_of_no_line {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] {M : matroid α}
+(X : set α) (h : M.has_no_line_minor (q+2)):
+  M.ε X ≤ pg_size q (M.r X) := 
+begin
+  rw ← ε_loopify_to_eq_ε, 
+  convert rank_le_rank_pg_of_no_line hq _ using 1, 
+  { rw [loopify_to_r, univ_inter]},
+  exact pminor_has_no_uniform_minor (by norm_num : (1 : ℤ) ≤ 2) (by linarith : 2 ≤ q + 2)
+    (lp_is_pminor _ _) h, 
+end
+  
 
  
 
@@ -153,7 +147,7 @@ end
     set M' := M ⟍ {f} with hM', 
     specialize hM_min M' 
       (size_strict_monotone (loopify_nonloop_fewer_nonloops hef.nonloop_right))
-      (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (lp_is_pminor M {f}) hMq), 
+      (pminor_has_no_uniform_minor (by norm_num) (by linarith) (lp_is_pminor M {f}) hMq), 
     rw [rank_nat, r_nat] at hM_min hMs, 
     rw [hM', rank_eq_rank_loopify_parallel hef hne, 
           ε_loopify_parallel _ (ne.symm hne) (hef.symm)] at hM_min, 

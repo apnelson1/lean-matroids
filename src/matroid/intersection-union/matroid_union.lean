@@ -193,7 +193,7 @@ begin
     with ⟨B, hB', hB⟩,
   
   rw [←hA', ←hB'], clear hA' hB',
-  simp_rw [rank_loopify_to] at *,
+  simp_rw [loopify_to_r] at *,
   have hXB : Xᶜ ⊆ B, 
   begin
     rw [subset_iff_union_eq_left, eq_comm],   
