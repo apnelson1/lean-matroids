@@ -128,12 +128,9 @@ begin
   exact one_ne_zero hx, 
 end
 
-
 lemma loop_of_loopify (M : matroid α) (he : e ∈ D) :
   (M ⟍ D).is_loop e := 
 by {rw [loop_iff_mem_loops, ← loops_loopify], exact or.inr he}
-
-
 
 lemma project_nonloop_fewer_nonloops (he : M.is_nonloop e): 
   (M ⟋ {e}).nonloops ⊂ M.nonloops := 

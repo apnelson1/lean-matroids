@@ -338,7 +338,6 @@ def is_indep_subset_of (M : matroid α) (X : set α) : set α → Prop :=
 
 def indep_subset_of (M : matroid α) (X : set α) := {I : set α // M.is_indep_subset_of X I}
 
-
 /-- is dependent in M; negation of independence -/
 def is_dep (M : matroid α) : set α → Prop := 
    λ X, ¬(M.is_indep X)
@@ -1676,7 +1675,6 @@ begin
   refl, 
 end
 
-
 lemma not_indep_iff_exists_removal : 
   ¬M.is_indep X ↔ ∃ (e : α), e ∈ X ∧ M.r (X \ {e}) = M.r X := 
 begin
@@ -1692,7 +1690,6 @@ begin
   rw ←he, refine lt_of_le_of_lt (M.rank_le_size _) _, 
   rw size_remove_mem heX, linarith,  
 end
-
 
 end basis 
 

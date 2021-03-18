@@ -480,6 +480,8 @@ end order
 
 section intervals 
 
+
+open set 
 variables {α : Type*} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α]
 {M : Type*} [add_comm_monoid M]
 
@@ -500,7 +502,6 @@ lemma finsum_Ioo_shift (a b d : α) (f : α → M) :
 finsum_in_eq_of_bij_on _ (Ioo_add_bij _ _ _) (λ _ _, rfl)
 
 
- 
 
 end intervals 
 

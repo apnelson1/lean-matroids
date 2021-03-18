@@ -20,11 +20,11 @@ def C_to_I (M : cct_family α) : (set α → Prop) :=
   λ I, ∀ X, X ⊆ I → ¬M.cct X 
 
 lemma C_to_empty_indep (M : cct_family α) :
-  satisfies_C1 (C_to_I M) :=
-by {intro X, rw subset_empty hX, from M.C1}
+  satisfies_I1 (C_to_I M) :=
+by {intro X, rw subset_empty_iff, intro hX, rw hX, exact M.C1}
 
 lemma C_to_indep_of_subset_indep (M : cct_family α) :
-  satisfies_C2 (C_to_I M) :=
+  satisfies_I2 (C_to_I M) :=
 λ I J hIJ hJ X hXI, hJ _ (subset.trans hXI hIJ)
 
 lemma new_circuit_contains_new_elem {M : cct_family α} {I C : set α} {e : α} :

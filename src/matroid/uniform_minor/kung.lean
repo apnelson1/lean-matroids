@@ -9,30 +9,32 @@ open_locale classical big_operators
 
 open set matroid 
 
+variables {β : Type*}[comm_semiring β][no_zero_divisors β]
+
 /-- the size of a projective geometry over a `q`-element field; i.e `1 + q + q^2 + ... + q^{n-1}`.
 This is currently defined for integers `q`, but really `q` can live in any ring and it still 
 makes sense. -/
-def pg_size' : ℤ → ℕ → ℤ 
+def pg_size' : β → ℕ → β
 | q 0     := 0
 | q (n+1) := 1 + q * (pg_size' q n)
 
-@[simp] lemma pg_size'_zero (q : ℤ) :
+@[simp] lemma pg_size'_zero (q : β) :
   pg_size' q 0 = 0 := 
 rfl 
 
-@[simp] lemma pg_size'_succ {q : ℤ}{n : ℕ}: 
+@[simp] lemma pg_size'_succ {q : β}{n : ℕ}: 
   pg_size' q n.succ = 1 + q * (pg_size' q n) := rfl 
 
 @[simp] lemma pg_size'_order_one (n : ℕ) : 
-  pg_size' 1 n = n := 
+  pg_size' (1 : ℤ) n = n := 
 by {induction n with n ih, simp, simp [pg_size', ih, add_comm]  }
 
-lemma pg_size'_eq_powsum (q : ℤ) (n : ℕ) : 
+lemma pg_size'_eq_powsum (q : β) (n : ℕ) : 
   pg_size' q n = ∑ᶠ i in Ico 0 n , q^i  := 
 begin
   induction n with n ih, 
     simp, 
-  rw [pg_size', ih, mul_distrib_finsum_in], 
+  rw [pg_size', ih], rw mul_distrib_finsum_in q, 
   conv in (_ * _) {rw ← pow_succ}, 
   rw [← pow_zero q, finsum_Ico_shift, Ico_ℕ_eq_Ioo, nat.zero_add, nat.sub_self,
    ← finsum_in_insert, Ioo_insert_left_eq_Ico];
@@ -44,12 +46,14 @@ lemma pg_size'_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) :
 begin
   induction n with n ih, 
     simp, 
-  have hq : (q : ℚ) -1 ≠ 0 := by {norm_cast, linarith}, 
-  rw [pg_size', int.cast_add, int.cast_mul, int.cast_one, ih, pow_succ, ← mul_div_assoc, 
-  one_add_div hq, div_left_inj' hq],
-  ring,
+  replace hq : (q : ℚ) -1 ≠ 0 := by {norm_cast, linarith}, 
+  rw [pg_size', ih, ← mul_div_assoc, one_add_div hq, div_left_inj' hq, pow_succ], 
+  ring, 
 end
 
+/- the size of a rank-`n` projective geometry over `GF(q)`, or equivalently the value of the sum
+`1 + q + q² + q³ + ... + q^{n-1}` For convenience, this is defined for all integers `n`, and is 
+takes the value `0` if `n ≤ 0`.  -/
 def pg_size (q n : ℤ) := pg_size' q n.to_nat 
 
 lemma pg_size_eq_zero (q n : ℤ)(hn : n ≤ 0) : 
@@ -88,6 +92,7 @@ end
 theorem kung {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] (M : matroid α) :
   M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.r univ) := 
 begin
+  /- If the result fails, we can choose M to be a minimal counterexample-/
   revert M, 
   by_contra hn, 
   obtain ⟨M,hM⟩ := min_counterexample_nonneg_int_param 
@@ -95,25 +100,33 @@ begin
   push_neg at hM, 
   rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩,  
   
+  /- The counterexample doesn't have rank zero, so it has a nonloop e-/
   by_cases hr : M.r univ ≤ 0, 
   { linarith [pg_size_nonneg q (M.r univ) (by linarith : 0 ≤ q), 
               ε_eq_r_of_r_le_one (by linarith: M.r univ ≤ 1)]},
   obtain ⟨e,-,he⟩ := contains_nonloop_of_one_le_rank (lt_of_not_ge' hr), 
 
+  /- Write ε M in terms of the sum of lengths of lines through e-/
   rw ε_as_ε_proj_nonloop he at hMs, 
 
+  /- These lines all contain at most q points other than e... -/
   set lines := {L : set α | M.is_line L ∧ e ∈ L} with hlines, 
   have h_L_ub : ∀ L ∈ lines, M.ε L -1 ≤ q, 
   { rintros L ⟨hL,-⟩, exact int.sub_right_le_of_le_add (line_restr_ub_ε (by linarith) hMq hL)},
 
+  /- ... so we can get an upper bound on the sum of their lengths, which then translates to an 
+  upper bound in terms of `ε (M ⟋ e)`.  . -/
   have h_le : ∑ᶠ (L : set α) in lines, (M.ε L - 1) ≤  q * ((M ⟋ {e}).ε univ), 
   { convert fin.finsum_in_le_finsum_in h_L_ub, 
     rw [int.finsum_in_const_eq_mul_size, hlines, ε_proj_nonloop _ he]}, 
   
+  /- Since `M ⟋ e` isn't a counterxample, it doesn't have too many points  -/
   specialize hM_min (M ⟋ {e}) 
     (size_strict_monotone (project_nonloop_fewer_nonloops he))
     (pseudominor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq),
   
+  /- Now `M`, being a counterexample, has lots of points, whereas `M ⟋ e` doesn't have too many.
+  This is a contradiction. -/
   have hlt := calc 
     pg_size q (M.r univ)  < 1 + ∑ᶠ (L : set α) in lines, (M.ε L - 1) 
                         : hMs 

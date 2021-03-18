@@ -118,8 +118,6 @@ lemma Ioc_ℤ_eq_Icc (a b : ℤ) :
   Ioc a b = Icc (a+1) b := 
 rfl 
 
-
-
 end int
 
 
