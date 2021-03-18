@@ -4,10 +4,9 @@
   sets are the independent sets of a matroid on α. Then it generalizes the latter result to a 
   general list of matroids; the former is todo but shouldn't be too bad.  -/
 
--- somewhat broken due to extensive refactoring; needs work 
-
 import prelim.minmax prelim.setlist 
 import matroid.submatroid.projection  .matroid_inter .basic
+import matroid.constructions.uniform 
 import algebra.big_operators
 import set_tactic.solver
 
@@ -145,10 +144,10 @@ largest partitionable set. The heavy lifting in the proof is done by matroid int
 theorem two_matroid_union (M₁ M₂ : matroid α) :
   π₂ M₁ M₂ = min_val (λ A : set α, size Aᶜ + M₁.r A + M₂.r A ) :=
 begin
-  rw [π₂_eq_ν_plus_r, matroid_intersection],
-  rw min_add_commute (matroid_intersection_ub_fn M₁ (dual M₂)) (M₂.r univ),
-  congr', ext X, rw [matroid_intersection_ub_fn], dsimp,
-  rw [dual_r, compl_compl], linarith,  
+  rw [π₂_eq_ν_plus_r, matroid_intersection,  min_add_commute _ (M₂.r univ)],
+  congr', ext X, 
+  rw [dual_r, compl_compl], 
+  linarith,  
 end
 
 end two_union 
@@ -210,15 +209,18 @@ begin
   apply le_antisymm, 
   
   convert hB (Xᶜ ∪ A), 
-  simp [compl_compl_union_left],  
-  
+  { simp [compl_compl_union_left, diff_eq]}, 
   repeat 
-    {unfold_coes, 
-    simp only [inter_distrib_right, subset_iff_inter_eq_left.mp A.property, compl_inter_self, empty_union]},
+  { unfold_coes, 
+    simp only [inter_distrib_right, subset_iff_inter_eq_left.mp A.property, compl_inter_self,
+     empty_union], },
 
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩, 
-  dsimp,
-  set_solver, 
+  dsimp only [subtype.coe_mk], 
+  ext, 
+  simp only [mem_inter_eq, not_and, mem_diff, subtype.coe_mk, mem_compl_eq],  
+  specialize @hXB x, rw mem_compl_iff at hXB, 
+  tauto, 
 end
 
 
@@ -318,12 +320,13 @@ section union
 
 variables {n : ℕ}
 
+open unif 
 theorem exists_union_matroid (Ms : fin n → matroid α) :
   ∃ (M_union: matroid α), ∀ X, M_union.is_indep X ↔ is_union_indep_tuple Ms X := 
 begin
   induction n with n IH, 
     -- base case
-    {use loopy_matroid_on α, 
+    {use loopy α, 
     simp_rw [loopy_matroid_indep_iff_empty, is_union_indep_tuple], 
     refine λ X, ⟨λ h, _, λ h, _⟩,  
       {refine ⟨⟨λ i, fin_zero_elim i, λ i, fin_zero_elim i⟩,_⟩,
@@ -332,25 +335,23 @@ begin
         exact fin_zero_elim,  },
     cases h with Is hIs, rw hIs, 
     simp only [set.Union_eq_empty, subtype.val_eq_coe],
-    apply fin_zero_elim, },
-
+    apply fin_zero_elim},
+  
   set Ms₀ := fin.tail Ms, 
   set N := Ms 0 with hN, 
   cases IH Ms₀ with Mα₀ hMα₀, clear IH, 
   refine ⟨two_union_matroid.union Mα₀ N, λ X, _⟩,
   rw [two_union_matroid.indep_iff_union, is_union_two_indep], dsimp only,  
   refine ⟨λ h, _, λ h, _⟩, 
-    {{rcases h with ⟨I₁,I₂,h₁,h₂,rfl⟩, 
-    rw hMα₀ at h₁, rcases h₁ with ⟨⟨Is₀,h₃⟩,h₄⟩,
+  { rcases h with ⟨I₁,I₂,h₁,h₂,rfl⟩, 
+    rw hMα₀ at h₁, rcases h₁ with ⟨⟨Is₀,h₃⟩,rfl⟩,
     unfold is_union_indep_tuple, 
-    refine ⟨⟨@fin.cons _ (λ i, set α) I₂ Is₀,λ i,_⟩,_⟩, swap, 
-      {rw h₄, simp [seq.Union_cons],  },
+    refine ⟨⟨@fin.cons _ (λ i, set α) I₂ Is₀,λ i,_⟩, _⟩, swap, rw seq.Union_cons,
     revert i, refine λ i, fin.cases (by {rw ←hN, simp [h₂]}) (λ i₀ , _) i, 
-    convert h₃ i₀, simp, 
-    },},
+    convert h₃ i₀, simp},
   rcases h with ⟨⟨Is,h₂⟩, rfl⟩, 
   refine ⟨set.Union (fin.tail Is),Is 0,_,⟨h₂ 0,_⟩⟩, 
-    {rw hMα₀, refine ⟨⟨fin.tail Is,λ i, h₂ (fin.succ i)⟩,rfl⟩, },
+  { rw hMα₀, refine ⟨⟨fin.tail Is,λ i, h₂ (fin.succ i)⟩,rfl⟩},
   simp [←seq.Union_cons],
 end
 

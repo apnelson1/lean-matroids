@@ -745,6 +745,14 @@ lemma subset_cl (M : matroid α) (X : set α) :
   X ⊆ M.cl X := 
 (cl_iff_spanned_ub.mp rfl).2 _ (spans_refl M X)
 
+lemma mem_cl_of_mem (he : e ∈ X): 
+  e ∈ M.cl X := 
+mem_of_mem_of_subset he (M.subset_cl X)
+
+lemma mem_cl_single (M : matroid α) (e : α) : 
+  e ∈ M.cl {e} :=
+mem_cl_of_mem (mem_singleton e) 
+
 lemma spans_cl (M : matroid α) (X : set α) :
   M.spans X (M.cl X) := 
 (cl_iff_max.mp rfl).1 
@@ -1201,6 +1209,10 @@ lemma loop_iff_r :
   M.is_loop e ↔ M.r {e} = 0 := 
 iff.rfl 
 
+lemma nonloop_iff_one_le_rank :
+  M.is_nonloop e ↔ 1 ≤ M.r {e} := 
+by {rw nonloop_iff_r, split; {intro, linarith [rank_single_ub M e]}}
+
 lemma loop_iff_circuit :
   M.is_loop e ↔ M.is_circuit {e} :=
 by simp [loop_iff_r, circuit_iff_r, size_singleton, ssubset_singleton_iff_empty] 
@@ -1246,7 +1258,7 @@ begin
   linarith [(ne.le_iff_lt (ne.symm h)).mp (M.rank_nonneg {e})],  
 end
 
-lemma nonloops_eq_compl_loops : 
+lemma nonloops_eq_compl_loops (M : matroid α ): 
   M.nonloops = M.loopsᶜ := 
 by {ext, rw [← nonloop_iff_mem_nonloops, nonloop_iff_not_mem_loops ],  refl}
 

@@ -132,6 +132,29 @@ lemma loop_of_loopify (M : matroid α) (he : e ∈ D) :
   (M ⟍ D).is_loop e := 
 by {rw [loop_iff_mem_loops, ← loops_loopify], exact or.inr he}
 
+lemma project_nonloops_eq :
+  (M ⟋ C).nonloops = M.nonloops \ M.cl C :=
+begin
+  ext x,
+  rw [mem_diff, ← nonloop_iff_mem_nonloops, ← nonloop_iff_mem_nonloops, nonloop_iff_r, project_r, 
+    nonmem_cl_iff_r, union_comm],  
+  refine ⟨λ h, ⟨by_contra (λ hn, _), by linarith⟩, λ h, by linarith [h.2]⟩,
+  rw [← loop_iff_not_nonloop, loop_iff_r] at hn, 
+  rw [rank_eq_rank_union_rank_zero _ hn, sub_self] at h, 
+  exact zero_ne_one h,   
+end
+
+lemma loopify_nonloops_eq : 
+  (M ⟍ D).nonloops = M.nonloops \ D := 
+begin
+  ext x, 
+  rw [mem_diff, ← nonloop_iff_mem_nonloops, ← nonloop_iff_mem_nonloops, nonloop_iff_r, loopify_r],  
+  refine ⟨λ h, ⟨_, λ hn, _⟩, λ h, _⟩,
+  { rw [nonloop_iff_one_le_rank, ←h], exact M.rank_mono (diff_subset _ _)},
+  { apply int.zero_ne_one, convert h, convert M.rank_empty.symm,  tidy}, 
+  convert nonloop_iff_r.mp h.1, tidy, 
+end
+
 lemma project_nonloop_fewer_nonloops (he : M.is_nonloop e): 
   (M ⟋ {e}).nonloops ⊂ M.nonloops := 
 begin

@@ -8,7 +8,6 @@ noncomputable theory
 
 universes u v w
  
-namespace ftype 
 open set 
 
 variables {α : Type*} [fintype α]
@@ -96,12 +95,9 @@ begin
   convert h 0, 
 end
 
-
 end seq
 
 
-
-end ftype
 
 namespace list
 
