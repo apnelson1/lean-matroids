@@ -404,10 +404,6 @@ by simp [diff_eq, inter_right_comm]
 @[simp] lemma univ_diff (s : set α) : univ \ s = sᶜ := 
   (compl_eq_univ_diff s).symm
 
-@[simp] lemma diff_univ (s : set α) : s \ univ = ∅ := 
-by rw [diff_eq, compl_univ, inter_empty]
-
-
 @[simp] lemma symm_diff_self (s : set α) : symm_diff s s = ∅ :=
 by {unfold symm_diff, rw [diff_self, empty_union]}
 
