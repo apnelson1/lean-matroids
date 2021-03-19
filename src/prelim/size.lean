@@ -133,7 +133,7 @@ begin
     rw [finsum_pair (ne.symm hxe), h, add_le_iff_nonpos_right] at hs',
     norm_num at hs'}, 
   rw ← set.singleton_subset_iff at he h', 
-  convert set.union_of_subsets he h', 
+  convert set.union_subset he h', 
 end
 
 lemma eq_of_mems_size_one (hs : size s = 1) (he : e ∈ s) (hf : f ∈ s):
@@ -608,7 +608,7 @@ begin
     refine ⟨e,f,ne.symm (ne_of_mem_diff hf), _⟩,  
     rw eq_comm, apply finite.eq_of_eq_size_subset hs, 
     { rw ←union_singletons_eq_pair, 
-      apply union_of_subsets (singleton_subset_iff.mpr he),  
+      apply union_subset (singleton_subset_iff.mpr he),  
       simp only [set.mem_diff, set.mem_singleton_iff] at hf, 
       exact singleton_subset_iff.mpr hf.1, },
     rwa [eq_comm, size_pair  (ne.symm (ne_of_mem_diff hf))]}, 

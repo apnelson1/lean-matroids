@@ -59,7 +59,7 @@ lemma size_ind_le_size_set_basis {M : indep_family α} {I B X : set α} :
     rcases M.I3 B I hlt hB.2.1 hI with ⟨e, ⟨h₁e, h₂e⟩ ⟩, 
     rw mem_diff_iff at h₁e, refine hB.2.2 (B ∪ {e}) _ _ h₂e, 
     from ssub_of_add_nonmem h₁e.2, 
-    from union_of_subsets hB.1 (subset_of_mem_of_subset h₁e.1 hIX),
+    from union_subset hB.1 (subset_of_mem_of_subset h₁e.1 hIX),
   end
 
 lemma set_bases_equicardinal {M : indep_family α} {X B₁ B₂ : set α} :
@@ -143,16 +143,16 @@ begin
   intro h, 
   rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨Bα, ⟨hαs, hαb⟩⟩,
   have := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1,  
-  have := M.I_to_R2 _ _ (subset_union_subset_left B X Y h.1), 
+  have := M.I_to_R2 _ _ (union_subset_union_left B X Y h.1), 
   have := I_to_r_of_set_basis hαb, linarith, 
   have : B = Bα ∩ X := by
   {
     have := I_to_r_ub (inter_subset_right Bα X) (M.I2 _ _ (inter_subset_left Bα X) hαb.2.1),
     rw [I_to_r_of_set_basis h] at this, 
-    from eq_of_le_size_subset (subset_of_inter_mpr hαs h.1) this, 
+    from eq_of_le_size_subset (subset_inter hαs h.1) this, 
   },
   have h' := subset_iff_inter_eq_left.mp hαb.1, rw [inter_distrib_left, ←this] at h', 
-  rw ←h', from subset_union_subset_right _ _ _ (inter_subset_right Bα Y),
+  rw ←h', from union_subset_union_right _ _ _ (inter_subset_right Bα Y),
 end
 
 
@@ -167,7 +167,7 @@ begin
       ←I_to_r_eq_rank_basis_union BX hBY, union_comm BY, 
        I_to_r_of_set_basis hBI, I_to_r_of_set_basis hBX, 
        I_to_r_of_set_basis hBα, I_to_r_of_set_basis hBY],
-  have := size_monotone hBα.1, have := size_monotone (subset_of_inter_mpr hss hBIBY),
+  have := size_monotone hBα.1, have := size_monotone (subset_inter hss hBIBY),
   linarith[size_modular BX BY]
 end 
 

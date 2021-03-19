@@ -65,7 +65,7 @@ lemma rank_pair_of_simple_set (h : M.is_simple_set S) (hef : e ≠ f) (he : e �
 begin
   rw [indep_iff_r.mp (h {e,f} _ (by rw size_pair hef)), size_pair hef], 
   rw ← singleton_subset_iff at he hf,   
-  convert union_of_subsets he hf, 
+  convert union_subset he hf, 
 end 
 
 lemma rank_subset_simple_set (h : M.is_simple_set S) (hX : X ⊆ S) (hX' : size X ≤ 2):

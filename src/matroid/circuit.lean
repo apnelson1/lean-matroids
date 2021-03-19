@@ -40,7 +40,7 @@ begin
                               (new_circuit_contains_new_elem hI hC'.2 hC'.1),
   by_contra hCC', 
   cases M.C3 _ _ e (ne.symm hCC') hC hC'.1 this with C₀ hC₀,
-  from hI _ (subset.trans hC₀.2 (removal_subset_of (union_of_subsets hCI hC'.2))) hC₀.1,
+  from hI _ (subset.trans hC₀.2 (removal_subset_of (union_subset hCI hC'.2))) hC₀.1,
 end 
 
 lemma union_mem_singleton_le_one_circuit {M : cct_family α} {I C C': set α} (e : α) :
@@ -80,7 +80,7 @@ begin
   { intro h, rw diff_empty_iff_subset at h, 
     cases exists_mem_of_size_pos hJI_nonempty with e he,
     refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
-    from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _))},
+    from union_subset h (subset_of_mem_of_subset he (diff_subset _ _))},
   
   cases ne_empty_has_mem hIJ_nonempty with e he, -- choose e from I -J
 
@@ -101,7 +101,7 @@ begin
       { refine subset.trans hCe₁ (union_subset (subset_union_left _ _) _), 
         rw singleton_subset_iff, apply mem_of_mem_of_subset he, 
         apply subset.trans (diff_subset _ _) (subset_union_right _ _), },
-    refine subset.trans (subset_of_inter_mpr hCeJI hn) (λ x, _), 
+    refine subset.trans (subset_inter hCeJI hn) (λ x, _), 
     simp only [mem_inter_iff, mem_union, mem_compl_iff, mem_diff, and_imp], 
     tauto,},
 
@@ -117,7 +117,7 @@ begin
   have hJ'₀: J' \ I ⊆ (J ∪ I),
   { rw hdefJ',
     repeat {refine subset.trans (diff_subset _ _) _},
-    apply union_of_subsets (subset_union_left _ _),
+    apply union_subset (subset_union_left _ _),
     rw [singleton_subset_iff, mem_union], right, 
     exact mem_of_mem_diff he, }, 
   

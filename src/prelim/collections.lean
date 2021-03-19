@@ -175,11 +175,11 @@ end
 --- Unions/Intersections of collections
 lemma lb_union_closed (P : set α → Prop) : 
   union_closed (λ X, is_lb P X) := 
-  ⟨λ Z hZ, empty_subset Z, λ X Y hX hY, λ Z hZ, union_of_subsets (hX Z hZ) (hY Z hZ)⟩
+  ⟨λ Z hZ, empty_subset Z, λ X Y hX hY, λ Z hZ, union_subset (hX Z hZ) (hY Z hZ)⟩
 
 lemma ub_inter_closed (P : set α → Prop) : 
   inter_closed (λ X, is_ub P X) := 
-  ⟨λ Z hZ, subset_univ Z, λ X Y hX hY, λ Z hZ, subset_of_inter_mpr (hX Z hZ) (hY Z hZ)⟩
+  ⟨λ Z hZ, subset_univ Z, λ X Y hX hY, λ Z hZ, subset_inter (hX Z hZ) (hY Z hZ)⟩
 
 
 def inter_all (P : set α → Prop) : set α := max_of_union_closed (lb_union_closed P)
@@ -209,8 +209,6 @@ section size
 
 variables {α : Type*} [fintype α]
 
-
-
 lemma size_sUnion_of_common_inter {I : set α} {S : set (set α)}
 (hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) : 
   size (⋃₀ S) = size I + ∑ᶠ X in S, (size X - size I) :=
@@ -223,13 +221,12 @@ begin
   { apply h, repeat {rw mem_insert_iff, right, assumption,}, assumption  },
   rw fin.finsum_in_insert _ hX₀, 
   suffices hI : X₀ ∩ ⋃₀S = I, { rw hI, ring, },
-  --obtain ⟨X', hX'⟩ := nonempty_def.mp hS, 
   have hI' : ∀ X' ∈ S, X₀ ∩ X' = I,
   { intros X' hX', apply h, simp, rwa mem_insert_iff, exact or.inr hX', rintro rfl, exact hX₀ hX'},
   apply subset.antisymm, swap, 
   { obtain ⟨X', hX'⟩ := nonempty_def.mp hS, 
     rw ← hI' _ hX', 
-    apply subset_inter_subset_right, 
+    apply inter_subset_inter_right, 
     intros x hx, 
     rw mem_sUnion, 
     exact ⟨X', hX', hx⟩},

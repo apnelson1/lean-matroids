@@ -159,7 +159,7 @@ lemma rank_zero_of_union_rank_zero :
 lemma rank_eq_of_union_eq_rank_subset (Z: set α) :
   X ⊆ Y → M.r X = M.r Y → M.r (X ∪ Z) = M.r (Y ∪ Z) := 
 begin
-  intros hXY hr, apply rank_eq_of_le_supset (subset_union_subset_left X Y Z hXY), 
+  intros hXY hr, apply rank_eq_of_le_supset (union_subset_union_left Z hXY), 
   have : M.r ((X ∪ Z) ∩ Y) = _ := by rw [inter_distrib_right, subset_iff_inter_eq_left.mp hXY] ,
   have : M.r ((X ∪ Z) ∪ Y) = _ := by rw [union_assoc, union_comm Z Y, ←union_assoc, 
                                       subset_iff_union_eq_left.mp hXY ],
@@ -274,7 +274,7 @@ begin
   rw mem_diff_iff at he, 
   have h_aug_e := h_aug e he.1, 
   have hYe := hYmax e he.2, push_neg at hYe,
-  rcases hYe (eq.trans h_aug_e hYX) (union_of_subsets hYXZ (singleton_subset_iff.mpr he.1))
+  rcases hYe (eq.trans h_aug_e hYX) (union_subset hYXZ (singleton_subset_iff.mpr he.1))
     with ⟨f, ⟨hf, h_aug_ef⟩⟩, 
   replace h_aug_ef := rank_eq_add_one_of_ne_aug h_aug_ef,
   rw union_assoc at h_aug_ef, 
@@ -709,7 +709,7 @@ lemma spans_subset (M : matroid α) :
   Y ⊆ Y' → M.spans X Y' → M.spans X Y :=
 begin
   unfold spans, intros hYY' hXY, 
-  linarith [M.rank_mono_union_left X Y,  M.rank_mono (subset_union_subset_right _ _ X hYY')], 
+  linarith [M.rank_mono_union_left X Y,  M.rank_mono (union_subset_union_right X hYY')], 
 end
 
 lemma spans_rank_zero (X : set α){L : set α} (hL : M.r L = 0) :
@@ -1229,6 +1229,11 @@ lemma rank_nonloop :
   M.is_nonloop e → M.r {(e : α)} = 1 :=
 by {unfold is_nonloop, from λ h, h}
 
+lemma is_nonloop.r (h : M.is_nonloop e) : M.r {e} = 1 := 
+h 
+
+
+
 lemma rank_loop :
   M.is_loop e → M.r {e} = 0 :=
 by {unfold is_loop, from λ h, h}
@@ -1460,7 +1465,7 @@ by rw is_cobasis
 begin
   refine ⟨λ h, ⟨h.1,⟨h.2.1,λ e he, _⟩⟩, λ h, ⟨h.1,⟨h.2.1,_⟩⟩⟩, 
   { linarith [h.2.2, 
-      M.rank_mono (union_of_subsets h.1 (singleton_subset_iff.mpr he)), 
+      M.rank_mono (union_subset h.1 (singleton_subset_iff.mpr he)), 
       M.rank_mono (subset_union_left B {e})]}, 
   refine rank_eq_of_not_lt_supset h.1 (λ hBX, _), 
   cases rank_augment hBX with e he, 
@@ -1565,7 +1570,7 @@ begin
   rw mem_diff_iff at he, 
   have := hBmax _ he.2, 
   push_neg at this, 
-  from this (subset.trans h_left (subset_union_left _ _)) hecon (union_of_subsets hPB.2.2 (singleton_subset_iff.mpr he.1)), 
+  from this (subset.trans h_left (subset_union_left _ _)) hecon (union_subset hPB.2.2 (singleton_subset_iff.mpr he.1)), 
 end 
 
 lemma exists_basis_of (M : matroid α) (X : set α) : 

@@ -15,38 +15,15 @@ variables {α : Type*} {s s' t t' r r': set α}
 /-- the symmetric difference of two sets -/
 def symm_diff (s t : set α) : set α := (s \ t) ∪ (t \ s)
 
-lemma empty_unique (s : set α) : (∀ t, t ∪ s = t) → s = ∅ := 
-λ hs, by calc s = ∅ ∪ s : (empty_union s).symm ... = ∅ : hs ∅
-
-lemma empty_of_has_no_mem (hs : ¬ ∃ x, x ∈ s) : s = ∅ := 
-by {rw eq_empty_iff_forall_not_mem, push_neg at hs, exact hs, }
-
 @[simp] lemma absorb_union_inter (s t : set α) : s ∪ (s ∩ t) = s := 
 by calc s ∪ (s ∩ t) = (s ∩ univ) ∪ (s ∩ t) : by rw inter_univ  
                 ... = s : by rw [←inter_distrib_left, union_comm, union_univ, inter_univ ]
 
 @[simp] lemma absorb_inter_union (s t : set α) : s ∩ (s ∪ t) = s := 
-by calc s ∩ (s ∪ t) = (s ∪ ∅) ∩ (s ∪ t) : by rw union_empty 
-                ... = s : by rw [←union_distrib_left, inter_comm, inter_empty, union_empty]
-
-@[simp] lemma union_left_absorb (s t : set α) : (s ∪ t) ∪ s = s ∪ t := 
-by rw [union_right_comm, union_self]  
-
-@[simp] lemma union_right_absorb (s t : set α) : s ∪ (t ∪ s) = s ∪ t := 
-by rw [union_left_comm, union_self, union_comm]  
-
-@[simp] lemma inter_left_absorb (s t : set α) : (s ∩ t) ∩ s = s ∩ t := 
-by rw [inter_right_comm, inter_self]  
-
-@[simp] lemma inter_right_absorb (s t : set α) : s ∩ (t ∩ s) = s ∩ t := 
-by rw [inter_left_comm, inter_self, inter_comm]
+by {rw [inter_comm, union_inter_cancel_left], }
 
 lemma inter_distrib_inter_left (s t r : set α) : (s ∩ t) ∩ r = (s ∩ r) ∩ (t ∩ r) := 
 by rw [inter_assoc s r, inter_comm r, inter_assoc t, inter_self, inter_assoc] 
-
-lemma inter_distrib_inter_right (s t r : set α) : s ∩ (t ∩ r) = (s ∩ t) ∩ (s ∩ r) := 
-by rw [inter_comm _ (s ∩ r), inter_assoc _ _ (s ∩ t), inter_comm r, ←inter_assoc s, 
-          ←inter_assoc s, ←inter_assoc s, inter_self]
 
 lemma union_distrib_union_left (s t r : set α) : (s ∪ t) ∪ r = (s ∪ r) ∪ (t ∪ r) := 
 by rw [union_assoc s r, union_comm r, union_assoc t, union_self, union_assoc]
@@ -155,34 +132,6 @@ lemma cover_compl_subset :  s ∪ t = univ → sᶜ ⊆ t :=
 lemma compl_inj (h : sᶜ = tᶜ) : s = t := 
 by rw [←compl_compl s, ←compl_compl t, h]
 
-@[simp] lemma union_compl_union  (s t : set α) : s ∪ (sᶜ ∪ t) = univ :=  
-by rw [←univ_inter(s ∪ (sᶜ ∪ t)), ←union_compl_self, ←union_distrib_left, absorb_inter_union] 
-
-@[simp] lemma inter_compl_inter (s t : set α) : s ∩ (sᶜ ∩ t) = ∅ := 
-by rw [←empty_union(s ∩ (sᶜ ∩ t)), ←inter_compl_self, ←inter_distrib_left, absorb_union_inter]
-
-@[simp] lemma inter_compl_union (s t : set α) : s ∩ (sᶜ ∪ t) = s ∩ t :=
-by rw [inter_distrib_left, inter_compl_self, empty_union]
-
-@[simp] lemma union_compl_inter (s t : set α) : s ∪ (sᶜ ∩ t) = s ∪ t :=
-by rw [union_distrib_left, union_compl_self, univ_inter]
-
-lemma union_inter_compl_inter (s t : set α) : (s ∪ t) ∪ (sᶜ ∩ tᶜ)  = univ := 
-by rw [union_distrib_left, union_comm _ sᶜ, union_comm s t, union_comm _ tᶜ,
-      ←(compl_compl t),  compl_compl tᶜ, union_compl_union tᶜ, union_comm _ s, 
-      ←(compl_compl s),    compl_compl sᶜ, union_compl_union sᶜ, inter_self]
-
-@[simp] lemma inter_union_compl_union (s t : set α) : (s ∩ t) ∩ (sᶜ ∪ tᶜ)  = ∅ := 
-by rw [inter_distrib_left, inter_comm _ sᶜ, inter_comm s t, inter_comm _ tᶜ, 
-        ←(compl_compl t), compl_compl tᶜ, inter_compl_inter tᶜ, inter_comm _ s, 
-        ←(compl_compl s), compl_compl sᶜ, inter_compl_inter sᶜ, union_self]
-  
-@[simp] lemma inter_union_compl_inter (s t : set α) : (s ∪ t) ∩ (sᶜ ∩ tᶜ) = ∅ := 
-by rw [inter_distrib_right s t, inter_compl_inter, inter_comm sᶜ, inter_compl_inter, union_self]
-  
-@[simp] lemma union_inter_compl_union  (s t : set α) : (s ∩ t) ∪ (sᶜ ∪ tᶜ) = univ := 
-by rw [union_distrib_right s t, union_compl_union, union_comm sᶜ, union_compl_union, inter_self]
-
 lemma compl_compl_inter_left (s t : set α) : (sᶜ ∩ t)ᶜ = s ∪ tᶜ := 
 by {nth_rewrite 0 ←(compl_compl t), rw [compl_inter, compl_compl, compl_compl] }
 
@@ -236,35 +185,8 @@ lemma inter_subset_union (s t : set α) : s ∩ t ⊆ s ∪ t :=
 lemma subset_of_inter_mp : s ⊆ t ∩ r → s ⊆ t ∧ s ⊆ r := 
   λ h, ⟨subset.trans h (inter_subset_left _ _), subset.trans h (inter_subset_right _ _)⟩  
 
-lemma union_of_subsets : (s ⊆ r) → (t ⊆ r) → (s ∪ t ⊆ r) := 
-  λ hsr htr, by {rw subset_iff_inter_eq_left at *, rw [inter_distrib_right, hsr, htr]}
-
-lemma subset_of_inter_mpr  : (s ⊆ t) → (s ⊆ r) → (s ⊆ t ∩ r) := 
-  λ hst hsr, by {rw subset_iff_inter_eq_left at *, rw [←inter_assoc, hst, hsr]}
-
-lemma subset_of_inter_iff : s ⊆ (t ∩ r) ↔ (s ⊆ t ∧ s ⊆ r) := 
-  ⟨λ h, subset_of_inter_mp h, λ h, subset_of_inter_mpr  h.1 h.2⟩
-
-lemma inter_of_subsets (s t r : set α) (h : s ⊆ r) : s ∩ t ⊆ r := 
-subset.trans (inter_subset_left s t) h
-
-lemma union_of_supsets (s t r : set α) (h : s ⊆ t) : (s ⊆ t ∪ r) := 
-subset.trans h (subset_union_left t r)
-
-lemma subset_inter_subset_left (r : set α) (h : s ⊆ t) : (s ∩ r) ⊆ (t ∩ r) := 
-by {rw subset_iff_inter_eq_left at *, rw [←inter_distrib_inter_left, h]}
-
-lemma subset_inter_subset_right (s t r : set α) : (s ⊆ t) → (r ∩ s) ⊆ (r ∩ t) := 
-by {rw [inter_comm _ s, inter_comm _ t], apply subset_inter_subset_left }
-
-lemma subset_union_subset_left (s t r : set α) : (s ⊆ t) → (s ∪ r) ⊆ (t ∪ r) := 
-  λ hst, by {rw subset_iff_union_eq_left at *, rw [←union_distrib_union_left, hst]}
-
-lemma subset_union_subset_right (s t r : set α) : (s ⊆ t) → (r ∪ s) ⊆ (r ∪ t) := 
-by {rw [union_comm _ s, union_comm _ t], apply subset_union_subset_left }
-
 lemma subset_of_set_and_compl : s ⊆ t → s ⊆ tᶜ → s = ∅ :=
-  λ h1 h2, by {have := subset_of_inter_mpr h1 h2, rw inter_compl_self at this, 
+  λ h1 h2, by {have := subset_inter h1 h2, rw inter_compl_self at this, 
   exact subset_empty this}
 
 @[trans] lemma subset.lt_of_le_of_lt (_ : s ⊆ t) (_ : t ⊂ r) : s ⊂ r := 
@@ -282,10 +204,6 @@ lemma subset_not_ssupset (h: s ⊆ t) : ¬(t ⊂ s) :=
 lemma eq_of_subset_not_ssubset  : s ⊆ t → ¬(s ⊂ t) → s = t := 
 λ h h', by {simp only [not_and, not_not, ssubset_iff_subset_ne] at h', exact h' h}
 
-lemma inter_of_ssubsets (s t r : set α) : (s ⊂ r) → (s ∩ t ⊂ r) := 
-λ h, ssubset_of_subset_ne (inter_of_subsets s t r h.1)
-     (λ heq, by {rw ←heq at h, have := ssubset_not_supset h, from this (inter_subset_left _ _) })
-
 @[trans] lemma ssubset.trans {s t r : set α} : s ⊂ t → t ⊂ r → s ⊂ r := 
 λ hst htr, subset.lt_of_le_of_lt hst.1 htr
 
@@ -296,13 +214,11 @@ begin
   exact h (eq.trans (a.1 (inter_subset_left s t)).symm (a.2 (inter_subset_right s t)) ),
 end 
 
--- Misc
-
 lemma union_union_diff (s t r : set α) : (s ∪ r) ∪ (t \ r) = s ∪ t ∪ r :=
 by {rw [diff_eq, union_distrib_left, union_right_comm, union_assoc _ r], simp,}
 
 lemma union_diff_absorb (s t : set α) : s ∪ (t \ s) = s ∪ t :=
-by {nth_rewrite 0 ←union_self s, rw union_union_diff, simp}
+by {nth_rewrite 0 ←union_self s, rw [union_union_diff, union_right_comm, union_self]}
 
 @[simp] lemma union_union_inter_compl_self (s t r : set α) : (s ∪ r) ∪ (t ∩ rᶜ) = s ∪ t ∪ r :=
 by rw [←diff_eq, union_union_diff] 
@@ -383,10 +299,10 @@ by {rw [diff_eq, diff_eq, compl_inter, inter_distrib_left, inter_right_comm,
 lemma diff_inter_diff_right (s t r : set α) : (s \ r) ∩ (t \ r) = (s ∩ t) \ r := 
 by {ext, tidy,  }
 
-
-
 lemma diff_right_comm (s t r : set α) : s \ t \ r = s \ r \ t := 
 by simp [diff_eq, inter_right_comm]
+
+
 
 @[simp] lemma univ_diff (s : set α) : univ \ s = sᶜ := 
   (compl_eq_univ_diff s).symm
@@ -417,14 +333,14 @@ lemma scompl_subset_compl.mpr : s ⊂ t → tᶜ ⊂ sᶜ :=
 lemma compl_to_ssubset : sᶜ ⊂ tᶜ → t ⊂ s := 
 λ h, by {have := scompl_subset_compl.mpr h, repeat {rw compl_compl at this}, exact this }
 
-lemma scompl_subset_comm.mpr : s ⊂ tᶜ → t ⊂ sᶜ := 
-λ h, by {rw [←compl_compl s] at h, exact compl_to_ssubset h}
+lemma compl_iff_ssubset_compl : sᶜ ⊂ tᶜ ↔ t ⊂ s := 
+by tidy 
 
-lemma scompl_subset_comm.mp : sᶜ ⊂ t → tᶜ ⊂ s := 
-λ h, by {rw [←compl_compl t] at h, exact compl_to_ssubset h}
+lemma scompl_subset_comm : s ⊂ tᶜ ↔ t ⊂ sᶜ := 
+by {convert compl_iff_ssubset_compl, rw compl_compl}
 
 lemma ssubset_univ_of_ne_univ: s ≠ univ → s ⊂ univ := 
-by {rw ssubset_iff_subset_ne, tauto} 
+λ h, ssubset_of_subset_ne (subset_univ _) h
 
 lemma pairwise_disjoint_inter_sUnion {S S₁ S₂: set (set α)} 
 (hdj : pairwise_disjoint S) (h₁ : S₁ ⊆ S) (h₂ : S₂ ⊆ S) :

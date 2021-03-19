@@ -236,7 +236,7 @@ lemma R0 :
   
 lemma R1 : 
   satisfies_R1 (r M₁ M₂) := 
-by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_of_subsets Ip.2.2.1 Ip.2.2.2)}
+by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_subset Ip.2.2.1 Ip.2.2.2)}
 
 lemma R2 :
   satisfies_R2 (r M₁ M₂) := 

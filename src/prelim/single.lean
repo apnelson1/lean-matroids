@@ -30,11 +30,11 @@ singleton_subset_iff.mpr (mem_of_mem_of_subset h h')
 
 lemma union_subset_of_mem_of_mem {e f : α} {X : set α} :
   e ∈ X → f ∈ X → ({e} ∪ {f} : set α) ⊆ X := 
-λ he hf, by {refine union_of_subsets _ _, tidy} 
+λ he hf, by {refine union_subset _ _, tidy} 
 
 lemma union_singleton_subset_of_subset_mem {X Y : set α} {e : α} :
   X ⊆ Y → e ∈ Y → X ∪ {e} ⊆ Y := 
-by {rw ←singleton_subset_iff, apply union_of_subsets } 
+by {rw ←singleton_subset_iff, apply union_subset } 
 
 lemma ne_empty_has_mem {X : set α}  : 
   X ≠ ∅ → ∃ e, e ∈ X := 
@@ -266,7 +266,7 @@ lemma add_from_nonempty_diff {X Y : set α} :
 begin
   refine ⟨λ h,_, λ h, ssubset_of_subset_ne _ (λ hne, _)⟩, 
   cases nonempty_def.mp (ssubset_diff_nonempty h) with e he, 
-  { rw mem_diff at he, exact ⟨e, he.2,union_of_subsets h.1 (singleton_subset_iff.mpr he.1)⟩, },
+  { rw mem_diff at he, exact ⟨e, he.2,union_subset h.1 (singleton_subset_iff.mpr he.1)⟩, },
   { rcases h with ⟨e, h, h'⟩, exact subset.trans (subset_union_left _ _) h', },
   rcases h with ⟨e, h,h'⟩,  rw ←hne at h', 
   exact ssubset_irrefl _ (subset.lt_of_lt_of_le (ssub_of_add_nonmem h) h'), 

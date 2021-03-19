@@ -32,7 +32,7 @@ def project (M : matroid α) (C : set α) : matroid α :=
 { r := λ X, M.r (X ∪ C) - M.r C,
   R0 := λ X, by {simp only, linarith [M.rank_mono (subset_union_right X C)]},
   R1 := λ X, by {simp only, linarith [M.R0 (X ∩ C), M.R3 X C, M.R1 X]},
-  R2 := λ X Y hXY, by {simp only, linarith [M.rank_mono (subset_union_subset_left _ _ C hXY)]},
+  R2 := λ X Y hXY, by {simp only, linarith [M.rank_mono (union_subset_union_left C hXY)]},
   R3 := λ X Y, by {simp_rw [union_comm _ C], linarith [submod_three_sets M C X Y]} }
 
 infix ` ⟋ ` :75 :=  matroid.project  
@@ -76,7 +76,7 @@ by rw [project_r, union_self, sub_self]
 
 lemma projected_set_union_rank_zero (M : matroid α) (C : set α){X : set α} (hX : M.r X = 0) :
   (M ⟋ C).r (X ∪ C) = 0 :=
-by rwa [project_r, union_comm X, union_left_absorb, rank_eq_rank_union_rank_zero, sub_self]
+by rwa [project_r, union_assoc, union_self, union_comm, rank_eq_rank_union_rank_zero, sub_self] 
 
 lemma project_rank_zero_eq (h : M.r C = 0) : M ⟋ C = M := 
 by {ext X, rw [project_r, rank_eq_rank_union_rank_zero X h, h, sub_zero]}
@@ -184,15 +184,9 @@ def loopify_to (M : matroid α) (R : set α) : matroid α := M ⟍ (Rᶜ)
 
 infix ` ‖ `  :75 :=  matroid.loopify_to
    
-@[simp] lemma loopify_r (M : matroid α) (D X : set α) :
-  (M ⟍ D).r X = M.r (X \ D) := 
-rfl 
-@[simp] lemma loopify_empty (M : matroid α): 
-  M ⟍ ∅ = M := 
-by { ext X, rw [loopify_r, diff_empty],   }
-
-def loopify_project (M : matroid α) (C D : set α) : matroid α := 
-  project (loopify M D) C 
+@[simp] lemma loopify_r (M : matroid α) (D X : set α) : (M ⟍ D).r X = M.r (X \ D) := rfl  
+@[simp] lemma loopify_empty (M : matroid α) : M ⟍ ∅ = M := 
+by { ext X, rw [loopify_r, diff_empty]}
 
 lemma loopify_is_weak_image (M : matroid α) (D : set α) :  
   M ⟍ D ≤ M :=
@@ -202,7 +196,7 @@ lemma loopify_loopify (M : matroid α) (D D' : set α) :
    M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
 by {ext X, simp [diff_eq, ←inter_assoc, inter_right_comm]}
 
-lemma loops_loopify (M : matroid α) (D : set α) : 
+lemma loopify_loops_eq (M : matroid α) (D : set α) : 
   M.loops ∪ D = (M ⟍ D).loops := 
 begin
   refine subset.antisymm _ (λ x hx, _), 
@@ -220,31 +214,24 @@ begin
   exact one_ne_zero hx, 
 end
 
-lemma loops_subset_loops_loopify (M : matroid α)(D : set α):
+lemma loops_subset_loopify_loops_eq (M : matroid α)(D : set α):
   M.loops ⊆ (M ⟍ D).loops :=
-by {rw ← loops_loopify, apply subset_union_left}
+by {rw ← loopify_loops_eq, apply subset_union_left}
 
 lemma loop_of_loopify (M : matroid α) (he : e ∈ D) :
   (M ⟍ D).is_loop e := 
-by {rw [loop_iff_mem_loops, ← loops_loopify], exact or.inr he}
+by {rw [loop_iff_mem_loops, ← loopify_loops_eq], exact or.inr he}
 
 lemma loopify_nonloops_eq (M : matroid α) (D : set α): 
   (M ⟍ D).nonloops = M.nonloops \ D := 
-begin
-  ext x, 
-  rw [mem_diff, ← nonloop_iff_mem_nonloops, ← nonloop_iff_mem_nonloops, nonloop_iff_r, loopify_r],  
-  refine ⟨λ h, ⟨_, λ hn, _⟩, λ h, _⟩,
-  { rw [nonloop_iff_one_le_rank, ←h], exact M.rank_mono (diff_subset _ _)},
-  { apply int.zero_ne_one, convert h, convert M.rank_empty.symm,  tidy}, 
-  convert nonloop_iff_r.mp h.1, tidy, 
-end
+by rw [nonloops_eq_compl_loops, nonloops_eq_compl_loops, ← loopify_loops_eq, compl_union, diff_eq]
 
 lemma loopify_nonloop_fewer_nonloops (he : M.is_nonloop e): 
   (M ⟍ {e}).nonloops ⊂ M.nonloops := 
 begin
   simp_rw [nonloops_eq_compl_loops],
   apply scompl_subset_compl.mpr,  
-  rw ← loops_loopify, 
+  rw ← loopify_loops_eq, 
   exact ssubset_of_add_nonmem_iff.mp (nonloop_iff_not_mem_loops.mp he),
 end
 
@@ -258,8 +245,7 @@ by rw [loopify_r, set.diff_self, rank_empty]
 
 lemma loopified_set_union_rank_zero (M : matroid α) (D : set α){X : set α} (h: M.r X = 0) :
   (M ⟍ D).r (X ∪ D) = 0 :=
-by {simp only [loopify_r, union_left_absorb, union_comm X], 
-    exact rank_zero_of_subset_rank_zero (by {intro x, simp, tauto}) h}
+by {rw [loopify_r, union_diff_right], exact rank_zero_of_subset_rank_zero (diff_subset _ _) h}
 
 lemma loopify_rank_zero_of_rank_zero (D : set α)(hX : M.r X = 0) :
   (M ⟍ D).r X = 0 := 

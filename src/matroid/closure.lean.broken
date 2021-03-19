@@ -21,7 +21,7 @@ lemma monotone (M : clfun α){X Y : set α} :
 
 lemma subset_union (M : clfun α) (X Y : set α) :
   M.cl X ∪ M.cl Y ⊆ M.cl (X ∪ Y) :=
-  union_of_subsets (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
+  union_subset (M.cl3 _ _ (subset_union_left X Y)) (M.cl3 _ _ (subset_union_right X Y))
   
 
 lemma cl_union_both (M : clfun α) (X Y : set α) :
