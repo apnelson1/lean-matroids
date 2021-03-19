@@ -7,13 +7,15 @@ open_locale classical
 open set 
 namespace matroid 
 
-variables {α β : Type*} [fintype α] [fintype β] {M : matroid α} {e f : α} {S X : set α}
+variables {α β : Type*} [fintype α] [fintype β] {N M : matroid α} {e f : α} {S X : set α}
 
 section simple 
 
+/-- the property of a set not containing any loops -/
 def is_loopless_set (M : matroid α) (S : set α) :=
   ∀ X ⊆ S, size X ≤ 1 → M.is_indep X
 
+/-- the property of a matroid having no loops -/
 def is_loopless (M : matroid α) := 
   is_loopless_set M univ 
 
@@ -21,6 +23,7 @@ lemma loopless_iff_univ_loopless {M : matroid α} :
   is_loopless M ↔ is_loopless_set M univ := 
 iff.rfl 
 
+/-- the property of a set containing no loops or parallel pairs -/
 def is_simple_set (M : matroid α) (S : set α) :=
   ∀ X ⊆ S, size X ≤ 2 → M.is_indep X 
 
@@ -28,8 +31,13 @@ lemma simple_of_subset_simple {M : matroid α} {S T : set α} (hT : M.is_simple_
   M.is_simple_set S := 
 λ X hX, hT X (subset.trans hX hST)
 
+/-- the property of a matroid containing no loops or parallel pairs -/
 def is_simple (M : matroid α) :=
   is_simple_set M univ 
+
+lemma simple_set_iff_r : 
+  M.is_simple_set S ↔ ∀ X ⊆ S, size X ≤ 2 → size X ≤ M.r X :=
+by simp_rw [is_simple_set, indep_iff_size_le_r]
 
 lemma rank_subset_simple (h : M.is_simple) (hX : size X ≤ 2) :
   M.r X = size X := 
@@ -311,7 +319,25 @@ lemma si_r_eq_r_parallel_cl_image (M : matroid α) (X : set α) :
   (si M).r (M.parallel_cl_image_of X) = M.r X :=
 by {rw [si_r, ← rank_eq_rank_parallel_cl_image_of]} 
 
+lemma simple_set_of_weak_le {N M : matroid α}{X : set α}(hNM : N ≤ M)(hX : N.is_simple_set X):
+  M.is_simple_set X := 
+by {rw simple_set_iff_r at hX ⊢, exact λ Y hY hsize, le_trans (hX Y hY hsize) (hNM Y)} 
 
+lemma simple_loopify_iff {D : set α} : 
+  (N ⟍ D).is_simple_set S ↔ N.is_simple_set S ∧ S ∩ D = ∅ := 
+begin
+  refine ⟨λ h, ⟨ simple_set_of_weak_le (loopify_is_weak_image _ _) h ,_⟩, λ h, _⟩, 
+  { by_contra hn, 
+    obtain ⟨e,⟨heS,heD⟩⟩ := ne_empty_iff_has_mem.mp hn, 
+    rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at h, 
+    exact loop_iff_not_nonloop.mp (loop_of_loopify N heD) (h.1 e heS)},
+  simp_rw [is_simple_set, indep_loopify_iff],
+  exact λ X hX hsize, ⟨h.1 X hX hsize, disjoint_of_subset_left' hX h.2⟩,  
+end
+
+lemma simple_loopify_to_iff {R : set α}: 
+  (N ‖ R).is_simple_set S ↔ N.is_simple_set S ∧ S ⊆ R :=
+by rw [loopify_to, simple_loopify_iff, subset_iff_disjoint_compl]
 
 end simple 
 

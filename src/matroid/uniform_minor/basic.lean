@@ -131,7 +131,7 @@ iminor_of_irestr h
 def matroid.has_no_uniform_minor (M : matroid α)(a b : ℤ) := 
   ¬ M.has_unif_minor a b 
 
-def pseudominor_has_no_uniform_minor (ha : 1 ≤ a) (hb : 2 ≤ b) (hNM : N.is_pminor_of M): 
+def pminor_has_no_uniform_minor (ha : 1 ≤ a) (hb : 2 ≤ b) (hNM : N.is_pminor_of M): 
   (M.has_no_uniform_minor a b) → (N.has_no_uniform_minor a b) :=
 begin
   simp_rw [matroid.has_no_uniform_minor, matroid.has_unif_minor], contrapose!, intro hN, 

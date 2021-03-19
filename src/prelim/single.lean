@@ -118,6 +118,10 @@ lemma nonmem_diff_of_nonmem {X : set α} (Y : set α){e : α} :
   e ∉ X → e ∉ X\Y :=
 by tidy 
 
+lemma nonmem_diff_of_mem (X : set α) {Y : set α } {e : α} (h : e ∈ Y) : 
+  e ∉ X \ Y := 
+by tidy 
+
 lemma nonmem_of_nonmem_supset {s t : set α} {e : α} : 
    e ∉ t → s ⊆ t → e ∉ s := 
 by tidy  
@@ -171,6 +175,13 @@ by {refine ⟨λ h, ssub_of_add_nonmem h, λ h, λ hex, _⟩,
     rw [←singleton_subset_iff, subset_iff_union_eq_left, union_comm] at hex, 
     rw hex at h, 
     exact ssubset_irrefl _ h}
+
+lemma ssubset_iff_subset_mem_diff {X Y : set α}:
+  X ⊂ Y ↔ (X ⊆ Y) ∧ ∃ y, y ∈ Y ∧ y ∉ X :=
+begin
+  rw ssubset_iff_subset_not_supset, convert iff.rfl, 
+  rw [← iff_iff_eq, iff_not_comm, not_exists], tidy, 
+end
 
 lemma union_mem_singleton {X : set α} {e : α} : 
   e ∈ X → X ∪ {e} = X := 
@@ -325,7 +336,6 @@ begin
   refine ⟨λ h, subset_singleton_eq_singleton_or_empty h, λ h, _⟩,
   rcases h with (rfl | rfl); simp, 
 end
-
 
 lemma ssubset_singleton_iff_empty {e : α} {X : set α} :
   X ⊂ {e} ↔ X = ∅ := 

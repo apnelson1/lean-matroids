@@ -408,7 +408,9 @@ begin
   ext x, 
   simp_rw [ext_iff, mem_union, mem_parallel_cl, ← loop_iff_mem_loops, loop_iff_not_nonloop] at h, 
   rw [mem_parallel_cl, mem_parallel_cl], 
-  unfold parallel at *, finish, 
+  unfold parallel at *,
+  specialize h x, 
+  tauto, 
 end
 
 /-- the natural equivalence between points and parallel classes in a matroid -/

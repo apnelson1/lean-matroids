@@ -1,7 +1,7 @@
 
 
 
-import prelim.induction prelim.collections .rankfun .indep set_tactic.solver
+import prelim.induction prelim.collections .rankfun .indep 
 
 open_locale classical 
 noncomputable theory 
@@ -72,15 +72,15 @@ begin
   ------------------
   
   have hJI_nonempty : 0 < size (J \ I) := by 
-    {have := size_induced_partition I J, rw inter_comm at this, linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
+  { have := size_induced_partition I J, 
+    rw inter_comm at this, 
+    linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
   
   have hIJ_nonempty : I \ J ≠ ∅ := by 
-  {
-    intro h, rw diff_empty_iff_subset at h, 
+  { intro h, rw diff_empty_iff_subset at h, 
     cases exists_mem_of_size_pos hJI_nonempty with e he,
     refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
-    from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _)), 
-  },
+    from union_of_subsets h (subset_of_mem_of_subset he (diff_subset _ _))},
   
   cases ne_empty_has_mem hIJ_nonempty with e he, -- choose e from I -J
 
@@ -114,7 +114,6 @@ begin
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
   set J' := (J ∪ {e}) \ {f} with hdefJ', 
   
-  --- test case for set tactic 
   have hJ'₀: J' \ I ⊆ (J ∪ I),
   { rw hdefJ',
     repeat {refine subset.trans (diff_subset _ _) _},
@@ -146,22 +145,16 @@ begin
 
   by_cases g ∈ J \ I,
   from h_non_aug g h hg₂, 
-  rw [←mem_compl_iff] at h,  
-  have := mem_inter hg₁ h, 
-  rw [diff_eq, diff_eq, compl_inter, compl_compl, inter_distrib_left, inter_right_comm J', inter_right_comm _ _ I, 
-      inter_assoc _ I _ ,inter_compl_self, inter_empty, union_empty, hdefJ', diff_eq, inter_assoc, inter_right_comm, 
-      inter_distrib_right, ←inter_assoc, inter_compl_self, empty_inter, empty_union, inter_right_comm, ←compl_union] at this, -- tactic plz 
-  have := mem_of_mem_of_subset this (inter_subset_right _ _),
-  have := (mem_inter (mem_of_mem_of_subset hg₁ hJ'₀) this),
-  rw inter_compl_self at this, from not_mem_empty g this, 
+  
+  specialize @hJ'₀ g hg₁, 
+  simp only [mem_inter_eq, not_and, mem_diff, mem_compl_eq, mem_union] at h ⊢ hJ'₀ hg₁,
+  tauto,  
 end 
 
 end cct_family 
 
-
 def indep_family.of_cct_family (M : cct_family α) : indep_family α :=
   ⟨M.C_to_I, M.C_to_empty_indep, M.C_to_indep_of_subset_indep, M.C_to_I3⟩ 
-
 
 namespace matroid 
 

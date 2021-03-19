@@ -380,6 +380,11 @@ lemma inter_distrib_diff (s t r : set α) : s ∩ (t \ r) = (s ∩ t) \ (s ∩ r
 by {rw [diff_eq, diff_eq, compl_inter, inter_distrib_left, inter_right_comm, 
                         inter_compl_self, empty_inter, empty_union, ←inter_assoc]}
 
+lemma diff_inter_diff_right (s t r : set α) : (s \ r) ∩ (t \ r) = (s ∩ t) \ r := 
+by {ext, tidy,  }
+
+
+
 lemma diff_right_comm (s t r : set α) : s \ t \ r = s \ r \ t := 
 by simp [diff_eq, inter_right_comm]
 

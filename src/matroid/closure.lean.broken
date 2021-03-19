@@ -1,3 +1,6 @@
+
+Closure axioms. This is todo. 
+
 import prelim.size prelim.induction prelim.collections prelim.minmax 
 import .rankfun .indep 
 
