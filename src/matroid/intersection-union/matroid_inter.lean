@@ -133,9 +133,9 @@ begin
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by 
   {
     have h_add_e := union_subset_union 
-      (loops_loopify N₁ {e}) 
-      (loops_loopify N₂ {e}), 
-    rw ←union_distrib_union_left at h_add_e, 
+      (loops_subset_loops_loopify N₁ {e}) 
+      (loops_subset_loops_loopify N₂ {e}), 
+    --rw ←union_distrib_union_left at h_add_e, 
     have := size_monotone h_add_e, 
     rw [size_union_singleton_compl he, ←hN₁d, ←hN₂d] at this, 
     rw [compl_size] at ⊢ hsize, linarith,  
@@ -190,7 +190,7 @@ begin
   linarith only [sm1, sm2, hi, hu, hAd_ub, hAc_ub], 
 end
 
-/-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer -/
+/-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer-/
 theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α) : 
   ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
 begin

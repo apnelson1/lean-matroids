@@ -15,26 +15,11 @@ variables {α : Type*} {s s' t t' r r': set α}
 /-- the symmetric difference of two sets -/
 def symm_diff (s t : set α) : set α := (s \ t) ∪ (t \ s)
 
-
--- Complements
-
-
-@[simp] lemma union_compl_rev (s : set α) : sᶜ ∪ s = univ := 
-by rw [union_comm, union_compl_self]
-
-@[simp] lemma inter_compl_rev (s : set α) : sᶜ ∩ s = ∅ := 
-by rw [inter_comm, inter_compl_self]
-
 lemma empty_unique (s : set α) : (∀ t, t ∪ s = t) → s = ∅ := 
 λ hs, by calc s = ∅ ∪ s : (empty_union s).symm ... = ∅ : hs ∅
 
 lemma empty_of_has_no_mem (hs : ¬ ∃ x, x ∈ s) : s = ∅ := 
 by {rw eq_empty_iff_forall_not_mem, push_neg at hs, exact hs, }
-
-@[simp] lemma empty_of_ss_empty {P : α → Prop} :
-  {x ∈ (∅ : set α) | P x} = ∅ :=
-by {ext, simp, }
-
 
 @[simp] lemma absorb_union_inter (s t : set α) : s ∪ (s ∩ t) = s := 
 by calc s ∪ (s ∩ t) = (s ∩ univ) ∪ (s ∩ t) : by rw inter_univ  
@@ -79,8 +64,8 @@ lemma subset_iff_union_eq_left : (s ⊆ t) ↔ (s ∪ t = t) :=
 by rw [←compl_subset_compl, subset_iff_inter_eq_left, ←compl_union, 
             compl_inj_iff, union_comm t s]
 
-lemma subset_iff_union_eq_right : (s ⊆ t) ↔ (t = s ∪ t) := 
-by rw [subset_iff_union_eq_left, eq_comm]
+lemma subset_iff_union_eq_right : (t ⊆ s) ↔ (s ∪ t = s) := 
+by rw [subset_iff_union_eq_left, union_comm]
 
 lemma subset_refl (s : set α) : s ⊆ s :=
 by rw [subset_iff_inter_eq_left, inter_self]
@@ -237,9 +222,6 @@ by rw [←union_assoc, union_comm s, union_union_compl_self]
 
 @[simp] lemma inter_inter_compl_right (s t : set α) : s ∩ (t ∩ sᶜ) = ∅ := 
 by rw [←inter_assoc, inter_comm s, inter_inter_compl_self]
-
-lemma union_inter_compl_self (s t : set α) : s ∪ (t ∩ tᶜ) = s :=
-by simp 
 
 lemma inter_union_compl_self (s t : set α) : s ∩ (t ∪ tᶜ) = s :=
 by rw [union_compl_self, inter_univ]

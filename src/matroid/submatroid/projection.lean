@@ -128,6 +128,10 @@ begin
   exact one_ne_zero hx, 
 end
 
+lemma loops_subset_loops_loopify (M : matroid α)(D : set α):
+  M.loops ⊆ (M ⟍ D).loops :=
+by {rw ← loops_loopify, apply subset_union_left}
+
 lemma loop_of_loopify (M : matroid α) (he : e ∈ D) :
   (M ⟍ D).is_loop e := 
 by {rw [loop_iff_mem_loops, ← loops_loopify], exact or.inr he}
