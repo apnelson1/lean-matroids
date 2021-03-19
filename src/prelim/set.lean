@@ -326,18 +326,24 @@ lemma nonempty_iff_empty_subset: s.nonempty ↔ ∅ ⊂ s :=
 ⟨ λ h, empty_ssubset_nonempty h, 
   λ h, by {rw ←set.ne_empty_iff_nonempty, exact (ne_of_ssubset h).symm, }⟩
 
-lemma scompl_subset_compl.mpr : s ⊂ t → tᶜ ⊂ sᶜ := 
+lemma ssubset_compl_commpl.mpr : s ⊂ t → tᶜ ⊂ sᶜ := 
 λ h, ssubset_of_subset_ne (compl_subset_compl.mpr h.1) 
       (λ h', by {rw (compl_inj h') at h, from ssubset_irrefl _ h}) 
 
 lemma compl_to_ssubset : sᶜ ⊂ tᶜ → t ⊂ s := 
-λ h, by {have := scompl_subset_compl.mpr h, repeat {rw compl_compl at this}, exact this }
+λ h, by {have := ssubset_compl_commpl.mpr h, repeat {rw compl_compl at this}, exact this }
 
-lemma compl_iff_ssubset_compl : sᶜ ⊂ tᶜ ↔ t ⊂ s := 
+lemma compl_ssubset_compl_iff : sᶜ ⊂ tᶜ ↔ t ⊂ s := 
 by tidy 
 
-lemma scompl_subset_comm : s ⊂ tᶜ ↔ t ⊂ sᶜ := 
-by {convert compl_iff_ssubset_compl, rw compl_compl}
+lemma ssubset_compl_comm : s ⊂ tᶜ ↔ t ⊂ sᶜ := 
+by {convert compl_ssubset_compl_iff, rw compl_compl}
+
+lemma compl_ssubset_comm : sᶜ ⊂ t ↔ tᶜ ⊂ s := 
+by {convert @compl_ssubset_compl_iff _ s tᶜ, rw compl_compl}
+
+--lemma ssubset_compl_iff_compl_ssubset : s ⊂ tᶜ ↔ sᶜ ⊂ t := 
+--by {nth_rewrite 0 ← compl_compl s, rw compl_ssubset_compl_iff,  }
 
 lemma ssubset_univ_of_ne_univ: s ≠ univ → s ⊂ univ := 
 λ h, ssubset_of_subset_ne (subset_univ _) h

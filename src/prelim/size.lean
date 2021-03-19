@@ -902,13 +902,11 @@ lemma size_sUnion {k : set (set α)} (hdisj : pairwise_disjoint k) :
   size (⋃₀ k) = ∑ᶠ s in k, size s := 
 by {apply finite.size_sUnion _ (λ b hb, _) hdisj; apply finite.of_fintype, } 
 
-lemma size_Union {t : β → set α} 
-(h : ∀ x y, x ≠ y → disjoint (t x) (t y)) :
+lemma size_Union {t : β → set α} (h : ∀ x y, x ≠ y → disjoint (t x) (t y)) :
   size (⋃ x : β, t x) = ∑ᶠ i, (size (t i)) :=
 by {simp_rw [← finsum_ones_eq_size], apply fin.finsum_in_Union h, }
 
-lemma size_bUnion {t : β → set α} {b : set β} 
-(h : ∀ x y ∈ b, x ≠ y → disjoint (t x) (t y)):  
+lemma size_bUnion {t : β → set α} {b : set β} (h : ∀ x y ∈ b, x ≠ y → disjoint (t x) (t y)):  
   size (⋃ (x : β) (H : x ∈ b), t x) = ∑ᶠ i in b, size (t i) :=
 begin
   rw [← finsum_subtype_eq_finsum_in, ← size_Union], simp,  
@@ -918,8 +916,7 @@ begin
 end
 
 
-lemma eq_univ_of_size_eq_type_size (hs : size s = type_size α):
-  s = univ :=
+lemma eq_univ_of_size_eq_type_size (hs : size s = type_size α) : s = univ :=
 begin
   rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, finsum_eq_finsum_in_univ] at hs, 
   have h := fin.eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg
@@ -1011,7 +1008,6 @@ by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
   size (set.univ : set (fin' n)) = n := 
 by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
 
-
 lemma type_size_eq_iff_equiv_fin' {α : Type*} [fintype α] {n : ℤ} (hn : 0 ≤ n) : 
   type_size α = n ↔ nonempty (equiv α (fin' n)) :=
 begin
@@ -1023,7 +1019,6 @@ end
 def choose_equiv_to_fin' (α : Type*) [fintype α] :
   equiv α (fin' (type_size α)) :=
 classical.choice ((type_size_eq_iff_equiv_fin' (type_size_nonneg α)).mp rfl)
-
 
 lemma type_size_le_zero_elim {α : Type*} [fintype α] (hα : type_size α ≤ 0) (e : α): 
   false :=

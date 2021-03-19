@@ -482,8 +482,12 @@ section intervals
 
 
 open set 
+
+
 variables {α : Type*} [ordered_cancel_add_comm_monoid α] [has_exists_add_of_le α]
-{M : Type*} [add_comm_monoid M]
+
+section shifts 
+variables {M : Type*} [add_comm_monoid M]
 
 lemma finsum_Icc_shift (a b d : α) (f : α → M) : 
   ∑ᶠ i in set.Icc a b, f (i + d) = ∑ᶠ i in set.Icc (a + d) (b + d), f i := 
@@ -501,7 +505,7 @@ lemma finsum_Ioo_shift (a b d : α) (f : α → M) :
   ∑ᶠ i in set.Ioo a b, f (i + d) = ∑ᶠ i in set.Ioo (a + d) (b + d), f i := 
 finsum_in_eq_of_bij_on _ (Ioo_add_bij _ _ _) (λ _ _, rfl)
 
-
+end shifts 
 
 end intervals 
 

@@ -104,7 +104,7 @@ by {simp_rw [indep_iff_r, project_r] at *,
 lemma project_nonloop_fewer_nonloops (he : M.is_nonloop e): (M ⟋ {e}).nonloops ⊂ M.nonloops := 
 begin
   simp_rw [nonloops_eq_compl_loops],
-  apply scompl_subset_compl.mpr,  
+  apply ssubset_compl_commpl.mpr,  
   rw ssubset_iff_subset_ne, 
   refine ⟨subset.trans (subset_union_left _ _) (project_makes_loops M {e}), λ hn, _⟩, 
   rw ext_iff at hn, 
@@ -230,7 +230,7 @@ lemma loopify_nonloop_fewer_nonloops (he : M.is_nonloop e):
   (M ⟍ {e}).nonloops ⊂ M.nonloops := 
 begin
   simp_rw [nonloops_eq_compl_loops],
-  apply scompl_subset_compl.mpr,  
+  apply ssubset_compl_commpl.mpr,  
   rw ← loopify_loops_eq, 
   exact ssubset_of_add_nonmem_iff.mp (nonloop_iff_not_mem_loops.mp he),
 end

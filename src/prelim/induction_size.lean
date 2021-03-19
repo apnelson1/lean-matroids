@@ -89,7 +89,7 @@ begin
   intro h, rw ←compl_compl X at h, 
   rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩, 
   use Yᶜ, refine ⟨subset_compl_comm.mpr hY₁, hY₂,λ Z hZ, _⟩,  
-  rw ←compl_compl Z, exact hY₃ Zᶜ (scompl_subset_comm.mp hZ), 
+  rw ←compl_compl Z, exact hY₃ Zᶜ (ssubset_compl_commm.mp hZ), 
 end
 
 lemma maximal_example_from_empty (P : set α → Prop) : 
