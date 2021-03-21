@@ -1107,8 +1107,8 @@ lemma cocircuit_iff_compl_hyperplane  (X : set α) :
   M.is_cocircuit X ↔ M.is_hyperplane Xᶜ := 
 begin
   rw [cocircuit_iff_r, hyperplane_iff_r], 
-  refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (ssubset_compl_commpl.mpr hXY)⟩⟩, 
-  rw [←(h.2 _ (ssubset_compl_commm.mp hXY)), compl_compl], 
+  refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (ssubset_compl_compl.mpr hXY)⟩⟩, 
+  rw [←(h.2 _ (ssubset_compl_comm.mp hXY)), compl_compl], 
 end
 
 lemma inter_flats_is_flat (M : matroid α) (F₁ F₂ : set α) :
