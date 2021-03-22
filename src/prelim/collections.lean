@@ -26,8 +26,8 @@ lemma max_iff_compl_min (P : set α → Prop) (X : set α) :
 begin 
   refine ⟨λ h, ⟨by {rw ←compl_compl X at h, exact h.1},λ Y hY, _⟩, 
           λ h, ⟨by {rw ←compl_compl X, exact h.1},λ Y hY, _⟩⟩, 
-  exact h.2 _ (ssubset_compl_commm.mpr hY), rw ←compl_compl Y, 
-  exact h.2 _ (ssubset_compl_commpl.mpr hY), 
+  exact h.2 _ (ssubset_compl_comm.mpr hY), rw ←compl_compl Y, 
+  exact h.2 _ (compl_ssubset_compl_iff.mpr hY), 
 end
 
 lemma down_closed_iff_negation_up_closed (P : set α → Prop) : 

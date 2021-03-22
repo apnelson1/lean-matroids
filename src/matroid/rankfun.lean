@@ -127,7 +127,7 @@ lemma rank_eq_of_le_supset :
 
 lemma rank_eq_of_le_union :
   M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
-λ h, ((rank_eq_of_le_supset ((subset_union_left X Y))) h).symm
+λ h, ((rank_eq_of_le_supset ((subset_union_left _ _))) h).symm
 
 lemma rank_eq_of_le_inter :
   M.r X ≤ M.r (X ∩ Y) →  M.r (X ∩ Y) = M.r X :=
@@ -140,6 +140,7 @@ lemma rank_eq_of_not_lt_supset :
 lemma rank_eq_of_not_lt_union :
   ¬ (M.r X < M.r (X ∪ Y)) → M.r (X ∪ Y) = M.r X :=
 λ h', rank_eq_of_le_union (int.le_of_not_gt' h')
+
 @[simp] lemma rank_eq_rank_union_rank_zero (X : set α){Y :set α} (hY : M.r Y = 0) :
   M.r (X ∪ Y) = M.r X := 
 by {apply rank_eq_of_le_union, linarith [M.rank_nonneg (X ∩ Y ), M.rank_submod X Y],} 
@@ -259,8 +260,7 @@ begin
   
   by_contra h_con, push_neg at h_con, 
   replace h_con : ∀ (z:α), z ∈ X ∪ Z → M.r (X ∪ {z}) = M.r X := 
-  by {
-        intros z hz, rw mem_union_iff at hz, cases hz, 
+  by {  intros z hz, rw mem_union_iff at hz, cases hz, 
         rw union_mem_singleton hz, 
         from (rank_eq_of_le_supset (subset_union_left _ _) (h_con z hz)).symm
         },
@@ -1107,8 +1107,8 @@ lemma cocircuit_iff_compl_hyperplane  (X : set α) :
   M.is_cocircuit X ↔ M.is_hyperplane Xᶜ := 
 begin
   rw [cocircuit_iff_r, hyperplane_iff_r], 
-  refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (ssubset_compl_commpl.mpr hXY)⟩⟩, 
-  rw [←(h.2 _ (ssubset_compl_commm.mp hXY)), compl_compl], 
+  refine ⟨λ h, ⟨h.1,λ Y hXY, _⟩ , λ h, ⟨h.1,λ Y hXY, h.2 _ (compl_ssubset_compl_iff.mpr hXY)⟩⟩, 
+  rw [←(h.2 _ (compl_ssubset_comm.mp hXY)), compl_compl], 
 end
 
 lemma inter_flats_is_flat (M : matroid α) (F₁ F₂ : set α) :

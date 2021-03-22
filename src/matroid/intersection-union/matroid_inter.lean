@@ -87,7 +87,7 @@ begin
   -- contract and delete (loopify/project) e from both elements of the pairs, to get 
   -- strictly loopier pairs to which we'll apply the IH, along with the associated maximizers 
   set N₁d := N₁ ⟍ {e} with hN₁d, 
-  set N₂d := N₂ ⟍ {e} with hN₂d, 
+  set N₂d := N₂ ⟍ {e} with hN₂d,  
   set N₁c := N₁ ⟋ {e} with hN₁c, 
   set N₂c := N₂ ⟋ {e} with hN₂c, 
 
