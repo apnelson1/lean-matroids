@@ -8,7 +8,11 @@ noncomputable theory
 
 universes u v w
 
+open finset
+
 namespace set 
+
+section basic 
 
 variables {α : Type*} {s s' t t' r r': set α}
 
@@ -378,4 +382,161 @@ lemma finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite :=
 lemma finite.inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
   set.finite.subset ht (set.inter_subset_right _ _)
 
-end set 
+
+
+lemma subset_insert_iff_subset_or_eq_insert {s t : set α} {a : α}: 
+  s ⊆ insert a t ↔ (s ⊆ t) ∨ ∃ s' ⊆ t, s = insert a s' := 
+begin
+  refine ⟨λ h, _, _⟩, 
+  by_cases ha : a ∈ s, 
+  { refine or.inr ⟨s \ {a}, λ x, _, _⟩, 
+    {specialize @h x, tidy, tauto, }, 
+    simp [set.insert_eq_of_mem ha]},
+  refine or.inl (λ x hx, _), 
+  specialize h hx, 
+  rw set.mem_insert_iff at h, 
+  rcases h with (rfl | h), 
+    exact false.elim (ha hx), 
+    assumption, 
+  rintros (hst | ⟨s', hs't, rfl⟩), 
+  { exact subset.trans hst (set.subset_insert _ _)},
+  exact set.insert_subset_insert hs't, 
+end
+
+lemma insert_inj_subset_iff {s t t' : set α} {a : α} (ht : t ⊆ s) (ht' : t' ⊆ s) (hat : a ∉ s ):
+  insert a t = insert a t' ↔ t = t' :=
+begin
+  refine ⟨λ h, _, by {rintro rfl, refl}⟩, 
+  simp_rw [ext_iff, mem_insert_iff] at h, 
+  ext x, 
+  specialize h x, split, 
+  { intro h', 
+    obtain (rfl | hx) := h.mp (or.intro_right _ h'), 
+      exact false.elim (hat (mem_of_mem_of_subset h' ht)),
+    assumption, },
+  { intro h', 
+    obtain (rfl | hx) := h.mpr (or.intro_right _ h'), 
+      exact false.elim (hat (mem_of_mem_of_subset h' ht')),
+    assumption, },
+end
+
+lemma remove_insert (s : set α) (e : α) : 
+  insert e (s \ {e})  = insert e s := 
+by rw [← union_singleton, diff_union_self, union_singleton]
+
+end basic 
+
+end set
+
+section sigma 
+
+variables {α : Type*} {β : α → Type*} 
+
+/-- the set of all pairs `(x,y)` where `x ∈ s` and `y ∈ β x` -/
+def set.sigma (s : set α) (t : Π (a : α), set (β a)) : set (sigma β) :=
+  set_of (λ x : sigma β, x.1 ∈ s ∧ x.2 ∈ t x.1)
+
+def set.sigma_swap : (Σ (a : α), α) → (Σ (a : α), α) := 
+  λ p, ⟨p.2, p.1⟩ 
+
+lemma set.sigma_inter_sigma (s s' : set α) (t t' : Π (a : α), set (β a)) : 
+  (s.sigma t) ∩ (s'.sigma t') = (s ∩ s').sigma (λ a, (t a) ∩ (t' a)) := 
+by {ext, simp [set.sigma], tauto}
+
+lemma set.sigma_inter (s : set α) (t : Π (a : α), set (β a)) (r : set (sigma β)) : 
+  (s.sigma t) ∩ r = s.sigma (λ a, (t a) ∩ { b ∈ t a | (⟨a,b⟩ : sigma β) ∈ r}) := 
+by {ext, simp [set.sigma], tauto} 
+
+  
+lemma set.sigma_singleton_eq  (a : α) (t : Π (a : α), set (β a)) : 
+  ({a} : set α).sigma t = sigma.mk a '' t a :=
+begin
+  ext x, 
+  simp only [set.sigma, set.mem_image, set.mem_singleton_iff, set.mem_set_of_eq],
+  split, 
+  { cases x, dsimp only at *,  rintro ⟨rfl, h⟩, exact ⟨_, h, rfl⟩},
+  rintro ⟨b, hb, rfl⟩, 
+  exact ⟨rfl, hb⟩, 
+end 
+
+lemma set.sigma_finite_iff {s : set α} {t : Π a, set (β a)}:
+  (s.sigma t).finite ↔ {a ∈ s | (t a).nonempty}.finite ∧ ∀ a ∈ s, (t a).finite := 
+begin
+  refine ⟨λ hf, ⟨_, λ a ha, _⟩, λ h, _⟩, 
+  { convert set.finite.image (λ (p : sigma β), p.1) hf, 
+    ext p, 
+    simp [set.sigma, set.nonempty_def]}, 
+
+  { refine @set.finite_of_finite_image _ _ _ 
+      (λ x, (⟨a, x⟩ : sigma β)) 
+      _ 
+      (set.finite.subset hf _), 
+    { intros x hx y hy hxy, simpa using hxy},
+    simp only [set.image_subset_iff], 
+    exact λ x hx, ⟨ha, hx⟩},
+  convert @set.finite.bUnion _ _ _ (λ a _, ({a} : set α).sigma t) h.1 _, 
+  { ext, 
+    simp only [set.nonempty_def, exists_prop, set.mem_Union, set.mem_sep_eq, 
+     set.mem_singleton_iff, set.mem_set_of_eq, set.sigma], 
+    refine ⟨λ h, ⟨x.1, ⟨⟨h.1, _, h.2⟩, rfl , h.2⟩⟩, λ h, _⟩,
+    obtain ⟨a, ⟨has, b, hba⟩, ⟨rfl, ha'⟩⟩ := h,  
+    exact ⟨has, ha'⟩},
+  intros a ha, 
+  simp only, 
+  convert set.finite.image (λ (b : β a), (⟨a,b⟩ : sigma β)) (h.2 a ha.1), 
+  rw set.sigma_singleton_eq, 
+end
+
+
+lemma set.sigma_to_finset {s : set α} {t : Π a, set (β a)} 
+(h : (s.sigma t).finite) : 
+  h.to_finset = finset.sigma (set.sigma_finite_iff.mp h).1.to_finset 
+                (λ a : α, dite (a ∈ s) (λ ha, ((set.sigma_finite_iff.mp h).2 a ha).to_finset) 
+                                       (λ _, finset.empty)) :=                      
+begin
+  ext x, 
+  simp only [set.mem_sep_eq, set.finite.mem_to_finset, finset.mem_sigma, set.nonempty_def], 
+  split_ifs with h h', 
+  { simp only [set.finite.mem_to_finset, set.sigma, set.mem_set_of_eq], cases x, tauto}, 
+  rw [set.sigma, set.mem_set_of_eq],  
+  exact ⟨λ h₁, false.elim (h h₁.1), λ h₁, false.elim (finset.not_mem_empty _ h₁.2)⟩,
+end
+
+lemma set.sigma_eq_univ_sigma (s : set α) (t : Π a, set (β a) ): 
+  s.sigma t = (set.univ : set α).sigma (λ a, ite (a ∈ s) (t a) ∅) :=
+begin
+  ext x, cases x with a b,
+  simp only [set.sigma, true_and, set.mem_univ, set.mem_set_of_eq], 
+  split_ifs; 
+  tauto,
+end
+
+
+lemma set.sigma_univ_invert (t : α → set α) :
+  set.bij_on (set.sigma_swap) 
+    ((set.univ : set α).sigma t) 
+    ((set.univ : set α).sigma (λ b, {a : α | b ∈ t a}) ):= 
+begin
+  refine ⟨ λ x hx, _, λ x hx y hy hxy , _, λ x hx, _⟩, 
+  { rw [set.sigma] at *, simpa using hx}, 
+  { cases x, cases y, simp only [heq_iff_eq, set.sigma_swap] at ⊢ hxy, rwa and_comm,}, 
+  simp only [set.mem_image, sigma.exists], 
+  rw [set.sigma] at hx ⊢, 
+  simp only [true_and, set.mem_univ, set.mem_set_of_eq] at hx ⊢, 
+  exact ⟨x.2, x.1, hx, by {simp only [sigma.eta, set.sigma_swap], }⟩, 
+end
+
+lemma set.sigma_invert (s : set α) (t : α → set α) :
+  set.bij_on (set.sigma_swap) 
+    (s.sigma t)
+    ((set.univ : set α).sigma (λ b, {a ∈ s | b ∈ t a}) ) := 
+begin
+  rw set.sigma_eq_univ_sigma, 
+  convert set.sigma_univ_invert _ using 1,
+  ext x, repeat {rw set.sigma}, 
+  cases x, 
+  simp only [true_and, set.mem_sep_eq, set.mem_univ, set.mem_set_of_eq],  
+  split_ifs; tauto, 
+end
+
+end sigma 

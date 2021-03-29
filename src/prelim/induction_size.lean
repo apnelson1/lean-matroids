@@ -43,6 +43,23 @@ begin
   simp [remove_union_mem_singleton he, int.zero_lt_one,size_remove_mem he, insert_eq_of_mem he], 
 end
 
+lemma induction_set_size_insert_finite {α : Type*} (P : set α → Prop) :
+  (P ∅) → (∀ (X : set α) (e : α), e ∉ X → P X → P (insert e X)) → (∀ (s : set α), s.finite → P s) :=
+begin
+  intro h_empt, 
+  have h := nonneg_int_strong_induction_param 
+    (λ (s : set α), s.finite → P s) 
+    size 
+    (λ _, size_nonneg _)
+    (by { intros s hs hf, rw finite.size_zero_iff_empty hf at hs, rwa hs,}), 
+  refine λ h' s hfin, h (λ t h₁ ih hf, (_)) _ hfin, 
+  obtain (rfl | ht) := em (t = ∅), assumption, 
+  obtain ⟨e, he⟩ := ne_empty_iff_has_mem.mp ht, 
+  specialize ih (t \ {e}) (by {rw finite.size_remove_mem hf he, norm_num}) (finite.diff hf _), 
+  convert h' (t \ {e}) e (nonmem_diff_of_mem _ (by simp)) ih, 
+  simp [insert_eq_of_mem he], 
+end
+
 
 /-- P holds for all proper subsets of Y-/
 def below (P : set α → Prop) (Y : set α) : Prop :=

@@ -433,7 +433,7 @@ begin
   { left, rw ←size_zero_iff_empty hs, linarith [size_nonneg s],},
   right, rw ←size_one_iff_eq_singleton, 
   exact le_antisymm h (by linarith), 
-end
+end 
 
 lemma two_le_size_iff_has_distinct (hs : s.finite) :
   2 ≤ size s ↔ ∃ e f ∈ s, e ≠ f :=
