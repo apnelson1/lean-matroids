@@ -1,5 +1,5 @@
 
-import .finsum_more prelim.single 
+import .finsum_more prelim.single data.nat.parity data.zmod.basic
 
 open_locale classical big_operators 
 noncomputable theory 
@@ -199,6 +199,42 @@ begin
   exact ⟨λ h, hx ⟨y,h⟩, λ h, false.elim h⟩, 
 end
 
+lemma fincard_union {s t : set α} (hs : s.finite) (ht : t.finite):
+  (fincard (s ∪ t) : ℤ) = fincard s + fincard t - fincard (s ∩ t) := 
+by linarith [fincard_modular hs ht]
+
+lemma fincard_union_disj {s t : set α} (hs : s.finite) (ht : t.finite) (hst : disjoint s t) :
+  fincard (s ∪ t) = fincard s + fincard t := 
+by {zify, simp [fincard_union hs ht,  disjoint_iff_inter_eq_empty.mp hst]}
+
+lemma fincard_diff {s t : set α} (hs : s.finite) (hst : t ⊆ s) : 
+  (fincard (s \ t) : ℤ) = fincard s - fincard t :=
+begin
+  unfold fincard, 
+  have := @finsum_in_sdiff _ _ _ (1 : α → ℕ) _ _ hs hst,  
+  change ∑ᶠ (i : α) in t, 1 + ∑ᶠ (i : α) in s \ t, 1 = ∑ᶠ (i : α) in s, 1 at this, 
+  simp [← this], 
+end
+
+lemma fincard_symm_diff {s t : set α} (hs : s.finite) (ht : t.finite): 
+  (fincard (s.symm_diff t) : ℤ) = fincard s + fincard t - 2 * fincard (s ∩ t) :=
+begin
+  rw [
+    symm_diff_alt, 
+    fincard_diff (hs.union ht) (subset.trans (inter_subset_left _ _) (subset_union_left _ _)), 
+    fincard_union hs ht],
+  linarith,   
+end
+
+lemma fincard_symm_diff_mod2 {s t : set α} (hs : s.finite) (ht : t.finite) :
+  (fincard (s.symm_diff t) : zmod 2) = fincard s + fincard t := 
+begin
+  rw [← int.cast_coe_nat, fincard_symm_diff hs ht, int.cast_sub], 
+  convert sub_zero _, swap, simp, 
+  rw [int.cast_mul], 
+  convert zero_mul _, 
+end
+ 
 lemma finite_set_induction (P : set α → Prop): 
   (P ∅) → (∀ (s : set α) (e : α), e ∉ s → P s → P (insert e s)) → (∀ (s : set α), s.finite → P s) :=
 begin
@@ -215,11 +251,16 @@ begin
   rw [remove_insert, insert_eq_of_mem he], 
 end
 
+
+
 section incl_excl 
   
 variables {M : Type*} [add_comm_group M]
 
+--def foo (n : ℤ):= (-1 : units int)^(n)
 
+
+--def foo' (n : ℤ) (a : M) := @gpow (units int) _ (-1) n 
 
 def comm_group_neg : M ≃+ M := 
 { to_fun := λ x, -x,
@@ -234,6 +275,8 @@ lemma group_sign_add  (n n' : ℤ) :
   (group_sign (n + n') : M ≃+ M) = (group_sign n).trans (group_sign n') := 
 by {unfold group_sign, rw [add_comm, gpow_add], congr'}
 
+def neg_one_pow (n : ℤ) : ℤ := @gpow (units ℤ) _ (-1) n 
+
 /-- returns (-1)^n * g. (i.e. g if n is even, -g if n is odd ) -/
 /- lemma group_sign_eq (g : M) (n : ℤ) :
   group_sign n g = ite (even n) g (-g) := 
@@ -247,58 +290,61 @@ lemma finsum_in_bUnion {s : set β} {t : β → set α} (hs : s.finite)
   ∑ᶠ i in (⋃ x ∈ s, t x), f i = ∑ᶠ i in s, (∑ᶠ j in (t i), f j) :=
 -/
 
-def signed_convolution (f : set α → M) (s : set α) : M :=
-  ∑ᶠ a in s.powerset, group_sign (fincard a) (f a)
 
-lemma twice {f : set α → M} {s : set α} (h : (s.powerset ∩ function.support f).finite): 
+
+def signed_convolution (f : set α → M) (s : set α) : M :=
+  ∑ᶠ a in s.powerset, gsmul (neg_one_pow (fincard a)) (f a)
+
+lemma twice {f : set α → M} {s : set α} (hs : s.finite): 
   signed_convolution (signed_convolution f) s = f s:=
 begin
  
   unfold signed_convolution, 
-  
+  have hs' : s.powerset.finite := set.finite.finite_subsets hs,
 
-    
-
-  rw ← finsum_subtype_eq_finsum_in, 
-  have hrw : ∀ x : s.powerset, group_sign 
-      (fincard (coe x) : ℤ) 
-      (∑ᶠ (a : set α) in (x : set α).powerset, (group_sign (fincard a) (f a))) 
-    = (∑ᶠ (a : set α) in (x : set α).powerset, (group_sign (fincard a + fincard (coe x)) (f a))), 
-  { intro x,
-    convert (finsum_in_hom' (group_sign (fincard (x : set α)) : M ≃+ M).to_add_monoid_hom _).symm,
-    { ext a, simp [group_sign, add_comm (fincard a : ℤ), gpow_add] },  
-    cases x with x hx, 
-    refine finite.subset h (inter_subset_inter _ (λ c hc, _)), 
-    { exact powerset_mono.mpr (by rwa mem_powerset_iff at hx)},
-    rw function.mem_support at hc ⊢, 
-    exact λ hc', hc (by simp [hc'])},
+  convert @finsum_in_eq_of_eq _ _ _ _ _ _ 
+    (λ (a : set α) ha, @gsmul_distrib_finsum_in _ _ _ 
+      (λ x, (neg_one_pow (fincard x)) •ℤ (f x)) 
+      (a.powerset) 
+      (neg_one_pow (fincard a)) 
+      (by 
+      { apply set.finite.subset (hs'.subset _) (inter_subset_left _ _), 
+        rwa [powerset_mono, ← mem_powerset_iff] } )), 
   
-  conv_lhs {congr, funext, rw [hrw x]},
-  convert finsum_subtype_eq_finsum_in 
-    ((λ x, ∑ᶠ a in (x : set α).powerset, (group_sign (↑(fincard a) + ↑(fincard x))) (f a))) _,
-  
-  let f' := λ p : (Σ (x : set α), set α), group_sign (↑(fincard p.2) + ↑(fincard p.1)) (f p.2),  
+  rw finsum_comm_dep, rotate, 
+  { apply hs'.subset, rintros x ⟨hx, hx'⟩, assumption},
+  { refine λ a ha, hs'.subset (subset.trans (inter_subset_left _ _) _), rwa powerset_mono},
 
-  convert finsum_in_sigma' s.powerset (λ x, x.powerset) f' _ _, 
-    
-    --have := @finsum_in_bUnion _ _ _ _ (λ a : set α, ⇑(group_sign (↑(fincard a) + ↑(fincard x))) (f a)), 
-    
+  convert (finsum_ite_singleton_eq s).symm, 
+  funext, 
+  split_ifs with h, 
+  { convert (finsum_ite_singleton_eq y), 
+    { change _ = {y}, ext x, simp [h, subset.antisymm_iff]}, 
+    simp only [neg_one_pow, ←gsmul_mul, units.coe_neg_one, group.gpow_eq_has_pow, 
+    units.coe_pow, gpow_coe_nat, ← pow_add], 
+    convert (one_gsmul _).symm,
+    rw [nat.neg_one_pow_of_even], 
+    rw [← two_mul, even],  
+    exact ⟨_,rfl⟩},
+
+  by_cases hsy : s ⊆ y, 
+  { convert finsum_in_empty, 
+    ext, 
+    simp only [mem_sep_eq, mem_empty_eq, not_and, mem_powerset_iff, iff_false], 
+    exact λ hxs hyx, h (subset.antisymm (subset.trans hyx hxs) hsy)},
+
+  rw [subset_def] at hsy, push_neg at hsy, 
+  obtain ⟨e, hes, hey⟩ := hsy, 
+
+  apply finsum_in_involution (λ (x : set α), x.symm_diff {e}), 
+  { rintros a ⟨has, hya⟩, 
+    rw ←  add_gsmul, 
+    convert zero_gsmul _, }
+  
   
     
 
 end
-#check finsum
-lemma 
-
-lemma foo (f : set α → M) (s : set α) (hs : s.finite) :
---(hf : (powerset a ∩ function.support f).finite ) (hg : (powerset a ∩ function.support g).finite )
---(h : g a = ∑ᶠ s in a.powerset, f s):
-  f s = ∑ᶠ a in s.powerset, group_sign (↑(fincard s) - ↑(fincard a)) (∑ᶠ t in a.powerset, f t) :=
-begin
-  
-end
-
-
 
 
 lemma finsum_incl_excl {s : set (set α)} (f : α → M) (hs : s.finite) :

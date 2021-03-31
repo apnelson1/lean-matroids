@@ -14,10 +14,8 @@ namespace set
 
 section basic 
 
-variables {α : Type*} {s s' t t' r r': set α}
+variables {α β : Type*} {s s' t t' r r': set α}
 
-/-- the symmetric difference of two sets -/
-def symm_diff (s t : set α) : set α := (s \ t) ∪ (t \ s)
 
 @[simp] lemma absorb_union_inter (s t : set α) : s ∪ (s ∩ t) = s := 
 by calc s ∪ (s ∩ t) = (s ∩ univ) ∪ (s ∩ t) : by rw inter_univ  
@@ -311,17 +309,6 @@ by simp [diff_eq, inter_right_comm]
 @[simp] lemma univ_diff (s : set α) : univ \ s = sᶜ := 
   (compl_eq_univ_diff s).symm
 
-@[simp] lemma symm_diff_self (s : set α) : symm_diff s s = ∅ :=
-by {unfold symm_diff, rw [diff_self, empty_union]}
-
-lemma symm_diff_alt (s t : set α) : symm_diff s t = (s ∪ t) \ (s ∩ t) := 
-begin
-   unfold symm_diff, 
-   repeat {rw [diff_eq]}, 
-   rw [compl_inter, inter_distrib_right, inter_distrib_left, inter_distrib_left],
-   simp,   
-end  
-
 lemma empty_ssubset_nonempty : s.nonempty → ∅ ⊂ s := 
 λ h, by {rw ←set.ne_empty_iff_nonempty at h, 
           exact ssubset_of_subset_ne (empty_subset s) (ne.symm h)}
@@ -424,10 +411,64 @@ lemma remove_insert (s : set α) (e : α) :
   insert e (s \ {e})  = insert e s := 
 by rw [← union_singleton, diff_union_self, union_singleton]
 
+lemma finite.iff_of_bij_on {s : set α} {t : set β} {f : α → β} (h : bij_on f s t) : 
+  s.finite ↔ t.finite := 
+begin
+  refine ⟨λ hs, _, λ ht, _⟩,
+  { convert finite.image f hs, rw h.image_eq},
+  apply finite_of_finite_image h.inj_on, rwa h.image_eq, 
+end
+
+
 end basic 
 
-end set
 
+section symm_diff
+
+variables {α : Type*}
+/-- the symmetric difference of two sets -/
+def symm_diff (s t : set α) : set α := (s \ t) ∪ (t \ s)
+
+lemma symm_diff_assoc (s t r : set α) : 
+  (s.symm_diff t).symm_diff r = s.symm_diff (t.symm_diff r) :=
+by {ext, simp [symm_diff], tauto}
+
+@[simp] lemma symm_diff_self (s : set α): s.symm_diff s = ∅ := by simp [symm_diff]
+
+@[simp] lemma symm_diff_univ (s : set α) : s.symm_diff univ = sᶜ := by simp [symm_diff]
+
+@[simp] lemma symm_diff_empty (s : set α) : s.symm_diff ∅ = s := by simp [symm_diff]
+
+lemma symm_diff_comm (s t : set α) : symm_diff s t = symm_diff t s := 
+by {ext, simp [symm_diff], tauto}
+
+lemma symm_diff_alt (s t : set α) : symm_diff s t = (s ∪ t) \ (s ∩ t) := 
+by {ext, simp only [symm_diff, mem_inter_eq, mem_union_eq, not_and, mem_diff], tauto}
+
+@[simp] lemma symm_diff_self_right (s t : set α) : (s.symm_diff t).symm_diff t = s := 
+by simp [symm_diff_assoc]
+
+lemma symm_diff_singleton_mem_eq {s : set α} {x : α} (h : x ∈ s) : 
+  s.symm_diff {x} = s \ {x} := 
+begin
+  ext, 
+  simp only [symm_diff,and_imp, mem_singleton_iff, mem_union_eq, or_iff_left_iff_imp, mem_diff], 
+  rintros rfl h',
+  exact false.elim (h' h), 
+end
+ 
+lemma symm_diff_singleton_nonmem_eq {s : set α} {x : α} (h : x ∉ s) : 
+  s.symm_diff {x} = insert x s := 
+begin
+  ext y, 
+  simp only [symm_diff, mem_singleton_iff, mem_union_eq, mem_insert_iff, mem_diff], 
+  rcases em (y = x) with (rfl | _); tauto, 
+end
+ 
+
+end symm_diff
+
+end set 
 section sigma 
 
 variables {α : Type*} {β : α → Type*} 
@@ -436,7 +477,7 @@ variables {α : Type*} {β : α → Type*}
 def set.sigma (s : set α) (t : Π (a : α), set (β a)) : set (sigma β) :=
   set_of (λ x : sigma β, x.1 ∈ s ∧ x.2 ∈ t x.1)
 
-def set.sigma_swap : (Σ (a : α), α) → (Σ (a : α), α) := 
+def set.sigma_swap {α β : Type*}: (Σ (a : α), β) → (Σ (b : β), α) := 
   λ p, ⟨p.2, p.1⟩ 
 
 lemma set.sigma_inter_sigma (s s' : set α) (t t' : Π (a : α), set (β a)) : 
@@ -512,10 +553,10 @@ begin
 end
 
 
-lemma set.sigma_univ_invert (t : α → set α) :
+lemma set.sigma_univ_invert {α β : Type*} (t : α → set β) :
   set.bij_on (set.sigma_swap) 
     ((set.univ : set α).sigma t) 
-    ((set.univ : set α).sigma (λ b, {a : α | b ∈ t a}) ):= 
+    ((set.univ : set β).sigma (λ b, {a : α | b ∈ t a}) ):= 
 begin
   refine ⟨ λ x hx, _, λ x hx y hy hxy , _, λ x hx, _⟩, 
   { rw [set.sigma] at *, simpa using hx}, 
@@ -526,17 +567,18 @@ begin
   exact ⟨x.2, x.1, hx, by {simp only [sigma.eta, set.sigma_swap], }⟩, 
 end
 
-lemma set.sigma_invert (s : set α) (t : α → set α) :
+lemma set.sigma_invert {α β : Type*} (s : set α) (t : α → set β) :
   set.bij_on (set.sigma_swap) 
     (s.sigma t)
-    ((set.univ : set α).sigma (λ b, {a ∈ s | b ∈ t a}) ) := 
+    ((set.univ : set β).sigma (λ b, {a ∈ s | b ∈ t a}) ) := 
 begin
   rw set.sigma_eq_univ_sigma, 
   convert set.sigma_univ_invert _ using 1,
   ext x, repeat {rw set.sigma}, 
   cases x, 
   simp only [true_and, set.mem_sep_eq, set.mem_univ, set.mem_set_of_eq],  
-  split_ifs; tauto, 
+  split_ifs; 
+  tauto, 
 end
 
 end sigma 
