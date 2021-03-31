@@ -64,6 +64,31 @@ begin
   norm_num at this, assumption, 
 end
 
+lemma nat_induction (P : ℕ → Prop):
+  P 0 → (∀ n, P n → P (n+1)) → (∀ n₀, P n₀) :=
+by {intros h0 ih n₀, induction n₀ with n ih',  assumption, exact ih n ih'}
+
+lemma nat_strong_induction (P : ℕ → Prop): 
+  P 0 → (∀ n, (∀ m < n, P m) → P n) → (∀ n₀, P n₀) :=
+begin
+  intros h h' n₀, 
+  refine nat.case_strong_induction_on n₀ h (λ n hn, h' _ (λ m hm, hn m _)), 
+  rwa nat.lt_succ_iff at hm, 
+end
+
+lemma nat_min_counterexample (P : ℕ → Prop): 
+  (¬ ∀ n, P n) → ∃ n₀, (¬ P n₀ ∧ ∀ n' < n₀, P n') :=
+begin
+  contrapose!,
+  intro ih, 
+  refine nat_strong_induction _ (by_contra (λ hn, _)) (by_contra (λ hn, _)),  
+  { obtain ⟨n', hn',-⟩ := ih _ hn, exact nat.not_lt_zero _ hn'}, 
+  push_neg at hn, 
+  obtain ⟨n, hn, hn'⟩ := hn, 
+  obtain ⟨n', h₀, hn₀'⟩ := ih _ hn', 
+  exact hn₀' (hn _ h₀), 
+end
+
 lemma nat_induction_zero_one (P : ℕ → Prop) (n₀ : ℕ) : 
   P 0 → P 1 → (∀ n, 2 ≤ n → P (n-1) → P n) → P n₀ :=
 begin

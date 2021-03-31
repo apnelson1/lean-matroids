@@ -670,6 +670,16 @@ lemma eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg [ordered_cancel_add_com
   ∀ x ∈ t \ s, f x = 0 :=
 eq_zero_of_finsum_in_subset_le_finsum_in_of_nonneg_supp (ht.inter_left _) hst hf h
 
+lemma eq_zero_of_finsum_in_subset_eq_finsum_in [canonically_ordered_add_monoid M] 
+(ht : t.finite)
+(hst : s ⊆ t) (h : ∑ᶠ x in t, f x ≤ ∑ᶠ x in s, f x) :
+  ∀ x ∈ t \ s, f x = 0 :=
+begin
+  have := finsum_in_subset_le_finsum_in_of_nonneg ht hst (λ x _, zero_le (f x)), 
+  
+end
+
+
 end order
 
 section intervals 
