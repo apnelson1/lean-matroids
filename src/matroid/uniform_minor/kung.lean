@@ -9,7 +9,7 @@ open_locale classical big_operators
 
 open set matroid 
 
-variables {β : Type*}[comm_semiring β][no_zero_divisors β]
+variables {α β : Type*} [fintype α] [comm_semiring β] [no_zero_divisors β]
 
 /-- the size of a projective geometry over a `q`-element field; i.e `1 + q + q^2 + ... + q^{n-1}` -/
 def pg_size' : β → ℕ → β
@@ -74,11 +74,11 @@ by {rw pg_size_eq_powsum, exact nonneg_of_finsum_in_nonneg (λ i hi, pow_nonneg 
 
 /- Kung's lemma - the number of points in a rank-`r` matroid with no `U_{2,q+2}`-minor is at most 
 `1 + q + q^2 + ... + q^{n-1}`. -/
-theorem rank_le_rank_pg_of_no_line {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] {M : matroid α} :
-  M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.r univ) := 
+theorem rank_le_rank_pg_of_no_line {q : ℤ} (hq : 1 ≤ q) {M : matroid α} :
+  M.has_no_line_minor (q+2) → M.ε univ ≤ pg_size q (M.rank) := 
 begin
   /- If the result fails, we can choose M to be a minimal counterexample-/
-  revert M, 
+  rw rank, revert M, 
   by_contra hn, 
   obtain ⟨M,hM⟩ := min_counterexample_nonneg_int_param 
     _ (λ (M : matroid α), size (M.nonloops)) (λ s, size_nonneg _) hn, 
@@ -123,6 +123,8 @@ begin
   rw [project_r, univ_union, rank_nonloop he, ← pg_size_rec q (by linarith : 1 ≤ M.r univ)] at hlt, 
   exact lt_irrefl _ hlt, 
 end
+
+
 
 theorem rank_set_le_rank_pg_of_no_line {q : ℤ}(hq : 1 ≤ q){α : Type*} [fintype α] {M : matroid α}
 (X : set α) (h : M.has_no_line_minor (q+2)):

@@ -110,7 +110,6 @@ def minor_matroid_to_minor_iso {M : matroid α} {M' : matroid β} {N : matroid_i
     refine ⟨⟨⟨y,hy⟩,hyx,_⟩,rfl⟩, 
     rw subtype.mk_eq_mk, refl,   
   end⟩
- 
 
 def image_minor_iso_minor {N M : matroid_in α} {M' : matroid_in β}
 (i : isom M M') (P : minor_pair N M) :
@@ -420,7 +419,6 @@ lemma iminor_trans {L : matroid α} {M : matroid β} {N : matroid γ}
 (hLM : L.is_iminor_of M) (hMN : M.is_iminor_of N) :
 L.is_iminor_of N := 
 begin
-  -- why is this silly hack neccessary? 
   unfold is_iminor_of at *, 
   obtain ⟨⟨e₁⟩,⟨e₂⟩⟩ := ⟨hLM, hMN⟩, 
   have := minor_emb.trans, 

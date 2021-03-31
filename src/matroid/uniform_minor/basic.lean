@@ -14,33 +14,6 @@ section uniform
 
 variables {α : Type*} [fintype α] {M N : matroid α} {a b : ℤ} 
 
-/-- the rank-a uniform matroid on b elements with ground set `fin' b`. Junk unless `0 ≤ a ≤ b`. -/
-def canonical_unif (a b : ℤ) : 
-  matroid (fin' b) := 
-unif.uniform_matroid_on (fin' b) a
-
-lemma canonical_unif_simple_iff (ha : 0 ≤ a) (hb : 2 ≤ b) : 
-  (canonical_unif a b).is_simple ↔ 2 ≤ a := 
-begin
- convert unif.uniform_matroid_simple_iff (fin' b) _ ha, 
- rwa size_fin' b (by linarith : 0 ≤ b), 
-end
-
-lemma canonical_unif_loopless_iff (ha : 0 ≤ a) (hb : 1 ≤ b): 
-  (canonical_unif a b).is_loopless ↔ 1 ≤ a := 
-begin
-  convert unif.uniform_matroid_loopless_iff (fin' b) _ _, 
-  assumption, 
-  convert hb, rw size_fin' b (by linarith : 0 ≤ b), 
-end
-lemma canonical_unif_simple_of_two_le_r (ha : 2 ≤ a) : 
-  (canonical_unif a b).is_simple :=
-unif.unif_simple_of_two_le_r _ ha
-
-@[simp] lemma canonical_unif_r (ha : 0 ≤ a) (X : set (fin' b)) :
-  (canonical_unif a b).r X = min a (size X) :=
-unif.uniform_matroid_rank ha _
-
 /-- the property of having a `U_{a,b}` -minor -/
 def matroid.has_unif_minor (M : matroid α) (a b : ℤ) :=
   M.has_iminor (canonical_unif a b)

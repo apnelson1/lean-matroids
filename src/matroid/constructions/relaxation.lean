@@ -142,8 +142,8 @@ lemma relax_weak_image (M : matroid α) (C : set α) :
   M ≤ (relax M C) :=
 λ X, r_le_relax_r _ _ X 
 
-theorem relax.dual {M : matroid α} {C : set α} :
-  dual (relax M C) = relax (dual M) Cᶜ := 
+theorem relax.dual (M : matroid α) (C : set α) :
+  (relax M C).dual = relax (M.dual) Cᶜ := 
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
   { ext X, have hCd := hC, rw circuit_hyperplane_dual at hCd, 
@@ -151,13 +151,13 @@ begin
   let hCc := circuit_hyperplane_dual.mp hC, 
 
   ext X, 
-  have hCuniv : univ ≠ C := λ h, 
-    by {have := circuit_hyperplane_rank hC, rw ←h at this, linarith}, 
+  have hCuniv : univ ≠ C,
+  { intro h, have := circuit_hyperplane_rank hC, rw ←h at this, linarith}, 
   by_cases h : X = Cᶜ,   
-  simp_rw [dual_r, h, compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc],
-  rw [dual_r, compl_compl, relax.r_of_not_C M hCuniv], linarith, 
-  have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish}, 
+  { simp_rw [dual_r, h, compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc], 
+    rw [dual_r, compl_compl, relax.r_of_not_C M hCuniv], linarith}, 
   
+  have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish}, 
   simp_rw [dual_r, relax_r_def, relax.r_of_not_C _ h, dual_r, 
     relax.r_of_not_C M h', relax.r_of_not_C M hCuniv ],
 end

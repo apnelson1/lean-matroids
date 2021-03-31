@@ -142,19 +142,16 @@ lemma I_to_r_eq_rank_basis_union {M : indep_family α} {B X: set α} (Y : set α
 begin
   intro h, 
   rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨Bα, ⟨hαs, hαb⟩⟩,
-  have := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1,  
-  have := M.I_to_R2 _ _ (union_subset_union_left B X Y h.1), 
-  have := I_to_r_of_set_basis hαb, linarith, 
+  have h₁ := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1,  
+  { linarith [M.I_to_R2 _ _ (union_subset_union_left Y h.1), I_to_r_of_set_basis hαb]}, 
   have : B = Bα ∩ X := by
-  {
-    have := I_to_r_ub (inter_subset_right Bα X) (M.I2 _ _ (inter_subset_left Bα X) hαb.2.1),
+  { have := I_to_r_ub (inter_subset_right Bα X) (M.I2 _ _ (inter_subset_left Bα X) hαb.2.1),
     rw [I_to_r_of_set_basis h] at this, 
-    from eq_of_le_size_subset (subset_inter hαs h.1) this, 
-  },
+    exact eq_of_le_size_subset (subset_inter hαs h.1) this, },
   have h' := subset_iff_inter_eq_left.mp hαb.1, rw [inter_distrib_left, ←this] at h', 
-  rw ←h', from union_subset_union_right _ _ _ (inter_subset_right Bα Y),
+  rw ←h', 
+  exact union_subset_union_right _ (inter_subset_right Bα Y),
 end
-
 
 lemma I_to_R3 (M : indep_family α) : 
   satisfies_R3 M.I_to_r := 
