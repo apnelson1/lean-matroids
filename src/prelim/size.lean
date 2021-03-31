@@ -100,7 +100,6 @@ lemma size_set_of_eq_size_subtype (P : α → Prop):
   size {x | P x} = type_size {x // P x} :=
 by rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, ← finsum_subtype_eq_finsum_in_set_of]
 
-
 lemma size_set_of_push (P Q : α → Prop) :
   size {x : {y // P y} | Q (x : α)} = size { x | P x ∧ Q x } := 
 by {rw [← finsum_ones_eq_size, ← finsum_ones_eq_size], 

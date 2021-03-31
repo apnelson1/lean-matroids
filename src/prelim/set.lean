@@ -433,6 +433,7 @@ lemma symm_diff_assoc (s t r : set α) :
   (s.symm_diff t).symm_diff r = s.symm_diff (t.symm_diff r) :=
 by {ext, simp [symm_diff], tauto}
 
+
 @[simp] lemma symm_diff_self (s : set α): s.symm_diff s = ∅ := by simp [symm_diff]
 
 @[simp] lemma symm_diff_univ (s : set α) : s.symm_diff univ = sᶜ := by simp [symm_diff]
@@ -447,6 +448,19 @@ by {ext, simp only [symm_diff, mem_inter_eq, mem_union_eq, not_and, mem_diff], t
 
 @[simp] lemma symm_diff_self_right (s t : set α) : (s.symm_diff t).symm_diff t = s := 
 by simp [symm_diff_assoc]
+
+lemma symm_diff_eq_iff {s t r: set α} : 
+  s.symm_diff t = r ↔ s = t.symm_diff r := 
+begin
+  split, {rintro rfl, rw symm_diff_comm, simp, },
+  rintro rfl, simp [symm_diff_comm t], 
+end
+
+lemma symm_diff_subset_union (s t : set α) : s.symm_diff t ⊆ s ∪ t := 
+by {rw symm_diff_alt, apply diff_subset}
+
+lemma diff_subset_symm_diff (s t : set α) : s \ t ⊆ s.symm_diff t := 
+λ x hx, by {rw symm_diff_alt, simp at ⊢ hx, tauto}
 
 lemma symm_diff_singleton_mem_eq {s : set α} {x : α} (h : x ∈ s) : 
   s.symm_diff {x} = s \ {x} := 
@@ -465,7 +479,10 @@ begin
   rcases em (y = x) with (rfl | _); tauto, 
 end
  
-
+@[simp] lemma symm_diff_eq_self_iff {s t : set α } :
+  s.symm_diff t = s ↔ t = ∅ := 
+⟨λ h, by rwa [symm_diff_comm, symm_diff_eq_iff, symm_diff_self] at h, by {rintro rfl, simp}⟩
+  
 end symm_diff
 
 end set 

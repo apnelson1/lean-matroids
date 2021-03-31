@@ -1,4 +1,4 @@
-import data.set.intervals 
+import data.set.intervals data.nat.parity
 import tactic 
 
 universes u v w 
@@ -72,3 +72,62 @@ lemma squeeze_le_trans (hab : a ≤ b) (hbc : b ≤ c) (hac : a = c):
 ⟨squeeze_le_trans_left hab hbc hac, squeeze_le_trans_right hab hbc hac⟩ 
 
 end order 
+
+section neg_one_pow
+
+
+lemma nat.neg_one_pow_sum_eq_zero_of_sum_odd {n m : ℕ} (h : odd (n+m)) : 
+  (-1 :ℤ)^m + (-1)^n = 0 :=
+begin
+  obtain ⟨ (⟨k,rfl⟩ | ⟨k,rfl⟩), (⟨j,rfl⟩ | ⟨j,rfl⟩)⟩ := ⟨nat.even_or_odd n, nat.even_or_odd m⟩, 
+  { exfalso, apply nat.odd_iff_not_even.mp h ⟨k+j, by {rw mul_add}⟩, },
+  { simp [nat.neg_one_pow_of_odd ⟨j,rfl⟩, nat.neg_one_pow_of_even ⟨k,rfl⟩]},
+  { simp [nat.neg_one_pow_of_even ⟨j,rfl⟩, nat.neg_one_pow_of_odd ⟨k,rfl⟩]}, 
+  { exfalso, apply nat.odd_iff_not_even.mp h ⟨j+k+1, by linarith⟩}, 
+end
+ 
+def int.neg_one_pow (n : ℤ) : ℤ := @gpow (units ℤ) _ (-1) n 
+
+lemma int.neg_one_pow_eq_neg_one_pow_neg (n : ℤ) :
+  int.neg_one_pow n = int.neg_one_pow (-n) :=
+begin
+  unfold int.neg_one_pow, 
+  simp only [gpow_neg, group.gpow_eq_has_pow], 
+  rw [eq_comm], 
+  apply units.inv_eq_of_mul_eq_one,
+  simp, 
+end
+
+lemma int.neg_one_pow_eq_abs (n : ℤ):
+  int.neg_one_pow n = (-1)^(n.nat_abs) :=
+begin
+  unfold int.neg_one_pow, 
+  rcases int.nat_abs_eq n with (h | h), rw h, simp, 
+  rw h, 
+  simp only [int.nat_abs_of_nat, gpow_neg, int.nat_abs_neg, group.gpow_eq_has_pow, gpow_coe_nat], 
+  apply units.inv_eq_of_mul_eq_one, 
+  simp only [units.coe_neg_one, units.coe_pow, ← pow_add, ← two_mul],  
+  apply nat.neg_one_pow_of_even, 
+  exact ⟨_, rfl⟩, 
+end
+
+lemma int.neg_one_pow_coe {n : ℕ}: int.neg_one_pow n = (-1)^n := 
+by {rw int.neg_one_pow_eq_abs, congr', }
+
+lemma neg_one_pow_of_even {n : ℤ} (hn : even n) : int.neg_one_pow n = 1 := 
+begin
+  obtain ⟨k,rfl⟩ := hn, 
+  obtain ⟨a, (rfl | rfl)⟩ := k.eq_coe_or_neg, swap,
+  rw [(by simp : ((2 : ℤ) * - (a : ℤ) = - (2*a ))), int.neg_one_pow_eq_neg_one_pow_neg, neg_neg],
+  all_goals
+  { rw [← (by simp: ((2 * a : ℕ) : ℤ) = ((2 : ℤ)* (a : ℤ))), int.neg_one_pow_coe, 
+    nat.neg_one_pow_of_even ⟨_, rfl⟩]}, 
+end
+/-
+lemma neg_one_pow_of_odd {n : ℤ} (hn : odd n) : int.neg_one_pow n = -1 := 
+begin
+  obtain ⟨k,rfl⟩ := hn, 
+  rw [int.neg_one_pow], convert gpow_add_one (-1 : units ℤ) (2*k), 
+end
+-/
+end neg_one_pow
