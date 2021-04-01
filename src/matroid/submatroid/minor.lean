@@ -228,9 +228,9 @@ begin
   rw [minor_pair.move_to_delete], dsimp only, rw [he, dual_r], 
   simp only [diff_eq, matroid_in.dual_r, set.compl_union, sub_lt_sub_iff_right, add_lt_add_iff_left], 
 
-  have h : size ((p.D ∪ {e}) ∩ M.E) = size (p.D ∩ M.E) + 1, 
+  have h : fincard ((p.D ∪ {e}) ∩ M.E) = fincard (p.D ∩ M.E) + 1, 
   { rw [inter_distrib_right, subset_iff_inter_eq_left.mp (subset.trans heC p.C_ss_E)], 
-    apply size_union_nonmem_singleton, 
+    apply fincard_union_nonmem_singleton, 
     by_contra hn, 
     rw singleton_subset_iff at heC, 
     have := eq_empty_iff_forall_not_mem.mp p.disj e,   
@@ -271,10 +271,10 @@ begin
   linarith, 
 end
 
-/-- each minor N has a minor pair (C,D) with C independent and of size r M - r N. (Latter condition 
+/-- each minor N has a minor pair (C,D) with C independent and of fincard r M - r N. (Latter condition 
 is equivalent to the coindependence of D in M) -/
 lemma minor_has_indep_coindep_pair' {N M : matroid_in α} (h_minor : is_minor N M) :
-   ∃ (p : minor_pair N M), M.is_indep p.C ∧ size p.C = M.r M.E - N.r N.E := 
+   ∃ (p : minor_pair N M), M.is_indep p.C ∧ fincard p.C = M.r M.E - N.r N.E := 
 begin
   rcases minor_has_indep_coindep_pair h_minor with ⟨p,hC,hD⟩, 
   refine ⟨p,hC,_⟩, 

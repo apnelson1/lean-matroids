@@ -14,22 +14,22 @@ namespace partition
 variables {α ι : Type*} [fintype α] (f : α → ι){b : ι → ℤ}
 
 /-- the partition matroid - given a partition of α encoded by a function f : α → ι, the independent 
-sets are those whose intersection with each cell i has size at most b i -/
+sets are those whose intersection with each cell i has fincard at most b i -/
 def M (f : α → ι) (b : ι → ℤ) : matroid α := idsum.M f (λ i, unif.uniform_matroid_on _ (b i))
 
 lemma indep_iff (hb : ∀ i, 0 ≤ b i) (X : set α) : 
-  (M f b).is_indep X ↔ ∀ i, size {x ∈ X | f x = i} ≤ b i :=
+  (M f b).is_indep X ↔ ∀ i, fincard {x ∈ X | f x = i} ≤ b i :=
 begin
-  simp_rw [M, idsum.indep_iff, ← idsum.size_coe_eq], 
+  simp_rw [M, idsum.indep_iff, ← idsum.fincard_coe_eq], 
   refine ⟨λ h, λ i, _, λ h, λ i, _⟩, 
   {exact (unif.uniform_matroid_indep_iff (hb i)).mp (h i), }, 
   exact (unif.uniform_matroid_indep_iff (hb i)).mpr (h i), 
 end 
 
 lemma r_eq (hb : ∀ i, 0 ≤ b i) (X : set α) : 
-  (M f b).r X = ∑ᶠ (i : ι), (min (b i) (size {x ∈ X | f x = i})) :=
+  (M f b).r X = ∑ᶠ (i : ι), (min (b i) (fincard {x ∈ X | f x = i})) :=
 begin
-  simp_rw [M, idsum.r_eq, ← idsum.size_coe_eq],
+  simp_rw [M, idsum.r_eq, ← idsum.fincard_coe_eq],
   convert rfl, ext i, rw unif.uniform_matroid_rank (hb i), 
 end 
 
@@ -61,42 +61,42 @@ lemma M_def :
 rfl 
 
 lemma r_eq (X : set α) : 
-  (M S).r X = size {P ∈ S.classes | (X ∩ P).nonempty} := 
+  (M S).r X = fincard {P ∈ S.classes | (X ∩ P).nonempty} := 
 begin
-  rw [M_def, partition.r_eq, ← sum_size_fiber_eq_size _ id], 
+  rw [M_def, partition.r_eq, ← sum_fincard_fiber_eq_fincard _ id], 
   rotate, apply_instance, apply partition_fn_nonneg, 
   convert rfl, funext, 
   rw partition_fn, dsimp only [id.def], split_ifs, 
   { subst h, 
-    rw min_eq_left (size_nonneg {x ∈ X | S.cl x = ∅}), 
-    simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
+    rw min_eq_left (fincard_nonneg {x ∈ X | S.cl x = ∅}), 
+    simp only [and_imp, mem_sep_eq, fincard_zero_iff_empty, presetoid.mem_classes_iff, 
     id.def, sep_in_eq_empty_iff, exists_imp_distrib], 
     rintros P x hx rfl - hx', 
     exact cl_eq_empty_iff.mp hx' hx, },
   by_cases hi : ∃ x ∈ X, S.cl x = i, swap,
   { convert (min_eq_right (zero_le_one : (0 :ℤ) ≤ 1 )).symm,  
-    { simp only [and_imp, mem_sep_eq, size_zero_iff_empty, presetoid.mem_classes_iff, 
+    { simp only [and_imp, mem_sep_eq, fincard_zero_iff_empty, presetoid.mem_classes_iff, 
         sep_in_eq_empty_iff, exists_imp_distrib], 
       rintros s x hx rfl hxX rfl,
       obtain ⟨x',hx'⟩ := hxX, 
       rw mem_inter_iff at hx', 
       exact hi ⟨x', hx'.1, cl_eq_cl_of_rel (mem_cl_iff.mp hx'.2)⟩ }, 
-    simp only [size_zero_iff_empty, sep_in_eq_empty_iff], 
+    simp only [fincard_zero_iff_empty, sep_in_eq_empty_iff], 
     exact λ x hx hS, hi ⟨x,hx,hS⟩},
   obtain ⟨x,hx,rfl⟩ := hi, 
   rw [presetoid.cl_eq_empty_iff, not_not] at h, 
   convert (λ m hm, by {rw min_eq_left hm} : (∀ m : ℤ, 1 ≤ m → 1 = min 1 m)) _ _,  
-  { rw size_one_iff_eq_singleton, 
+  { rw fincard_one_iff_eq_singleton, 
     refine ⟨S.cl x, ext_iff.mpr (λ f, _)⟩,
     simp only [mem_sep_eq, presetoid.mem_classes_iff, mem_singleton_iff, 
     and_iff_right_iff_imp],  
     rintros rfl, 
     exact ⟨⟨x, h, rfl⟩,⟨x,mem_inter hx (mem_cl_iff.mpr h)⟩⟩}, 
-  exact one_le_size_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
+  exact one_le_fincard_iff_has_mem.mpr ⟨x, by {simpa using hx}⟩, 
 end
 
 lemma indep_iff (I : set α) :
-  (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, size (I ∩ P) ≤ 1 :=
+  (M S).is_indep I ↔ disjoint I S.kernel ∧ ∀ P ∈ S.classes, fincard (I ∩ P) ≤ 1 :=
 begin
   rw [M_def, partition.indep_iff, partition_fn, disjoint_right], 
   swap, apply partition_fn_nonneg, 
@@ -117,7 +117,7 @@ begin
     rw [cl_eq_empty_iff.mpr hx], 
     simpa using h.1},
   convert (λ Q, by {split_ifs; norm_num} : ∀ Q: Prop, (0 : ℤ) ≤ ite Q (0 : ℤ) 1) _ , 
-  rw [size_zero_iff_empty, sep_in_eq_empty_iff], 
+  rw [fincard_zero_iff_empty, sep_in_eq_empty_iff], 
   exact λ x hx hxP, hP ⟨x, hxP.symm⟩, 
 end
 

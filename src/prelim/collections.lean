@@ -1,4 +1,4 @@
-import .size .induction_size algebra.big_operators.order finsum.fin_api .embed
+import finsum.fincard .induction_fincard algebra.big_operators.order finsum.fin_api .embed
 ----------------------------------------------------------------
 open_locale classical 
 open_locale big_operators 
@@ -205,19 +205,19 @@ lemma union_all_ub (P : set α → Prop) :
   (union_all_subset_iff P _).mp (subset_refl _ )
   
 end extrema 
-section size 
+section fincard 
 
 variables {α : Type*} [fintype α]
 
-lemma size_sUnion_of_common_inter {I : set α} {S : set (set α)}
+lemma fincard_sUnion_of_common_inter {I : set α} {S : set (set α)}
 (hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) : 
-  size (⋃₀ S) = size I + ∑ᶠ X in S, (size X - size I) :=
+  fincard (⋃₀ S) = fincard I + ∑ᶠ X in S, (fincard X - fincard I) :=
 begin
   revert S, 
-  refine induction_set_size_insert _ (by simp) (λ S X₀ hX₀ IH, _), 
+  refine induction_set_fincard_insert _ (by simp) (λ S X₀ hX₀ IH, _), 
   rcases (eq_empty_or_nonempty S) with (rfl | hS), simp, 
   rintros - h, 
-  rw [sUnion_insert, size_union, IH hS (λ X X' hX hX' hXX', _) ], swap,
+  rw [sUnion_insert, fincard_union, IH hS (λ X X' hX hX' hXX', _) ], swap,
   { apply h, repeat {rw mem_insert_iff, right, assumption,}, assumption  },
   rw fin.finsum_in_insert _ hX₀, 
   suffices hI : X₀ ∩ ⋃₀S = I, { rw hI, ring, },
@@ -237,28 +237,28 @@ begin
   exact ⟨hx.1, hxX₁⟩,
 end
 
-lemma size_sUnion_of_common_inter' {I : set α} {S : set (set α)}
+lemma fincard_sUnion_of_common_inter' {I : set α} {S : set (set α)}
 (hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) : 
-  size (⋃₀ S) =  ∑ᶠ X in S, size X - (size S - 1) * (size I)  := 
+  fincard (⋃₀ S) =  ∑ᶠ X in S, fincard X - (fincard S - 1) * (fincard I)  := 
 begin
-  rw [size_sUnion_of_common_inter hne h],  
-  have hsub : ∑ᶠ (X : set α) in S, (size X - size I) 
-            = ∑ᶠ (X : set α) in S, size X - ∑ᶠ (X : set α) in S, size I,
+  rw [fincard_sUnion_of_common_inter hne h],  
+  have hsub : ∑ᶠ (X : set α) in S, (fincard X - fincard I) 
+            = ∑ᶠ (X : set α) in S, fincard X - ∑ᶠ (X : set α) in S, fincard I,
   { apply fin.finsum_in_sub_distrib, } ,
-  rw [hsub, int.finsum_in_const_eq_mul_size], 
+  rw [hsub, int.finsum_in_const_eq_mul_fincard], 
   ring, 
 end
 
-lemma size_disjoint_sUnion {S : set (set α)}
+lemma fincard_disjoint_sUnion {S : set (set α)}
 (hdj : pairwise_disjoint S) : 
-  size (⋃₀ S) =  ∑ᶠ X in S, size X :=
+  fincard (⋃₀ S) =  ∑ᶠ X in S, fincard X :=
 begin
   rcases S.eq_empty_or_nonempty with (rfl | hS), simp, 
   have hX : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = ∅, 
   { simp_rw ← disjoint_iff_inter_eq_empty, 
     exact λ X X' hX hX' hXX', hdj X hX X' hX' hXX'}, 
-  rw size_sUnion_of_common_inter' hS hX, simp, 
+  rw fincard_sUnion_of_common_inter' hS hX, simp, 
 end
 
 
-end size 
+end fincard 

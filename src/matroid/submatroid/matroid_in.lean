@@ -61,7 +61,7 @@ end
 def as_mat_on (M : matroid_in α) (E : set α) : matroid E := 
 { r := λ X, M.r X,
   R0 := λ X, M.carrier.R0 _,
-  R1 := λ X, by {dsimp only [r], rw ←size_subtype_image, apply M.carrier.R1},
+  R1 := λ X, by {dsimp only [r], rw ←fincard_subtype_image, apply M.carrier.R1},
   R2 := λ X Y hXY, by {apply M.carrier.R2, apply set.image_subset _ hXY, },
   R3 := λ X Y, by {dsimp only, convert M.carrier.R3 _ _, apply set.image_union, 
                    exact (set.image_inter subtype.val_injective).symm} }
@@ -83,7 +83,7 @@ def of_mat {E : set α} (N : matroid E) : matroid_in α :=
   carrier := 
   { r := λ X, N.r (inter_subtype E X ),
     R0 := λ X, N.R0 _,
-    R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (size_mono_inter_right E X)), 
+    R1 := λ X, by {refine le_trans (N.R1 _) (eq.trans_le _ (fincard_mono_inter_right E X)), 
                   rw inter_comm, apply sizNE_inter_subtype },
     R2 := λ X Y hXY, by {dsimp only, apply N.R2, tauto,  },
     R3 := λ X Y, N.R3 _ _, },
@@ -177,7 +177,7 @@ def is_indep [f : fintype α] (M : matroid_in α) (X : set α) : Prop :=
   (lift_mat_set_property (@matroid.is_indep)) M X 
 
 lemma indep_iff_r (M : matroid_in α) (X : set α) : 
-  is_indep M X ↔ M.r X = size X := 
+  is_indep M X ↔ M.r X = fincard X := 
 begin
   rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r],  
   simp only with coe_up msimp, 
@@ -185,9 +185,9 @@ begin
   { rw subset_iff_inter_eq_left at h, rw ←h.1, exact h.2}, 
   suffices h' : X ⊆ M.E, refine ⟨h', by {rwa[subset_iff_inter_eq_left.mp h'],}⟩, 
   rw r_eq_r_inter at h, 
-  have h' := M.carrier.rank_le_size (X ∩ M.E), 
+  have h' := M.carrier.rank_le_fincard (X ∩ M.E), 
   rw [r_carrier_eq_r, h] at h', 
-  rw [subset_iff_inter_eq_left, eq_of_le_size_subset _ h'], 
+  rw [subset_iff_inter_eq_left, eq_of_le_fincard_subset _ h'], 
   apply inter_subset_left, 
 end
 
@@ -207,7 +207,7 @@ def is_circuit (M : matroid_in α) (C : set α) :=
   (lift_mat_set_property (@matroid.is_circuit)) M C 
 
 lemma circuit_iff_r {M : matroid_in α} {C : set α} :
-  M.is_circuit C ↔ M.r C = size C - 1 ∧ (∀ Y, Y ⊂ C → M.r Y = size Y) ∧ C ⊆ M.E := 
+  M.is_circuit C ↔ M.r C = fincard C - 1 ∧ (∀ Y, Y ⊂ C → M.r Y = fincard Y) ∧ C ⊆ M.E := 
 begin
   simp_rw [is_circuit, lift_mat_set_property, matroid.circuit_iff_r], 
   simp only with coe_up msimp, 
@@ -241,7 +241,7 @@ def dual (M : matroid_in α) : matroid_in α :=
   of_mat (as_mat M).dual 
 
 @[simp, msimp] lemma dual_r (M : matroid_in α) (X : set α) :
-  (dual M).r X = size (X ∩ M.E) + M.r (M.E \ X) - M.r M.E  :=
+  (dual M).r X = fincard (X ∩ M.E) + M.r (M.E \ X) - M.r M.E  :=
 begin
   rw [dual, of_mat_r, matroid.dual_r], simp only with coe_up, convert rfl, 
   simp only with coe_up, 
@@ -274,9 +274,9 @@ lemma coindep_iff_r {M : matroid_in α} {X : set α} :
 begin
   simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_iff_inter_eq_left], 
   refine ⟨λ h, _, λ h, _⟩, 
-  { have h1 := size_mono_inter_left X M.E, 
+  { have h1 := fincard_mono_inter_left X M.E, 
     have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,   
-    refine ⟨eq_of_eq_size_subset (inter_subset_left _ _) (by linarith) , by linarith⟩},
+    refine ⟨eq_of_eq_fincard_subset (inter_subset_left _ _) (by linarith) , by linarith⟩},
   rw [h.1, h.2], simp, 
 end
 

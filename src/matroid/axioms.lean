@@ -1,4 +1,4 @@
-import prelim.size
+import finsum.fincard
 
 universes u u₁ u₂ u₃
 
@@ -12,7 +12,7 @@ def satisfies_R0 (r : set α → ℤ) : Prop :=
   ∀ X, 0 ≤ r X 
 
 def satisfies_R1 (r : set α → ℤ) : Prop := 
-  ∀ X, r X ≤ size X
+  ∀ X, r X ≤ fincard X
 
 def satisfies_R2 (r : set α → ℤ) : Prop := 
   ∀ X Y, X ⊆ Y → r X ≤ r Y 
@@ -38,10 +38,10 @@ def satisfies_I2 (indep : set α → Prop) : Prop :=
   ∀ I J, I ⊆ J → indep J → indep I
 
 def satisfies_I3 (indep : set α → Prop) : Prop := 
-  ∀ I J, size I < size J → indep I → indep J → ∃ (e : α), e ∈ J \ I ∧ indep (I ∪ {e})
+  ∀ I J, fincard I < fincard J → indep I → indep J → ∃ (e : α), e ∈ J \ I ∧ indep (I ∪ {e})
 
 --def satisfies_I3' : (set α → Prop) → Prop := 
---  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → size B = r
+--  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → fincard B = r
 
 @[ext] structure indep_family (α : Type*) := 
   (indep : set α → Prop)

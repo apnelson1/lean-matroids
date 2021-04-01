@@ -9,15 +9,15 @@ namespace trunc
 variables {α : Type*} [fintype α]
 
 def indep (M : indep_family α) (n : ℤ) : set α → Prop :=  
-  λ X, M.indep X ∧ size X ≤ max 0 n 
+  λ X, M.indep X ∧ fincard X ≤ max 0 n 
 
 lemma I1 (M : indep_family α) (n : ℤ) : 
   satisfies_I1 (trunc.indep M n) := 
-⟨M.I1, by {rw size_empty, apply le_max_left, }⟩
+⟨M.I1, by {rw fincard_empty, apply le_max_left, }⟩
 
 lemma I2 (M : indep_family α) (n : ℤ) : 
   satisfies_I2 (trunc.indep M n) := 
-λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
+λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (fincard_monotone hIJ) hJ.2⟩ 
 
 lemma I3 (M : indep_family α) (n : ℤ) : 
   satisfies_I3 (trunc.indep M n) := 
@@ -26,7 +26,7 @@ begin
   cases (M.I3 _ _ hIJ hI.1 hJ.1) with e he, 
   refine ⟨e, ⟨he.1, ⟨he.2,_ ⟩ ⟩⟩, 
   by_contra h_con, push_neg at h_con, 
-  rw [(size_union_nonmem_singleton (mem_diff_iff.mp he.1).2)] at h_con, 
+  rw [(fincard_union_nonmem_singleton (mem_diff_iff.mp he.1).2)] at h_con, 
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end
 
@@ -45,18 +45,18 @@ begin
   cases M.exists_basis_of X with B hB, 
   rw matroid.basis_of_iff_indep_full_rank at hB, 
   rcases hB with ⟨hBX, ⟨hBI, hBS⟩⟩, 
-  by_cases n ≤ size B,
-  rcases has_subset_of_size hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
+  by_cases n ≤ fincard B,
+  rcases has_subset_of_fincard hn h with ⟨B₀,⟨hB₀,hB₀s⟩⟩, 
   rw hBS at h, 
   simp_rw hn', 
   refine ⟨B₀, ⟨⟨_,⟨⟨matroid.indep_of_subset_indep hB₀ hBI,(eq.symm hB₀s).ge⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,by finish⟩⟩, 
   from subset.trans hB₀ hBX, 
-  linarith [size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
+  linarith [fincard_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   push_neg at h, 
   rw hBS at h, 
   refine ⟨B, ⟨⟨hBX,⟨⟨hBI,by linarith⟩,λ J hBJ1 hBJ2 hJX hJind, _⟩⟩,_⟩⟩, 
   rw matroid.indep_iff_r at hBI hJind, 
-  linarith [rank_mono M hJX, M.rank_mono hBJ1, size_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
+  linarith [rank_mono M hJX, M.rank_mono hBJ1, fincard_strict_monotone (ssubset_of_subset_ne hBJ1 hBJ2)], 
   have := le_of_lt h, 
   rw min_comm, 
   finish, 

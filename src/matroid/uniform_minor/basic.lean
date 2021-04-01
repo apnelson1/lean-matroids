@@ -1,4 +1,4 @@
-import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax finsum.fin_api
+import prelim.collections prelim.embed prelim.fincard prelim.induction prelim.minmax finsum.fin_api
 import matroid.pointcount matroid.simple 
 import matroid.submatroid.projection matroid.submatroid.minor_iso 
 import matroid.constructions.uniform 
@@ -29,41 +29,41 @@ iff.rfl
 lemma has_unif_minor_iff (ha : 0 ≤ a) (hb : 0 ≤ b) :
   M.has_unif_minor a b ↔ 
     ∃ S C : set α,  disjoint S C 
-                  ∧ size S = b 
-                  ∧ ∀ X ⊆ S, min a (size X) = M.r (X ∪ C) - M.r C :=
+                  ∧ fincard S = b 
+                  ∧ ∀ X ⊆ S, min a (fincard X) = M.r (X ∪ C) - M.r C :=
 begin
   rw [has_unif_minor_def, iminor_of_iff_exists_embedding], 
   split, 
   { rintros ⟨ φ, C, hdisj, hr⟩, 
     refine ⟨range φ, C, hdisj, _, λ X hX, _⟩,
-    { rwa [← image_univ, size_image_emb, size_fin'_univ],  },
+    { rwa [← image_univ, fincard_image_emb, fincard_fin'_univ],  },
     convert hr (φ ⁻¹' X), 
-    rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],
+    rw [canonical_unif_r ha, fincard_preimage_embed_subset_range _ _ hX],
     rw image_preimage_eq_of_subset hX, },
-  rintros ⟨S, C, hdisj, hsize, hr⟩, 
-  rw [eq_comm, ← size_fin' _ hb] at hsize, 
-  obtain ⟨φ, rfl⟩ := exists_emb_of_nat.card_eq_size_set hsize,   
+  rintros ⟨S, C, hdisj, hfincard, hr⟩, 
+  rw [eq_comm, ← fincard_fin' _ hb] at hfincard, 
+  obtain ⟨φ, rfl⟩ := exists_emb_of_nat_card_eq_fincard_set hfincard,   
   refine ⟨φ, C, hdisj, λ F, _⟩, 
   convert hr (φ '' F) (λ x, by tidy), 
-  rw [size_image_emb, canonical_unif_r ha], 
+  rw [fincard_image_emb, canonical_unif_r ha], 
 end
 
 lemma has_good_C_of_has_unif_minor (ha : 0 ≤ a) (hab : a ≤ b) :
   M.has_unif_minor a b → 
     ∃ S C : set α,  disjoint S C 
-                  ∧ size S = b 
-                  ∧ (∀ X ⊆ S, min a (size X) = M.r (X ∪ C) - M.r C)
+                  ∧ fincard S = b 
+                  ∧ (∀ X ⊆ S, min a (fincard X) = M.r (X ∪ C) - M.r C)
                   ∧ M.is_indep C 
                   ∧ M.r C = M.r univ - a :=
 begin
   rw [has_unif_minor_def, iminor_of_iff_exists_good_C], 
   rintros ⟨ φ, C, hdisj, hr, hind, hrank⟩, 
   refine ⟨range φ, C, (disjoint_iff_inter_eq_empty.mpr hdisj), _, λ X hX, _, hind, _⟩,
-  { rw [← image_univ, size_image_emb, size_fin'_univ], exact le_trans ha hab,  },
+  { rw [← image_univ, fincard_image_emb, fincard_fin'_univ], exact le_trans ha hab,  },
   { convert hr (φ ⁻¹' X), 
-    rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],
+    rw [canonical_unif_r ha, fincard_preimage_embed_subset_range _ _ hX],
     rw image_preimage_eq_of_subset hX}, 
-  rw [canonical_unif_r ha, ← nat.card_eq, size_fin' _ (le_trans ha hab), min_eq_left hab] at hrank, 
+  rw [canonical_unif_r ha, ← nat_card_eq, fincard_fin' _ (le_trans ha hab), min_eq_left hab] at hrank, 
   linarith,  
 end
 
@@ -75,22 +75,22 @@ lemma has_unif_restr_def :
 iff.rfl 
 
 lemma has_unif_restr_iff (ha : 0 ≤ a) (hb : 0 ≤ b) :
-  M.has_unif_restr a b ↔ ∃ S : set α, (size S = b) ∧ (∀ X ⊆ S, M.r X = min a (size X)) :=
+  M.has_unif_restr a b ↔ ∃ S : set α, (fincard S = b) ∧ (∀ X ⊆ S, M.r X = min a (fincard X)) :=
 begin
   rw [has_unif_restr_def, irestr_of_iff_exists_map],  
   split, 
   { rintros ⟨φ, hr⟩, 
     refine ⟨range φ, _, λ X hX, _⟩,
-    { rw [← image_univ, size_image_emb], convert size_fin' _ hb},
+    { rw [← image_univ, fincard_image_emb], convert fincard_fin' _ hb},
     convert (hr (φ ⁻¹' X)).symm using 1,
     rw image_preimage_eq_of_subset hX, 
-    rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],  }, 
-  rintros ⟨S, hsize, hr⟩, 
-  rw [eq_comm, ← size_fin' _ hb] at hsize, 
-  obtain ⟨φ, rfl⟩ := exists_emb_of_nat.card_eq_size_set hsize,   
+    rw [canonical_unif_r ha, fincard_preimage_embed_subset_range _ _ hX],  }, 
+  rintros ⟨S, hfincard, hr⟩, 
+  rw [eq_comm, ← fincard_fin' _ hb] at hfincard, 
+  obtain ⟨φ, rfl⟩ := exists_emb_of_nat_card_eq_fincard_set hfincard,   
   refine ⟨φ, λ F, _⟩, 
   convert (hr (φ '' F) (λ x, by tidy)).symm using 1, 
-  rw [size_image_emb, canonical_unif_r ha], 
+  rw [fincard_image_emb, canonical_unif_r ha], 
 end
 
 lemma matroid.has_unif_minor_iff_si_has_unif_minor (ha : 2 ≤ a) :
@@ -123,13 +123,13 @@ def matroid.has_no_line_minor (M : matroid α) (n : ℤ) :=
   ¬ M.has_unif_minor 2 n 
 
 lemma line_restr_of_simple_set (hl : 0 ≤ l)(hr : M.r L ≤ 2) (hL : M.is_simple_set L) 
-(hsize : l ≤ size L):
+(hfincard : l ≤ fincard L):
   M.has_unif_restr 2 l := 
 begin
   rw has_unif_restr_iff (by norm_num : (0 : ℤ) ≤ 2) hl, 
-  obtain ⟨L', hL', hsizeL'⟩ := has_subset_of_size (by linarith : 0 ≤ l) hsize, 
-  refine ⟨L', hsizeL', λ X hXL', _⟩, 
-  rcases le_or_lt (size X) 2 with (hX | hX), 
+  obtain ⟨L', hL', hfincardL'⟩ := has_subset_of_fincard (by linarith : 0 ≤ l) hfincard, 
+  refine ⟨L', hfincardL', λ X hXL', _⟩, 
+  rcases le_or_lt (fincard X) 2 with (hX | hX), 
   { rw [rank_subset_simple_set hL (subset.trans hXL' hL') hX, min_eq_right hX]},
   rw min_eq_left (le_of_lt hX), 
   refine le_antisymm (le_trans (M.rank_mono (subset.trans hXL' hL')) hr) _,  
@@ -141,7 +141,7 @@ lemma line_restr_of_ε {L : set α}(hl : 0 ≤ l)(hr : M.r L ≤ 2)(hL : l ≤ M
   M.has_unif_restr 2 l :=
 begin
   rw ε_eq_largest_simple_subset at hL, 
-  obtain ⟨⟨L₀,hL₀⟩, h', -⟩ := max_spec (λ (S : M.simple_subset_of L), size (S : set α)), 
+  obtain ⟨⟨L₀,hL₀⟩, h', -⟩ := max_spec (λ (S : M.simple_subset_of L), fincard (S : set α)), 
   rw ← h' at hL, 
   exact line_restr_of_simple_set hl (le_trans (M.rank_mono hL₀.2) hr) hL₀.1 hL,
 end

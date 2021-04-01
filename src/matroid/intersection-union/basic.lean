@@ -33,11 +33,11 @@ def basis_pair (M₁ M₂ : matroid α) := {p : set α × set α // is_basis_pai
 def indep_pair_of_subset (M₁ M₂ : matroid α) (X : set α) := 
   {p : set α × set α // is_indep_pair M₁ M₂ p ∧ (p.1 ⊆ X ∧ p.2 ⊆ X) }
 
-/-- size of the intersection of a pair of sets -/
-def inter_size (pair : (set α × set α)) : ℤ := size (pair.1 ∩ pair.2)
+/-- fincard of the intersection of a pair of sets -/
+def inter_fincard (pair : (set α × set α)) : ℤ := fincard (pair.1 ∩ pair.2)
 
-/-- size of the union of a pair of sets -/
-def union_size (pair : (set α × set α)) : ℤ := size (pair.1 ∪ pair.2) 
+/-- fincard of the union of a pair of sets -/
+def union_fincard (pair : (set α × set α)) : ℤ := fincard (pair.1 ∪ pair.2) 
 
 /-- type of pairs of disjoint independent sets of M₁,M₂ respectively -/
 def disjoint_indep_pair (M₁ M₂ : matroid α) := {pair : indep_pair M₁ M₂ // is_disjoint pair.1}
@@ -150,13 +150,13 @@ end prelim
 
 section params 
 
-/-- size of largest common independent set of M₁ and M₂ -/
+/-- fincard of largest common independent set of M₁ and M₂ -/
 def ν (M₁ M₂ : matroid α) : ℤ := 
-  max_val (λ (X : common_ind M₁ M₂), size X.val)
+  max_val (λ (X : common_ind M₁ M₂), fincard X.val)
 
-/-- size of the largest set that is the union of independent sets of M₁ and M₂-/
+/-- fincard of the largest set that is the union of independent sets of M₁ and M₂-/
 def π₂ (M₁ M₂ : matroid α) : ℤ :=  
-  max_val (λ (Ip : indep_pair M₁ M₂), union_size Ip.val)
+  max_val (λ (Ip : indep_pair M₁ M₂), union_fincard Ip.val)
 
 end params  
 
@@ -179,9 +179,9 @@ instance indep_tuple_nonempty (Ms : fin n → matroid α) : nonempty (indep_tupl
 instance indep_tuple_fintype (Ms : fin n → matroid α) : fintype (indep_tuple Ms) := 
   by {unfold indep_tuple, apply_instance,  }
 
-/-- size of largest partitionable set wrt a tuple of matroids -/
+/-- fincard of largest partitionable set wrt a tuple of matroids -/
 def π {n : ℕ} (Ms : fin n → matroid α) : ℤ := 
-  max_val (λ Is : (indep_tuple Ms), size (set.Union Is.val)) 
+  max_val (λ Is : (indep_tuple Ms), fincard (set.Union Is.val)) 
 
 def is_union_indep_tuple {n : ℕ} (Ms : fin n → matroid α) : (set α) → Prop := 
   λ X, ∃ (Is : indep_tuple Ms), X = set.Union Is.val

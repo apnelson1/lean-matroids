@@ -131,17 +131,6 @@ variables {β : Type*} [has_zero β]
 lemma support_finite (f : α →₀ β) : (function.support f).finite :=
 by { rw function.support_eq_support, exact f.support.finite_to_set }
 
-/-- The natural `finsupp` induced by the function `f` given that it has finite support. -/
-noncomputable def of_support_finite
-  {f : α → β} (hf : (function.support f).finite) : α →₀ β :=
-{ support := hf.to_finset,
-  to_fun := f,
-  mem_support_to_fun := λ a, set.finite.mem_to_finset hf }
-  
-
-lemma of_support_finite_def {f : α → β} {hf : (function.support f).finite} :
-  (of_support_finite hf : α → β) = f := rfl
-
 end finsupp
 
 lemma finsum_eq_finsupp_sum (f : α →₀ M) : ∑ᶠ i : α, f i = finsupp.sum f (λ x m, m) :=
@@ -152,8 +141,8 @@ begin
 end
 
 lemma finsum_eq_finsupp_sum' (f : α → M) (hf : (function.support f).finite) :
-  ∑ᶠ i : α, f i = finsupp.sum (finsupp.of_support_finite hf) (λ x m, m) :=
-by rw [← finsum_eq_finsupp_sum, finsupp.of_support_finite_def]
+  ∑ᶠ i : α, f i = finsupp.sum (finsupp.of_support_finite _ hf) (λ x m, m) :=
+by {rw [← finsum_eq_finsupp_sum, finsupp.of_support_finite], convert rfl, }
 
 lemma finsum_eq_finset_sum (f : α → M) (hf : (function.support f).finite) :
   ∑ᶠ i : α, f i = finset.sum hf.to_finset f :=

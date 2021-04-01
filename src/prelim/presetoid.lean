@@ -1,4 +1,4 @@
-import tactic .single .size
+import tactic .single .fincard
 
 /-! 
 This file contains an API for a `presetoid`, which is a symmetric, transitive relation. This is
@@ -202,20 +202,20 @@ begin
 end
 
 lemma simple_set_iff_of_fintype [fintype α] { X : set α }: 
-  S.is_simple_set X ↔ disjoint X S.kernel ∧ ∀ P, S.is_class P → size (X ∩ P) ≤ 1 :=
-by {conv in (_ ≤ _) {rw size_le_one_iff_mem_unique}, exact simple_set_iff} 
+  S.is_simple_set X ↔ disjoint X S.kernel ∧ ∀ P, S.is_class P → fincard (X ∩ P) ≤ 1 :=
+by {conv in (_ ≤ _) {rw fincard_le_one_iff_mem_unique}, exact simple_set_iff} 
 
 /-- a presetoid is simple if its kernel is empty and its equivalence classes are singletons -/
 def is_simple (S : presetoid α) := 
   S.is_simple_set univ 
 
 lemma simple_iff :
-  S.is_simple ↔ S.kernel = ∅ ∧ ∀ P, S.is_class P → size P = 1 :=
+  S.is_simple ↔ S.kernel = ∅ ∧ ∀ P, S.is_class P → fincard P = 1 :=
 begin
   rw [is_simple, simple_set_iff], convert iff.rfl, simp, 
   simp_rw [univ_inter], 
-  refine iff_iff_eq.mp ⟨λ h P hP e f he hf, eq_of_mems_size_one (h P hP) he hf, λ h P hP, _⟩, 
-  rw size_eq_one_iff_nonempty_unique_mem, 
+  refine iff_iff_eq.mp ⟨λ h P hP e f he hf, eq_of_mems_fincard_one (h P hP) he hf, λ h P hP, _⟩, 
+  rw fincard_eq_one_iff_nonempty_unique_mem, 
   exact ⟨class_nonempty hP, h P hP⟩,
 end
 
@@ -235,21 +235,21 @@ end
 
 end simple
 
-section size 
+section fincard 
 
 variables [fintype α]
 
-lemma size_classes_le_nat.card (S : presetoid α):
-  size (S.classes) ≤ nat.card α := 
-size_disjoint_collection_le_nat.card 
+lemma fincard_classes_le_nat_card (S : presetoid α):
+  fincard (S.classes) ≤ nat.card α := 
+fincard_disjoint_collection_le_nat_card 
   (λ s hs, class_nonempty (mem_classes_iff_is_class.mpr hs))
   (S.eqv_classes_pairwise_disj)
 
 /- this proof is a nasty hack and should be improvable -/
-lemma size_classes_eq_nat.card_iff_simple (S : presetoid α): 
-  size S.classes = nat.card α ↔ S.is_simple :=
+lemma fincard_classes_eq_nat_card_iff_simple (S : presetoid α): 
+  fincard S.classes = nat.card α ↔ S.is_simple :=
 begin
-  convert size_disjoint_collection_eq_nat.card_iff 
+  convert fincard_disjoint_collection_eq_nat_card_iff 
     (λ s hs, class_nonempty (mem_classes_iff_is_class.mpr hs))
     (S.eqv_classes_pairwise_disj), 
   rw [simple_iff, ← iff_iff_eq],  
@@ -271,7 +271,7 @@ begin
 end
 
 
-end size 
+end fincard 
 
 
 

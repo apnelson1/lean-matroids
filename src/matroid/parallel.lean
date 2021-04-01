@@ -1,5 +1,5 @@
 
-import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax prelim.presetoid
+import prelim.collections prelim.embed prelim.fincard prelim.induction prelim.minmax prelim.presetoid
 import .rankfun matroid.submatroid.minor_iso matroid.submatroid.projection
 
 noncomputable theory 
@@ -45,7 +45,7 @@ rank_nonloop hef.1
 lemma rank_two_of_not_parallel (he : M.is_nonloop e)(hf : M.is_nonloop f)( h : ¬ M.parallel e f): 
   M.r {e,f} = 2 := 
 begin
-  refine le_antisymm (le_trans (M.rank_le_size {e,f}) (size_pair_ub _ _)) _, 
+  refine le_antisymm (le_trans (M.rank_le_fincard {e,f}) (fincard_pair_ub _ _)) _, 
   by_contra hn, push_neg at hn, 
   exact h (parallel_of_rank_le_one he hf (int.le_sub_one_of_lt hn)), 
 end
@@ -104,12 +104,12 @@ begin
   split, 
   { rintros ⟨-,-,hef⟩, 
     by_contra hn, push_neg at hn, cases hn with hne hef',  
-    rw [←indep_iff_not_dep, indep_iff_r, hef, size_pair hne] at hef',
+    rw [←indep_iff_not_dep, indep_iff_r, hef, fincard_pair hne] at hef',
     norm_num at hef', },
   rintros (heq | hef), rw heq, exact hf.parallel_refl,
   rw [dep_iff_r, ←int.le_sub_one_iff] at hef, 
   refine ⟨he,hf,_⟩,  
-  linarith [nonloop_iff_r.mp he, M.rank_mono (by tidy: {e} ⊆ {e,f}), size_pair_ub e f],   
+  linarith [nonloop_iff_r.mp he, M.rank_mono (by tidy: {e} ⊆ {e,f}), fincard_pair_ub e f],   
 end
 
 lemma parallel_iff_cct {M: matroid α} (he : M.is_nonloop e) (hf : M.is_nonloop f) : 
@@ -665,10 +665,10 @@ begin
 end
 
 
-lemma size_image_transversal (f : M.transversal)
+lemma fincard_image_transversal (f : M.transversal)
 (S : set M.parallel_class) :
-  size (f '' S) = size S := 
-size_image_inj (transversal_inj f) S
+  fincard (f '' S) = fincard S := 
+fincard_image_inj (transversal_inj f) S
 
 lemma rank_img_transversal (f : M.transversal)
 (S : set M.parallel_class) :

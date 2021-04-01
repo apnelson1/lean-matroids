@@ -1,7 +1,7 @@
 
 Closure axioms. This is todo. 
 
-import prelim.size prelim.induction prelim.collections prelim.minmax 
+import prelim.fincard prelim.induction prelim.collections prelim.minmax 
 import .rankfun .indep 
 
 local attribute [instance] classical.prop_decidable
@@ -55,13 +55,13 @@ instance spans_nonempty (M : clfun α) (X : set α) : nonempty (M.spans X) :=
   by {apply nonempty_subtype.mpr, from ⟨X, M.cl1 X⟩}
 
 def r (M : clfun α) : set α → ℤ := 
-  λ X, min_val (λ (A : M.spans X), size A.val) 
+  λ X, min_val (λ (A : M.spans X), fincard A.val) 
 
 lemma R1 (M : clfun α) :
   satisfies_R1 M.r := 
 begin
   intros X, unfold clfun.r, 
-  rcases min_spec (λ (A : M.spans X), size A.val) with ⟨⟨B,hB⟩, ⟨hB₁, hB₂⟩⟩, 
+  rcases min_spec (λ (A : M.spans X), fincard A.val) with ⟨⟨B,hB⟩, ⟨hB₁, hB₂⟩⟩, 
   rw ←hB₁, from hB₂ ⟨X, M.cl1 X⟩,
 end
 
@@ -69,9 +69,9 @@ lemma R2 (M : clfun α) :
   satisfies_R2 M.r := 
 begin
   intros X Y hXY, 
-  rcases min_spec (λ (A : M.spans Y), size A.val) with ⟨⟨BY,hBY⟩, ⟨hBY₁, hBY₂⟩⟩,
+  rcases min_spec (λ (A : M.spans Y), fincard A.val) with ⟨⟨BY,hBY⟩, ⟨hBY₁, hBY₂⟩⟩,
   unfold clfun.r, rw [←hBY₁],
-  from min_is_lb (λ (A : M.spans X), size A.val) ⟨BY,trans hXY hBY⟩, 
+  from min_is_lb (λ (A : M.spans X), fincard A.val) ⟨BY,trans hXY hBY⟩, 
 end
 
 lemma R3 (M : clfun α) :

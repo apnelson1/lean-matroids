@@ -1,61 +1,61 @@
-import .induction .size 
+import .induction .fincard 
 
 universes u v w
 
 variables {α : Type*} [fintype α]
 open set 
 
-lemma induction_set_size_remove (P : set α → Prop) : 
+lemma induction_set_fincard_remove (P : set α → Prop) : 
   (P ∅) → (∀ (X : set α) (e : X), P (X \ {e}) → P X) → (∀ X, P X) := 
 begin
   intros h0 h, 
-  refine nonneg_int_strong_induction_param P size (size_nonneg) (λ X hX, _) (λ X hX hX', _ ), 
-  { convert h0, apply empty_of_size_zero hX}, 
-  rcases size_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
-  exact h X ⟨e,he⟩ (hX' (X \ {e}) (by linarith [size_remove_mem he])), 
+  refine nonneg_int_strong_induction_param P fincard (fincard_nonneg) (λ X hX, _) (λ X hX hX', _ ), 
+  { convert h0, apply empty_of_fincard_zero hX}, 
+  rcases fincard_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
+  exact h X ⟨e,he⟩ (hX' (X \ {e}) (by linarith [fincard_remove_mem he])), 
 end
 
-lemma induction_set_size_add (P : set α → Prop) : 
+lemma induction_set_fincard_add (P : set α → Prop) : 
   (P ∅) → (∀ (X : set α) (e : α), e ∉ X → P X → P (X ∪ {e})) → (∀ X, P X) :=
 begin
   intros h0 h, 
-  refine nonneg_int_strong_induction_param P size 
-    (size_nonneg) 
+  refine nonneg_int_strong_induction_param P fincard 
+    (fincard_nonneg) 
     (λ X hX, _) 
     (λ X hX hX', _ ), 
-  { convert h0, apply empty_of_size_zero hX}, 
-  rcases size_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
+  { convert h0, apply empty_of_fincard_zero hX}, 
+  rcases fincard_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
   convert h (X \ {e}) e _ (hX' _ _);
-  simp [remove_union_mem_singleton he, int.zero_lt_one,size_remove_mem he], 
+  simp [remove_union_mem_singleton he, int.zero_lt_one,fincard_remove_mem he], 
 end
 
-lemma induction_set_size_insert (P : set α → Prop) : 
+lemma induction_set_fincard_insert (P : set α → Prop) : 
   (P ∅) → (∀ (X : set α) (e : α), e ∉ X → P X → P (insert e X)) → (∀ X, P X) :=
 begin
   intros h0 h, 
-  refine nonneg_int_strong_induction_param P size 
-    (size_nonneg) 
+  refine nonneg_int_strong_induction_param P fincard 
+    (fincard_nonneg) 
     (λ X hX, _) 
     (λ X hX hX', _ ), 
-  { convert h0, apply empty_of_size_zero hX}, 
-  rcases size_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
+  { convert h0, apply empty_of_fincard_zero hX}, 
+  rcases fincard_pos_iff_has_mem.mp hX with ⟨e,he⟩, 
   convert h (X \ {e}) e _ (hX' _ _);
-  simp [remove_union_mem_singleton he, int.zero_lt_one,size_remove_mem he, insert_eq_of_mem he], 
+  simp [remove_union_mem_singleton he, int.zero_lt_one,fincard_remove_mem he, insert_eq_of_mem he], 
 end
 
-lemma induction_set_size_insert_finite {α : Type*} (P : set α → Prop) :
+lemma induction_set_fincard_insert_finite {α : Type*} (P : set α → Prop) :
   (P ∅) → (∀ (X : set α) (e : α), e ∉ X → P X → P (insert e X)) → (∀ (s : set α), s.finite → P s) :=
 begin
   intro h_empt, 
   have h := nonneg_int_strong_induction_param 
     (λ (s : set α), s.finite → P s) 
-    size 
-    (λ _, size_nonneg _)
-    (by { intros s hs hf, rw finite.size_zero_iff_empty hf at hs, rwa hs,}), 
+    fincard 
+    (λ _, fincard_nonneg _)
+    (by { intros s hs hf, rw finite.fincard_zero_iff_empty hf at hs, rwa hs,}), 
   refine λ h' s hfin, h (λ t h₁ ih hf, (_)) _ hfin, 
   obtain (rfl | ht) := em (t = ∅), assumption, 
   obtain ⟨e, he⟩ := ne_empty_iff_has_mem.mp ht, 
-  specialize ih (t \ {e}) (by {rw finite.size_remove_mem hf he, norm_num}) (finite.diff hf _), 
+  specialize ih (t \ {e}) (by {rw finite.fincard_remove_mem hf he, norm_num}) (finite.diff hf _), 
   convert h' (t \ {e}) e (nonmem_diff_of_mem _ (by simp)) ih, 
   simp [insert_eq_of_mem he], 
 end
@@ -73,20 +73,20 @@ lemma strong_induction (P : set α → Prop) :
   (augment P) → (forall (Z : set α), P Z) :=
 begin
   intros h_augment, 
-  let  Q : ℤ → Prop := λ n, ∀ Y : set α, size Y = n → P Y,
+  let  Q : ℤ → Prop := λ n, ∀ Y : set α, fincard Y = n → P Y,
   suffices : ∀ n, 0 ≤ n → Q n,  
-  from λ Z, this (size Z) (size_nonneg _)  Z rfl, 
+  from λ Z, this (fincard Z) (fincard_nonneg _)  Z rfl, 
   refine nonneg_int_strong_induction Q _ _,
   
-  intros Y hY, rw [size_zero_iff_empty] at hY, rw hY, 
+  intros Y hY, rw [fincard_zero_iff_empty] at hY, rw hY, 
   refine h_augment _ _, 
   from λ X hX, false.elim (ssubset_empty _ hX), 
   intros n h0n hn X hXn, 
   refine h_augment _ _,
   intros Y hY, 
-  refine hn (size Y) (size_nonneg Y) _ Y rfl, 
+  refine hn (fincard Y) (fincard_nonneg Y) _ Y rfl, 
   rw ←hXn, 
-  from size_strict_monotone hY, 
+  from fincard_strict_monotone hY, 
 end
 
 lemma minimal_example (P : set α → Prop){X : set α} : 
@@ -133,8 +133,8 @@ begin
   from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (ssubset_of_remove_mem he) ⟩⟩⟩,  
 end 
 
-/-lemma minimal_example_size (P : set α → Prop) (hP : set.nonempty P) :
-  ∃ X, P X ∧ ∀ Y, size Y < size X → ¬ P Y := 
+/-lemma minimal_example_fincard (P : set α → Prop) (hP : set.nonempty P) :
+  ∃ X, P X ∧ ∀ Y, fincard Y < fincard X → ¬ P Y := 
 begin
   by_contra h, push_neg at h, 
 end-/

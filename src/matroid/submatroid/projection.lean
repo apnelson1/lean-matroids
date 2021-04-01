@@ -99,7 +99,7 @@ lemma indep_union_project_set_of_project_indep
 (hX : is_indep (M ⟋ C) X) (hC : is_indep M C) :
 is_indep M (X ∪ C) :=
 by {simp_rw [indep_iff_r, project_r] at *, 
-    linarith [M.R1 (X ∪ C), size_modular X C, size_nonneg (X ∩ C)]}
+    linarith [M.R1 (X ∪ C), fincard_modular X C, fincard_nonneg (X ∩ C)]}
 
 lemma project_nonloop_fewer_nonloops (he : M.is_nonloop e): (M ⟋ {e}).nonloops ⊂ M.nonloops := 
 begin
@@ -125,10 +125,10 @@ lemma indep_project_iff : (M ⟋ C).is_indep X ↔ M.is_indep X ∧ M.r (X ∪ C
 begin
   rw [indep_iff_r,project_r, indep_iff_r], 
   refine ⟨λ h, ⟨_,_⟩, λ h, _⟩, 
-  { refine le_antisymm (M.rank_le_size _) _, rw ←h, linarith [rank_subadditive M X C]},
+  { refine le_antisymm (M.rank_le_fincard _) _, rw ←h, linarith [rank_subadditive M X C]},
   { refine le_antisymm (M.rank_subadditive X C) _, 
-    rw (by linarith : M.r (X ∪ C) = M.r C + size X), 
-    linarith [M.rank_le_size X], },
+    rw (by linarith : M.r (X ∪ C) = M.r C + fincard X), 
+    linarith [M.rank_le_fincard X], },
   rw [←h.1, h.2], simp, 
 end
 
@@ -172,7 +172,7 @@ convenient than deleting D -/
 def loopify (M : matroid α) (D : set α) : matroid α := 
 { r := λ X, M.r (X \ D), 
   R0 := λ X, M.R0 _, 
-  R1 := λ X, by linarith [M.R1 (X \ D), size_diff_le_size X D], 
+  R1 := λ X, by linarith [M.R1 (X \ D), fincard_diff_le_fincard X D], 
   R2 := λ X Y hXY, M.rank_mono (diff_subset_diff_left hXY), 
   R3 := λ X Y, by {simp only [diff_eq], rw [inter_distrib_right, inter_distrib_inter_left], 
                     linarith [M.rank_submod (X ∩ Dᶜ) (Y ∩ Dᶜ)], }} 
@@ -277,9 +277,9 @@ begin
   rw [indep_iff_r, loopify_to_r, indep_iff_r],
   refine ⟨λ h, _, λ h, by {cases h with h h', rwa subset_iff_inter_eq_left.mp h'}⟩,
   have h' : I ∩ R = I, 
-  { refine eq_of_eq_size_subset (inter_subset_left _ _) _, 
-    refine le_antisymm (size_mono_inter_left _ _) _,
-    rw ←h, apply rank_le_size,},
+  { refine eq_of_eq_fincard_subset (inter_subset_left _ _) _, 
+    refine le_antisymm (fincard_mono_inter_left _ _) _,
+    rw ←h, apply rank_le_fincard,},
   rw [←h, h', subset_iff_inter_eq_left],
   simpa, 
 end

@@ -9,8 +9,8 @@ noncomputable theory
 
 variables {α : ftype}
 
-lemma basis_have_same_size (M : basis_family α) (B₁ B₂ : set α) :
-  M.basis B₁ → M.basis B₂ → size B₁ = size B₂ := sorry
+lemma basis_have_same_fincard (M : basis_family α) (B₁ B₂ : set α) :
+  M.basis B₁ → M.basis B₂ → fincard B₁ = fincard B₂ := sorry
 
 def basis_to_indep (basis : set α → Prop) : (set α → Prop) :=
   λ I, ∃ B, basis B ∧ I ⊆ B.
@@ -43,7 +43,7 @@ begin
   
   -- B₁ = B₂ 
 
-  have HB_case := eq_or_exists_mem_diff_of_size_eq (basis_have_same_size M B₂ B₁ HB₂ HB₁),
+  have HB_case := eq_or_exists_mem_diff_of_fincard_eq (basis_have_same_fincard M B₂ B₁ HB₂ HB₁),
   cases HB_case,
     {
       -- Here I and J are part of the same basis B, so we can add any element
@@ -112,13 +112,13 @@ begin
             -- symmetrically, as B₁ - I₁ ∪ B₂ is empty,
             -- B₁ - B₂ = I₁ - B₂
             have HB₁B₂ : B₁ \ B₂ = I₁ \ B₂ := sorry,
-            have Hsize := basis_have_same_size M B₁ B₂ HB₁ HB₂,
+            have Hfincard := basis_have_same_fincard M B₁ B₂ HB₁ HB₂,
             -- set difference fact : |B₁| = |B₂| → |B₁ - B₂| = |B₂ - B₁| = |B_x| - |B₁ ∩ B₂|
-            have Hsizeeq : size (B₁ \ B₂) = size (B₂ \ B₁) := sorry,
+            have Hfincardeq : fincard (B₁ \ B₂) = fincard (B₂ \ B₁) := sorry,
             -- now, as B₁ - B₂ ⊆ I₁ - B₂ ⊆ I₁ - I₂,
             -- |I₁ - I₂| ≥ |B₁ - B₂| = |B₂ - B₁| = |I₂ - I₁|,
             -- hence |I₁| ≥ |I₂|
-            have : size I₁ ≥ size I₂ := sorry,
+            have : fincard I₁ ≥ fincard I₂ := sorry,
             linarith, 
           },
           {

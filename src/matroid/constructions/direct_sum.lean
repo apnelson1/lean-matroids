@@ -16,26 +16,26 @@ variables {α ι : Type*} [fintype α] (f : α → ι)
 def r (X : set α) := 
 ∑ᶠ (i : ι), (Rs i).r (coe ⁻¹' X)
 
-lemma size_coe_eq (i : ι) (X : set α) : 
-  size (coe ⁻¹' X : set {x // f x = i}) = size ({ x ∈ X | f x = i}) := 
-by {rw size_preimage_coe, congr'}  
+lemma fincard_coe_eq (i : ι) (X : set α) : 
+  fincard (coe ⁻¹' X : set {x // f x = i}) = fincard ({ x ∈ X | f x = i}) := 
+by {rw fincard_preimage_coe, congr'}  
 
-lemma size_finite_supp (X : set α) :
-  (function.support (λ (i : ι), size ({ x ∈ X | f x = i}))).finite := 
+lemma fincard_finite_supp (X : set α) :
+  (function.support (λ (i : ι), fincard ({ x ∈ X | f x = i}))).finite := 
 begin
-  by_cases he : size X = 0,
-  { rw size_zero_iff_empty at he, convert set.finite_empty, simp [ext_iff, he],   },
-  apply finsupp_of_finsum_nonzero, convert he, apply sum_size_fiber_eq_size, 
+  by_cases he : fincard X = 0,
+  { rw fincard_zero_iff_empty at he, convert set.finite_empty, simp [ext_iff, he],   },
+  apply finsupp_of_finsum_nonzero, convert he, apply sum_fincard_fiber_eq_fincard, 
 end 
 
 lemma rank_finite_supp (X : set α) :
   (function.support (λ (i : ι), (Rs i).r (coe ⁻¹' X))).finite :=
 begin
-  by_cases he : size X = 0, 
-  { rw size_zero_iff_empty at he, simp [r, he]},
-  apply set.finite.subset (size_finite_supp f X), 
+  by_cases he : fincard X = 0, 
+  { rw fincard_zero_iff_empty at he, simp [r, he]},
+  apply set.finite.subset (fincard_finite_supp f X), 
   intros x hx hn,
-  simp_rw [← size_coe_eq, size_zero_iff_empty] at hn,  
+  simp_rw [← fincard_coe_eq, fincard_zero_iff_empty] at hn,  
   rw [function.mem_support, hn] at hx, 
   simpa using hx, 
 end
@@ -57,11 +57,11 @@ lemma R0:
 lemma R1: 
   satisfies_R1 (r f Rs) := 
 λ X, begin
-  rw [r, ← sum_size_fiber_eq_size _ f], 
-  refine finsum_le_finsum (λ i, has_le.le.trans_eq (rank_le_size _ _) _) _ _, 
-    rw size_coe_eq, 
+  rw [r, ← sum_fincard_fiber_eq_fincard _ f], 
+  refine finsum_le_finsum (λ i, has_le.le.trans_eq (rank_le_fincard _ _) _) _ _, 
+    rw fincard_coe_eq, 
   apply rank_finite_supp, 
-  apply size_finite_supp,
+  apply fincard_finite_supp,
 end 
 
 lemma R2:
@@ -95,10 +95,10 @@ rfl
 lemma indep_iff (X : set α) : 
   (M f Rs).is_indep X ↔ ∀ i, (Rs i).is_indep (coe ⁻¹' X) :=
 begin
-  simp_rw [indep_iff_r, ← sum_size_fiber_eq_size X f, size_coe_eq, r_eq],
-  rw [finsum_eq_finsum_iff_of_le (rank_finite_supp _ _ X) (size_finite_supp _ X)],  
-  simp_rw [← size_coe_eq], 
-  exact λ x, rank_le_size _ _, 
+  simp_rw [indep_iff_r, ← sum_fincard_fiber_eq_fincard X f, fincard_coe_eq, r_eq],
+  rw [finsum_eq_finsum_iff_of_le (rank_finite_supp _ _ X) (fincard_finite_supp _ X)],  
+  simp_rw [← fincard_coe_eq], 
+  exact λ x, rank_le_fincard _ _, 
 end
 
 end idsum 

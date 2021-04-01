@@ -1,6 +1,6 @@
-/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size 
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the fincard 
 of the largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ,
-taken over all X ⊆ α. The proof is really by induction on the size of the ground set, but to make 
+taken over all X ⊆ α. The proof is really by induction on the fincard of the ground set, but to make 
 things easier we instead do induction on the number of nonloops, applying the induction hypothesis 
 to loopifications and projections of M₁ and M₂.  -/
 
@@ -19,7 +19,7 @@ section intersection
 /-- the parameter ν is nonnegative -/
 lemma ν_nonneg (M₁ M₂ : matroid α) : 
   0 ≤ ν M₁ M₂ := 
-by {apply lb_le_max, intro X, apply size_nonneg}
+by {apply lb_le_max, intro X, apply fincard_nonneg}
 
 /-- function that provides an upper bound on ν M₁ M₂ -/
 def matroid_inter_ub_fn (M₁ M₂ : matroid α) (X : set α): ℤ := 
@@ -27,11 +27,11 @@ def matroid_inter_ub_fn (M₁ M₂ : matroid α) (X : set α): ℤ :=
 
 /-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
 theorem matroid_intersection_pair_le {M₁ M₂ : matroid α} {I : common_ind M₁ M₂} (A : set α) : 
-  size (I : set α) ≤ M₁.r A + M₂.r Aᶜ := 
+  fincard (I : set α) ≤ M₁.r A + M₂.r Aᶜ := 
 begin
   rcases I with ⟨I, ⟨h₁, h₂⟩⟩, 
   unfold_coes, dsimp only, 
-  rw ←(compl_inter_size A I), 
+  rw ←(compl_inter_fincard A I), 
   have h₁i := indep_of_subset_indep (inter_subset_right A I) h₁, 
   have h₂i := indep_of_subset_indep (inter_subset_right Aᶜ I) h₂, 
   rw [←indep_iff_r.mp h₁i, ←indep_iff_r.mp h₂i], 
@@ -42,14 +42,14 @@ end
 lemma ν_ub (M₁ M₂ : matroid α) : 
   ν M₁ M₂ ≤ min_val (matroid_inter_ub_fn M₁ M₂)  := 
 begin
-  rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨X, hX1, hX2⟩,
+  rcases max_spec (λ (X : common_ind M₁ M₂), fincard X.val) with ⟨X, hX1, hX2⟩,
   rcases min_spec (matroid_inter_ub_fn M₁ M₂) with ⟨A, hA1, hA2⟩, 
   rw [ν, ←hX1, ←hA1], 
   apply matroid_intersection_pair_le, 
 end
 
-/-- Edmonds' matroid intersection theorem: the size of a largest common independent set 
-    is equal to the minimum value of a natural upper bound on the size of any such set. 
+/-- Edmonds' matroid intersection theorem: the fincard of a largest common independent set 
+    is equal to the minimum value of a natural upper bound on the fincard of any such set. 
     Implies many other minmax theorems in combinatorics.                             -/
 theorem matroid_intersection (M₁ M₂ : matroid α) : 
   ν M₁ M₂ = min_val (λ X, M₁.r X + M₂.r Xᶜ) := 
@@ -60,15 +60,15 @@ begin
   --induction boilerplate 
   convert  nonneg_int_strong_induction_param 
     (λ p : matroid α × matroid α, min_val (matroid_inter_ub_fn p.1 p.2) ≤ ν p.1 p.2)
-    (λ p : matroid α × matroid α, size (nonloops p.1 ∩ nonloops p.2))
-    (λ p, size_nonneg _)
+    (λ p : matroid α × matroid α, fincard (nonloops p.1 ∩ nonloops p.2))
+    (λ p, fincard_nonneg _)
     _ _ ⟨M₁,M₂⟩,
 
   -- base case, when everything is a loop. Here the LHS is obviously 0.
   rintros ⟨N₁,N₂⟩ hN, dsimp only at ⊢ hN, 
 
   have h' : (matroid_inter_ub_fn N₁ N₂) (loops N₁) = 0 :=  by 
-  { rw [size_zero_iff_empty, N₂.nonloops_eq_compl_loops, ← subset_iff_disjoint_compl] at hN, 
+  { rw [fincard_zero_iff_empty, N₂.nonloops_eq_compl_loops, ← subset_iff_disjoint_compl] at hN, 
     rw [matroid_inter_ub_fn, rank_loops, ← nonloops_eq_compl_loops, zero_add, 
       rank_zero_of_subset_rank_zero hN N₂.rank_loops]},
 
@@ -77,10 +77,10 @@ begin
   -- we now assume that the result holds for any strictly loopier pair of matroids, 
   -- and that there is at least one common nonloop; call it e. 
   
-  rintros ⟨N₁,N₂⟩ hsize IH, dsimp only at hsize IH ⊢, 
+  rintros ⟨N₁,N₂⟩ hfincard IH, dsimp only at hfincard IH ⊢, 
   set k := ν N₁ N₂ with hk, 
-  --rw ←hsize at hn, 
-  obtain ⟨e, he_mem⟩  := exists_mem_of_size_pos hsize, 
+  --rw ←hfincard at hn, 
+  obtain ⟨e, he_mem⟩  := exists_mem_of_fincard_pos hfincard, 
   have  h_e_nl := he_mem, 
   rw [mem_inter_iff, ← nonloop_iff_mem_nonloops] at h_e_nl, 
   
@@ -91,8 +91,8 @@ begin
   set N₁c := N₁ ⟋ {e} with hN₁c, 
   set N₂c := N₂ ⟋ {e} with hN₂c, 
 
-  obtain ⟨⟨Id,hId_ind⟩, ⟨hId_eq_max, hId_ub⟩⟩ := max_spec (λ (X : common_ind N₁d N₂d), size X.val),
-  obtain ⟨⟨Ic,hIc_ind⟩, ⟨hIc_eq_max, hIc_ub⟩⟩ := max_spec (λ (X : common_ind N₁c N₂c), size X.val),
+  obtain ⟨⟨Id,hId_ind⟩, ⟨hId_eq_max, hId_ub⟩⟩ := max_spec (λ (X : common_ind N₁d N₂d), fincard X.val),
+  obtain ⟨⟨Ic,hIc_ind⟩, ⟨hIc_eq_max, hIc_ub⟩⟩ := max_spec (λ (X : common_ind N₁c N₂c), fincard X.val),
 
   -- e doesn't belong to Ic, because Ic is independent in M/e 
   have heIc : e ∉ Ic := λ heIc, by 
@@ -103,29 +103,29 @@ begin
   -- ν does not get larger upon deletion 
   have h_nu_d : ν N₁d N₂d ≤ k :=  by 
   { rw [ν, ←hId_eq_max, hk, ν],
-    convert max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Id, _⟩, 
+    convert max_is_ub (λ (X : common_ind N₁ N₂), fincard X.val) ⟨Id, _⟩, 
     from ⟨indep_of_loopify_indep hId_ind.1, indep_of_loopify_indep hId_ind.2⟩},
   
   -- ν goes down upon contraction 
   have h_nu_c : ν N₁c N₂c ≤ k-1 := by 
   { rw [hk, ν, ν, ←hIc_eq_max], 
-    have := max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Ic ∪ {e}, _⟩, 
+    have := max_is_ub (λ (X : common_ind N₁ N₂), fincard X.val) ⟨Ic ∪ {e}, _⟩, 
     dsimp only at this ⊢,
-    linarith only [size_union_nonmem_singleton heIc, this], 
+    linarith only [fincard_union_nonmem_singleton heIc, this], 
     split, all_goals {apply indep_union_project_set_of_project_indep}, 
     exact hIc_ind.1, exact (nonloop_iff_indep.mp h_e_nl.1), 
     exact hIc_ind.2, exact (nonloop_iff_indep.mp h_e_nl.2)},                             
   
   -- `(N₁ ⟍ e, N₂ ⟍ e)` is loopier than `(N₁, N₂)`.
-  have h_fewer_nonloops_d : size (N₁d.nonloops ∩ N₂d.nonloops) < size (N₁.nonloops ∩ N₂.nonloops),
+  have h_fewer_nonloops_d : fincard (N₁d.nonloops ∩ N₂d.nonloops) < fincard (N₁.nonloops ∩ N₂.nonloops),
   { rw [hN₁d, hN₂d, loopify_nonloops_eq, loopify_nonloops_eq, diff_inter_diff_right, 
-        size_remove_mem he_mem],
+        fincard_remove_mem he_mem],
     apply sub_one_lt, },
 
   -- so is `(N₁ ⟋ e , N₂ ⟋ e)`.  
-  have h_fewer_nonloops_c : size (N₁c.nonloops ∩ N₂c.nonloops) < size (N₁.nonloops ∩ N₂.nonloops),
+  have h_fewer_nonloops_c : fincard (N₁c.nonloops ∩ N₂c.nonloops) < fincard (N₁.nonloops ∩ N₂.nonloops),
   { rw [hN₁c, hN₂c, project_nonloops_eq, project_nonloops_eq],
-    refine size_strict_monotone ((ssubset_iff_of_subset _).mpr ⟨e, he_mem, _⟩), 
+    refine fincard_strict_monotone ((ssubset_iff_of_subset _).mpr ⟨e, he_mem, _⟩), 
     { intros x hx, simp_rw [mem_inter_iff, mem_diff_iff] at hx, exact ⟨hx.1.1, hx.2.1⟩}, 
     refine nonmem_of_nonmem_supset (nonmem_diff_of_mem _ _) (inter_subset_left _ _), 
     apply mem_cl_single},
@@ -168,9 +168,9 @@ end
 
 /-- restatement of matroid intersection theorem as the existence of a matching maximizer/minimizer-/
 theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α) : 
-  ∃ I A, is_common_ind M₁ M₂ I ∧ size I =  M₁.r A + M₂.r Aᶜ  := 
+  ∃ I A, is_common_ind M₁ M₂ I ∧ fincard I =  M₁.r A + M₂.r Aᶜ  := 
 begin
-  rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 
+  rcases max_spec (λ (I : common_ind M₁ M₂), fincard I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩, 
   rcases min_spec (λ X, M₁.r X + M₂.r Xᶜ) with ⟨A, hA_eq_min, hA_lb⟩, 
   refine ⟨I, A, ⟨h_ind,_⟩⟩,  
   dsimp only at *, 

@@ -1,4 +1,4 @@
-import .fincard 
+import .finsum_more
 
 open_locale big_operators classical 
 
@@ -36,10 +36,6 @@ lemma finsum_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M] (hf : ∀ x, 0 �
   ∑ᶠ x, f x = 0 ↔ ∀ x, f x = 0 := 
 by {apply finsum_eq_zero_iff_of_nonneg _ hf, apply set.finite.of_fintype}
 
-@[simp] lemma fincard_eq_zero_iff_empty {s : set α} :
-  fincard s = 0 ↔ s = ∅ := 
-by {apply fincard_eq_zero_iff_empty, apply set.finite.of_fintype}
-
 lemma finsum_in_insert [add_comm_monoid M] (f : α → M) (h : a ∉ s) :
   ∑ᶠ i in insert a s, f i = f a + ∑ᶠ i in s, f i :=
 by {apply finsum_in_insert' _ h, apply set.finite.of_fintype}
@@ -59,10 +55,6 @@ by {apply finsum_in_sub_distrib, apply set.finite.of_fintype}
 lemma finsum_sub_distrib [add_comm_group M] (f g : α → M) :
   ∑ᶠ i, (f - g) i = ∑ᶠ i, f i - ∑ᶠ i, g i :=
 by {apply finsum_sub_distrib; apply set.finite.of_fintype}
-
-lemma sum_fincard_fiber_eq_fincard (s : set α) (f : α → β) :
-  ∑ᶠ (b : β), fincard {a ∈ s | f a = b} = fincard s := 
-by {exact sum_fincard_fiber_eq_fincard _ (set.finite.of_fintype _),}
 
 lemma finsum_in_exists_lt_of_finsum_lt [linear_ordered_cancel_add_comm_monoid M]
 (hlt : ∑ᶠ x in s, f x < ∑ᶠ x in s, g x) : 

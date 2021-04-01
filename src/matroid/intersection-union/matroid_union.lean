@@ -1,5 +1,5 @@
 
-/- This file proves a minmax formula for π₂, the maximum size of an (M₁,M₂)-partitionable set, 
+/- This file proves a minmax formula for π₂, the maximum fincard of an (M₁,M₂)-partitionable set, 
   where M₁ and M₂ are matroids on a common ground set α, and also proves that the partitionable
   sets are the independent sets of a matroid on α. Then it generalizes the latter result to a 
   general list of matroids; the former is todo but shouldn't be too bad.  -/
@@ -66,17 +66,17 @@ by {rw is_common_ind_iff_is_subset_inter_bases, from inter_bases_is_subset_inter
 
 
 lemma max_common_indep_inter_bases (M₁ M₂ : matroid α) :
-  ν M₁ M₂ = max_val (λ (pair : basis_pair M₁ M₂), inter_size pair.val) :=
+  ν M₁ M₂ = max_val (λ (pair : basis_pair M₁ M₂), inter_fincard pair.val) :=
 begin
-  rcases max_spec (λ (X : common_ind M₁ M₂), size X.val) with ⟨⟨I,hI_ind⟩,hI_size,hI_ub⟩, 
-  rcases max_spec (λ (pair : basis_pair M₁ M₂), inter_size pair.val) with ⟨⟨⟨B₁, B₂⟩,hB⟩,h_inter,h_size_ub⟩, 
-  rw [ν], dsimp at *, rw [←hI_size, ←h_inter],
+  rcases max_spec (λ (X : common_ind M₁ M₂), fincard X.val) with ⟨⟨I,hI_ind⟩,hI_fincard,hI_ub⟩, 
+  rcases max_spec (λ (pair : basis_pair M₁ M₂), inter_fincard pair.val) with ⟨⟨⟨B₁, B₂⟩,hB⟩,h_inter,h_fincard_ub⟩, 
+  rw [ν], dsimp at *, rw [←hI_fincard, ←h_inter],
   apply le_antisymm, 
   { rw is_common_ind_iff_is_subset_inter_bases at hI_ind, 
     rcases hI_ind with ⟨Y,⟨⟨B₁',B₂',⟨hB₁',hB₂',hY⟩⟩,h'⟩⟩, 
-    have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this,  
+    have := h_fincard_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_fincard at this, dsimp at this,  
     rw ←hY at h', 
-    linarith [size_monotone h'],},
+    linarith [fincard_monotone h'],},
   refine hI_ub 
   ⟨ B₁ ∩ B₂, 
     subset_inter_bases_is_common_ind (inter_two_bases_is_subset_inter_bases hB.1 hB.2)⟩,
@@ -88,17 +88,17 @@ end intersections_of_bases
 section two_union
 
 lemma π₂_eq_max_union_bases (M₁ M₂ : matroid α) :
-  π₂ M₁ M₂ = max_val (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) := 
+  π₂ M₁ M₂ = max_val (λ (Bp : basis_pair M₁ M₂), union_fincard Bp.val) := 
 begin
-  rcases max_spec (λ (Bp : basis_pair M₁ M₂), union_size Bp.val) 
+  rcases max_spec (λ (Bp : basis_pair M₁ M₂), union_fincard Bp.val) 
     with ⟨⟨⟨Bp₁, Bp₂⟩, hBp⟩, hBp_union, hBp_ub⟩, 
-  rcases max_spec (λ (Ip : indep_pair M₁ M₂), union_size Ip.val) 
+  rcases max_spec (λ (Ip : indep_pair M₁ M₂), union_fincard Ip.val) 
     with ⟨⟨⟨Ip₁, Ip₂⟩, hIp⟩, hIp_union, hIp_ub⟩, 
   rw [π₂ ], dsimp only at *, rw [←hBp_union, ←hIp_union], 
   apply le_antisymm,
   rcases extends_to_basis hIp.1 with ⟨B₁,hB₁⟩, 
   rcases extends_to_basis hIp.2 with ⟨B₂,hB₂⟩, 
-  refine le_trans (size_monotone _) (hBp_ub ⟨⟨B₁, B₂⟩, ⟨hB₁.2, hB₂.2⟩⟩), 
+  refine le_trans (fincard_monotone _) (hBp_ub ⟨⟨B₁, B₂⟩, ⟨hB₁.2, hB₂.2⟩⟩), 
   from union_subset_union hB₁.1 hB₂.1, 
   from hIp_ub ⟨⟨Bp₁,Bp₂⟩, ⟨basis_is_indep hBp.1,basis_is_indep hBp.2⟩⟩, 
 end
@@ -124,7 +124,7 @@ begin
     rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2, 
     rw hφ,  simp,},
   -- use φ to reindex so LHS/RHS are being summed over the same set 
-  have := max_reindex φ hφ_sur (λ pair, inter_size pair.val), 
+  have := max_reindex φ hφ_sur (λ pair, inter_fincard pair.val), 
   erw ←this,
   
   -- bring addition inside the max 
@@ -134,15 +134,15 @@ begin
   convert rfl, 
   ext Bp, 
   rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,   
-  dsimp [union_size,inter_size] at ⊢,
-  linarith [size_basis hB.1, size_basis hB.2, size_modular B₁ B₂, size_induced_partition_inter B₁ B₂], 
+  dsimp [union_fincard,inter_fincard] at ⊢,
+  linarith [fincard_basis hB.1, fincard_basis hB.2, fincard_modular B₁ B₂, fincard_induced_partition_inter B₁ B₂], 
 end 
 
 
-/-- The matroid union theorem for two matroids : a minmax formula for the size of the
+/-- The matroid union theorem for two matroids : a minmax formula for the fincard of the
 largest partitionable set. The heavy lifting in the proof is done by matroid intersection. -/
 theorem two_matroid_union (M₁ M₂ : matroid α) :
-  π₂ M₁ M₂ = min_val (λ A : set α, size Aᶜ + M₁.r A + M₂.r A ) :=
+  π₂ M₁ M₂ = min_val (λ A : set α, fincard Aᶜ + M₁.r A + M₂.r A ) :=
 begin
   rw [π₂_eq_ν_plus_r, matroid_intersection,  min_add_commute _ (M₂.r univ)],
   congr', ext X, 
@@ -163,7 +163,7 @@ local infix ` |  `:50 := λ (M : matroid α) (X : set α), (M.loopify_to X)
 
 /-- independent pairs of a subset are independent pairs of a loopification to that set -/ 
 lemma indep_pair_of_subset_as_indep_pair_loopify (X : set α) :
-    max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) = π₂ (M₁ | X) (M₂ | X) :=
+    max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_fincard Ip.val) = π₂ (M₁ | X) (M₂ | X) :=
 begin
   set φ : indep_pair_of_subset M₁ M₂ X → indep_pair (M₁ | X) (M₂ | X) :=
     λ Ip, 
@@ -176,20 +176,20 @@ begin
       cases h₁, cases h₂, 
       refine ⟨⟨p,⟨⟨_,_⟩,⟨_,_⟩⟩⟩ ,_⟩; try {assumption}, 
       simp},
-  rw (max_reindex φ hφ_sur (λ Ip : indep_pair (M₁ | X) (M₂ | X), union_size Ip.val)), 
+  rw (max_reindex φ hφ_sur (λ Ip : indep_pair (M₁ | X) (M₂ | X), union_fincard Ip.val)), 
   trivial, 
 end
 
 /-- matroid union theorem for common independent sets of a given subset X -/
 theorem two_matroid_union_on_subset (X : set α) :
-  max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val) 
-  = min_val (λ A : {Y : set α // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A) := 
+  max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_fincard Ip.val) 
+  = min_val (λ A : {Y : set α // Y ⊆ X}, fincard (X \ A) + M₁.r A + M₂.r A) := 
 begin
   rw [indep_pair_of_subset_as_indep_pair_loopify, two_matroid_union], 
   
-  rcases min_spec (λ A : {Y : set α // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A)
+  rcases min_spec (λ A : {Y : set α // Y ⊆ X}, fincard (X \ A) + M₁.r A + M₂.r A)
     with ⟨A, hA', hA⟩, 
-  rcases min_spec (λ A : set α, size Aᶜ + (M₁|X).r A + (M₂|X).r A)
+  rcases min_spec (λ A : set α, fincard Aᶜ + (M₁|X).r A + (M₂|X).r A)
     with ⟨B, hB', hB⟩,
   
   rw [←hA', ←hB'], clear hA' hB',
@@ -203,8 +203,8 @@ begin
     have h' := hB (Xᶜ ∪ B), 
     simp only [inter_distrib_right, compl_inter_self, compl_compl, 
     set.compl_union, empty_union, add_le_add_iff_right] at h',  
-    rw [←compl_compl_union_left, compl_size, compl_size] at h', 
-    linarith [size_strict_monotone h], 
+    rw [←compl_compl_union_left, compl_fincard, compl_fincard] at h', 
+    linarith [fincard_strict_monotone h], 
   end,  
   apply le_antisymm, 
   
@@ -225,25 +225,25 @@ end
 
 
 
-/-- the rank function of the partitionable-sets matroid : rank is the size of a largest 
+/-- the rank function of the partitionable-sets matroid : rank is the fincard of a largest 
 (M₁,M₂)-partitionable subset.  -/
 def r : set α → ℤ :=
-  λ X, max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_size Ip.val)
+  λ X, max_val (λ Ip : indep_pair_of_subset M₁ M₂ X, union_fincard Ip.val)
 
 lemma R0 : 
   satisfies_R0 (r M₁ M₂) :=
-λ X, by { apply lb_le_max, intro Ip, apply size_nonneg}
+λ X, by { apply lb_le_max, intro Ip, apply fincard_nonneg}
   
 lemma R1 : 
   satisfies_R1 (r M₁ M₂) := 
-by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_subset Ip.2.2.1 Ip.2.2.2)}
+by {intro X, apply max_le_ub, from λ Ip, fincard_monotone (union_subset Ip.2.2.1 Ip.2.2.2)}
 
 lemma R2 :
   satisfies_R2 (r M₁ M₂) := 
 begin
   intros X Y hXY, 
   let φ : indep_pair_of_subset M₁ M₂ X → indep_pair_of_subset M₁ M₂ Y := λ Ip, ⟨Ip.val, _⟩, 
-  { convert max_compose_le_max φ (λ Ip, union_size Ip.val)}, 
+  { convert max_compose_le_max φ (λ Ip, union_fincard Ip.val)}, 
   rcases Ip with ⟨_, ⟨⟨_,_⟩,⟨_,_⟩⟩⟩, 
   refine ⟨⟨_,_⟩,⟨_,_⟩⟩; 
   { try {assumption}, try {from subset.trans (by assumption) hXY}}, 
@@ -266,8 +266,8 @@ begin
   rintro ⟨A,B⟩, rw hφ, 
   dsimp [-diff_eq], 
   unfold_coes, 
-  rw [diff_size A.2, diff_size B.2, diff_size (hi ⟨A,B⟩), diff_size (hu ⟨A,B⟩)],
-  linarith [size_modular X Y, size_modular A.1 B.1, M₁.rank_submod A.1 B.1, M₂.rank_submod A.1 B.1], 
+  rw [diff_fincard A.2, diff_fincard B.2, diff_fincard (hi ⟨A,B⟩), diff_fincard (hu ⟨A,B⟩)],
+  linarith [fincard_modular X Y, fincard_modular A.1 B.1, M₁.rank_submod A.1 B.1, M₂.rank_submod A.1 B.1], 
 end
 
 /-- the matroid whose independent sets are the (M₁,M₂)-partitionable ones -/
@@ -279,21 +279,21 @@ lemma indep_iff (M₁ M₂ : matroid α){X : set α} :
   (union M₁ M₂).is_indep X ↔ is_two_partitionable M₁ M₂ X :=
 begin
   rw [indep_iff_r, union], simp only [r], 
-  rcases max_spec (λ (Ip : indep_pair_of_subset M₁ M₂ X), union_size Ip.val) 
+  rcases max_spec (λ (Ip : indep_pair_of_subset M₁ M₂ X), union_fincard Ip.val) 
     with ⟨⟨⟨I₁,I₂⟩,⟨⟨hempty_indep,hindep_of_subset_indep⟩,hX1,hX2⟩⟩, hI', hI⟩, 
   rw [←hI'], clear hI', dsimp only, 
   have hss := (set.union_subset_union hX1 hX2), simp only [set.union_self] at hss, 
  
   refine ⟨λ h, ⟨I₁,I₂ \ I₁, hempty_indep,_,_,_⟩, λ h, _⟩, 
   from indep_of_subset_indep (diff_subset I₂ I₁) hindep_of_subset_indep, 
-  dsimp only [union_size] at h,  rw [eq_of_eq_size_subset_iff hss] at h, rw ←h, 
+  dsimp only [union_fincard] at h,  rw [eq_of_eq_fincard_subset_iff hss] at h, rw ←h, 
   rw ←union_diff_absorb, 
   --simp only [diff_eq], 
   --rw ← diff_eq, 
   apply inter_diff, 
   rcases h with ⟨I₁',I₂', ⟨h11,h12,h21,h22⟩⟩, 
   subst h21, 
-  refine le_antisymm (size_monotone hss) _ , 
+  refine le_antisymm (fincard_monotone hss) _ , 
   refine hI ⟨⟨I₁',I₂'⟩, _⟩,
   from ⟨⟨h11,h12⟩, subset_union_left _ _, subset_union_right _ _⟩, 
 end 
@@ -369,7 +369,7 @@ by {ext x, from classical.some_spec (exists_union_matroid Ms) x}
 lemma union_matroid_rank_eq_pi (Ms : fin n → matroid α) :
   (union_matroid Ms).r univ = π Ms := 
 begin
-  unfold π, rw [r_univ_eq_max_size_indep], 
+  unfold π, rw [r_univ_eq_max_fincard_indep], 
   set φ : (indep_tuple Ms) → (union_matroid Ms).indep := 
   λ Is, ⟨set.Union Is.val, by {rw union_matroid_indep_iff, use Is, }⟩ with hφ, 
   have hφ' : function.surjective φ, 
@@ -378,13 +378,13 @@ begin
     rw union_matroid_indep_iff at hI,   
     cases hI with Is hIs, 
     use Is, convert hIs.symm, },
-  rw max_reindex φ hφ' (λ I, size I.val), trivial, 
+  rw max_reindex φ hφ' (λ I, fincard I.val), trivial, 
 end
 
 end union 
 /-
 theorem matroid_union (Ms : fin n → matroid α) : 
-  π Ms = min_val (λ (A : set α), size Aᶜ + ∑ i, (Ms i).r A ) := 
+  π Ms = min_val (λ (A : set α), fincard Aᶜ + ∑ i, (Ms i).r A ) := 
 begin
   --rw ←union_matroid_rank_eq_pi, 
   induction n with n IH, unfold π, sorry, 
@@ -411,7 +411,7 @@ begin
       end ⟩ with hφ,  
   
   have hφ' : function.surjective φ := sorry, 
-  erw [←(max_reindex φ hφ' (λ Is, size (set.Union Is.val))), hφ], 
+  erw [←(max_reindex φ hφ' (λ Is, fincard (set.Union Is.val))), hφ], 
   
   sorry, 
   
@@ -444,7 +444,7 @@ def union_of_tuple {n : ℕ} (Xs : fin n → set α) : set α :=
   ⋃ i, Xs i
 
 def π_tuple {n : ℕ} : (fin n → matroid α) → ℤ := 
-  λ Ms, max_val (λ (Is: indep_tuple Ms), size (union_of_tuple Is.val) )
+  λ Ms, max_val (λ (Is: indep_tuple Ms), fincard (union_of_tuple Is.val) )
 
 @[simp] lemma sum_fin_one (a : fin 1 → ℤ) :
   ∑ i, a i = a 0 := 
@@ -488,14 +488,14 @@ end
 
 
 
-/-- function mapping tuples of indep sets to the size of the union -/
+/-- function mapping tuples of indep sets to the fincard of the union -/
 def matroid_union_lb_fn {n : ℕ} (Ms : fin n → matroid α) := 
-  (λ (Is : indep_tuple Ms), size (union_of_tuple Is.val))
+  (λ (Is : indep_tuple Ms), fincard (union_of_tuple Is.val))
 
-/-- function mapping each sets the size of its complement plus the sum of its ranks 
+/-- function mapping each sets the fincard of its complement plus the sum of its ranks 
 in the list of matroids: an upper bound for matroid union -/
 def matroid_union_ub_fn {n : ℕ} (Ms : fin n → matroid α) := 
-  (λ (A : set α), size Aᶜ + ∑ i, (Ms i).r A )
+  (λ (A : set α), fincard Aᶜ + ∑ i, (Ms i).r A )
 
 
 
@@ -505,7 +505,7 @@ lemma lb_fn_trivial (Ms : fin 0 → matroid α) :
 begin
   ext x, 
   unfold matroid_union_lb_fn union_of_tuple, dsimp only,
-  rw [size_zero_iff_empty, set.Union_eq_empty], 
+  rw [fincard_zero_iff_empty, set.Union_eq_empty], 
   from λ i, fin_zero_elim i,  
 end
 
@@ -517,8 +517,8 @@ begin
 
   -- base case
   simp only [matroid_union_ub_fn, add_zero, fin.sum_univ_zero, lb_fn_trivial, max_const],  
-  rw attained_lb_is_min' (λ (X : set α), size Xᶜ ) (univ : set α) 0 _ _; 
-  simp [size_nonneg], 
+  rw attained_lb_is_min' (λ (X : set α), fincard Xᶜ ) (univ : set α) 0 _ _; 
+  simp [fincard_nonneg], 
   
   cases nat.eq_zero_or_pos n with hn,
 
@@ -533,7 +533,7 @@ begin
     {intros i,  rw h_Bfn, dsimp only, convert (basis_is_indep hB)},
 
   refine ⟨⟨Bfn, Bprop⟩, univ, _⟩,  
-  simp [size_basis hB],   
+  simp [fincard_basis hB],   
 
   intros Is A,
   rw ←indep_iff_r.mp (Is.property 0),

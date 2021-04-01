@@ -65,14 +65,14 @@ lemma relax.R1 {M : matroid α} {C : set α} :
   satisfies_R1 (relax.r M C) := 
 begin
   by_cases hC : M.is_circuit_hyperplane C, swap, 
-  { intro X, rw relax_junk_r_eq hC, apply rank_le_size }, 
+  { intro X, rw relax_junk_r_eq hC, apply rank_le_fincard }, 
   intro X, rw relax_r_eq hC, by_cases h : X = C, 
   rw if_pos h, 
   rcases hC with ⟨h₁,h₂⟩, 
   rw circuit_iff_r at h₁, 
   rw h, linarith,  
   rw if_neg h, 
-  from M.rank_le_size X, 
+  from M.rank_le_fincard X, 
 end
 
 lemma relax.R2 {M : matroid α} {C : set α} : 
@@ -120,8 +120,8 @@ begin
   rcases hCXY with ⟨(hCX|hCX),(hCY|hCY)⟩, 
   rw [relax.r_of_not_C M (ne_of_ssubset hCX), circuit_hyperplane_ssubset_rank hC hCX],
   rw [relax.r_of_not_C M (ne_of_ssubset hCY), circuit_hyperplane_ssubset_rank hC hCY],
-  rw [relax.r_of_C hC, circuit_hyperplane_rank_size hC, ←hu], 
-  linarith [size_modular X Y, M.rank_le_size (X ∩ Y)], 
+  rw [relax.r_of_C hC, circuit_hyperplane_rank_fincard hC, ←hu], 
+  linarith [fincard_modular X Y, M.rank_le_fincard (X ∩ Y)], 
   rw [hCY], linarith [relax.r_of_not_C M (ne_of_ssubset hCX), M.rank_mono (inter_subset_left X C)], 
   rw [hCX], linarith [relax.r_of_not_C M (ne_of_ssubset hCY), M.rank_mono (inter_subset_right C Y)],
   rw [hCY, hCX, inter_self], linarith [r_le_relax_r M C C], 

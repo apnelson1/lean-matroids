@@ -1,5 +1,5 @@
 import finsum.fin_api 
-import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax
+import prelim.collections prelim.embed prelim.fincard prelim.induction prelim.minmax
 import .parallel .simple matroid.constructions.partition matroid.submatroid.projection
 
 noncomputable theory 
@@ -32,7 +32,7 @@ begin
   ps_kernel_eq_loops, loopless_set_iff_all_nonloops, disjoint_left],
 
   simp_rw [← nonloop_iff_not_mem_loops, ← parallel_refl_iff_nonloop, ← ps_rel_eq_parallel, 
-  size_le_one_iff_mem_unique, mem_inter_iff, presetoid.mem_classes_iff], 
+  fincard_le_one_iff_mem_unique, mem_inter_iff, presetoid.mem_classes_iff], 
 
   convert iff.rfl, 
   refine iff_iff_eq.mp ⟨λ h P hP e f he hf, h _ _ he.1 hf.1 _, 
@@ -44,58 +44,58 @@ begin
 end
 
 lemma ε_eq_largest_simple_subset (M : matroid α) (X : set α) : 
-  M.ε X = max_val (λ (S : M.simple_subset_of X), size (S : set α)) :=
+  M.ε X = max_val (λ (S : M.simple_subset_of X), fincard (S : set α)) :=
 begin
   rw [ε_eq_pc_matroid_r, rank_as_indep], 
   let e : ((pc_matroid M).indep_subset_of X) ≃ (M.simple_subset_of X) := 
   equiv.subtype_equiv_right 
     (λ X, by {rw [← pc_matroid_indep_iff, and_comm], refl, }),
-  exact (max_reindex e.to_fun e.surjective (λ X, size (X : set α))), 
+  exact (max_reindex e.to_fun e.surjective (λ X, fincard (X : set α))), 
 end
 
 lemma r_le_ε (M : matroid α) (X : set α) : 
   M.r X ≤ M.ε X := 
 begin
   rw ε_eq_largest_simple_subset,  
-  obtain ⟨⟨Y, hYX, hYs⟩, hY', hY''⟩ := max_spec (λ (S : M.simple_subset_of X), size (S : set α)), 
+  obtain ⟨⟨Y, hYX, hYs⟩, hY', hY''⟩ := max_spec (λ (S : M.simple_subset_of X), fincard (S : set α)), 
   obtain ⟨B, hB ⟩ := M.exists_basis_of X, 
-  rw [← hY', ← hB.size_eq_r],  
+  rw [← hY', ← hB.fincard_eq_r],  
   convert hY'' ⟨B, ⟨simple_of_indep hB.indep, hB.is_subset_of⟩⟩, 
 end
 
 lemma ε_univ_eq_largest_simple_set (M : matroid α): 
-  M.ε univ = max_val (λ (S : M.simple_set), size (S : set α)) := 
+  M.ε univ = max_val (λ (S : M.simple_set), fincard (S : set α)) := 
 begin
   rw ε_eq_largest_simple_subset, 
   exact max_reindex 
     (λ (S : M.simple_subset_of univ), (⟨S.1, S.2.1⟩ : M.simple_set))
     (λ S, ⟨⟨S.1, S.2, subset_univ _⟩, by simp⟩) 
-    (λ S, size (S : set α)), 
+    (λ S, fincard (S : set α)), 
 end
 
-lemma ε_eq_size_of_simple_matroid {M : matroid α} (hM : M.is_simple) (X : set α) : 
-  M.ε X = size X :=
+lemma ε_eq_fincard_of_simple_matroid {M : matroid α} (hM : M.is_simple) (X : set α) : 
+  M.ε X = fincard X :=
 begin
   rw [ε_eq_largest_simple_subset], 
   let X' : M.simple_subset_of X := 
     ⟨X, ⟨simple_of_subset_simple hM (subset_univ _), subset_refl _⟩⟩, 
-  exact attained_ub_is_max' _ X' (size X) rfl.le (λ Y, size_monotone Y.2.2),  
+  exact attained_ub_is_max' _ X' (fincard X) rfl.le (λ Y, fincard_monotone Y.2.2),  
 end
 
-lemma ε_eq_size_iff_simple_set {M : matroid α} {X : set α} :
-  M.ε X = size X ↔ M.is_simple_set X :=
+lemma ε_eq_fincard_iff_simple_set {M : matroid α} {X : set α} :
+  M.ε X = fincard X ↔ M.is_simple_set X :=
 by rw [ε_eq_pc_matroid_r, ← indep_iff_r, pc_matroid_indep_iff]
 
-lemma ε_eq_size_univ_iff_simple {M : matroid α} :
-  M.ε univ = size (univ : set α) ↔ M.is_simple :=
-ε_eq_size_iff_simple_set
+lemma ε_eq_fincard_univ_iff_simple {M : matroid α} :
+  M.ε univ = fincard (univ : set α) ↔ M.is_simple :=
+ε_eq_fincard_iff_simple_set
 
 
 lemma ε_eq_num_parallel_classes_inter (M : matroid α) (X : set α) :
-  M.ε X = size {P : M.parallel_class | (X ∩ P).nonempty } :=
+  M.ε X = fincard {P : M.parallel_class | (X ∩ P).nonempty } :=
 begin
   simp_rw [ε_eq_pc_matroid_r, pc_matroid_def, presetoid_matroid.r_eq], 
-  exact (size_set_subtype_eq_size_set _ _).symm, 
+  exact (fincard_set_subtype_eq_fincard_set _ _).symm, 
 end
 
 lemma ε_eq_r_of_r_le_one {M : matroid α} {X : set α} (h : M.r X ≤ 1): 
@@ -105,7 +105,7 @@ begin
   rw [ε_eq_num_parallel_classes_inter],
   by_cases hX : M.r X < 1,
   { have hX' : M.r X = 0, linarith [M.rank_nonneg X],
-    rw [hX', size_le_zero_iff_has_no_mem],
+    rw [hX', fincard_le_zero_iff_has_no_mem],
     simp only [not_exists, mem_set_of_eq],
     rintros ⟨P,hP⟩, 
     by_contra hn, 
@@ -114,7 +114,7 @@ begin
     apply loop_of_mem_rank_zero he₁ hX'}, 
 
   have hX' : M.r X = 1 := le_antisymm h (le_of_not_lt hX), 
-  rw [hX', size_le_one_iff_mem_unique], 
+  rw [hX', fincard_le_one_iff_mem_unique], 
   refine λ P P' hP hP', _, 
   rcases P with ⟨P,hPp⟩, rcases P' with ⟨P', hPp'⟩,  
   obtain ⟨e, he, rfl⟩ := rep_parallel_class hPp, 
@@ -151,10 +151,10 @@ begin
 end
 
 lemma ε_eq_num_points_inter (M : matroid α) (X : set α) : 
-  M.ε X = size {P : M.point | ((P.val \ M.loops) ∩ X).nonempty } :=
+  M.ε X = fincard {P : M.point | ((P.val \ M.loops) ∩ X).nonempty } :=
 begin
   rw ε_eq_num_parallel_classes_inter, 
-  convert (size_image_inj M.parallel_class_point_equiv.injective _).symm, 
+  convert (fincard_image_inj M.parallel_class_point_equiv.injective _).symm, 
   ext P, cases P with P hP, 
   simp only [mem_set_of_eq, subtype.val_eq_coe],  
   split,
@@ -176,9 +176,9 @@ begin
 end
 
 lemma ε_flat_eq_num_points {M : matroid α} {F : set α} (hF : M.is_flat F): 
-  M.ε F = size {P : set α | M.is_point P ∧ P ⊆ F} := 
+  M.ε F = fincard {P : set α | M.is_point P ∧ P ⊆ F} := 
 begin
-  simp only [ε_eq_num_points_inter M F, ← size_set_of_push] , 
+  simp only [ε_eq_num_points_inter M F, ← fincard_set_of_push] , 
   convert rfl, 
   ext P,
   cases P with P hP, 
@@ -196,20 +196,20 @@ end
 lemma ε_univ_eq_num_points (M : matroid α):
   M.ε univ = nat.card M.point :=
 begin
-  rw [point, nat.card_type_of_eq_size_set_of], 
+  rw [point, nat_card_type_of_eq_fincard_set_of], 
   convert ε_flat_eq_num_points M.univ_is_flat, 
   ext P, 
   exact ⟨λ h, ⟨h, subset_univ _⟩, λ h, h.1⟩,  
 end
 
-lemma ε_univ_eq_size_set_of_points (M : matroid α):
-  M.ε univ = size { P : set α | M.is_point P } :=
-by {rw [ε_univ_eq_num_points, point, nat.card_type_of_eq_size_set_of]}
+lemma ε_univ_eq_fincard_set_of_points (M : matroid α):
+  M.ε univ = fincard { P : set α | M.is_point P } :=
+by {rw [ε_univ_eq_num_points, point, nat_card_type_of_eq_fincard_set_of]}
 
 lemma ε_proj_nonloop (M : matroid α) {e : α} (he : M.is_nonloop e): 
-  (M ⟋ {e}).ε univ = size { L | M.is_line L ∧ e ∈ L} := 
+  (M ⟋ {e}).ε univ = fincard { L | M.is_line L ∧ e ∈ L} := 
 begin
-  rw [ε_univ_eq_num_points, point, nat.card_type_of_eq_size_set_of], 
+  rw [ε_univ_eq_num_points, point, nat_card_type_of_eq_fincard_set_of], 
   convert rfl, ext, rwa [point_project_nonloop_iff], 
 end
 
@@ -221,10 +221,10 @@ begin
   set lines := {L : set α | M.is_line L ∧ e ∈ L}, 
   have hcle : ∀ L ∈ lines, disjoint {P | M.is_point P ∧ P ⊆ L ∧ P ≠ M.cl {e}} {M.cl {e}}, 
   { intros L hL, simp, },
-  have h₁ : ∀ L ∈ lines, M.ε L - 1 = size {P | M.is_point P ∧ P ⊆ L ∧ P ≠ M.cl {e}},
+  have h₁ : ∀ L ∈ lines, M.ε L - 1 = fincard {P | M.is_point P ∧ P ⊆ L ∧ P ≠ M.cl {e}},
   { intros L hL, 
     rw [ε_flat_eq_num_points (hL.1.flat),  sub_eq_iff_eq_add, 
-    ←size_singleton (M.cl {e}), ← size_union_of_disjoint (hcle L hL)], 
+    ←fincard_singleton (M.cl {e}), ← fincard_union_of_disjoint (hcle L hL)], 
     congr', 
     ext X, 
     rw [mem_def, mem_union, mem_set_of_eq, mem_singleton_iff], 
@@ -232,8 +232,8 @@ begin
     rcases h with (h₁ | rfl), tauto, 
     exact ⟨point_of_cl_nonloop he, subset_flat _ _ (singleton_subset_iff.mpr hL.2) (hL.1.flat)⟩},
      
-  rw [finsum_in_eq_of_eq h₁, ← size_bUnion, ← size_singleton (M.cl {e} : set α),
-   ← size_union_of_disjoint, ε_univ_eq_size_set_of_points], rotate, 
+  rw [finsum_in_eq_of_eq h₁, ← fincard_bUnion, ← fincard_singleton (M.cl {e} : set α),
+   ← fincard_union_of_disjoint, ε_univ_eq_fincard_set_of_points], rotate, 
   { rw [disjoint_iff_inter_eq_empty, inter_bUnion], 
     ext x, 
     rw [mem_bUnion_iff],
@@ -275,7 +275,7 @@ lemma ε_loopify_parallel (M : matroid α) {e f : α} (hef : e ≠ f) (hpara : M
   (M ⟍ {e}).ε univ = M.ε univ :=
 begin
   rw eq_comm, repeat {rw ε_univ_eq_largest_simple_set}, 
-  obtain ⟨⟨S,hS⟩,  hS', hS''⟩ := max_spec (λ (S : M.simple_set), size (S : set α)), 
+  obtain ⟨⟨S,hS⟩,  hS', hS''⟩ := max_spec (λ (S : M.simple_set), fincard (S : set α)), 
   rw [← hS', eq_comm], 
   dsimp only [subtype.coe_mk],
   by_cases he : e ∈ S,  
@@ -287,7 +287,7 @@ begin
       refine ⟨simple_set_exchange hS he hpara, λ he, _⟩,  
       rw [mem_union, mem_diff_iff, mem_singleton_iff, mem_singleton_iff] at he, tauto},
     refine attained_ub_is_max' _ ⟨S', hS'⟩ _ _ _, 
-    { rw [subtype.coe_mk, hS'_def, size_remove_union_singleton he hf]}, 
+    { rw [subtype.coe_mk, hS'_def, fincard_remove_union_singleton he hf]}, 
     rintros ⟨S₀, hS₀⟩, 
     rw loopify_simple_iff_simple_disjoint at hS₀, 
     exact hS'' ⟨S₀, hS₀.1⟩}, 
@@ -306,6 +306,6 @@ begin
     λ S, ⟨S.val, by {obtain ⟨S, hS₁, hS₂⟩ := S, dsimp only, rwa  ←simple_loopify_to_iff, }⟩ with hφ, 
   have hsurj : function.surjective φ, 
   { rintro ⟨S, hS₁, hS₂⟩, exact ⟨⟨S, ⟨simple_loopify_to_iff.mpr ⟨hS₁, hS₂⟩, subset_univ _⟩⟩, rfl⟩},
-  convert max_reindex φ hsurj (λ (S : M.simple_subset_of X), size ↑S), 
+  convert max_reindex φ hsurj (λ (S : M.simple_subset_of X), fincard ↑S), 
   ext, refl, 
 end

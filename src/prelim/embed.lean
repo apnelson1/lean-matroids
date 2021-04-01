@@ -1,5 +1,5 @@
 
-import .size --.single
+import finsum.fincard --.single
 open set 
 -- Embedding and subftypes
 
@@ -19,8 +19,8 @@ variables {α : Type*} [fintype α] {S : set α}
   (({(e : S)} : set S) : set α) = {(e : α)} :=
 image_singleton 
 
-@[coe_up] lemma subtype_coe_size (X : set S) : size X = size (X : set α) := 
-(size_subtype_image X).symm
+@[coe_up] lemma subtype_coe_fincard (X : set S) : fincard X = fincard (X : set α) := 
+(fincard_subtype_image X).symm
 
 @[coe_up] lemma subtype_coe_subset {X Y : set S} : 
   (X ⊆ Y) ↔ ((X: set α) ⊆ (Y: set α)) :=
@@ -72,8 +72,8 @@ begin
 end
 
 @[coe_up] lemma sizNE_inter_subtype (X : set α) : 
-  size (inter_subtype S X) = size (X ∩ S) := 
-by rw [subtype_coe_size, coNE_inter_subtype]
+  fincard (inter_subtype S X) = fincard (X ∩ S) := 
+by rw [subtype_coe_fincard, coNE_inter_subtype]
 
 @[coe_up] lemma inter_subtype_eq_iff (X Y : set α) :
   inter_subtype S X = inter_subtype S Y ↔ (X ∩ S = Y ∩ S) :=

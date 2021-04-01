@@ -1,4 +1,4 @@
-import prelim.collections prelim.embed prelim.size prelim.induction prelim.minmax
+import prelim.collections prelim.embed prelim.fincard prelim.induction prelim.minmax
 import .parallel matroid.submatroid.projection
 
 noncomputable theory 
@@ -13,7 +13,7 @@ section simple
 
 /-- the property of a set not containing any loops -/
 def is_loopless_set (M : matroid α) (S : set α) :=
-  ∀ X ⊆ S, size X ≤ 1 → M.is_indep X
+  ∀ X ⊆ S, fincard X ≤ 1 → M.is_indep X
 
 /-- the property of a matroid having no loops -/
 def is_loopless (M : matroid α) := 
@@ -25,7 +25,7 @@ iff.rfl
 
 /-- the property of a set containing no loops or parallel pairs -/
 def is_simple_set (M : matroid α) (S : set α) :=
-  ∀ X ⊆ S, size X ≤ 2 → M.is_indep X 
+  ∀ X ⊆ S, fincard X ≤ 2 → M.is_indep X 
 
 lemma simple_of_subset_simple {M : matroid α} {S T : set α} (hT : M.is_simple_set T) (hST : S ⊆ T) :
   M.is_simple_set S := 
@@ -36,55 +36,55 @@ def is_simple (M : matroid α) :=
   is_simple_set M univ 
 
 lemma simple_set_iff_r : 
-  M.is_simple_set S ↔ ∀ X ⊆ S, size X ≤ 2 → size X ≤ M.r X :=
-by simp_rw [is_simple_set, indep_iff_size_le_r]
+  M.is_simple_set S ↔ ∀ X ⊆ S, fincard X ≤ 2 → fincard X ≤ M.r X :=
+by simp_rw [is_simple_set, indep_iff_fincard_le_r]
 
-lemma rank_subset_simple (h : M.is_simple) (hX : size X ≤ 2) :
-  M.r X = size X := 
+lemma rank_subset_simple (h : M.is_simple) (hX : fincard X ≤ 2) :
+  M.r X = fincard X := 
 h X (subset_univ _) hX
 
 lemma rank_singleton_of_simple (h : M.is_simple) (e : α) : 
   M.r {e} = 1 :=
-by {rw [←size_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw size_singleton, norm_num }
+by {rw [←fincard_singleton e, ← indep_iff_r], apply h _ (subset_univ _), rw fincard_singleton, norm_num }
 
 lemma rank_pair_of_simple (h : M.is_simple) (hef : e ≠ f) : 
   M.r {e,f} = 2 :=
-by rw [indep_iff_r.mp (h {e,f} (subset_univ _) (by rw size_pair hef)), size_pair hef]
+by rw [indep_iff_r.mp (h {e,f} (subset_univ _) (by rw fincard_pair hef)), fincard_pair hef]
 
 lemma rank_mem_simple_set (h : M.is_simple_set S) (he : e ∈ S) : 
   M.r {e} = 1 :=
 begin
-  rw [←size_singleton e, ← indep_iff_r], 
+  rw [←fincard_singleton e, ← indep_iff_r], 
   apply h _ (singleton_subset_iff.mpr he), 
-  rw size_singleton, 
+  rw fincard_singleton, 
   norm_num,
 end 
 
 lemma rank_pair_of_simple_set (h : M.is_simple_set S) (hef : e ≠ f) (he : e ∈ S) (hf : f ∈ S): 
   M.r {e,f} = 2 :=
 begin
-  rw [indep_iff_r.mp (h {e,f} _ (by rw size_pair hef)), size_pair hef], 
+  rw [indep_iff_r.mp (h {e,f} _ (by rw fincard_pair hef)), fincard_pair hef], 
   rw ← singleton_subset_iff at he hf,   
   convert union_subset he hf, 
 end 
 
-lemma rank_subset_simple_set (h : M.is_simple_set S) (hX : X ⊆ S) (hX' : size X ≤ 2):
-  M.r X = size X :=
+lemma rank_subset_simple_set (h : M.is_simple_set S) (hX : X ⊆ S) (hX' : fincard X ≤ 2):
+  M.r X = fincard X :=
 by convert h X hX hX'
 
 lemma rank_subset_simple_set_lb (h : M.is_simple_set S) (hX : X ⊆ S): 
-  min 2 (size X) ≤ M.r X := 
+  min 2 (fincard X) ≤ M.r X := 
 begin
-  cases le_or_lt (size X) 2 with h1 h2, 
+  cases le_or_lt (fincard X) 2 with h1 h2, 
   { rwa [min_eq_right h1, rank_subset_simple_set h hX]}, 
   rw min_eq_left (le_of_lt h2), 
-  obtain ⟨X₀, hX₀, hX₀'⟩ := has_subset_of_size (by norm_num : (0 : ℤ) ≤ 2) (le_of_lt h2), 
+  obtain ⟨X₀, hX₀, hX₀'⟩ := has_subset_of_fincard (by norm_num : (0 : ℤ) ≤ 2) (le_of_lt h2), 
   rw [← hX₀', ← (rank_subset_simple_set h (subset.trans hX₀ hX) (le_of_eq hX₀'))],
   exact rank_mono _ hX₀, 
 end 
 
 lemma rank_subset_simple_lb (h : M.is_simple) (X : set α): 
-  min 2 (size X) ≤ M.r X := 
+  min 2 (fincard X) ≤ M.r X := 
 rank_subset_simple_set_lb h (subset_univ _)
 
 lemma eq_of_rank_one_simple (h : M.is_simple) (hef : M.r {e,f} = 1) : 
@@ -136,11 +136,11 @@ lemma simple_of_indep {M : matroid α} {I : set α} (hI : M.is_indep I):
 lemma loopless_set_iff_all_nonloops {M : matroid α} {S : set α} : 
   M.is_loopless_set S ↔ ∀ e ∈ S, M.is_nonloop e :=
 begin
-  simp_rw [nonloop_iff_r, is_loopless_set, size_le_one_iff_empty_or_singleton, indep_iff_r],
+  simp_rw [nonloop_iff_r, is_loopless_set, fincard_le_one_iff_empty_or_singleton, indep_iff_r],
   refine ⟨λ h, λ e he ,_  , λ h, λ X hX h', _⟩, 
-  {rw ← size_singleton e, exact h _ (singleton_subset_iff.mpr he) (or.inr ⟨e, rfl⟩)},  
+  {rw ← fincard_singleton e, exact h _ (singleton_subset_iff.mpr he) (or.inr ⟨e, rfl⟩)},  
   rcases h' with (rfl | ⟨e,rfl⟩), simp, 
-  rw [size_singleton, h e (singleton_subset_iff.mp hX)],  
+  rw [fincard_singleton, h e (singleton_subset_iff.mp hX)],  
 end
 
 lemma loopless_set_iff_subset_nonloops {M : matroid α} {S : set α} :
@@ -188,18 +188,18 @@ begin
   refine ⟨λ h, ⟨λ X hXS hX, h X hXS (by linarith [hX]),λ e f he hf hef, by_contra (λ hn, _)⟩,
   λ h, λ X hXS hX, _⟩, 
   { rcases hef with ⟨he,hf,hef⟩, 
-    have hef' := size_pair hn, 
+    have hef' := fincard_pair hn, 
     linarith [r_indep (h {e,f} (λ x, by {simp, rintros (rfl | rfl); assumption, }) (by linarith))]},
-  rcases int.nonneg_le_two_iff (size_nonneg X) hX with (h0 | h1 | h2), 
-  { rw size_zero_iff_empty at h0, rw h0, apply M.empty_indep, },
-  { obtain ⟨e,rfl⟩ := size_one_iff_eq_singleton.mp h1, 
+  rcases int.nonneg_le_two_iff (fincard_nonneg X) hX with (h0 | h1 | h2), 
+  { rw fincard_zero_iff_empty at h0, rw h0, apply M.empty_indep, },
+  { obtain ⟨e,rfl⟩ := fincard_one_iff_eq_singleton.mp h1, 
     rw singleton_subset_iff at hXS, 
     exact nonloop_iff_indep.mp (nonloop_of_mem_loopless_set h.1 hXS), },
-  rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩, 
+  rcases fincard_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩, 
   by_contra hn, 
   cases pair_subset_iff.mp hXS with he hf, 
   
-  suffices heq : e = f, rw [heq, pair_eq_singleton, size_singleton] at h2, norm_num at h2, 
+  suffices heq : e = f, rw [heq, pair_eq_singleton, fincard_singleton] at h2, norm_num at h2, 
   apply h.2 e f he hf, rw parallel_iff_dep _ _, right, 
     rwa [←dep_iff_not_indep] at hn, 
   all_goals {apply nonloop_of_mem_loopless_set h.1, assumption,  },
@@ -236,9 +236,9 @@ end
 lemma loopify_simple_set_of_simple_set (hS : M.is_simple_set S) (hX : disjoint S X): 
   (M ⟍ X).is_simple_set S := 
 begin
-  intros Y hY hsize, 
+  intros Y hY hfincard, 
   rw indep_loopify_iff, 
-  refine ⟨hS Y hY hsize, _⟩, 
+  refine ⟨hS Y hY hfincard, _⟩, 
   rw [← disjoint_iff_inter_eq_empty], 
   exact disjoint_of_subset_left hY hX,  
 end
@@ -246,8 +246,8 @@ end
 lemma loopify_simple_iff_simple_disjoint : 
   (M ⟍ X).is_simple_set S ↔ M.is_simple_set S ∧ disjoint S X := 
 begin
-  refine ⟨λ h, ⟨ λ X hX hsize, _ ,_⟩, λ h, loopify_simple_set_of_simple_set h.1 h.2⟩, 
-  { exact indep_of_loopify_indep (h X hX hsize)},
+  refine ⟨λ h, ⟨ λ X hX hfincard, _ ,_⟩, λ h, loopify_simple_set_of_simple_set h.1 h.2⟩, 
+  { exact indep_of_loopify_indep (h X hX hfincard)},
   by_contra hn, 
   obtain ⟨e, hx, hx'⟩ :=  not_disjoint_iff.mp hn, 
   simp_rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops,
@@ -263,7 +263,7 @@ def si (M : matroid α) : matroid (M.parallel_class) :=
   R0 := λ X, by {apply M.R0 },
   R1 := λ X, begin 
     let f := choose_transversal M, 
-    simp only [rank_img_transversal f, ←size_image_transversal f],
+    simp only [rank_img_transversal f, ←fincard_image_transversal f],
     apply M.R1, 
   end,
   R2 := λ X Y hXY, begin
@@ -321,7 +321,7 @@ by {rw [si_r, ← rank_eq_rank_parallel_cl_image_of]}
 
 lemma simple_set_of_weak_le {N M : matroid α}{X : set α}(hNM : N ≤ M)(hX : N.is_simple_set X):
   M.is_simple_set X := 
-by {rw simple_set_iff_r at hX ⊢, exact λ Y hY hsize, le_trans (hX Y hY hsize) (hNM Y)} 
+by {rw simple_set_iff_r at hX ⊢, exact λ Y hY hfincard, le_trans (hX Y hY hfincard) (hNM Y)} 
 
 lemma simple_loopify_iff {D : set α} : 
   (N ⟍ D).is_simple_set S ↔ N.is_simple_set S ∧ S ∩ D = ∅ := 
@@ -332,7 +332,7 @@ begin
     rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at h, 
     exact loop_iff_not_nonloop.mp (loop_of_loopify N heD) (h.1 e heS)},
   simp_rw [is_simple_set, indep_loopify_iff],
-  exact λ X hX hsize, ⟨h.1 X hX hsize, disjoint_of_subset_left' hX h.2⟩,  
+  exact λ X hX hfincard, ⟨h.1 X hX hfincard, disjoint_of_subset_left' hX h.2⟩,  
 end
 
 lemma simple_loopify_to_iff {R : set α}: 
@@ -369,7 +369,7 @@ begin
     apply rank_zero_of_pr_lp, },
   have hCC'D' : C ∩ (C' ∪ D') = ∅, 
   
-  rw [←size_zero_iff_empty, 
+  rw [←fincard_zero_iff_empty, 
         ←rank_zero_of_inter_rank_zero C (rank_zero_of_pr_lp M C' D'),
         ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)],
   

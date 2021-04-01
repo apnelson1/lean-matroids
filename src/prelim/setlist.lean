@@ -1,6 +1,6 @@
 
 import tactic 
-import .size .num_lemmas 
+import .fincard .num_lemmas 
 
 open_locale classical 
 open_locale big_operators 

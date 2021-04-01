@@ -58,7 +58,7 @@ lemma C_to_I3 (M : cct_family α) :
 begin
   -- I3 states that there are no bad pairs 
   let bad_pair : set α → set α → Prop := 
-    λ I J, size I < size J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:α), e ∈ J \ I → ¬C_to_I M (I ∪ {e}), 
+    λ I J, fincard I < fincard J ∧ C_to_I M I ∧ C_to_I M J ∧ ∀ (e:α), e ∈ J \ I → ¬C_to_I M (I ∪ {e}), 
   suffices : ∀ I J, ¬bad_pair I J, 
     push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
   by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
@@ -71,14 +71,14 @@ begin
   rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D, 
   ------------------
   
-  have hJI_nonempty : 0 < size (J \ I) := by 
-  { have := size_induced_partition I J, 
+  have hJI_nonempty : 0 < fincard (J \ I) := by 
+  { have := fincard_induced_partition I J, 
     rw inter_comm at this, 
-    linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
+    linarith [fincard_nonneg (I \ J), hsIJ, fincard_induced_partition J I]},
   
   have hIJ_nonempty : I \ J ≠ ∅ := by 
   { intro h, rw diff_empty_iff_subset at h, 
-    cases exists_mem_of_size_pos hJI_nonempty with e he,
+    cases exists_mem_of_fincard_pos hJI_nonempty with e he,
     refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ), 
     from union_subset h (subset_of_mem_of_subset he (diff_subset _ _))},
   
@@ -88,7 +88,7 @@ begin
   have : ∃ f, f ∈ J \ I ∧ ∀ C, C ⊆ J ∪ {e} → M.cct C → f ∈ C := by
   begin
     by_cases hJe : C_to_I M (J ∪ {e}) , -- Either J ∪ {e} has a circuit or doesn't
-    { cases exists_mem_of_size_pos hJI_nonempty with f hf, 
+    { cases exists_mem_of_fincard_pos hJI_nonempty with f hf, 
       exact ⟨f, ⟨hf, λ C hCJe hC, false.elim ((hJe _ hCJe) hC)⟩ ⟩},
      
     -- let Ce be a circuit contained in J ∪ {e}
@@ -128,9 +128,9 @@ begin
     have := mem_of_mem_of_subset hf hXJ', 
     rw mem_diff at this, tauto},
 
-  have hJ's : size I < size J', 
+  have hJ's : fincard I < fincard J', 
   { rw mem_diff at he hFJI, 
-    rwa [hdefJ', size_union_singleton_remove hFJI.1 he.2], },
+    rwa [hdefJ', fincard_union_singleton_remove hFJI.1 he.2], },
   
   have hJ'ssu : I \ J' ⊂ I \ J,
   { rw hdefJ',
