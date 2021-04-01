@@ -194,9 +194,9 @@ begin
 end
 
 lemma ε_univ_eq_num_points (M : matroid α):
-  M.ε univ = type_size M.point :=
+  M.ε univ = nat.card M.point :=
 begin
-  rw [point, type_size_type_of_eq_size_set_of], 
+  rw [point, nat.card_type_of_eq_size_set_of], 
   convert ε_flat_eq_num_points M.univ_is_flat, 
   ext P, 
   exact ⟨λ h, ⟨h, subset_univ _⟩, λ h, h.1⟩,  
@@ -204,12 +204,12 @@ end
 
 lemma ε_univ_eq_size_set_of_points (M : matroid α):
   M.ε univ = size { P : set α | M.is_point P } :=
-by {rw [ε_univ_eq_num_points, point, type_size_type_of_eq_size_set_of]}
+by {rw [ε_univ_eq_num_points, point, nat.card_type_of_eq_size_set_of]}
 
 lemma ε_proj_nonloop (M : matroid α) {e : α} (he : M.is_nonloop e): 
   (M ⟋ {e}).ε univ = size { L | M.is_line L ∧ e ∈ L} := 
 begin
-  rw [ε_univ_eq_num_points, point, type_size_type_of_eq_size_set_of], 
+  rw [ε_univ_eq_num_points, point, nat.card_type_of_eq_size_set_of], 
   convert rfl, ext, rwa [point_project_nonloop_iff], 
 end
 

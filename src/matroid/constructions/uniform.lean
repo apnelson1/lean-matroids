@@ -84,11 +84,11 @@ begin
 end
 
 def circuit_matroid_on (α : Type*) [fintype α]: matroid α := 
-  uniform_matroid_on α (type_size α - 1)
+  uniform_matroid_on α (nat.card α - 1)
 
 @[simp] lemma circuit_matroid_rank (hα : nonempty α) (X : set α) :
   (circuit_matroid_on α).r X = min (size (univ : set α) - 1) (size X) := 
-by {convert uniform_matroid_rank  _ X, linarith [one_le_type_size_of_nonempty hα]}
+by {convert uniform_matroid_rank  _ X, linarith [one_le_nat.card_of_nonempty hα]}
 
 lemma circuit_matroid_iff_univ_circuit (hα : nonempty α){M : matroid α} :
   M = circuit_matroid_on α ↔ is_circuit M univ := 
@@ -106,10 +106,10 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
+lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ nat.card α){r : ℤ} (hr : 0 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
-  rw type_size_eq at hα, 
+  rw nat.card_eq at hα, 
   refine ⟨λ h, by_contra (λ hn, _), λ h, _⟩, 
   { push_neg at hn, 
     obtain ⟨X,hX⟩ := has_set_of_size  (by norm_num : (0 : ℤ) ≤ 2) hα, 
@@ -127,14 +127,14 @@ end
 
 
 lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℤ} (hr : 0 ≤ r) 
-(hα : 1 ≤ type_size α):
+(hα : 1 ≤ nat.card α):
   (unif.uniform_matroid_on α r).is_loopless ↔ 1 ≤ r := 
 begin
   simp_rw [loopless_iff_all_nonloops, nonloop_iff_r], 
   by_cases (r ≤ 0), 
   { rw [le_antisymm h hr], 
     norm_num, 
-    obtain ⟨e⟩ :=  nonempty_of_type_size_pos hα, 
+    obtain ⟨e⟩ :=  nonempty_of_nat.card_pos hα, 
     exact ⟨e, by {rw [uniform_matroid_rank, min_eq_left (size_nonneg _)]; norm_num,  }⟩}, 
   have : 1 ≤ r, rwa not_le at h, 
   convert (iff_true _).mpr _, simpa only [iff_true, eq_iff_iff], 

@@ -9,7 +9,7 @@ universes u v w
 
 /-!
 This file contains an API for `size`, which is the noncomputable function assigning each finite
-set to its size as an integer, and each infinite set to zero. Also `type_size` is defined similarly 
+set to its size as an integer, and each infinite set to zero. Also `nat.card` is defined similarly 
 for types. Most lemmas are only true in a finite setting, and have two versions, one with explicit
 finiteness assumptions, and one in which they are derived from a `fintype` instance . Lemmas of the 
 former type are usually less useful for us, and go in the `finite` namespace. 
@@ -21,7 +21,7 @@ section defs
 def size {α : Type*} (s : set α) : ℕ := (fincard s)
 
 /-- The size of a type, as an integer. Zero if the type is infinite -/
-def type_size (α : Type* ) : ℕ := size (set.univ : set α)
+def nat.card (α : Type* ) : ℕ := size (set.univ : set α)
 
 end defs 
 
@@ -35,18 +35,18 @@ lemma size_def (s : set α) :
   size s = fincard s := 
 rfl 
 
-lemma type_size_eq (α : Type*) : type_size α = size (set.univ : set α) := rfl 
+lemma nat.card_eq (α : Type*) : nat.card α = size (set.univ : set α) := rfl 
 
-lemma type_size_eq_fincard_t (α : Type*) : type_size α = fincard_t α := 
-by {rw [type_size, size_def], refl,  }
+lemma nat.card_eq_fincard_t (α : Type*) : nat.card α = fincard_t α := 
+by {rw [nat.card, size_def], refl,  }
 
-lemma type_size_coe_set_eq_size (s : set α) :
-  type_size s = size s := 
-by rw [type_size_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
+lemma nat.card_coe_set_eq_size (s : set α) :
+  nat.card s = size s := 
+by rw [nat.card_eq_fincard_t, size, fincard_t_subtype_eq_fincard]
 
-lemma type_size_type_of_eq_size_set_of (P : α → Prop): 
-  type_size {x // P x} = size {x | P x} :=
-type_size_coe_set_eq_size P
+lemma nat.card_type_of_eq_size_set_of (P : α → Prop): 
+  nat.card {x // P x} = size {x | P x} :=
+nat.card_coe_set_eq_size P
 
 @[simp] lemma size_empty (α : Type*) : size (∅ : set α) = 0 := 
 by simp [size]
@@ -57,7 +57,7 @@ by simp [size]
 lemma size_nonneg (s : set α) : 0 ≤ size s := 
 by {simp only [size],  apply zero_le}  
 
-lemma type_size_nonneg (α : Type*) : 0 ≤ type_size α := 
+lemma nat.card_nonneg (α : Type*) : 0 ≤ nat.card α := 
 size_nonneg _
 
 lemma size_zero_of_infinite (hs : s.infinite) : 
@@ -69,17 +69,17 @@ lemma finite_of_size_pos (hs : 0 < size s) :
 by {rw size at hs, exact finite_of_fincard_pos hs, }
 
 /-- a positive type size gives rise to a fintype -/
-def fintype_of_type_size_pos {α : Type*} (hα : 0 < type_size α) : 
+def fintype_of_nat.card_pos {α : Type*} (hα : 0 < nat.card α) : 
   fintype α := 
-set.fintype_of_univ_finite (by {rw [type_size_eq] at hα, exact finite_of_size_pos hα,})
+set.fintype_of_univ_finite (by {rw [nat.card_eq] at hα, exact finite_of_size_pos hα,})
 
 lemma nonempty_of_size_pos (hs : 0 < size s) :
   s.nonempty := 
 by {rw ← set.ne_empty_iff_nonempty, rintro rfl, linarith [size_empty α], }
 
-lemma nonempty_of_type_size_pos (hα : 0 < type_size α): 
+lemma nonempty_of_nat.card_pos (hα : 0 < nat.card α): 
   nonempty α := 
-by {rw set.nonempty_iff_univ_nonempty, rw type_size_eq at hα, exact nonempty_of_size_pos hα, }
+by {rw set.nonempty_iff_univ_nonempty, rw nat.card_eq at hα, exact nonempty_of_size_pos hα, }
 
 lemma contains_singleton {s : set α} : s.nonempty → (∃ t, t ⊆ s ∧ size t = 1) :=
 λ ⟨e,he⟩, ⟨{e},⟨set.singleton_subset_iff.mpr he, size_singleton e⟩⟩
@@ -92,13 +92,13 @@ lemma exists_mem_of_size_pos (h : 0 < size s) :
   ∑ᶠ x in s, 1 = size s := 
 by rw [size, fincard]
 
-@[simp] lemma finsum_ones_eq_type_size (α : Type*) : 
-  ∑ᶠ (x : α), 1 = type_size α := 
+@[simp] lemma finsum_ones_eq_nat.card (α : Type*) : 
+  ∑ᶠ (x : α), 1 = nat.card α := 
 by {rw [finsum_eq_finsum_in_univ, finsum_ones_eq_size], refl}
 
 lemma size_set_of_eq_size_subtype (P : α → Prop):
-  size {x | P x} = type_size {x // P x} :=
-by rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, ← finsum_subtype_eq_finsum_in_set_of]
+  size {x | P x} = nat.card {x // P x} :=
+by rw [← finsum_ones_eq_size, ← finsum_ones_eq_nat.card, ← finsum_subtype_eq_finsum_in_set_of]
 
 lemma size_set_of_push (P Q : α → Prop) :
   size {x : {y // P y} | Q (x : α)} = size { x | P x ∧ Q x } := 
@@ -156,9 +156,9 @@ section sums
 
 variables {α : Type*}
 
-@[simp] lemma int.finsum_const_eq_mul_type_size (α : Type*) (b : ℕ) :
-  ∑ᶠ (x : α), b = b * type_size α := 
-by rw [← mul_one b, ← finsum_ones_eq_type_size, ← mul_distrib_finsum, mul_one]
+@[simp] lemma int.finsum_const_eq_mul_nat.card (α : Type*) (b : ℕ) :
+  ∑ᶠ (x : α), b = b * nat.card α := 
+by rw [← mul_one b, ← finsum_ones_eq_nat.card, ← mul_distrib_finsum, mul_one]
 
 @[simp] lemma int.finsum_in_const_eq_mul_size (s : set α) (b : ℕ) :
   ∑ᶠ x in s, b = b * size s := 
@@ -517,10 +517,10 @@ variables {α : Type*} {s t : set α} {e f : α}
 
 open set 
 
-lemma compl_nonempty_of_size_lt_type_size (hs : size s < type_size α):  
+lemma compl_nonempty_of_size_lt_nat.card (hs : size s < nat.card α):  
   sᶜ.nonempty :=
 begin
-  rw type_size_eq at hs,
+  rw nat.card_eq at hs,
   refine nonempty_compl.mpr (λ h, lt_irrefl (size s) (by {rwa ← h at hs})), 
 end
 
@@ -658,9 +658,9 @@ begin
     exact nonmem_of_nonmem_supset (nonmem_removal _ _) hst},
 end
 
-lemma has_set_of_size {n : ℕ} (h' : n ≤ type_size α) :
+lemma has_set_of_size {n : ℕ} (h' : n ≤ nat.card α) :
   ∃ (Y : set α), size Y = n :=
-by {rw type_size_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h', tauto}
+by {rw nat.card_eq at h', obtain ⟨Y,-,hY⟩ := has_subset_of_size h', tauto}
  
 lemma has_subset_of_size_of_infinite {n : ℕ} (ht : t.infinite) :
   ∃ s ⊆ t, size s = n :=
@@ -711,8 +711,8 @@ lemma size_monotone (hst : s ⊆ t) :
   size s ≤ size t :=
 by {apply finite.size_monotone _ hst, apply finite.of_fintype, }
 
-lemma size_le_type_size (s : set α):
-  size s ≤ type_size α :=
+lemma size_le_nat.card (s : set α):
+  size s ≤ nat.card α :=
 size_monotone (subset_univ _)
 
 lemma sum_size_fiber_eq_size {ι : Type*} (s : set α) (f : α → ι) :
@@ -812,7 +812,7 @@ nonempty_iff_size_pos
 lemma one_le_size_univ_of_nonempty (hα : nonempty α) : 1 ≤ size (univ : set α) := 
 by rwa [nonempty_iff_univ_nonempty, one_le_size_iff_nonempty] at hα
 
-lemma one_le_type_size_of_nonempty (hα: nonempty α) : 1 ≤ type_size α  := 
+lemma one_le_nat.card_of_nonempty (hα: nonempty α) : 1 ≤ nat.card α  := 
 one_le_size_univ_of_nonempty hα
 
 lemma size_strict_monotone (hst : s ⊂ t) : size s < size t := 
@@ -918,11 +918,11 @@ begin
   simpa using hxy, 
 end
 
-lemma eq_univ_of_size_eq_type_size (hs : size s = type_size α) : s = univ :=
+lemma eq_univ_of_size_eq_nat.card (hs : size s = nat.card α) : s = univ :=
 begin
-  rw [← finsum_ones_eq_size, ← finsum_ones_eq_type_size, finsum_eq_finsum_in_univ] at hs, 
-  have h := fin.eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg
-    (subset_univ s) (λ _ _, int.zero_lt_one.le) hs.symm.le,
+  rw [← finsum_ones_eq_size, ← finsum_ones_eq_nat.card, finsum_eq_finsum_in_univ] at hs, 
+  have h := fin.eq_zero_of_finsum_in_subset_eq_finsum_in_of_nonneg (subset_univ s) _ hs.symm.le,
+  swap, norm_num, 
   simp only [one_ne_zero, univ_diff, mem_compl_eq, imp_false, not_not] at h, 
   ext, 
   tauto,
@@ -945,94 +945,43 @@ lemma size_collection_eq_size_union_iff
   size k = size (⋃₀ k) ↔ ∀ s ∈ k, size s = 1 := 
 by apply finite.size_collection_eq_size_union_iff _ (λ _ _, _) hk hdisj; apply finite.of_fintype
 
-lemma size_disjoint_collection_le_type_size {k : set (set α)} (hk' : ∀ s ∈ k, set.nonempty s)
+lemma size_disjoint_collection_le_nat.card {k : set (set α)} (hk' : ∀ s ∈ k, set.nonempty s)
 (hdisj : pairwise_disjoint k): 
-  size k ≤ type_size α :=
-le_trans (size_collection_le_size_union hk' hdisj) (size_le_type_size _)
+  size k ≤ nat.card α :=
+le_trans (size_collection_le_size_union hk' hdisj) (size_le_nat.card _)
 
-lemma size_disjoint_collection_eq_type_size_iff (hk : ∀ s ∈ k, set.nonempty s)
+lemma size_disjoint_collection_eq_nat.card_iff (hk : ∀ s ∈ k, set.nonempty s)
 (hdisj : pairwise_disjoint k): 
-  size k = type_size α ↔ ⋃₀ k = univ ∧ ∀ s ∈ k, size s = 1 := 
+  size k = nat.card α ↔ ⋃₀ k = univ ∧ ∀ s ∈ k, size s = 1 := 
 begin
   refine ⟨λ h, _, λ h, _⟩,  
   {  obtain ⟨h₁, h₂⟩ := squeeze_le_trans 
       (size_collection_le_size_union hk hdisj) 
-      (size_le_type_size _) 
+      (size_le_nat.card _) 
       h, 
-    exact ⟨eq_univ_of_size_eq_type_size h₂, 
+    exact ⟨eq_univ_of_size_eq_nat.card h₂, 
             singletons_of_size_collection_eq_size_union hk hdisj h₁⟩},
-  rw [(size_collection_eq_size_union_iff hk hdisj).mpr h.2, h.1, type_size_eq], 
+  rw [(size_collection_eq_size_union_iff hk hdisj).mpr h.2, h.1, nat.card_eq], 
 end
 
 end fintype 
 
-
-/-! This section deals with fin', an analogue of fin that is defined for all n; it is 
-an empty type whenever `n ≤ 0`. -/
-
-section fin'
-
-/-- the same as fin, but defined for all integers (empty if `n < 0`)-/
-def fin' (n : ℕ) : Type := fin (n.to_nat)
-
-lemma fin'_eq_fin {n : ℕ} :
-  fin' n = fin n := 
-rfl 
-
-lemma fin'_neg_elim {n : ℕ} (hn : n < 0) (x : fin' n) : 
-  false :=
-by {cases x with x hx, rw int.to_nat_zero_of_neg hn at hx, exact nat.not_lt_zero _ hx,  }
-
-lemma fin'_le_zero_elim {n : ℕ} (hn : n ≤ 0) (x : fin' n) : 
-  false :=
-begin
-  cases x with x hx,
-  rcases eq_or_lt_of_le hn with (rfl | hn), 
-  { exact nat.not_lt_zero _ hx, },
-  rw int.to_nat_zero_of_neg hn at hx, 
-  exact nat.not_lt_zero _ hx,
-end 
-
-instance {n : ℕ} : fintype (fin' n) := by {unfold fin', apply_instance}
-
 @[simp] lemma size_fin (n : ℕ) : 
-  type_size (fin n) = n := 
-by {rw [type_size_eq_fincard_t], norm_num}
+  nat.card (fin n) = n := 
+by {rw [nat.card_eq_fincard_t], norm_num}
 
-@[simp] lemma size_fin' (n : ℕ) (hn : 0 ≤ n) : 
-  type_size (fin' n) = n := 
-by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
 
-@[simp] lemma size_fin'_univ (n : ℕ) (hn : 0 ≤ n) : 
-  size (set.univ : set (fin' n)) = n := 
-by {convert size_fin (n.to_nat), exact (int.to_nat_of_nonneg hn).symm}
-
-lemma type_size_eq_iff_equiv_fin' {α : Type*} [fintype α] {n : ℕ} (hn : 0 ≤ n) : 
-  type_size α = n ↔ nonempty (equiv α (fin' n)) :=
-begin
-  obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le hn, 
-  rw [fin'_eq_fin, ← fincard_t_eq_iff_fin_equiv, type_size_eq_fincard_t, int.coe_nat_inj'],
-end
-
-/-- choose an equivalence between a finite type and the appropriate `fin'` -/
-def choose_equiv_to_fin' (α : Type*) [fintype α] :
-  equiv α (fin' (type_size α)) :=
-classical.choice ((type_size_eq_iff_equiv_fin' (type_size_nonneg α)).mp rfl)
-
-lemma type_size_le_zero_elim {α : Type*} [fintype α] (hα : type_size α ≤ 0) (e : α): 
+lemma nat.card_le_zero_elim {α : Type*} [fintype α] (hα : nat.card α ≤ 0) (e : α): 
   false :=
 begin
-  let bij := choose_equiv_to_fin' α, 
-  apply nat.not_lt_zero (bij e).val,
-  convert (bij e).property, 
-  rw int.to_nat_zero_of_nonpos hα,   
+  have h : nat.card α = 0, linarith, 
+  rw [nat.card_eq, size_zero_iff_empty, set.univ_eq_empty_iff] at h, 
+  exact not_nonempty_iff_imp_false.mp h e, 
 end
 
-lemma type_size_lt_zero_elim {α : Type*} (hα : type_size α < 0) (e : α): 
-  false :=
-by linarith [type_size_nonneg α]
 
-end fin' 
+lemma nat.card_lt_zero_elim {α : Type*} (hα : nat.card α < 0) (e : α): false :=
+by linarith [nat.card_nonneg α]
 
 
 /-! This section covers the relationship between size and functions between sets (mostly embeddings
@@ -1046,12 +995,12 @@ variables {α : Type*}{β : Type*}
 
 lemma size_image_emb (f : α ↪ β) (s : set α) : 
   size (f '' s) = size s := 
-by {simp_rw [size], norm_cast, apply fincard_img_emb, }
+by {simp_rw [size], apply fincard_img_emb, }
 
-lemma type_size_le_type_size_inj [fintype β] (f : α ↪ β) : 
-  type_size α ≤ type_size β := 
+lemma nat.card_le_nat.card_inj [fintype β] (f : α ↪ β) : 
+  nat.card α ≤ nat.card β := 
 begin
-  rw [type_size, type_size, ← size_image_emb f], 
+  rw [nat.card, nat.card, ← size_image_emb f], 
   apply size_monotone, 
   apply subset_univ, 
 end 
@@ -1065,28 +1014,24 @@ lemma size_image_equiv (f : α ≃ β) (s : set α) :
 size_image_emb (f.to_embedding) s 
 
 lemma size_range_emb (f : α ↪ β):
-  size (range f) = type_size α :=
+  size (range f) = nat.card α :=
 by {rw [← image_univ, size_image_emb], refl,  }
 
 lemma size_range_inj (f : α → β)(hf : function.injective f):
-  size (range f) = type_size α :=
+  size (range f) = nat.card α :=
 by {rw [← image_univ, size_image_inj hf], refl,  }
 
-lemma type_size_eq_type_size_equiv (f : α ≃ β) : 
-  type_size α = type_size β := 
-by rw [type_size, type_size, ← size_image_equiv f, ← f.range_eq_univ, image_univ]
+lemma nat.card_eq_nat.card_equiv (f : α ≃ β) : 
+  nat.card α = nat.card β := 
+by rw [nat.card, nat.card, ← size_image_equiv f, ← f.range_eq_univ, image_univ]
 
-lemma type_size_eq_iff_equiv [fintype α] [fintype β]: 
-  type_size α = type_size β ↔ nonempty (α ≃ β) :=
-begin
-  simp_rw [type_size_eq_fincard_t],
-  norm_num, 
-  simp_rw [fincard_t_eq_fintype_card, fintype.card_eq],
-end 
-
+lemma nat.card_eq_iff_equiv [fintype α] [fintype β]: 
+  nat.card α = nat.card β ↔ nonempty (α ≃ β) :=
+by simp_rw [nat.card_eq_fincard_t, fincard_t_eq_fintype_card, fintype.card_eq]
+  
 /-- Gives an equivalence between two types of equal size -/
-def equiv_of_type_size_eq [fintype α] [fintype β] (h : type_size α = type_size β ): α ≃ β :=
-classical.choice (type_size_eq_iff_equiv.mp h)
+def equiv_of_nat.card_eq [fintype α] [fintype β] (h : nat.card α = nat.card β ): α ≃ β :=
+classical.choice (nat.card_eq_iff_equiv.mp h)
 
 @[simp] lemma equiv.image_mem_image_iff_mem {f : α ≃ β} {x : α} {s : set α} : 
   f x ∈ f '' s ↔ x ∈ s := 
@@ -1129,63 +1074,63 @@ size_subtype_image s
 by {rw ← size_image_coe (coe ⁻¹' s : set E), simp, }
 
 
-lemma nonempty_fin'_emb_of_type_size {n : ℕ} (hα : n ≤ type_size α ) : 
-  nonempty ((fin' n) ↪ α) := 
+lemma nonempty_fin_emb_of_nat_card {n : ℕ} (hα : n ≤ nat.card α) : 
+  nonempty ((fin n) ↪ α) := 
 begin
-  by_cases hn : n ≤ 0, 
-  { exact ⟨⟨λ x, false.elim (fin'_le_zero_elim hn x), λ x, false.elim (fin'_le_zero_elim hn x)⟩⟩},
-  push_neg at hn, 
-  obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le (le_of_lt hn), 
-  rw fin'_eq_fin, 
+  cases n, 
+  { exact ⟨⟨λ x, fin_zero_elim x, λ x, fin_zero_elim x⟩⟩},
   
-  obtain ⟨s,hs⟩ := has_set_of_size (le_of_lt hn) hα, 
-  rw [size_def, int.coe_nat_inj'] at hs,
-  subst hs, 
-  letI := fintype_of_type_size_pos (lt_of_lt_of_le hn hα), 
+  --obtain ⟨m,rfl⟩ := int.eq_coe_of_zero_le (le_of_lt hn), 
+  --rw fin'_eq_fin, 
+  
+  obtain ⟨s,hs⟩ := has_set_of_size hα, 
+  --rw [size_def, int.coe_nat_inj'] at hs,
+  --subst hs, 
+  letI := fintype_of_nat.card_pos (lt_of_lt_of_le hn hα), 
   have bij := (@choose_fin_bij ↥s _).symm, 
   exact ⟨⟨ 
     λ x, (bij ⟨x, by {rw fincard_t_subtype_eq_fincard, exact x.property,}⟩).val ,
     λ x y hxy, by {convert subtype.val_injective hxy, tidy,}⟩⟩,
 end
 
-/-- an embedding from `fin' n` into `α`, provided that `n ≤ type_size α` -/
-def choose_fin'_inj_of_type_size {n : ℕ} (hα : n ≤ type_size α) :
+/-- an embedding from `fin' n` into `α`, provided that `n ≤ nat.card α` -/
+def choose_fin'_inj_of_nat.card {n : ℕ} (hα : n ≤ nat.card α) :
   (fin' n) ↪ α :=
-classical.choice (nonempty_fin'_emb_of_type_size hα)
+classical.choice (nonempty_fin'_emb_of_nat.card hα)
 
 def emb_nonempty_of_size_le_size {α : Type*} {β : Type*} [fintype α]
-(hsize : type_size α ≤ type_size β ) : 
+(hsize : nat.card α ≤ nat.card β ) : 
   nonempty (α ↪ β) := 
-⟨(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_type_size β _ hsize)⟩ 
+⟨(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_nat.card β _ hsize)⟩ 
 
 
-lemma type_size_le_iff_emb {α β : Type* } [fintype α] [fintype β] : 
-  type_size α ≤ type_size β ↔ nonempty (α ↪ β) :=
+lemma nat.card_le_iff_emb {α β : Type* } [fintype α] [fintype β] : 
+  nat.card α ≤ nat.card β ↔ nonempty (α ↪ β) :=
 ⟨ λ h, emb_nonempty_of_size_le_size h, 
-  λ ⟨emb⟩, eq.trans_le (size_range_emb emb).symm (size_le_type_size (range emb)), ⟩
+  λ ⟨emb⟩, eq.trans_le (size_range_emb emb).symm (size_le_nat.card (range emb)), ⟩
 
-/-- an embedding from `α` into `β`, provided that `type_size α ≤ type_size β` and `α` is finite.
+/-- an embedding from `α` into `β`, provided that `nat.card α ≤ nat.card β` and `α` is finite.
 A little scary as this takes a `fintype` and outputs data, so could cause instance issues. Maybe 
 the `nonempty` version is safer. -/
 def choose_emb_of_size_le_size {α : Type*} {β : Type*} [fintype α]
-(hsize : type_size α ≤ type_size β ) : 
+(hsize : nat.card α ≤ nat.card β ) : 
   (α ↪ β) := 
-(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_type_size β _ hsize) 
+(choose_equiv_to_fin' α).to_embedding.trans (@choose_fin'_inj_of_nat.card β _ hsize) 
 
-lemma exists_emb_of_type_size_le_size_set {α : Type*} [fintype α] {β : Type*} {s : set β} 
-(hsize : type_size α ≤ size s ) : 
+lemma exists_emb_of_nat.card_le_size_set {α : Type*} [fintype α] {β : Type*} {s : set β} 
+(hsize : nat.card α ≤ size s ) : 
   ∃ (emb : α ↪ β), set.range emb ⊆ s := 
 begin
-  rw ← type_size_coe_set_eq_size at hsize, 
+  rw ← nat.card_coe_set_eq_size at hsize, 
   let emb := choose_emb_of_size_le_size hsize, 
   exact ⟨emb.trans ⟨subtype.val, subtype.val_injective ⟩, λ x, by tidy⟩, 
 end
 
-lemma set.finite.exists_emb_of_type_size_eq_size_set {α : Type*} [fintype α] {β : Type*} 
-{s : set β} (hs : s.finite) (hsize : type_size α = size s ) : 
+lemma set.finite.exists_emb_of_nat.card_eq_size_set {α : Type*} [fintype α] {β : Type*} 
+{s : set β} (hs : s.finite) (hsize : nat.card α = size s ) : 
   ∃ (emb : α ↪ β), set.range emb = s := 
 begin
-  convert exists_emb_of_type_size_le_size_set (le_of_eq hsize), 
+  convert exists_emb_of_nat.card_le_size_set (le_of_eq hsize), 
   ext emb, 
   split, 
   { unfreezingI {rintro rfl}, exact subset_refl _, }, 
@@ -1195,29 +1140,29 @@ begin
   convert hsize, 
 end
 
-lemma exists_emb_of_type_size_eq_size_set {α : Type*} [fintype α] {β : Type*} [fintype β]
-{s : set β} (hsize : type_size α = size s ) : 
+lemma exists_emb_of_nat.card_eq_size_set {α : Type*} [fintype α] {β : Type*} [fintype β]
+{s : set β} (hsize : nat.card α = size s ) : 
   ∃ (emb : α ↪ β), set.range emb = s := 
-by {apply set.finite.exists_emb_of_type_size_eq_size_set _ hsize, apply finite.of_fintype }
+by {apply set.finite.exists_emb_of_nat.card_eq_size_set _ hsize, apply finite.of_fintype }
 
-lemma type_size_lt_of_nonmem_range_emb {α β : Type* } [fintype β] (emb : α ↪ β) {b : β}
+lemma nat.card_lt_of_nonmem_range_emb {α β : Type* } [fintype β] (emb : α ↪ β) {b : β}
 (hb : b ∉ range emb): 
-  type_size α < type_size β :=
+  nat.card α < nat.card β :=
 begin
-  refine lt_of_le_of_ne (by { rw [← size_range_emb emb], apply size_le_type_size, }) (λ h, _),
+  refine lt_of_le_of_ne (by { rw [← size_range_emb emb], apply size_le_nat.card, }) (λ h, _),
   letI : fintype α := fintype.of_injective _ (emb.injective), 
-  let eq := equiv_of_type_size_eq h.symm, 
+  let eq := equiv_of_nat.card_eq h.symm, 
   have h' := size_image_equiv eq (has_insert.insert b (range emb)), 
   rw [size_insert_nonmem hb, size_range_emb] at h', 
-  linarith [size_le_type_size (eq '' insert b (range ⇑emb))], 
+  linarith [size_le_nat.card (eq '' insert b (range ⇑emb))], 
 end
 
-lemma type_size_lt_iff_exists_proper_emb {α β : Type*} [fintype α] [fintype β] : 
-  type_size α < type_size β ↔ ∃ (emb : α ↪ β) (b : β), b ∉ range emb := 
+lemma nat.card_lt_iff_exists_proper_emb {α β : Type*} [fintype α] [fintype β] : 
+  nat.card α < nat.card β ↔ ∃ (emb : α ↪ β) (b : β), b ∉ range emb := 
 begin
-  refine ⟨λ h, _, λ ⟨emb, b, hb⟩, type_size_lt_of_nonmem_range_emb emb hb⟩,
+  refine ⟨λ h, _, λ ⟨emb, b, hb⟩, nat.card_lt_of_nonmem_range_emb emb hb⟩,
   obtain ⟨emb⟩ := emb_nonempty_of_size_le_size (le_of_lt h), 
-  refine ⟨emb, compl_nonempty_iff_exists_nonmem.mp (compl_nonempty_of_size_lt_type_size _)⟩,
+  refine ⟨emb, compl_nonempty_iff_exists_nonmem.mp (compl_nonempty_of_size_lt_nat.card _)⟩,
   rwa size_range_emb, 
 end
 

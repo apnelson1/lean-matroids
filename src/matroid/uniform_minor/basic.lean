@@ -42,7 +42,7 @@ begin
     rw image_preimage_eq_of_subset hX, },
   rintros ⟨S, C, hdisj, hsize, hr⟩, 
   rw [eq_comm, ← size_fin' _ hb] at hsize, 
-  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,   
+  obtain ⟨φ, rfl⟩ := exists_emb_of_nat.card_eq_size_set hsize,   
   refine ⟨φ, C, hdisj, λ F, _⟩, 
   convert hr (φ '' F) (λ x, by tidy), 
   rw [size_image_emb, canonical_unif_r ha], 
@@ -63,7 +63,7 @@ begin
   { convert hr (φ ⁻¹' X), 
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],
     rw image_preimage_eq_of_subset hX}, 
-  rw [canonical_unif_r ha, ← type_size_eq, size_fin' _ (le_trans ha hab), min_eq_left hab] at hrank, 
+  rw [canonical_unif_r ha, ← nat.card_eq, size_fin' _ (le_trans ha hab), min_eq_left hab] at hrank, 
   linarith,  
 end
 
@@ -87,7 +87,7 @@ begin
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],  }, 
   rintros ⟨S, hsize, hr⟩, 
   rw [eq_comm, ← size_fin' _ hb] at hsize, 
-  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,   
+  obtain ⟨φ, rfl⟩ := exists_emb_of_nat.card_eq_size_set hsize,   
   refine ⟨φ, λ F, _⟩, 
   convert (hr (φ '' F) (λ x, by tidy)).symm using 1, 
   rw [size_image_emb, canonical_unif_r ha], 

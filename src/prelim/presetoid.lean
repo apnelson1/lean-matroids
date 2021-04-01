@@ -239,17 +239,17 @@ section size
 
 variables [fintype α]
 
-lemma size_classes_le_type_size (S : presetoid α):
-  size (S.classes) ≤ type_size α := 
-size_disjoint_collection_le_type_size 
+lemma size_classes_le_nat.card (S : presetoid α):
+  size (S.classes) ≤ nat.card α := 
+size_disjoint_collection_le_nat.card 
   (λ s hs, class_nonempty (mem_classes_iff_is_class.mpr hs))
   (S.eqv_classes_pairwise_disj)
 
 /- this proof is a nasty hack and should be improvable -/
-lemma size_classes_eq_type_size_iff_simple (S : presetoid α): 
-  size S.classes = type_size α ↔ S.is_simple :=
+lemma size_classes_eq_nat.card_iff_simple (S : presetoid α): 
+  size S.classes = nat.card α ↔ S.is_simple :=
 begin
-  convert size_disjoint_collection_eq_type_size_iff 
+  convert size_disjoint_collection_eq_nat.card_iff 
     (λ s hs, class_nonempty (mem_classes_iff_is_class.mpr hs))
     (S.eqv_classes_pairwise_disj), 
   rw [simple_iff, ← iff_iff_eq],  
