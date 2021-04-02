@@ -1,4 +1,4 @@
-import .induction .fincard 
+import .induction finsum.fincard 
 
 universes u v w
 

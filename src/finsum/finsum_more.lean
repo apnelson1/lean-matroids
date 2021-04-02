@@ -384,6 +384,13 @@ begin
   apply set.finite.inter_right h, 
 end 
 
+lemma finsum_in_sdiff_neg {t : set α} (ht : (t ∩ function.support f).finite)
+  (hst : s ⊆ t) : ∑ᶠ i in t \ s, f i = ∑ᶠ i in t, f i -  ∑ᶠ i in s, f i :=
+eq_sub_of_add_eq' (finsum_in_sdiff' ht hst)
+
+lemma finsum_in_sdiff_neg_of_fintype [fintype α] {s t : set α} 
+  (hst : s ⊆ t) : ∑ᶠ i in t \ s, f i = ∑ᶠ i in t, f i -  ∑ᶠ i in s, f i :=
+by {apply finsum_in_sdiff_neg _ hst, apply set.finite.of_fintype, }
 
 lemma finsum_in_neg_distrib (f : α → M) (s : set α) : 
   ∑ᶠ i in s, - f i = - ∑ᶠ i in s, f i :=   
