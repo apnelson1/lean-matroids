@@ -59,7 +59,7 @@ lemma ssubset_iff_subset_not_supset : s ⊂ t ↔ s ⊆ t ∧ ¬(t ⊆ s) :=
 iff.rfl
 
 lemma ssubset_of_subset_ne : s ⊆ t → s ≠ t → s ⊂ t := 
-@lt_of_le_of_ne _ _ s t 
+@lt_of_le_of_ne _ _ s t
 
 lemma ne_of_ssubset : s ⊂ t → s ≠ t := 
 ne_of_irrefl
@@ -361,15 +361,13 @@ lemma infinite_of_union (hs : s.infinite) (t : set α) :
 set.infinite_mono (set.subset_union_left _ _) hs 
 
 lemma finite.diff (hs : s.finite) (t : set α) : (s \ t).finite :=  
-  set.finite.subset hs (set.diff_subset _ _)
+  hs.subset (set.diff_subset _ _)
 
 lemma finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite := 
-  set.finite.subset hs (set.inter_subset_left _ _)
+  hs.subset (set.inter_subset_left _ _)
 
 lemma finite.inter_right (ht : t.finite) (s : set α ) : (s ∩ t).finite := 
-  set.finite.subset ht (set.inter_subset_right _ _)
-
-
+  ht.subset (set.inter_subset_right _ _)
 
 lemma subset_insert_iff_subset_or_eq_insert {s t : set α} {a : α}: 
   s ⊆ insert a t ↔ (s ⊆ t) ∨ ∃ s' ⊆ t, s = insert a s' := 
