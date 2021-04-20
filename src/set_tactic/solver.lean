@@ -207,12 +207,14 @@ meta def split_goal : (tactic unit) := do
  
 meta def finisher_step : (tactic unit) := do
   -- push negatives everywhere
-  tactic.try `[push_neg at *], 
+  tactic.try `[push_neg at *],
+  tactic.try `[push_neg],
   -- try introducing a name and specializing
   introduce_and_specialize 
   <|>
   -- if that fails, eliminate existentials in the goal by filling them in
-  -- with a metavariable
+  -- with a metavariable.
+  -- maybe: fail instead?  We can't automatically determine what should go in.
   clear_existential_goal
   <|>
   -- if that fails, attempt to clear existentials
@@ -224,21 +226,35 @@ meta def finisher_step : (tactic unit) := do
   -- if that fails, split the goal if it is a conjunction
   split_goal
   <|>
-  -- if that fails, run tauto
+  -- if that fails, run tauto.
+  -- TODO: fill in metavariables somehow introduced by existentials????
+  -- this can be hard.
   `[tauto! {closer := tactic.tidy}]
 
 meta def set_solver_finisher : (tactic unit) := do
-  tactic.repeat `[{finisher_step}],
-  -- we may have a list of goals
-  -- three cases (for each goal)
-  -- disjunction in hypothesis (repeat on either side)
-  -- disjunction in goal (try left and right)
-  -- none of the above (fail!!!)
+  tactic.repeat finisher_step,
+  -- we may have a list of goals -- we need to finish all of them
+  -- in order to succeed.
+  tactic.all_goals $ (
+    tactic.target >>= (fun (target : expr),
+    match target with
+    -- if there is a disjunction in the goal, try either side
+    | `(_ \/ _) := ((tactic.left >> set_solver_finisher) <|> (tactic.right >> set_solver_finisher)) >> tactic.skip
+    -- if there is a disjucntion in the hypothesis, split it and make sure both sides work.
+    | _ := (do 
+      mvar1 <- tactic.mk_mvar,
+      mvar2 <- tactic.mk_mvar,
+      disj <- tactic.find_assumption `(%%mvar1 \/ %%mvar2),
+      -- if we can't find such as disjunction, then we fail as the finisher could not work.
+      tactic.cases disj [],
+      tactic.all_goals set_solver_finisher,
+      tactic.skip)
+    end)),
   tactic.skip
 
 meta def set_solver (consider_function_types := ff) : (tactic unit) := do
   set_ext consider_function_types,
-  `[repeat {finisher_step}]
+  set_solver_finisher
 
 example (α : Type*) [boolean_algebra α] (X Y Z P Q W : α) :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
@@ -283,7 +299,7 @@ example (α : Type*) [boolean_algebra α]  (A B C D E F G : α) :
   D ≤ Fᶜ →
   (A ⊓ F = ⊥) :=
 begin
-  tactic.timetac "slow" $  set_solver,
+  tactic.timetac "slow" $ set_solver,
 end
  
 example (α : Type*) (C E : set α) (hCE : C ⊓ E = ∅) :
@@ -293,6 +309,14 @@ by {set_solver, }
 example (α : Type*) (C E : set α) (h : C ⊓ E = ⊥) : 
   C ⊓ (C ⊔ E)ᶜ = ∅ := 
 by {set_solver, } 
+
+example (X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ : set nat) :
+  (X₀ ⊔ X₁ ⊔ (X₂ ⊓ X₃) ⊔ X₄ ⊔ X₅ ⊔ (X₆ ⊓ X₇ ⊓ X₈) ⊔ X₉)ᶜ
+    ≤ (X₉ᶜ ⊓ ((X₆ᶜ ⊔ ⊥) ⊔ X₈ᶜ ⊔ X₇ᶜᶜᶜ) ⊓ X₅ᶜ ⊓ (X₀ᶜ \ X₁) ⊓ (X₃ᶜ ⊔ X₂ᶜ) ⊓ X₄ᶜ) :=
+begin
+  tactic.timetac "big_ext" $ set_ext,
+  tactic.timetac "big_finish" $ set_solver_finisher
+end
 
 /-
 example (X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ : α) :
