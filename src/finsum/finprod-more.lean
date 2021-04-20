@@ -67,13 +67,6 @@ add_monoid_hom.map_finsum_mem _ (const_smul_hom A c) hs
 def nsmul.monoid_hom (n : ℕ) : A →+ A :=
 { to_fun := nsmul n, map_zero' := nsmul_zero _, map_add' := λ _ _, nsmul_add _ _ _}
 
-
-lemma foo (c : ℤ) (f : ℕ → ℕ) (s : set ℕ) (hf : (s ∩ support f).finite):
-  c * (∑ᶠ i ∈ s, f i) = ∑ᶠ i ∈ s, c * (f i) :=
-begin
-  have := finsum_mem_smul_distrib' c hf,
-end
-
 /-- Scalar multiplication distributes over `finsum_mem`, with the finiteness assumption replaced by
 the assumption that the scalar multiplication has no zero divisors. Requires `semiring` and
 `semimodule` instances. -/
@@ -134,7 +127,6 @@ by {rw ← finprod_mem_univ, exact one_le_of_finprod_mem_one_le (λ i _, hf i)}
 lemma finprod_mem_le_finprod_mem''' (hfg : ∀ x ∈ s, f x ≤ g x) (hf : (s ∩ mul_support f).finite)
   (hg : (s ∩ mul_support g).finite) : ∏ᶠ i ∈ s, f i ≤ ∏ᶠ i ∈ s, g i :=
 begin
-  --have := @finset.prod_le_prod'',
   convert @finset.prod_le_prod'' _ _ _  f g  ((hf.union hg).to_finset.filter s) (λ i, _),
   any_goals { refine finprod_mem_eq_prod_of_mem_iff _ (λ _ _, _)},
   all_goals {simp only [mem_inter_eq, mem_union_eq, mem_mul_support, finite.mem_to_finset,
@@ -172,4 +164,6 @@ end
 @[to_additive]
 lemma finprod_mem_eq_one_iff_of_le_one (hs : (s ∩ mul_support f).finite) (hf : ∀ x ∈ s, 1 ≤ f x) :
   ∏ᶠ x ∈ s, f x = 1 ↔ ∀ x ∈ s, f x = 1 :=
+
+  
 end order
