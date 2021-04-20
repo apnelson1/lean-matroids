@@ -132,9 +132,113 @@ meta def set_ext (consider_function_types := ff) : (tactic unit) := do
   types.mmap rewrite_for_type,
   tactic.skip 
 
+
+meta def specialize_all (ename : expr) : (tactic unit) := do
+  context <- tactic.local_context,
+  context.mmap (fun hyp, tactic.try $ do
+    pf <- tactic.to_expr ``(%%hyp %%ename),
+    tactic.note `H none pf,
+    tactic.skip),
+  tactic.skip
+
+meta def introduce_and_specialize : (tactic unit) := do 
+  target <- tactic.target,
+  match target with
+  | expr.lam nm _ argtyp body := do
+    let basename := (if (nm.to_string = "ᾰ") then `H else nm) in do
+    fname <- tactic.get_unused_name basename,
+    exp <- tactic.intro fname,
+    specialize_all exp
+  | expr.pi nm _ argtyp body := do
+    let basename := (if (nm.to_string = "ᾰ") then `H else nm) in do
+    fname <- tactic.get_unused_name basename,
+    ename <- tactic.intro fname,
+    specialize_all ename
+  | _ := tactic.fail "goal not an abstraction"
+  end
+
+meta def clear_existential_hyp (hyp : expr) : (tactic (option expr)) := do
+  htyp <- tactic.infer_type hyp,
+  match htyp with
+  | `(@Exists _ _) := do 
+      [(_, [witness, _])] <- tactic.cases hyp,
+      return (some witness)
+  | _ := return none
+  end
+
+meta def forall_hypotheses (f : expr -> tactic unit) : (tactic unit) := do
+  context <- tactic.local_context,
+  result <- context.mmap (fun hyp, (f hyp >> return tt) <|> return ff),
+  if (result.filter (fun (x : bool), x)).empty then 
+    tactic.fail "could not apply function to any hypothesis" 
+  else tactic.skip
+
+meta def clear_existentials_hyp_and_specialize : (tactic unit) := do
+  forall_hypotheses (fun hyp, 
+    do some witness <- clear_existential_hyp hyp, specialize_all witness
+  ) <|> tactic.fail "no existentials present"
+
+meta def clear_existential_goal : (tactic unit) := do
+  target <- tactic.target,
+  match target with
+  | `(@Exists %%typ _) := do
+    mvar <- tactic.mk_meta_var typ,
+    tactic.existsi mvar,
+    tactic.skip
+  | _ := tactic.fail "goal is not existential"
+  end
+
+meta def split_hypothesis (hyp : expr) : (tactic unit) := do
+  htyp <- tactic.infer_type hyp,
+  match htyp with
+  | `(_ /\ _) := tactic.cases hyp >> tactic.skip
+  | _ := tactic.fail "hypothesis is not conjunction"
+  end
+
+meta def split_all_hypothesis : (tactic unit) := do
+  forall_hypotheses split_hypothesis <|> tactic.fail "no conjunctions in hypothesis"
+
+meta def split_goal : (tactic unit) := do
+  target <- tactic.target,
+  match target with
+  | `(_ /\ _) := tactic.split >> tactic.skip
+  | _ := tactic.fail "not a conjunction"
+  end
+ 
+meta def finisher_step : (tactic unit) := do
+  -- push negatives everywhere
+  tactic.try `[push_neg at *], 
+  -- try introducing a name and specializing
+  introduce_and_specialize 
+  <|>
+  -- if that fails, eliminate existentials in the goal by filling them in
+  -- with a metavariable
+  clear_existential_goal
+  <|>
+  -- if that fails, attempt to clear existentials
+  clear_existentials_hyp_and_specialize
+  <|>
+  -- if that fails, split all hypothesis that are conjunctions
+  split_all_hypothesis
+  <|>
+  -- if that fails, split the goal if it is a conjunction
+  split_goal
+  <|>
+  -- if that fails, run tauto
+  `[tauto! {closer := tactic.tidy}]
+
+meta def set_solver_finisher : (tactic unit) := do
+  tactic.repeat `[{finisher_step}],
+  -- we may have a list of goals
+  -- three cases (for each goal)
+  -- disjunction in hypothesis (repeat on either side)
+  -- disjunction in goal (try left and right)
+  -- none of the above (fail!!!)
+  tactic.skip
+
 meta def set_solver (consider_function_types := ff) : (tactic unit) := do
   set_ext consider_function_types,
-  `[finish]
+  `[repeat {finisher_step}]
 
 example (α : Type*) [boolean_algebra α] (X Y Z P Q W : α) :
   (X ⊔ (Y ⊔ Z)) ⊔ ((W ⊓ P ⊓ Q)ᶜ ⊔ (P ⊔ W ⊔ Q)) = ⊤ :=
@@ -168,15 +272,8 @@ example (α : Type*) [boolean_algebra α]  (A B C D E F G : α) :
   D ≤ Fᶜ →
   (A ⊓ F = ⊥) :=
 begin
-  tactic.timetac "fast" $ `[(do
-    types <- gather_types,
-    types.mmap rewrite_for_type,
-    tactic.skip),
-  intros H1 H2 H3 H4; split; intros e;
-  specialize (H1 e);
-  specialize (H2 e);
-  specialize (H3 e);
-  specialize (H4 e); tauto!],
+  set_ext,
+  tactic.timetac "fast" $ (`[repeat {finisher_step}]),
 end
 
 example (α : Type*) [boolean_algebra α]  (A B C D E F G : α) :
