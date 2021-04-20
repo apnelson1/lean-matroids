@@ -2,7 +2,7 @@
 
 
 import prelim.induction prelim.collections .rankfun .indep 
-
+import set_tactic.solver
 open_locale classical 
 noncomputable theory 
 
@@ -114,13 +114,16 @@ begin
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
   set J' := (J ∪ {e}) \ {f} with hdefJ', 
   
-  have hJ'₀: J' \ I ⊆ (J ∪ I),
+  have hJ'₀: J' \ I ⊆ (J ∪ I), {
+    tactic.timetac "solve" $ set_solver,
+  },
+  /-
   { rw hdefJ',
     repeat {refine subset.trans (diff_subset _ _) _},
     apply union_subset (subset_union_left _ _),
     rw [singleton_subset_iff, mem_union], right, 
     exact mem_of_mem_diff he, }, 
-  
+  -/
   have hJ' : C_to_I M (J'), 
   { intros X hXJ' hX,
     rw hdefJ' at hXJ', 
