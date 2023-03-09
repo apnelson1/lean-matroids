@@ -1,8 +1,8 @@
 [package]
 name = "matroid"
 version = "0.1"
-lean_version = "leanprover-community/lean:3.28.0"
+lean_version = "leanprover-community/lean:3.50.3"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "216aecd75a04760cc5204acba3bd3f567590fecf"}
+mathlib = {git = "https://github.com/leanprover-community/mathlib", rev = "ddec54a71a0dd025c05445d467f1a2b7d586a3ba"}

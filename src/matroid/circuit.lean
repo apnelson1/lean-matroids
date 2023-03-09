@@ -115,7 +115,8 @@ begin
   set J' := (J ∪ {e}) \ {f} with hdefJ', 
   
   have hJ'₀: J' \ I ⊆ (J ∪ I), {
-    tactic.timetac "solve" $ set_solver,
+    set_ext, simp, tauto, 
+    --intros x hx, simp at *, tauto, 
   },
   /-
   { rw hdefJ',

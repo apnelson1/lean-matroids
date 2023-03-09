@@ -1,4 +1,4 @@
-import prelim.size
+import set_theory.cardinal.finite
 
 universes u u₁ u₂ u₃
 
@@ -8,20 +8,20 @@ variable {α : Type*}
 
 section rank 
 
-def satisfies_R0 (r : set α → ℤ) : Prop := 
+def satisfies_R0 (r : set α → ℕ) : Prop := 
   ∀ X, 0 ≤ r X 
 
-def satisfies_R1 (r : set α → ℤ) : Prop := 
-  ∀ X, r X ≤ size X
+def satisfies_R1 (r : set α → ℕ) : Prop := 
+  ∀ X, r X ≤ nat.card X
 
-def satisfies_R2 (r : set α → ℤ) : Prop := 
+def satisfies_R2 (r : set α → ℕ) : Prop := 
   ∀ X Y, X ⊆ Y → r X ≤ r Y 
 
-def satisfies_R3 (r : set α → ℤ) : Prop := 
+def satisfies_R3 (r : set α → ℕ) : Prop := 
   ∀ X Y, r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y
 
 @[ext] structure rankfun (α : Type*) :=
-  (r : set α → ℤ)
+  (r : set α → ℕ)
   (R0 : satisfies_R0 r)
   (R1 : satisfies_R1 r)
   (R2 : satisfies_R2 r)
@@ -37,8 +37,8 @@ def satisfies_I1 (indep : set α → Prop) : Prop :=
 def satisfies_I2 (indep : set α → Prop) : Prop := 
   ∀ I J, I ⊆ J → indep J → indep I
 
-def satisfies_I3 (indep : set α → Prop) : Prop := 
-  ∀ I J, size I < size J → indep I → indep J → ∃ (e : α), e ∈ J \ I ∧ indep (I ∪ {e})
+def satisfies_I3 (indep : set α → Prop) : Prop := ∀ (I J : set α), 
+  nat.card I < nat.card J → indep I → indep J → ∃ (e : α), e ∈ J \ I ∧ indep (I ∪ {e})
 
 --def satisfies_I3' : (set α → Prop) → Prop := 
 --  λ indep, ∀ X, ∃ r, ∀ B, (B ⊆ X ∧ indep B ∧ (∀ Y, B ⊂ Y → Y ⊆ X → ¬indep Y) → size B = r
@@ -79,17 +79,17 @@ end cct
 
 section basis
 
-def satisfies_B1 (basis : set α → Prop) : Prop :=
-  ∃ B, basis B.
+def exists_basis (basis : set α → Prop) : Prop :=
+  ∃ B, basis B
 
-def satisfies_B2 (basis : set α → Prop) : Prop :=
+def basis_exchange (basis : set α → Prop) : Prop :=
   ∀ B₁ B₂, basis B₁ → basis B₂ 
     → ∀ (b₁ : α), b₁ ∈ B₁ \ B₂ → ∃ b₂, (b₂ ∈ B₂ \ B₁) ∧ basis (B₁ \ {b₁} ∪ {b₂}) 
 
 @[ext] structure basis_family (α : Type*) :=
   (basis : set α → Prop)
-  (B1 : satisfies_B1 basis)
-  (B2 : satisfies_B2 basis)
+  (B1 : exists_basis basis)
+  (B2 : basis_exchange basis)
 
 end basis 
 
@@ -118,7 +118,7 @@ end cl
 
 end axiom_sets 
 
-def matroid (α : Type*) := rankfun α 
+def matroid (α : Type*) := basis_family α 
 
 variables {α₁ : Type* }{α₂ : Type* }{α₃ : Type*}
 
@@ -126,39 +126,40 @@ namespace matroid
 
 structure isom (M₁ : matroid α₁) (M₂ : matroid α₂) := 
 (equiv : α₁ ≃ α₂)
-(on_rank : ∀ X, M₂.r (equiv '' X) = M₁.r X)
+(on_basis : ∀ B, M₁.basis B ↔ M₂.basis (equiv '' B))
+-- (on_rank : ∀ X, M₂.r (equiv '' X) = M₁.r X)
 
-instance coe_to_equiv {M₁ : matroid α₁} {M₂ : matroid α₂} : has_coe_to_fun (M₁.isom M₂) := 
-{ F := _,
-  coe := λ i, i.equiv } 
+-- instance coe_to_equiv {M₁ : matroid α₁} {M₂ : matroid α₂} : has_coe_to_fun (M₁.isom M₂) := 
+-- { F := _,
+--   coe := λ i, i.equiv } 
 
-def isom.refl (M₁ : matroid α₁) : 
-M₁.isom M₁ := 
-{ equiv := equiv.refl α₁,
-  on_rank := by simp  }
+-- def isom.refl (M₁ : matroid α₁) : 
+-- M₁.isom M₁ := 
+-- { equiv := equiv.refl α₁,
+--   on_rank := by simp  }
 
-def isom.trans {M₁ : matroid α₁} {M₂ : matroid α₂} {M₃ : matroid α₃} 
-(I12 : M₁.isom M₂) (I23 : M₂.isom M₃) : 
-M₁.isom M₃ :=
-{ equiv := I12.equiv.trans I23.equiv ,
-  on_rank := λ X, by {rw [←I12.on_rank, ←I23.on_rank], apply congr_arg, ext, simp  }  } 
+-- def isom.trans {M₁ : matroid α₁} {M₂ : matroid α₂} {M₃ : matroid α₃} 
+-- (I12 : M₁.isom M₂) (I23 : M₂.isom M₃) : 
+-- M₁.isom M₃ :=
+-- { equiv := I12.equiv.trans I23.equiv ,
+--   on_rank := λ X, by {rw [←I12.on_rank, ←I23.on_rank], apply congr_arg, ext, simp  }  } 
 
-def isom.symm {M₁ : matroid α₁} {M₂ : matroid α₂} (i : M₁.isom M₂) : M₂.isom M₁ := 
-{ equiv := i.equiv.symm,
-  on_rank := λ X, by {rw ←i.on_rank, apply congr_arg, ext, simp,  } }
+-- def isom.symm {M₁ : matroid α₁} {M₂ : matroid α₂} (i : M₁.isom M₂) : M₂.isom M₁ := 
+-- { equiv := i.equiv.symm,
+--   on_rank := λ X, by {rw ←i.on_rank, apply congr_arg, ext, simp,  } }
 
-def is_isom (M₁ : matroid α₁) (M₂ : matroid α₂) := 
-  nonempty (M₁.isom M₂)
+-- def is_isom (M₁ : matroid α₁) (M₂ : matroid α₂) := 
+--   nonempty (M₁.isom M₂)
 
-lemma isom.inv_on_rank {M₁ : matroid α₁} {M₂ : matroid α₂} (i : isom M₁ M₂) (X : set α₂) :
-  M₂.r X = M₁.r (i.equiv.symm '' X) :=
-by {rw ←i.symm.on_rank X, refl} 
+-- lemma isom.inv_on_rank {M₁ : matroid α₁} {M₂ : matroid α₂} (i : isom M₁ M₂) (X : set α₂) :
+--   M₂.r X = M₁.r (i.equiv.symm '' X) :=
+-- by {rw ←i.symm.on_rank X, refl} 
 
-def isom_equiv {M₁ N₁ : matroid α₁} {M₂ N₂ : matroid α₂} 
-(h₁ : M₁ = N₁) (h₂ : M₂ = N₂) (i : isom M₁ M₂) : 
-  isom N₁ N₂ := 
-{ equiv := i.equiv,
-  on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }
+-- def isom_equiv {M₁ N₁ : matroid α₁} {M₂ N₂ : matroid α₂} 
+-- (h₁ : M₁ = N₁) (h₂ : M₂ = N₂) (i : isom M₁ M₂) : 
+--   isom N₁ N₂ := 
+-- { equiv := i.equiv,
+--   on_rank := λ X, by {rw [←h₁,←h₂], apply i.on_rank, } }
  
 end matroid 
 
