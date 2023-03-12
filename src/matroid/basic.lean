@@ -112,7 +112,7 @@ end
 
 section indep 
 
-/-- Independence in a matroid. Needs no `fintype` instance. -/
+/-- Independence in a matroid. -/
 def indep {E : Type*} (M : matroid E) : set E → Prop := λ I, ∃ B, M.base B ∧ I ⊆ B   
 
 lemma empty_indep (M : matroid E) : M.indep ∅ := 
@@ -359,7 +359,7 @@ begin
   exact finset.eq_of_subset_of_card_le (by simpa) hJcard.symm.le,
 end 
 
-lemma r_empty (M : matroid E) : 
+@[simp] lemma r_empty (M : matroid E) : 
   M.r ∅ = 0 :=
 by rw [M.empty_indep.r, to_finset_empty, finset.card_empty] 
 
@@ -369,10 +369,7 @@ r_le_iff.mpr (λ I hI hIX, finset.card_mono (by simpa))
 
 lemma r_mono (M : matroid E) {X Y : set E} (hXY : X ⊆ Y) : 
   M.r X ≤ M.r Y :=
-begin
-  simp_rw [r_le_iff, le_r_iff], 
-  exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl.le⟩, 
-end  
+by {simp_rw [r_le_iff, le_r_iff], exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl⟩}
 
 lemma base.r (hB : M.base B) : 
   M.r B = M.rk := 
@@ -386,11 +383,9 @@ begin
   cases h with hB hB', 
   rw [hB.r] at hB', 
   have := finset.card_lt_card (to_finset_ssubset_to_finset.mpr hBI'), 
-  sorry, 
-  -- this is easy but annoying apparently
-  
+  rw [←hI.r, hB'] at this, 
+  exact (M.r_mono (subset_univ _)).not_lt this, 
 end
-
 
 lemma basis.r_eq_r_union (hIX : M.basis I X) (Y : set E) :
   M.r (I ∪ Y) = M.r (X ∪ Y) := 
@@ -409,7 +404,6 @@ begin
   rw [eq_comm, insert_eq_self] at this, 
   exact hz'.1 this, 
 end
-
 
 /--
 The submodularity axiom for the rank function
