@@ -53,12 +53,9 @@ begin
     finish },  
   { ext X,
     simp_rw [free_matroid_on],
-    have h2 := @indep_iff_subset_base α _ univ M,
-    cases h2 with h1 h2,
     refine ⟨λ h3, base.eq_of_subset_indep h3 h (subset_univ X), λ h3,_⟩, 
-    
-    --simp_rw [free_matroid_on, ←indep_iff_subset_base],
-    sorry, },  
+    rw [base_iff_maximal_indep, h3],
+    refine ⟨h, λ I hI huI, eq.symm (univ_subset_iff.1 huI)⟩ },  
 end
 
 def loopy (α : Type*) [fintype α]: matroid α := 
