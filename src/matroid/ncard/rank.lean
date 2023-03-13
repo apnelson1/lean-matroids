@@ -1,4 +1,4 @@
-import matroid.basic
+import .matroid 
 
 noncomputable theory
 open_locale classical
@@ -6,7 +6,7 @@ open_locale big_operators
 
 open set 
 
-variables {E : Type*} [fintype E] {M : matroid E} {X Y X' Y' Z I J : set E} {e f x y z : E}
+variables {E : Type*} [finite E] {M : matroid E} {X Y X' Y' Z I J : set E} {e f x y z : E}
 
 namespace matroid 
 
@@ -51,13 +51,13 @@ lemma r_zero_of_inter_r_zero (X : set E) :
 λ hY, by {apply r_zero_of_subset_r_zero _ hY, simp }
 
 lemma r_lt_card_iff_not_indep : 
-  (M.r X < X.to_finset.card) ↔ ¬M.indep X :=
+  (M.r X < X.ncard) ↔ ¬M.indep X :=
 begin
   rw [lt_iff_not_le, not_iff_not, indep_iff_r_eq_card],
   exact ⟨(M.r_le_card X).antisymm, λ h, by rw h⟩,
 end 
 
-lemma nonempty_of_r_lt_card (hX : M.r X < X.to_finset.card) : 
+lemma nonempty_of_r_lt_card (hX : M.r X < X.ncard) : 
   X.nonempty := 
 by {rw r_lt_card_iff_not_indep at hX, rw nonempty_iff_ne_empty, rintro rfl, exact hX M.empty_indep}
 
@@ -141,7 +141,7 @@ lemma r_union_le_add_r (M : matroid E) (X Y : set E) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.r_submod X Y]
 
-/- Figure this out - are finsets or sets better here? -/
+/- Probably `finsum` is fight for this  -/
 
 -- lemma r_union_le_add_r_sUnion (M : matroid E) (S : finset (set E)) :
 --   M.r (S.bUnion id) ≤ ∑ x in s, f x := 
@@ -179,16 +179,14 @@ lemma r_diff_singleton_add_one_eq_r_of_ne (h_ne : M.r X ≠ M.r (X \ {e})) :
     (M.r_le_r_diff_singleton_add_one _ _)
   
 lemma r_le_r_add_card_diff_of_subset (M : matroid E) (hXY : X ⊆ Y) : 
-  M.r Y ≤ M.r X + (Y \ X).to_finset.card :=
+  M.r Y ≤ M.r X + (Y \ X).ncard :=
 (M.r_le_r_add_r_diff X Y).trans (add_le_add_left (by convert M.r_le_card (Y \ X)) _)
   
 lemma r_add_card_le_r_add_card_of_subset (M : matroid E) (hXY : X ⊆ Y) :
-  M.r Y + X.to_finset.card ≤ M.r X + Y.to_finset.card :=
+  M.r Y + X.ncard ≤ M.r X + Y.ncard :=
 begin
   have := M.r_le_r_add_card_diff_of_subset hXY, 
-  rw ←to_finset_subset_to_finset at hXY, 
-  rw [to_finset_diff] at this, 
-  linarith [finset.card_sdiff_add_card_eq_card hXY], 
+  linarith [ncard_diff_add_ncard_eq_ncard hXY], 
 end 
 
 lemma submod_three (M : matroid E) (X Y Y' : set E) :
