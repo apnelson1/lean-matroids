@@ -1,8 +1,7 @@
-import matroid.rankfun 
+import matroid.rank 
 import linear_algebra.finite_dimensional
 import data.matrix.basic data.zmod.basic
 import matroid.constructions.uniform
-import number_theory.quadratic_reciprocity
 
 noncomputable theory 
 open_locale classical 

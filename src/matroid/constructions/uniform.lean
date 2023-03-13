@@ -1,9 +1,6 @@
-
-
-
-import prelim.induction prelim.collections 
-import matroid.rankfun matroid.indep matroid.submatroid.order matroid.simple 
-import .truncation 
+import matroid.rank --matroid.submatroid.order matroid.simple 
+--import prelim.induction prelim.collections 
+--import .truncation 
 
 open matroid set 
 open_locale classical
@@ -16,23 +13,52 @@ namespace unif
 
 variables {α : Type*} [fintype α]
 
-def free_matroid_on (α : Type*) [fintype α]: matroid α := 
+/-def free_matroid_on (α : Type*) [fintype α]: matroid α := 
 { r := size,
   R0 := size_nonneg,
   R1 := λ X, le_refl (size X),
   R2 := λ X Y hXY, size_monotone hXY,
-  R3 := λ X Y, le_of_eq (size_modular X Y),} 
+  R3 := λ X Y, le_of_eq (size_modular X Y),} -/
+
+def free_matroid_on (α : Type*) [fintype α]: matroid α := 
+{ base := λ s, s = univ,
+  exists_base' := 
+    begin
+      use univ,
+    end,
+  base_exchange' := λ X Y hX hY a ha, 
+    begin
+      simp at hX,
+      simp at hY,
+      rw [hX, hY] at ha,
+      simp at ha,
+      by_contra,
+      exact ha,
+    end } 
 
 lemma free_indep (X : set α) :
-  (free_matroid_on α).is_indep X  := 
-by rw [free_matroid_on, indep_iff_r]
+  (free_matroid_on α).indep X  := 
+begin
+  rw [free_matroid_on, indep_iff_subset_base],
+  simp only [exists_eq_left, subset_univ],
+end
 
 lemma free_iff_univ_indep {M : matroid α} : 
-   M = free_matroid_on α ↔ is_indep M univ := 
+   M = free_matroid_on α ↔ indep M univ := 
 begin
   refine ⟨λ h, _, λ h,_⟩, 
-  rw [indep_iff_r,h], finish,  
-  ext X, simp_rw [free_matroid_on, ←indep_iff_r, indep_of_subset_indep (subset_univ X) h], 
+  { rw [indep_iff_subset_base, h],
+    use univ,
+    rw free_matroid_on,
+    finish },  
+  { ext X,
+    simp_rw [free_matroid_on],
+    have h2 := @indep_iff_subset_base α _ univ M,
+    cases h2 with h1 h2,
+    refine ⟨λ h3, base.eq_of_subset_indep h3 h (subset_univ X), λ h3,_⟩, 
+    
+    --simp_rw [free_matroid_on, ←indep_iff_subset_base],
+    sorry, },  
 end
 
 def loopy (α : Type*) [fintype α]: matroid α := 
