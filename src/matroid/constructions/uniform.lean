@@ -109,12 +109,24 @@ end
 lemma loopy_iff_univ_rank_zero {M : matroid α} :
   M = loopy α ↔ M.r univ = 0 := 
 begin
+  simp_rw [eq_r_iff, ← base_iff_basis_univ, loopy], 
   refine ⟨λ h, _, λ h,_⟩,  
-  
-  ext X, simp_rw [loopy], 
-  have := rank_mono M (subset_univ X), 
-  rw h at this, 
-  linarith [M.rank_nonneg X], 
+  { use ∅,
+    refine ⟨_, _⟩,
+    rw h,
+    simp only,
+    simp only [to_finset_empty, finset.card_empty]},
+  ext X,
+  rcases h with ⟨I, ⟨h2, h3⟩⟩,
+  rw [finset.card_eq_zero, to_finset_eq_empty] at h3,
+  rw h3 at h2,
+  refine ⟨λ h4, _, _⟩, 
+  { rw ← base.eq_of_subset_base h2 h4 (empty_subset X),
+    simp only },
+  { intros h4, -- for some reason simp at h4 doesn't work with lambda
+    simp only at h4,
+    rw h4,
+    exact h2 },
 end
 
 def uniform_matroid_on (α : Type*) [fintype α] (r : ℤ) : matroid α := 
