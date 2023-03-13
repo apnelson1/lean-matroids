@@ -191,11 +191,6 @@ begin
   linarith [finset.card_sdiff_add_card_eq_card hXY], 
 end 
 
--- lemma r_diff_le_size_diff (M : matroid E) (hXY : X ⊆ Y) :
---   M.r Y - M.r X ≤ size Y - size X := 
--- by linarith [r_le_r_add_r_diff M X Y, diff_size hXY, M.r_le_size (Y \ X )]
-  
-
 lemma submod_three (M : matroid E) (X Y Y' : set E) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
 begin
@@ -203,12 +198,12 @@ begin
   rwa [←union_distrib_left, ←union_union_distrib_left] at this, 
 end 
 
--- lemma submod_three_sets_right (M : matroid E) (X Y Y' : set E) :
---   M.r ((Y ∪ Y') ∪ X) + M.r ((Y ∩ Y') ∪ X) ≤ M.r (Y ∪ X) + M.r (Y' ∪ X) := 
--- by {simp_rw ←(union_comm X), apply submod_three_sets} 
+lemma submod_three_right (M : matroid E) (X Y Y' : set E) :
+  M.r ((Y ∪ Y') ∪ X) + M.r ((Y ∩ Y') ∪ X) ≤ M.r (Y ∪ X) + M.r (Y' ∪ X) := 
+by {simp_rw ←(union_comm X), apply submod_three} 
 
--- lemma submod_three_sets_disj (M : matroid E) (X Y Y' : set E) (hYY' : Y ∩ Y' = ∅) :
---   M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
--- by {have := submod_three_sets M X Y Y', rw [hYY', union_empty] at this, exact this}
+lemma submod_three_disj (M : matroid E) (X Y Y' : set E) (hYY' : Y ∩ Y' = ∅) :
+  M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
+by {have := submod_three M X Y Y', rwa [hYY', union_empty] at this}
 
 end matroid 
