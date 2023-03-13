@@ -58,26 +58,64 @@ begin
     refine ⟨h, λ I hI huI, eq.symm (univ_subset_iff.1 huI)⟩ },  
 end
 
-def loopy (α : Type*) [fintype α]: matroid α := 
+/-def loopy (α : Type*) [fintype α]: matroid α := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
   R1 := λ X, size_nonneg X, 
   R2 := λ X Y hXY, le_refl 0, 
-  R3 := λ X Y, rfl.ge }
+  R3 := λ X Y, rfl.ge }-/
+
+def loopy (α : Type*) [fintype α]: matroid α := 
+{ base := λ X, X = ∅,
+  exists_base' := 
+    begin
+      use ∅,
+    end,
+  base_exchange' := λ X Y hX hY a ha,
+    begin
+      simp at hX,
+      simp at hY,
+      rw [hX, hY] at ha,
+      simp at ha,
+      by_contra,
+      exact ha,
+    end }
+
+lemma loopy_matroid_base_iff_empty {X : set α} :
+  (loopy α).base X ↔ X = ∅ := 
+begin
+  refine ⟨λ h, _, λ h,_⟩, 
+  rw loopy at h,
+  simp at h,
+  exact h,
+  rw loopy,
+  simp,
+  exact h,
+end
+
+lemma loopy_matroid_indep_iff_empty {X : set α} :
+  (loopy α).indep X ↔ X = ∅ := 
+begin
+  simp_rw [indep_iff_subset_base, ← loopy_matroid_base_iff_empty, loopy],
+  refine ⟨λ h, _, λ h,_⟩, 
+  rcases h with ⟨h0, ⟨h1, h2⟩⟩,
+  rw h1 at h2,
+  apply subset_empty_iff.1 h2,
+  use ∅,
+  rw h,
+  simp only [eq_self_iff_true, empty_subset, and_self],
+end
 
 lemma loopy_iff_univ_rank_zero {M : matroid α} :
   M = loopy α ↔ M.r univ = 0 := 
 begin
-  refine ⟨λ h, by finish, λ h,_⟩,  
+  refine ⟨λ h, _, λ h,_⟩,  
+  
   ext X, simp_rw [loopy], 
   have := rank_mono M (subset_univ X), 
   rw h at this, 
   linarith [M.rank_nonneg X], 
 end
-
-lemma loopy_matroid_indep_iff_empty {X : set α} :
-  (loopy α).is_indep X ↔ X = ∅ := 
-by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
 
 def uniform_matroid_on (α : Type*) [fintype α] (r : ℤ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
