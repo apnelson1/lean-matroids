@@ -51,6 +51,11 @@ end finset
 
 open set 
 
+theorem set.finite.exists_minimal_wrt {α β : Type*} [partial_order β] (f : α → β) (s : set α) 
+  (h : s.finite) :
+s.nonempty → (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a' ≤ f a → f a = f a') :=
+@set.finite.exists_maximal_wrt α (order_dual β) _ f s h  
+
 lemma set.finite.exists_maximal {α : Type*} [finite α] [partial_order α] (P : α → Prop) 
 (h : ∃ x, P x) : 
   ∃ m, P m ∧ ∀ x, P x → m ≤ x → m = x :=
@@ -73,3 +78,4 @@ lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} :
 lemma set.diff_singleton_ssubset {α : Type*} {e : α} {S : set α} (heS : e ∈ S) : 
   S \ {e} ⊂ S :=
 set.diff_singleton_ssubset_iff.mpr heS 
+
