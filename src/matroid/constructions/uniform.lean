@@ -1,6 +1,6 @@
 import matroid.rank --matroid.submatroid.order matroid.simple 
 --import prelim.induction prelim.collections 
---import .truncation 
+import .truncation 
 
 open matroid set 
 open_locale classical
