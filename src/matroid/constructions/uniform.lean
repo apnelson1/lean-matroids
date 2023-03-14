@@ -1,4 +1,4 @@
-import matroid.rank --matroid.submatroid.order matroid.simple 
+import matroid.basic --matroid.submatroid.order matroid.simple 
 --import prelim.induction prelim.collections 
 import .truncation 
 
@@ -152,6 +152,36 @@ by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
 lemma uniform_matroid_indep_iff {X : set α} {r : ℕ} (hr : 0 ≤ r)  : 
   indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
 by {rw [indep_iff_r_eq_card, uniform_matroid_rank hr], finish }
+
+def dual (M : matroid α) : matroid α := 
+{ base := λ X, M.base (univ \ X) ,
+  exists_base' := 
+    begin
+      cases M.exists_base' with B hB,
+      use (univ \ B),
+      simp,
+      exact hB,
+    end,
+  base_exchange' := λ X Y hX hY a ha, 
+    begin
+      have h3 : a ∈ univ \ Y \ (univ \ X),
+      { simp only [mem_diff, mem_univ, true_and, not_not_mem],
+        refine ⟨ha.2, ha.1⟩ },
+      have h2 := M.base_exchange' (univ \ Y) (univ \ X) hY hX a h3,
+      simp at *,
+      rcases h2 with ⟨b, ⟨hb1, hb2⟩⟩,
+      use b,
+      refine ⟨⟨hb1.2, hb1.1⟩, _⟩,
+      have h4 := M.base_exchange' (univ \ X) (univ \ Y) hX hY b,
+      have h5 : b ∈ univ \ X \ (univ \ Y),
+      { simp,
+        exact hb1 },
+      specialize h4 h5,
+      rcases h4 with ⟨x, ⟨hx1, hx2⟩⟩,
+      simp at hx1,
+      
+      sorry,
+    end }
 
 lemma uniform_dual {r : ℕ} (hr : 0 ≤ r) (hrn : r ≤ nat.card (univ : set α)) : 
   dual (uniform_matroid_on α r) 

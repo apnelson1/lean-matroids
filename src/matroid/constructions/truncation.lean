@@ -32,7 +32,7 @@ end-/
 /-def tr (M : matroid α) (n : ℤ) : matroid α := 
   let M_ind := M.to_indep_family in 
   matroid.of_indep_family ⟨indep M_ind n, I1 M_ind n, I2 M_ind n, I3 M_ind n⟩-/
-def tr'' (M : matroid α) (n : ℕ) [decidable_eq α] (h : n ≤ M.rk) : matroid α := 
+/-def tr'' (M : matroid α) (n : ℕ) [decidable_eq α] (h : n ≤ M.rk) : matroid α := 
 { base := λ X, M.indep X ∧ nat.card X = n,
   exists_base' := 
     begin
@@ -44,7 +44,7 @@ def tr'' (M : matroid α) (n : ℕ) [decidable_eq α] (h : n ≤ M.rk) : matroid
       
       sorry,
     end,
-  base_exchange' := _ }
+  base_exchange' := _ }-/
 -- do we need the assumption that n ≤ M.r? i think so
 
 -- tried my hand at defining truncation w.r.t rank
