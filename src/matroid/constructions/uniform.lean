@@ -58,6 +58,13 @@ begin
     refine ⟨h, λ I hI huI, eq.symm (univ_subset_iff.1 huI)⟩ },  
 end
 
+lemma free_rank (X : set α) :
+  (free_matroid_on α).r X = nat.card X :=
+begin
+  rw [nat.card_eq_to_finset_card, ← indep_iff_r_eq_card],
+  apply free_indep,
+end
+
 /-def loopy (α : Type*) [fintype α]: matroid α := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
@@ -134,15 +141,17 @@ def uniform_matroid_on (α : Type*) [fintype α] (r : ℕ) : matroid α :=
 
 lemma uniform_matroid_rank {r : ℕ} (hr : 0 ≤ r) (X : set α) :
   (uniform_matroid_on α r).r X = min r (nat.card X) := 
-trunc.r_eq (uniform_matroid_on α r) hr X 
+begin
+  rw [uniform_matroid_on, trunc.r_eq _ hr _, free_rank],
+end
 
 lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ nat.card (univ : set α)) : 
   (uniform_matroid_on α r).r univ = r :=
 by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
  
 lemma uniform_matroid_indep_iff {X : set α} {r : ℕ} (hr : 0 ≤ r)  : 
-  is_indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
-by {rw [indep_iff_r, uniform_matroid_rank hr], finish}
+  indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
+by {rw [indep_iff_r_eq_card, uniform_matroid_rank hr], finish }
 
 lemma uniform_dual {r : ℕ} (hr : 0 ≤ r) (hrn : r ≤ nat.card (univ : set α)) : 
   dual (uniform_matroid_on α r) 
