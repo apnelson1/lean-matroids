@@ -1,6 +1,6 @@
 import matroid.rank --matroid.submatroid.order matroid.simple 
 --import prelim.induction prelim.collections 
---import .truncation 
+import .truncation 
 
 open matroid set 
 open_locale classical
@@ -58,49 +58,108 @@ begin
     refine ⟨h, λ I hI huI, eq.symm (univ_subset_iff.1 huI)⟩ },  
 end
 
-def loopy (α : Type*) [fintype α]: matroid α := 
+lemma free_rank (X : set α) :
+  (free_matroid_on α).r X = nat.card X :=
+begin
+  rw [nat.card_eq_to_finset_card, ← indep_iff_r_eq_card],
+  apply free_indep,
+end
+
+/-def loopy (α : Type*) [fintype α]: matroid α := 
 { r := λ X, 0, 
   R0 := λ X, le_refl 0, 
   R1 := λ X, size_nonneg X, 
   R2 := λ X Y hXY, le_refl 0, 
-  R3 := λ X Y, rfl.ge }
+  R3 := λ X Y, rfl.ge }-/
+
+def loopy (α : Type*) [fintype α]: matroid α := 
+{ base := λ X, X = ∅,
+  exists_base' := 
+    begin
+      use ∅,
+    end,
+  base_exchange' := λ X Y hX hY a ha,
+    begin
+      simp at hX,
+      simp at hY,
+      rw [hX, hY] at ha,
+      simp at ha,
+      by_contra,
+      exact ha,
+    end }
+
+lemma loopy_matroid_base_iff_empty {X : set α} :
+  (loopy α).base X ↔ X = ∅ := 
+begin
+  refine ⟨λ h, _, λ h,_⟩, 
+  rw loopy at h,
+  simp at h,
+  exact h,
+  rw loopy,
+  simp,
+  exact h,
+end
+
+lemma loopy_matroid_indep_iff_empty {X : set α} :
+  (loopy α).indep X ↔ X = ∅ := 
+begin
+  simp_rw [indep_iff_subset_base, ← loopy_matroid_base_iff_empty, loopy],
+  refine ⟨λ h, _, λ h,_⟩, 
+  rcases h with ⟨h0, ⟨h1, h2⟩⟩,
+  rw h1 at h2,
+  apply subset_empty_iff.1 h2,
+  use ∅,
+  rw h,
+  simp only [eq_self_iff_true, empty_subset, and_self],
+end
 
 lemma loopy_iff_univ_rank_zero {M : matroid α} :
   M = loopy α ↔ M.r univ = 0 := 
 begin
-  refine ⟨λ h, by finish, λ h,_⟩,  
-  ext X, simp_rw [loopy], 
-  have := rank_mono M (subset_univ X), 
-  rw h at this, 
-  linarith [M.rank_nonneg X], 
+  simp_rw [eq_r_iff, ← base_iff_basis_univ, loopy], 
+  refine ⟨λ h, _, λ h,_⟩,  
+  { use ∅,
+    refine ⟨_, _⟩,
+    rw h,
+    simp only,
+    simp only [to_finset_empty, finset.card_empty]},
+  ext X,
+  rcases h with ⟨I, ⟨h2, h3⟩⟩,
+  rw [finset.card_eq_zero, to_finset_eq_empty] at h3,
+  rw h3 at h2,
+  refine ⟨λ h4, _, _⟩, 
+  { rw ← base.eq_of_subset_base h2 h4 (empty_subset X),
+    simp only },
+  { intros h4, -- for some reason simp at h4 doesn't work with lambda
+    simp only at h4,
+    rw h4,
+    exact h2 },
 end
 
-lemma loopy_matroid_indep_iff_empty {X : set α} :
-  (loopy α).is_indep X ↔ X = ∅ := 
-by {rw [indep_iff_r, ←size_zero_iff_empty, eq_comm], simp [loopy]}
-
-def uniform_matroid_on (α : Type*) [fintype α] (r : ℤ) : matroid α := 
+def uniform_matroid_on (α : Type*) [fintype α] (r : ℕ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
 
-lemma uniform_matroid_rank {r : ℤ} (hr : 0 ≤ r) (X : set α) :
-  (uniform_matroid_on α r).r X = min r (size X) := 
-trunc.r_eq _ hr _ 
+lemma uniform_matroid_rank {r : ℕ} (hr : 0 ≤ r) (X : set α) :
+  (uniform_matroid_on α r).r X = min r (nat.card X) := 
+begin
+  rw [uniform_matroid_on, trunc.r_eq _ hr _, free_rank],
+end
 
-lemma uniform_matroid_rank_univ {r : ℤ} (hr : 0 ≤ r) (hr' : r ≤ size (univ : set α)) : 
+lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ nat.card (univ : set α)) : 
   (uniform_matroid_on α r).r univ = r :=
 by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
  
-lemma uniform_matroid_indep_iff {X : set α} {r : ℤ} (hr : 0 ≤ r)  : 
-  is_indep (uniform_matroid_on α r) X ↔ size X ≤ r := 
-by {rw [indep_iff_r, uniform_matroid_rank hr], finish}
+lemma uniform_matroid_indep_iff {X : set α} {r : ℕ} (hr : 0 ≤ r)  : 
+  indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
+by {rw [indep_iff_r_eq_card, uniform_matroid_rank hr], finish }
 
-lemma uniform_dual {r : ℤ} (hr : 0 ≤ r) (hrn : r ≤ size (univ : set α)) : 
+lemma uniform_dual {r : ℕ} (hr : 0 ≤ r) (hrn : r ≤ nat.card (univ : set α)) : 
   dual (uniform_matroid_on α r) 
-  = uniform_matroid_on α (size (univ : set α) - r) :=
+  = uniform_matroid_on α (nat.card (univ : set α) - r) :=
 begin
   ext X, 
   rw [dual_r, uniform_matroid_rank hr, uniform_matroid_rank hr, 
-      uniform_matroid_rank (_ : 0 ≤ size univ - r), min_eq_left hrn, 
+      uniform_matroid_rank (_ : 0 ≤ nat.card univ - r), min_eq_left hrn, 
       compl_size, ← min_add_add_left, ← min_sub_sub_right, min_comm], 
   congr, 
   all_goals {linarith}, 
@@ -110,7 +169,7 @@ def circuit_matroid_on (α : Type*) [fintype α]: matroid α :=
   uniform_matroid_on α (type_size α - 1)
 
 @[simp] lemma circuit_matroid_rank (hα : nonempty α) (X : set α) :
-  (circuit_matroid_on α).r X = min (size (univ : set α) - 1) (size X) := 
+  (circuit_matroid_on α).r X = min (nat.card (univ : set α) - 1) (nat.card X) := 
 by {convert uniform_matroid_rank  _ X, linarith [one_le_type_size_of_nonempty hα]}
 
 lemma circuit_matroid_iff_univ_circuit (hα : nonempty α){M : matroid α} :
@@ -129,7 +188,7 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
+lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℕ} (hr : 0 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
   rw type_size_eq at hα, 
@@ -149,7 +208,7 @@ begin
 end
 
 
-lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℤ} (hr : 0 ≤ r) 
+lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℕ} (hr : 0 ≤ r) 
 (hα : 1 ≤ type_size α):
   (unif.uniform_matroid_on α r).is_loopless ↔ 1 ≤ r := 
 begin
@@ -166,7 +225,7 @@ begin
   rw [size_singleton, min_eq_right this], 
 end
 
-lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
+lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℕ} (hr : 2 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple :=
 begin
   rintros X - hX, 
@@ -208,7 +267,7 @@ lemma canonical_unif_simple_of_two_le_r (ha : 2 ≤ a) :
 unif.unif_simple_of_two_le_r _ ha
 
 @[simp] lemma canonical_unif_r (ha : 0 ≤ a) (X : set (fin' b)) :
-  (canonical_unif a b).r X = min a (size X) :=
+  (canonical_unif a b).r X = min a (nat.card X) :=
 unif.uniform_matroid_rank ha _
 
 end canonical 
