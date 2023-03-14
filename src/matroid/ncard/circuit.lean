@@ -92,7 +92,27 @@ begin
   have := M.r_add_card_le_r_add_card_of_subset (diff_subset (C₁ ∪ C₂) {e}), 
   -- have hsm := M.r_inter_add_r_union_le_r_add_r ((C₁ ∪ C₂) \ {e}) {e}, 
   -- rw [inter_singleton_eq_empty.mpr, r_empty, diff_union_self, union_singleton, insert_eq_self.mpr he] at hsm, 
+  sorry,
   end 
+
+-- putting this here temporarily because it needs circuits for the proof
+lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E} 
+(hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
+  ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
+begin
+  have h1 : ¬ M.indep (X ∪ {a}),
+  sorry,
+  -- X ∪ {a} has unique circuit C(a, X)
+  -- i think i do need the minimal circuit
+  have h2 := exists_circuit_subset_of_dep h1,
+  -- C(a, X) dep, Y indep
+  -- C(a, X) \ Y ≠ ∅
+  -- let b ∈ C(a, X) \ Y
+  -- then b ∈ X ∧ b ∉ Y
+  -- then (X \ {b} ∪ {a}) since it doesn't contain C(a, X)
+  -- therefore it is basis
+  sorry
+end
 
   end matroid
   
