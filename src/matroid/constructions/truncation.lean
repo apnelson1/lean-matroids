@@ -49,9 +49,27 @@ def tr' (M : matroid α) (n : ℕ) [decidable_eq α] (h : n ≤ M.rk) : matroid 
 
 def matroid.tr_r (M : matroid α) (n : ℕ) : set α → ℕ := λ X, if ((M.r X) < n) then M.r X else n
 
--- I think this proof is probably really stupid but I couldn't find a more clever way to do it
-lemma tr_r_mono (M : matroid α) (n : ℕ) {X Y : set α} (hXY : X ⊆ Y) : M.tr_r n X ≤ M.tr_r n Y :=
+lemma tr_r_le_card (M : matroid α) (n : ℕ) : ∀ X, (M.tr_r n X) ≤ nat.card X := λ X, 
 begin
+  rw matroid.tr_r,
+  simp only,
+  by_cases hX : M.r X < n,
+  { rw [(ne.ite_eq_left_iff (ne_of_lt hX)).2 hX, nat.card_eq_to_finset_card],
+    apply M.r_le_card },
+  { have h2 : ite (M.r X < n) (M.r X) n = n,
+    { rw ite_eq_iff,
+      right,
+      refine ⟨hX, rfl⟩ },
+    rw h2,
+    push_neg at hX,
+    rw nat.card_eq_to_finset_card,
+    apply le_trans hX (M.r_le_card X) },
+end
+
+-- I think this proof is probably really stupid but I couldn't find a more clever way to do it
+lemma tr_r_mono (M : matroid α) (n : ℕ) : ∀ X Y, X ⊆ Y → M.tr_r n X ≤ M.tr_r n Y :=
+begin
+  intros X Y hXY,
   rw matroid.tr_r,
   simp only,
   by_cases hX : M.r X < n,
@@ -162,7 +180,10 @@ begin
             refine ⟨hY, rfl⟩ }, 
           rw h4 } } } },
 end
---def tr (M : matroid α) (n : ℕ) [decidable_eq α] : matroid α := matroid_of_r 
+
+-- truncation defined in terms of rank
+def tr (M : matroid α) (n : ℕ) [decidable_eq α] : matroid α := 
+  matroid_of_r (M.tr_r n) (tr_r_le_card M n) (tr_r_mono M n) (tr_r_submod M n)
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
 lemma r_eq (M : matroid α){n : ℕ} (hn : 0 ≤ n) (X : set α) :
