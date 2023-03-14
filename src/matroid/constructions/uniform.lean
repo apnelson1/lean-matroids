@@ -129,28 +129,28 @@ begin
     exact h2 },
 end
 
-def uniform_matroid_on (α : Type*) [fintype α] (r : ℤ) : matroid α := 
+def uniform_matroid_on (α : Type*) [fintype α] (r : ℕ) : matroid α := 
   trunc.tr (free_matroid_on α) r 
 
-lemma uniform_matroid_rank {r : ℤ} (hr : 0 ≤ r) (X : set α) :
-  (uniform_matroid_on α r).r X = min r (size X) := 
-trunc.r_eq _ hr _ 
+lemma uniform_matroid_rank {r : ℕ} (hr : 0 ≤ r) (X : set α) :
+  (uniform_matroid_on α r).r X = min r (nat.card X) := 
+trunc.r_eq (uniform_matroid_on α r) hr X 
 
-lemma uniform_matroid_rank_univ {r : ℤ} (hr : 0 ≤ r) (hr' : r ≤ size (univ : set α)) : 
+lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ nat.card (univ : set α)) : 
   (uniform_matroid_on α r).r univ = r :=
 by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
  
-lemma uniform_matroid_indep_iff {X : set α} {r : ℤ} (hr : 0 ≤ r)  : 
-  is_indep (uniform_matroid_on α r) X ↔ size X ≤ r := 
+lemma uniform_matroid_indep_iff {X : set α} {r : ℕ} (hr : 0 ≤ r)  : 
+  is_indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
 by {rw [indep_iff_r, uniform_matroid_rank hr], finish}
 
-lemma uniform_dual {r : ℤ} (hr : 0 ≤ r) (hrn : r ≤ size (univ : set α)) : 
+lemma uniform_dual {r : ℕ} (hr : 0 ≤ r) (hrn : r ≤ nat.card (univ : set α)) : 
   dual (uniform_matroid_on α r) 
-  = uniform_matroid_on α (size (univ : set α) - r) :=
+  = uniform_matroid_on α (nat.card (univ : set α) - r) :=
 begin
   ext X, 
   rw [dual_r, uniform_matroid_rank hr, uniform_matroid_rank hr, 
-      uniform_matroid_rank (_ : 0 ≤ size univ - r), min_eq_left hrn, 
+      uniform_matroid_rank (_ : 0 ≤ nat.card univ - r), min_eq_left hrn, 
       compl_size, ← min_add_add_left, ← min_sub_sub_right, min_comm], 
   congr, 
   all_goals {linarith}, 
@@ -160,7 +160,7 @@ def circuit_matroid_on (α : Type*) [fintype α]: matroid α :=
   uniform_matroid_on α (type_size α - 1)
 
 @[simp] lemma circuit_matroid_rank (hα : nonempty α) (X : set α) :
-  (circuit_matroid_on α).r X = min (size (univ : set α) - 1) (size X) := 
+  (circuit_matroid_on α).r X = min (nat.card (univ : set α) - 1) (nat.card X) := 
 by {convert uniform_matroid_rank  _ X, linarith [one_le_type_size_of_nonempty hα]}
 
 lemma circuit_matroid_iff_univ_circuit (hα : nonempty α){M : matroid α} :
@@ -179,7 +179,7 @@ begin
   from subset_ssubset_or_eq (subset_univ _), 
 end
 
-lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℤ} (hr : 0 ≤ r) : 
+lemma uniform_matroid_simple_iff (α : Type*)[fintype α] (hα : 2 ≤ type_size α){r : ℕ} (hr : 0 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple ↔ 2 ≤ r :=
 begin
   rw type_size_eq at hα, 
@@ -199,7 +199,7 @@ begin
 end
 
 
-lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℤ} (hr : 0 ≤ r) 
+lemma uniform_matroid_loopless_iff (α : Type*) [fintype α] {r : ℕ} (hr : 0 ≤ r) 
 (hα : 1 ≤ type_size α):
   (unif.uniform_matroid_on α r).is_loopless ↔ 1 ≤ r := 
 begin
@@ -216,7 +216,7 @@ begin
   rw [size_singleton, min_eq_right this], 
 end
 
-lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℤ} (hr : 2 ≤ r) : 
+lemma unif_simple_of_two_le_r (α : Type*)[fintype α] {r : ℕ} (hr : 2 ≤ r) : 
   (unif.uniform_matroid_on α r).is_simple :=
 begin
   rintros X - hX, 
@@ -258,7 +258,7 @@ lemma canonical_unif_simple_of_two_le_r (ha : 2 ≤ a) :
 unif.unif_simple_of_two_le_r _ ha
 
 @[simp] lemma canonical_unif_r (ha : 0 ≤ a) (X : set (fin' b)) :
-  (canonical_unif a b).r X = min a (size X) :=
+  (canonical_unif a b).r X = min a (nat.card X) :=
 unif.uniform_matroid_rank ha _
 
 end canonical 
