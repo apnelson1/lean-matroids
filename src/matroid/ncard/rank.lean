@@ -2,7 +2,7 @@ import .matroid
 
 noncomputable theory
 open_locale classical
-open_locale big_operators
+-- open_locale big_operators
 
 open set 
 

@@ -51,9 +51,25 @@ end finset
 
 open set 
 
-lemma finite.exists_maximal {α : Type*} [finite α] [partial_order α] (P : α → Prop) (h : ∃ x, P x) : 
+lemma set.finite.exists_maximal {α : Type*} [finite α] [partial_order α] (P : α → Prop) 
+(h : ∃ x, P x) : 
   ∃ m, P m ∧ ∀ x, P x → m ≤ x → m = x :=
 begin
   obtain ⟨m,⟨hm : P m,hm'⟩⟩ := set.finite.exists_maximal_wrt (@id α) (set_of P) (to_finite _) h, 
   exact ⟨m, hm, hm'⟩, 
 end    
+
+lemma set.finite.exists_minimal {α : Type*} [finite α] [partial_order α] (P : α → Prop) 
+(h : ∃ x, P x) : 
+  ∃ m, P m ∧ ∀ x, P x → x ≤ m → m = x :=
+@set.finite.exists_maximal (order_dual α) _ _ P h
+
+lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} : 
+  S \ {e} ⊂ S ↔ e ∈ S :=
+⟨ λ h, by_contra (λ he, h.ne (by rwa [sdiff_eq_left, disjoint_singleton_right])), 
+  λ h, ssubset_of_ne_of_subset 
+    (by rwa [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]) (diff_subset _ _)⟩
+
+lemma set.diff_singleton_ssubset {α : Type*} {e : α} {S : set α} (heS : e ∈ S) : 
+  S \ {e} ⊂ S :=
+set.diff_singleton_ssubset_iff.mpr heS 

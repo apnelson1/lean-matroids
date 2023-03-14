@@ -385,53 +385,13 @@ eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_r_eq_card,h I])
   
 end rank 
 
-section circuit
 
-variables {C C' C₁ C₂ : set E}
-
-/-- A circuit is a minimal dependent set -/
-def circuit {E : Type*} (M : matroid E) (C : set E) := 
-  ¬M.indep C ∧ ∀ I ⊂ C, M.indep I 
-
-lemma circuit_def : 
-  M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I :=
-iff.rfl 
-
-lemma circuit.dep (hC : M.circuit C) : 
-  ¬M.indep C := 
-hC.1 
-
-lemma circuit.indep_of_ssubset (hC : M.circuit C) {X : set E} (hXC : X ⊂ C) :
-  M.indep X := 
-hC.2 _ hXC
-
-lemma circuit.nonempty (hC : M.circuit C) : 
-  C.nonempty := 
-by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
-
-lemma circuit.card_eq (hC : M.circuit C) : 
-  C.ncard = M.r C + 1 :=
-begin
-  obtain ⟨e,he⟩ := hC.nonempty, 
-  have hss : C \ {e} ⊂ C, by {refine ssubset_of_ne_of_subset _ (diff_subset _ _), 
-    simpa only [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]},   
-  have hlb := M.r_mono hss.subset, 
-  have hub := r_lt_card_of_dep hC.dep, 
-  rw [←nat.add_one_le_iff] at hub, 
-  rw [(hC.indep_of_ssubset hss).r] at hlb, 
-  have := ncard_diff_singleton_add_one he, 
-  linarith, 
-end 
-
-lemma circuit.eq_of_dep_subset_self (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : 
-  C = X :=
-by_contra (λ h, hX (hC.indep_of_ssubset (ssubset_of_subset_of_ne hXC (ne.symm h))))
-
-lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ⊆ C₂) : 
-  C₁ = C₂ :=
-(hC₂.eq_of_dep_subset_self hC₁.dep h).symm
+  -- simp_rw [diff_eq_compl_inter] at hsm, 
+  -- rw [inter_right_comm, ←inter_assoc, inter_self, inter_right_comm, ←inter_distrib_left] at hsm, 
+  -- simp_rw [←diff_eq_compl_inter ] at hsm, 
   
-end circuit 
+  
+  
 
 
 end matroid 
