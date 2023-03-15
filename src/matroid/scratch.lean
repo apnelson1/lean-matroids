@@ -1,11 +1,5 @@
+import tactic 
 
-axiom choice {α : Sort*} : nonempty α → α 
+variables {E : Type*} {P Q : set E} {e : E}
 
-lemma em (P : Prop) : P ∨ ¬P :=
-begin
-  suffices : nonempty (P ∨ ¬P), 
-  exact @choice (P ∨ ¬P) this,
-
-  
-
-end  
+example (heQ : e ∉ Q) (hPQ : P ⊆ Q) : e ∉ P := by {library_search, }

@@ -3,10 +3,9 @@ import matroid.ncard.circuit
 
 /-
 This is correct and uses only mathlib, but I am leaving it as is for now and doing stuff in the 
-ncard folder, which uses constructive cardinalities. I've just made a PR with an API for ncard, 
+ncard folder, which uses nonconstructive cardinalities. I've just made a PR with an API for ncard, 
 so hopefully this will only be temporary. 
 -/
-
 
 -- noncomputable theory 
 open_locale classical 
