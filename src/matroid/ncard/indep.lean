@@ -117,6 +117,26 @@ begin
   rwa h _ hB'.indep hBB', 
 end  
 
+lemma base_of_card_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
+begin
+  rintros hB ⟨hB', hBB'⟩,
+  rcases indep_iff_subset_base.1 hB' with ⟨B2, ⟨hB21, hB22⟩⟩,
+  have h2 := base.card_eq_card_of_base hB hB21,
+  contrapose h2,
+  rw base_iff_maximal_indep at h2,
+  push_neg at h2,
+  specialize h2 hB',
+  rcases h2 with ⟨B3, ⟨hiB3, ⟨hBB3', hBB3ne'⟩⟩⟩,
+  have h4 : ¬ B3 ⊆ B',
+  by_contra,
+  apply hBB3ne',
+  apply eq_of_subset_of_subset hBB3' h,
+  have h5 : B' ⊆ B3 ∧ ¬B3 ⊆ B',
+  refine ⟨hBB3', h4⟩,
+  rw ← ssubset_def at h5,
+  sorry,
+end
+
 lemma eq_of_indep_iff_indep_forall {M₁ M₂ : matroid E} (h : ∀ I, (M₁.indep I ↔ M₂.indep I)) : 
   M₁ = M₂ := 
 begin

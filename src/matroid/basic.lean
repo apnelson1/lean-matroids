@@ -1,4 +1,5 @@
 import .helpers
+import matroid.ncard.circuit
 
 /-
 This is correct and uses only mathlib, but I am leaving it as is for now and doing stuff in the 
@@ -260,20 +261,6 @@ by {obtain ⟨I, -, hI⟩ := M.empty_indep.subset_basis_of_subset (empty_subset 
 lemma base_iff_basis_univ : 
   M.base B ↔ M.basis B univ := 
 by {rw [base_iff_maximal_indep, basis], simp}
-
-lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E} 
-(hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
-  ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
-begin
-  -- X ∪ {a} has unique circuit C(a, X)
-  -- C(a, X) dep, Y indep
-  -- C(a, X) \ Y ≠ ∅
-  -- let b ∈ C(a, X) \ Y
-  -- then b ∈ X ∧ b ∉ Y
-  -- then (X \ {b} ∪ {a}) since it doesn't contain C(a, X)
-  -- therefore it is basis
-  sorry
-end
 
 end basis
 

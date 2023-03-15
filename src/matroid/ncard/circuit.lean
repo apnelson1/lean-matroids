@@ -108,6 +108,50 @@ begin
       M.r_mono (diff_subset (C₁ ∪ C₂) {e})], 
 end 
 
+lemma set.mem_of_nsubset_insert_iff {s t : set E} {a : E} (h : s ⊆ insert a t ∧ ¬ s ⊆ t) : a ∈ s :=
+begin
+  contrapose h,
+  push_neg,
+  intros h2,
+  exact (subset_insert_iff_of_not_mem h).1 h2,
+end
+
+lemma unique_circuit_of_insert_indep (hX : M.indep X) (a : E) (hXa : ¬ M.indep (X ∪ {a}) ): 
+  ∃! (C ⊆ X ∪ {a}), M.circuit C ∧ a ∈ C :=
+begin
+  rcases exists_circuit_subset_of_dep hXa with ⟨C, ⟨hC1, hC2⟩⟩,
+  have h2 : ∀ (C' ⊆ X ∪ {a}), M.circuit C' → C' = C, 
+  rintros C' hC1' hC2',
+  by_contra hne,
+  rcases circuit.elimination hC2 hC2' (ne.symm hne) a with ⟨nC, ⟨hnC1, hnC2⟩⟩,
+  have h3 : (C ∪ C') \ {a} ⊆ X,
+  rw [diff_singleton_subset_iff, union_subset_iff],
+  simp at hC1,
+  simp at hC1',
+  refine ⟨hC1, hC1'⟩, 
+  have h5 := subset_trans hnC1 h3,
+  have h4 := indep_mono h5 hX,
+  apply circuit.dep hnC2,
+  exact h4,
+  use C,
+  simp,
+  simp at hC1,
+  have hCX : ¬ C ⊆ X,
+  by_contra hCX',  
+  have h4 := indep_mono hCX' hX,
+  apply circuit.dep hC2,
+  exact h4,
+  have haC := set.mem_of_nsubset_insert_iff ⟨hC1, hCX⟩,
+  
+  refine ⟨⟨hC1, ⟨hC2, haC⟩⟩, λ C' hC1' hC2' haC', _⟩,
+  apply h2,
+  simp,
+  apply hC1',
+  apply hC2',
+end
+
+-- trying to make alternate basis exchange axiom (B2)*
+
 end matroid
   
 section from_axioms
