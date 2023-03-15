@@ -152,6 +152,8 @@ begin
   apply hC2',
 end
 
+-- trying to make alternate basis exchange axiom (B2)*
+
 end matroid
   
 section from_axioms
@@ -173,7 +175,7 @@ begin
   /- Choose an independent set `K ⊆ I ∪ J`, larger than `I`, for which `I \ K` is minimized -/
   set sbad := {K : set E | indep K ∧ K ⊆ I ∪ J ∧ I.ncard < K.ncard} with hsbad, 
   have hbad_ne : sbad.nonempty := ⟨J, hJ, subset_union_right _ _, hIJ⟩,  
-  /-obtain ⟨K, ⟨hK, hKIJ, hIK⟩, hKmin⟩ := 
+  obtain ⟨K, ⟨hK, hKIJ, hIK⟩, hKmin⟩ := 
     @set.finite.exists_minimal_wrt (set E) _ _ (λ X, (I \ X).ncard) sbad (to_finite sbad) hbad_ne, 
   simp only [hsbad, mem_set_of_eq, and_imp] at hKmin, 
   
@@ -226,8 +228,7 @@ begin
   obtain ⟨C, hCss, hC⟩ := elimination Cg Cg' e hne ⟨heCg, heCg'⟩, 
   refine hK C (hCss.trans _) hC, 
   rw [diff_subset_iff, singleton_union], 
-  exact union_subset hCgss hCg'ss, -/
-  sorry,
+  exact union_subset hCgss hCg'ss, 
 end 
 
 @[simp] lemma matroid_of_circuit_apply 
