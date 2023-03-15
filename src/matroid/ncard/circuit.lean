@@ -123,97 +123,33 @@ lemma unique_circuit_of_insert_indep (hX : M.indep X) (a : E) (hXa : ¬ M.indep 
 begin
   rcases exists_circuit_subset_of_dep hXa with ⟨C, ⟨hC1, hC2⟩⟩,
   have h2 : ∀ (C' ⊆ X ∪ {a}), M.circuit C' → C' = C, 
-  rintros C' hC2' hC1',
+  rintros C' hC1' hC2',
   by_contra hne,
-  rcases circuit.elimination hC1 hC1' (ne.symm hne) a with ⟨nC, ⟨hnC1, hnC2⟩⟩,
+  rcases circuit.elimination hC2 hC2' (ne.symm hne) a with ⟨nC, ⟨hnC1, hnC2⟩⟩,
   have h3 : (C ∪ C') \ {a} ⊆ X,
   rw [diff_singleton_subset_iff, union_subset_iff],
-  simp at hC2,
-  simp at hC2',
-  refine ⟨hC2, hC2'⟩, 
-  have h5 := subset_trans hnC2 h3,
+  simp at hC1,
+  simp at hC1',
+  refine ⟨hC1, hC1'⟩, 
+  have h5 := subset_trans hnC1 h3,
   have h4 := indep_mono h5 hX,
-  apply circuit.dep hnC1,
+  apply circuit.dep hnC2,
   exact h4,
   use C,
   simp,
-  simp at hC2,
+  simp at hC1,
   have hCX : ¬ C ⊆ X,
   by_contra hCX',  
   have h4 := indep_mono hCX' hX,
-  apply circuit.dep hC1,
+  apply circuit.dep hC2,
   exact h4,
-  have haC := set.mem_of_nsubset_insert_iff ⟨hC2, hCX⟩,
+  have haC := set.mem_of_nsubset_insert_iff ⟨hC1, hCX⟩,
   
-  refine ⟨⟨hC2, ⟨hC1, haC⟩⟩, λ C' hC2' hC1' haC', _⟩,
+  refine ⟨⟨hC1, ⟨hC2, haC⟩⟩, λ C' hC1' hC2' haC', _⟩,
   apply h2,
   simp,
-  apply hC2',
   apply hC1',
-end
-
-
--- putting this here temporarily because it needs circuits for the proof
-lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E} 
-(hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
-  ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
-begin
-  have h1 : ¬ M.indep (X ∪ {a}),
-  sorry,
-  -- X ∪ {a} has unique circuit C(a, X)
-  have h3 := unique_circuit_of_insert_indep (base.indep hX) a h1,
-  rcases h3 with ⟨C, ⟨hC1, hC2⟩⟩,
-  have h5 := exists_of_exists_unique hC1,
-  simp at h5,
-  rcases h5 with ⟨hCaX, ⟨hC, haC⟩⟩,
-  -- C(a, X) dep, Y indep
-  have h4 := circuit.dep hC,
-  have h5 := base.indep hY,
-  -- C(a, X) \ Y ≠ ∅
-  have h6 : set.nonempty (C \ Y),
-  apply nonempty_of_not_subset,
-  by_contra,
-  apply h4,
-  apply indep_mono h h5,
-  -- let b ∈ C(a, X) \ Y
-  rw set.nonempty at h6,
-  cases h6 with b hb,
-  rw mem_diff at hb,
-  have h7 : b ∈ X,
-  have h8 := mem_of_subset_of_mem hCaX hb.1,
-  simp at h8,
-  have h9 := ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
-  cc,
-  -- then b ∈ X ∧ b ∉ Y
-  have h10 : ¬ C ⊆ (X \ {b} ∪ {a}),
-  simp,
-  rw not_subset,
-  use b,
-  refine ⟨hb.1, _⟩,
-  simp,
-  exact ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
-  -- then (X \ {b} ∪ {a}) indep since it doesn't contain C(a, X)
-  use b,
-  refine ⟨⟨h7, hb.2⟩, _⟩,
-  have h11 : M.indep (X \ {b} ∪ {a}), 
-  by_contra h12,
-  rw dep_iff_contains_circuit at h12,
-  rcases h12 with ⟨C', ⟨hC1', hC2'⟩⟩,
-  have h12 := union_subset_union (diff_subset X {b}) (subset.refl {a}),
-  have h13 := subset_trans hC2' h12,
-  specialize hC2 C',
-  simp at hC2,
-  simp at h13,
-  have hCX : ¬ C' ⊆ X,
-  by_contra hCX',  
-  apply circuit.dep hC1' (indep_mono hCX' (base.indep hX)),
-  specialize hC2 h13 hC1' (set.mem_of_nsubset_insert_iff ⟨h13, hCX⟩),
-  rw hC2 at hC2',
-  apply h10,
-  exact hC2',
-  -- therefore it is basis
-  
-  sorry
+  apply hC2',
 end
 
 end matroid
