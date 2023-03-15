@@ -80,6 +80,15 @@ lemma infinite.ncard (hs : s.infinite) :
   s.ncard = 0 :=
 by {haveI := hs.to_subtype, exact s.ncard_eq_zero_of_infinite,}
 
+lemma ncard_univ (α : Type*): 
+  (univ : set α).ncard = nat.card α :=
+begin
+  cases finite_or_infinite α with h h, 
+  { haveI := @fintype.of_finite α h, 
+    rw [ncard_eq_to_finset_card, to_finset_univ, finset.card_univ, nat.card_eq_fintype_card]},
+  rw [(@infinite_univ _ h).ncard, @nat.card_eq_zero_of_infinite _ h], 
+end  
+
 lemma ncard_pos [finite s] :
   0 < s.ncard ↔ s.nonempty :=
 by simp [ncard_def, finite.card_pos_iff]

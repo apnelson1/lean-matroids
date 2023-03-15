@@ -4,7 +4,7 @@ noncomputable theory
 open_locale classical
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} 
-  {C C' C₁ C₂ X : set E} {e : E}
+  {I C C' C₁ C₂ X : set E} {e : E}
 
 open set 
 
@@ -65,31 +65,41 @@ lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C
 (hC₂.eq_of_dep_subset_self hC₁.dep h).symm
 
 lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) : 
-  ∃ C, M.circuit C ∧ C ⊆ X :=
+  ∃ C ⊆ X, M.circuit C :=
 begin
-  obtain ⟨C,⟨hCX,hCdep⟩,hmin⟩:=  finite.exists_minimal (λ Y, Y ⊆ X ∧ ¬M.indep Y) ⟨_,rfl.subset,hX⟩,
-  exact ⟨C, ⟨hCdep,λ I hIC, 
-    by_contra (λ hI, hIC.ne ((hmin I ⟨hIC.subset.trans hCX,hI⟩ hIC.subset).symm))⟩, hCX⟩,  
+  obtain ⟨C,⟨hCX,hCdep⟩,hmin⟩ := finite.exists_minimal (λ Y, Y ⊆ X ∧ ¬M.indep Y) ⟨_,rfl.subset,hX⟩,
+  exact ⟨C, hCX, ⟨hCdep,λ I hIC, 
+    by_contra (λ hI, hIC.ne ((hmin I ⟨hIC.subset.trans hCX,hI⟩ hIC.subset).symm))⟩⟩,  
 end   
   
-lemma dep_iff_contains_circuit :
-  ¬ M.indep X ↔ ∃ C, M.circuit C ∧ C ⊆ X  :=
+lemma dep_iff_supset_circuit :
+  ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
+⟨exists_circuit_subset_of_dep, λ ⟨C, hCX, hC⟩ hX, hC.dep (hX.subset hCX)⟩
+
+lemma indep_iff_forall_subset_not_circuit : 
+  M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C := 
+by {rw ← not_iff_not, simp_rw [dep_iff_supset_circuit, not_forall, not_not]}
+
+lemma exists_circuit_iff_card_lt_rk : 
+  M.rk < (univ : set E).ncard ↔ ∃ C, M.circuit C :=
 begin
-  refine ⟨exists_circuit_subset_of_dep, _⟩, 
-  rintros ⟨C, hC, hCX⟩, 
-  exact λhX, hC.dep (hX.subset hCX),  
+  rw [matroid.rk, r_lt_card_iff_dep, dep_iff_supset_circuit], 
+  split, 
+  { rintro ⟨C,-,hC⟩, exact ⟨C,hC⟩},
+  rintro ⟨C,hC⟩, 
+  exact ⟨C, subset_univ _, hC⟩
 end 
 
 /-- The circuit eliminiation axiom : for any pair of distinct circuits `C₁,C₂` and any `e`, some 
   circuit is contained in `C₁ ∪ C₂ \ {e}`. Traditionally this includes the stipulation that 
   `e ∈ C₁ ∩ C₂`, but we can derive the stronger version. -/
 lemma circuit.elimination (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ≠ C₂) (e : E) : 
-  ∃ C, M.circuit C ∧ C ⊆ (C₁ ∪ C₂) \ {e} :=
+  ∃ C ⊆ (C₁ ∪ C₂) \ {e}, M.circuit C  :=
 begin
   by_cases he : e ∈ (C₁ ∪ C₂), swap, 
   { have h' := subset_union_left C₁ C₂, 
-    exact ⟨C₁, hC₁, subset_diff_singleton h' (λ he', he (h' he'))⟩},
-  simp_rw [←dep_iff_contains_circuit, ←r_lt_card_iff_dep, nat.lt_iff_add_one_le], 
+    exact ⟨C₁, subset_diff_singleton h' (λ he', he (h' he')), hC₁⟩},
+  simp_rw [←dep_iff_supset_circuit, ←r_lt_card_iff_dep, nat.lt_iff_add_one_le], 
   
   have hss : C₁ ∩ C₂ ⊂ C₁ := ssubset_of_ne_of_subset 
     (by {simp only [ne.def, inter_eq_left_iff_subset], 

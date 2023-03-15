@@ -280,6 +280,19 @@ lemma r_union_le_add_r (M : matroid E) (X Y : set E) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.r_submod X Y]
 
+lemma rank_eq_of_le_supset (h : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
+  M.r X = M.r Y :=
+hr.antisymm' (M.r_mono h)
+
+lemma rank_eq_of_le_union :
+  M.r (X ∪ Y) ≤ M.r X → M.r (X ∪ Y) = M.r X :=
+λ h, ((rank_eq_of_le_supset ((subset_union_left _ _))) h).symm
+
+lemma rank_eq_of_le_inter :
+  M.r X ≤ M.r (X ∩ Y) →  M.r (X ∩ Y) = M.r X :=
+λ h, (rank_eq_of_le_supset (inter_subset_left _ _) h)
+
+
 /- Probably `finsum` is fight for this  -/
 
 -- lemma r_union_le_add_r_sUnion (M : matroid E) (S : finset (set E)) :
@@ -343,11 +356,61 @@ lemma submod_three_disj (M : matroid E) (X Y Y' : set E) (hYY' : Y ∩ Y' = ∅)
   M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') := 
 by {have := submod_three M X Y Y', rwa [hYY', union_empty] at this}
 
+theorem r_augment (h : M.r X < M.r Z) :  
+  ∃ z ∈ Z, M.r X < M.r (insert z X) := 
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X,  
+  obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (subset_union_left X Z)), 
+  have hXZ := h.trans_le (M.r_mono (subset_union_right X Z)), 
+
+  rw [←hI.card, ←hJ.card] at hXZ,
+  obtain ⟨e,heJ,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hXZ,   
+  
+  have hlt : M.r X < M.r (insert e X),
+  { refine lt_of_lt_of_le _ (M.r_mono (@insert_subset_insert _ e _ _ hI.subset)), 
+    rw [←hI.card, (hJ.indep.subset (insert_subset.mpr ⟨heJ,hIJ⟩)).r, ncard_insert_of_not_mem heI, 
+      nat.lt_iff_add_one_le]},
+  have heX : e ∉ X, 
+  { refine λ heX, hlt.ne _, rw [insert_eq_of_mem heX], },
+  have heZ : e ∈ Z, 
+    from or.resolve_left (hJ.subset heJ) heX,   
+  exact ⟨e,heZ,hlt⟩, 
+end 
+
+lemma r_eq_of_r_all_insert_le (hXY : X ⊆ Y) (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) :
+   M.r X = M.r Y := 
+begin
+  refine (M.r_mono hXY).antisymm (le_of_not_lt (λ hlt, _)), 
+  obtain ⟨e,he,hlt'⟩ := r_augment hlt, 
+  exact hlt'.not_le (hY _ he), 
+end  
+
+lemma r_eq_of_r_all_insert_eq (hXY : X ⊆ Y) (hY : ∀ e ∈ Y, M.r X = M.r (insert e X)) :
+   M.r X = M.r Y := 
+r_eq_of_r_all_insert_le hXY (λ e h, (hY e h).symm.le)
+
+lemma r_eq_zero_of_loopy (he : (∀ e ∈ X, M.r {e} = 0)) : 
+  M.r X = 0 :=
+begin
+  rw [←M.r_empty, eq_comm], 
+  exact r_eq_of_r_all_insert_eq (empty_subset _) 
+    (λ e heX, by {rw [M.r_empty, eq_comm, insert_emptyc_eq], exact he e heX}), 
+end 
+
+lemma indep_inter_r_zero_eq_empty (hI : M.indep I) (hX : M.r X = 0) : 
+   I ∩ X = ∅ :=
+begin
+  have h := hI.subset (inter_subset_left _ X), 
+  rwa [indep_iff_r_eq_card, r_zero_of_subset_r_zero (inter_subset_right _ _) hX, eq_comm, 
+    ncard_eq_zero] at h, 
+end
+
 end matroid
 
 section from_axioms
 
-lemma r_eq_card_of_subset_of_r_le_card_submod (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard) 
+lemma r_eq_card_of_subset_of_r_le_card_submod 
+(r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard) 
 (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) 
 {I J : set E} (hIJ : I ⊆ J) (hJ : r J = J.ncard) :
   r I = I.ncard := 
