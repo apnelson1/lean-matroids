@@ -10,9 +10,7 @@ open set
 
 namespace matroid 
 
-/-- A circuit is a minimal dependent set -/
-def circuit {E : Type*} (M : matroid E) (C : set E) := 
-  ¬M.indep C ∧ ∀ I ⊂ C, M.indep I 
+
 
 lemma circuit_def : 
   M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I :=

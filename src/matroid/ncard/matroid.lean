@@ -3,6 +3,7 @@ import ..helpers
 
 -- noncomputable theory 
 open_locale classical 
+open_locale big_operators
 
 /-
  This is the same as basic.lean, but with noncomputable cardinality from ncard . Saves about 50 loc
@@ -15,7 +16,7 @@ variables {E : Type*}
 /-- A predicate `P` on sets satisfies the exchange property if, for all `X` and `Y` satisfying `P`
   and all `a ∈ X \ Y`, there exists `b ∈ Y \ X` so that swapping `a` for `b` in `X` maintains `P`.-/
 def exchange_property (P : set E → Prop) : Prop :=
-  ∀ X Y, P X → P Y → ∀ a, a ∈ X \ Y → ∃ b, b ∈ Y \ X ∧ P (X \ {a} ∪ {b}) 
+  ∀ X Y, P X → P Y → ∀ a, a ∈ X \ Y → ∃ b, b ∈ Y \ X ∧ P (insert b (X \ {a})) 
 
 /-- A `matroid` is a nonempty collection of sets satisfying the exchange property. Each such set 
   is called a `base` of the matroid. -/
@@ -24,19 +25,62 @@ def exchange_property (P : set E → Prop) : Prop :=
   (exists_base' : ∃ B, base B) 
   (base_exchange' : exchange_property base)
 
-namespace matroid 
 
-variables [finite E] {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E}
+variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
+
+namespace matroid 
+/- None of these definitions require finiteness -/
+
+section defs
+
+/-- A set is independent if it is contained in a base.  -/
+def indep (M : matroid E) (I : set E) : Prop := 
+  ∃ B, M.base B ∧ I ⊆ B   
+
+/-- A basis for a set `X` is a maximal independent subset of `X`
+  (Often, the word 'basis' is used to refer to what we call a 'base')-/
+def basis (M : matroid E) (I X : set E) : Prop := 
+  M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J 
+
+/-- A circuit is a minimal dependent set -/
+def circuit (M : matroid E) (C : set E) : Prop := 
+  ¬M.indep C ∧ ∀ I ⊂ C, M.indep I 
+
+/-- A flat is a maximal set having a given basis  -/
+def flat (M : matroid E) (F : set E) : Prop := 
+  ∀ I X, M.basis I F → M.basis I X → X ⊆ F    
+
+/-- The closure of a set is the intersection of the flats containing it -/
+def cl (M : matroid E) (X : set E) : set E :=
+  ⋂₀ {F | M.flat F ∧ X ⊆ F}
+
+/-- A spanning set is one whose closure is the ground set -/
+def spanning (M : matroid E) (X : set E) : Prop := 
+  M.cl X = univ 
+
+/-- A hyperplane is a maximal nonspanning set -/
+def hyperplane (M : matroid E) (H : set E) : Prop :=
+  ¬ M.spanning H ∧ ∀ X, X ⊂ H → M.spanning X      
+
+/-- A cocircuit is the complement of a hyperplane -/
+def cocircuit (M : matroid E) (K : set E) : Prop := 
+  M.hyperplane Kᶜ  
+  
+end defs 
+
+section base
 
 lemma exists_base (M : matroid E) : ∃ B, M.base B := M.exists_base'
 
 lemma base.exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x ∈ B₁) (hxB₂ : x ∉ B₂) : 
-  ∃ y, (y ∈ B₂ ∧ y ∉ B₁) ∧ M.base (B₁ \ {x} ∪ {y})   := 
+  ∃ y, (y ∈ B₂ ∧ y ∉ B₁) ∧ M.base (insert y (B₁ \ {x})) := 
 M.base_exchange' B₁ B₂ hB₁ hB₂ x ⟨hxB₁,hxB₂⟩
   
 lemma base.exchange_diff (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) : 
   ∃ y ∈ B₂ \ B₁, M.base (insert y (B₁ \ {x}))  :=
 by simpa using hB₁.exchange hB₂ hx.1 hx.2
+
+variables [finite E]
 
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   B₁.ncard = B₂.ncard := 
@@ -83,8 +127,11 @@ begin
   exact hy' (hB₁B₂ hy), 
 end 
 
-end matroid 
+end base
 
+
+
+end matroid 
 
 
 section misc
@@ -93,20 +140,7 @@ lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e �
   insert e (X \ {f}) = (insert e X) \ {f} :=
 by rw [←union_singleton, ←union_singleton, union_diff_distrib, 
   diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
-  
-lemma ncard_exchange {α : Type*} {X : set α} {e f : α} (he : e ∉ X) (hf : f ∈ X) : 
-  (insert e (X \ {f})).ncard = X.ncard :=
-begin
-  cases X.finite_or_infinite with h h,
-  { haveI := h.to_subtype, 
-    rw [ncard_insert_of_not_mem, ncard_diff_singleton_add_one hf],
-    simpa only [mem_diff, not_and] using he},
-  rw [((h.diff (set.to_finite {f})).mono (subset_insert e _)).ncard, h.ncard],  
-end 
-
-lemma ncard_exchange' {α : Type*} {X : set α} {e f : α} (he : e ∉ X) (hf : f ∈ X) : 
-  ((insert e X) \ {f}).ncard = X.ncard :=
-by rw [←insert_diff_singleton_comm (by {rintro rfl, exact he hf} : e ≠ f), ncard_exchange he hf]
 
 
 end misc 
+
