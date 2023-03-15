@@ -1,5 +1,5 @@
 import tactic 
 
-variables {E : Type*} {P Q : set E} {e : E}
+variables {E : Type*} {P Q : Prop} {e : E}
 
-example (heQ : e ∉ Q) (hPQ : P ⊆ Q) : e ∉ P := by {library_search, }
+example {hP : P ∨ Q} {hQ : ¬P} : Q := by {library_search, }
