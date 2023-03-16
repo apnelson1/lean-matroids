@@ -121,6 +121,10 @@ begin
   exact (M.r_mono (subset_univ _)).not_lt this, 
 end
 
+lemma base_iff_indep_card : 
+  M.base B ↔ M.indep B ∧ B.ncard = M.rk :=
+⟨λ h, ⟨h.indep, by rw ←h.card⟩, λ h, base_iff_indep_r.mpr ⟨h.1, by rw [←h.2, ←h.1.r]⟩⟩
+
 lemma basis.r_eq_r_union (hIX : M.basis I X) (Y : set E) :
   M.r (I ∪ Y) = M.r (X ∪ Y) := 
 begin

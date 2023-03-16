@@ -16,7 +16,7 @@ variables {E : Type*}
 /-- A predicate `P` on sets satisfies the exchange property if, for all `X` and `Y` satisfying `P`
   and all `a ∈ X \ Y`, there exists `b ∈ Y \ X` so that swapping `a` for `b` in `X` maintains `P`.-/
 def exchange_property (P : set E → Prop) : Prop :=
-  ∀ X Y, P X → P Y → ∀ a, a ∈ X \ Y → ∃ b, b ∈ Y \ X ∧ P (insert b (X \ {a})) 
+  ∀ X Y, P X → P Y → ∀ a ∈ X \ Y, ∃ b ∈ Y \ X, P (insert b (X \ {a})) 
 
 /-- A `matroid` is a nonempty collection of sets satisfying the exchange property. Each such set 
   is called a `base` of the matroid. -/
@@ -24,7 +24,6 @@ def exchange_property (P : set E → Prop) : Prop :=
   (base : set E → Prop)
   (exists_base' : ∃ B, base B) 
   (base_exchange' : exchange_property base)
-
 
 variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
 
@@ -72,13 +71,13 @@ section base
 
 lemma exists_base (M : matroid E) : ∃ B, M.base B := M.exists_base'
 
-lemma base.exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x ∈ B₁) (hxB₂ : x ∉ B₂) : 
-  ∃ y, (y ∈ B₂ ∧ y ∉ B₁) ∧ M.base (insert y (B₁ \ {x})) := 
-M.base_exchange' B₁ B₂ hB₁ hB₂ x ⟨hxB₁,hxB₂⟩
-  
-lemma base.exchange_diff (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) : 
+lemma base.exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) : 
   ∃ y ∈ B₂ \ B₁, M.base (insert y (B₁ \ {x}))  :=
-by simpa using hB₁.exchange hB₂ hx.1 hx.2
+M.base_exchange' B₁ B₂ hB₁ hB₂ _ hx
+
+lemma base.exchange_mem (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x ∈ B₁) (hxB₂ : x ∉ B₂) : 
+  ∃ y, (y ∈ B₂ ∧ y ∉ B₁) ∧ M.base (insert y (B₁ \ {x})) := 
+by simpa using hB₁.exchange hB₂ ⟨hxB₁, hxB₂⟩ 
 
 variables [finite E]
 
@@ -96,25 +95,26 @@ begin
     exact ncard_le_of_subset h, },  
   refine λ B B' hB hB' hcard, le_of_not_lt (λ hlt, _ ) , 
   obtain ⟨x, hxB', hxB⟩ := exists_mem_not_mem_of_ncard_lt_ncard hlt,  
-  obtain ⟨y, ⟨(hyB : y ∈ B), (hyB' : y ∉ B')⟩, hB''⟩ := hB'.exchange hB hxB' hxB, 
+  have := hB'.exchange hB ⟨hxB',hxB⟩,
+  obtain ⟨y, hy, hB''⟩ := hB'.exchange hB ⟨hxB',hxB⟩, 
 
-  have hcard := IH B (B' \ {x} ∪ {y})  hB (by simpa using hB'') _, 
+  have hcard := IH B (insert y (B' \ {x}))  hB (by simpa using hB'') _, 
   { apply hlt.not_le, 
-    rwa [union_singleton, ncard_insert_of_not_mem, ncard_diff_singleton_add_one hxB'] at hcard,
-    simpa using hyB'},
+    rwa [ncard_insert_of_not_mem, ncard_diff_singleton_add_one hxB'] at hcard,
+    simpa using hy.2},
   
-  suffices hss : (B' \ {x} ∪ {y}) \ B ⊂ B' \ B, 
+  suffices hss : (insert y (B' \ {x})) \ B ⊂ B' \ B, 
   { exact nat.le_of_lt_succ ((ncard_lt_ncard hss).trans_le hcard)},
 
   refine (ssubset_iff_of_subset (λ a, _) ).mpr ⟨x,  _⟩, 
-  { simp only [mem_diff, mem_union, mem_singleton_iff, and_imp],  
-    rintros (⟨haB',hax⟩ | rfl) haB;  
-    tauto},
+  { rw [mem_diff, mem_insert_iff, and_imp, mem_diff_singleton],
+    rintro (rfl | ⟨haB',hax⟩) haB,
+    { exact (haB hy.1).elim}, 
+    exact ⟨haB',haB⟩},
   
-  simp only [mem_diff, mem_union, mem_singleton, not_true, and_false, mem_singleton_iff, false_or, 
-    not_and, not_not_mem, exists_prop, and_false, false_or,eq_self_iff_true], 
-  
-  exact ⟨⟨hxB', hxB⟩, by {rintro rfl, exact hyB}⟩, 
+  rw [exists_prop, mem_diff, mem_diff, not_and, not_not_mem, mem_insert_iff, mem_diff, 
+    mem_singleton_iff, ne_self_iff_false, and_false, or_false], 
+  exact ⟨⟨hxB', hxB⟩, by {rintro rfl, exact hy.1}⟩, 
 end 
 
 lemma base.eq_of_subset_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hB₁B₂ : B₁ ⊆ B₂) : 
@@ -123,8 +123,8 @@ begin
   suffices : B₂ \ B₁ = ∅, from hB₁B₂.antisymm (diff_eq_empty.mp this),
   by_contra' h, 
   obtain ⟨e,he⟩ := set.nonempty_iff_ne_empty.mpr h, 
-  obtain ⟨y,⟨hy,hy'⟩,-⟩:=  hB₂.exchange_diff hB₁ he, 
-  exact hy' (hB₁B₂ hy), 
+  obtain ⟨y,hy,-⟩:=  hB₂.exchange hB₁ he, 
+  exact hy.2 (hB₁B₂ hy.1), 
 end 
 
 end base

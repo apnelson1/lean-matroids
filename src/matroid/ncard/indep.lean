@@ -50,11 +50,11 @@ begin
     { intros y hyB₁, 
       rw [mem_union, or_iff_not_imp_right],   
       intro hyB₂, 
-      obtain ⟨x,⟨hxB₂, hxB₁⟩, hB'⟩ := hB₁.exchange hB₂ hyB₁ hyB₂,  
-      obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hxB₂ h_le, 
-      swap, exact (hxB₁ hxB₁').elim,
+      obtain ⟨x,hx, hB'⟩ := hB₁.exchange hB₂ ⟨hyB₁, hyB₂⟩,  
+      obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hx.1 h_le, 
+      swap, exact (hx.2 hxB₁').elim,
       by_contradiction hyI₁, 
-      refine h_con x hxI₂ (not_mem_subset hI₁B₁ hxB₁) 
+      refine h_con x hxI₂ (not_mem_subset hI₁B₁ hx.2) 
         ⟨_, hB', insert_subset.mpr ⟨by simp, subset_trans _ (subset_insert _ _)⟩⟩,  
       apply subset_diff_singleton hI₁B₁ hyI₁},
     have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss  
@@ -75,7 +75,7 @@ begin
   { rw [←ncard_pos, h_le], apply nat.succ_pos _},
   obtain ⟨x, hxB₂, hx'⟩ := h_ne, 
   rw [set.mem_union, not_or_distrib] at hx', obtain ⟨hxI₂, hxB₁⟩:= hx',  
-  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := hB₂.exchange hB₁ hxB₂ hxB₁,  
+  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := hB₂.exchange hB₁ ⟨hxB₂,hxB₁⟩,  
   have hI₂B' : I₂ ⊆ insert y (B₂ \ {x}), 
   { rw ←union_singleton,  
     apply set.subset_union_of_subset_left, apply subset_diff_singleton hI₂B₂ hxI₂},
@@ -98,8 +98,6 @@ begin
 end 
 
 lemma base.indep (hB : M.base B) : M.indep B := ⟨B, hB, subset_rfl⟩ 
-
-lemma base.subset_indep (hB : M.base B) (hIB : I ⊆ B) : M.indep I := hB.indep.subset hIB
 
 lemma base.eq_of_subset_indep (hB : M.base B) (hI : M.indep I) (hBI : B ⊆ I) : 
   B = I :=
@@ -149,6 +147,12 @@ begin
   exact base.card_eq_card_of_base hB hB21,
 end
 
+lemma base.insert_dep (hB : M.base B) (h : e ∉ B) : ¬ M.indep (insert e B) :=
+  λ h', (insert_ne_self.mpr h).symm ((base_iff_maximal_indep.mp hB).2 _ h' (subset_insert _ _)) 
+
+lemma base.ssubset_dep (hB : M.base B) (h : B ⊂ X) : ¬ M.indep X :=
+  λ h', h.ne ((base_iff_maximal_indep.mp hB).2 _ h' h.subset) 
+  
 lemma eq_of_indep_iff_indep_forall {M₁ M₂ : matroid E} (h : ∀ I, (M₁.indep I ↔ M₂.indep I)) : 
   M₁ = M₂ := 
 begin
