@@ -50,11 +50,11 @@ begin
     { intros y hyB₁, 
       rw [mem_union, or_iff_not_imp_right],   
       intro hyB₂, 
-      obtain ⟨x,⟨hxB₂, hxB₁⟩, hB'⟩ := hB₁.exchange hB₂ hyB₁ hyB₂,  
-      obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hxB₂ h_le, 
-      swap, exact (hxB₁ hxB₁').elim,
+      obtain ⟨x,hx, hB'⟩ := hB₁.exchange hB₂ ⟨hyB₁, hyB₂⟩,  
+      obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hx.1 h_le, 
+      swap, exact (hx.2 hxB₁').elim,
       by_contradiction hyI₁, 
-      refine h_con x hxI₂ (not_mem_subset hI₁B₁ hxB₁) 
+      refine h_con x hxI₂ (not_mem_subset hI₁B₁ hx.2) 
         ⟨_, hB', insert_subset.mpr ⟨by simp, subset_trans _ (subset_insert _ _)⟩⟩,  
       apply subset_diff_singleton hI₁B₁ hyI₁},
     have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss  
@@ -75,7 +75,7 @@ begin
   { rw [←ncard_pos, h_le], apply nat.succ_pos _},
   obtain ⟨x, hxB₂, hx'⟩ := h_ne, 
   rw [set.mem_union, not_or_distrib] at hx', obtain ⟨hxI₂, hxB₁⟩:= hx',  
-  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := hB₂.exchange hB₁ hxB₂ hxB₁,  
+  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := hB₂.exchange hB₁ ⟨hxB₂,hxB₁⟩,  
   have hI₂B' : I₂ ⊆ insert y (B₂ \ {x}), 
   { rw ←union_singleton,  
     apply set.subset_union_of_subset_left, apply subset_diff_singleton hI₂B₂ hxI₂},
@@ -119,6 +119,7 @@ end
 
 lemma base_of_card_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
 begin
+  
   rintros hB ⟨hB', hBB'⟩,
   rcases indep_iff_subset_base.1 hB' with ⟨B2, ⟨hB21, hB22⟩⟩,
   have h2 := base.card_eq_card_of_base hB hB21,

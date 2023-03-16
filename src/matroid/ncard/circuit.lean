@@ -10,8 +10,6 @@ open set
 
 namespace matroid 
 
-
-
 lemma circuit_def : 
   M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I :=
 iff.rfl 
@@ -116,38 +114,21 @@ begin
   exact (subset_insert_iff_of_not_mem h).1 h2,
 end
 
-lemma unique_circuit_of_insert_indep (hX : M.indep X) (a : E) (hXa : ¬ M.indep (X ∪ {a}) ): 
-  ∃! (C ⊆ X ∪ {a}), M.circuit C ∧ a ∈ C :=
+lemma indep.unique_circuit_of_insert (hX : M.indep X) (a : E) (hXa : ¬ M.indep (insert a X) ): 
+  ∃! (C ⊆ insert a X), M.circuit C ∧ a ∈ C :=
 begin
-  rcases exists_circuit_subset_of_dep hXa with ⟨C, ⟨hC1, hC2⟩⟩,
-  have h2 : ∀ (C' ⊆ X ∪ {a}), M.circuit C' → C' = C, 
-  rintros C' hC1' hC2',
-  by_contra hne,
-  rcases circuit.elimination hC2 hC2' (ne.symm hne) a with ⟨nC, ⟨hnC1, hnC2⟩⟩,
-  have h3 : (C ∪ C') \ {a} ⊆ X,
-  rw [diff_singleton_subset_iff, union_subset_iff],
-  simp at hC1,
-  simp at hC1',
-  refine ⟨hC1, hC1'⟩, 
-  have h5 := subset_trans hnC1 h3,
-  have h4 := indep_mono h5 hX,
-  apply circuit.dep hnC2,
-  exact h4,
-  use C,
-  simp,
-  simp at hC1,
-  have hCX : ¬ C ⊆ X,
-  by_contra hCX',  
-  have h4 := indep_mono hCX' hX,
-  apply circuit.dep hC2,
-  exact h4,
-  have haC := set.mem_of_nsubset_insert_iff ⟨hC1, hCX⟩,
-  
-  refine ⟨⟨hC1, ⟨hC2, haC⟩⟩, λ C' hC1' hC2' haC', _⟩,
-  apply h2,
-  simp,
-  apply hC1',
-  apply hC2',
+  apply exists_unique_of_exists_of_unique, 
+  { simp only [union_singleton, exists_unique_iff_exists, exists_prop],  
+    refine (dep_iff_supset_circuit.mp hXa).imp (λ C, _), 
+    rintro ⟨hCX,hC⟩,
+    refine ⟨hCX ,hC, by_contra (λ haC, _)⟩, 
+    exact hC.dep (hX.subset ((subset_insert_iff_of_not_mem haC).mp hCX))}, 
+  simp only [exists_unique_iff_exists, exists_prop, and_imp], 
+  refine λ  C₁ C₂ hC₁X hC₁ haC₁ hC₂X hC₂ haC₂, by_contra (λ hne, _), 
+  obtain ⟨C,hCss,hC⟩ := hC₁.elimination hC₂ hne a,  
+  have h := hCss.trans (@diff_subset_diff_left _ _ _ {a} (union_subset hC₁X hC₂X)), 
+  simp only [insert_diff_of_mem, mem_singleton] at h, 
+  refine hC.dep (hX.subset (h.trans (diff_subset _ _))), 
 end
 
 -- trying to make alternate basis exchange axiom (B2)*
