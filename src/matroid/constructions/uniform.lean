@@ -1,4 +1,4 @@
-import matroid.basic --matroid.submatroid.order matroid.simple 
+--import matroid.basic --matroid.submatroid.order matroid.simple 
 --import prelim.induction prelim.collections 
 import .truncation 
 
@@ -59,9 +59,9 @@ begin
 end
 
 lemma free_rank (X : set α) :
-  (free_matroid_on α).r X = nat.card X :=
+  (free_matroid_on α).r X = X.ncard :=
 begin
-  rw [nat.card_eq_to_finset_card, ← indep_iff_r_eq_card],
+  rw ← indep_iff_r_eq_card,
   apply free_indep,
 end
 
@@ -122,10 +122,10 @@ begin
     refine ⟨_, _⟩,
     rw h,
     simp only,
-    simp only [to_finset_empty, finset.card_empty]},
+    simp },
   ext X,
   rcases h with ⟨I, ⟨h2, h3⟩⟩,
-  rw [finset.card_eq_zero, to_finset_eq_empty] at h3,
+  rw ncard_eq_zero at h3,
   rw h3 at h2,
   refine ⟨λ h4, _, _⟩, 
   { rw ← base.eq_of_subset_base h2 h4 (empty_subset X),
@@ -140,20 +140,20 @@ def uniform_matroid_on (α : Type*) [fintype α] (r : ℕ) : matroid α :=
   trunc.tr (free_matroid_on α) r 
 
 lemma uniform_matroid_rank {r : ℕ} (hr : 0 ≤ r) (X : set α) :
-  (uniform_matroid_on α r).r X = min r (nat.card X) := 
+  (uniform_matroid_on α r).r X = min r (X.ncard) := 
 begin
   rw [uniform_matroid_on, trunc.r_eq _ hr _, free_rank],
 end
 
-lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ nat.card (univ : set α)) : 
+lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ (univ : set α).ncard) : 
   (uniform_matroid_on α r).r univ = r :=
 by {rw [uniform_matroid_rank hr, min_eq_left hr'],  }
  
 lemma uniform_matroid_indep_iff {X : set α} {r : ℕ} (hr : 0 ≤ r)  : 
-  indep (uniform_matroid_on α r) X ↔ nat.card X ≤ r := 
+  indep (uniform_matroid_on α r) X ↔ X.ncard ≤ r := 
 by {rw [indep_iff_r_eq_card, uniform_matroid_rank hr], finish }
 
-def dual (M : matroid α) : matroid α := 
+/-def dual (M : matroid α) : matroid α := 
 { base := λ X, M.base (univ \ X) ,
   exists_base' := 
     begin
@@ -262,6 +262,7 @@ begin
   rw [indep_iff_r, uniform_matroid_rank (by linarith : 0 ≤ r), min_eq_right], 
   exact le_trans hX hr, 
 end
+-/
 
 end unif 
 
@@ -271,14 +272,14 @@ end unif
 -/
 section canonical 
 
-variables {a b : ℤ}
+variables {a b : ℕ}
 
 /-- the rank-a uniform matroid on b elements with ground set `fin' b`. Junk unless `0 ≤ a ≤ b`. -/
-def canonical_unif (a b : ℤ) : 
-  matroid (fin' b) := 
-unif.uniform_matroid_on (fin' b) a
+def canonical_unif (a b : ℕ) : 
+  matroid (fin b) := 
+unif.uniform_matroid_on (fin b) a
 
-lemma canonical_unif_simple_iff (ha : 0 ≤ a) (hb : 2 ≤ b) : 
+/-lemma canonical_unif_simple_iff (ha : 0 ≤ a) (hb : 2 ≤ b) : 
   (canonical_unif a b).is_simple ↔ 2 ≤ a := 
 begin
  convert unif.uniform_matroid_simple_iff (fin' b) _ ha, 
@@ -286,7 +287,7 @@ begin
 end
 
 lemma canonical_unif_loopless_iff (ha : 0 ≤ a) (hb : 1 ≤ b): 
-  (canonical_unif a b).is_loopless ↔ 1 ≤ a := 
+  (canonical_unif a b).loopless ↔ 1 ≤ a := 
 begin
   convert unif.uniform_matroid_loopless_iff (fin' b) _ _, 
   assumption, 
@@ -294,10 +295,10 @@ begin
 end
 lemma canonical_unif_simple_of_two_le_r (ha : 2 ≤ a) : 
   (canonical_unif a b).is_simple :=
-unif.unif_simple_of_two_le_r _ ha
+unif.unif_simple_of_two_le_r _ ha-/
 
-@[simp] lemma canonical_unif_r (ha : 0 ≤ a) (X : set (fin' b)) :
-  (canonical_unif a b).r X = min a (nat.card X) :=
+@[simp] lemma canonical_unif_r (ha : 0 ≤ a) (X : set (fin b)) :
+  (canonical_unif a b).r X = min a (X.ncard) :=
 unif.uniform_matroid_rank ha _
 
 end canonical 

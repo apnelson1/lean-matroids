@@ -1,5 +1,7 @@
-import ..basic --matroid.indep matroid.submatroid.order
---import prelim.induction prelim.collections 
+--import ..basic --matroid.indep matroid.submatroid.order
+--import prelim.induction prelim.collections
+import ..helpers
+import matroid.ncard.circuit 
 
 open matroid set 
 noncomputable theory 
@@ -55,8 +57,7 @@ begin
   rw matroid.tr_r,
   simp,
   left,
-  rw nat.card_eq_to_finset_card,
-  apply M.r_le_card
+  apply M.r_le_card,
 end
 
 lemma tr_r_mono (M : matroid α) (n : ℕ) : ∀ X Y, X ⊆ Y → M.tr_r n X ≤ M.tr_r n Y :=
