@@ -8,9 +8,6 @@ namespace matroid
 
 section indep 
 
-/-- A set is independent in a matroid if it is contained in a base.  -/
-def indep {E : Type*} (M : matroid E) : set E → Prop := λ I, ∃ B, M.base B ∧ I ⊆ B   
-
 lemma indep_iff_subset_base :
   M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B :=
 iff.rfl 
@@ -58,7 +55,7 @@ begin
       swap, exact (hxB₁ hxB₁').elim,
       by_contradiction hyI₁, 
       refine h_con x hxI₂ (not_mem_subset hI₁B₁ hxB₁) 
-        ⟨_, hB', insert_subset.mpr ⟨by simp, subset_union_of_subset_left _ _⟩⟩,  
+        ⟨_, hB', insert_subset.mpr ⟨by simp, subset_trans _ (subset_insert _ _)⟩⟩,  
       apply subset_diff_singleton hI₁B₁ hyI₁},
     have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss  
                           ... = _       : union_diff_right
@@ -66,21 +63,29 @@ begin
 
 
     have hle₁ := ncard_le_of_subset hss₁, 
-    rwa [ncard_eq_ncard_iff_ncard_diff_eq_ncard_diff.mp (hB₁.card_eq_card_of_base hB₂), h₁₂, 
-      ← ncard_le_ncard_iff_ncard_diff_le_ncard_diff] at hle₁},
+    
+    rwa [(ncard_eq_ncard_iff_ncard_diff_eq_ncard_diff (to_finite _) (to_finite _)).mp 
+      (hB₁.card_eq_card_of_base hB₂), h₁₂, ← ncard_le_ncard_iff_ncard_diff_le_ncard_diff] at hle₁,
+    
+    -- , h₁₂, 
+    --   ← ncard_le_ncard_iff_ncard_diff_le_ncard_diff] at hle₁
+      
+      },
   have h_ne : (B₂ \ (I₂ ∪ B₁)).nonempty, 
   { rw [←ncard_pos, h_le], apply nat.succ_pos _},
   obtain ⟨x, hxB₂, hx'⟩ := h_ne, 
   rw [set.mem_union, not_or_distrib] at hx', obtain ⟨hxI₂, hxB₁⟩:= hx',  
   obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := hB₂.exchange hB₁ hxB₂ hxB₁,  
-  have hI₂B' : I₂ ⊆ B₂ \ {x} ∪ {y}, 
-  { apply set.subset_union_of_subset_left, apply subset_diff_singleton hI₂B₂ hxI₂},
+  have hI₂B' : I₂ ⊆ insert y (B₂ \ {x}), 
+  { rw ←union_singleton,  
+    apply set.subset_union_of_subset_left, apply subset_diff_singleton hI₂B₂ hxI₂},
 
+  
   refine IH hB₁ hB' hI₁B₁ hI₂B' h_lt _, 
-  suffices h_set_eq : (B₂ \ {x} ∪ {y}) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x},   
+  suffices h_set_eq : (insert y (B₂ \ {x})) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x},   
   { rw [←nat.succ_inj', h_set_eq, ←h_le, nat.succ_eq_add_one, ncard_diff_singleton_add_one], 
     exact ⟨hxB₂, not_or hxI₂ hxB₁⟩},
-  rw [union_singleton, insert_diff_of_mem _ (mem_union_right _ hyB₁)],
+  rw [insert_diff_of_mem _ (mem_union_right _ hyB₁)],
   rw [diff_diff_comm], 
 end 
 
@@ -147,12 +152,6 @@ end indep
 
 section basis
 
-/-- A `basis` of a set `X` is a maximal independent subset of `X`. This word is also commonly used
-  to refer to what we call a `base` (a basis of the ground set), but it is convenient to have 
-  distinct words. (See `base_iff_basis_univ`.) -/
-def basis {E : Type*} (M : matroid E) (I X : set E) := 
-M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J 
-
 lemma basis.indep (hI : M.basis I X) : M.indep I := hI.1
 
 lemma basis.subset (hI : M.basis I X) : I ⊆ X := hI.2.1
@@ -165,6 +164,10 @@ lemma basis.eq_of_subset_indep (hI : M.basis I X) {J : set E} (hJ : M.indep J) (
 (hJX : J ⊆ X) : 
   I = J := 
 hI.2.2 J hJ hIJ hJX
+
+lemma basis.dep_of_ssubset (hI : M.basis I X) {Y : set E} (hIY : I ⊂ Y) (hYX : Y ⊆ X) :
+  ¬ M.indep Y :=
+λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX)
 
 lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) : 
   ∃ J, I ⊆ J ∧ M.basis J X := 
@@ -191,6 +194,10 @@ by {obtain ⟨I, -, hI⟩ := M.empty_indep.subset_basis_of_subset (empty_subset 
 lemma base_iff_basis_univ : 
   M.base B ↔ M.basis B univ := 
 by {rw [base_iff_maximal_indep, basis], simp}
+
+lemma base.basis_univ (hB : M.base B) : 
+  M.basis B univ := 
+base_iff_basis_univ.mp hB 
 
 end basis
 
@@ -228,7 +235,7 @@ def matroid_of_indep (indep : set E → Prop)
         ind_aug B' J hB'.1 hJ (hB'B.trans_lt (ncard_lt_ncard hss)), 
       exact heB' (by simpa using hB'.2 _ he (subset_insert _ _))},
     
-    simp_rw [h_base_iff _ _ hB₁, mem_diff, union_singleton], 
+    simp_rw [h_base_iff _ _ hB₁, mem_diff], 
     have hcard : (B₁ \ {x}).ncard < B₂.ncard, 
     { rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one hxB₁],
       exact ((h_base_iff _ _ hB₁).mp hB₂).2},

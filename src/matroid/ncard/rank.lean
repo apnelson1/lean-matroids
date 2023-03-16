@@ -68,6 +68,14 @@ lemma basis.r (hIX : M.basis I X) :
   M.r I = M.r X := 
 by rw [←hIX.card, hIX.indep.r]
 
+lemma base.r (hB : M.base B) : 
+  M.r B = M.rk := 
+by {rw base_iff_basis_univ at hB, rw hB.r}
+
+lemma base.card (hB : M.base B) : 
+  B.ncard = M.rk := 
+by {rw base_iff_basis_univ at hB, rw hB.card}
+
 lemma indep_iff_r_eq_card : 
   M.indep I ↔ M.r I = I.ncard := 
 begin
@@ -97,9 +105,9 @@ lemma r_mono (M : matroid E) {X Y : set E} (hXY : X ⊆ Y) :
   M.r X ≤ M.r Y :=
 by {simp_rw [r_le_iff, le_r_iff], exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl⟩}
 
-lemma base.r (hB : M.base B) : 
-  M.r B = M.rk := 
-by {rw [base_iff_basis_univ] at hB, rw hB.r}
+lemma indep.card_le_rk (hI : M.indep I) : 
+  I.ncard ≤ M.rk := 
+by {rw [←hI.r], exact M.r_mono (subset_univ I)}
 
 lemma base_iff_indep_r : 
   M.base B ↔ M.indep B ∧ M.r B = M.rk :=
@@ -130,6 +138,18 @@ begin
   rw [eq_comm, insert_eq_self] at this, 
   exact hz'.1 this, 
 end
+
+lemma basis.r_eq_r_insert (hIX : M.basis I X) (e : E) :
+  M.r (insert e I) = M.r (insert e X) := 
+by simp_rw [←union_singleton, hIX.r_eq_r_union]
+
+lemma indep.basis_of_subset_of_r_le (hI : M.indep I) (hIX : I ⊆ X) (h : M.r X ≤ M.r I) :
+  M.basis I X :=
+begin
+  refine ⟨hI, hIX, λ J hJ hIJ hJX, eq_of_subset_of_ncard_le hIJ _⟩, 
+  rw [←hI.r, ←hJ.r], 
+  exact (M.r_mono hJX).trans h, 
+end 
 
 /-- The submodularity axiom for the rank function -/
 lemma r_inter_add_r_union_le_r_add_r (M : matroid E) (X Y : set E) : 
@@ -377,6 +397,19 @@ begin
   exact ⟨e,heZ,hlt⟩, 
 end 
 
+lemma r_union_eq_of_r_union_subset_le (hXY : X ⊆ Y) (h : M.r (X ∪ Z) ≤ M.r X) : 
+  M.r (Y ∪ Z) = M.r Y :=
+begin
+  have hsm := M.r_submod Y (X ∪ Z), 
+  rw [←union_assoc, union_eq_left_iff_subset.mpr hXY, inter_distrib_left, 
+    inter_eq_right_iff_subset.mpr hXY] at hsm,  
+  linarith [M.r_le_r_union_left X (Y ∩ Z), M.r_le_r_union_left Y Z], 
+end 
+
+lemma r_insert_eq_of_r_insert_subset_le (hXY : X ⊆ Y) (h : M.r (insert e X) ≤ M.r X) :
+  M.r (insert e Y) = M.r Y :=  
+by {rw [←union_singleton] at *, rw [r_union_eq_of_r_union_subset_le hXY h],}
+
 lemma r_eq_of_r_all_insert_le (hXY : X ⊆ Y) (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) :
    M.r X = M.r Y := 
 begin
@@ -384,6 +417,15 @@ begin
   obtain ⟨e,he,hlt'⟩ := r_augment hlt, 
   exact hlt'.not_le (hY _ he), 
 end  
+
+lemma r_union_eq_of_r_all_insert_le (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) : 
+  M.r (X ∪ Y) = M.r X :=
+begin
+  refine (r_eq_of_r_all_insert_le (subset_union_left X Y) _).symm, 
+  rintro e (heX | heY),
+  { rw [insert_eq_of_mem heX]},
+  exact hY _ heY, 
+end 
 
 lemma r_eq_of_r_all_insert_eq (hXY : X ⊆ Y) (hY : ∀ e ∈ Y, M.r X = M.r (insert e X)) :
    M.r X = M.r Y := 
@@ -404,6 +446,14 @@ begin
   rwa [indep_iff_r_eq_card, r_zero_of_subset_r_zero (inter_subset_right _ _) hX, eq_comm, 
     ncard_eq_zero] at h, 
 end
+
+lemma base_iff_indep_card_eq_r : 
+  M.base B ↔ M.indep B ∧ B.ncard = M.rk := 
+begin
+  refine ⟨λ hB, ⟨hB.indep, hB.card⟩ ,
+    λ h, base_iff_maximal_indep.mpr ⟨h.1, λ I hI hBI, eq_of_subset_of_ncard_le hBI _⟩⟩, 
+  rw [h.2], exact hI.card_le_rk,   
+end 
 
 end matroid
 
