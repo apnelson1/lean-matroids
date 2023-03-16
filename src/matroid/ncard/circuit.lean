@@ -115,11 +115,10 @@ begin
 end
 
 lemma indep.unique_circuit_of_insert (hX : M.indep X) (a : E) (hXa : ¬ M.indep (insert a X) ): 
-  ∃! (C ⊆ insert a X), M.circuit C ∧ a ∈ C :=
+  ∃! C, C ⊆ insert a X ∧ M.circuit C ∧ a ∈ C :=
 begin
   apply exists_unique_of_exists_of_unique, 
-  { simp only [union_singleton, exists_unique_iff_exists, exists_prop],  
-    refine (dep_iff_supset_circuit.mp hXa).imp (λ C, _), 
+  { refine (dep_iff_supset_circuit.mp hXa).imp (λ C, _), 
     rintro ⟨hCX,hC⟩,
     refine ⟨hCX ,hC, by_contra (λ haC, _)⟩, 
     exact hC.dep (hX.subset ((subset_insert_iff_of_not_mem haC).mp hCX))}, 

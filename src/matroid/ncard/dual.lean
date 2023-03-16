@@ -14,6 +14,26 @@ lemma base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x �
 begin
   by_contra, 
   simp_rw [not_exists] at h, 
+  obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=   
+    hB₂.indep.unique_circuit_of_insert x (hB₂.insert_dep hx.2), 
+  
+  simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique, 
+  have hC_exchange : ∀ y ∈ C, y ≠ x →  M.base (insert x (B₂ \ {y})), 
+  { intros y hyC hyx, 
+    have hy₂ : y ∈ B₂, 
+      from mem_of_mem_insert_of_ne (hCB₂ hyC) hyx, 
+    rw [base_iff_indep_card, ncard_exchange hx.2 hy₂, hB₂.card, eq_self_iff_true, and_true],
+    by_contra hdep, 
+    rw [dep_iff_supset_circuit] at hdep, 
+    obtain ⟨C', hC'ss, hC'⟩ := hdep, 
+    have  hC'x : x ∈ C', 
+    { by_contra hx', 
+      exact hC'.dep (hB₂.indep.subset (((subset_insert_iff_of_not_mem hx').mp hC'ss).trans 
+          (diff_subset _ _)))},
+    have := hCunique C' (hC'ss.trans (insert_subset_insert (diff_subset _ _))) hC' hC'x,  
+    subst this, 
+    simpa using hC'ss hyC},
+  
   -- have hr : B₂ ⊆   
 
   -- have hr : M.r B₂ ≤ M.r (B₁ \ {x}), 

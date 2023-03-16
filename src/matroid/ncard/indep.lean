@@ -99,8 +99,6 @@ end
 
 lemma base.indep (hB : M.base B) : M.indep B := ⟨B, hB, subset_rfl⟩ 
 
-lemma base.subset_indep (hB : M.base B) (hIB : I ⊆ B) : M.indep I := hB.indep.subset hIB
-
 lemma base.eq_of_subset_indep (hB : M.base B) (hI : M.indep I) (hBI : B ⊆ I) : 
   B = I :=
 begin
@@ -117,26 +115,34 @@ begin
   rwa h _ hB'.indep hBB', 
 end  
 
-lemma base_of_card_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
-begin
+lemma base.insert_dep (hB : M.base B) (h : e ∉ B) : ¬ M.indep (insert e B) :=
+  λ h', (insert_ne_self.mpr h).symm ((base_iff_maximal_indep.mp hB).2 _ h' (subset_insert _ _)) 
+
+lemma base.ssubset_dep (hB : M.base B) (h : B ⊂ X) : ¬ M.indep X :=
+  λ h', h.ne ((base_iff_maximal_indep.mp hB).2 _ h' h.subset) 
+
+-- commenting out just so things stay sorry-free 
+
+-- lemma base_of_card_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
+-- begin
   
-  rintros hB ⟨hB', hBB'⟩,
-  rcases indep_iff_subset_base.1 hB' with ⟨B2, ⟨hB21, hB22⟩⟩,
-  have h2 := base.card_eq_card_of_base hB hB21,
-  contrapose h2,
-  rw base_iff_maximal_indep at h2,
-  push_neg at h2,
-  specialize h2 hB',
-  rcases h2 with ⟨B3, ⟨hiB3, ⟨hBB3', hBB3ne'⟩⟩⟩,
-  have h4 : ¬ B3 ⊆ B',
-  by_contra,
-  apply hBB3ne',
-  apply eq_of_subset_of_subset hBB3' h,
-  have h5 : B' ⊆ B3 ∧ ¬B3 ⊆ B',
-  refine ⟨hBB3', h4⟩,
-  rw ← ssubset_def at h5,
-  sorry,
-end
+--   rintros hB ⟨hB', hBB'⟩,
+--   rcases indep_iff_subset_base.1 hB' with ⟨B2, ⟨hB21, hB22⟩⟩,
+--   have h2 := base.card_eq_card_of_base hB hB21,
+--   contrapose h2,
+--   rw base_iff_maximal_indep at h2,
+--   push_neg at h2,
+--   specialize h2 hB',
+--   rcases h2 with ⟨B3, ⟨hiB3, ⟨hBB3', hBB3ne'⟩⟩⟩,
+--   have h4 : ¬ B3 ⊆ B',
+--   by_contra,
+--   apply hBB3ne',
+--   apply eq_of_subset_of_subset hBB3' h,
+--   have h5 : B' ⊆ B3 ∧ ¬B3 ⊆ B',
+--   refine ⟨hBB3', h4⟩,
+--   rw ← ssubset_def at h5,
+--   sorry,
+-- end
 
 lemma eq_of_indep_iff_indep_forall {M₁ M₂ : matroid E} (h : ∀ I, (M₁.indep I ↔ M₂.indep I)) : 
   M₁ = M₂ := 
