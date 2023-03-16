@@ -135,16 +135,16 @@ lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E}
 (hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
   ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
 begin
-  have h1 : ¬ M.indep (X ∪ {a}),
-  sorry,
+  have h1 : ¬ M.indep (insert a X),
+  apply base.insert_dep hX haY,
   -- X ∪ {a} has unique circuit C(a, X)
-  have h3 := unique_circuit_of_insert_indep (base.indep hX) a h1,
-  rcases h3 with ⟨C, ⟨hC1, hC2⟩⟩,
-  have h5 := exists_of_exists_unique hC1,
+  have h3 := indep.unique_circuit_of_insert (base.indep hX) a h1,
+  rcases (indep.unique_circuit_of_insert (base.indep hX) a h1) with ⟨C, ⟨hC1, hC2⟩⟩,
+  /-have h5 := exists_of_exists_unique h3,
   simp at h5,
-  rcases h5 with ⟨hCaX, ⟨hC, haC⟩⟩,
+  rcases h5 with ⟨C2, ⟨hC, ⟨hCaX⟩⟩⟩,-/
   -- C(a, X) dep, Y indep
-  have h4 := circuit.dep hC,
+  have h4 := circuit.dep hC1.2.1,
   have h5 := base.indep hY,
   -- C(a, X) \ Y ≠ ∅
   have h6 : set.nonempty (C \ Y),
@@ -157,7 +157,7 @@ begin
   cases h6 with b hb,
   rw mem_diff at hb,
   have h7 : b ∈ X,
-  have h8 := mem_of_subset_of_mem hCaX hb.1,
+  have h8 := mem_of_subset_of_mem hC1.1 hb.1,
   simp at h8,
   have h9 := ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
   cc,
