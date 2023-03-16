@@ -150,8 +150,7 @@ begin
   apply hC2',
 end
 
--- trying to make alternate basis exchange axiom (B2)*
--- putting this here temporarily because it needs circuits for the proof
+-- this needs some cleaning up (as do the other lemmas it uses)
 lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E} 
 (hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
   ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
@@ -210,8 +209,22 @@ begin
   apply h10,
   exact hC1',
   -- therefore it is basis
-  
-  sorry
+  have h14 := base_of_ncard_eq_indep hX ⟨h11, _⟩,
+  apply h14,
+  rw ncard_union_eq,
+  rw ncard_diff,
+  simp_rw ncard_singleton,
+  have h15 : 0 < X.ncard, 
+  rw ncard_pos,
+  use ⟨b, h7⟩,
+  rw nat.sub_add_cancel,
+  rw nat.add_one_le_iff,
+  exact h15,
+  simp,
+  exact h7,
+  simp only [disjoint_singleton_right, mem_diff, mem_singleton_iff, not_and_distrib],
+  left,
+  exact haY,
 end
 
 end matroid

@@ -117,27 +117,36 @@ begin
   rwa h _ hB'.indep hBB', 
 end  
 
-lemma indep_not_base : M.base B → M.indep B' → (B' ⊂ B ↔ ¬ M.base B') :=
+lemma indep_not_base : M.base B → M.indep B' → B' ⊂ B → ¬ M.base B' :=
 begin
-  intros hB hB',
-  split,
-  { intros hBB',
+  intros hB hB' hBB',
     by_contra,
-    apply (ne_of_ssubset hBB') (base.eq_of_subset_base h hB (subset_of_ssubset hBB')) },
-  { intros hB2',
-    rw base_iff_maximal_indep at hB2',
-    simp at hB2',
-    sorry }
+    apply (ne_of_ssubset hBB') (base.eq_of_subset_base h hB (subset_of_ssubset hBB')),
 end
 
-lemma base_of_card_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
+lemma indep_not_base_ssubset : M.indep B' → ¬ M.base B' → ∃ (B : set E), M.base B ∧ B' ⊂ B :=
+begin
+  intros hB' hBn',
+  rw indep_iff_subset_base at hB',
+  rcases hB' with ⟨B, ⟨hB1, hB2⟩⟩,
+  use B,
+  refine ⟨hB1, _⟩,
+  apply ssubset_of_ne_of_subset _ hB2,
+  by_contra,
+  apply hBn',
+  rw ← h at hB1,
+  exact hB1,  
+end
+
+lemma base_of_ncard_eq_indep : M.base B → M.indep B' ∧ B'.ncard = B.ncard → M.base B' :=
 begin
   rintros hB ⟨hB', hBB'⟩,
-  rcases indep_iff_subset_base.1 hB' with ⟨B2, ⟨hB21, hB22⟩⟩,
-  have h2 := base.card_eq_card_of_base hB hB21,
-  contrapose h2,
-  
-  sorry,
+  by_contra,
+  rcases indep_not_base_ssubset hB' h with ⟨B2, ⟨hB21, hB22⟩⟩,
+  have h2 := ncard_lt_ncard hB22,
+  rw hBB' at h2,
+  apply ne_of_lt h2,
+  exact base.card_eq_card_of_base hB hB21,
 end
 
 lemma eq_of_indep_iff_indep_forall {M₁ M₂ : matroid E} (h : ∀ I, (M₁.indep I ↔ M₂.indep I)) : 
