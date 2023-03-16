@@ -153,6 +153,68 @@ begin
 end
 
 -- trying to make alternate basis exchange axiom (B2)*
+-- putting this here temporarily because it needs circuits for the proof
+lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E} 
+(hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) : 
+  ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   := 
+begin
+  have h1 : ¬ M.indep (X ∪ {a}),
+  sorry,
+  -- X ∪ {a} has unique circuit C(a, X)
+  have h3 := unique_circuit_of_insert_indep (base.indep hX) a h1,
+  rcases h3 with ⟨C, ⟨hC1, hC2⟩⟩,
+  have h5 := exists_of_exists_unique hC1,
+  simp at h5,
+  rcases h5 with ⟨hCaX, ⟨hC, haC⟩⟩,
+  -- C(a, X) dep, Y indep
+  have h4 := circuit.dep hC,
+  have h5 := base.indep hY,
+  -- C(a, X) \ Y ≠ ∅
+  have h6 : set.nonempty (C \ Y),
+  apply nonempty_of_not_subset,
+  by_contra,
+  apply h4,
+  apply indep_mono h h5,
+  -- let b ∈ C(a, X) \ Y
+  rw set.nonempty at h6,
+  cases h6 with b hb,
+  rw mem_diff at hb,
+  have h7 : b ∈ X,
+  have h8 := mem_of_subset_of_mem hCaX hb.1,
+  simp at h8,
+  have h9 := ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
+  cc,
+  -- then b ∈ X ∧ b ∉ Y
+  have h10 : ¬ C ⊆ (X \ {b} ∪ {a}),
+  simp,
+  rw not_subset,
+  use b,
+  refine ⟨hb.1, _⟩,
+  simp,
+  exact ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
+  -- then (X \ {b} ∪ {a}) indep since it doesn't contain C(a, X)
+  use b,
+  refine ⟨⟨h7, hb.2⟩, _⟩,
+  have h11 : M.indep (X \ {b} ∪ {a}), 
+  by_contra h12,
+  rw dep_iff_supset_circuit at h12,
+  rcases h12 with ⟨C', ⟨hC1', hC2'⟩⟩,
+  have h12 := union_subset_union (diff_subset X {b}) (subset.refl {a}),
+  have h13 := subset_trans hC1' h12,
+  specialize hC2 C',
+  simp at hC2,
+  simp at h13,
+  have hCX : ¬ C' ⊆ X,
+  by_contra hCX',  
+  apply circuit.dep hC2' (indep_mono hCX' (base.indep hX)),
+  specialize hC2 h13 hC2' (set.mem_of_nsubset_insert_iff ⟨h13, hCX⟩),
+  rw hC2 at hC1',
+  apply h10,
+  exact hC1',
+  -- therefore it is basis
+  
+  sorry
+end
 
 end matroid
   
