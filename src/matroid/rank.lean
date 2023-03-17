@@ -18,6 +18,10 @@ noncomputable def r {E : Type*} (M : matroid E) : set E → ℕ :=
 /-- The rank `M.rk` of a matroid `M` is the rank of its ground set -/
 @[reducible] noncomputable def rk (M : matroid E) := M.r univ  
 
+lemma rk_def (M : matroid E) : 
+  M.rk = M.r univ := 
+rfl 
+
 /-- This is the useful definition of rank -/
 lemma eq_r_iff {n : ℕ} : M.r X = n ↔ ∃ I, M.basis I X ∧ I.ncard = n :=
 begin
@@ -105,6 +109,10 @@ lemma r_mono (M : matroid E) {X Y : set E} (hXY : X ⊆ Y) :
   M.r X ≤ M.r Y :=
 by {simp_rw [r_le_iff, le_r_iff], exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl⟩}
 
+lemma r_le_rk (M : matroid E) (X : set E) :
+  M.r X ≤ M.rk :=
+M.r_mono (subset_univ _) 
+
 lemma indep.card_le_rk (hI : M.indep I) : 
   I.ncard ≤ M.rk := 
 by {rw [←hI.r], exact M.r_mono (subset_univ I)}
@@ -124,6 +132,10 @@ end
 lemma base_iff_indep_card : 
   M.base B ↔ M.indep B ∧ B.ncard = M.rk :=
 ⟨λ h, ⟨h.indep, by rw ←h.card⟩, λ h, base_iff_indep_r.mpr ⟨h.1, by rw [←h.2, ←h.1.r]⟩⟩
+
+lemma indep.base_of_rk_le_card (hI : M.indep I) (h : M.rk ≤ I.ncard) :
+  M.base I :=
+base_iff_indep_card.mpr ⟨hI, h.antisymm' (by {rw ←hI.r, apply r_le_rk})⟩ 
 
 lemma basis.r_eq_r_union (hIX : M.basis I X) (Y : set E) :
   M.r (I ∪ Y) = M.r (X ∪ Y) := 
@@ -304,6 +316,13 @@ lemma r_union_le_add_r (M : matroid E) (X Y : set E) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.r_submod X Y]
 
+lemma rk_le_card_add_r_compl (M : matroid E) (X : set E) :
+  M.rk ≤ X.ncard + M.r Xᶜ :=
+begin
+  rw [rk_def, ←union_compl_self X], 
+  exact (M.r_union_le_add_r _ _).trans (add_le_add_right (M.r_le_card _) _), 
+end   
+
 lemma rank_eq_of_le_supset (h : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
   M.r X = M.r Y :=
 hr.antisymm' (M.r_mono h)
@@ -458,6 +477,40 @@ begin
     λ h, base_iff_maximal_indep.mpr ⟨h.1, λ I hI hBI, eq_of_subset_of_ncard_le hBI _⟩⟩, 
   rw [h.2], exact hI.card_le_rk,   
 end 
+
+
+
+/- Nullity -/
+
+/-- The nullity of a set is its cardinality minus its rank -/
+def nullity (M : matroid E) (X : set E) : ℕ := 
+  X.ncard - M.r X 
+
+lemma nullity_add_rank_eq (M : matroid E) (X : set E) :
+  M.nullity X + M.r X = X.ncard :=
+by rw [nullity, tsub_add_cancel_of_le (M.r_le_card X)]
+
+lemma cast_nullity (M : matroid E) (X : set E) : 
+  (M.nullity X : ℤ) = X.ncard - M.r X :=
+by rw [←M.nullity_add_rank_eq, nat.cast_add, add_tsub_cancel_right]
+
+lemma nullity_supermod (X Y : set E) :
+  M.nullity X + M.nullity Y ≤ M.nullity (X ∩ Y) + M.nullity (X ∪ Y) :=
+begin
+  zify, 
+  simp_rw [cast_nullity], 
+  linarith [M.r_submod X Y, ncard_inter_add_ncard_union X Y], 
+end  
+
+lemma nullity_le_card (M : matroid E) (X : set E) :
+  M.nullity X ≤ X.ncard :=
+nat.sub_le _ _
+
+lemma nullity_mono (hXY : X ⊆ Y) :
+  M.nullity X ≤ M.nullity Y :=
+by {zify, simp_rw [cast_nullity], linarith [M.r_add_card_le_r_add_card_of_subset hXY]}
+
+/- -/
 
 end matroid
 

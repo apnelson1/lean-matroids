@@ -51,7 +51,7 @@ begin
   have hss : C \ {x} ⊆ M.cl (B₁ \ {x}), 
   from λ y hy, by_contra (λ hy', h _ ⟨hCss hy, λ hy₁, hy' (M.subset_cl _ ⟨hy₁,hy.2⟩)⟩ 
       (hC_exchange y hy) (hcl _ ⟨hCss hy,hy'⟩)), 
-    
+  
   have hx' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2, 
   rw [mem_cl, insert_diff_singleton, insert_eq_of_mem hx.1, hB₁.indep.r, (hB₁.indep.diff _).r, 
     ←ncard_diff_singleton_add_one hx.1] at hx', 
@@ -155,46 +155,40 @@ end
 lemma dual_r_add_rk_eq (M : matroid E) (X : set E) : 
   M.dual.r X + M.rk = ncard X + M.r Xᶜ  :=
 begin
-  set r₀ : (set E) → ℤ := λ X, nat.card E - M.nullity Xᶜ with hr₀, 
-  have hr₀_nonneg : ∀ X, 0 ≤ r₀ X, 
-  { sorry},
-  set r' := int.to_nat ∘ r₀ with hr', 
-  
+  set r' : (set E) → ℕ := λ X, (X.ncard + M.r Xᶜ) - M.rk with hr',  
+  have hcancel := λ Y, M.rk_le_card_add_r_compl Y, 
+
+  have hr'_cast : ∀ Y, (r' Y : ℤ) = Y.ncard + M.r Yᶜ - M.rk, 
+  { intro Y, rw [hr', nat.cast_sub (hcancel Y), nat.cast_add]},
+
   have hr'_mono : ∀ X Y, X ⊆ Y → r' X ≤ r' Y,     
-  { sorry}, 
+  { intros X Y hXY, rw hr', 
+    apply nat.sub_le_sub_right,
+    linarith [M.r_add_card_le_r_add_card_of_subset (compl_subset_compl.mpr hXY),
+      ncard_add_ncard_compl X, ncard_add_ncard_compl Y]}, 
   have hr'_le_card : ∀ X, r' X ≤ X.ncard,   
-  {sorry}, 
+  { intro X, rw hr', simp only [tsub_le_iff_right, add_le_add_iff_left], apply r_le_rk}, 
   have hr'_submod : ∀ X Y, r' (X ∩ Y) + r' (X ∪ Y) ≤ r' X + r' Y, 
-  {sorry}, 
+  { intros X Y, 
+    zify, simp_rw [hr'_cast, compl_inter, compl_union], 
+    linarith [ncard_inter_add_ncard_union X Y, M.r_submod Xᶜ Yᶜ]}, 
 
   set M' := matroid_of_r r' hr'_le_card hr'_mono hr'_submod with hM',
+  have hrM' : ∀ Y, M'.r Y = (Y.ncard + M.r Yᶜ) - M.rk := λ Y, 
+    by rw [hM', matroid_of_r_apply],
 
   have hM'M : M' = M.dual,
-  { ext B, 
-    
-    rw [hM', base_iff_indep_card_eq_r, indep_iff_r_eq_card, rk_def, matroid_of_r_apply, 
-      dual_base_iff, hr'], 
-    dsimp, 
-    rw [coe_nullity], 
-    
-    refine ⟨λ h, _,λ h, _⟩, 
+  { refine eq_of_indep_iff_indep_forall (λ I, _), 
+    rw [indep_iff_r_eq_card, dual_indep_iff_r, hrM', nat.sub_eq_iff_eq_add (hcancel _), 
+      add_right_inj]}, 
 
-
-      
-       }, 
-
-  -- rw (@eq_r_iff _ _ M.dual X (X.ncard + M.r Xᶜ - M.rk)).mpr,
-  -- { refine nat.sub_add_cancel _, sorry },
-  -- obtain ⟨I, hI, hss, hmax⟩ := M.dual.exists_basis X,     
-  -- refine ⟨I, ⟨hI,hss,hmax⟩, _⟩, 
-  -- simp_rw [dual_indep_iff] at hI hmax, 
-  -- obtain ⟨B, hB, hBI⟩ := hI, 
-
-  
-  -- simp_rw [←add_left_inj (M.rk)] at this,  
-  -- zify, 
-  -- rw [eq_comm, add_comm, ←sub_eq_iff_eq_add, eq_comm],
+  rw [←hM'M, hrM',  nat.sub_add_cancel (rk_le_card_add_r_compl _ _)], 
 end 
+
+lemma dual_rank_cast_eq (M : matroid E) (X : set E) : 
+  (M.dual.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
+by linarith [M.dual_r_add_rk_eq X]
+
 
 section rank
 

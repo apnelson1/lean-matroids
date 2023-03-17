@@ -18,8 +18,24 @@ lemma empty_indep (M : matroid E) : M.indep ∅ :=
 lemma indep_mono {M : matroid E} {I J : set E} (hIJ : I ⊆ J) (hJ : M.indep J) : M.indep I :=
 by {obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
 
+lemma indep.exists_base_supset (hI : M.indep I) : 
+  ∃ B, M.base B ∧ I ⊆ B :=
+hI  
+
 lemma indep.subset (hJ : M.indep J) (hIJ : I ⊆ J) : M.indep I :=
 by {obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
+
+lemma indep.inter_right (hI : M.indep I) (X : set E) : 
+  M.indep (I ∩ X) :=
+hI.subset (inter_subset_left _ _)
+
+lemma indep.inter_left (hI : M.indep I) (X : set E) : 
+  M.indep (X ∩ I) :=
+hI.subset (inter_subset_right _ _)
+
+lemma indep.diff (hI : M.indep I) (X : set E) :
+  M.indep (I \ X) :=
+hI.subset (diff_subset _ _)
 
 /-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`, 
   there is an element `e` of `J \ I` whose insertion into `e` is an independent set.  -/

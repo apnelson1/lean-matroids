@@ -1,13 +1,9 @@
 import .ncard
-import ..helpers 
+import .helpers 
 
 -- noncomputable theory 
 open_locale classical 
 open_locale big_operators
-
-/-
- This is the same as basic.lean, but with noncomputable cardinality from ncard . Saves about 50 loc
--/
 
 open set 
 
@@ -64,6 +60,15 @@ def hyperplane (M : matroid E) (H : set E) : Prop :=
 /-- A cocircuit is the complement of a hyperplane -/
 def cocircuit (M : matroid E) (K : set E) : Prop := 
   M.hyperplane Kᶜ  
+
+/-- A loop is a singleton circuit -/
+def loop (M : matroid E) (e : E) : Prop :=
+  M.circuit {e}
+
+/-- A coloop is an element contained in every basis -/
+def coloop (M : matroid E) (e : E) : Prop :=
+  ∀ B, M.base B → e ∈ B
+
   
 end defs 
 
@@ -129,10 +134,7 @@ end
 
 end base
 
-
-
 end matroid 
-
 
 section misc
 
@@ -140,7 +142,6 @@ lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e �
   insert e (X \ {f}) = (insert e X) \ {f} :=
 by rw [←union_singleton, ←union_singleton, union_diff_distrib, 
   diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
-
 
 end misc 
 

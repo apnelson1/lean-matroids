@@ -5,7 +5,7 @@ open_locale classical
 open_locale big_operators
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} 
-  {I X Y Z F F₁ F₂ : set E} {e f x y z : E}
+  {I C X Y Z F F₁ F₂ : set E} {e f x y z : E}
 
 open set 
 
@@ -102,7 +102,7 @@ lemma subset_cl (M : matroid E) (X : set E) :
   X ⊆ M.cl X :=
 by simp only [cl_def, subset_sInter_iff, mem_set_of_eq, and_imp, imp_self, implies_true_iff]
 
-lemma mem_cl: 
+lemma mem_cl : 
   e ∈ M.cl X ↔ M.r (insert e X) = M.r X := 
 begin
   have hF := M.flat_of_cl X, 
@@ -129,6 +129,14 @@ begin
   rw r_insert_eq_of_r_insert_subset_le (M.subset_cl X) h.le,     
 end      
 
+lemma not_mem_cl : 
+  e ∉ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
+begin
+  rw [mem_cl, ←ne.def], 
+  refine ⟨r_insert_eq_add_one_of_r_ne, λ h, 
+    by simp only [h, ne.def, nat.succ_ne_self, not_false_iff]⟩,
+end 
+
 @[simp] lemma r_cl (M : matroid E) (X : set E) : 
   M.r (M.cl X) = M.r X :=
 (r_eq_of_r_all_insert_eq (M.subset_cl X) (λ e h, (mem_cl.mp h).symm)).symm
@@ -154,6 +162,10 @@ sInter_subset_sInter (λ F hF, ⟨hF.1, h.trans hF.2⟩)
 lemma cl_mono (M : matroid E) : monotone M.cl := 
   λ _ _, M.cl_le_cl_of_subset
 
+lemma cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) : 
+  M.cl X ⊆ M.cl Y :=
+by simpa only [cl_cl] using M.cl_le_cl_of_subset hXY
+
 lemma r_insert_eq_add_one_of_not_mem_cl (h : e ∉ M.cl X) : 
   M.r (insert e X) = M.r X + 1 :=
 r_insert_eq_add_one_of_r_ne (h ∘ mem_cl.mpr)
@@ -177,5 +189,17 @@ begin
   exact (lt_add_one _).not_le h, 
 end  
 
+lemma circuit.subset_cl_diff_singleton (hC : M.circuit C) (e : E) :
+  C ⊆ M.cl (C \ {e}) :=
+begin
+  nth_rewrite 0 [←inter_union_diff C {e}],
+  refine union_subset  _ (M.subset_cl _), 
+  obtain he | he := em (e ∈ C), 
+  { refine (inter_subset_right _ _).trans (singleton_subset_iff.mpr _),
+    rw [mem_cl, insert_diff_singleton, insert_eq_of_mem he, hC.r, 
+      (hC.diff_singleton_indep he).r, ncard_diff_singleton_of_mem he]},
+  convert empty_subset _, 
+  rwa inter_singleton_eq_empty,
+end 
 
 end matroid 
