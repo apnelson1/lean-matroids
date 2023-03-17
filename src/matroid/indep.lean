@@ -220,6 +220,31 @@ lemma exists_basis (M : matroid E) (X : set E) :
   ∃ I, M.basis I X :=
 by {obtain ⟨I, -, hI⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X), exact ⟨_,hI⟩, }
 
+lemma basis.exists_base (hI : M.basis I X) : 
+  ∃ B, M.base B ∧ I = B ∩ X :=
+begin
+  obtain ⟨B,hB, hIB⟩ := hI.indep,   
+  refine ⟨B, hB, subset_antisymm (subset_inter hIB hI.subset) _⟩,  
+  rw hI.eq_of_subset_indep (hB.indep.inter_right X) (subset_inter hIB hI.subset)
+    (inter_subset_right _ _), 
+end   
+
+lemma basis_iff_base_inter :
+  M.basis I X ↔ ∃ B, M.base B ∧ I = B ∩ X ∧ 
+    ∀ B', M.base B' → B ∩ X ⊆ B' ∩ X → B ∩ X = B' ∩ X :=
+begin
+  refine ⟨λ h, _,_⟩,   
+  { obtain ⟨B,hB,rfl⟩ := h.exists_base, 
+    refine ⟨B,hB,rfl,λ B' hB' hss, 
+      h.eq_of_subset_indep (hB'.indep.inter_right X) hss (inter_subset_right _ _)⟩},
+  rintros ⟨B,hB,rfl,hBmax⟩, 
+  refine ⟨hB.indep.inter_right X, inter_subset_right _ _, _⟩,   
+  rintros J ⟨B',hB',hB'J⟩ hBXJ hJX , 
+  refine hBXJ.antisymm _, 
+  rw hBmax B' hB' (subset_inter (hBXJ.trans hB'J) (inter_subset_right _ _)), 
+  exact subset_inter hB'J hJX,
+end  
+
 lemma base_iff_basis_univ : 
   M.base B ↔ M.basis B univ := 
 by {rw [base_iff_maximal_indep, basis], simp}
