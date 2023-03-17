@@ -1,26 +1,64 @@
---import ..basic --matroid.indep matroid.submatroid.order
---import prelim.induction prelim.collections
-import ..helpers
-import matroid.ncard.circuit 
+import .dual 
 
 open matroid set 
+
+open_locale classical 
 noncomputable theory 
 namespace trunc 
 
-variables {α : Type*} [fintype α]
+variables {E : Type*} {X Y Z B C I : set E} [finite E]
 
-/-def indep (M : indep_family α) (n : ℤ) : set α → Prop :=  
+def tr' (M : matroid E) : matroid E := 
+if h0 : M.base ∅ then M else 
+{ base := λ B, ∃ B' e, M.base B' ∧ e ∈ B' ∧ B = B' \ {e}, 
+  exists_base' := 
+  begin
+    obtain ⟨B, hB⟩ := M.exists_base, 
+    have hB' : B.nonempty, 
+    { rw nonempty_iff_ne_empty, rintro rfl, exact h0 hB},
+    obtain ⟨e,he⟩ := hB',
+    exact ⟨_,_,_,hB,he,rfl⟩, 
+  end, 
+  base_exchange' := 
+  begin
+    
+    rintro _ _ ⟨B₁,e₁,hB₁,heB₁,rfl⟩ ⟨B₂,e₂,hB₂,heB₂,rfl⟩ x hx,
+    dsimp only, 
+    -- have hxe₂ : x ≠ e₂, sorry, 
+    obtain (rfl | hxe₂) := eq_or_ne x e₂, 
+    { refine ⟨e₁,_,B₁,_,hB₁,heB₁,_⟩, 
+      simp, },
+
+    obtain ⟨y,hyB,hy⟩ := hB₁.exchange hB₂ ⟨hx.1.1, sorry⟩, 
+    obtain (rfl | hye₂) := eq_or_ne y e₂, 
+    { sorry},
+    refine ⟨y, _,_⟩, 
+    { simp at ⊢ hyB, tauto,},
+    refine ⟨_,e₁,hy,_,_⟩,  
+    { refine mem_insert_of_mem _ (mem_diff_singleton.mpr ⟨heB₁,_⟩), rintro rfl, simpa using hx},
+    ext z, 
+    simp only [mem_insert_iff, mem_diff, mem_singleton_iff] at ⊢ hx, 
+    split, 
+    { rintro (rfl | hz),
+      { simp only [eq_self_iff_true, true_or, true_and], 
+        rintro rfl,
+        exact hyB.2 heB₁},  
+      tauto},
+    tauto, 
+  end  }
+
+/-def indep (M : indep_family E) (n : ℤ) : set E → Prop :=  
   λ X, M.indep X ∧ size X ≤ max 0 n 
 
-lemma I1 (M : indep_family α) (n : ℤ) : 
+lemma I1 (M : indep_family E) (n : ℤ) : 
   satisfies_I1 (trunc.indep M n) := 
 ⟨M.I1, by {rw size_empty, apply le_max_left, }⟩
 
-lemma I2 (M : indep_family α) (n : ℤ) : 
+lemma I2 (M : indep_family E) (n : ℤ) : 
   satisfies_I2 (trunc.indep M n) := 
 λ I J hIJ hJ, ⟨M.I2 I J hIJ hJ.1, le_trans (size_monotone hIJ) hJ.2⟩ 
 
-lemma I3 (M : indep_family α) (n : ℤ) : 
+lemma I3 (M : indep_family E) (n : ℤ) : 
   satisfies_I3 (trunc.indep M n) := 
 begin
   intros I J hIJ hI hJ, 
@@ -31,10 +69,10 @@ begin
   linarith [int.le_of_lt_add_one h_con, hIJ, hJ.2], 
 end-/
 
-/-def tr (M : matroid α) (n : ℤ) : matroid α := 
+/-def tr (M : matroid E) (n : ℤ) : matroid E := 
   let M_ind := M.to_indep_family in 
   matroid.of_indep_family ⟨indep M_ind n, I1 M_ind n, I2 M_ind n, I3 M_ind n⟩-/
-/-def tr'' (M : matroid α) (n : ℕ) [decidable_eq α] (h : n ≤ M.rk) : matroid α := 
+/-def tr'' (M : matroid E) (n : ℕ) [decidable_eq E] (h : n ≤ M.rk) : matroid E := 
 { base := λ X, M.indep X ∧ nat.card X = n,
   exists_base' := 
     begin
@@ -50,9 +88,9 @@ end-/
 -- do we need the assumption that n ≤ M.r? i think so
 
 -- tried my hand at defining truncation w.r.t rank
-def matroid.tr_r (M : matroid α) (n : ℕ) : set α → ℕ := λ X, min (M.r X) n
+def matroid.tr_r (M : matroid E) (n : ℕ) : set E → ℕ := λ X, min (M.r X) n
 
-lemma tr_r_le_card (M : matroid α) (n : ℕ) : ∀ X, (M.tr_r n X) ≤ nat.card X := λ X, 
+lemma tr_r_le_card (M : matroid E) (n : ℕ) : ∀ X, (M.tr_r n X) ≤ nat.card X := λ X, 
 begin
   rw matroid.tr_r,
   simp,
@@ -60,7 +98,7 @@ begin
   apply M.r_le_card,
 end
 
-lemma tr_r_mono (M : matroid α) (n : ℕ) : ∀ X Y, X ⊆ Y → M.tr_r n X ≤ M.tr_r n Y :=
+lemma tr_r_mono (M : matroid E) (n : ℕ) : ∀ X Y, X ⊆ Y → M.tr_r n X ≤ M.tr_r n Y :=
 begin
   intros X Y hXY,
   rw matroid.tr_r,
@@ -80,9 +118,9 @@ begin
       exact hY } },
 end
 
-theorem set.inter_subset_union (s t : set α) : s ∩ t ⊆ s ∪ t := λ x h, (mem_union_left t) (mem_of_mem_inter_left h)
+theorem set.inter_subset_union (s t : set E) : s ∩ t ⊆ s ∪ t := λ x h, (mem_union_left t) (mem_of_mem_inter_left h)
 
-lemma tr_r_submod (M : matroid α) (n : ℕ) : 
+lemma tr_r_submod (M : matroid E) (n : ℕ) : 
   ∀ X Y, M.tr_r n (X ∩ Y) + M.tr_r n (X ∪ Y) ≤ M.tr_r n X + M.tr_r n Y :=
 begin
   intros X Y,
@@ -170,15 +208,15 @@ begin
           exact hY } } } },
 end
 
-def tr (M : matroid α) (n : ℕ) : matroid α := 
+def tr (M : matroid E) (n : ℕ) : matroid E := 
   matroid_of_r (M.tr_r n) (tr_r_le_card M n) (tr_r_mono M n) (tr_r_submod M n)
 
-/-lemma weak_image (M : matroid α){n : ℕ} (hn : 0 ≤ n) : 
+/-lemma weak_image (M : matroid E){n : ℕ} (hn : 0 ≤ n) : 
   (tr M n) ≤ M := 
 λ X, by {rw r_eq, simp, tauto, tauto }-/
 
 -- in retrospect it would probably have been easier to define truncation in terms of rank. This is at least possible though. 
-lemma r_eq (M : matroid α){n : ℕ} (hn : 0 ≤ n) (X : set α) :
+lemma r_eq (M : matroid E){n : ℕ} (hn : 0 ≤ n) (X : set E) :
   (tr M n).r X = min n (M.r X) :=
 begin
   rw tr,
