@@ -199,6 +199,12 @@ begin
   sorry, 
 end 
    
+lemma indep_iff_cl_diff_ne_forall :
+  M.indep I ↔ ∀ x ∈ I, M.cl (I \ {x}) ≠ M.cl I :=
+begin
+  sorry, 
+end 
+
 lemma mem_cl_iff_exists_basis : 
   e ∈ M.cl X ↔ ∃ I, M.basis I X ∧ M.basis I (insert e X) :=  
 begin
@@ -334,6 +340,64 @@ matroid E :=
   exact hx.2 hy2, 
   end }
 
+lemma matroid_of_cl_aux (cl : set E → set E) 
+  (subset_cl : ∀ X, X ⊆ cl X )
+  (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
+  (cl_idem : ∀ X, cl (cl X) = cl X )
+  (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) 
+  {I : set E} :
+(∀ x ∈ I, cl (I \ {x}) ≠ cl I) ↔ ∃ B, cl B = univ ∧ (∀ X ⊂ B, cl X ≠ univ) ∧ I ⊆ B :=
+begin
+  refine ⟨λ h, _, λ h x hI hcl, _⟩,
+  { obtain ⟨B, ⟨hB, hIB⟩, hBmax⟩ := 
+      finite.exists_maximal (λ X, (∀ e ∈ X, cl (X \ {e}) ≠ cl X) ∧ I ⊆ X) 
+         ⟨I, h, rfl.subset⟩,
+    refine ⟨B, by_contra (λ hBu, _), λ X hXB hX, _, hIB⟩, 
+    { rw [←ne.def, ne_univ_iff_exists_not_mem] at hBu, 
+      obtain ⟨a,haB⟩ := hBu, 
+      have haB' : a ∉ B := λ haB', haB (subset_cl B haB'), 
+      rw hBmax (insert a B) _ (subset_insert _ _) at haB',
+      { exact haB' (mem_insert _ _)}, 
+      refine ⟨λ e heaB hcl, _,  hIB.trans (subset_insert _ _)⟩, 
+      have hea : e ≠ a,
+      { rintro rfl, 
+        rw [insert_diff_self_of_not_mem haB'] at hcl,
+        rw hcl at haB, 
+        exact haB ((subset_cl (insert e B)) (mem_insert e B))},
+      have heB : e ∈ B := mem_of_mem_insert_of_ne heaB hea, 
+      have hecl : e ∉ cl ((insert a B) \ {e}), 
+      { refine λ h_in, hB e heB ((cl_mono _ _ (diff_subset _ _)).antisymm _), 
+        suffices hecl : e ∈ cl (B \ {e}), 
+        { have h' := union_subset (singleton_subset_iff.mpr hecl) (subset_cl _), 
+          rw [singleton_union, insert_diff_singleton, insert_eq_of_mem heB] at h', 
+          have := cl_mono _ _ h', 
+          rwa cl_idem at this},
+        by_contra hecl, apply haB,
+        rw ←insert_diff_singleton_comm hea.symm  at h_in, 
+        have := (cl_exchange _ _ _ ⟨h_in,hecl⟩).1,
+        rwa [insert_diff_singleton, insert_eq_of_mem heB] at this},
+      rw hcl at hecl, 
+      exact hecl ((subset_cl _) heaB)},
+    obtain ⟨e,heB, heX⟩ := exists_of_ssubset hXB, 
+    have hcon := hX.symm.trans_subset (cl_mono _ _ (subset_diff_singleton hXB.subset heX)),
+    rw [univ_subset_iff] at hcon, 
+    refine hB e heB ((cl_mono _ _ (diff_subset _ _)).antisymm _),
+    rw [hcon], 
+    apply subset_univ},
+  obtain ⟨B, hBu, hBmax, hIB⟩ := h, 
+  refine hBmax _ (diff_singleton_ssubset (hIB hI)) _,
+  have hdiff := cl_mono _ _  (@diff_subset_diff_left _ _ _ {x} hIB), 
+  rw [hcl] at hdiff, 
+  have hxBx: x ∈ cl (B \ {x}), 
+  { apply hdiff, apply subset_cl, exact hI }, 
+  rw [←singleton_subset_iff] at hxBx, 
+  have hB' := union_subset hxBx (subset_cl _), 
+  rw [singleton_union, insert_diff_singleton, insert_eq_of_mem (hIB hI)] at hB', 
+  have := cl_mono _ _ hB', 
+  rwa [cl_idem, hBu, univ_subset_iff] at this, 
+end 
+
+
 @[simp] lemma matroid_of_cl_apply (cl : set E → set E) 
   (subset_cl : ∀ X, X ⊆ cl X )
   (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
@@ -347,6 +411,10 @@ begin
   apply funext, 
   by_contra' h, 
   obtain ⟨I,hI,hImin⟩ := finite.exists_minimal _ h,  
+
+  
+
+
   have hI' : M.indep I, 
   { apply matroid.indep_of_cl_diff_ne_forall,
     by_contra' hI', 
@@ -386,8 +454,30 @@ begin
   
   -- obtain ⟨B, ⟨hB, hBmax⟩, hIB⟩ := hI'
   simp_rw [not_and, not_exists, ne.def, not_and, and_imp] at h',  
-  obtain ⟨B, hB, hBmin⟩ := finite.exists_minimal (λ B, insert x I ⊆ B ∧ cl B = univ) sorry,
-  refine h' (λ hxI, hxI' (subset_cl I hxI)) _ hB.2 (λ X hXB hXcl, hXB.ne.symm _) hB.1, 
+  set indep : set E → Prop := λ I, ∀ x ∈ I, cl (I \ {x}) ≠ I with h_indep,
+
+  have : indep (insert x I), 
+  { rintro y (rfl | hy) h_eq, 
+    { simp only [insert_diff_of_mem, mem_singleton] at h_eq,  
+      apply hxI', 
+      exact h_eq.symm.subset.trans (cl_mono _ _ (diff_subset I {y})) (mem_insert _ _)},
+      rw [matroid.indep_iff_cl_diff_ne_forall] at hI', 
+      have := hI' y hy, 
+      have hxy : x ≠ y, sorry,  
+      have hycl : y ∈ cl (insert x (I \ {y})),
+      { rw [insert_diff_singleton_comm hxy, h_eq], apply mem_insert_of_mem _ hy,},
+      have hycl' : y ∉ cl (I \ {y}), sorry, 
+      have h' := cl_exchange _ _ _ ⟨hycl,hycl'⟩,  
+      rw [insert_diff_singleton, insert_eq_of_mem hy] at h', 
+      exact hxI' h'.1, 
+
+     },
+
+
+
+  
+  -- obtain ⟨B, hB, hBmin⟩ := finite.exists_minimal (λ B, insert x I ⊆ B ∧ cl B = univ) sorry,
+  -- refine h' (λ hxI, hxI' (subset_cl I hxI)) _ hB.2 (λ X hXB hXcl, hXB.ne.symm _) hB.1, 
   -- apply hBmin, 
   
   
