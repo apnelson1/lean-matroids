@@ -155,34 +155,31 @@ end
 lemma dual_r_add_rk_eq (M : matroid E) (X : set E) : 
   M.dual.r X + M.rk = ncard X + M.r Xᶜ  :=
 begin
-  set r' : (set E) → ℕ := λ X, (X.ncard + M.r Xᶜ) - M.rk with hr',  
-  have hcancel := λ Y, M.rk_le_card_add_r_compl Y, 
+  set r' : set E → ℤ := λ X, X.ncard + M.r Xᶜ - M.rk with hr', 
 
-  have hr'_cast : ∀ Y, (r' Y : ℤ) = Y.ncard + M.r Yᶜ - M.rk, 
-  { intro Y, rw [hr', nat.cast_sub (hcancel Y), nat.cast_add]},
-
-  have hr'_mono : ∀ X Y, X ⊆ Y → r' X ≤ r' Y,     
-  { intros X Y hXY, rw hr', 
-    apply nat.sub_le_sub_right,
+  have hr'_nonneg : ∀ X, 0 ≤ r' X, 
+  { intro X, simp_rw hr', linarith [M.rk_le_card_add_r_compl X]},  
+  have hr'_mono : ∀ X Y, X ⊆ Y → r' X ≤ r' Y, 
+  { intros X Y hXY, simp_rw hr', 
     linarith [M.r_add_card_le_r_add_card_of_subset (compl_subset_compl.mpr hXY),
-      ncard_add_ncard_compl X, ncard_add_ncard_compl Y]}, 
-  have hr'_le_card : ∀ X, r' X ≤ X.ncard,   
-  { intro X, rw hr', simp only [tsub_le_iff_right, add_le_add_iff_left], apply r_le_rk}, 
+       ncard_add_ncard_compl X, ncard_add_ncard_compl Y]},
+  have hr'_le_card : ∀ X, r' X ≤ X.ncard, 
+  { intros X, simp_rw hr', linarith [M.r_le_rk Xᶜ] }, 
   have hr'_submod : ∀ X Y, r' (X ∩ Y) + r' (X ∪ Y) ≤ r' X + r' Y, 
-  { intros X Y, 
-    zify, simp_rw [hr'_cast, compl_inter, compl_union], 
-    linarith [ncard_inter_add_ncard_union X Y, M.r_submod Xᶜ Yᶜ]}, 
+  { intros X Y, simp_rw [hr', compl_inter, compl_union],
+    linarith [ncard_inter_add_ncard_union X Y, M.r_submod Xᶜ Yᶜ]},
 
-  set M' := matroid_of_r r' hr'_le_card hr'_mono hr'_submod with hM',
-  have hrM' : ∀ Y, M'.r Y = (Y.ncard + M.r Yᶜ) - M.rk := λ Y, 
-    by rw [hM', matroid_of_r_apply],
+  set M' := matroid_of_int_r r' hr'_nonneg hr'_le_card hr'_mono hr'_submod with hM', 
 
-  have hM'M : M' = M.dual,
+  have hM'M : M' = M.dual, 
   { refine eq_of_indep_iff_indep_forall (λ I, _), 
-    rw [indep_iff_r_eq_card, dual_indep_iff_r, hrM', nat.sub_eq_iff_eq_add (hcancel _), 
-      add_right_inj]}, 
+    rw [indep_iff_r_eq_card, dual_indep_iff_r], zify, 
+    simp_rw [hM', matroid_of_int_r_apply, hr'], 
+    refine ⟨λ h, _, λ h, _⟩, 
+    all_goals { simp only at h, linarith}},
 
-  rw [←hM'M, hrM',  nat.sub_add_cancel (rk_le_card_add_r_compl _ _)], 
+  rw [←hM'M], zify, simp_rw [hM', matroid_of_int_r_apply, hr'], 
+  ring, 
 end 
 
 lemma dual_rank_cast_eq (M : matroid E) (X : set E) : 

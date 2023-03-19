@@ -49,13 +49,9 @@ def flat (M : matroid E) (F : set E) : Prop :=
 def cl (M : matroid E) (X : set E) : set E :=
   ⋂₀ {F | M.flat F ∧ X ⊆ F}
 
-/-- A spanning set is one whose closure is the ground set -/
-def spanning (M : matroid E) (X : set E) : Prop := 
-  M.cl X = univ 
-
-/-- A hyperplane is a maximal nonspanning set -/
+/-- A hyperplane is a maximal proper subflat -/
 def hyperplane (M : matroid E) (H : set E) : Prop :=
-  ¬ M.spanning H ∧ ∀ X, X ⊂ H → M.spanning X      
+  M.flat H ∧ H ⊂ univ ∧ (∀ F, H ⊂ F → M.flat F → F = univ)  
 
 /-- A cocircuit is the complement of a hyperplane -/
 def cocircuit (M : matroid E) (K : set E) : Prop := 

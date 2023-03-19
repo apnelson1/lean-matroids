@@ -610,6 +610,25 @@ begin
   linarith, 
 end 
 
+/-- Construction of a matroid from an `int`-valued rank function that is everywhere nonnegative, 
+  rather than a `nat`-valued one. Useful for defining matroids whose rank function involves 
+  subtraction. -/
+def matroid_of_int_r (r : set E → ℤ) (r_nonneg : ∀ X, 0 ≤ r X) (r_le_card : ∀ X, r X ≤ X.ncard)
+(r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) : 
+matroid E := 
+matroid_of_r (int.nat_abs ∘ r) 
+  (λ X, by {zify, convert r_le_card X, rw abs_eq_self, apply r_nonneg}) 
+  (λ X Y hXY, by {zify, convert r_mono X Y hXY, all_goals {rw abs_eq_self, apply r_nonneg}}) 
+  (λ X Y, by {zify, convert r_submod X Y, all_goals {rw abs_eq_self, apply r_nonneg}}) 
+
+@[simp] lemma matroid_of_int_r_apply (r : set E → ℤ) (r_nonneg : ∀ X, 0 ≤ r X) 
+(r_le_card : ∀ X, r X ≤ X.ncard) (r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) 
+(r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) (X : set E) : 
+  ((matroid_of_int_r r r_nonneg r_le_card r_mono r_submod).r X : ℤ) = r X :=
+by simpa [matroid_of_int_r] using r_nonneg _
+
+
+
 end from_axioms
 
 
