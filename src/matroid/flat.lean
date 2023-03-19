@@ -605,6 +605,25 @@ begin
   exact hx hxI' B ⟨hB, hIB.1⟩ hIB.2, 
 end 
 
+lemma matroid_of_flat_aux (flat : set E → Prop) (univ_flat : flat univ) 
+(flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set E) :
+  flat (⋂₀ {F | flat F ∧ X ⊆ F}) ∧ ∀ F₀, flat F₀ → ((⋂₀ {F | flat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
+begin
+  set F₁ := ⋂₀ {F | flat F ∧ X ⊆ F} with hF₁,
+  refine ⟨_, λ F₀ hF₀, ⟨λ hF₁F₀, _, λ hXF, _⟩⟩ ,  
+  { obtain ⟨F',⟨hF',hYF'⟩,hmin⟩ := finite.exists_minimal (λ F, flat F ∧ X ⊆ F) 
+      ⟨univ, univ_flat, subset_univ _⟩,
+    convert hF', 
+    refine subset_antisymm (sInter_subset_of_mem ⟨hF',hYF'⟩) (subset_sInter _),
+    rintro F ⟨hF,hYF⟩, 
+    rw hmin _ ⟨flat_inter _ _ hF hF', subset_inter hYF hYF'⟩ _, 
+    { apply inter_subset_left}, 
+    apply inter_subset_right},
+  { refine subset_trans (subset_sInter (λ F h, _)) hF₁F₀, exact h.2},
+  apply sInter_subset_of_mem, 
+  exact ⟨hF₀, hXF⟩,  
+end  
+
 def matroid_of_flat (flat : set E → Prop) (univ_flat : flat univ) 
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) 
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ → 
@@ -622,41 +641,37 @@ matroid_of_cl (λ X, ⋂₀ {F | flat F ∧ X ⊆ F})
   exact ⟨hF, hXF⟩,
 end )
 (begin
-  have lem : ∀ Y, flat (⋂₀ {F | flat F ∧ Y ⊆ F}), 
-  { intro Y, 
-    obtain ⟨F',⟨hF',hYF'⟩,hmin⟩ := finite.exists_minimal (λ F, flat F ∧ Y ⊆ F) 
-      ⟨univ, univ_flat, subset_univ _⟩,
-    convert hF', 
-    refine subset_antisymm (sInter_subset_of_mem ⟨hF',hYF'⟩) (subset_sInter _),
-    rintro F ⟨hF,hYF⟩, 
-    rw hmin _ ⟨flat_inter _ _ hF hF', subset_inter hYF hYF'⟩ _, 
-    { apply inter_subset_left}, 
-    apply inter_subset_right},
-
   simp only [mem_diff, mem_sInter, mem_set_of_eq, and_imp, not_forall, exists_prop, 
     forall_exists_index], 
-  refine λ X e f h F hF hXF hfF, ⟨λ Ff hFf hfXf, _,_⟩, 
-  { 
-    set FX := sInter {F | flat F ∧ X ⊆ F} with hFX, 
-    set FXe := sInter {F | flat F ∧ insert e X ⊆ F} with hFXe, 
-    have hFX : flat FX := lem _, 
-    have hFXe : flat FXe := lem _,
+  refine λ X e f h F₀ hF₀ hXF₀ hfF₀, ⟨λ Ff hFf hfXf, _,_⟩, 
+  { obtain ⟨hFX, hX'⟩     := matroid_of_flat_aux flat univ_flat flat_inter X, 
+    obtain  ⟨hFXe, hXe'⟩  := matroid_of_flat_aux flat univ_flat flat_inter (insert e X), 
+
+    set FX := sInter {F | flat F ∧ X ⊆ F} with hFX_def, 
+    set FXe := sInter {F | flat F ∧ insert e X ⊆ F} with hFXe_def, 
+
     have hXFX : X ⊆ FX := subset_sInter (λ F hF, hF.2),
-    have hFss : FX ⊆ FXe, 
-    { apply subset_sInter, 
-      rintro F ⟨hF, heXF⟩, 
-      exact sInter_subset_of_mem ⟨hF,(subset_insert _ _).trans heXF⟩}, 
+    have hFss : FX ⊆ FXe, {rw hX' _ hFXe, sorry},
+    -- { apply subset_sInter, 
+    --   rintro F ⟨hF, heXF⟩, 
+    --   exact sInter_subset_of_mem ⟨hF,(subset_insert _ _).trans heXF⟩}, 
     have heFXe : e ∈ FXe := mem_sInter.mpr (λ F hF, hF.2 (mem_insert _ _)), 
-    have hFXF : F ⊆ FX, 
-    { refine subset_sInter (λ F' hF', _),
+    -- have hFXF₀ : FX ⊆ F₀ := sInter_subset_of_mem ⟨hF₀, hXF₀⟩, 
+    
       
-       },
+       
     have heFX : e ∉ FX, 
-    { intro heFX, 
-      have := h FX hFX (insert_subset.mpr ⟨heFX,hXFX⟩), },
+    {  sorry},
     
 
-    have hfFXe := h FXe hFXe (subset_sInter sorry),   
+    have hfFXe := h FXe hFXe (insert_subset.mpr ⟨_, _⟩),
+    obtain ⟨FXe',⟨hFXe',heFX',hmin⟩, hunique⟩ := flat_partition FX e hFX heFX,     
+
+    have hsubs := hunique FXe ⟨hFXe, insert_subset.mpr ⟨heFXe, hFss⟩, _⟩, 
+    { subst hsubs, sorry},
+    intros F hF hFXF hFFXe, 
+    have := subset_sInter_iff.mp hFFXe.subset, 
+
 
     -- have : flat FX, 
     -- { set FX' := finite.exists_minimal (λ F, flat F ∧ insert e X ⊆ F)},
