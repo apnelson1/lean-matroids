@@ -8,44 +8,51 @@ namespace trunc
 
 variables {E : Type*} {X Y Z B C I : set E} [finite E]
 
-def tr' (M : matroid E) : matroid E := 
-if h0 : M.base ∅ then M else 
-{ base := λ B, ∃ B' e, M.base B' ∧ e ∈ B' ∧ B = B' \ {e}, 
-  exists_base' := 
-  begin
-    obtain ⟨B, hB⟩ := M.exists_base, 
-    have hB' : B.nonempty, 
-    { rw nonempty_iff_ne_empty, rintro rfl, exact h0 hB},
-    obtain ⟨e,he⟩ := hB',
-    exact ⟨_,_,_,hB,he,rfl⟩, 
-  end, 
-  base_exchange' := 
-  begin
+def tr' (M : matroid E) : 
+  matroid E := 
+matroid_of_flat (λ F, M.flat F ∧ ¬ M.hyperplane F) 
+  ⟨M.univ_flat, M.univ_not_hyperplane⟩ 
+(begin
+  refine λ F₁ F₂ hF₁ hF₂, ⟨hF₁.1.inter hF₂.1, λ h, _⟩, 
+  obtain (rfl | h₁) := eq_or_ne F₁ univ, 
+  { rw [univ_inter] at h, exact hF₂.2 h},
+  refine h₁ (h.ssupset_eq_univ_of_flat hF₁.1 (ssubset_of_ne_of_subset (λ h_eq, _)
+    (inter_subset_left _ _))), 
+  rw [h_eq] at h, 
+  exact hF₁.2 h, 
+end)
+(begin
+  rintro F₀ e ⟨hF₀,hhF₀⟩ heF₀, 
+  have hne : F₀ ≠ univ, 
+  { rw [ne.def, eq_univ_iff_forall, not_forall], exact ⟨_,heF₀⟩, },
+  obtain ⟨F₁,⟨heF₁,hcov⟩,hunique⟩ := hF₀.exists_unique_flat_of_not_mem heF₀, 
+  -- obtain ⟨heF₁,hF₀F₁⟩ := insert_subset.mp heF₀F₁, 
+  by_cases hhF₁ : M.hyperplane F₁,
+  { refine ⟨univ, ⟨⟨M.univ_flat,M.univ_not_hyperplane⟩,(subset_univ _),λ F hF hF₀F hFss, _⟩,_⟩, 
+    { obtain ⟨H,hH,hFH⟩ := hF.1.subset_hyperplane_of_ne_univ hFss.ne, 
+      obtain (rfl | hne) := eq_or_ne H F₁, 
+      { exact (hcov.eq_or_eq hF.1 hF₀F hFH).elim eq.symm (by {rintro rfl, exact (hF.2 hhF₁).elim})},
+      have hF₁ := hcov.flat_right, 
+      obtain (hinter | h_eq) := hcov.eq_or_eq (hH.flat.inter hF₁) 
+        (subset_inter (hF₀F.trans hFH) hcov.subset) (inter_subset_right _ _), 
+      { subst hinter, 
+        rw [←hH.inter_covby_comm hhF₁] at hcov, 
+        rw hcov.eq_of_subset_of_ssubset hF.1 hF₀F (hFH.ssubset_of_ne _),
+        rintro rfl, 
+        exact hF.2 hH},
+      rw inter_eq_right_iff_subset at h_eq, 
+      have := hhF₁.eq_of_subset hH h_eq, subst this, 
+      exact (hne rfl).elim},
+    rintro F₂ ⟨hF₂, hF₂h, hmax⟩, 
+    by_contra' hF₂univ, 
+    obtain ⟨H,hH,hFH⟩ := hF₂.1.subset_hyperplane_of_ne_univ hF₂univ, 
     
-    rintro _ _ ⟨B₁,e₁,hB₁,heB₁,rfl⟩ ⟨B₂,e₂,hB₂,heB₂,rfl⟩ x hx,
-    dsimp only, 
-    -- have hxe₂ : x ≠ e₂, sorry, 
-    obtain (rfl | hxe₂) := eq_or_ne x e₂, 
-    { refine ⟨e₁,_,B₁,_,hB₁,heB₁,_⟩, 
-      simp, },
+    sorry, 
+  },
 
-    obtain ⟨y,hyB,hy⟩ := hB₁.exchange hB₂ ⟨hx.1.1, sorry⟩, 
-    obtain (rfl | hye₂) := eq_or_ne y e₂, 
-    { sorry},
-    refine ⟨y, _,_⟩, 
-    { simp at ⊢ hyB, tauto,},
-    refine ⟨_,e₁,hy,_,_⟩,  
-    { refine mem_insert_of_mem _ (mem_diff_singleton.mpr ⟨heB₁,_⟩), rintro rfl, simpa using hx},
-    ext z, 
-    simp only [mem_insert_iff, mem_diff, mem_singleton_iff] at ⊢ hx, 
-    split, 
-    { rintro (rfl | hz),
-      { simp only [eq_self_iff_true, true_or, true_and], 
-        rintro rfl,
-        exact hyB.2 heB₁},  
-      tauto},
-    tauto, 
-  end  }
+end)
+
+ 
 
 /-def indep (M : indep_family E) (n : ℤ) : set E → Prop :=  
   λ X, M.indep X ∧ size X ≤ max 0 n 
