@@ -1,7 +1,8 @@
 import ..dual
 import linear_algebra.finite_dimensional
 import data.matrix.basic data.zmod.basic
---import matroid.constructions.uniform
+import ..uniform
+import .field_stuff
 
 noncomputable theory 
 open_locale classical 
@@ -86,10 +87,23 @@ begin
 
 end
 
-
-/-lemma U23_binary : (canonical_unif 2 3).is_binary :=
+lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin
   unfold matroid.is_binary matroid.is_representable, 
-end-/
+  sorry,
+end
 
+lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
+begin
+  by_contra h2,
+  cases h2 with V hV,
+  have h1 := @num_subspaces_dim_one (zmod 2) V _ _ _ _ _ sorry _ sorry,
+  simp at h1,
+  have h3 := hV univ,
+  rw canonical_unif_r at h3,
+  rw ncard_univ at h3,
+  simp at h3,
+
+  sorry,
+end
 
