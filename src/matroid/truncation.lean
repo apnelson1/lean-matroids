@@ -21,7 +21,7 @@ def tr (M : matroid E) (t : ℕ) :=
       exact this _ _ h.le}, 
     cases le_or_lt t (M.r Y) with ht ht, 
     { rw [min_eq_left ht, min_eq_left (ht.trans (M.r_le_r_union_right _ _))],
-      linarith [min_le_min (rfl.le : t ≤ t) (M.r_inter_left_le_r X Y)]},
+      linarith [min_le_min (rfl.le : t ≤ t) (M.r_inter_le_r_left X Y)]},
     rw [min_eq_right_of_lt ht, min_eq_right (hXY.trans ht.le)], 
     linarith [min_le_right t (M.r (X ∩ Y)), min_le_right t (M.r (X ∪ Y)), M.r_submod X Y],
   end)) 
