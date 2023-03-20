@@ -137,12 +137,12 @@ begin
 end
 
 def uniform_matroid_on (α : Type*) [fintype α] (r : ℕ) : matroid α := 
-  trunc.tr (free_matroid_on α) r 
+  tr (free_matroid_on α) r 
 
 lemma uniform_matroid_rank {r : ℕ} (hr : 0 ≤ r) (X : set α) :
   (uniform_matroid_on α r).r X = min r (X.ncard) := 
 begin
-  rw [uniform_matroid_on, trunc.r_eq _ hr _, free_rank],
+  rw [uniform_matroid_on, tr_r r, free_rank],
 end
 
 lemma uniform_matroid_rank_univ {r : ℕ} (hr : 0 ≤ r) (hr' : r ≤ (univ : set α).ncard) : 
