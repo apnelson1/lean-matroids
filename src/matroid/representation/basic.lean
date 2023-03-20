@@ -71,17 +71,18 @@ def matroid.is_binary (M : matroid E) :=
 
 
 lemma representable_iff_has_matrix_rep (M : matroid E) (𝔽 : Type*) [field 𝔽]:
-  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin' (M.r univ)) E 𝔽), is_matrix_rep P M :=
+  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin (M.r univ)) E 𝔽), is_matrix_rep P M :=
 begin
   refine ⟨λ h, _, by {rintros ⟨P,hP⟩, exact ⟨P.row_space, hP⟩}⟩, 
   obtain ⟨R, hR⟩ := h, 
   obtain ⟨B, hB⟩ := finite_dimensional.fin_basis 𝔽 R, 
   have h_univ := hR univ, 
-  suffices h_same : findim 𝔽 ↥(submodule.proj_to_set R univ) = findim 𝔽 R, 
-  { exact ⟨λ i a, (B ⟨i.val, sorry⟩).val a, λ X, sorry⟩, },
+  suffices h_same : finrank 𝔽 ↥(submodule.proj_to_set R univ) = finrank 𝔽 R, 
+  { sorry }, --exact ⟨λ i a, (B ⟨i.val, sorry⟩).val a, λ X, sorry⟩, },
 
-  apply linear_equiv.findim_eq, 
-  exact proj_to_univ_equiv _, 
+  /-apply linear_equiv.findim_eq, 
+  exact proj_to_univ_equiv _, -/
+  sorry,
 
 end
 
