@@ -1,7 +1,8 @@
-import matroid.rank 
+import ..matroid 
 import linear_algebra.finite_dimensional
 import data.matrix.basic data.zmod.basic
-import matroid.constructions.uniform
+import ..uniform
+import .field_stuff
 
 noncomputable theory 
 open_locale classical 
@@ -32,19 +33,30 @@ end
 all co-ordinates outside `X`-/
 def submodule.proj_to_set (V : submodule 𝔽 (α → 𝔽)) (X : set α) := submodule.map (proj_to_set 𝔽 X) V 
 
-def proj_to_univ_equiv (V : submodule 𝔽 (α → 𝔽)) :
+/-def proj_to_univ_equiv (V : submodule 𝔽 (α → 𝔽)) :
   V.proj_to_set univ ≃ₗ[𝔽] V :=
-{ to_fun := λ x, ⟨λ a, x.val ⟨a, mem_univ a⟩, by tidy⟩, 
-  map_add' := by tidy,
-  map_smul' := by tidy,
-  inv_fun := λ x, ⟨λ u, x.1 u.1, by tidy⟩,
-  left_inv := by tidy,
-  right_inv := by tidy }
+{ to_fun := λ x, -- ⟨λ a, x.val ⟨a, mem_univ a⟩, by tidy⟩, 
+    begin
+      rw submodule.proj_to_set at x,
+      have h2 := submodule.mem_map.1 x.2,
+      cases h2 with y hy,
+      apply x.2,
+      sorry,
+    end, 
+  map_add' := by sorry,
+  map_smul' := by sorry,
+  inv_fun := λ x, --⟨λ u, x.1 u.1, by tidy⟩,
+    begin
+      -- have h2 := proj_to_set_apply V.2 x,
+      sorry,
+    end,
+  left_inv := by sorry,
+  right_inv := by sorry }-/
 
 /- A subspace `R` of `𝔽^α` represents a matroid `M` on `α` if, for every `(X : set α)`, the rank of
 `X` in `M` agrees with the dimension of the projection of `R` to the co-ordinates in `X`. -/
 def is_subspace_rep {𝔽 : Type*} (h𝔽 : field 𝔽) (V : subspace 𝔽 ( α → 𝔽 )) (M : matroid α) := 
-  ∀ X : set α, ( findim 𝔽 (V.proj_to_set X) : ℤ) = M.r X 
+  ∀ X : set α, ( finrank 𝔽 (V.proj_to_set X) : ℕ) = M.r X 
 
 /- A matroid is representable over `𝔽` if it has a (subspace) representation over `𝔽`. -/
 def matroid.is_representable (M : matroid α) (𝔽 : Type*) [h𝔽 : field 𝔽] := 
@@ -67,21 +79,40 @@ def matroid.is_binary (M : matroid α) :=
   matroid.is_representable M (zmod 2)
 
 
-lemma representable_iff_has_matrix_rep (M : matroid α) (𝔽 : Type*) [field 𝔽]:
-  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin' (M.r univ)) α 𝔽), is_matrix_rep P M :=
+/-lemma representable_iff_has_matrix_rep (M : matroid α) (𝔽 : Type*) [field 𝔽]:
+  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin (M.r univ)) α 𝔽), is_matrix_rep P M :=
 begin
   refine ⟨λ h, _, by {rintros ⟨P,hP⟩, exact ⟨P.row_space, hP⟩}⟩, 
   obtain ⟨R, hR⟩ := h, 
   obtain ⟨B, hB⟩ := finite_dimensional.fin_basis 𝔽 R, 
   have h_univ := hR univ, 
-  suffices h_same : findim 𝔽 ↥(submodule.proj_to_set R univ) = findim 𝔽 R, 
+  suffices h_same : finrank 𝔽 ↥(submodule.proj_to_set R univ) = finrank 𝔽 R, 
   { exact ⟨λ i a, (B ⟨i.val, sorry⟩).val a, λ X, sorry⟩, },
 
   apply linear_equiv.findim_eq, 
   exact proj_to_univ_equiv _, 
+end -/
 
+
+lemma U23_binary : (canonical_unif 2 3).is_binary :=
+begin
+  unfold matroid.is_binary matroid.is_representable, 
+  sorry,
 end
 
+lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
+begin
+  by_contra h2,
+  cases h2 with V hV,
+  have h1 := @num_subspaces_dim_one (zmod 2) V _ _ _ _ _ sorry _ sorry,
+  simp at h1,
+  have h3 := hV univ,
+  rw canonical_unif_r at h3,
+  rw ncard_univ at h3,
+  simp at h3,
+  
+  sorry,
+end
 
 /-lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin

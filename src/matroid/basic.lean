@@ -1,5 +1,5 @@
 import .helpers
-import matroid.ncard.circuit
+import .circuit
 
 /-
 This is correct and uses only mathlib, but I am leaving it as is for now and doing stuff in the 
