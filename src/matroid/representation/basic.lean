@@ -13,10 +13,6 @@ open set
 open finite_dimensional
 variables {E ρ R : Type*} [finite E] [finite ρ] {𝔽 : Type*} [field 𝔽] 
 
-
-
--- linear_map.fun_left : Π (R : Type u_1) (M : Type u_9) [_inst_1 : semiring R] [_inst_2 : add_comm_monoid M] [_inst_3 : module R M] {m : Type u_20} {n : Type u_21}, (m → n) → ((n → M) →ₗ[R] m → M)
-
 /- Linear map from vector in `𝔽^E` to a vector in `𝔽^X` given by forgetting all co-ordinates outside
 `X`, where `(X : set E)` -/ 
 def proj_to_set (𝔽 : Type*) [field 𝔽] (X : set E) := linear_map.fun_left 𝔽 𝔽 (coe : X → E)
@@ -45,41 +41,67 @@ def proj_to_univ_equiv (V : submodule 𝔽 (E → 𝔽)) :
    V ≃ₗ[𝔽] V.proj_to_set univ :=
 (linear_equiv.fun_congr_left 𝔽 𝔽 (equiv.subtype_univ_equiv mem_univ)).submodule_map V
 
-/- A subspace `R` of `𝔽^α` represents a matroid `M` on `α` if, for every `(X : set α)`, the rank of
+/- A subspace `R` of `𝔽^E` represents a matroid `M` on `α` if, for every `(X : set α)`, the rank of
 `X` in `M` agrees with the dimension of the projection of `R` to the co-ordinates in `X`. -/
-def is_subspace_rep {𝔽 : Type*} (h𝔽 : field 𝔽) (V : subspace 𝔽 ( E → 𝔽 )) (M : matroid E) := 
-  ∀ X : set E, ( finrank 𝔽 (V.proj_to_set X) : ℤ) = M.r X 
+def is_subspace_rep (V : submodule 𝔽 ( E → 𝔽 )) (M : matroid E) := 
+  ∀ X : set E, finrank 𝔽 (V.proj_to_set X) = M.r X 
 
 /- A matroid is representable over `𝔽` if it has a (subspace) representation over `𝔽`. -/
 def matroid.is_representable (M : matroid E) (𝔽 : Type*) [h𝔽 : field 𝔽] := 
-  ∃ V, is_subspace_rep h𝔽 V M 
+  ∃ (V : submodule 𝔽 (E → 𝔽)), is_subspace_rep V M 
 
 /- The set of rows of a `ρ × E` matrix. -/
 def matrix.row_set (P : matrix ρ E R) : set (E → R) := 
   set.range (λ i, (λ a, P i a))
 
+-- def matrix.row_set' (P : matroid ρ E R) : set ()
+
 /- The row space of a `ρ × E` matrix over `𝔽`. -/
-def matrix.row_space (P : matrix ρ E 𝔽) : submodule 𝔽 (E → 𝔽) :=   
+@[reducible] def matrix.row_space (P : matrix ρ E 𝔽) : submodule 𝔽 (E → 𝔽) :=   
   submodule.span 𝔽 P.row_set
 
 /- A matrix represents `M` if its row space is a subspace representation of `M` -/
 def is_matrix_rep (P : matrix ρ E 𝔽) (M : matroid E) := 
-  is_subspace_rep _ P.row_space M 
+  is_subspace_rep P.row_space M 
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
 def matroid.is_binary (M : matroid E) := 
   matroid.is_representable M (zmod 2)
 
+lemma rank_of_rep {V : submodule 𝔽 (E → 𝔽)} {M : matroid E} (h : is_subspace_rep V M) :
+  finite_dimensional.finrank 𝔽 V = M.rk :=
+by rw [M.rk_def, ←h univ, (proj_to_univ_equiv V).finrank_eq]
 
-lemma representable_iff_has_matrix_rep (M : matroid E) (𝔽 : Type*) [field 𝔽]:
-  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin (M.r univ)) E 𝔽), is_matrix_rep P M :=
+lemma representable_iff_has_matrix_rep (M : matroid E) (𝔽 : Type*) [field 𝔽] {n : ℕ} (hn : n = M.rk):
+  (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin n) E 𝔽), is_matrix_rep P M :=
 begin
   refine ⟨λ h, _, by {rintros ⟨P,hP⟩, exact ⟨P.row_space, hP⟩}⟩, 
-  obtain ⟨R, hR⟩ := h, 
-  obtain ⟨B, hB⟩ := finite_dimensional.fin_basis 𝔽 R, 
-  have h_univ := hR univ, 
-  suffices h_same : finrank 𝔽 ↥(submodule.proj_to_set R univ) = finrank 𝔽 R, 
-  { sorry }, --exact ⟨λ i a, (B ⟨i.val, sorry⟩).val a, λ X, sorry⟩, },
+  obtain ⟨V,hV⟩ := h,  
+  rw [←rank_of_rep hV] at hn, 
+  
+  set B := finite_dimensional.fin_basis_of_finrank_eq 𝔽 V hn.symm with hB,
+  have hspan := B.span_eq, 
+  
+
+  -- have := @congr_arg (set V) (set (E → 𝔽)) _ _ (λ X, coe '' X), 
+  -- have : congr_arg (λ (X : set V), (coe '' X : ), 
+   
+
+  use @matrix.of (fin n) E 𝔽 (λ i, (B i : E → 𝔽)), 
+  rw [is_matrix_rep, matrix.row_space, matrix.row_set],  
+  convert hV, 
+  simp, 
+  
+  
+  -- simp [is_matrix_rep, is_subspace_rep], 
+  -- have : A.row_set = coe '' range B, 
+  
+  
+
+
+  -- have h_univ := hR univ, 
+  -- suffices h_same : finrank 𝔽 ↥(submodule.proj_to_set R univ) = finrank 𝔽 R, 
+  { sorry }, 
 
   /-apply linear_equiv.findim_eq, 
   exact proj_to_univ_equiv _, -/
