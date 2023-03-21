@@ -185,10 +185,14 @@ lemma mem_cl_of_mem (M : matroid E) (h : e ∈ X) :
 lemma r_insert_eq_add_one_of_not_mem_cl (h : e ∉ M.cl X) : 
   M.r (insert e X) = M.r X + 1 :=
 r_insert_eq_add_one_of_r_ne (h ∘ mem_cl.mpr)
- 
+
 lemma not_mem_cl_of_r_insert_gt (h : M.r X < M.r (insert e X)) : 
   e ∉ M.cl X := 
 h.ne.symm ∘ mem_cl.mp
+
+lemma mem_cl_of_r_insert_le (h : M.r (insert e X) ≤ M.r X) : 
+  e ∈ M.cl X := 
+mem_cl.mpr (h.antisymm (M.r_le_r_insert X e))
 
 lemma not_mem_cl_iff_r_insert_eq_add_one  : 
   e ∉ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
@@ -332,6 +336,19 @@ end
 lemma flat.cl (hF : M.flat F) :
   M.cl F = F :=
 flat_iff_cl_self.mp hF 
+
+lemma flat_iff_ssubset_cl_insert_forall : 
+  M.flat F ↔ ∀ e ∉ F, M.cl F ⊂ M.cl (insert e F) :=
+begin
+  refine ⟨λ h e he, (M.cl_subset_cl_of_subset (subset_insert _ _)).ssubset_of_ne _, λ h, _⟩,
+  { rw [h.cl], exact λ h', mt ((set.ext_iff.mp h') e).mpr he ((M.subset_cl _) (mem_insert _ _))},
+  rw flat_iff_cl_self, 
+  by_contra h', 
+  obtain ⟨e,he',heF⟩ := exists_of_ssubset (ssubset_of_ne_of_subset (ne.symm h') (M.subset_cl F)),
+  have h'' := (h e heF), 
+  rw [←cl_insert_cl_eq_cl_insert, insert_eq_of_mem he', cl_cl] at h'', 
+  exact h''.ne rfl, 
+end 
 
 lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=

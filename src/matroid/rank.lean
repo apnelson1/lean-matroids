@@ -347,6 +347,10 @@ lemma rank_eq_of_le_inter :
 --   exact le_trans (r_union_le_add_r M _ _) (int.add_le_add_left hX _), 
 -- end 
 
+lemma r_le_r_insert (M : matroid E) (X : set E) (e : E) : 
+  M.r X ≤ M.r (insert e X) :=
+M.r_mono (subset_insert _ _)
+
 lemma r_insert_le_add_one (M : matroid E) (X : set E) (e : E) : 
   M.r (insert e X) ≤ M.r X + 1 := 
 by {rw ←union_singleton, linarith [r_union_le_add_r M X {e}, r_single_ub M e]}
