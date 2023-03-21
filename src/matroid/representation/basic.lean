@@ -11,7 +11,12 @@ universes u v w z
 
 open set 
 open finite_dimensional
+open submodule
 variables {E ρ R : Type*} [finite E] [finite ρ] {𝔽 : Type*} [field 𝔽] 
+
+section submodule_stuff 
+
+variables {M : Type*} [semiring R] [add_comm_monoid M] 
 
 /- Linear map from vector in `𝔽^E` to a vector in `𝔽^X` given by forgetting all co-ordinates outside
 `X`, where `(X : set E)` -/ 
@@ -69,44 +74,27 @@ def matroid.is_binary (M : matroid E) :=
   matroid.is_representable M (zmod 2)
 
 lemma rank_of_rep {V : submodule 𝔽 (E → 𝔽)} {M : matroid E} (h : is_subspace_rep V M) :
-  finite_dimensional.finrank 𝔽 V = M.rk :=
+  finrank 𝔽 V = M.rk :=
 by rw [M.rk_def, ←h univ, (proj_to_univ_equiv V).finrank_eq]
 
-lemma representable_iff_has_matrix_rep (M : matroid E) (𝔽 : Type*) [field 𝔽] {n : ℕ} (hn : n = M.rk):
+
+lemma representable_iff_has_matrix_rep (M : matroid E) (𝔽 : Type*) [field 𝔽] {n : ℕ} 
+(hn : n = M.rk) :
   (M.is_representable 𝔽) ↔ ∃ (P : matrix (fin n) E 𝔽), is_matrix_rep P M :=
 begin
   refine ⟨λ h, _, by {rintros ⟨P,hP⟩, exact ⟨P.row_space, hP⟩}⟩, 
   obtain ⟨V,hV⟩ := h,  
   rw [←rank_of_rep hV] at hn, 
-  
   set B := finite_dimensional.fin_basis_of_finrank_eq 𝔽 V hn.symm with hB,
-  have hspan := B.span_eq, 
-  
-
-  -- have := @congr_arg (set V) (set (E → 𝔽)) _ _ (λ X, coe '' X), 
-  -- have : congr_arg (λ (X : set V), (coe '' X : ), 
-   
-
+  have h' := congr_arg (submodule.map V.subtype) B.span_eq,
+  simp only [submodule.map_span, submodule.coe_subtype, map_subtype_top] at h', 
   use @matrix.of (fin n) E 𝔽 (λ i, (B i : E → 𝔽)), 
   rw [is_matrix_rep, matrix.row_space, matrix.row_set],  
+  simp only [matrix.of_apply, ←h'], 
   convert hV, 
+  convert h', 
+  ext, 
   simp, 
-  
-  
-  -- simp [is_matrix_rep, is_subspace_rep], 
-  -- have : A.row_set = coe '' range B, 
-  
-  
-
-
-  -- have h_univ := hR univ, 
-  -- suffices h_same : finrank 𝔽 ↥(submodule.proj_to_set R univ) = finrank 𝔽 R, 
-  { sorry }, 
-
-  /-apply linear_equiv.findim_eq, 
-  exact proj_to_univ_equiv _, -/
-  sorry,
-
 end
 
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
