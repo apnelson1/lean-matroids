@@ -334,5 +334,31 @@ begin
   exact ⟨B, ⟨hBi.2, λ X hX hBX, (hB _ (hBi.1.trans hBX) hX hBX).symm⟩, hBi.1⟩, 
 end 
 
+/-- Another version of the independence axioms that doesn't mention cardinality. TODO -/
+-- def matroid_of_indep' (indep : set E → Prop) (exists_ind : ∃ I, indep I)
+-- (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
+-- (ind_aug : ∀ I J, indep I → indep J → (∃ I', I ⊂ I' ∧ indep I') → (∀ J', J ⊂ J' → ¬indep J') 
+--   → (∃ x ∈ J \ I, indep (insert x I))) :
+--   matroid E :=
+-- { base := λ B, indep B ∧ ∀ I, B ⊆ I → indep I → I = B,
+--   exists_base' := 
+--   begin
+--     obtain ⟨B,hB,hBmax⟩ := finite.exists_maximal indep exists_ind, 
+--     exact ⟨B, hB, λ I hBI hI, (hBmax _ hI hBI).symm⟩,   
+--   end,
+--   base_exchange' := 
+--   begin
+--     rintro B₁ B₂ ⟨hB₁,hB₁max⟩ ⟨hB₂,hB₂max⟩ x hx, 
+--     obtain ⟨y,hy,hyI⟩ := ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁) hB₂ 
+--       ⟨B₁, diff_singleton_ssubset hx.1, hB₁⟩ 
+--       (λ J hB₂J hJ, hB₂J.ne ((hB₂max _ hB₂J.subset hJ).symm)), 
+--     refine ⟨y, mem_of_mem_of_subset hy _, hyI, λ I hyI hI, _⟩  , 
+--     { rw [diff_diff_right, inter_singleton_eq_empty.mpr hx.2, union_empty]}, 
+    
+
+--     -- rintro I J hI hJ hImax ⟨J',hJJ',hJ'⟩,  
+--   end  }
+
+
 end from_axioms 
 

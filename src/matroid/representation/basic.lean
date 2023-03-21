@@ -1,6 +1,7 @@
 import ..dual
 import linear_algebra.finite_dimensional
-import data.matrix.basic data.zmod.basic
+import data.matrix.rank 
+import data.zmod.basic
 import ..uniform
 import .field_stuff
 
@@ -12,7 +13,7 @@ universes u v w z
 open set 
 open finite_dimensional
 open submodule
-variables {E ρ R : Type*} [finite E] [finite ρ] {𝔽 : Type*} [field 𝔽] 
+variables {E ρ R : Type*} [fintype E] [finite ρ] {𝔽 : Type*} [field 𝔽] 
 
 section submodule_stuff 
 
@@ -25,6 +26,8 @@ def proj_to_set (𝔽 : Type*) [field 𝔽] (X : set E) := linear_map.fun_left �
 @[simp] lemma proj_to_set_apply {X : set E} (v : E → 𝔽) (a : X):
   (proj_to_set 𝔽 X v) a = v (coe a) := 
 rfl 
+
+#check proj_to_set
 
 lemma proj_to_set_range_eq_top (𝔽 : Type*) [field 𝔽] (X : set E): 
   (proj_to_set 𝔽 X).range = ⊤ :=
@@ -96,6 +99,12 @@ begin
   ext, 
   simp, 
 end
+
+def matrix.col_submatrix (P : matrix ρ E 𝔽) (X : set E) : matrix ρ X 𝔽 := 
+  matrix.submatrix P id coe 
+
+lemma matrix_rep.apply (M : matroid E) (P : matrix ρ E 𝔽) (X : set E) : 
+  M.r X = (P.col_submatrix X).rank := sorry 
 
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin
