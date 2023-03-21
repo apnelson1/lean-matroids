@@ -17,7 +17,7 @@ iff.rfl
 lemma loop.circuit (he : M.loop e) : 
   M.circuit {e} :=
 he
- 
+
 lemma loop.r (he : M.loop e) :
   M.r {e} = 0 :=
 begin
@@ -35,17 +35,47 @@ begin
   apply empty_indep, 
 end  
 
+lemma loop_iff_not_mem_base_forall :
+  M.loop e ↔ ∀ B, M.base B → e ∉ B :=
+begin
+  refine ⟨λ h B hB heB, h.circuit.dep (hB.indep.subset (singleton_subset_iff.mpr heB)),
+    λ h, _⟩, 
+  refine ⟨λ h_ind, _,λ I hI, _⟩, 
+  { obtain ⟨B,hB⟩ := h_ind.exists_base_supset, 
+    exact h _ hB.1 (singleton_subset_iff.mp hB.2)},
+  convert M.empty_indep, 
+  rwa ssubset_singleton_iff at hI, 
+end   
+
 lemma loop.dep_of_mem (he : M.loop e) (h : e ∈ X) :
   ¬M.indep X := 
 λ hX, he.circuit.dep (hX.subset (singleton_subset_iff.mpr h))
 
+/- TODO : Don't use rank here -/
 lemma cl_empty_eq_loops (M : matroid E) : 
   M.cl ∅ = {e | M.loop e} :=
 by {ext e, rw [mem_cl, r_empty, insert_emptyc_eq, ←loop_iff_r], refl}
 
+lemma loop_iff_mem_cl_empty :
+  M.loop e ↔ e ∈ M.cl ∅ :=
+by simp_rw [cl_empty_eq_loops, mem_set_of_eq]
+ 
 lemma loop.not_mem_indep (he : M.loop e) (hI : M.indep I) : 
   e ∉ I :=
 λ h, he.dep_of_mem h hI   
+
+lemma indep.nonloop_of_mem (hI : M.indep I) (h : e ∈ I) :
+  ¬ M.loop e := 
+λ he, (he.not_mem_indep hI) h  
+  
+lemma indep.disjoint_cl_empty (hI : M.indep I) : 
+  disjoint I (M.cl ∅) :=
+begin
+  rw [cl_empty_eq_loops], 
+  by_contra' h, 
+  obtain ⟨e,he⟩ := not_disjoint_iff.mp h, 
+  exact he.2.not_mem_indep hI he.1, 
+end 
 
 lemma loop.eq_of_circuit_mem (he : M.loop e) (hC : M.circuit C) (h : e ∈ C) : 
   C = {e} :=

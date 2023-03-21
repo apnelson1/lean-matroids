@@ -197,11 +197,11 @@ lemma r_submod' (M : matroid E) (X Y : set E) :
   M.r (X ∩ Y) + M.r (X ∪ Y) ≤ M.r X + M.r Y := 
 M.r_inter_add_r_union_le_r_add_r _ _
 
-lemma r_inter_le_r_left (M : matroid E) (X Y : set E) : 
+lemma r_inter_left_le_r (M : matroid E) (X Y : set E) : 
   M.r (X ∩ Y) ≤ M.r X := 
 M.r_mono (inter_subset_left X Y)
 
-lemma r_inter_le_r_right (M : matroid E) (X Y : set E) : 
+lemma r_inter_right_le_r (M : matroid E) (X Y : set E) : 
   M.r (X ∩ Y) ≤ M.r Y := 
 M.r_mono (inter_subset_right X Y)
 
@@ -215,7 +215,7 @@ M.r_mono (subset_union_right X Y)
 
 lemma r_diff_le_r (M : matroid E) (X Y : set E) :
   M.r (X \ Y) ≤ M.r X := 
-by {rw diff_eq, apply r_inter_le_r_left} 
+by {rw diff_eq, apply r_inter_left_le_r} 
 
 lemma r_zero_of_subset_r_zero (hXY : X ⊆ Y) (hY : M.r Y = 0) : 
   M.r X = 0 := 
@@ -346,6 +346,10 @@ lemma rank_eq_of_le_inter :
 --   rw [hP, sUnion_insert, fin.finsum_in_insert _ hA],
 --   exact le_trans (r_union_le_add_r M _ _) (int.add_le_add_left hX _), 
 -- end 
+
+lemma r_le_r_insert (M : matroid E) (X : set E) (e : E) : 
+  M.r X ≤ M.r (insert e X) :=
+M.r_mono (subset_insert _ _)
 
 lemma r_insert_le_add_one (M : matroid E) (X : set E) (e : E) : 
   M.r (insert e X) ≤ M.r X + 1 := 

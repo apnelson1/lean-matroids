@@ -1,5 +1,5 @@
 
-import ..loop
+import ..dual
 
 open_locale classical 
 noncomputable theory
@@ -154,62 +154,51 @@ begin
   refine λ X hX, by_contra (λ h', _),
   obtain ⟨C,hCX,hC⟩ := dep_iff_supset_circuit.mp h', 
   obtain ⟨e,heC⟩ := hC.nonempty,  
-  
   have he := (hC.subset_cl_diff_singleton e).trans (h (C \ {e})), 
-  rw indep_iff_cl_diff_ne_forall at hX, 
-  -- rw hC.cl_diff_singleton at hss, 
-
-  
+  exact ((cl_subset_cl_of_subset_cl he).trans_ssubset 
+    ((hX.subset hCX).cl_diff_singleton_ssubset heC)).ne rfl, 
 end 
 
--- lemma quotient_of_cl (h : ∀ X, M.cl X ⊆ N.cl X) : 
---    N ≼ M := 
--- begin
---   set P : set E × set E → Prop :=  
---   (λ p, p.1 ⊆ p.2 → N.r p.2 - N.r p.1 ≤ M.r p.2 - M.r p.1 ) with hP, 
---   suffices : ∀ p, P p, exact λ X Y, this ⟨X,Y⟩, 
---   apply nonneg_int_strong_induction_param P (λ p, size (p.2 \ p.1)), 
---   { rintros ⟨X,Y⟩, apply size_nonneg}, 
---   { rintros ⟨X,Y⟩ hs hXY, dsimp only at *, 
---     rw [size_zero_iff_empty, diff_empty_iff_subset] at hs, 
---     rw [subset.antisymm hXY hs, sub_self, sub_self],  }, 
---   rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,   
---   cases exists_mem_of_size_pos h_size with e he,
---   specialize h' ⟨X, Y \ {e}⟩ _ _, 
---   { dsimp only, rw [diff_right_comm, size_remove_mem he], linarith}, 
---   { dsimp only, apply subset_of_remove_mem_diff; assumption,},
---   dsimp only at h', 
---   suffices : N.r Y - N.r (Y \ {e}) ≤ M.r Y - M.r (Y \ {e}), by linarith, 
---   by_cases hY : M.r Y = M.r (Y \ {e}), swap, 
---   { rw [rank_eq_sub_one_of_ne_remove _ _ _ hY], linarith [rank_remove_single_lb N Y e]  },
---   rw [hY, sub_self], 
---   rw [eq_comm, rank_removal_iff_closure _ _ he.1]  at hY, 
---   have hN := mem_of_subset (h _) hY, rw [←rank_removal_iff_closure _ _ he.1] at hN, 
---   linarith, 
--- end
-
+/- TODO : prove without rank (or with relative rank)-/
 lemma quotient_iff_dual_quotient : 
   N ≼ M ↔ M.dual ≼ N.dual :=
 begin
   suffices h' : ∀ (N M : matroid E), N ≼ M → M.dual ≼ N.dual, 
   exact ⟨λ h, h' _ _ h, λ h, by {convert h' _ _ h; rw dual_dual, }⟩, 
+  simp_rw [is_quotient_iff_r, dual_rank_cast_eq], 
   intros N M h X Y hXY, 
-  simp_rw [dual_r], 
-  rw compl_subset_compl.symm at hXY, 
-  linarith [h _ _ hXY],
+  have := h _ _ (compl_subset_compl.mpr hXY), 
+  linarith, 
 end
+
+lemma is_quotient_iff_flat :
+  N ≼ M ↔ ∀ F, N.flat F → M.flat F :=
+begin
+  rw [is_quotient], 
+  refine ⟨λ h, _, λ h, _⟩,
+  { by_contra' hcon, 
+    obtain ⟨F, ⟨hNF,hMF⟩, hFmax⟩ := finite.exists_maximal _ hcon, simp at hFmax, 
+    simp_rw flat_iff_ssubset_cl_insert_forall at hNF hMF, 
+    -- refine λ h F hFN e heF, ssubset_of_ne_of_subset (λ hF, _) (M.cl_mono (subset_insert _ _)), 
+    -- have := hFN e heF, 
+
+
+    
+
+    },
+end 
 
 lemma quotient_tfae : 
   tfae 
 [N ≼ M,
- ∀ F, N.is_flat F → M.is_flat F, 
- ∀ X Y, X ⊆ Y → N.r Y - N.r X ≤ M.r Y - M.r X,
+ ∀ F, N.flat F → M.flat F, 
+ ∀ X Y, X ⊆ Y → (N.r Y : ℤ)  - N.r X ≤ M.r Y - M.r X,
  ∀ X, M.cl X ⊆ N.cl X,
  M.dual ≼ N.dual] :=
 begin
-  tfae_have : 1 ↔ 3, unfold is_quotient,
+  tfae_have : 1 ↔ 3, simp_rw is_quotient_iff_r,
   tfae_have : 3 → 2, 
-  {exact λ h, λ F hF Y hFY, by linarith [hF _ hFY, h _ _ hFY.1],}, 
+  {refine λ h F hF Y hFY, _, }, 
   tfae_have : 2 → 4, 
   {exact λ h X, subset_flat X _ (subset_cl N X) (h _ (N.cl_is_flat X))}, 
   tfae_have: 4 → 1, apply quotient_of_cl, 
@@ -217,9 +206,9 @@ begin
   tfae_finish, 
 end
 
-lemma quotient_iff_flat :
-  N ≼ M ↔ ∀ F, N.is_flat F → M.is_flat F :=
-by apply @tfae.out _ quotient_tfae 0 1 
+-- lemma quotient_iff_flat :
+--   N ≼ M ↔ ∀ F, N.is_flat F → M.is_flat F :=
+-- by apply @tfae.out _ quotient_tfae 0 1 
 
 lemma flat_of_quotient_flat (h : N ≼ M){F : set E} (hF : N.is_flat F) :
   M.is_flat F :=
@@ -233,11 +222,11 @@ lemma quotient_iff_cl :
   N ≼ M ↔ ∀ X, M.cl X ⊆ N.cl X :=
 by apply @tfae.out _ quotient_tfae 0 3 
 
-lemma quotient_rank_zero_of_rank_zero (h : N ≼ M){X : set E} (hX : M.r X = 0) :
+lemma quotient_rank_zero_of_rank_zero (h : N ≼ M) {X : set E} (hX : M.r X = 0) :
   N.r X = 0 :=
 weak_image_rank_zero_of_rank_zero (weak_image_of_quotient h) hX 
 
-lemma quotient_loop_of_loop (h : N ≼ M){e : E} (he : M.is_loop e) :
+lemma quotient_loop_of_loop (h : N ≼ M) {e : E} (he : M.is_loop e) :
   N.is_loop e :=
 weak_image_loop_of_loop (weak_image_of_quotient h) he
 
