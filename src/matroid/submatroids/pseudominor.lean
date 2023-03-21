@@ -9,7 +9,7 @@ adding back in `C` (or `D`) as a set containing only loops. We call these operat
 and 'loopification'. 
 
 The advantage of this over taking minors is that we stay in the Type `matroid E` rather than 
-changing the ground set and having to deal with type quality . In practice it seems 
+changing the ground set and having to deal with type equality . In practice it seems 
 that many proofs that involve manipulating minors can be phrased only in terms of these modified 
 minor-like-objects, which we call pseudominors. Kung's theorem and the matroid intersection theorem
 are currently both proved in this way. 
@@ -18,21 +18,90 @@ are currently both proved in this way.
 noncomputable theory 
 open set 
 
+variables {E : Type*} [finite E]
+
 namespace matroid 
 
-section project 
-variables {E : Type*} [finite E] {e f : E} {M : matroid E} {X Y D C F I R: set E}
+section defs
+
+
+-- def project (M : matroid E) (C : set E) : matroid E := 
+-- matroid_of_int_r (λ X, M.r (X ∪ C) - M.r C)
+--   (λ X, by {rw [sub_nonneg, nat.cast_le], exact M.r_le_r_union_right _ _}) 
+--   (λ X, by linarith [M.r_union_le_card_add_r X C])
+--   (λ X Y hXY, by linarith [M.r_mono (union_subset_union_left C hXY)])
+--   (λ X Y, by {simp_rw [union_comm _ C], linarith [submod_three M C X Y]})
 
 /-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
-Often more convenient than just contracting C . TODO : define in terms of something other than `r`-/
-def project (M : matroid E) (C : set E) : matroid E := 
-matroid_of_int_r (λ X, M.r (X ∪ C) - M.r C)
-  (λ X, by {rw [sub_nonneg, nat.cast_le], exact M.r_le_r_union_right _ _}) 
-  (λ X, by linarith [M.r_union_le_card_add_r X C])
-  (λ X Y hXY, by linarith [M.r_mono (union_subset_union_left C hXY)])
-  (λ X Y, by {simp_rw [union_comm _ C], linarith [submod_three M C X Y]})
+Often more convenient than just contracting C . -/
+def project (M : matroid E) (C : set E) : matroid E :=
+matroid_of_cl (λ X, M.cl (X ∪ C)) 
+(λ X, (subset_union_left _ _).trans (M.subset_cl _)) 
+(λ X Y hXY, M.cl_mono (union_subset_union_left _ hXY)) 
+(λ X, by {simp only [cl_union_cl_left_eq_cl_union, union_assoc, union_self]} ) 
+(λ X e f hf, by {rw [insert_union] at ⊢ hf, exact cl_exchange hf})
 
+@[simp] lemma project_cl_eq (M : matroid E) (C X : set E) :
+  (M.project C).cl X = M.cl (X ∪ C) := 
+by simp only [project, matroid_of_cl_apply]
 
+def loopify (M : matroid E) (D : set E) : 
+  matroid E := 
+matroid_of_circuit 
+(λ C, (M.circuit C ∧ disjoint C D) ∨ ∃ e ∈ D, C = {e}) 
+(begin
+  by_contra' h, 
+  obtain (h | ⟨e, -, h⟩) := h, 
+  { simpa using h.1.nonempty},
+  exact nonempty_iff_ne_empty.mp (singleton_nonempty _) h.symm, 
+end) 
+(begin
+  rintros C₁ C₂ (⟨hC₁,hC₁D⟩ | ⟨e₁,he₁,rfl⟩) (⟨hC₂,hC₂D⟩ | ⟨e₂,he₂,rfl⟩) hC₁C₂,   
+  { exact hC₁.eq_of_subset_circuit hC₂ hC₁C₂},
+  { obtain (rfl | h) := subset_singleton_iff_eq.mp hC₁C₂,
+    { exact (M.empty_not_circuit hC₁).elim},
+    exact h},
+  { exact (disjoint_iff_forall_ne.mp hC₂D e₁ (singleton_subset_iff.mp hC₁C₂) _ he₁ rfl).elim},
+  simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at hC₁C₂, 
+  rw hC₁C₂,
+end)
+(begin
+  rintros C₁ C₂ e (⟨hC₁,hC₁D⟩ | ⟨e₁,he₁,rfl⟩) (⟨hC₂,hC₂D⟩ | ⟨e₂,he₂,rfl⟩) hne he,
+  { obtain ⟨C,hCdiff,hC⟩ := hC₁.elimination hC₂ hne e, 
+    refine ⟨C, hCdiff, or.inl ⟨hC,_⟩⟩,
+    apply disjoint_of_subset_left hCdiff (disjoint.disjoint_sdiff_left (hC₁D.union_left hC₂D))},
+  { rw [mem_inter_iff, mem_singleton_iff] at he, 
+    obtain ⟨he,rfl⟩ := he, 
+    exact (hC₁D.ne_of_mem he he₂ rfl).elim},
+  { rw [mem_inter_iff, mem_singleton_iff] at he, 
+    obtain ⟨rfl,he⟩ := he, 
+    exact (hC₂D.ne_of_mem he he₁ rfl).elim},
+  simp only [ne.def, singleton_eq_singleton_iff, mem_inter_iff, mem_singleton_iff] at he hne,
+  exact (hne (he.1.symm.trans he.2)).elim, 
+end)
+
+end defs 
+
+section project 
+variables {e f : E} {M : matroid E} {X Y D C F I R: set E}
+
+lemma coe_r_project (M : matroid E) (C X : set E) : 
+  ((M.project C).r X : ℤ) = M.r (X ∪ C) - M.r C :=
+begin
+  refine le_antisymm _ _, 
+  { rw [←nat.cast_sub (M.r_le_r_union_right X C)],
+    have hequiv := @r_le_iff_cl _ _ (M.project C) X,
+    zify at hequiv,  
+    simp_rw hequiv, 
+    obtain ⟨IC, hIC⟩ := M.exists_basis C, 
+    obtain ⟨I, hICI, hI⟩ := 
+      hIC.indep.subset_basis_of_subset (hIC.subset.trans (subset_union_right X C)), 
+      refine ⟨I \ IC, _, _⟩,     
+      { simp, },
+    
+    --simp_rw ←(add_le_add_iff_right (M.r C)) at this, 
+      },  
+end 
 
 
 end project 

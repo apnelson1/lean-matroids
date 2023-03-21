@@ -38,6 +38,10 @@ lemma circuit.nonempty (hC : M.circuit C) :
   C.nonempty := 
 by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
 
+lemma empty_not_circuit (M : matroid E) : 
+  ¬M.circuit ∅ := 
+λ h, by simpa using h.nonempty
+
 lemma circuit.card (hC : M.circuit C) : 
   C.ncard = M.r C + 1 :=
 begin
@@ -224,7 +228,8 @@ def matroid_of_circuit
   (circuit : set E → Prop) 
   (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
-  (elimination : ∀ C₁ C₂ e, C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
+  (elimination : ∀ C₁ C₂ e, 
+    circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
 matroid E :=
 matroid_of_indep (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩ 
 (λ I J hIJ hJ C hCI, hJ C (hCI.trans hIJ)) 
@@ -286,7 +291,7 @@ begin
   obtain ⟨Cg', hCg'ss, hCg', hgCg', heCg'⟩ := hCf g' hg'KI,  
   have hne : Cg ≠ Cg', 
   { intro heq, rw ←heq at hgCg', exact hgCg' hg', }, 
-  obtain ⟨C, hCss, hC⟩ := elimination Cg Cg' e hne ⟨heCg, heCg'⟩, 
+  obtain ⟨C, hCss, hC⟩ := elimination _ _ e hCg hCg' hne ⟨heCg, heCg'⟩, 
   refine hK C (hCss.trans _) hC, 
   rw [diff_subset_iff, singleton_union], 
   exact union_subset hCgss hCg'ss, 
@@ -296,7 +301,8 @@ end
   (circuit : set E → Prop) 
   (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
-  (elimination : ∀ C₁ C₂ e, C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
+  (elimination : ∀ C₁ C₂ e, 
+    circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
 (matroid_of_circuit circuit empty_not_circuit antichain elimination).circuit = circuit :=
 begin
   ext C, 

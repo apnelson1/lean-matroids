@@ -10,7 +10,7 @@ open set list
 
 namespace matroid 
 
-variables {E : Type*} [finite E] {X Y I C B : set E} {N M : matroid E} {e f : E}
+variables {E : Type*} [finite E] {X Y I C B F : set E} {N M : matroid E} {e f : E}
 
 section weak_image 
 /- `M` is a weak image of `N` if independence in `N` implies independence in `M` -/
@@ -83,7 +83,7 @@ lemma weak_image.rank_zero_of_rank_zero (h : N ≤ M) (hX : M.r X = 0) :
   N.r X = 0 :=
 nat.eq_zero_of_le_zero ((weak_image.r_le h X).trans_eq hX)
 
-lemma loop.loop_of_weak_image (he : M.loop e) (h : N ≤ M) :
+lemma loop.weak_image (he : M.loop e) (h : N ≤ M) :
   N.loop e :=
 begin
   obtain ⟨C,hCe,hC⟩ :=  he.circuit.supset_circuit_of_weak_image h, 
@@ -96,7 +96,7 @@ end
 
 lemma nonloop_of_weak_image_nonloop (h : N ≤ M) {e : E} (he : ¬ N.loop e) :
   ¬ M.loop e :=
-λ he', he (he'.loop_of_weak_image h) 
+λ he', he (he'.weak_image h) 
 
 end weak_image
 
@@ -159,6 +159,10 @@ begin
     ((hX.subset hCX).cl_diff_singleton_ssubset heC)).ne rfl, 
 end 
 
+lemma indep.quotient (hI : N.indep I) (h : N ≼ M) :
+  M.indep I :=
+hI.weak_image h.weak_image
+
 /- TODO : prove without rank (or with relative rank)-/
 lemma quotient_iff_dual_quotient : 
   N ≼ M ↔ M.dual ≼ N.dual :=
@@ -175,18 +179,16 @@ lemma is_quotient_iff_flat :
   N ≼ M ↔ ∀ F, N.flat F → M.flat F :=
 begin
   rw [is_quotient], 
-  refine ⟨λ h, _, λ h, _⟩,
-  { by_contra' hcon, 
-    obtain ⟨F, ⟨hNF,hMF⟩, hFmax⟩ := finite.exists_maximal _ hcon, simp at hFmax, 
-    simp_rw flat_iff_ssubset_cl_insert_forall at hNF hMF, 
-    -- refine λ h F hFN e heF, ssubset_of_ne_of_subset (λ hF, _) (M.cl_mono (subset_insert _ _)), 
-    -- have := hFN e heF, 
-
-
-    
-
-    },
+  refine ⟨λ h F hNF, _, λ h, _⟩,
+  { refine flat_iff_cl_self.mpr ((M.subset_cl _).antisymm' _),  
+    have hcl := h F, rwa hNF.cl at hcl},  
+  simp_rw [N.cl_def, subset_sInter_iff, mem_set_of_eq, and_imp], 
+  exact λ X F hF hXF, (h _ hF).cl_subset_of_subset hXF, 
 end 
+
+lemma flat.quotient (hF : N.flat F) (h : N ≼ M) :
+  M.flat F :=
+(is_quotient_iff_flat.mp h) F hF 
 
 lemma quotient_tfae : 
   tfae 
@@ -196,66 +198,35 @@ lemma quotient_tfae :
  ∀ X, M.cl X ⊆ N.cl X,
  M.dual ≼ N.dual] :=
 begin
-  tfae_have : 1 ↔ 3, simp_rw is_quotient_iff_r,
-  tfae_have : 3 → 2, 
-  {refine λ h F hF Y hFY, _, }, 
-  tfae_have : 2 → 4, 
-  {exact λ h X, subset_flat X _ (subset_cl N X) (h _ (N.cl_is_flat X))}, 
-  tfae_have: 4 → 1, apply quotient_of_cl, 
-  tfae_have : 1 ↔ 5, apply quotient_iff_dual_quotient, 
+  tfae_have : 1 ↔ 3, exact is_quotient_iff_r,
+  tfae_have : 1 ↔ 2, exact is_quotient_iff_flat, 
+  tfae_have : 1 ↔ 4, refl, 
+  tfae_have : 1 ↔ 5, exact quotient_iff_dual_quotient, 
   tfae_finish, 
 end
-
--- lemma quotient_iff_flat :
---   N ≼ M ↔ ∀ F, N.is_flat F → M.is_flat F :=
--- by apply @tfae.out _ quotient_tfae 0 1 
-
-lemma flat_of_quotient_flat (h : N ≼ M){F : set E} (hF : N.is_flat F) :
-  M.is_flat F :=
-(quotient_iff_flat.mp h) F hF 
-
-lemma indep_of_quotient_indep (h : N ≼ M){I : set E} (hI : N.indep I) :
-  M.indep I := 
-indep_of_weak_image_indep (weak_image_of_quotient h) hI 
 
 lemma quotient_iff_cl :
   N ≼ M ↔ ∀ X, M.cl X ⊆ N.cl X :=
 by apply @tfae.out _ quotient_tfae 0 3 
 
-lemma quotient_rank_zero_of_rank_zero (h : N ≼ M) {X : set E} (hX : M.r X = 0) :
-  N.r X = 0 :=
-weak_image_rank_zero_of_rank_zero (weak_image_of_quotient h) hX 
-
-lemma quotient_loop_of_loop (h : N ≼ M) {e : E} (he : M.is_loop e) :
-  N.is_loop e :=
-weak_image_loop_of_loop (weak_image_of_quotient h) he
-
-lemma nonloop_of_quotient_nonloop (h : N ≼ M){e : E} (he : N.is_nonloop e) :
-  M.is_nonloop e :=
-nonloop_of_weak_image_nonloop (weak_image_of_quotient h) he
-
-lemma loops_quotient (h : N ≼ M) : 
-  loops M ⊆ loops N := 
-loops_weak_image (weak_image_of_quotient h)
-
-lemma eq_of_eq_rank_quotient (h : N ≼ M) (hr : N.r univ = M.r univ) :
+lemma eq_of_quotient_of_rk_eq_rk (h : N ≼ M) (hr : N.rk = M.rk) :
   N = M :=
 begin
-  ext X, by_contra hn,
-  /- take a maximal set on which the ranks of N and M differ. -/
-  rcases maximal_example_aug (λ X, ¬N.r X = M.r X) hn with ⟨Y, hXY, h',h''⟩, 
-  dsimp only at h'', simp_rw [not_not] at h'', clear hXY hn X, 
-  have hY : Y ≠ univ := λ hY, by {rw ←hY at hr, exact h' hr },
-  cases ne_univ_iff_has_nonmem.mp hY with e heY,  
-  specialize h'' e heY, 
-  have hle := weak_image_of_quotient h, 
-  rw quotient_iff_cl at h, 
-  by_cases hM : e ∈ M.cl Y, 
-  { rw [(mem_cl_iff_r.mp hM)] at h'',
-    rw [←h'', eq_comm, ←mem_cl_iff_r] at h', 
-    exact h' (mem_of_mem_of_subset hM (h _))}, 
-  rw nonmem_cl_iff_r at hM,  
-  linarith [int.le_sub_one_of_le_of_ne (hle _) h', rank_augment_single_ub N Y e], 
+  refine eq_of_r_eq_r_forall _,
+  by_contra' h',
+  obtain ⟨S, hS, hmax⟩ := finite.exists_maximal _ h',   
+  apply hS, 
+  obtain ⟨e,heS⟩ := (ne_univ_iff_exists_not_mem S).mp (by {rintro rfl, exact hS hr}), 
+  have hi : M.r (insert e S) = N.r (insert e S), 
+  { by_contra hi, 
+    exact (ssubset_insert heS).ne (hmax _ (ne.symm hi) (subset_insert _ _)), },
+  rw is_quotient_iff_r at h, 
+  have h1 := h _ _ (subset_insert e S), 
+  have h2 := h _ _ (empty_subset S), 
+  rw [hi] at h1, 
+  simp_rw [r_empty, nat.cast_zero] at h2, 
+  zify, 
+  linarith, 
 end
 
 end quotient 

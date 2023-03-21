@@ -1,7 +1,7 @@
 import .matroid 
 
 
-variables {E : Type*} [finite E] {M : matroid E} {I J I' J' I₁ I₂ B B' X : set E} {e : E}
+variables {E : Type*} [finite E] {M : matroid E} {I J I' J' I₁ I₂ B B' X Y : set E} {e f : E}
 
 open set
 namespace matroid 
@@ -124,19 +124,52 @@ begin
   exact ncard_le_of_subset hIB', 
 end 
 
-lemma base_iff_maximal_indep : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → B = I :=
+lemma base_iff_maximal_indep : 
+  M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → B = I :=
 begin
   refine ⟨λ h, ⟨h.indep, λ _, h.eq_of_subset_indep ⟩,λ h, _⟩, 
   obtain ⟨⟨B', hB', hBB'⟩, h⟩ := h, 
   rwa h _ hB'.indep hBB', 
 end  
 
-lemma indep_not_base : M.base B → M.indep B' → B' ⊂ B → ¬ M.base B' :=
+lemma base.dep_of_ssubset (hB : M.base B) (h : B ⊂ X) : 
+  ¬M.indep X := 
+λ hX, h.ne (hB.eq_of_subset_indep hX h.subset)  
+
+lemma base.dep_of_insert (hB : M.base B) (he : e ∉ B) :
+  ¬M.indep (insert e B) := 
+hB.dep_of_ssubset (ssubset_insert he)
+
+lemma indep_not_base : 
+  M.base B → M.indep B' → B' ⊂ B → ¬ M.base B' :=
 begin
   intros hB hB' hBB',
     by_contra,
     apply (ne_of_ssubset hBB') (base.eq_of_subset_base h hB (subset_of_ssubset hBB')),
 end
+
+/- This proof deliberately avoids cardinality -/
+lemma base.exchange_base_of_indep (hB : M.base B) (he : e ∈ B) (hf : f ∉ B) 
+(hI : M.indep (insert f (B \ {e}))) : 
+  M.base (insert f (B \ {e})) :=
+begin
+  obtain ⟨B', hB', hIB'⟩ := hI,  
+  have hBeB' := (subset_insert _ _).trans hIB', 
+  have heB' : e ∉ B',
+  { intro heB', 
+    have hBB' : B ⊆ B',
+    { refine subset_trans _ (insert_subset.mpr ⟨heB',hIB'⟩),   
+      rw [insert_comm, insert_diff_singleton],
+      refine (subset_insert _ _).trans (subset_insert _ _)},
+    rw ←hB.eq_of_subset_indep hB'.indep hBB' at hIB',
+    exact hf (hIB' (mem_insert _ _))},
+  obtain ⟨y,hy,hy'⟩ := hB.exchange hB' ⟨he,heB'⟩,
+  rw ←hy'.eq_of_subset_base hB' (insert_subset.mpr ⟨hy.1, hBeB'⟩) at hIB', 
+  have : f = y, 
+  { exact (mem_insert_iff.mp (hIB' (mem_insert _ _))).elim id 
+      (λ h', (hf (diff_subset _ _ h')).elim)},
+  rwa this, 
+end 
 
 lemma indep_not_base_ssubset : M.indep B' → ¬ M.base B' → ∃ (B : set E), M.base B ∧ B' ⊂ B :=
 begin
@@ -194,9 +227,17 @@ lemma basis.eq_of_subset_indep (hI : M.basis I X) {J : set E} (hJ : M.indep J) (
   I = J := 
 hI.2.2 J hJ hIJ hJX
 
+lemma basis.basis_subset (hI : M.basis I X) (hIY : I ⊆ Y) (hYX : Y ⊆ X) : 
+  M.basis I Y :=
+⟨hI.indep, hIY, λ J hJ hIJ hJY, hI.eq_of_subset_indep hJ hIJ (hJY.trans hYX)⟩
+  
 lemma basis.dep_of_ssubset (hI : M.basis I X) {Y : set E} (hIY : I ⊂ Y) (hYX : Y ⊆ X) :
   ¬ M.indep Y :=
 λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX)
+
+lemma basis.not_basis_of_ssubset (hI : M.basis I X) (hJI : J ⊂ I) :
+  ¬ M.basis J X :=
+λ h, hJI.ne (h.eq_of_subset_indep hI.indep hJI.subset hI.subset)
 
 lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) : 
   ∃ J, I ⊆ J ∧ M.basis J X := 
@@ -334,7 +375,12 @@ begin
   exact ⟨B, ⟨hBi.2, λ X hX hBX, (hB _ (hBi.1.trans hBX) hX hBX).symm⟩, hBi.1⟩, 
 end 
 
-/-- Another version of the independence axioms that doesn't mention cardinality. TODO -/
+end from_axioms 
+
+
+
+
+/- Another version of the independence axioms that doesn't mention cardinality. TODO -/
 -- def matroid_of_indep' (indep : set E → Prop) (exists_ind : ∃ I, indep I)
 -- (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
 -- (ind_aug : ∀ I J, indep I → indep J → (∃ I', I ⊂ I' ∧ indep I') → (∀ J', J ⊂ J' → ¬indep J') 
@@ -357,8 +403,3 @@ end
     
 
 --     -- rintro I J hI hJ hImax ⟨J',hJJ',hJ'⟩,  
---   end  }
-
-
-end from_axioms 
-

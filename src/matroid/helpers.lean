@@ -34,8 +34,7 @@ by rw [←finset.card_inter_add_card_sdiff_eq_card X Y, ←finset.card_inter_add
  
 lemma finset.card_le_card_iff_card_sdiff_le_card_sdiff {X Y : finset α} : 
   X.card ≤ Y.card ↔ (X \ Y).card ≤ (Y \ X).card := 
-by rw [←finset.card_inter_add_card_sdiff_eq_card X Y, ←finset.card_inter_add_card_sdiff_eq_card Y X, 
-    finset.inter_comm, add_le_add_iff_left]
+by rw [←finset.card_inter_add_card_sdiff_eq_card X Y, ←finset.card_inter_add_card_sdiff_eq_card Y X, finset.inter_comm, add_le_add_iff_left]
 
 lemma finset.card_lt_card_iff_card_sdiff_lt_card_sdiff {X Y : finset α} : 
   X.card < Y.card ↔ (X \ Y).card < (Y \ X).card := 
@@ -45,7 +44,6 @@ by rw [←finset.card_inter_add_card_sdiff_eq_card X Y, ←finset.card_inter_add
 lemma nat.card_eq_to_finset_card [fintype α] (S : set α) : 
   nat.card S = S.to_finset.card :=
 by simp [nat.card_eq_fintype_card] 
-
 
 end finset
 
@@ -65,8 +63,7 @@ begin
 end    
 
 lemma set.finite.exists_minimal {α : Type*} [finite α] [partial_order α] (P : α → Prop) 
-(h : ∃ x, P x) : 
-  ∃ m, P m ∧ ∀ x, P x → x ≤ m → m = x :=
+(h : ∃ x, P x) : ∃ m, P m ∧ ∀ x, P x → x ≤ m → m = x :=
 @set.finite.exists_maximal (order_dual α) _ _ P h
 
 lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} : 
@@ -78,4 +75,12 @@ lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} :
 lemma set.diff_singleton_ssubset {α : Type*} {e : α} {S : set α} (heS : e ∈ S) : 
   S \ {e} ⊂ S :=
 set.diff_singleton_ssubset_iff.mpr heS 
+
+
+lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e ≠ f) : 
+  insert e (X \ {f}) = (insert e X) \ {f} :=
+by rw [←union_singleton, ←union_singleton, union_diff_distrib, 
+  diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
+
+
 

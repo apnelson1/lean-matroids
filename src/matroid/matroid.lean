@@ -21,7 +21,7 @@ def exchange_property (P : set E → Prop) : Prop :=
   (exists_base' : ∃ B, base B) 
   (base_exchange' : exchange_property base)
 
-variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
+-- variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
 
 namespace matroid 
 /- None of these definitions require finiteness -/
@@ -70,6 +70,8 @@ end defs
 
 section base
 
+variables {B B₁ B₂ I : set E} {M : matroid E} {e f x y : E}
+
 lemma exists_base (M : matroid E) : ∃ B, M.base B := M.exists_base'
 
 lemma base.exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) : 
@@ -81,6 +83,7 @@ lemma base.exchange_mem (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x 
 by simpa using hB₁.exchange hB₂ ⟨hxB₁, hxB₂⟩ 
 
 variables [finite E]
+
 
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   B₁.ncard = B₂.ncard := 
@@ -128,16 +131,93 @@ begin
   exact hy.2 (hB₁B₂ hy.1), 
 end 
 
-end base
 
+end base 
 end matroid 
 
-section misc
+-- TODO : prove strong basis exchange (and hence define duality) in this file. 
 
-lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e ≠ f) : 
-  insert e (X \ {f}) = (insert e X) \ {f} :=
-by rw [←union_singleton, ←union_singleton, union_diff_distrib, 
-  diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
+-- lemma base.indep (hB : M.base B) : 
+--   M.indep B := 
+-- sorry 
 
-end misc 
+-- lemma base.insert_dep (hB : M.base B) (h : e ∉ B) : 
+--   ¬M.indep (insert e B) := sorry  
+
+-- lemma base_iff_maximal_indep : 
+--   M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → B = I := 
+-- sorry 
+
+-- lemma indep.unique_circuit_of_insert {e : E} (hI : M.indep I) (hI' : ¬M.indep (insert e I)) : 
+--   ∃! C, C ⊆ insert e I ∧ M.circuit C ∧ e ∈ C := sorry 
+
+-- lemma subset_cl (M : matroid E) (X : set E) :
+--   X ⊆ M.cl X := sorry  
+
+-- -- lemma base_iff_indep_card :
+-- --   M.base B ↔ M.indep B ∧ B.ncard =  
+
+-- -- Strong exchange -- 
+
+-- /-- We can exchange in both directions at one -/
+-- theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
+--   ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) ∧ M.base (insert y (B₁ \ {x})) :=
+-- begin
+--   by_contra, 
+--   simp_rw [not_exists, not_and] at h, 
+  
+--   obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=   
+--   hB₂.indep.unique_circuit_of_insert (hB₂.insert_dep hx.2), 
+  
+--   have hCss := diff_singleton_subset_iff.mpr hCB₂, 
+
+--   simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique, 
+--   have hC_exchange : ∀ y ∈ C \ {x}, M.base (insert x (B₂ \ {y})), 
+--   { simp_rw [base_iff_maximal_indep], 
+--     rintros y ⟨hyC, hyx⟩, 
+--     refine ⟨by_contra (λ hdep, _ ), λ I hI hssI, by_contra (λ hne, _)⟩,  
+--     { obtain ⟨C',⟨hC'ss,hC'⟩,hC'min⟩ := finite.exists_minimal 
+--       (λ D, D ⊆ insert x (B₂ \ {y}) ∧ ¬M.indep D)  ⟨_, rfl.subset, hdep⟩,
+--       have hC'C := hCunique C' _ ⟨hC',λ I hIC, by_contra (λ hI, _)⟩ (by_contra (λ hxC', hC' _)),
+--       { subst hC'C, 
+--         obtain (rfl | mem_diff) := mem_insert_iff.mp (hC'ss hyC), 
+--         {exact hyx rfl},
+--         exact not_mem_diff_of_mem rfl mem_diff}, 
+--       { exact hC'ss.trans (insert_subset_insert (diff_subset _ _))},
+--       { exact hIC.ne.symm (hC'min I ⟨ hIC.subset.trans hC'ss, hI⟩ hIC.subset)},
+--       rw subset_insert_iff_of_not_mem hxC' at hC'ss, 
+--       exact ⟨B₂, hB₂, hC'ss.trans (diff_subset _ _)⟩},
+--     obtain ⟨B',hB',hB'I⟩ := hI,  
+--     have hlt := (ncard_lt_ncard (hssI.ssubset_of_ne hne)).trans_le (ncard_le_of_subset hB'I), 
+    
+--     rw [hB'.card_eq_card_of_base hB₂, nat.lt_iff_add_one_le, 
+--       ncard_exchange hx.2 (hCss (mem_diff_singleton.mpr ⟨hyC,hyx⟩))] at hlt,
+--     simpa only [add_le_iff_nonpos_right, le_zero_iff] using hlt},
+  
+--   have hcl : ∀ y ∈ B₂ \ M.cl (B₁ \ {x}), M.base (insert y (B₁ \ {x})), 
+--   { rintro y ⟨hy₂, hy₁⟩, 
+--     obtain rfl | hyx := em (y = x), 
+--     { rwa [insert_diff_singleton, insert_eq_self.mpr hx.1]},
+--     have hyB₁ : y ∉ B₁, from 
+--       λ hyB₁, hy₁ (M.subset_cl (B₁ \ {x}) (mem_diff_singleton.mpr ⟨hyB₁, hyx⟩)), 
+
+--     rw base_iff_maximal_indep, 
+
+--     -- simp_rw [base_iff_indep_card, indep_iff_r_eq_card, ncard_exchange hyB₁ hx.1, 
+--     --   hB₁.card, eq_self_iff_true, and_true, ←hB₁.card, not_mem_cl.mp hy₁, 
+--     --   (hB₁.indep.diff {x}).r, ncard_diff_singleton_add_one hx.1]
+      
+--       },
+
+--   -- have hss : C \ {x} ⊆ M.cl (B₁ \ {x}), 
+--   -- from λ y hy, by_contra (λ hy', h _ ⟨hCss hy, λ hy₁, hy' (M.subset_cl _ ⟨hy₁,hy.2⟩)⟩ 
+--   --     (hC_exchange y hy) (hcl _ ⟨hCss hy,hy'⟩)), 
+  
+--   -- have hx' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2, 
+--   -- rw [mem_cl, insert_diff_singleton, insert_eq_of_mem hx.1, hB₁.indep.r, (hB₁.indep.diff _).r, 
+--   --   ←ncard_diff_singleton_add_one hx.1] at hx', 
+--   -- simpa only [nat.succ_ne_self] using hx', 
+-- end     
+
+
 

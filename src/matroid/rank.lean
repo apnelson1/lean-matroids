@@ -316,6 +316,14 @@ lemma r_union_le_add_r (M : matroid E) (X Y : set E) :
   M.r (X ∪ Y) ≤ M.r X + M.r Y :=
 by linarith [M.r_submod X Y]
 
+lemma r_union_le_card_add_r (M : matroid E) (X Y : set E) :
+  M.r (X ∪ Y) ≤ X.ncard + M.r Y :=
+(M.r_union_le_add_r X Y).trans (add_le_add_right (M.r_le_card _) _)
+
+lemma r_union_le_r_add_card (M : matroid E) (X Y : set E) :
+  M.r (X ∪ Y) ≤ M.r X + Y.ncard :=
+(M.r_union_le_add_r X Y).trans (add_le_add_left (M.r_le_card _) _)
+
 lemma rk_le_card_add_r_compl (M : matroid E) (X : set E) :
   M.rk ≤ X.ncard + M.r Xᶜ :=
 begin
