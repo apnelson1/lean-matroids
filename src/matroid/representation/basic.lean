@@ -103,8 +103,11 @@ end
 def matrix.col_submatrix (P : matrix ρ E 𝔽) (X : set E) : matrix ρ X 𝔽 := 
   matrix.submatrix P id coe 
 
-lemma matrix_rep.apply (M : matroid E) (P : matrix ρ E 𝔽) (X : set E) : 
+lemma matrix_rep.apply {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (X : set E) : 
   M.r X = (P.col_submatrix X).rank := sorry 
+
+-- show that if the submatrices for `{e}`, `{f}` have the same column space, then the 
+-- submatrix for `{e,f}` has rank `1`, contradicting simplicity. 
 
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin
