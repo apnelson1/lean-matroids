@@ -40,6 +40,10 @@ all co-ordinates outside `X`-/
 def submodule.proj_to_set (V : submodule 𝔽 (E → 𝔽)) (X : set E) : submodule 𝔽 (X → 𝔽)
   := submodule.map (proj_to_set 𝔽 X) V 
 
+def submodule.proj_to_singleton (V : submodule 𝔽 (E → 𝔽)) (a : E) : submodule 𝔽 (({a} : set E) → 𝔽) 
+  := V.proj_to_set {a}
+-- want linear_map.apply
+
 /-- An equivalence  -/
 def proj_to_univ_equiv (V : submodule 𝔽 (E → 𝔽)) :
    V ≃ₗ[𝔽] V.proj_to_set univ :=
@@ -48,7 +52,7 @@ def proj_to_univ_equiv (V : submodule 𝔽 (E → 𝔽)) :
 /- A subspace `R` of `𝔽^α` represents a matroid `M` on `α` if, for every `(X : set α)`, the rank of
 `X` in `M` agrees with the dimension of the projection of `R` to the co-ordinates in `X`. -/
 def is_subspace_rep {𝔽 : Type*} (h𝔽 : field 𝔽) (V : subspace 𝔽 ( E → 𝔽 )) (M : matroid E) := 
-  ∀ X : set E, ( finrank 𝔽 (V.proj_to_set X) : ℤ) = M.r X 
+  ∀ X : set E, ( finrank 𝔽 (V.proj_to_set X) : ℕ) = M.r X 
 
 /- A matroid is representable over `𝔽` if it has a (subspace) representation over `𝔽`. -/
 def matroid.is_representable (M : matroid E) (𝔽 : Type*) [h𝔽 : field 𝔽] := 
@@ -87,6 +91,35 @@ begin
 
 end
 
+variables (h𝔽 : field 𝔽) (V : submodule 𝔽 ( E → 𝔽 ))[fintype V] (M : matroid E)
+variables [fintype {S : subspace 𝔽 V | finrank 𝔽 S = 1}]
+
+--lemma simple_rep_inj 
+-- define simple to mean every pair has rank 2
+def simple (M : matroid E) : Prop := ∀ (e f : E), e ≠ f → M.r {e, f} = 2 
+
+#check (λ x : E, submodule.proj_to_set V ({x} : set E))
+#check submodule.proj_to_set V
+
+def submodule.proj_to_set2 (x : E) := submodule.proj_to_set V ({x} : set E)
+
+lemma inj_of_simple : simple M → is_subspace_rep h𝔽 V M → 
+  function.injective (submodule.proj_to_set2) :=
+begin
+  sorry,
+end
+
+-- this is true for simple matroids
+lemma card_subspaces_eq_ncard_univ :
+  simple M → is_subspace_rep h𝔽 V M  → 
+    (univ : set E).ncard ≤ fintype.card {S : subspace 𝔽 V | finrank 𝔽 S = 1} :=
+begin
+  intros hs hr,
+  
+  sorry,
+end
+--[_inst_3 : field K] [_inst_4 : add_comm_group V] [_inst_5 : module K V] [_inst_6 : fintype K] [_inst_7 : finite_dimensional K V] [_inst_8 : fintype ↥{S : submodule K V | finrank K ↥S = 1}] [_inst_9 : nontrivial K] [_inst_11 : nontrivial V], fintype.card ↥{S : subspace K V | finrank K ↥S = 1}
+
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin
   unfold matroid.is_binary matroid.is_representable, 
@@ -103,7 +136,12 @@ begin
   rw canonical_unif_r at h3,
   rw ncard_univ at h3,
   simp at h3,
-
+  have h4 : finrank (zmod 2) ↥V = 2,
+  sorry,
+  rw h4 at h1,
+  have h5 := ncard_univ (fin 4),
+  have h6 : univ.ncard ≤ fintype.card ↥{S : subspace (zmod 2) ↥V | finrank (zmod 2) ↥S = 1},
+  
   sorry,
 end
 
