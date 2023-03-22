@@ -32,18 +32,7 @@ section defs
 --   (λ X Y hXY, by linarith [M.r_mono (union_subset_union_left C hXY)])
 --   (λ X Y, by {simp_rw [union_comm _ C], linarith [submod_three M C X Y]})
 
-/-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
-Often more convenient than just contracting C . -/
-def project (M : matroid E) (C : set E) : matroid E :=
-matroid_of_cl (λ X, M.cl (X ∪ C)) 
-(λ X, (subset_union_left _ _).trans (M.subset_cl _)) 
-(λ X Y hXY, M.cl_mono (union_subset_union_left _ hXY)) 
-(λ X, by {simp only [cl_union_cl_left_eq_cl_union, union_assoc, union_self]} ) 
-(λ X e f hf, by {rw [insert_union] at ⊢ hf, exact cl_exchange hf})
 
-@[simp] lemma project_cl_eq (M : matroid E) (C X : set E) :
-  (M.project C).cl X = M.cl (X ∪ C) := 
-by simp only [project, matroid_of_cl_apply]
 
 def loopify (M : matroid E) (D : set E) : 
   matroid E := 
@@ -83,24 +72,241 @@ end)
 end defs 
 
 section project 
-variables {e f : E} {M : matroid E} {X Y D C F I R: set E}
+variables {e f : E} {M : matroid E} {X Y D C F I I₀ R: set E}
+
+/-- contract C and replace it with a set of loops to get a matroid on the same ground set.  
+Often more convenient than just contracting C . -/
+def project (M : matroid E) (C : set E) : matroid E :=
+matroid_of_cl (λ X, M.cl (X ∪ C)) 
+(λ X, (subset_union_left _ _).trans (M.subset_cl _)) 
+(λ X Y hXY, M.cl_mono (union_subset_union_left _ hXY)) 
+(λ X, by {simp only [cl_union_cl_left_eq_cl_union, union_assoc, union_self]} ) 
+(λ X e f hf, by {rw [insert_union] at ⊢ hf, exact cl_exchange hf})
+
+infix ` // ` :75 :=  matroid.project  
+
+@[simp] lemma project_cl_eq (M : matroid E) (C X : set E) :
+  (M // C).cl X = M.cl (X ∪ C) := 
+by simp only [project, matroid_of_cl_apply]
+
+
+lemma project_contract_subset_loops (M : matroid E) (C : set E) :
+  C ⊆ (M // C).cl ∅ :=
+by {rw [project_cl_eq, empty_union], apply M.subset_cl}
+
+lemma project_indep_disjoint_contract (hI : (M // C).indep I) : 
+  disjoint I C := 
+begin
+  simp_rw [indep_iff_not_mem_cl_diff_forall, project_cl_eq] at hI, 
+  rw [disjoint_iff_forall_ne], 
+  rintro x hxI _ hxC rfl,
+  exact hI x hxI (M.subset_cl _ (or.inr hxC)),  
+end 
+
+lemma union_basis_indep_of_project_indep (hI : (M // C).indep I) (hI₀ : M.basis I₀ C) :
+  M.indep (I ∪ I₀) :=
+begin
+  by_contra h', 
+  simp_rw [indep_iff_not_mem_cl_diff_forall, project_cl_eq] at hI, 
+  rw dep_iff_supset_circuit at h',
+  obtain ⟨D,hDss,hD⟩ := h',  
+  
+  have heD : (D ∩ I).nonempty, 
+  { rw [nonempty_iff_ne_empty, ne.def, ←disjoint_iff_inter_eq_empty],
+    exact λ hDI, hD.dep (hI₀.indep.subset (hDI.subset_right_of_subset_union hDss))}, 
+
+  obtain ⟨x,hx⟩ := heD, 
+  apply hI x hx.2,   
+  refine mem_of_mem_of_subset (hD.subset_cl_diff_singleton x hx.1) _, 
+  rw [←cl_union_cl_right_eq_cl_union, ←hI₀.cl, cl_union_cl_right_eq_cl_union], 
+  refine cl_subset_cl_of_subset _ (diff_subset_iff.mpr (hDss.trans _)), 
+  rw [singleton_union, insert_union_distrib, insert_diff_singleton],
+  exact union_subset_union (subset_insert _ _) (subset_insert _ _),
+end 
+
+lemma project_indep_of_union_basis_indep (hI₀ : M.basis I₀ C) (hdj : disjoint I I₀) 
+(h_ind : M.indep (I ∪ I₀)) : 
+  (M // C).indep I :=
+begin
+  simp_rw [indep_iff_not_mem_cl_diff_forall, project_cl_eq], 
+  rw [indep_iff_not_mem_cl_diff_forall] at h_ind, 
+  intros x hxI, 
+  refine not_mem_subset _ (h_ind _ (or.inl hxI)), 
+  rw [←cl_union_cl_right_eq_cl_union, ←hI₀.cl, cl_union_cl_right_eq_cl_union, union_diff_distrib, 
+    diff_singleton_eq_self (disjoint_left.mp hdj hxI)],
+  exact rfl.subset, 
+end 
+
+lemma project_indep_iff_exists (M : matroid E) (I : set E) : 
+  (M // C).indep I ↔ ∃ I₀, disjoint I I₀ ∧ M.basis I₀ C ∧ M.indep (I ∪ I₀) :=
+begin
+  refine ⟨λ h, _,λ h, _⟩, 
+  { obtain ⟨I₀, hI₀⟩ := M.exists_basis C, 
+    refine ⟨I₀, disjoint_of_subset_right hI₀.subset (project_indep_disjoint_contract h), hI₀, _⟩, 
+    exact union_basis_indep_of_project_indep h hI₀},
+  obtain ⟨I₀, hII₀, hI₀, hu⟩ := h,  
+  exact project_indep_of_union_basis_indep hI₀ hII₀ hu,  
+end    
+
+lemma project_indep_iff_forall (M : matroid E) (I : set E) : 
+  (M // C).indep I ↔ disjoint I C ∧ ∀ I₀, M.basis I₀ C → M.indep (I ∪ I₀) :=
+begin
+  refine ⟨λ hI, ⟨project_indep_disjoint_contract hI, λ I₀ hI₀, 
+    union_basis_indep_of_project_indep hI hI₀⟩, _⟩, 
+  rw project_indep_iff_exists, 
+  rintro ⟨hdj, hbas⟩,   
+  obtain ⟨I₀, hI₀⟩ := M.exists_basis C, 
+  exact ⟨I₀, disjoint_of_subset_right hI₀.subset hdj, hI₀, hbas _ hI₀⟩,  
+end 
+
+lemma project_basis_of_basis (hI : M.basis I (X ∪ C)) (hIC : M.basis (I ∩ C) C) :
+  (M // C).basis (I \ C) X :=
+begin
+  simp_rw [basis_iff_cl, project_cl_eq, diff_union_self, diff_subset_iff], 
+  refine ⟨hI.subset.trans_eq (union_comm _ _),_, λ J hJI hXJ, hJI.antisymm (diff_subset_iff.mpr _)⟩,  
+  { exact ((subset_union_left _ _).trans hI.subset_cl).trans (M.cl_mono (subset_union_left _ _))}, 
+  have hss : J ∪ (I ∩ C) ⊆ I,
+    from (union_subset (hJI.trans (diff_subset _ _)) (inter_subset_left _ _)),
+  have hcl : X ∪ C ⊆ M.cl (J ∪ I ∩ C), 
+  { rw [←cl_union_cl_right_eq_cl_union, hIC.cl, cl_union_cl_right_eq_cl_union],
+    exact union_subset hXJ ((subset_union_right _ _).trans (M.subset_cl _))},
+  rw [←hI.eq_of_cl_subset hss hcl, union_comm], 
+  exact union_subset_union_left _ (inter_subset_right _ _), 
+end 
+
+lemma union_basis_of_project_basis (hI : (M // C).basis I X) (hI₀ : M.basis I₀ C) :
+  M.basis (I ∪ I₀) (X ∪ C) :=
+begin
+  simp_rw [basis_iff_cl, project_cl_eq] at hI, 
+  obtain ⟨hIX, hXIC, h⟩ := hI, 
+  refine basis_iff_cl.mpr ⟨union_subset_union hIX hI₀.subset,_, λ J hJII₀ hXCJ, _⟩,   
+  { rw [←cl_union_cl_right_eq_cl_union, hI₀.cl,cl_union_cl_right_eq_cl_union ], 
+    exact union_subset hXIC ((subset_union_right _ _).trans (M.subset_cl _))},
+  
+  by_contra' hne, 
+  obtain ⟨e,(heI | heI₀),heJ⟩ := exists_of_ssubset (hJII₀.ssubset_of_ne hne),
+  { refine (diff_singleton_ssubset heI).ne (h (I \ {e}) (diff_subset _ _) _), 
+    rw [←cl_union_cl_right_eq_cl_union, ←hI₀.cl, cl_union_cl_right_eq_cl_union], 
+    refine (subset_union_left _ _).trans (hXCJ.trans (M.cl_subset_cl_of_subset _)), 
+    refine (subset_diff_singleton hJII₀ heJ).trans _,
+    rw union_diff_distrib, 
+    exact union_subset_union_right _ (diff_subset _ _)},
+  
+  refine heJ ((set.ext_iff.mp (hI₀.eq_of_cl_subset (inter_subset_right J I₀) _) e).mpr heI₀).1, 
+   
+
+
+
+  -- refine hJII₀.antisymm (union_subset _ _),
+  -- { rw ←inter_eq_right_iff_subset, 
+  --   rw union_subset_iff at hXCJ, 
+  --   refine h _ (inter_subset_right _ _) _, 
+  --   rw [←cl_union_cl_right_eq_cl_union, ←hI₀.cl, cl_union_cl_right_eq_cl_union], 
+    
+  --   },  
+end 
+
+
+lemma project_basis_iff : 
+  (M // C).basis I X ↔ ∃ I₀, disjoint I I₀ ∧ M.basis I₀ C ∧ M.basis (I ∪ I₀) (X ∪ C) :=
+begin
+  split, 
+  { rw [basis_iff, project_indep_iff_exists],
+    rintro ⟨⟨I₀, hdj, hI₀C,hII₀⟩, hIX, hmax⟩,
+    refine ⟨I₀, hdj, hI₀C, hII₀, union_subset_union hIX hI₀C.subset, λ J hJ hssJ hJXC, _⟩,
+    have hI₀J : I₀ ⊆ J, from (I.subset_union_right I₀).trans hssJ, 
+    have hJI₀ : I ⊆ (J \I₀), from subset_diff.mpr ⟨(subset_union_left _ _).trans hssJ, hdj⟩, 
+    have hJI₀X : J \ I₀ ⊆ X, 
+    { rw [diff_subset_iff, union_comm], 
+      have h_eq : I₀ = J ∩ C, from hI₀C.eq_of_subset_indep (hJ.inter_right C) 
+          (subset_inter hI₀J hI₀C.subset) (inter_subset_right _ _),  
+      subst h_eq, 
+      refine (subset_inter hJXC rfl.subset).trans _,
+      rw [inter_distrib_right, inter_comm C], 
+      exact union_subset_union_left _ (inter_subset_left _ _)}, 
+    have hi : (M // C).indep (J \ I₀), 
+    { rw project_indep_iff_exists, 
+      refine ⟨I₀,disjoint_sdiff_left,hI₀C,_⟩,
+      convert hJ, 
+      rwa [diff_union_self, union_eq_left_iff_subset]},
+    rw hmax _ hi hJI₀ hJI₀X, 
+    simpa only [diff_union_self, union_eq_left_iff_subset] using hI₀J},
+  rintro ⟨I₀, hII₀, hI₀C, h_basis⟩, 
+  rw [basis_iff, project_indep_iff_exists],  
+  refine ⟨⟨I₀,hII₀,hI₀C,h_basis.indep⟩, _, λ J hJ hIJ hJX, _⟩, 
+  { have hI₀ : M.indep I₀ := h_basis.indep.subset (subset_union_right _ _), 
+    have hinter := hI₀C.eq_of_subset_indep (h_basis.indep.inter_right C) 
+      (subset_inter (subset_union_right _ _) hI₀C.subset) (inter_subset_right _ _), 
+    rw [inter_distrib_right, inter_eq_left_iff_subset.mpr hI₀C.subset, eq_comm, 
+      union_eq_right_iff_subset] at hinter,
+    have hi' := subset_inter hinter (inter_subset_left _ _),   
+    rw [inter_comm I₀, disjoint_iff_inter_eq_empty.mp hII₀, subset_empty_iff] at hi',  
+    rw [←inter_union_diff I C, hi', empty_union, diff_subset_iff, union_comm],
+    exact (subset_union_left _ _).trans h_basis.subset},  
+  have hi : M.indep (J ∪ I₀), 
+  { rw project_indep_iff_exists at hJ, 
+    rw indep_iff_not_mem_cl_diff_forall, 
+    obtain ⟨I₀', hJI₀', hI₀'C, hI₀'⟩ := hJ,  
+    intros x hx, 
+
+
+    }, 
+  have hJI₀ : disjoint J I₀ ,sorry, 
+  have hu := h_basis.eq_of_subset_indep hi (union_subset_union_left _ hIJ)
+    (union_subset_union hJX hI₀C.subset), 
+  
+  rw union_eq_union_iff_right at hu, 
+  have h1 := disjoint.subset_left_of_subset_union hu.1 hII₀,
+  have h2 := disjoint.subset_left_of_subset_union hu.2 hJI₀, 
+  exact h1.antisymm h2,  
+     
+    
+end 
+
+
+-- lemma project.basis_iff :
+--   (M // C).basis I X ↔ ∃ I₀, disjoint I₀ I ∧ M.basis I₀ C ∧ M.basis (I ∪ I₀) (X ∪ C) :=
+-- begin
+--   simp_rw [basis_iff_cl, project.cl_eq],
+--   split, 
+--   { rintro ⟨hIX, hXIC, hI⟩, 
+--     obtain ⟨I₀,hI₀⟩ := M.exists_basis C, 
+--     refine ⟨I₀, _, ⟨hI₀.subset,hI₀.subset_cl,λ J hJ₀ hCJ, hI₀.eq_of_supset_cl hJ₀ hCJ⟩, ⟨_,_,_⟩⟩,  
+--     { have := hI₀.indep},
+--     { exact union_subset_union hIX hI₀.subset}, 
+--     { rw [←cl_union_cl_right_eq_cl_union, hI₀.cl, cl_union_cl_right_eq_cl_union],
+--       exact union_subset hXIC ((subset_union_right _ _).trans (M.subset_cl _))},
+--     refine λ J hJ hXK, hJ.antisymm (union_subset _ _), 
+--     have := hI (J \ I₀) (diff_subset_iff.mpr (hJ.trans_eq (union_comm _ _))),
+--   }
+    
+--       -- ⟨union_subset_union hIX hI₀.subset,union_subset 
+--       --   (hXIC.trans (cl_subset_cl_of_subset_cl (union_subset 
+--       --   ((subset_union_left _ _).trans (M.subset_cl _)) _))) 
+--       --   _, _⟩⟩,
+--     -- { refine (hI₀.subset_cl.trans (M.cl_mono (subset_union_right _ _))), },
+--     -- { }      },
+-- end  
 
 lemma coe_r_project (M : matroid E) (C X : set E) : 
   ((M.project C).r X : ℤ) = M.r (X ∪ C) - M.r C :=
 begin
-  refine le_antisymm _ _, 
-  { rw [←nat.cast_sub (M.r_le_r_union_right X C)],
-    have hequiv := @r_le_iff_cl _ _ (M.project C) X,
-    zify at hequiv,  
-    simp_rw hequiv, 
-    obtain ⟨IC, hIC⟩ := M.exists_basis C, 
-    obtain ⟨I, hICI, hI⟩ := 
-      hIC.indep.subset_basis_of_subset (hIC.subset.trans (subset_union_right X C)), 
-      refine ⟨I \ IC, _, _⟩,     
-      { simp, },
+  obtain ⟨I,hI⟩ := (M.project C).exists_basis X, 
+  rw [←hI.r, hI.indep.r],
+  simp_rw [basis_iff_cl, project_cl_eq] at hI,  
+  -- refine le_antisymm _ _, 
+  -- { rw [←nat.cast_sub (M.r_le_r_union_right X C)],
+  --   have hequiv := @r_le_iff_cl _ _ (M.project C) X,
+  --   zify at hequiv,  
+  --   simp_rw hequiv, 
+  --   obtain ⟨IC, hIC⟩ := M.exists_basis C, 
+  --   obtain ⟨I, hICI, hI⟩ := 
+  --     hIC.indep.subset_basis_of_subset (hIC.subset.trans (subset_union_right X C)), 
+  --     refine ⟨I \ IC, _, _⟩,     
+  --     { simp, },
     
-    --simp_rw ←(add_le_add_iff_right (M.r C)) at this, 
-      },  
+  --   --simp_rw ←(add_le_add_iff_right (M.r C)) at this, 
+  --     },  
 end 
 
 

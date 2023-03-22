@@ -12,7 +12,7 @@ open_locale big_operators
 -/
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} 
-  {I B C X Y Z F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
+  {I J B C X Y Z F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
 
 open set 
 
@@ -262,6 +262,10 @@ begin
   exact (M.cl_mono (subset_insert _ _)).trans h', 
 end 
 
+lemma mem_cl_diff_singleton_iff_cl (he : e ∈ X) :
+  e ∈ M.cl (X \ {e}) ↔ M.cl (X \ {e}) = M.cl X :=
+⟨cl_diff_singleton_eq_cl, λ h, by {rw h, exact subset_cl _ _ he}⟩
+  
 lemma circuit.subset_cl_diff_singleton (hC : M.circuit C) (e : E) :
   C ⊆ M.cl (C \ {e}) :=
 begin
@@ -291,6 +295,25 @@ begin
   exact h x (hCI hxC) (cl_diff_singleton_eq_cl 
     (M.cl_mono (diff_subset_diff_left hCI) (hC.subset_cl_diff_singleton _ hxC))),
 end 
+ 
+ lemma indep_iff_not_mem_cl_diff_forall :
+  M.indep I ↔ ∀ x ∈ I, x ∉ M.cl (I \ {x}) :=
+begin
+  rw indep_iff_cl_diff_ne_forall, 
+  exact ⟨λ h, λ x hxI, by {rw mem_cl_diff_singleton_iff_cl hxI, exact h x hxI},
+    λ h x hxI, by {rw [ne.def, ←mem_cl_diff_singleton_iff_cl hxI], exact h x hxI}⟩, 
+end   
+
+lemma indep_iff_cl_ssubset_ssubset_forall : 
+  M.indep I ↔ ∀ J ⊂ I, M.cl J ⊂ M.cl I :=
+begin
+  refine ⟨λ hI J hJI, _, 
+    λ h, indep_iff_cl_diff_ne_forall.mpr (λ x hx, (h _ (diff_singleton_ssubset hx)).ne)⟩,
+  obtain ⟨e,heI,heJ⟩ := exists_of_ssubset hJI,
+  exact (M.cl_subset_cl_of_subset (subset_diff_singleton hJI.subset heJ)).trans_ssubset
+    ((M.cl_subset_cl_of_subset (diff_subset I {e})).ssubset_of_ne 
+    (indep_iff_cl_diff_ne_forall.mp hI e heI)), 
+end   
 
 lemma indep.not_mem_cl_iff (hI : M.indep I) : 
   x ∉ M.cl I ↔ x ∉ I ∧ M.indep (insert x I) :=  
@@ -304,11 +327,15 @@ begin
   have hIi := h hxI, 
   rwa [←r_lt_card_iff_dep, ←nat.add_one_le_iff, ncard_insert_of_not_mem hxI, add_le_add_iff_right, 
     ←hI.r] at hIi, 
-end 
+end   
 
 lemma indep.cl_diff_singleton_ssubset (hI : M.indep I) (he : e ∈ I) :
   M.cl (I \ {e}) ⊂  M.cl I :=
 ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
+
+lemma indep.cl_ssubset_ssubset (hI : M.indep I) (hJI : J ⊂ I) : 
+  M.cl J ⊂ M.cl I :=
+indep_iff_cl_ssubset_ssubset_forall.mp hI J hJI
 
 lemma subset_cl_iff_r_union_eq_r :
   X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
@@ -425,6 +452,39 @@ begin
     (hI.basis_cl.basis_subset (hI.subset.trans (subset_insert _ _)) 
       (insert_subset.mpr ⟨he,M.subset_cl _⟩)), 
 end 
+
+lemma basis_iff_cl : 
+  M.basis I X ↔ I ⊆ X ∧ X ⊆ M.cl I ∧ ∀ J ⊆ I, X ⊆ M.cl J → J = I :=          
+begin
+  revert I, 
+  by_contra' hcon, 
+  obtain ⟨I, hI, hImin⟩ := finite.exists_minimal _ hcon,   
+  apply hI,  
+  refine ⟨λ hI, ⟨hI.subset, hI.subset_cl, _ ⟩, _⟩, 
+  { by_contra' h', 
+    obtain ⟨J, ⟨hJI, hXJ, hJne⟩, hJmin⟩ := finite.exists_minimal _ h',  
+    refine hJne (hImin J (λ hJgood,_) hJI).symm, 
+    have hJ : M.basis J X, 
+    { rw hJgood, 
+      refine ⟨hJI.trans hI.subset, hXJ, λ J' hJ' hXJ', _⟩,
+      rw hJmin J' ⟨hJ'.trans hJI,hXJ',_⟩ hJ', 
+      rintro rfl, 
+      exact hJne (hJI.antisymm hJ')},
+    exact hJne (hJ.eq_of_subset_indep hI.indep hJI hI.subset)},
+  rintros ⟨hIX, hXI, hI⟩,
+  refine ⟨_,hIX,λ J hJ hIJ hJX, by_contra (λ hne, _)⟩,   
+  { rw indep_iff_cl_ssubset_ssubset_forall, 
+    intros J hJI, 
+    refine (M.cl_subset_cl_of_subset (hJI.subset)).ssubset_of_ne (λ he, hJI.ne _), 
+    exact hI J hJI.subset (hXI.trans_eq he.symm)},
+  rw indep_iff_cl_ssubset_ssubset_forall at hJ, 
+  refine ((hJ I (hIJ.ssubset_of_ne hne)).trans_subset (M.cl_mono hJX)).not_subset _,
+  exact cl_subset_cl_of_subset_cl hXI, 
+end 
+
+lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : 
+  J = I :=
+(basis_iff_cl.mp hI).2.2 J hJI hJ
 
 lemma flat.r_strict_mono (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) (h : F₁ ⊂ F₂) : 
   M.r F₁ < M.r F₂ :=
