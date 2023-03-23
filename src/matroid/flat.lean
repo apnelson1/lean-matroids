@@ -482,6 +482,25 @@ begin
   exact cl_subset_cl_of_subset_cl hXI, 
 end 
 
+lemma basis_union_iff_indep_cl : 
+  M.basis I (I ∪ X) ↔ M.indep I ∧ X ⊆ M.cl I := 
+begin
+  refine ⟨λ h, ⟨h.indep, (subset_union_right _ _).trans h.subset_cl⟩, _⟩,
+  rw basis_iff_cl, 
+  rintros ⟨hI, hXI⟩,
+  refine ⟨subset_union_left _ _, union_subset (M.subset_cl _) hXI, λ J hJI hJ, by_contra (λ h', _)⟩, 
+  obtain ⟨e,heI,heJ⟩ := exists_of_ssubset (hJI.ssubset_of_ne h'),  
+  have heJ' : e ∈ M.cl J, 
+    from hJ (or.inl heI), 
+  refine indep_iff_not_mem_cl_diff_forall.mp hI e heI (mem_of_mem_of_subset heJ' _), 
+  exact M.cl_subset_cl_of_subset (subset_diff_singleton hJI heJ), 
+end  
+
+lemma basis_iff_indep_cl : 
+  M.basis I X ↔ M.indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
+⟨λ h, ⟨h.indep, h.subset_cl, h.subset⟩, 
+  λ h, (basis_union_iff_indep_cl.mpr ⟨h.1,h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩ 
+
 lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : 
   J = I :=
 (basis_iff_cl.mp hI).2.2 J hJI hJ
@@ -526,7 +545,9 @@ begin
   exact r_le_iff_cl, 
 end 
 
-
+lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂.cl X) :
+  M₁ = M₂ := 
+eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h]) 
 
 /- Covering  -/
 

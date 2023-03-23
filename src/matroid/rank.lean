@@ -490,11 +490,9 @@ begin
   rw [h.2], exact hI.card_le_rk,   
 end 
 
-
-
 /- Nullity -/
 
-/-- The nullity of a set is its cardinality minus its rank -/
+/-- The nullity of a set is its cardinality minus its rank. Maybe not needed... -/
 def nullity (M : matroid E) (X : set E) : ℕ := 
   X.ncard - M.r X 
 
