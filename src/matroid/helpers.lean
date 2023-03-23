@@ -82,5 +82,15 @@ lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e �
 by rw [←union_singleton, ←union_singleton, union_diff_distrib, 
   diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
 
-
-
+lemma function.injective.compl_image {α β : Type*} {f : α → β} (hf : f.injective) (X : set α) :
+  (f '' X)ᶜ = f '' (Xᶜ) ∪ (range f)ᶜ := 
+begin
+  apply compl_injective, 
+  simp_rw [compl_union, compl_compl], 
+  refine (subset_inter _ (image_subset_range _ _)).antisymm _, 
+  { rintro x ⟨y, hy, rfl⟩ ⟨z,hz, hzy⟩,
+    rw [hf hzy] at hz, 
+    exact hz hy},
+  rintro x ⟨hx, ⟨y, rfl⟩⟩, 
+  exact ⟨y, by_contra (λ (hy : y ∈ Xᶜ), hx (mem_image_of_mem _ hy)), rfl⟩,    
+end   

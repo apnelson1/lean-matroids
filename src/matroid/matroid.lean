@@ -33,7 +33,7 @@ def indep (M : matroid E) (I : set E) : Prop :=
   ∃ B, M.base B ∧ I ⊆ B   
 
 /-- A basis for a set `X` is a maximal independent subset of `X`
-  (Often, the word 'basis' is used to refer to what we call a 'base')-/
+  (Often in the literature, the word 'basis' is used to refer to what we call a 'base')-/
 def basis (M : matroid E) (I X : set E) : Prop := 
   M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J 
 
@@ -56,6 +56,10 @@ def hyperplane (M : matroid E) (H : set E) : Prop :=
 /-- A cocircuit is the complement of a hyperplane -/
 def cocircuit (M : matroid E) (K : set E) : Prop := 
   M.hyperplane Kᶜ  
+
+/-- A coindependent set is one that contains no cocircuit -/
+def coindep (M : matroid E) (I : set E) : Prop := 
+  ¬ ∃ K ⊆ I, M.cocircuit K     
 
 /-- A loop is a singleton circuit -/
 def loop (M : matroid E) (e : E) : Prop :=
@@ -131,8 +135,34 @@ begin
   exact hy.2 (hB₁B₂ hy.1), 
 end 
 
-
 end base 
+
+section iso 
+
+variables {E₀ E₁ E₂ : Type*} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
+
+def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) := 
+  ∀ B, M₁.base B ↔ M₂.base (e '' B)  
+
+structure iso (M₁ : matroid E₁) (M₂ : matroid E₂) := 
+(to_fun : E₁ ≃ E₂)
+(on_base : ∀ B, M₁.base B ↔ M₂.base (to_fun '' B))
+
+infix ` ≃i ` :75 :=  matroid.iso
+
+instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, E₁ → E₂) :=
+  ⟨λ e, e.to_fun⟩  
+
+def iso.refl (M : matroid E) : M ≃i M := ⟨equiv.refl E, λ B, by simp⟩   
+def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := ⟨e.to_fun.symm, λ B, by {rw e.on_base, simp, }⟩  
+-- def iso.trans (e₀₁ : M₀ ≃i M₁) (e₁₂ : M₁ ≃i M₂) : M₀ ≃i M₂ := 
+--   ⟨e₀₁.to_fun.trans  e₁₂.to_fun, λ B, by {simp, }⟩ 
+
+
+
+
+end iso 
+
 end matroid 
 
 -- TODO : prove strong basis exchange (and hence define duality) in this file. 

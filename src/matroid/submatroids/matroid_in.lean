@@ -10,9 +10,9 @@ variables {E α : Type*} [finite E] [finite α]
 /-- a matroid_in `α` is a matroid defined on some subset `E` of `α`. Implemented as a matroid on 
   which the nonelements of `E` are all loops. -/
 
-structure matroid_in (E : Type*) [finite E] :=
-(ground : set E)
-(carrier : matroid E)
+@[ext] structure matroid_in (α : Type*) [finite α] :=
+(ground : set α)
+(carrier : matroid α)
 (support : groundᶜ ⊆ carrier.cl ∅)
 
 namespace matroid_in 
@@ -20,41 +20,41 @@ namespace matroid_in
 section defs
 /- Definitions -/
 
-variables (M : matroid_in E)
+variables (M : matroid_in α)
 
-def indep (I : set E) : Prop := 
+def indep (I : set α) : Prop := 
   M.carrier.indep I 
 
-def base (B : set E) : Prop := 
+def base (B : set α) : Prop := 
   M.carrier.base B
 
-def circuit (C : set E) : Prop := 
+def circuit (C : set α) : Prop := 
   M.carrier.circuit C
 
-def r (X : set E) : ℕ := 
+def r (X : set α) : ℕ := 
   M.carrier.r X 
 
-def flat (F : set E) : Prop := 
+def flat (F : set α) : Prop := 
   M.carrier.flat (F ∪ M.groundᶜ) ∧ F ⊆ M.ground 
 
-def cl (X : set E) : set E := 
+def cl (X : set α) : set α := 
   M.carrier.cl X ∩ M.ground
 
-def hyperplane (H : set E) : Prop :=
+def hyperplane (H : set α) : Prop :=
   M.flat H ∧ ∀ F, M.flat F → H ⊂ F → F = M.ground
 
-def loop (e : E) : Prop :=
+def loop (e : α) : Prop :=
   M.carrier.loop e ∧ e ∈ M.ground 
 
-def coloop (e : E) : Prop :=
+def coloop (e : α) : Prop :=
   M.carrier.coloop e 
 
-def cocircuit (K : set E) : Prop :=
+def cocircuit (K : set α) : Prop :=
   M.carrier.cocircuit K ∧ K ⊆ M.ground
 
 end defs 
 
-variables {M₁ M₂ M : matroid_in E} {X I B C : set E} {e f x y : E}
+variables {M₁ M₂ M : matroid_in α} {X I B C : set α} {e f x y : α}
 
 lemma subset_ground_of_disjoint_loops (hX : disjoint X (M.carrier.cl ∅)) : 
   X ⊆ M.ground :=
@@ -69,8 +69,14 @@ begin
   exact he (M.support h')
 end 
 
+lemma subset_ground_of_base (hB : M.carrier.base B) : 
+  B ⊆ M.ground := 
+sorry 
+
+
+
 /-- A `matroid_in` gives a matroid on a subtype -/
-def to_matroid (M : matroid_in E) : 
+def to_matroid (M : matroid_in α) : 
   matroid M.ground :=
 { base := M.carrier.base ∘ (set.image coe),
   exists_base' := 
@@ -86,7 +92,7 @@ def to_matroid (M : matroid_in E) :
   begin
     rintro B₁ B₂ hB₁ hB₂ a ha, 
     simp only [function.comp_app] at hB₁ hB₂, 
-    have ha' : (a : E) ∈ (coe '' B₁) \ (coe '' B₂), 
+    have ha' : (a : α) ∈ (coe '' B₁) \ (coe '' B₂), 
     { rw [←image_diff (subtype.coe_injective), mem_image], exact ⟨a,ha,rfl⟩},
     obtain ⟨y,hy,hy'⟩ :=  hB₁.exchange hB₂ ha', 
     refine ⟨⟨y, mem_ground_of_nonloop (hB₂.indep.nonloop_of_mem hy.1)⟩, _, _⟩,   
@@ -98,8 +104,8 @@ def to_matroid (M : matroid_in E) :
   end }
 
 /-- A `matroid` on a subtype gives a `matroid_in` -/
-def of_matroid_in {ground : set E} (M : matroid ground) :
-  matroid_in E :=
+def of_matroid_in {ground : set α} (M : matroid ground) :
+  matroid_in α :=
 { ground := ground,
   carrier := 
   { base := λ B, M.base (coe ⁻¹' B) ∧ B ⊆ ground ,
@@ -135,18 +141,38 @@ def of_matroid_in {ground : set E} (M : matroid ground) :
     exact he (hB heB), 
   end) }
 
-@[simp] lemma of_matroid_in_base_iff {ground : set E} {M : matroid ground} :
+@[simp] lemma of_matroid_in_base_iff {ground : set α} {M : matroid ground} :
   (of_matroid_in M).base B ↔ M.base (coe ⁻¹' B) ∧ B ⊆ ground :=
 iff.rfl 
 
-@[simp] lemma to_matroid_base_iff {M : matroid_in E} {B : set M.ground}:
+@[simp] lemma to_matroid_base_iff {M : matroid_in α} {B : set M.ground}:
   M.to_matroid.base B ↔ M.base (coe '' B) :=
 iff.rfl 
+
+lemma eq_of_to_matroid_congr {M₁ M₂ : matroid_in α} (h : M₁.ground = M₂.ground) 
+(hcongr : is_iso M₁.to_matroid M₂.to_matroid (equiv.subtype_equiv_prop h)) : 
+  M₁ = M₂ :=
+begin
+  ext B, rw h, 
+  ext B, 
+  simp_rw [is_iso, to_matroid_base_iff] at hcongr,
+  by_cases hB : B ⊆ M₁.ground, 
+  { have := hcongr (coe ⁻¹' B), 
+    simp at this,
+    rw inter_eq_left_iff_subset.mpr hB at this,  }, 
+
+-- WIP z
+  
+  
+   
+end 
+-- def congr (M₁ M₂ : matroid_in α) := 
+--   ∃  
 
 section dual
 
 /-- The dual of a `matroid_in` -/
-def dual (M : matroid_in E) : matroid_in E := 
+def dual (M : matroid_in α) : matroid_in α := 
   of_matroid_in (M.to_matroid.dual) 
 
 lemma dual_base_iff : 
@@ -154,23 +180,14 @@ lemma dual_base_iff :
 by simp only [dual, of_matroid_in_base_iff, matroid.dual_base_iff, to_matroid_base_iff,   
     image_compl_preimage, subtype.range_coe_subtype, set_of_mem_eq]
 
+@[simp] lemma dual_dual (M : matroid_in α) : 
+  M.dual.dual = M := 
+begin
+
+end 
+
 
 end dual
-
-section loopify_project
-
-def loopify ()
-
-end loopify_project
-
-section minor 
-
-def delete (M : matroid_in E) (D : set E) : matroid_in E := 
-{ ground := _,
-  carrier := _,
-  support := _ }
-
-end minor 
 
 
 

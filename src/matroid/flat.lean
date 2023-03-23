@@ -12,7 +12,7 @@ open_locale big_operators
 -/
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} 
-  {I J B C X Y Z F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
+  {I I₁ I₂ B₁ B₂ J B C X Y Z F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
 
 open set 
 
@@ -430,6 +430,21 @@ begin
   exact hI.basis_cl, 
 end 
 
+lemma base_subset_iff_cl_eq_univ :
+  (∃ B ⊆ X, M.base B) ↔ M.cl X = univ :=
+begin
+  split, 
+  { rintro ⟨B, hBX, hB⟩, 
+    have h' := M.cl_subset_cl_of_subset hBX,
+    rw [hB.cl] at h', 
+    exact h'.antisymm' (subset_univ _)},
+  intro h, 
+  obtain ⟨I, hIX⟩ := M.exists_basis X, 
+  have h' := hIX.basis_cl, 
+  rw [h, ←base_iff_basis_univ] at h', 
+  exact ⟨I, hIX.subset, h'⟩,   
+end 
+
 lemma basis.insert_basis_insert_of_not_mem_cl (hI : M.basis I X) (he : e ∉ M.cl X) :
   M.basis (insert e I) (insert e X) :=
 begin
@@ -505,6 +520,82 @@ lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl 
   J = I :=
 (basis_iff_cl.mp hI).2.2 J hJI hJ
 
+/- ### Basis exchange -/
+/- These lemmas doesn't actually use closure in their statements, but we prove them using closure.
+  TODO : Avoid cardinality in the proofs. -/
+
+/- Given two bases `I₁,I₂` of `X` and an element `e` of `I₁ \ I₂`, we can find an `f ∈ I₂ \ I₁`
+  so that swapping `e` for `f` in yields bases in both `I₁` and `I₂`.  -/
+theorem basis.strong_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) : 
+  ∃ f ∈ I₂ \ I₁, M.basis (insert e (I₂ \ {f})) X ∧ M.basis (insert f (I₁ \ {e})) X := 
+begin
+  by_contra, 
+  simp_rw [not_exists, not_and] at h, 
+  
+  have heX : e ∈ X := hI₁.subset he.1,  
+  obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=   
+    hI₂.indep.unique_circuit_of_insert e (hI₂.insert_dep ⟨heX, he.2⟩), 
+  
+  have hCss := diff_singleton_subset_iff.mpr hCB₂, 
+
+  simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique, 
+  have hC_exchange : ∀ f ∈ C \ {e}, M.basis (insert e (I₂ \ {f})) X, 
+  { rintros y ⟨hyC, hyx⟩, 
+    
+    rw [basis_iff_indep_card, ncard_exchange he.2 (hCss ⟨hyC,hyx⟩), hI₂.card, eq_self_iff_true, 
+      and_true],
+    refine ⟨by_contra (λ hdep, _), insert_subset.mpr ⟨heX, ((diff_subset _ _).trans hI₂.subset)⟩⟩,  
+    
+    rw [dep_iff_supset_circuit] at hdep, 
+    obtain ⟨C', hC'ss, hC'⟩ := hdep, 
+    have  hC'e : e ∈ C', 
+    { by_contra he', 
+      exact hC'.dep (hI₂.indep.subset (((subset_insert_iff_of_not_mem he').mp hC'ss).trans 
+          (diff_subset _ _)))},
+    have := hCunique C' (hC'ss.trans (insert_subset_insert (diff_subset _ _))) hC' hC'e,  
+    subst this, 
+    simpa using hC'ss hyC},
+  
+  have hcl : ∀ f ∈ I₂ \ M.cl (I₁ \ {e}), M.basis (insert f (I₁ \ {e})) X, 
+  { rintro f ⟨hf₂, hf₁⟩, 
+    obtain rfl | hfe := em (f = e), 
+    { rwa [insert_diff_singleton, insert_eq_self.mpr he.1]},
+    have hfI₁ : f ∉ I₁, from 
+      λ hfI₁, hf₁ (M.subset_cl (I₁ \ {e}) (mem_diff_singleton.mpr ⟨hfI₁, hfe⟩)), 
+    simp_rw [basis_iff_indep_card, indep_iff_r_eq_card, ncard_exchange hfI₁ he.1, 
+      hI₁.card, eq_self_iff_true, and_true, ←hI₁.card, not_mem_cl.mp hf₁, insert_subset,
+      (hI₁.indep.diff {e}).r, ncard_diff_singleton_add_one he.1, eq_self_iff_true, true_and], 
+    exact ⟨hI₂.subset hf₂, (diff_subset _ _).trans hI₁.subset⟩},
+
+  have hss : C \ {e} ⊆ M.cl (I₁ \ {e}), 
+  from λ f hf, by_contra (λ hf', h _ ⟨hCss hf, λ hf₁, hf' (M.subset_cl _ ⟨hf₁,hf.2⟩)⟩ 
+      (hC_exchange f hf) (hcl _ ⟨hCss hf,hf'⟩)), 
+  
+  have he' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2, 
+  rw [mem_cl, insert_diff_singleton, insert_eq_of_mem he.1, hI₁.indep.r, (hI₁.indep.diff _).r, 
+    ←ncard_diff_singleton_add_one he.1] at he', 
+  simpa only [nat.succ_ne_self] using he', 
+end     
+
+/- This lemma is tantamount to saying that matroid restriction is well-defined. -/
+lemma basis.exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) : 
+  ∃ f ∈ I₂ \ I₁, M.basis (insert f (I₁ \ {e})) X := 
+(hI₁.strong_exchange hI₂ he).imp (λ h, Exists.imp (λ h', and.right))
+
+lemma basis.rev_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) : 
+  ∃ f ∈ I₂ \ I₁, M.basis (insert e (I₂ \ {f})) X := 
+(hI₁.strong_exchange hI₂ he).imp (λ h, Exists.imp (λ h', and.left))
+
+theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
+  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) ∧ M.base (insert y (B₁ \ {x})) :=
+by {simp_rw base_iff_basis_univ at *, exact hB₁.strong_exchange hB₂ hx}
+
+lemma base.rev_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
+  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) :=
+(hB₁.strong_exchange hB₂ hx).imp (by {rintro y ⟨hy,h,-⟩, use [hy,h]})
+
+/- ### Flats and rank -/
+
 lemma flat.r_strict_mono (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) (h : F₁ ⊂ F₂) : 
   M.r F₁ < M.r F₂ :=
 begin
@@ -549,7 +640,7 @@ lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂
   M₁ = M₂ := 
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h]) 
 
-/- Covering  -/
+/- ### Covering  -/
 
 /-- A set is covered by another in a matroid if they are strictly nested flats, with no flat 
   between them . -/
@@ -615,7 +706,7 @@ begin
   refl, 
 end  
 
-/- Hyperplanes -/
+/- ### Hyperplanes -/
 
 lemma hyperplane_def :
   M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
@@ -661,6 +752,10 @@ begin
   refine by_contra (λ hne, hFne _),
   rw [←hmax F (ssubset_of_ne_of_subset hne hHF), hF.cl], 
 end   
+
+lemma hyperplane_iff_maximal_not_supset_base :
+  M.hyperplane H ↔ (¬∃ B ⊆ H, M.base B) ∧ ∀ X, H ⊂ X → ∃ B ⊆ X, M.base B :=
+by simp_rw [hyperplane_iff_maximal_cl_ne_univ, ne.def, ←base_subset_iff_cl_eq_univ]
 
 lemma hyperplane_iff_maximal_r : 
   M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → M.r X = M.rk :=
@@ -779,6 +874,18 @@ begin
      (hHX.subset.trans (M.subset_cl _)),  
   exact M.subset_cl _,
 end   
+
+lemma subset_hyperplane_iff_cl_ne_univ :
+  M.cl Y ≠ univ ↔ ∃ H, M.hyperplane H ∧ Y ⊆ H :=
+begin
+  refine ⟨λ h, _,_⟩,
+  { obtain ⟨H, hH, hYH⟩ := (M.cl_flat Y).subset_hyperplane_of_ne_univ h,  
+    exact ⟨H, hH, (M.subset_cl Y).trans hYH⟩},
+  rintro ⟨H, hH, hYH⟩ hY, 
+  refine hH.ssubset_univ.not_subset _, 
+  rw ←hH.flat.cl,  
+  exact (hY.symm.trans_subset (M.cl_mono hYH)), 
+end  
 
 /- This follows more easily from a rank argument, but I'm trying to avoid rank. -/
 lemma hyperplane.inter_right_covby_of_inter_left_covby 

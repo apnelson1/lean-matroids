@@ -235,6 +235,10 @@ lemma basis.dep_of_ssubset (hI : M.basis I X) {Y : set E} (hIY : I ⊂ Y) (hYX :
   ¬ M.indep Y :=
 λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX)
 
+lemma basis.insert_dep (hI : M.basis I X) (he : e ∈ X \ I) : 
+  ¬M.indep (insert e I) :=
+hI.dep_of_ssubset (ssubset_insert he.2) (insert_subset.mpr ⟨he.1,hI.subset⟩)
+
 lemma basis.not_basis_of_ssubset (hI : M.basis I X) (hJI : J ⊂ I) :
   ¬ M.basis J X :=
 λ h, hJI.ne (h.eq_of_subset_indep hI.indep hJI.subset hI.subset)
@@ -256,6 +260,14 @@ begin
   subst this, 
   exact hI'.2.1.ne rfl, 
 end 
+
+lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) :
+  J = I :=
+hJ.eq_of_subset_indep hI hJ.subset subset.rfl
+
+lemma indep.basis_self (hI : M.indep I) :
+  M.basis I I :=
+⟨hI, rfl.subset, λ J hJ, subset_antisymm⟩  
 
 lemma exists_basis (M : matroid E) (X : set E) : 
   ∃ I, M.basis I X :=
@@ -300,6 +312,80 @@ end matroid
 
 section from_axioms 
 
+/-- A collection of sets satisfying the independence axioms determines a matroid -/
+def matroid_of_indep (indep : set E → Prop) 
+(exists_ind : ∃ I, indep I)
+(ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
+(ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
+  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) : 
+  matroid E :=
+{ base := λ B, indep B ∧ ∀ X, indep X → B ⊆ X → X = B,
+  exists_base' := 
+    by exact 
+      (@set.finite.exists_maximal_wrt (set E) (set E) _ id indep (to_finite _) exists_ind).imp 
+      (λ B hB, exists.elim hB (λ hB h, ⟨hB, λ X hX hBX, (h X hX hBX).symm⟩)), 
+  base_exchange' := 
+  begin  
+    set is_base := λ (B : set E), indep B ∧ ∀ X, indep X → B ⊆ X → X = B with hbase, 
+    rintro B₁ B₂ hB₁ hB₂ x ⟨hxB₁,hxB₂⟩,
+
+    have h_base_iff : ∀ B B' (hB' : is_base B'),
+      is_base B ↔ indep B ∧ B'.ncard ≤ B.ncard, 
+    { intros B B' hB', split, 
+      { refine λ hB, ⟨hB.1, le_of_not_lt (λ hlt, _)⟩, 
+        obtain ⟨e,heB,heB',he⟩ := ind_aug B B' hB.1 hB'.1 hlt, 
+        exact heB' (by simpa using hB.2 _ he (subset_insert _ _))},  
+      rintros ⟨hBI, hB'B⟩ , 
+      refine ⟨hBI, λ J hJ hBJ, (hBJ.antisymm (by_contra (λhJB, _))).symm⟩, 
+      have hss := ssubset_of_subset_not_subset hBJ hJB, 
+      obtain ⟨e,heJ,heB',he⟩ := 
+        ind_aug B' J hB'.1 hJ (hB'B.trans_lt (ncard_lt_ncard hss)), 
+      exact heB' (by simpa using hB'.2 _ he (subset_insert _ _))},
+    
+    simp_rw [h_base_iff _ _ hB₁, mem_diff], 
+    have hcard : (B₁ \ {x}).ncard < B₂.ncard, 
+    { rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one hxB₁],
+      exact ((h_base_iff _ _ hB₁).mp hB₂).2},
+
+    obtain ⟨e,heB₂,heB₁x,he⟩ := 
+      ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁.1) hB₂.1 hcard, 
+    have hex : e ≠ x := by {rintro rfl, exact hxB₂ heB₂},  
+    have heB₁ : e ∉ B₁, 
+    { simp only [mem_diff, mem_singleton_iff, not_and, not_not] at heB₁x,
+      exact λ h', hex (heB₁x h')},
+    
+    refine ⟨e,⟨heB₂,heB₁⟩,he,_⟩, 
+    rwa [ncard_insert_of_not_mem heB₁x, ncard_diff_singleton_add_one], 
+  end  }
+
+@[simp] lemma matroid_of_indep_base_iff {indep : set E → Prop} 
+  (exists_ind : ∃ I, indep I)
+  (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
+  (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
+    ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) {B : set E }: 
+(matroid_of_indep indep exists_ind ind_mono ind_aug).base B ↔ 
+  indep B ∧ ∀ X, indep X → B ⊆ X → X = B :=
+iff.rfl 
+
+@[simp] lemma matroid_of_indep_apply {indep : set E → Prop} 
+  (exists_ind : ∃ I, indep I)
+  (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
+  (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
+    ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) : 
+  (matroid_of_indep indep exists_ind ind_mono ind_aug).indep = indep :=
+begin
+  ext I,
+  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep], 
+  split, 
+  { rintro ⟨B, ⟨hBi,hB⟩, hIB⟩, 
+    exact ind_mono _ _ hIB hBi},
+  intro hI, 
+  obtain ⟨B,hBi, hB⟩ := 
+    @set.finite.exists_maximal_wrt (set E) (set E) _ id {J | I ⊆ J ∧ indep J} (to_finite _)
+    ⟨I, subset_refl I, hI⟩, 
+  simp only [mem_set_of_eq, id.def, le_eq_subset, and_imp] at hB hBi, 
+  exact ⟨B, ⟨hBi.2, λ X hX hBX, (hB _ (hBi.1.trans hBX) hX hBX).symm⟩, hBi.1⟩, 
+end 
 
 end from_axioms 
 

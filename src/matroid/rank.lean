@@ -60,6 +60,10 @@ begin
   have := h I hIX.indep hIX.subset, rwa ←hI, 
 end 
 
+lemma r_mono (M : matroid E) {X Y : set E} (hXY : X ⊆ Y) : 
+  M.r X ≤ M.r Y :=
+by {simp_rw [r_le_iff, le_r_iff], exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl⟩}
+
 lemma basis.card (hIX : M.basis I X) : 
   I.ncard = M.r X := 
 by {rw [eq_comm, eq_r_iff], exact ⟨_, hIX, rfl⟩}
@@ -88,6 +92,19 @@ begin
   suffices hIJ : J = I, rwa ←hIJ, 
   exact eq_of_subset_of_ncard_le hJI hJcard.symm.le,
 end 
+
+lemma basis_iff_indep_card : 
+  M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.r X :=
+begin
+  refine ⟨λ hI, ⟨hI.indep, hI.subset, hI.card⟩, _⟩, 
+  rintro ⟨hI, hIX, hIcard⟩, 
+  obtain ⟨I', hII', hI'X⟩ := hI.subset_basis_of_subset hIX, 
+  rw [eq_comm, ←hI.r] at hIcard, 
+  have h := ((M.r_mono hI'X.subset).trans_eq hIcard).antisymm (M.r_mono hII'), 
+  rw [hI.r, hI'X.indep.r] at h, 
+  rwa [eq_of_subset_of_ncard_le hII' h.le], 
+end 
+
 
 @[simp] lemma r_empty (M : matroid E) : 
   M.r ∅ = 0 :=

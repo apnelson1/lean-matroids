@@ -9,59 +9,6 @@ variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} {B B₁ B₂ X Y Z : 
 open set
 namespace matroid 
 
-/-- We can exchange in both directions at one -/
-theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
-  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) ∧ M.base (insert y (B₁ \ {x})) :=
-begin
-  by_contra, 
-  simp_rw [not_exists, not_and] at h, 
-  
-  obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=   
-  hB₂.indep.unique_circuit_of_insert x (hB₂.insert_dep hx.2), 
-  
-  have hCss := diff_singleton_subset_iff.mpr hCB₂, 
-
-  simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique, 
-  have hC_exchange : ∀ y ∈ C \ {x}, M.base (insert x (B₂ \ {y})), 
-  { rintros y ⟨hyC, hyx⟩, 
-    
-    rw [base_iff_indep_card, ncard_exchange hx.2 (hCss ⟨hyC,hyx⟩), hB₂.card, eq_self_iff_true, 
-      and_true],
-    by_contra hdep, 
-    rw [dep_iff_supset_circuit] at hdep, 
-    obtain ⟨C', hC'ss, hC'⟩ := hdep, 
-    have  hC'x : x ∈ C', 
-    { by_contra hx', 
-      exact hC'.dep (hB₂.indep.subset (((subset_insert_iff_of_not_mem hx').mp hC'ss).trans 
-          (diff_subset _ _)))},
-    have := hCunique C' (hC'ss.trans (insert_subset_insert (diff_subset _ _))) hC' hC'x,  
-    subst this, 
-    simpa using hC'ss hyC},
-  
-  have hcl : ∀ y ∈ B₂ \ M.cl (B₁ \ {x}), M.base (insert y (B₁ \ {x})), 
-  { rintro y ⟨hy₂, hy₁⟩, 
-    obtain rfl | hyx := em (y = x), 
-    { rwa [insert_diff_singleton, insert_eq_self.mpr hx.1]},
-    have hyB₁ : y ∉ B₁, from 
-      λ hyB₁, hy₁ (M.subset_cl (B₁ \ {x}) (mem_diff_singleton.mpr ⟨hyB₁, hyx⟩)), 
-    simp_rw [base_iff_indep_card, indep_iff_r_eq_card, ncard_exchange hyB₁ hx.1, 
-      hB₁.card, eq_self_iff_true, and_true, ←hB₁.card, not_mem_cl.mp hy₁, 
-      (hB₁.indep.diff {x}).r, ncard_diff_singleton_add_one hx.1]},
-
-  have hss : C \ {x} ⊆ M.cl (B₁ \ {x}), 
-  from λ y hy, by_contra (λ hy', h _ ⟨hCss hy, λ hy₁, hy' (M.subset_cl _ ⟨hy₁,hy.2⟩)⟩ 
-      (hC_exchange y hy) (hcl _ ⟨hCss hy,hy'⟩)), 
-  
-  have hx' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2, 
-  rw [mem_cl, insert_diff_singleton, insert_eq_of_mem hx.1, hB₁.indep.r, (hB₁.indep.diff _).r, 
-    ←ncard_diff_singleton_add_one hx.1] at hx', 
-  simpa only [nat.succ_ne_self] using hx', 
-end     
-
-lemma base.rev_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
-  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) :=
-(hB₁.strong_exchange hB₂ hx).imp (by {rintro y ⟨hy,h,-⟩, use [hy,h]})
-
 section dual 
 
 /-- The dual of a matroid. Its bases are the complements of bases -/
@@ -109,6 +56,26 @@ begin
     exact ⟨_,hB,by rwa [←subset_compl_iff_disjoint_left, compl_compl]⟩},
   rintro ⟨B,hB,hBX⟩, 
   exact ⟨Bᶜ,by rwa compl_compl,subset_compl_iff_disjoint_left.mpr hBX⟩,
+end 
+
+lemma dual_indep_iff_coindep : 
+  M.dual.indep X ↔ M.coindep X := 
+begin
+  rw [dual_indep_iff, ←compl_compl X],
+  set Y := Xᶜ with hY, 
+  simp_rw [disjoint_compl_right_iff_subset, coindep, not_exists, cocircuit],
+  rw [(by {split, tauto, tauto} : (∃ (B : set E), M.base B ∧ B ⊆ Y) ↔ (∃ B ⊆ Y, M.base B)), 
+    base_subset_iff_cl_eq_univ], 
+
+  split, 
+  { intros hYcl K hKY hK, 
+    rw subset_compl_comm at hKY, 
+    exact ((hYcl.symm.trans_subset (M.cl_mono hKY)).trans_eq 
+      (hK.flat.cl)).not_ssubset (hK.ssubset_univ)},
+  rintro h, by_contra h', 
+  rw [←ne.def, subset_hyperplane_iff_cl_ne_univ] at h', 
+  obtain ⟨H, hH, hYH⟩ := h',
+  refine h Hᶜ (compl_subset_compl.mpr hYH) (by rwa compl_compl),  
 end 
 
 lemma dual_indep_iff_r : 
