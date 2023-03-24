@@ -1,10 +1,6 @@
-
 import ..dual
 
 open_locale classical 
-noncomputable theory
-
-universes u v w 
 
 open set list 
 
@@ -104,12 +100,9 @@ section quotient
 /-- a quotient of M is a matroid N for which rank differences of nested pairs in N are at most
 the corresponding rank differences in M. This is equivalent to the existence of a matroid P for 
 which M is a deletion of P and N is a contraction of P, but we do not show this equivalence here.
-
-/- TODO : define this in terms of something other than `r` -/
 -/
 def is_quotient (N M : matroid E) := 
   ∀ X, M.cl X ⊆ N.cl X
-  --∀ X Y, X ⊆ Y → N.r Y - N.r X ≤ M.r Y - M.r X
 
 reserve infixl ` ≼ `:75
 infix ` ≼ ` :=  is_quotient 

@@ -11,8 +11,10 @@ and 'loopification'.
 The advantage of this over taking minors is that we stay in the Type `matroid E` rather than 
 changing the ground set and having to deal with type equality . In practice it seems 
 that many proofs that involve manipulating minors can be phrased only in terms of these modified 
-minor-like-objects, which we call pseudominors. Kung's theorem and the matroid intersection theorem
-are currently both proved in this way. 
+minor-like-objects, which we call pseudominors. 
+
+Kung's theorem and the matroid intersection theorem are currently both proved in this way. 
+(or at least will be once I fix them again)
 -/
  
 noncomputable theory 
