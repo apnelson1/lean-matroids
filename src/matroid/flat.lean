@@ -181,6 +181,10 @@ lemma cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) :
   M.cl X ⊆ M.cl Y :=
 by simpa only [cl_cl] using M.cl_subset_cl_of_subset hXY
 
+lemma cl_subset_cl_iff_subset_cl : 
+  M.cl X ⊆ M.cl Y ↔ X ⊆ M.cl Y :=
+⟨λ h, (M.subset_cl _).trans h, cl_subset_cl_of_subset_cl⟩  
+
 lemma subset_cl_of_subset (M : matroid E) (hXY : X ⊆ Y) :
   X ⊆ M.cl Y :=
 hXY.trans (M.subset_cl Y)
@@ -360,7 +364,7 @@ end
 lemma cl_flat (M : matroid E) (X : set E) :
   M.flat (M.cl X) :=
 λ I Y hIcl hIY, hIY.subset_cl.trans (cl_subset_cl_of_subset_cl hIcl.subset)
-
+  
 lemma flat_iff_cl_self :
   M.flat F ↔ M.cl F = F :=
 begin 
@@ -519,6 +523,34 @@ lemma basis_iff_indep_cl :
 lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : 
   J = I :=
 (basis_iff_cl.mp hI).2.2 J hJI hJ
+
+lemma empty_basis_iff :
+  M.basis ∅ X ↔ X ⊆ M.cl ∅ :=
+begin
+  simp only [basis_iff_cl, empty_subset, true_and, and_iff_left_iff_imp], 
+  exact λ h J hJ hXJ, subset_empty_iff.mp hJ, 
+end   
+
+lemma mem_cl_iff_exists_circuit : 
+  e ∈ M.cl X ↔ e ∈ X ∨ ∃ C, M.circuit C ∧ e ∈ C ∧ C \ {e} ⊆ X :=
+begin
+  refine ⟨λ h, _,_⟩, 
+  { by_contra' h', 
+    obtain ⟨I, hI⟩ := M.exists_basis X, 
+    have hIe : ¬ M.indep (insert e I), 
+    { intro hI', 
+      refine indep_iff_not_mem_cl_diff_forall.mp hI' e (mem_insert _ _) _,
+      rwa [insert_diff_of_mem _ (mem_singleton _), 
+        diff_singleton_eq_self (not_mem_subset hI.subset h'.1), hI.cl]},   
+    obtain ⟨C,⟨hCeI, hC, heC⟩,-⟩ :=  hI.indep.unique_circuit_of_insert _ hIe, 
+    refine h'.2 C hC heC (diff_subset_iff.mpr (hCeI.trans _)), 
+    rw singleton_union, 
+    apply insert_subset_insert hI.subset},
+  rintro (heX | ⟨C,hC, heC, hCX⟩),
+  { exact (M.subset_cl X) heX},
+  exact (M.cl_mono hCX) (hC.subset_cl_diff_singleton e heC), 
+end 
+
 
 /- ### Basis exchange -/
 /- These lemmas doesn't actually use closure in their statements, but we prove them using closure.

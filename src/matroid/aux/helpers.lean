@@ -94,3 +94,15 @@ begin
   rintro x ⟨hx, ⟨y, rfl⟩⟩, 
   exact ⟨y, by_contra (λ (hy : y ∈ Xᶜ), hx (mem_image_of_mem _ hy)), rfl⟩,    
 end   
+
+lemma singleton_inter_eq_of_mem {α : Type*} {x : α} {s : set α} (hx : x ∈ s) : 
+  {x} ∩ s = {x} := 
+(inter_subset_left _ _).antisymm (subset_inter subset_rfl (singleton_subset_iff.mpr hx))
+
+lemma inter_singleton_eq_of_mem {α : Type*} {x : α} {s : set α} (hx : x ∈ s) : 
+  s ∩ {x} = {x} := 
+(inter_subset_right _ _).antisymm (subset_inter (singleton_subset_iff.mpr hx) subset_rfl)
+
+@[simp] lemma diff_diff_cancel_right {α : Type*} (s t : set α) : 
+  s \ (t \ s) = s :=  
+(diff_subset _ _).antisymm (λ x hx, ⟨hx, λ h, h.2 hx⟩)

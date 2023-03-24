@@ -222,6 +222,18 @@ lemma basis_iff :
   M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J := 
 iff.rfl 
 
+@[simp] lemma basis_empty_iff (M : matroid E) : 
+  M.basis I ∅ ↔ I = ∅ :=
+begin
+  refine ⟨λ h, subset_empty_iff.mp h.subset, _⟩,     
+  rintro rfl, 
+  exact ⟨M.empty_indep, empty_subset _, λ J h h' hJ, h'.antisymm hJ⟩,  
+end  
+
+lemma empty_basis_empty (M : matroid E) :
+  M.basis ∅ ∅ :=
+M.basis_empty_iff.mpr rfl  
+
 lemma basis.eq_of_subset_indep (hI : M.basis I X) {J : set E} (hJ : M.indep J) (hIJ : I ⊆ J) 
 (hJX : J ⊆ X) : 
   I = J := 
@@ -268,6 +280,10 @@ hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 lemma indep.basis_self (hI : M.indep I) :
   M.basis I I :=
 ⟨hI, rfl.subset, λ J hJ, subset_antisymm⟩  
+
+@[simp] lemma basis_self_iff_indep :
+  M.basis I I ↔ M.indep I :=
+⟨basis.indep, indep.basis_self⟩ 
 
 lemma exists_basis (M : matroid E) (X : set E) : 
   ∃ I, M.basis I X :=

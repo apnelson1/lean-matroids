@@ -10,22 +10,25 @@ variables {E : Type*} [finite E] {X Y I C B F : set E} {N M : matroid E} {e f : 
 
 section weak_image 
 /- `M` is a weak image of `N` if independence in `N` implies independence in `M` -/
-def is_weak_image (N M : matroid E) := 
+def weak_image (N M : matroid E) := 
   ∀ I, N.indep I → M.indep I 
 
-instance weak_image_le : has_le (matroid E) := 
-⟨λ N M, is_weak_image N M⟩
+-- instance weak_image_le : has_le (matroid E) := 
+-- ⟨λ N M, is_weak_image N M⟩
+
+reserve infixl ` ≤w `:75
+infix ` ≤w ` := weak_image
 
 lemma weak_image_def :
-  N ≤ M ↔ ∀ I, N.indep I → M.indep I :=
+  N ≤w M ↔ ∀ I, N.indep I → M.indep I :=
 iff.rfl 
 
-lemma indep.weak_image (hI : N.indep I) (h : N ≤ M)  :
+lemma indep.weak_image (hI : N.indep I) (h : N ≤w M)  :
   M.indep I := 
 h _ hI
 
 lemma weak_image_iff_r:
-  N ≤ M ↔ ∀ X, N.r X ≤ M.r X := 
+  N ≤w M ↔ ∀ X, N.r X ≤ M.r X := 
 begin
   simp_rw [r_le_iff, le_r_iff], 
   refine ⟨λ h X I hIN hIX, ⟨I,h _ hIN, hIX, rfl⟩, λ h I hI, _⟩, 
@@ -33,20 +36,20 @@ begin
   rwa [←eq_of_subset_of_ncard_le hJI hJ'.symm.le], 
 end
 
-lemma weak_image.r_le (h : N ≤ M) (X : set E) : 
+lemma weak_image.r_le (h : N ≤w M) (X : set E) : 
   N.r X ≤ M.r X :=
 weak_image_iff_r.mp h X  
 
 lemma weak_image_iff_dep:
-  N ≤ M ↔ ∀ X, ¬M.indep X → ¬N.indep X := 
+  N ≤w M ↔ ∀ X, ¬M.indep X → ¬N.indep X := 
 by simp_rw [weak_image_def, not_imp_not]
 
-lemma weak_image.dep (h : N ≤ M) (hX : ¬M.indep X) : 
+lemma weak_image.dep (h : N ≤w M) (hX : ¬M.indep X) : 
   ¬ N.indep X := 
 weak_image_iff_dep.mp h _ hX 
 
 lemma weak_image_iff_circuit:
-  N ≤ M ↔ ∀ C, M.circuit C → ∃ C' ⊆ C, N.circuit C' := 
+  N ≤w M ↔ ∀ C, M.circuit C → ∃ C' ⊆ C, N.circuit C' := 
 begin
   simp_rw [weak_image_iff_dep, dep_iff_supset_circuit],  
   refine ⟨λ h, λ C hC, _, λ h, λ X hX, _⟩, 
@@ -56,13 +59,13 @@ begin
   refine ⟨C', h1.trans h', h2⟩,  
 end 
 
-lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤ M) :
+lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) :
   ∃ C' ⊆ C, N.circuit C' :=
 weak_image_iff_circuit.mp h _ hC   
 
 lemma weak_image_tfae: 
   tfae
-[ N ≤ M, 
+[ N ≤w M, 
   ∀ X, N.r X ≤ M.r X, 
   ∀ X, N.indep X → M.indep X, 
   ∀ X, ¬M.indep X → ¬N.indep X,
@@ -75,11 +78,11 @@ begin
   tfae_finish, 
 end
 
-lemma weak_image.rank_zero_of_rank_zero (h : N ≤ M) (hX : M.r X = 0) :
+lemma weak_image.rank_zero_of_rank_zero (h : N ≤w M) (hX : M.r X = 0) :
   N.r X = 0 :=
 nat.eq_zero_of_le_zero ((weak_image.r_le h X).trans_eq hX)
 
-lemma loop.weak_image (he : M.loop e) (h : N ≤ M) :
+lemma loop.weak_image (he : M.loop e) (h : N ≤w M) :
   N.loop e :=
 begin
   obtain ⟨C,hCe,hC⟩ :=  he.circuit.supset_circuit_of_weak_image h, 
@@ -90,9 +93,17 @@ begin
   simpa using hC.nonempty, 
 end
 
-lemma nonloop_of_weak_image_nonloop (h : N ≤ M) {e : E} (he : ¬ N.loop e) :
+lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) :
   ¬ M.loop e :=
 λ he', he (he'.weak_image h) 
+
+lemma weak_image.trans {M₀ M₁ M₂ : matroid E} (h₀₁ : M₀ ≤w M₁) (h₁₂ : M₁ ≤w M₂) : 
+  M₀ ≤w M₂ :=
+λ I hI, h₁₂ I (h₀₁ I hI)
+
+lemma weak_image.antisymm (h : M ≤w N) (h' : N ≤w M) : 
+  M = N := 
+eq_of_indep_iff_indep_forall (λ I, ⟨λ hI, h I hI, λ hI, h' I hI⟩)
 
 end weak_image
 
@@ -142,7 +153,7 @@ begin
 end 
 
 lemma is_quotient.weak_image (h : N ≼ M) :
-   N ≤ M :=
+   N ≤w M :=
 begin
   refine λ X hX, by_contra (λ h', _),
   obtain ⟨C,hCX,hC⟩ := dep_iff_supset_circuit.mp h', 

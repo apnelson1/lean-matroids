@@ -1,5 +1,5 @@
-import .ncard
-import .helpers 
+import .aux.ncard
+import .aux.helpers 
 
 -- noncomputable theory 
 open_locale classical 
@@ -16,10 +16,19 @@ def exchange_property (P : set E → Prop) : Prop :=
 
 /-- A `matroid` is a nonempty collection of sets satisfying the exchange property. Each such set 
   is called a `base` of the matroid. -/
+
 @[ext] structure matroid (E : Type*) :=
   (base : set E → Prop)
   (exists_base' : ∃ B, base B) 
   (base_exchange' : exchange_property base)
+
+instance {E : Type*} [finite E] : finite (matroid E) := 
+finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by {ext, dsimp only at h, rw h}))   
+
+instance {E : Type*} : nonempty (matroid E) := 
+⟨{ base := λ B, B = univ ,
+  exists_base' := ⟨_,rfl⟩,
+  base_exchange' := λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim}⟩ 
 
 -- variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
 
@@ -68,6 +77,10 @@ def loop (M : matroid E) (e : E) : Prop :=
 /-- A coloop is an element contained in every basis -/
 def coloop (M : matroid E) (e : E) : Prop :=
   ∀ B, M.base B → e ∈ B
+
+/-- The set of nonloops of `M` is the complement of the set `M.cl ∅` of loops -/
+def nonloops (M : matroid E) : set E :=
+  (M.cl ∅)ᶜ 
 
   
 end defs 

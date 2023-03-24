@@ -20,7 +20,7 @@ Kung's theorem and the matroid intersection theorem are currently both proved in
 noncomputable theory 
 open set 
 
-variables {E : Type*} [finite E] {e f : E} {M : matroid E} {X Y D C F B I I₀ R: set E}
+variables {E : Type*} [finite E] {e f : E} {M N : matroid E} {X Y D C F B I I₀ R: set E}
 
 namespace matroid 
 
@@ -66,8 +66,8 @@ begin
   exact λ X, M.cl_mono (subset_union_left _ _),   
 end 
 
-lemma project_is_weak_image (M : matroid E) (C : set E) :
-  M ⟋ C ≤ M :=
+lemma project_weak_image (M : matroid E) (C : set E) :
+  M ⟋ C ≤w M :=
 (M.project_is_quotient C).weak_image  
 
 lemma project_project_comm (M : matroid E) (C₁ C₂ : set E) :
@@ -237,7 +237,7 @@ end
 
 lemma indep_of_project_indep (h : (M ⟋ C).indep I) : 
   M.indep I := 
-h.weak_image (project_is_weak_image _ _)
+h.weak_image (project_weak_image _ _)
 
 lemma project_cl_eq_project (M : matroid E) (C : set E) : 
   M ⟋ (M.cl C) = M ⟋ C  :=
@@ -246,6 +246,57 @@ eq_of_cl_eq_cl_forall (λ X, by simp_rw [project_cl_eq, cl_union_cl_right_eq_cl_
 lemma basis.project_eq_project (hI : M.basis I X) :
   M ⟋ I = M ⟋ X :=
 by rw [←project_cl_eq_project, ←M.project_cl_eq_project X, hI.cl]   
+
+lemma project_cl_empty_eq : 
+  (M ⟋ C).cl ∅ = M.cl C :=
+by rw [project_cl_eq, empty_union]
+
+lemma loop_of_project_iff :
+  (M ⟋ C).loop e ↔ e ∈ M.cl C := 
+by rw [loop_iff_mem_cl_empty, project_cl_eq, empty_union]
+
+lemma loop_of_project_mem_cl (he : e ∈ M.cl C) :
+  (M ⟋ C).loop e := 
+loop_of_project_iff.mpr he 
+
+lemma loop_of_project_mem (he : e ∈ C) :
+  (M ⟋ C).loop e := 
+loop_of_project_iff.mpr (mem_of_mem_of_subset he (M.subset_cl _)) 
+
+lemma project_eq_of_loops (h : C ⊆ M.cl ∅) : 
+  (M ⟋ C) = M := 
+by rw [←project_cl_eq_project, cl_eq_loops_of_subset h, project_cl_eq_project, project_empty]
+
+lemma project_eq_self_iff_subset_loops : 
+  M ⟋ C = M ↔ C ⊆ M.cl ∅ :=
+begin
+  refine ⟨λ h e heC, _, project_eq_of_loops⟩, 
+  rw [←h, project_cl_empty_eq],
+  exact (M.subset_cl C) heC, 
+end    
+
+lemma indep_project_singleton_iff (he : ¬M.loop e) (heI : e ∉ I) :
+  (M ⟋ {e}).indep I ↔ M.indep (insert e I) :=
+begin
+  rw [nonloop_iff_indep] at he, 
+  split, 
+  { intro h, 
+    have := he.project_indep_iff (indep_of_project_indep h), 
+    rw [this, union_singleton] at h, 
+    exact h.2},
+  intro h, 
+  rw [he.project_indep_iff (h.subset (subset_insert _ _)), union_singleton, 
+    disjoint_singleton_right], 
+  exact ⟨heI, h⟩,    
+end 
+
+lemma r_project_singleton_add_one (he : ¬M.loop e) (X : set E) :
+  (M ⟋ {e}).r X  + 1 = M.r (insert e X) := 
+by {zify, rw [coe_r_project, nonloop_iff_r.mp he], simp}
+
+lemma coe_r_project_singleton (he : ¬M.loop e) (X : set E) :
+  ((M ⟋ {e}).r X : ℤ) = M.r (insert e X) - 1 :=
+by {rw ←r_project_singleton_add_one he X, simp} 
 
 end project 
 
@@ -280,11 +331,101 @@ begin
   use [B',hB',hIB'],  
 end 
 
--- @[simp] lemma circuit_loopify_iff :
---   (M ⟍ D).circuit C ↔ (M.circuit C ∧ disjoint C D) ∨ ∃ e ∈ D, C = {e} := 
--- by simp [loopify]
+lemma indep_of_loopify_indep (h : (M ⟍ D).indep I ): 
+  M.indep I :=
+(indep_loopify_iff.mp h).2 
 
+lemma loopify_weak_image (M : matroid E) (D : set E): 
+  M ⟍ D ≤w M := 
+begin
+  intros I hI, 
+  rw indep_loopify_iff at hI, 
+  exact hI.2,
+end  
 
+@[simp] lemma loopify_empty (M : matroid E): 
+  M ⟍ ∅ = M  :=
+eq_of_indep_iff_indep_forall (λ I, by simp) 
+
+lemma circuit_loopify_iff :
+  (M ⟍ D).circuit C ↔ (M.circuit C ∧ disjoint C D) ∨ ∃ e ∈ D, C = {e} := 
+begin
+  simp_rw [circuit_def, indep_loopify_iff, not_and, exists_prop],
+  split, 
+  { rintro ⟨h₁, h₂⟩, 
+    obtain (h | ⟨e,heC,heD⟩) := (C ∩ D).eq_empty_or_nonempty, 
+    { left,
+      rw ←disjoint_iff_inter_eq_empty at h, 
+      exact ⟨⟨h₁ h, λ I hIC, (h₂ I hIC).2⟩,h⟩},
+      refine or.inr ⟨e,heD, _⟩,    
+      obtain (hss | rfl) := (singleton_subset_iff.mpr heC).ssubset_or_eq, swap, refl, 
+      have hcon := (h₂ _ hss).1,
+      rw [disjoint_singleton_left] at hcon, 
+      exact (hcon heD).elim}, 
+  rintro (⟨⟨hdep, h⟩,hdj⟩  | ⟨e,heD,rfl⟩), 
+  { exact ⟨λ _, hdep, λ I hIC, ⟨disjoint_of_subset_left hIC.subset hdj, h I hIC⟩⟩},
+  refine ⟨λ h, (disjoint_singleton_left.mp h heD).elim, λ I hI, _⟩, 
+  rw ssubset_singleton_iff at hI, 
+  subst hI, 
+  exact ⟨empty_disjoint _, M.empty_indep⟩, 
+end 
+
+lemma circuit_loopify_iff_of_disjoint (hC : disjoint C D) : 
+  (M ⟍ D).circuit C ↔ M.circuit C :=
+begin
+  rw [circuit_loopify_iff], 
+  refine ⟨λ h, h.elim (and.left) _,λ h, (or.inl ⟨h,hC⟩)⟩, 
+  rintro ⟨e,heD,rfl⟩,
+  refine h.elim (and.left) (false.elim ∘ _), 
+  rintro ⟨f,hfD,hef⟩,
+  rw [hef, disjoint_singleton_left] at hC,
+  exact hC hfD,
+end 
+
+@[simp] lemma loopify_cl_eq (D X : set E): 
+  (M ⟍ D).cl X = M.cl (X \ D) ∪ D :=
+begin
+  ext e,
+  simp_rw [mem_cl_iff_exists_circuit, circuit_loopify_iff],  
+  split, 
+  { rintro (heX | ⟨C, ⟨⟨hC,hCD⟩ | ⟨f,hfD,rfl⟩,hC'⟩⟩), 
+    { exact (em (e ∈ D)).elim or.inr (λ heD, 
+        or.inl (mem_of_mem_of_subset (⟨heX, heD⟩ : e ∈ X \ D) (M.subset_cl _) ))},
+    { refine or.inl (mem_of_mem_of_subset (hC.subset_cl_diff_singleton e hC'.1) 
+        (M.cl_subset_cl_of_subset _)),
+      rw [subset_diff], 
+      exact ⟨hC'.2, disjoint_of_subset_left (diff_subset _ _) hCD⟩}, 
+    rw ←mem_singleton_iff.mp hC'.1 at hfD,
+    exact or.inr hfD},
+  
+  by_cases heD : e ∈ D, 
+  { exact λ _, or.inr ⟨{e}, or.inr ⟨_,heD,rfl⟩, mem_singleton_of_eq rfl, by simp⟩},
+  rintro (heX | heD'), swap, exact (heD heD').elim,  
+  
+  rw mem_cl_iff_exists_circuit at heX, 
+  obtain ( heXD | ⟨C, hC, heC, hCX⟩) := heX,  
+  { exact or.inl ((diff_subset _ _) heXD)},
+  refine (em (e ∈ X)).elim or.inl (λ heX, or.inr _), 
+  refine ⟨C, or.inl ⟨hC, _⟩, heC, hCX.trans (diff_subset _ _)⟩, 
+
+  rw [←inter_union_diff C {e}, disjoint_union_left, inter_singleton_eq_of_mem heC, 
+    disjoint_singleton_left], 
+  rw subset_diff at hCX, 
+  exact ⟨heD, hCX.2⟩,  
+end 
+
+lemma loop_of_loopify_if : 
+  (M ⟍ D).loop e ↔ M.loop e ∨ e ∈ D :=
+by {simp_rw [loop_iff_mem_cl_empty, loopify_cl_eq, empty_diff], refl}
+
+lemma loopified_subset_loops (M : matroid E) (D : set E) :
+  D ⊆ (M ⟍ D).cl ∅ :=
+by {rw [loopify_cl_eq], exact subset_union_right _ _}
+
+lemma loop_of_loopify (h : e ∈ D) :
+  (M ⟍ D).loop e :=
+by {rw loop_iff_mem_cl_empty, exact M.loopified_subset_loops D h}
+ 
 lemma basis_loopify_iff : 
   (M ⟍ D).basis I X ↔ disjoint I D ∧ M.basis I (X \ D) :=
 begin
@@ -318,34 +459,246 @@ begin
   rw [←hI.2.r, hI.2.indep.r],
 end 
 
+lemma loopify_eq_of_loops (h : D ⊆ M.cl ∅) : 
+  M ⟍ D = M :=  
+begin
+  refine eq_of_indep_iff_indep_forall (λ I, _), 
+  rw [indep_loopify_iff], 
+  refine ⟨and.right, λ hI, ⟨disjoint_of_subset_right h hI.disjoint_loops,hI⟩⟩,   
+end 
+
+lemma loopify_eq_self_iff_subset_loops :
+  M ⟍ D = M ↔ D ⊆ M.cl ∅ :=
+begin
+  refine ⟨λ h e heD, _, loopify_eq_of_loops⟩, 
+  rw [←h, loopify_cl_eq], 
+  exact or.inr heD, 
+end    
+
+
 lemma r_loopify_of_disjoint (h : disjoint X D) :
   (M ⟍ D).r X = M.r X :=
 by rw [r_loopify, sdiff_eq_left.mpr h] 
 
+lemma loopify_loopify (M : matroid E) (D D' : set E) :
+  M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
+begin
+  refine eq_of_indep_iff_indep_forall (λ I, _), 
+  rw [indep_loopify_iff, indep_loopify_iff, indep_loopify_iff, ←and_assoc, and_comm (disjoint _ _)], 
+  convert iff.rfl,  
+  rw [disjoint_union_right], 
+end 
 
-
--- Is this maybe easier to define in terms of flats? Independent sets would be easiest, but I want 
--- to avoid cardinality in the axioms. TODO 
--- def loopify' (M : matroid E) (D : set E) : 
---   matroid E :=
--- matroid_of_flat
---   (λ F, ∃ F₀, M.flat F₀ ∧ F = F₀ ∪ D)
---   (⟨univ, M.univ_flat, univ_union.symm⟩)
---   (by {rintro _ _ ⟨F₁, hF₁, rfl⟩ ⟨F₂, hF₂, rfl⟩, 
---     exact ⟨F₁ ∩ F₂,hF₁.inter hF₂,by rw union_distrib_right⟩})
---   (begin
---     rintro _ e ⟨F, hF,rfl⟩ he,
---     obtain ⟨F', ⟨heF',hFF'⟩, hF'u⟩ := 
---       hF.exists_unique_flat_of_not_mem (not_mem_subset (subset_union_left _ _) he), 
-    
---     refine ⟨F' ∪ D, ⟨⟨F',hFF'.flat_right,rfl⟩,
---       insert_subset.mpr ⟨(subset_union_left _ _) heF',union_subset_union_left _ hFF'.subset⟩,_⟩, _⟩,  
---     { rintro _ ⟨F₀,hF₀, rfl⟩ hss hssu, 
---       have := hFF'.eq_of_subset_of_ssubset hF₀, 
---       },
---   end )
+lemma loopify_loopify_comm (M : matroid E) (D D' : set E) :
+  M ⟍ D ⟍ D' = M ⟍ D' ⟍ D :=  
+by rw [loopify_loopify, union_comm, loopify_loopify]
 
 end loopify 
+
+section pseudominor
+
+lemma project_loopify_swap (M : matroid E) (C D : set E) :
+  M ⟋ C ⟍ D = M ⟍ (D \ C) ⟋ C :=
+begin
+  refine eq_of_cl_eq_cl_forall (λ X, _),
+  simp only [project_cl_eq, loopify_cl_eq], 
+  rw [union_diff_distrib, diff_diff_cancel_right, @diff_eq_compl_inter _ D C, 
+    @diff_eq_compl_inter _ X (Cᶜ ∩ D), compl_inter, compl_compl, inter_distrib_right, 
+    union_right_comm, union_eq_right_iff_subset.mpr (inter_subset_left _ _), ←diff_eq_compl_inter, 
+    union_comm C, union_eq_union_iff_left],
+  refine ⟨_,(inter_subset_right _ _).trans (subset_union_right _ _)⟩, 
+  rw [←diff_eq_compl_inter],  
+  nth_rewrite 0 [←inter_union_diff D C], 
+  refine union_subset 
+    ((inter_subset_right _ _).trans (subset_union_of_subset_left _ _)) (subset_union_right _ _),  
+  exact (subset_union_right _ _).trans (M.subset_cl _), 
+end 
+  
+lemma loopify_project_swap (M : matroid E) (C D : set E) :
+  M ⟍ D ⟋ C = M ⟋ (C \ D) ⟍ D :=
+begin
+  rw [project_loopify_swap, diff_diff_cancel_right], 
+  nth_rewrite 0 ←inter_union_diff C D, 
+  rw [union_comm, ←project_project], 
+  apply project_eq_of_loops, 
+  simp only [project_cl_eq, empty_union, loopify_cl_eq, sdiff_idem],  
+  exact (inter_subset_right _ _).trans (subset_union_right _ _), 
+end 
+
+lemma project_loopify_comm (M : matroid E) {C D : set E} (hCD : disjoint C D) : 
+  M ⟋ C ⟍ D = M ⟍ D ⟋ C := 
+by {convert project_loopify_swap _ _ _, rwa [eq_comm, sdiff_eq_left, disjoint.comm]}
+
+lemma project_loopify_eq_self_iff_subset_loops :
+  M ⟋ C ⟍ D = M ↔ C ∪ D ⊆ M.cl ∅ :=
+begin
+  refine ⟨λ h, _,λ h, _⟩, 
+  { rw ←h, 
+    simp only [loopify_cl_eq, empty_diff, project_cl_eq, empty_union, union_subset_iff, 
+      subset_union_right, and_true], 
+    exact subset_union_of_subset_left (M.subset_cl _) _},
+  rw [loopify_eq_self_iff_subset_loops.mpr, project_eq_self_iff_subset_loops.mpr], 
+  { exact (subset_union_left _ _).trans h},
+  simp only [project_cl_eq, empty_union], 
+  exact (subset_union_right _ _).trans (h.trans (M.cl_mono (empty_subset C))),
+end 
+
+/-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising 
+-- from loopifications and/or projections of M  -/
+def pminor (N M : matroid E) := 
+  ∃ C D, N = M ⟋ C ⟍ D 
+
+def strict_pminor (N M : matroid E) :=
+  pminor N M ∧ N ≠ M  
+
+infix ` ≤p ` :75 :=  matroid.pminor
+
+infix ` <p ` :75 :=  matroid.strict_pminor
+
+lemma strict_pminor.pminor (h : N <p M) : 
+  N ≤p M :=
+h.1 
+
+lemma strict_pminor.ne (h : N <p M) : 
+  N ≠ M :=
+h.2
+
+lemma pminor.strict_pminor_of_ne (h : N ≤p M) (hne : N ≠ M) :
+  N <p M :=
+⟨h,hne⟩  
+
+lemma pminor.weak_image (h : N ≤p M) : 
+  N ≤w M := 
+by {obtain ⟨C,D,rfl⟩ := h, exact (loopify_weak_image _ _).trans (project_weak_image _ _)} 
+
+lemma project_pminor (M : matroid E) (C : set E) :
+  M ⟋ C ≤p M :=
+⟨C, ∅, by simp⟩    
+
+lemma loopify_pminor (M : matroid E) (D : set E) :
+  M ⟍ D ≤p M :=
+⟨∅, D, by simp⟩
+
+lemma project_loopify_pminor (M : matroid E) (C D : set E) :
+  M ⟋ C ⟍ D ≤p M :=
+⟨C,D,rfl⟩    
+
+lemma loopify_project_pminor (M : matroid E) (C D : set E) :
+  M ⟍ D ⟋ C ≤p M :=
+⟨C \D,D, by {rw loopify_project_swap}⟩
+
+/-- This doesn't include co-independence of `D`. TODO -/
+lemma exists_canonical_pminor_of_pminor (h : N ≤p M) :
+  ∃ C D, N = M ⟋ C ⟍ D ∧ M.indep C ∧ disjoint D (M.cl C) :=
+begin
+  obtain ⟨C', D', rfl⟩ := h, 
+  obtain ⟨C, hC⟩ := M.exists_basis C', 
+  refine ⟨C, D' \ M.cl C, _, hC.indep, disjoint_sdiff_left⟩ ,     
+  nth_rewrite 0 ←inter_union_diff D' (M.cl C),  
+  rw [hC.project_eq_project, union_comm, ←loopify_loopify, loopify_eq_self_iff_subset_loops, 
+    loopify_cl_eq, empty_diff, project_cl_eq, empty_union, hC.cl], 
+  exact (inter_subset_right _ _).trans (subset_union_left _ _),  
+end 
+
+lemma pminor_trans {M₀ M₁ M₂ : matroid E} (h₀ : M₀ ≤p M₁) (h₁ : M₁ ≤p M₂) : 
+  M₀ ≤p M₂ :=
+begin
+  obtain ⟨C₁,D₁,rfl, hC₁,hD₁⟩ := exists_canonical_pminor_of_pminor h₁, 
+  obtain ⟨C₀,D₀,rfl, hC₀,hD₀⟩ := exists_canonical_pminor_of_pminor h₀, 
+  
+  have hdj : disjoint (C₀ ∪ C₁) (D₀ ∪ D₁), 
+  { rw [disjoint_union_right, disjoint.comm], 
+    split, 
+    { refine disjoint_of_subset_right _ hD₀,
+      rw [loopify_cl_eq, project_cl_eq, union_subset_iff], 
+      split, 
+      { nth_rewrite 0 ←inter_union_diff C₀ D₁, 
+        rw [union_comm], 
+        exact union_subset_union ((subset_union_left _ _).trans (M₂.subset_cl _)) 
+            (inter_subset_right _ _)},
+      exact subset_union_of_subset_left ((subset_union_right _ _).trans (M₂.subset_cl _)) _},
+    rw [disjoint_union_left], 
+    refine ⟨_, (disjoint_of_subset_left (M₂.subset_cl _) hD₁.symm)⟩,   
+    simp only [indep_loopify_iff] at hC₀, 
+    exact hC₀.1},
+  
+  rw [project_loopify_comm, project_loopify_comm, project_loopify_comm, project_project, 
+     loopify_loopify, ←project_loopify_comm], 
+  { exact ⟨_,_,rfl⟩}, 
+  { rwa [union_comm, union_comm D₁]},
+  { exact disjoint_of_subset (subset_union_right _ _) (subset_union_left _ _) hdj},
+  { exact disjoint_of_subset (subset_union_right _ _) (subset_union_right _ _) hdj},
+  exact disjoint_of_subset (subset_union_left _ _) (subset_union_left _ _) hdj,
+end 
+
+lemma pminor_antisymm (h : N ≤p M) (h' : M ≤p N) : 
+  M = N :=
+h'.weak_image.antisymm h.weak_image
+
+
+lemma pminor.eq_of_loops_subset_loops (h : N ≤p M) (h_loops : N.cl ∅ ⊆ M.cl ∅) : 
+  N = M :=
+begin
+  obtain ⟨C, D, rfl⟩:= h, 
+  rw project_loopify_eq_self_iff_subset_loops, 
+  simp only [loopify_cl_eq, project_cl_eq, empty_diff, empty_union] at *,   
+  exact (union_subset_union_left D (M.subset_cl C)).trans h_loops, 
+end 
+
+lemma strict_pminor_of_project_nonloop (he : ¬M.loop e) : 
+  M ⟋ {e} <p M := 
+begin
+  refine (project_pminor M {e}).strict_pminor_of_ne (λ h, he _),
+  rwa [project_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
+end 
+
+lemma strict_pminor_of_loopify_nonloop (he : ¬M.loop e) : 
+  M ⟍ {e} <p M := 
+begin
+  refine (loopify_pminor M {e}).strict_pminor_of_ne (λ h, he _),
+  rwa [loopify_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
+end 
+
+lemma strict_pminor_of_project_loopify_r_ne_zero (h : M.r (C ∪ D) ≠ 0) : 
+  M ⟋ C ⟍ D <p M := 
+begin
+  refine (project_loopify_pminor _ _ _).strict_pminor_of_ne 
+    (λ hC, h (r_zero_iff_subset_loops.mpr _)), 
+  rwa [project_loopify_eq_self_iff_subset_loops] at hC, 
+end  
+
+lemma strict_pminor_of_project_r_ne_zero (h : M.r (C) ≠ 0) : 
+  M ⟋ C <p M := 
+begin
+  refine (project_pminor _ _).strict_pminor_of_ne (λ hC, h (r_zero_iff_subset_loops.mpr _)), 
+  rwa [project_eq_self_iff_subset_loops] at hC, 
+end  
+
+lemma pminor.loops_supset_loops (h : N ≤p M) :
+  M.cl ∅ ⊆ N.cl ∅ :=
+begin
+  obtain ⟨C,D,rfl⟩ := h, 
+  simp only [loopify_cl_eq, empty_diff, project_cl_eq, empty_union], 
+  exact subset_union_of_subset_left (M.cl_mono (empty_subset C)) _, 
+end   
+
+lemma pminor.nonloops_subset_nonloops (h : N ≤p M) : 
+  N.nonloops ⊆ M.nonloops :=
+begin
+  obtain ⟨C,D,rfl⟩ := @id _ h, 
+  rw [nonloops, nonloops, compl_subset_compl], 
+  exact h.loops_supset_loops, 
+end   
+
+lemma strict_pminor.nonloops_ssubset_nonloops (h : N <p M) : 
+  N.nonloops ⊂ M.nonloops :=
+begin
+  refine (h.pminor.nonloops_subset_nonloops).ssubset_of_ne (λ he, h.ne _), 
+  rw [nonloops, nonloops, compl_inj_iff] at he, 
+  exact h.pminor.eq_of_loops_subset_loops he.subset, 
+end  
+
+end pseudominor
 
 end matroid 
 

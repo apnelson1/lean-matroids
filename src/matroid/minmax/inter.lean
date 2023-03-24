@@ -15,12 +15,43 @@ variables {E : Type*} [finite E] {M₁ M₂ : matroid E} {I A : set E}
 
 section intersection 
 
-/-- The cardinality of a largest common independent set of matroids `M₁,M₂` -/
+/-- The cardinality of a largest common independent set of matroids `M₁,M₂`. 
+  Is `find_greatest` really the right way to do this?  -/
 noncomputable def max_common_ind (M₁ M₂ : matroid E) :=
-nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) (nat.card E)
+nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) ((univ : set E).ncard)
 
 lemma max_common_ind_eq_iff (M₁ M₂ : matroid E) {n : ℕ} :
-  max_common_ind M₁ M₁ = n ↔ (∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n :=
+  max_common_ind M₁ M₂ = n ↔ (∃ I, M₁.indep I ∧ M₂.indep I ∧ n ≤ I.ncard) ∧
+    (∀ I, M₁.indep I → M₂.indep I → I.ncard ≤ n)  :=
+begin
+  rw [max_common_ind, nat.find_greatest_eq_iff],  
+  obtain (rfl | n) := n, 
+  { simp only [nat.nat_zero_eq_zero, zero_le', ne.def, eq_self_iff_true, not_true, ncard_eq_zero, 
+    exists_eq_right_right, is_empty.forall_iff, not_exists, not_and, true_and, le_zero_iff, 
+    and_true], 
+    split, 
+    { 
+      refine λ h, ⟨⟨_, M₁.empty_indep, M₂.empty_indep⟩, λ I hI₁ hI₂, _⟩,
+      suffices hcI : ¬(0 < I.ncard), by rwa [not_lt, le_zero_iff, ncard_eq_zero] at hcI,   
+      exact λ hcI, h hcI (ncard_mono (subset_univ _)) I hI₁ hI₂ rfl},
+    refine λ h n hpos hn I hI₁ hI₂ hcard, _, 
+    rw [←hcard, h.2 I hI₁ hI₂] at hpos, 
+    simpa using hpos},
+
+  simp only [ne.def, nat.succ_ne_zero, not_false_iff, forall_true_left, not_exists, not_and, 
+    nat.succ_eq_add_one], 
+  split, 
+  { rintro ⟨hn, ⟨I, hI₁, hI₂, hIcard⟩, h'⟩, 
+    refine ⟨⟨I, hI₁, hI₂, hIcard.symm.le⟩, λ J hJ₁ hJ₂, _⟩,
+    by_contra' hJcard, 
+    exact h' hJcard (ncard_mono (subset_univ _)) J hJ₁ hJ₂ rfl},
+  simp only [and_imp, forall_exists_index], 
+  refine λ I hI₁ hI₂ hIcard h, ⟨_,⟨I, hI₁,hI₂,_⟩ ,λ n' hn' hn'' J hJ₁ hJ₂ hJcard, _⟩,
+  { rw ←(h I hI₁ hI₂).antisymm hIcard, exact ncard_mono (subset_univ _)},
+  { rw ←(h I hI₁ hI₂).antisymm hIcard},
+  subst hJcard, 
+  exact (h J hJ₁ hJ₂).not_lt hn', 
+end 
 
 /-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
 theorem common_ind_le_r_add_r_compl (hI₁ : M₁.indep I) (hI₂ : M₂.indep I) (A : set E) : 
@@ -31,23 +62,134 @@ begin
   exact add_le_add (M₁.r_mono (inter_subset_right I A)) (M₂.r_mono (inter_subset_left _ _)), 
 end
 
+/-- The hard direction of matroid intersection : existence -/
 lemma exists_common_ind (M₁ M₂ : matroid E) : 
-  ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = infi (λ X, M₁.r X + M₂.r Xᶜ) :=
+  ∃ I, M₁.indep I ∧ M₂.indep I ∧ (⨅ X, M₁.r X + M₂.r Xᶜ) ≤ I.ncard  :=
 begin
-  sorry
+  by_contra' hcon, 
+  have hcon' : ∀ I X, M₁.indep I → M₂.indep I → I.ncard < M₁.r X + M₂.r Xᶜ, 
+    from λ I X hI₁ hI₂, (hcon I hI₁ hI₂).trans_le (cinfi_le' (λ (X : set E), r M₁ X + r M₂ Xᶜ) X), 
+    
+  set matroid_pairs := (matroid E) × (matroid E), 
+  set param : matroid_pairs → ℕ := λ p, (p.1.nonloops ∩ p.2.nonloops).ncard with hparam, 
+  set counterex : set (matroid_pairs) := 
+    { p | ∀ I X, p.1.indep I → p.2.indep I → I.ncard < p.1.r X + p.2.r Xᶜ } with hce,
+  
+  haveI : finite (matroid_pairs) := finite.prod.finite, 
+  have hfin : counterex.finite := set.to_finite _, 
+  have hcne : counterex.nonempty := ⟨⟨M₁,M₂⟩, hcon'⟩, 
+  
+  obtain ⟨p,hp,hpmin⟩ := finite.exists_minimal_wrt param counterex hfin hcne, 
+  clear hcon hcon' M₁ M₂ hfin hcne, 
+  obtain ⟨⟨M₁,M₂⟩,hcon⟩ := ⟨p,hp⟩,  
+  simp only [hce, mem_set_of_eq] at hcon, 
+
+  have hne : (M₁.nonloops ∩ M₂.nonloops).nonempty, 
+  { by_contra' hcon',
+    rw [not_nonempty_iff_eq_empty, ←disjoint_iff_inter_eq_empty, ←subset_compl_iff_disjoint_right, 
+      nonloops, nonloops, compl_compl] at hcon', 
+    specialize hcon ∅ (M₁.cl ∅) (M₁.empty_indep) (M₂.empty_indep),
+    rw [ncard_empty, r_cl, r_empty, zero_add] at hcon,  
+    have h' := hcon.trans_le (M₂.r_mono hcon'), 
+    rw [r_cl, r_empty] at h', exact h'.ne rfl},
+
+  obtain ⟨e, he₁,he₂⟩ := hne, 
+
+  set M₁d := M₁ ⟍ {e} with hM₁d, 
+  set M₂d := M₂ ⟍ {e} with hM₂d,  
+  set M₁c := M₁ ⟋ {e} with hM₁c, 
+  set M₂c := M₂ ⟋ {e} with hM₂c, 
+
+  have h1dl : (M₁d).loop e := loop_of_loopify (mem_singleton _),   
+  have h2dl : (M₂d).loop e := loop_of_loopify (mem_singleton _),   
+  have h1cl : (M₁c).loop e := loop_of_project_mem (mem_singleton _),   
+  have h2cl : (M₂c).loop e := loop_of_project_mem (mem_singleton _),   
+
+  have h_smaller_d : (M₁d.nonloops ∩ M₂d.nonloops).ncard < (M₁.nonloops ∩ M₂.nonloops).ncard, 
+  { apply ncard_lt_ncard, 
+    refine ssubset_of_subset_not_subset 
+    (inter_subset_inter (loopify_pminor _ _).nonloops_subset_nonloops 
+      (loopify_pminor _ _).nonloops_subset_nonloops) (λ h, _ ), 
+    specialize h ⟨he₁,he₂⟩, 
+    simp_rw [nonloops, mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty] at h, 
+    exact h.1 h1dl}, 
+
+  have h_smaller_c : (M₁c.nonloops ∩ M₂c.nonloops).ncard < (M₁.nonloops ∩ M₂.nonloops).ncard, 
+  { apply ncard_lt_ncard, 
+    refine ssubset_of_subset_not_subset 
+    (inter_subset_inter (project_pminor _ _).nonloops_subset_nonloops 
+      (project_pminor _ _).nonloops_subset_nonloops) (λ h, _ ), 
+    specialize h ⟨he₁,he₂⟩, 
+    simp_rw [nonloops, mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty] at h, 
+    exact h.1 h1cl}, 
+
+  have hd : ∃ Id Xd, M₁d.indep Id ∧ M₂d.indep Id ∧ M₁d.r Xd + M₂d.r Xdᶜ ≤ Id.ncard,        
+  { by_contra' h', 
+    exact h_smaller_d.ne.symm (hpmin ⟨M₁d,M₂d⟩ h' h_smaller_d.le)},
+
+  have hc : ∃ Ic Xc, M₁c.indep Ic ∧ M₂c.indep Ic ∧ M₁c.r Xc + M₂c.r Xcᶜ ≤ Ic.ncard,        
+  { by_contra' h', 
+    exact h_smaller_c.ne.symm (hpmin ⟨M₁c,M₂c⟩ h' h_smaller_c.le)},
+
+  rw mem_nonloops_iff_not_loop at he₁ he₂, 
+
+  obtain ⟨Id,Xd, hId₁, hId₂, hId⟩ := hd, 
+  obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
+
+  zify at hIc hId hcon, 
+
+  have heIc : e ∉ Ic, 
+  { rw [hM₁c, indep.project_indep_iff] at hIc₁, 
+    { rw [←disjoint_singleton_right], exact hIc₁.1,},
+    { rwa [loop_iff_dep, not_not] at he₁},
+    exact indep_of_project_indep hIc₁},    
+
+  
+
+  have ineq1 := λ (X : set E), 
+    (hId.trans_lt (hcon _ X (indep_of_loopify_indep hId₁) (indep_of_loopify_indep hId₂))), 
+
+  have ineq2 := λ (X : set E), hcon (insert e Ic) X 
+    (by rwa ← indep_project_singleton_iff he₁ (heIc)) 
+    (by rwa ← indep_project_singleton_iff he₂ (heIc)),
+
+
+  simp_rw [ncard_insert_of_not_mem heIc, int.lt_iff_add_one_le] at ineq2, 
+  rw [hM₁c, hM₂c, coe_r_project_singleton he₁, coe_r_project_singleton he₂] at hIc, 
+  
+
+  
+  -- have := λ X, hIc 
+  -- have : M₁.r (Xd \ {e}) + M₂.r (Xdᶜ \ {e}) ≤ _,
+
+
+    -- have := hpmin ⟨M₁d,M₂d⟩ h',  
+
+
+  
+
+
+  -- have : ∃ e, ¬ M₁.loop e ∧ ¬M₁.loop e, 
+  -- { by_contra' hloopy, 
+  --   have h_all : M₁.cl ∅ = univ,  
+  --   { simp_rw [eq_univ_iff_forall, ←loop_iff_mem_cl_empty], exact hloopy, },
+  --   have h' := hcon ∅ univ M₁.empty_indep M₂.empty_indep, 
+  --   simp_rw [compl_univ, ←h_all, r_cl] at h',  
+  --   simpa using h'},
+  
+
+
+  -- have := @finite.exists_minimal_wrt matroid_pairs ℕ _ param counterex _,  
+  
 end 
 
 theorem matroid_intersection (M₁ M₂ : matroid E) : 
-  max_common_ind M₁ M₂ = infi (λ X, M₁.r X + M₂.r Xᶜ) :=
+  max_common_ind M₁ M₂ = ⨅ X, M₁.r X + M₂.r Xᶜ :=
 begin
-  rw [max_common_ind, nat.find_greatest_eq_iff],   
-  
-  simp only [ne.def, not_exists, not_and],
-  split, 
-  { refine (cinfi_le (order_bot.bdd_below _) ∅).trans _, 
-    simp only [r_empty, compl_empty, zero_add],
-    exact M₂.rk_le_card}, 
-  refine ⟨λ h, _,_⟩,  
+  rw [max_common_ind_eq_iff], 
+  obtain ⟨I, hI₁, hI₂, hle⟩ := exists_common_ind M₁ M₂, 
+  refine ⟨exists_common_ind M₁ M₂, λ I hI₁ hI₂, _ ⟩, 
+  exact (le_cinfi_iff (order_bot.bdd_below _)).mpr (common_ind_le_r_add_r_compl hI₁ hI₂),    
 end 
 
 
