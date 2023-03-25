@@ -475,7 +475,6 @@ begin
   exact or.inr heD, 
 end    
 
-
 lemma r_loopify_of_disjoint (h : disjoint X D) :
   (M ⟍ D).r X = M.r X :=
 by rw [r_loopify, sdiff_eq_left.mpr h] 

@@ -105,7 +105,6 @@ begin
   rwa [eq_of_subset_of_ncard_le hII' h.le], 
 end 
 
-
 @[simp] lemma r_empty (M : matroid E) : 
   M.r ∅ = 0 :=
 by rw [M.empty_indep.r, ncard_empty] 
@@ -114,6 +113,10 @@ lemma r_le_card (M : matroid E) (X : set E) :
   M.r X ≤ X.ncard :=
 r_le_iff.mpr (λ I hI, ncard_le_of_subset)
 
+lemma rk_le_card (M : matroid E) :
+  M.rk ≤ nat.card E := 
+by {rw [←ncard_univ], exact M.r_le_card univ}
+
 lemma r_lt_card_of_dep (hX : ¬ M.indep X) : 
   M.r X < X.ncard :=
 lt_of_le_of_ne (M.r_le_card X) (by rwa indep_iff_r_eq_card at hX)
@@ -121,10 +124,6 @@ lt_of_le_of_ne (M.r_le_card X) (by rwa indep_iff_r_eq_card at hX)
 lemma r_lt_card_iff_dep :
   M.r X < X.ncard ↔ ¬M.indep X :=
 ⟨λ h hI, (h.ne hI.r),r_lt_card_of_dep⟩ 
-
-lemma r_mono (M : matroid E) {X Y : set E} (hXY : X ⊆ Y) : 
-  M.r X ≤ M.r Y :=
-by {simp_rw [r_le_iff, le_r_iff], exact λ I hI hIX, ⟨I,hI,hIX.trans hXY,rfl⟩}
 
 lemma r_le_rk (M : matroid E) (X : set E) :
   M.r X ≤ M.rk :=
