@@ -13,7 +13,6 @@ open_locale big_operators
 A few helper lemmas for a separate PR 
 -/
 
-
 section finset 
 
 variables {α : Type*} {X Y : finset α}
@@ -70,6 +69,22 @@ lemma set.finite.exists_minimal {α : Type*} [finite α] [partial_order α] (P :
 (h : ∃ x, P x) : ∃ m, P m ∧ ∀ x, P x → x ≤ m → m = x :=
 @set.finite.exists_maximal (order_dual α) _ _ P h
 
+lemma set.finite.exists_minimal_subset {α : Type*} {s : set α} {P : set α → Prop} (hs : s.finite) 
+(hsP : P s) : 
+  ∃ t ⊆ s, P t ∧ ∀ t' ⊂ t, ¬ P t' := 
+begin
+  obtain ⟨t₀,ht₀,ht₀min⟩ := @set.finite.exists_minimal (set s) (@set.finite' _ (hs.to_subtype)) _ 
+    (P ∘ (set.image coe)) ⟨univ, by simpa⟩,
+  refine ⟨coe '' t₀, by simp, ht₀, λ t' ht' hPt', ht'.ne _⟩, 
+  have ht's : t' ⊆ s, from ht'.subset.trans (by simp),
+  have ht'' := subtype.coe_image_of_subset ht's,          
+  simp_rw function.comp_app at ht₀ ht₀min,
+
+  rw [ht₀min {x : ↥s | ↑x ∈ t'} (by rwa ht'') _, ht''],  
+  convert @preimage_mono _ _ (coe : s → α)   _ _ ht'.subset, 
+  rw preimage_image_eq _ subtype.coe_injective, 
+end     
+
 lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} : 
   S \ {e} ⊂ S ↔ e ∈ S :=
 ⟨ λ h, by_contra (λ he, h.ne (by rwa [sdiff_eq_left, disjoint_singleton_right])), 
@@ -113,26 +128,6 @@ lemma inter_singleton_eq_of_mem {α : Type*} {x : α} {s : set α} (hx : x ∈ s
 @[simp] lemma not_mem_diff_singleton {α : Type*} (x : α) (s : set α) :
   x ∉ s \ {x} :=
 by simp only [mem_diff, mem_singleton, not_true, and_false, not_false_iff]
-
-@[simp] lemma finsum_mem_one {α : Type*} (s : set α) :
-  ∑ᶠ a ∈ s, 1 = s.ncard :=
-begin
-  have hsupp := @function.support_const α _ _ _ (nat.one_ne_zero), 
-  obtain (h | h) := s.finite_or_infinite, 
-  { have h' := h, 
-    rw [←inter_univ s, ← hsupp] at h', 
-    convert finsum_mem_eq_sum _ h', 
-    simp only [finset.sum_const, nat.smul_one_eq_coe, nat.cast_id], 
-    rw [ncard_eq_to_finset_card _ h], 
-    congr', 
-    rw [hsupp, inter_univ]},
-  rw [h.ncard, finsum_mem_eq_zero_of_infinite], 
-  rwa [hsupp, inter_univ], 
-end  
-
-@[simp] lemma finsum_one (α : Type*) :
-  ∑ᶠ (a : α), 1 = nat.card α :=
-by rw [←finsum_mem_univ, finsum_mem_one, ncard_univ]
 
 section sigma
 
@@ -196,6 +191,65 @@ end
 
 
 end sigma 
+
+section finsum
+
+lemma finsum_mem_le_finsum_mem  {ι N : Type*} [ordered_add_comm_monoid N] {f g : ι → N} 
+{s : set ι} (hf : (s ∩ function.support f).finite) (hg : (s ∩ function.support g).finite) 
+(h : ∀ (i : ι), i ∈ s → f i ≤ g i) :
+  ∑ᶠ (i ∈ s), f i ≤ ∑ᶠ (i ∈ s), g i := 
+begin
+  set hs' := hf.union hg, 
+  rw [← inter_distrib_left] at hs', 
+  rw [@finsum_mem_eq_sum_of_inter_support_eq _ _ _ f _ hs'.to_finset,
+    @finsum_mem_eq_sum_of_inter_support_eq _ _ _ g _ hs'.to_finset], 
+  { apply finset.sum_le_sum, 
+    simp only [finite.mem_to_finset, mem_inter_iff, mem_union, function.mem_support, and_imp], 
+    exact λ i hi h', h i hi}, 
+  { rw [finite.coe_to_finset, inter_assoc, inter_eq_self_of_subset_right (subset_union_right _ _)]}, 
+  rw [finite.coe_to_finset, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)],
+end 
+
+/- I wasn't able to prove either of the following lemmas by reducing to their corresponding finset
+  versions - it gave a horrible mess. But induction works fine. -/
+lemma ncard_sUnion_le {α : Type*} (s : set (set α)) (hs : s.finite) (hs' : ∀ x ∈ s, set.finite x):
+  (⋃₀ s).ncard ≤ ∑ᶠ x ∈ s, ncard x := 
+begin
+  by_contra' h', 
+  obtain ⟨t,hts,ht,hmin⟩ := set.finite.exists_minimal_subset hs h', 
+  have ht_ne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using ht},
+  obtain ⟨x,hxt⟩ := ht_ne,
+  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt), 
+
+  have ht_eq : insert x (t \ {x}) = t, by simpa using insert_eq_of_mem hxt,
+  
+  rw [← ht_eq, sUnion_insert, finsum_mem_insert _ (not_mem_diff_singleton _ _) 
+    (hs.subset ((diff_subset _ _).trans hts))] at ht, 
+  exact (add_lt_add_iff_left _).mp (ht.trans_le (ncard_union_le _ _)), 
+end 
+
+lemma ncard_Union_le {ι α : Type*} [finite ι] (s : ι → set α) (h : ∀ i, (s i).finite) :
+  (⋃ i, s i).ncard ≤ ∑ᶠ i, (s i).ncard := 
+begin
+  rw [←finsum_mem_univ, ←bUnion_univ], 
+  by_contra' h', 
+  set P : set ι → Prop := λ t, ∑ᶠ i ∈ t, (s i).ncard < (⋃ (x ∈ t), s x).ncard with hP,  
+  have h_univ : P univ := h', 
+  obtain ⟨t,-,hPt,hmin⟩ :=  set.finite.exists_minimal_subset (to_finite _) h_univ,   
+  simp_rw [hP] at hPt hmin, 
+  have hne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using hPt},
+  obtain ⟨x,hxt⟩ := hne,   
+  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt), 
+
+  have ht_eq : insert x (t \ {x}) = t, by simpa using insert_eq_of_mem hxt,
+  rw [←ht_eq, finsum_mem_insert _ (not_mem_diff_singleton _ _) (@to_finite _ (t \ {x}) _), 
+    bUnion_insert] at hPt, 
+  exact (add_lt_add_iff_left _).mp (hPt.trans_le (ncard_union_le _ _)), 
+end  
+
+
+end finsum
+
 
 -- @[simp] lemma sigma.subset_image_mk_iff_preimage_mk_subset {ι : Type*} {α : ι → Type*} {j : ι} 
 -- {x : set (Σ i, α i)} {y : set (α j)} : 

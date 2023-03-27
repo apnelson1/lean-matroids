@@ -46,6 +46,9 @@ begin
   rw [←ncard_inter_add_ncard_diff_eq_ncard I X], 
   refine add_le_add _ 
     (ncard_le_of_subset (by {rw compl_eq_univ_diff, exact diff_subset_diff_left (subset_univ _)})),
+
+  obtain ⟨J, rfl, hJ⟩ := partitionable_iff_is_Union.mp h, 
+  
   -- obtain ⟨f, hf⟩ := partition, 
   
   

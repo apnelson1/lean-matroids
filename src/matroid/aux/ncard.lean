@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Peter Nelson
 -/
 import data.finite.card
+import algebra.big_operators.finprod
 
 /-!
 # Noncomputable Set Cardinality
@@ -40,6 +41,7 @@ arguments; they are are true by coincidence due to junk values.
 -/
 
 open_locale classical
+open_locale big_operators
 
 variables {α β : Type*} {s t : set α} {a b x y : α} {f : α → β}
 
@@ -75,12 +77,6 @@ by simp [ncard_def, @finite.card_eq_zero_iff _ hs.to_subtype]
   (s : set α).ncard = s.card :=
 by rw [ncard_eq_to_finset_card, finset.finite_to_set_to_finset]
 
--- by rw [ncard_eq_to_finset_card, finset.to_finset_coe]
-
-@[simp] lemma ncard_empty (α : Type*) :
-  (∅ : set α).ncard = 0 :=
-by simp only [ncard_eq_zero]
-
 lemma infinite.ncard (hs : s.infinite) :
   s.ncard = 0 :=
 @nat.card_eq_zero_of_infinite _ hs.to_subtype
@@ -94,6 +90,28 @@ begin
       nat.card_eq_fintype_card]},
   rw [(@infinite_univ _ h).ncard, @nat.card_eq_zero_of_infinite _ h],
 end
+
+@[simp] lemma finsum_mem_one {α : Type*} (s : set α) :
+  ∑ᶠ a ∈ s, 1 = s.ncard :=
+begin
+  have hsupp := @function.support_const α _ _ _ (nat.one_ne_zero), 
+  obtain (h | h) := s.finite_or_infinite, 
+  { have h' := h, 
+    rw [←inter_univ s, ← hsupp] at h', 
+    convert finsum_mem_eq_sum _ h', 
+    rw [←finset.card_eq_sum_ones, ncard_eq_to_finset_card _ h], 
+    congr', 
+    rw [hsupp, inter_univ]},
+  rw [h.ncard, finsum_mem_eq_zero_of_infinite], 
+  rwa [hsupp, inter_univ], 
+end  
+
+@[simp] lemma finsum_one (α : Type*) :
+  ∑ᶠ (a : α), 1 = nat.card α :=
+by rw [←finsum_mem_univ, finsum_mem_one, ncard_univ]
+@[simp] lemma ncard_empty (α : Type*) :
+  (∅ : set α).ncard = 0 :=
+by simp only [ncard_eq_zero]
 
 lemma ncard_pos (hs : s.finite . to_finite_tac) :
   0 < s.ncard ↔ s.nonempty :=
@@ -260,7 +278,6 @@ lemma ncard_image_of_injective (s : set α) (H : f.injective) :
   (f '' s).ncard = s.ncard :=
 ncard_image_of_inj_on $ λ x _ y _ h, H h
 
-/- New for PR -/
 lemma ncard_preimage_of_injective_subset_range {s : set β} (H : f.injective) 
 (hs : s ⊆ set.range f) :
   (f ⁻¹' s).ncard = s.ncard :=
@@ -463,6 +480,8 @@ begin
   rw h.ncard,
 end
 
+
+
 lemma ncard_union_eq (h : disjoint s t) (hs : s.finite . to_finite_tac)
 (ht : t.finite . to_finite_tac) :
   (s ∪ t).ncard = s.ncard + t.ncard :=
@@ -567,8 +586,7 @@ begin
   exact ⟨t, h₂, rfl.subset, by rw [ht.ncard, h₁'.1, h₁'.2]⟩
 end
 
-/- New for PR -/
-lemma exists_intermediate_set' (m : ℕ) (hs : s.ncard ≤ m) (ht : m ≤ t.ncard) (h : s ⊆ t) :
+lemma exists_intermediate_set' {m : ℕ} (hs : s.ncard ≤ m) (ht : m ≤ t.ncard) (h : s ⊆ t) :
   ∃ (r : set α), s ⊆ r ∧ r ⊆ t ∧ r.ncard = m :=
 begin
   obtain ⟨r,hsr,hrt,hc⟩ := 
