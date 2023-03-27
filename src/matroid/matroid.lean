@@ -22,15 +22,9 @@ def exchange_property (P : set E → Prop) : Prop :=
   (exists_base' : ∃ B, base B) 
   (base_exchange' : exchange_property base)
 
-instance {E : Type*} [finite E] : finite (matroid E) := 
+instance {E : Type*} [finite E] : 
+  finite (matroid E) := 
 finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by {ext, dsimp only at h, rw h}))   
-
-instance {E : Type*} : nonempty (matroid E) := 
-⟨{ base := λ B, B = univ ,
-  exists_base' := ⟨_,rfl⟩,
-  base_exchange' := λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim}⟩ 
-
--- variables {B B' B₁ B₂ I I' J I₁ I₂ J' X Y Z : set E} {x y : E} {M : matroid E} 
 
 namespace matroid 
 /- None of these definitions require finiteness -/
@@ -82,7 +76,20 @@ def coloop (M : matroid E) (e : E) : Prop :=
 def nonloops (M : matroid E) : set E :=
   (M.cl ∅)ᶜ 
 
-  
+section examples 
+
+/-- The matroid whose only basis is the whole ground set -/
+def free_matroid_on (E : Type*) : matroid E := 
+⟨λ B, B = univ, ⟨_,rfl⟩, λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim⟩
+
+/-- The matroid whose only basis is empty -/
+def loopy_on (E : Type*) : matroid E := 
+⟨λ B, B = ∅, ⟨_,rfl⟩, λ B B' hB hB' a ha, by {rw hB at ha, exact (not_mem_empty _ ha.1).elim}⟩
+
+instance {E : Type*} : nonempty (matroid E) := ⟨free_matroid_on E⟩ 
+
+end examples 
+
 end defs 
 
 section base
@@ -100,7 +107,6 @@ lemma base.exchange_mem (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x 
 by simpa using hB₁.exchange hB₂ ⟨hxB₁, hxB₂⟩ 
 
 variables [finite E]
-
 
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   B₁.ncard = B₂.ncard := 
@@ -154,9 +160,11 @@ section iso
 
 variables {E₀ E₁ E₂ : Type*} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
+/-- Two matroids are isomorphic if there is a map between ground sets that preserves bases -/
 def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) := 
   ∀ B, M₁.base B ↔ M₂.base (e '' B)  
 
+/-- A bundled isomorphism between two matroids -/
 structure iso (M₁ : matroid E₁) (M₂ : matroid E₂) := 
 (to_fun : E₁ ≃ E₂)
 (on_base : ∀ B, M₁.base B ↔ M₂.base (to_fun '' B))
@@ -168,13 +176,45 @@ instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, E₁ → E₂) :=
 
 def iso.refl (M : matroid E) : M ≃i M := ⟨equiv.refl E, λ B, by simp⟩   
 def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := ⟨e.to_fun.symm, λ B, by {rw e.on_base, simp, }⟩  
--- def iso.trans (e₀₁ : M₀ ≃i M₁) (e₁₂ : M₁ ≃i M₂) : M₀ ≃i M₂ := 
---   ⟨e₀₁.to_fun.trans  e₁₂.to_fun, λ B, by {simp, }⟩ 
 
+/-- An equivalence between types induces a map from a matroid on one type to one on another -/
+def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂)  :
+  matroid E₂ :=
+{ base := λ B, M₁.base (e ⁻¹' B),
+  exists_base' := by 
+    {obtain ⟨B₁,hB₁⟩ := M₁.exists_base, exact ⟨e '' B₁, by simpa using hB₁⟩} ,
+  base_exchange' := 
+  begin
+    rintro B₁ B₂ hB₁ hB₂ x hx,
+    have hx' : e.symm x ∈ e ⁻¹' B₁ \ e⁻¹' B₂, by simpa,
+    obtain ⟨y, hy, hBy⟩ := hB₁.exchange hB₂ hx',  
+    refine ⟨e y, by simpa, _⟩, 
+    dsimp only, 
+    simp_rw [←union_singleton, preimage_union, preimage_diff] at ⊢ hBy, 
+    convert hBy;
+    simp [preimage_equiv_eq_image_symm],
+  end}
 
+@[simp] lemma congr_equiv_apply_base {e : E₁ ≃ E₂} {M₁ : matroid E₁} {B : set E₂} :
+  (M₁.congr_equiv e).base B ↔ M₁.base (e ⁻¹' B) := 
+iff.rfl 
 
+@[simp] lemma congr_equiv_apply_indep {e : E₁ ≃ E₂} {M₁ : matroid E₁} {I : set E₂} :
+  (M₁.congr_equiv e).indep I ↔ M₁.indep (e ⁻¹' I) := 
+begin
+  simp_rw [indep, congr_equiv_apply_base], 
+  split, 
+  { rintro ⟨B₂, hB₂, hIB₂⟩, exact ⟨_, hB₂, preimage_mono hIB₂⟩},
+  rintro ⟨B₁, hB₁, hIB₁⟩, 
+  refine ⟨e '' B₁, by {convert hB₁, simp}, _⟩,  
+  rwa [←equiv.subset_image, ←preimage_equiv_eq_image_symm], 
+end 
 
-end iso 
+@[simp] lemma congr_equiv_apply_symm_base {e : E₁ ≃ E₂} {M₁ : matroid E₂} {B : set E₁} :
+  (M₁.congr_equiv e.symm).base B ↔ M₁.base (e '' B) := 
+by simp [image_equiv_eq_preimage_symm, congr_equiv]
+
+end iso
 
 end matroid 
 
@@ -199,68 +239,3 @@ end matroid
 
 -- -- lemma base_iff_indep_card :
 -- --   M.base B ↔ M.indep B ∧ B.ncard =  
-
--- -- Strong exchange -- 
-
--- /-- We can exchange in both directions at one -/
--- theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
---   ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) ∧ M.base (insert y (B₁ \ {x})) :=
--- begin
---   by_contra, 
---   simp_rw [not_exists, not_and] at h, 
-  
---   obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=   
---   hB₂.indep.unique_circuit_of_insert (hB₂.insert_dep hx.2), 
-  
---   have hCss := diff_singleton_subset_iff.mpr hCB₂, 
-
---   simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique, 
---   have hC_exchange : ∀ y ∈ C \ {x}, M.base (insert x (B₂ \ {y})), 
---   { simp_rw [base_iff_maximal_indep], 
---     rintros y ⟨hyC, hyx⟩, 
---     refine ⟨by_contra (λ hdep, _ ), λ I hI hssI, by_contra (λ hne, _)⟩,  
---     { obtain ⟨C',⟨hC'ss,hC'⟩,hC'min⟩ := finite.exists_minimal 
---       (λ D, D ⊆ insert x (B₂ \ {y}) ∧ ¬M.indep D)  ⟨_, rfl.subset, hdep⟩,
---       have hC'C := hCunique C' _ ⟨hC',λ I hIC, by_contra (λ hI, _)⟩ (by_contra (λ hxC', hC' _)),
---       { subst hC'C, 
---         obtain (rfl | mem_diff) := mem_insert_iff.mp (hC'ss hyC), 
---         {exact hyx rfl},
---         exact not_mem_diff_of_mem rfl mem_diff}, 
---       { exact hC'ss.trans (insert_subset_insert (diff_subset _ _))},
---       { exact hIC.ne.symm (hC'min I ⟨ hIC.subset.trans hC'ss, hI⟩ hIC.subset)},
---       rw subset_insert_iff_of_not_mem hxC' at hC'ss, 
---       exact ⟨B₂, hB₂, hC'ss.trans (diff_subset _ _)⟩},
---     obtain ⟨B',hB',hB'I⟩ := hI,  
---     have hlt := (ncard_lt_ncard (hssI.ssubset_of_ne hne)).trans_le (ncard_le_of_subset hB'I), 
-    
---     rw [hB'.card_eq_card_of_base hB₂, nat.lt_iff_add_one_le, 
---       ncard_exchange hx.2 (hCss (mem_diff_singleton.mpr ⟨hyC,hyx⟩))] at hlt,
---     simpa only [add_le_iff_nonpos_right, le_zero_iff] using hlt},
-  
---   have hcl : ∀ y ∈ B₂ \ M.cl (B₁ \ {x}), M.base (insert y (B₁ \ {x})), 
---   { rintro y ⟨hy₂, hy₁⟩, 
---     obtain rfl | hyx := em (y = x), 
---     { rwa [insert_diff_singleton, insert_eq_self.mpr hx.1]},
---     have hyB₁ : y ∉ B₁, from 
---       λ hyB₁, hy₁ (M.subset_cl (B₁ \ {x}) (mem_diff_singleton.mpr ⟨hyB₁, hyx⟩)), 
-
---     rw base_iff_maximal_indep, 
-
---     -- simp_rw [base_iff_indep_card, indep_iff_r_eq_card, ncard_exchange hyB₁ hx.1, 
---     --   hB₁.card, eq_self_iff_true, and_true, ←hB₁.card, not_mem_cl.mp hy₁, 
---     --   (hB₁.indep.diff {x}).r, ncard_diff_singleton_add_one hx.1]
-      
---       },
-
---   -- have hss : C \ {x} ⊆ M.cl (B₁ \ {x}), 
---   -- from λ y hy, by_contra (λ hy', h _ ⟨hCss hy, λ hy₁, hy' (M.subset_cl _ ⟨hy₁,hy.2⟩)⟩ 
---   --     (hC_exchange y hy) (hcl _ ⟨hCss hy,hy'⟩)), 
-  
---   -- have hx' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2, 
---   -- rw [mem_cl, insert_diff_singleton, insert_eq_of_mem hx.1, hB₁.indep.r, (hB₁.indep.diff _).r, 
---   --   ←ncard_diff_singleton_add_one hx.1] at hx', 
---   -- simpa only [nat.succ_ne_self] using hx', 
--- end     
-
-
-

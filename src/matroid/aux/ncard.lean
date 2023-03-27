@@ -257,8 +257,14 @@ lemma ncard_image_iff (hs : s.finite . to_finite_tac) :
 ⟨λ h, inj_on_of_ncard_image_eq h hs, ncard_image_of_inj_on⟩
 
 lemma ncard_image_of_injective (s : set α) (H : f.injective) :
-  (s.image f).ncard = s.ncard :=
+  (f '' s).ncard = s.ncard :=
 ncard_image_of_inj_on $ λ x _ y _ h, H h
+
+/- New for PR -/
+lemma ncard_preimage_of_injective_subset_range {s : set β} (H : f.injective) 
+(hs : s ⊆ set.range f) :
+  (f ⁻¹' s).ncard = s.ncard :=
+by rw [←ncard_image_of_injective _ H, image_preimage_eq_iff.mpr hs]  
 
 lemma fiber_ncard_ne_zero_iff_mem_image {y : β} (hs : s.finite . to_finite_tac) :
   {x ∈ s | f x = y}.ncard ≠ 0 ↔ y ∈ f '' s :=
@@ -559,6 +565,16 @@ begin
   have h₁' := nat.eq_zero_of_le_zero h₁,
   rw [add_eq_zero_iff] at h₁',
   exact ⟨t, h₂, rfl.subset, by rw [ht.ncard, h₁'.1, h₁'.2]⟩
+end
+
+/- New for PR -/
+lemma exists_intermediate_set' (m : ℕ) (hs : s.ncard ≤ m) (ht : m ≤ t.ncard) (h : s ⊆ t) :
+  ∃ (r : set α), s ⊆ r ∧ r ⊆ t ∧ r.ncard = m :=
+begin
+  obtain ⟨r,hsr,hrt,hc⟩ := 
+    exists_intermediate_set (m - s.ncard) (by rwa [tsub_add_cancel_of_le hs]) h, 
+  rw tsub_add_cancel_of_le hs at hc, 
+  exact ⟨r,hsr,hrt,hc⟩,  
 end
 
 /-- We can shrink `s` to any smaller size. -/

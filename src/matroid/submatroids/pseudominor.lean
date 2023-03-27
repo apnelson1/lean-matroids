@@ -298,6 +298,10 @@ lemma coe_r_project_singleton (he : ¬M.loop e) (X : set E) :
   ((M ⟋ {e}).r X : ℤ) = M.r (insert e X) - 1 :=
 by {rw ←r_project_singleton_add_one he X, simp} 
 
+lemma not_mem_of_indep_project_singleton (h : (M ⟋ {e}).indep I) : 
+  e ∉ I :=
+(loop_of_project_mem (mem_singleton e)).not_mem_indep h
+
 end project 
 
 section loopify 
@@ -491,6 +495,10 @@ end
 lemma loopify_loopify_comm (M : matroid E) (D D' : set E) :
   M ⟍ D ⟍ D' = M ⟍ D' ⟍ D :=  
 by rw [loopify_loopify, union_comm, loopify_loopify]
+
+lemma not_mem_of_indep_loopify_singleton (h : (M ⟍ {e}).indep I) : 
+  e ∉ I :=
+(loop_of_loopify (mem_singleton e)).not_mem_indep h
 
 end loopify 
 

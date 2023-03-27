@@ -2,7 +2,7 @@ import ..submatroids.pseudominor
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size 
 of the largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ,
-taken over all X ⊆ α. The proof is really by induction on the size of the ground set, but to make 
+taken over all X ⊆ E. The proof is really by induction on the size of the ground set, but to make 
 things easier we instead do induction on the number of nonloops, applying the induction hypothesis 
 to loopifications and projections of M₁ and M₂.  -/
 
@@ -14,7 +14,8 @@ variables {E : Type*} [finite E] {M₁ M₂ : matroid E} {I A : set E}
 
 section intersection 
 
-/-- the easy direction of matroid intersection, stated for a specific pair of sets. -/
+/-- the easy direction of matroid intersection; the rank in `M₁` of `A` plus the rank in `M₂` of 
+  `Aᶜ` is an upper bound for the size of a common independent set of `M₁` and `M₂` . -/
 theorem common_ind_le_r_add_r_compl (hI₁ : M₁.indep I) (hI₂ : M₂.indep I) (A : set E) : 
   I.ncard ≤ M₁.r A + M₂.r Aᶜ := 
 begin
@@ -27,25 +28,17 @@ end
 lemma exists_common_ind (M₁ M₂ : matroid E) : 
   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ :=
 begin
-  -- Suppose not. Construct a minimal counterexample (wrt the number of nonloops of `M₁`)
+  -- Suppose not. Then we get strict inequality for all choices of I, X. 
   by_contra' hcon, 
-  have hcon' : ∀ I X, M₁.indep I → M₂.indep I → I.ncard < M₁.r X + M₂.r Xᶜ, 
-  { refine λ I X hI₁ hI₂, lt_of_le_of_ne _ (hcon I X hI₁ hI₂), 
-    exact common_ind_le_r_add_r_compl hI₁ hI₂ X, },
+  have hcon' : ∀ I X, M₁.indep I → M₂.indep I → I.ncard < M₁.r X + M₂.r Xᶜ, from 
+    λ I X hI₁ hI₂, lt_of_le_of_ne (common_ind_le_r_add_r_compl hI₁ hI₂ X) (hcon I X hI₁ hI₂), 
+    
+  -- Construct a minimal counterexample (wrt the number of nonloops of `M₁`)
+  obtain ⟨M,hM,hpmin⟩ := finite.exists_minimal_wrt (ncard ∘ matroid.nonloops) 
+    { M | ∃ M', _} (to_finite _) ⟨M₁, ⟨M₂, hcon'⟩⟩, 
   
-  set matroid_pairs := (matroid E) × (matroid E), 
-  set param : matroid_pairs → ℕ := λ p, p.1.nonloops.ncard with hparam,
-  set counterex : set (matroid_pairs) := 
-    { p | ∀ I X, p.1.indep I → p.2.indep I → I.ncard < p.1.r X + p.2.r Xᶜ } with hce,
-  
-  haveI : finite (matroid_pairs) := finite.prod.finite, 
-  have hfin : counterex.finite := set.to_finite _, 
-  have hcne : counterex.nonempty := ⟨⟨M₁,M₂⟩, hcon'⟩, 
-  
-  obtain ⟨p,hp,hpmin⟩ := finite.exists_minimal_wrt param counterex hfin hcne, 
-  clear hcon hcon' M₁ M₂ hfin hcne, 
-  obtain ⟨⟨M₁,M₂⟩,hcon⟩ := ⟨p,hp⟩,  
-  simp only [mem_set_of_eq] at hcon, 
+  clear hcon hcon' M₁ M₂, 
+  obtain ⟨M₁,M₂,hcon⟩ := ⟨M,hM⟩,  
 
   -- There is a common nonloop of `M₁` and `M₂`, otherwise the result is easy
   have hne : ∃ e, ¬M₁.loop e ∧ ¬M₂.loop e, 
@@ -57,69 +50,63 @@ begin
 
   obtain ⟨e, he₁,he₂⟩ := hne, 
 
-  -- Projecting/loopifying `e` gives non-counterexamples (by minimality) ... 
-  set M₁d := M₁ ⟍ {e} with hM₁d, 
-  set M₂d := M₂ ⟍ {e} with hM₂d,  
-  set M₁c := M₁ ⟋ {e} with hM₁c, 
-  set M₂c := M₂ ⟋ {e} with hM₂c, 
-
-  have d_lt : M₁d.nonloops.ncard < M₁.nonloops.ncard, from 
-    ncard_lt_ncard (strict_pminor_of_loopify_nonloop he₁).nonloops_ssubset_nonloops,
-
-  have c_lt : M₁c.nonloops.ncard < M₁.nonloops.ncard, from 
-    ncard_lt_ncard (strict_pminor_of_project_nonloop he₁).nonloops_ssubset_nonloops,
-
-  have hd : ∃ Id Xd, M₁d.indep Id ∧ M₂d.indep Id ∧ M₁d.r Xd + M₂d.r Xdᶜ ≤ Id.ncard,        
-  { by_contra' h', exact d_lt.ne.symm (hpmin ⟨M₁d,M₂d⟩ h' d_lt.le)},
-
-  have hc : ∃ Ic Xc, M₁c.indep Ic ∧ M₂c.indep Ic ∧ M₁c.r Xc + M₂c.r Xcᶜ ≤ Ic.ncard,        
-  { by_contra' h', exact c_lt.ne.symm (hpmin ⟨M₁c,M₂c⟩ h' c_lt.le)},
-
--- So there are corresponding minimizers in these minors. 
+  -- Projecting/loopifying `e` gives non-counterexamples (by minimality), so there exist pairs
+  -- with equality in these minors.
+  have hd' := ncard_lt_ncard (strict_pminor_of_loopify_nonloop he₁).nonloops_ssubset_nonloops,
+  refine hd'.ne.symm (hpmin (M₁ ⟍ {e}) ⟨M₂ ⟍ {e},_⟩ hd'.le), 
+  by_contra' hd, 
   obtain ⟨Id,Xd, hId₁, hId₂, hId⟩ := hd, 
+
+  have hc' := ncard_lt_ncard (strict_pminor_of_project_nonloop he₁).nonloops_ssubset_nonloops,
+  refine hc'.ne.symm (hpmin (M₁ ⟋ {e}) ⟨M₂ ⟋ {e},_⟩ hc'.le),
+  by_contra' hc, 
   obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
 
-  zify at hIc hId hcon, 
-
-  have heIc : e ∉ Ic, 
-  { rw [hM₁c, indep.project_indep_iff] at hIc₁, 
-    { rw [←disjoint_singleton_right], exact hIc₁.1,},
-    { rwa [loop_iff_dep, not_not] at he₁},
-    exact indep_of_project_indep hIc₁},    
-
-  -- Use these minimizers to get rank lower bounds. 
-  have ineq1 := λ X, 
-    (hId.trans_lt (hcon _ X (indep_of_loopify_indep hId₁) (indep_of_loopify_indep hId₂))), 
-  simp_rw [hM₁d, hM₂d, r_loopify] at ineq1, 
-
-  have ineq2 := λ (X : set E), hcon (insert e Ic) X 
-    (by rwa ← indep_project_singleton_iff he₁ (heIc)) 
-    (by rwa ← indep_project_singleton_iff he₂ (heIc)),
-
-  simp_rw [ncard_insert_of_not_mem heIc,nat.cast_add, nat.cast_one] at ineq2, 
-  rw [hM₁c, hM₂c, coe_r_project_singleton he₁, coe_r_project_singleton he₂] at hIc, 
+  -- Use these pairs to get rank lower bounds ... 
+  have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e}) 
+    (indep_of_loopify_indep hId₁) (indep_of_loopify_indep hId₂))), 
   
-  have hi := ineq1 ((Xc ∩ Xd) \ {e}), 
-  have hu := ineq2 (insert e (Xc ∪ Xd)), 
-
-  -- And contradict them with submodularity bounds. 
-  have sm1 := M₁.r_submod (insert e Xc) (Xd \ {e}), 
-  have sm2 := M₂.r_submod (insert e Xcᶜ) (Xdᶜ \ {e}),
-  have htemp : ∀  S, e ∉ S \ {e}, 
-  { intro S, rw [mem_diff_singleton, not_and, not_ne_iff], exact λ _, rfl},
-  rw [insert_union, insert_union_distrib, insert_diff_singleton, ←insert_union_distrib, 
-    insert_inter_of_not_mem (htemp _), ←inter_diff_assoc] at sm1 sm2, 
-  
-  have huc : (insert e (Xc ∪ Xd))ᶜ = Xcᶜ ∩ Xdᶜ \ {e}, 
-  { apply compl_injective, 
-    simp_rw [diff_eq_compl_inter, compl_inter, compl_compl, singleton_union]},
   have hic : (Xc ∩ Xd \ {e})ᶜ = (insert e (Xcᶜ ∪ Xdᶜ)), 
   { apply compl_injective, 
     simp_rw [←union_singleton, compl_union, compl_compl, diff_eq_compl_inter, inter_comm {e}ᶜ]}, 
 
-  rw hic at hi, 
-  rw huc at hu, 
+  simp_rw [r_loopify, hic] at hi, 
+  zify at hIc hId hcon, 
+
+  have hu := hcon (insert e Ic) (insert e (Xc ∪ Xd)) 
+    (by rwa ← indep_project_singleton_iff he₁ (not_mem_of_indep_project_singleton hIc₁)) 
+    (by rwa ← indep_project_singleton_iff he₂ (not_mem_of_indep_project_singleton hIc₁)),
+
+  have huc : (insert e (Xc ∪ Xd))ᶜ = Xcᶜ ∩ Xdᶜ \ {e}, 
+  { apply compl_injective, 
+    simp_rw [diff_eq_compl_inter, compl_inter, compl_compl, singleton_union]},
+  
+  simp_rw [ncard_insert_of_not_mem (not_mem_of_indep_project_singleton hIc₁),
+    nat.cast_add, nat.cast_one, huc] at hu, 
+  
+  rw [coe_r_project_singleton he₁, coe_r_project_singleton he₂] at hIc, 
+  
+  -- ... and contradict them with submodularity bounds. 
+  have sm1 := M₁.r_submod (insert e Xc) (Xd \ {e}), 
+  have sm2 := M₂.r_submod (insert e Xcᶜ) (Xdᶜ \ {e}),
+  
+  rw [insert_union, insert_union_distrib, insert_diff_singleton, ←insert_union_distrib, 
+    insert_inter_of_not_mem (not_mem_diff_singleton _ _), ←inter_diff_assoc] at sm1 sm2, 
+  
   linarith, 
+end 
+
+/-- We can choose a minimizing pair `I,X` where `X` is a flat of `M₁` -/
+lemma exists_common_ind_with_flat (M₁ M₂ : matroid E) : 
+  ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₁.flat X :=
+begin
+  obtain ⟨I,X₀, h₀⟩ := exists_common_ind M₁ M₂, 
+  rw [←M₁.r_cl X₀] at h₀, 
+  refine ⟨I,M₁.cl X₀,h₀.1, h₀.2.1, le_antisymm _ _, M₁.cl_flat _⟩,  
+  { apply common_ind_le_r_add_r_compl h₀.1 h₀.2.1 },
+  rw h₀.2.2, 
+  simp only [add_le_add_iff_left], 
+  exact M₂.r_mono (compl_subset_compl.mpr (subset_cl _ _)), 
 end 
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. 

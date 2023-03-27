@@ -1,13 +1,14 @@
-import .dual 
+import ..dual 
 
 open set 
 
-open_locale classical 
+-- open_locale classical 
 noncomputable theory 
 namespace matroid 
 
-variables {E : Type*} {s t : ℕ} {X Y Z B C I : set E} {M : matroid E} [finite E]
+variables {E : Type*} [finite E] {s t : ℕ} {I : set E} {M : matroid E} 
 
+/-- Truncate a matroid to rank `t`. Every rank above `t` drops to `t`. -/
 def tr (M : matroid E) (t : ℕ) := 
   matroid_of_r (λ X, min t (M.r X))
   (λ X, (min_le_right _ _).trans (M.r_le_card _)) 
@@ -21,7 +22,7 @@ def tr (M : matroid E) (t : ℕ) :=
       exact this _ _ h.le}, 
     cases le_or_lt t (M.r Y) with ht ht, 
     { rw [min_eq_left ht, min_eq_left (ht.trans (M.r_le_r_union_right _ _))],
-      linarith [min_le_min (rfl.le : t ≤ t) (M.r_inter_le_r_left X Y)]},
+      linarith [min_le_min (rfl.le : t ≤ t) (M.r_inter_left_le_r X Y)]},
     rw [min_eq_right_of_lt ht, min_eq_right (hXY.trans ht.le)], 
     linarith [min_le_right t (M.r (X ∩ Y)), min_le_right t (M.r (X ∪ Y)), M.r_submod X Y],
   end)) 
@@ -30,15 +31,18 @@ def tr (M : matroid E) (t : ℕ) :=
   (M.tr t).r X = min t (M.r X) := 
 by simp only [tr, matroid_of_r_apply]
 
--- @[simp] lemma tr_indep_iff :
---   (M.tr t).indep I ↔ M.indep I ∧ I.ncard ≤ t :=
--- begin
---   rw [indep_iff_r_eq_card, tr_r],
---   refine ⟨λ h, _, λ h, _⟩,
---   { have h' := M.r_le_card I, 
---     rw ←h at h', 
---     simp at h', },
--- end 
+@[simp] lemma tr_indep_iff :
+  (M.tr t).indep I ↔ M.indep I ∧ I.ncard ≤ t :=
+begin
+  simp_rw [indep_iff_r_eq_card, tr_r],
+  obtain (hle | hlt) := le_or_lt t (M.r I), 
+  { rw [min_eq_left hle], 
+    exact ⟨by {rintro rfl, exact ⟨hle.antisymm' (M.r_le_card _), rfl.le⟩}, 
+      λ h, (hle.trans_eq h.1).antisymm h.2⟩},
+  rw [min_eq_right hlt.le], 
+  simp only [iff_self_and], 
+  exact λ h, h.symm.trans_le hlt.le, 
+end 
 
 end matroid
 
