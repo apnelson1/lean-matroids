@@ -9,12 +9,36 @@ open_locale big_operators
 
 open matroid set equiv 
 
-variables {ι E : Type*} [finite E] [finite ι] {M₁ M₂ : matroid E} {I A : set E}
+
+section partitionable 
+
+variables {ι E : Type*} [finite E] [finite ι] {M : ι → matroid E} {I A X : set E}
 
 /-- A set is partitionable with respect to a collection of matroids on `E` if it admits a partition   
   into sets that are independent in these matroids  -/
 def partitionable (M : ι → matroid E) (I : set E) : Prop := 
   ∃ f : I → ι, ∀ i, (M i).indep (I ∩ (coe '' (f⁻¹' {i})))
+
+lemma partitionable_iff_is_Union :
+  partitionable M I ↔ ∃ J : ι → set E, (I = ⋃ i, J i) ∧ ∀ i, (M i).indep (J i) :=
+begin
+  split, 
+  { rintro ⟨f, hf⟩, 
+    refine ⟨_, subset_antisymm (λ x hx, mem_Union_of_mem (f ⟨x,hx⟩) _) (Union_subset _), hf⟩, 
+    { exact ⟨hx, by simpa⟩},
+    exact λ _, inter_subset_left _ _},
+  rintro ⟨J, hIJ, hJ⟩, 
+  have h : ∀ (x : I), ∃ i, (x : E) ∈ J i,  
+  { intro x,  
+    obtain ⟨J,⟨i,rfl⟩,hxi⟩ :=  (hIJ.subset x.2), 
+    exact ⟨i, hxi⟩},
+  choose f hf using h, 
+  refine ⟨f, λ i, (hJ i).subset _⟩,
+  rintro x ⟨hxI, ⟨x,h,rfl⟩⟩, 
+  convert hf x,
+  rw eq_comm, 
+  exact h,   
+end  
 
 lemma partitionable_ub {M : ι → matroid E} {I X : set E} (h : partitionable M I) :
   I.ncard ≤ ∑ᶠ i, (M i).r X + Xᶜ.ncard := 
@@ -22,11 +46,12 @@ begin
   rw [←ncard_inter_add_ncard_diff_eq_ncard I X], 
   refine add_le_add _ 
     (ncard_le_of_subset (by {rw compl_eq_univ_diff, exact diff_subset_diff_left (subset_univ _)})),
-  obtain ⟨f, hf⟩ := h, 
-  have := bUnion_preimage_singleton, 
+  -- obtain ⟨f, hf⟩ := partition, 
+  
   
 end 
 
+end partitionable
 
 example (M : ι → matroid E) : false := 
 begin
