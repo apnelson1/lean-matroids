@@ -1,27 +1,42 @@
-import .truncation 
+import ..dual 
 
-open matroid set 
+/-
+Basic matroid constructions; free/loopy matroids, truncation, dual, etc. 
+-/
 open_locale classical
+
+open set 
+namespace matroid 
 
 noncomputable theory 
 
+section free_loopy 
+
 variables {E : Type*} {X I B : set E} {r s t : ℕ} [finite E] {M : matroid E}
 
+/-- The matroid whose only basis is the whole ground set -/
+def free_on (E : Type*) : matroid E := 
+⟨λ B, B = univ, ⟨_,rfl⟩, λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim⟩
+
+/-- The matroid whose only basis is empty -/
+def loopy_on (E : Type*) : matroid E := 
+⟨λ B, B = ∅, ⟨_,rfl⟩, λ B B' hB hB' a ha, by {rw hB at ha, exact (not_mem_empty _ ha.1).elim}⟩
+
 lemma free_indep (I : set E) :
-  (free_matroid_on E).indep I  := 
+  (free_on E).indep I  := 
 ⟨univ, rfl, subset_univ _⟩
 
 lemma univ_indep_iff_free {M : matroid E} : 
-   indep M univ ↔ M = free_matroid_on E := 
+   indep M univ ↔ M = free_on E := 
 begin
-  simp_rw [matroid.ext_iff, free_matroid_on, indep, univ_subset_iff, exists_eq_right], 
+  simp_rw [matroid.ext_iff, free_on, indep, univ_subset_iff, exists_eq_right], 
   rw [function.funext_iff],  
   simp_rw [eq_iff_iff], 
   exact ⟨λ h a, ⟨λ ha, ha.eq_of_subset_base h (subset_univ _), λ ha, by rwa ha⟩, λ h, by rw h⟩,
 end 
   
 @[simp] lemma free_r (X : set E) :
-  (free_matroid_on E).r X = X.ncard :=
+  (free_on E).r X = X.ncard :=
 by {rw ← indep_iff_r_eq_card, apply free_indep}
 
 @[simp] lemma loopy_on_base_iff_empty :
@@ -69,40 +84,123 @@ begin
   rwa [r_zero_iff_subset_loops, univ_subset_iff] at h, 
 end
 
+end free_loopy
+
+section truncation 
+
+variables {E : Type*} [finite E] {s t : ℕ} {I : set E} {M : matroid E} 
+
+/-- Truncate a matroid to rank `t`. Every rank above `t` drops to `t`. -/
+def tr (M : matroid E) (t : ℕ) := 
+  matroid_of_r (λ X, min t (M.r X))
+  (λ X, (min_le_right _ _).trans (M.r_le_card _)) 
+  (λ X Y hXY, le_min (min_le_left _ _) ((min_le_right _ _).trans (M.r_mono hXY))) 
+  (λ X Y, 
+  (begin
+    wlog hXY : M.r X ≤ M.r Y generalizing X Y,
+    { obtain (h | h) := le_or_lt (M.r X) (M.r Y), 
+      { exact this _ _ h},
+      rw [add_comm (min t (M.r X)), inter_comm, union_comm],
+      exact this _ _ h.le}, 
+    cases le_or_lt t (M.r Y) with ht ht, 
+    { rw [min_eq_left ht, min_eq_left (ht.trans (M.r_le_r_union_right _ _))],
+      linarith [min_le_min (rfl.le : t ≤ t) (M.r_inter_left_le_r X Y)]},
+    rw [min_eq_right_of_lt ht, min_eq_right (hXY.trans ht.le)], 
+    linarith [min_le_right t (M.r (X ∩ Y)), min_le_right t (M.r (X ∪ Y)), M.r_submod X Y],
+  end)) 
+
+@[simp] lemma tr_r (t : ℕ) (X : set E) :
+  (M.tr t).r X = min t (M.r X) := 
+by simp only [tr, matroid_of_r_apply]
+
+@[simp] lemma tr_indep_iff :
+  (M.tr t).indep I ↔ M.indep I ∧ I.ncard ≤ t :=
+begin
+  simp_rw [indep_iff_r_eq_card, tr_r],
+  obtain (hle | hlt) := le_or_lt t (M.r I), 
+  { rw [min_eq_left hle], 
+    exact ⟨by {rintro rfl, exact ⟨hle.antisymm' (M.r_le_card _), rfl.le⟩}, 
+      λ h, (hle.trans_eq h.1).antisymm h.2⟩},
+  rw [min_eq_right hlt.le], 
+  simp only [iff_self_and], 
+  exact λ h, h.symm.trans_le hlt.le, 
+end 
+
+end truncation 
+
+section uniform 
+
+variables {E : Type*} [finite E] {s t r : ℕ} {M : matroid E} 
+
 /-- The matroid whose bases are the `r`-sets. If `E` is smaller than `r`, then this is the free 
   matroid. TODO : define without rank  -/
 def unif (E : Type*) [finite E] (r : ℕ) : matroid E := 
-  tr (free_matroid_on E) r 
+  tr (free_on E) r 
 
 /-- the rank-a uniform matroid on b elements with ground set `fin' b`. Free if `b ≤ a`. -/
 def canonical_unif (a b : ℕ) : 
   matroid (fin b) := 
 unif (fin b) a
 
-
 @[simp] lemma unif_r (X : set E) :
   (unif E r).r X = min r (X.ncard) := 
 by rw [unif, tr_r r, free_r]
 
-@[simp] lemma unif_rk (hr : r ≤ nat.card E) : 
+lemma unif_rk (hr : r ≤ nat.card E) : 
   (unif E r).rk = r :=
 by rw [rk, unif_r univ, ncard_univ, min_eq_left hr]
  
-@[simp] lemma unif_indep_iff : 
-  indep (unif E r) X ↔ X.ncard ≤ r := 
+@[simp] lemma unif_indep_iff {I : set E}: 
+  (unif E r).indep I ↔ I.ncard ≤ r := 
 by rw [indep_iff_r_eq_card, unif_r, min_eq_right_iff]
 
-lemma unif_base_iff (hr : r ≤ nat.card E): 
-  base (unif E r) X ↔ X.ncard = r := 
+lemma unif_free_iff_card_le_r : 
+  nat.card E ≤ r ↔ unif E r = free_on E :=
+by rw [←univ_indep_iff_free, unif_indep_iff, ncard_univ] 
+   
+lemma unif_base_iff {B : set E} (hr : r ≤ nat.card E): 
+  (unif E r).base B ↔ B.ncard = r := 
 begin
   simp_rw [base_iff_maximal_indep, unif_indep_iff], 
   rw [←ncard_univ] at hr, 
   refine ⟨λ h, h.1.antisymm _, _⟩,
-  { obtain ⟨Y, hXY, - ,rfl⟩ := exists_intermediate_set' r h.1 hr (subset_univ _), 
+  { obtain ⟨Y, hXY, - ,rfl⟩ := exists_intermediate_set' h.1 hr (subset_univ _), 
     rw h.2 Y rfl.le hXY},
   rintro rfl, 
   exact ⟨rfl.le, λ I hIX hXI, eq_of_subset_of_ncard_le hXI hIX⟩, 
 end 
+
+@[simp] lemma unif_circuit_iff {C : set E}:
+  (unif E r).circuit C ↔ C.ncard = r + 1 :=
+begin
+  simp_rw [circuit_def, unif_indep_iff, not_le], 
+  refine ⟨λ h, _,λ h, _⟩, 
+  { obtain ⟨e,he⟩ := nonempty_of_ncard_ne_zero (ne_zero_of_lt h.1),
+    have hCe := h.2 (C \ {e}) (diff_singleton_ssubset he),  
+    rw [←add_le_add_iff_right 1, ncard_diff_singleton_add_one he] at hCe, 
+    exact hCe.antisymm (nat.add_one_le_iff.mpr h.1)},
+  refine ⟨by linarith, λ I hIC, (add_le_add_iff_right 1).mp _⟩,    
+  rw [←h, ←nat.lt_iff_add_one_le], 
+  exact ncard_lt_ncard hIC, 
+end 
+
+@[simp] lemma unif_flat_iff {F : set E} : 
+  (unif E r).flat F ↔ F = univ ∨ F.ncard < r :=
+begin
+  simp_rw [flat_iff_forall_circuit, unif_circuit_iff],  
+  refine ⟨λ h, (lt_or_le F.ncard r).elim or.inr (λ hle, or.inl _),_⟩, 
+  { obtain ⟨X,hXF,rfl⟩ := exists_smaller_set F r hle, 
+    refine eq_univ_of_forall (λ x, (em (x ∈ X)).elim (λ h', hXF h') (λ hxF, _)), 
+    refine h (insert x X) x (by rw [ncard_insert_of_not_mem hxF]) (mem_insert _ _) _, 
+    simp only [insert_diff_of_mem, mem_singleton, diff_singleton_subset_iff], 
+    exact hXF.trans (subset_insert _ _)},
+  rintro (rfl | hlt), 
+  { exact λ _ _ _ _ _, mem_univ _},
+  refine λ C e hcard heC hCF, _, 
+  have hlt' := (ncard_le_of_subset hCF).trans_lt hlt, 
+  rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one heC, hcard] at hlt', 
+  simpa using hlt', 
+end  
 
 lemma unif_dual (E : Type*) [finite E] {r₁ r₂ : ℕ} (h : r₁ + r₂ = nat.card E) :
   (unif E r₁).dual = unif E r₂ :=
@@ -114,6 +212,9 @@ begin
   { intro h, linarith [ncard_add_ncard_compl X]},
 end 
 
+end uniform 
+
+end matroid 
 
 /-def dual (M : matroid E) : matroid E := 
 { base := λ X, M.base (univ \ X) ,

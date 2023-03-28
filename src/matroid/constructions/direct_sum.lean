@@ -1,10 +1,10 @@
-import ..dual
-import .uniform 
+import .basic
+import ..equiv
 import algebra.big_operators.finprod
 
 noncomputable theory 
 
-open set function
+open set function sigma
 
 open_locale classical 
 open_locale big_operators
@@ -22,7 +22,7 @@ def direct_sum (M : ∀ i, matroid (E i)) :
   exists_base' := begin
     choose B hB using λ i, (M i).exists_base,  
     refine ⟨⋃ (i : ι), (sigma.mk i) '' (B i), λ i, _⟩, 
-    rw sigma.preimage_mk_Union_image_mk, 
+    rw preimage_mk_Union_image_mk, 
     exact hB i, 
   end,
   base_exchange' := begin
@@ -45,6 +45,10 @@ def direct_sum (M : ∀ i, matroid (E i)) :
   (direct_sum M).base B ↔ ∀ i, (M i).base ((sigma.mk i) ⁻¹' B) := 
 iff.rfl 
 
+lemma eq_union_image_bases_of_direct_sum_base {B : set (Σ i, E i)} (h : (direct_sum M).base B) : 
+  ∃ Bs : (∀ i, set (E i)), (B = ⋃ i, (sigma.mk i '' (Bs i))) ∧ (∀ i, (M i).base (Bs i)) := 
+⟨λ i, sigma.mk i ⁻¹' B, by rw ←eq_Union_image_preimage_mk B, direct_sum_base_iff.mp h⟩
+  
 variables [finite ι] [∀ i, finite (E i)]
 
 @[simp] lemma direct_sum_indep_iff {I : set (Σ i, E i)} :
@@ -58,6 +62,10 @@ begin
   { rw sigma.preimage_mk_Union_image_mk, exact (hf i).1},
   simpa using (hf i).2 a ha, 
 end
+
+lemma eq_union_image_indeps_of_direct_sum_indep {I : set (Σ i, E i)} (h : (direct_sum M).indep I) : 
+  ∃ Is : (∀ i, set (E i)), (I = ⋃ i, (sigma.mk i '' (Is i))) ∧ (∀ i, (M i).indep (Is i)) := 
+⟨λ i, sigma.mk i ⁻¹' I, by rw ←eq_Union_image_preimage_mk I, direct_sum_indep_iff.mp h⟩
 
 @[simp] lemma direct_sum_basis_iff {I X : set (Σ i, E i)} : 
   (direct_sum M).basis I X ↔ ∀ i, (M i).basis (sigma.mk i ⁻¹' I) (sigma.mk i ⁻¹' X) :=
@@ -89,7 +97,103 @@ begin
   rw [←(hI i).r, (hI i).indep.r, ncard_image_of_injective _ sigma_mk_injective], 
 end 
 
+/- This proof is a bit of a disaster. -/
+@[simp] lemma direct_sum_circuit_iff {C : set (Σ i, E i)} :
+  (direct_sum M).circuit C ↔ ∃ i C₀, (M i).circuit C₀ ∧ C = sigma.mk i '' C₀ :=
+begin
+  refine ⟨λ hC, _,_⟩, 
+  { have h_dep : ∃ i, ¬(M i).indep (sigma.mk i ⁻¹' C), 
+    { by_contra' h, rw [←direct_sum_indep_iff] at h, exact hC.dep h, }, 
+    obtain ⟨i,hi⟩ := h_dep,    
+    
+    have h_forall : ∀ j ≠ i, sigma.mk j ⁻¹' C = ∅,
+    { refine λ j hj, eq_empty_of_forall_not_mem (λ e he, hi _),  
+      have hjC : (⟨j,e⟩ : (Σ i, E i)) ∈ C, from he, 
+      convert ((direct_sum_indep_iff.mp (hC.diff_singleton_indep hjC)) i).subset rfl.subset using 1,
+      rw [preimage_diff, eq_comm], 
+      convert diff_empty, 
+      convert preimage_image_sigma_mk_of_ne hj.symm {e}, 
+      rw [image_singleton]},  
+    
+    have hC₀ : C = sigma.mk i '' (sigma.mk i ⁻¹' C), 
+    { nth_rewrite 0 ←Union_image_preimage_sigma_mk_eq_self C,  
+      refine subset_antisymm (Union_subset (λ j, _)) (subset_Union _ i), 
+      obtain (rfl | hne) := eq_or_ne j i, 
+      { exact subset.rfl},
+      rintro x ⟨h,h',rfl⟩, 
+      exact (not_mem_empty _ ((h_forall _ hne).subset h')).elim, },
+    refine ⟨_,_,_,hC₀⟩, 
+    simp_rw [circuit_iff_dep_forall_diff_singleton_indep, direct_sum_indep_iff] at hC ⊢, 
+    refine ⟨hi, λ e he, _⟩,    
+    convert hC.2 ⟨i,e⟩ he i using 1, 
+    ext, 
+    simp},
+  simp_rw [circuit_iff_dep_forall_diff_singleton_indep, direct_sum_indep_iff, not_forall], 
+  rintro ⟨i,C, ⟨hC,hmin⟩, rfl⟩, 
+  
+  refine ⟨⟨i,by rwa preimage_image_eq _ sigma_mk_injective⟩, _⟩, 
+  rintro ⟨j,e⟩ ⟨f,hf,⟨h'⟩⟩ j,     
+  rw preimage_diff, 
+  obtain (rfl | hne) := eq_or_ne i j, 
+  { rw [preimage_image_eq _ sigma_mk_injective], convert hmin f hf, ext, simp},
+  convert (M j).empty_indep, 
+  rw [preimage_image_sigma_mk_of_ne hne.symm, empty_diff], 
+end
+
+@[simp] lemma direct_sum_flat_iff {F : set (Σ i, E i)} :
+  (direct_sum M).flat F ↔ ∀ i, (M i).flat (sigma.mk i ⁻¹' F) :=
+begin
+  simp_rw [flat_iff_forall_circuit, direct_sum_circuit_iff], 
+  refine ⟨λ h i C e hC heC hss, h (sigma.mk i '' C) ⟨i,e⟩ ⟨_,_,hC,rfl⟩ ⟨e,heC,rfl⟩ _,λ h C e, _⟩, 
+  { simp_rw [diff_singleton_subset_iff, image_subset_iff, ←union_singleton, preimage_union] at 
+      ⊢ hss,
+    convert hss, 
+    ext, 
+    simp},
+  rintro ⟨i,C₀,hC₀,rfl⟩ ⟨f,hf,rfl⟩ h',  
+  refine h i C₀ f hC₀ hf _,
+  rintro x ⟨hxC₀,(hne : x ≠ f)⟩,   
+  exact h' ⟨⟨_,hxC₀,rfl⟩,by simpa⟩, 
+end  
+
 end direct_sum
+
+-- section prod_sum
+
+-- variables {ι E : Type*} [finite ι] [finite E] {M : ι → matroid E}
+
+-- def prod_sum (M : ι → matroid E) : 
+--   matroid (ι × E) := 
+-- (direct_sum M).congr_equiv (equiv.sigma_equiv_prod ι E)
+
+-- @[simp] lemma prod_sum_base_iff {B : set (ι × E)} :
+--   (prod_sum M).base B ↔ ∀ i, (M i).base (prod.mk i ⁻¹' B) := 
+-- iff.rfl 
+
+-- @[simp] lemma prod_sum_indep_iff {I : set (ι × E)} :
+--   (prod_sum M).indep I ↔ ∀ i, (M i).indep (prod.mk i ⁻¹' I) :=
+-- begin
+--   convert @congr_equiv_apply_indep _ _ _ _ (equiv.sigma_equiv_prod ι E) (direct_sum M) I,  
+--   simp_rw [direct_sum_indep_iff], 
+--   convert rfl, 
+-- end 
+
+-- @[simp] lemma prod_sum_circuit_iff {C : set (ι × E)} :
+--   (prod_sum M).circuit C ↔ ∃ i C₀, (M i).circuit C₀ ∧ C = prod.mk i '' C₀ :=
+-- begin
+--   set e := equiv.sigma_equiv_prod ι E with he, 
+--   convert @congr_equiv_apply_circuit _ _ _ _ e (direct_sum M) C,  
+--   simp_rw [direct_sum_circuit_iff, eq_iff_iff, preimage_eq_iff_eq_image e.bijective, image_image], 
+--   convert iff.rfl,  
+-- end 
+
+-- @[simp] lemma prod_sum_flat_iff {F : set (ι × E)} :
+--   (prod_sum M).flat F ↔ ∀ i, (M i).indep (prod.mk i ⁻¹' F) :=
+-- begin
+
+-- end 
+
+-- end prod_sum
 
 section sum 
 
@@ -149,6 +253,7 @@ end sum
 
 section partition 
 
+
 variables {ι : Type*} {E : ι → Type*} {rk : ι → ℕ} [finite ι] [∀ i, finite (E i)] 
 
 /-- The direct sum of uniform matroids with prescribed ranks -/
@@ -168,7 +273,7 @@ begin
 end 
 
 @[simp] lemma partition_matroid_indep_iff {I : set (Σ i, E i)} :
-  (partition_matroid E rk).indep I ↔ ∀ i, (I ∩ sigma.fst ⁻¹' {i}).ncard ≤ rk i := 
+  (partition_matroid E rk).indep I ↔ ∀ i, (I ∩ fst ⁻¹' {i}).ncard ≤ rk i := 
 begin
   simp only [partition_matroid, direct_sum_indep_iff, unif_indep_iff], 
   refine forall_congr (λ i, _), 
@@ -176,12 +281,24 @@ begin
 end 
 
 @[simp] lemma partition_matroid_r_eq (X : set (Σ i, E i)) :
-  (partition_matroid E rk).r X = ∑ᶠ i, min (rk i) (X ∩ sigma.fst ⁻¹' {i}).ncard := 
+  (partition_matroid E rk).r X = ∑ᶠ i, min (rk i) (X ∩ fst ⁻¹' {i}).ncard := 
 begin
   simp only [partition_matroid, direct_sum_r_eq, unif_r], 
   apply finsum_congr (λ i, _), 
   rw sigma.ncard_preimage_mk, 
 end 
+
+lemma partition_one_flat_iff {F : set (Σ i, E i)} :
+  (partition_matroid E 1).flat F ↔ ∀ i, (fst ⁻¹' {i} ⊆ F) ∨ (disjoint F (fst ⁻¹' {i})) :=   
+begin
+  simp only [partition_matroid, pi.one_apply, direct_sum_flat_iff, unif_flat_iff, ncard_preimage_mk, 
+    nat.lt_one_iff, ncard_eq_zero], 
+  refine forall_congr (λ i, _ ), 
+  convert iff.rfl, 
+  { simp_rw [eq_univ_iff_forall, eq_iff_iff], 
+    exact ⟨λ h x, h (rfl : sigma.fst ⟨i,x⟩ = i), λ h, by {rintro ⟨j,e⟩ (rfl : j = i), exact h _}⟩},
+  simp_rw [eq_iff_iff, ←disjoint_iff_inter_eq_empty], 
+end   
 
 end partition 
 

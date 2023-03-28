@@ -1,8 +1,7 @@
 import .inter
 import ..constructions.direct_sum
-import ..constructions.uniform
+import ..equiv
 import algebra.big_operators.finprod
-
 
 open_locale classical 
 open_locale big_operators
@@ -40,7 +39,7 @@ begin
   exact h,   
 end  
 
-lemma partitionable_ub {M : ι → matroid E} {I X : set E} (h : partitionable M I) :
+lemma partitionable_ub {M : ι → matroid E} {I : set E} (X : set E) (h : partitionable M I) :
   I.ncard ≤ ∑ᶠ i, (M i).r X + Xᶜ.ncard := 
 begin
   rw [←ncard_inter_add_ncard_diff_eq_ncard I X], 
@@ -58,22 +57,34 @@ end
 theorem matroid_union (M : ι → matroid E) : 
   ∃ I X, partitionable M I ∧ I.ncard = ∑ᶠ i, (M i).r X + Xᶜ.ncard := 
 begin
+  suffices h : ∃ I X : set E, partitionable M I ∧ ∑ᶠ i, (M i).r Xᶜ + X.ncard ≤ I.ncard,   
+  { obtain ⟨I, X, hI, hle⟩ := h, 
+    refine ⟨I, Xᶜ, hI, _⟩, 
+    rw compl_compl, 
+    refine hle.antisymm' _,  
+    have := (partitionable_ub Xᶜ hI),
+    rwa compl_compl at this},
+
   set M₁ := (direct_sum M).congr_equiv (sigma_equiv_prod ι E) with hM₁, 
   set M₂ := (partition_matroid (λ (e : E), ι) 1).congr_equiv 
     ((sigma_equiv_prod E ι).trans (prod_comm _ _)) with hM₂, 
   
   obtain ⟨I,X, hI₁,hI₂, hIX, hF⟩ := exists_common_ind_with_flat_right M₁ M₂, 
 
-  refine ⟨prod.snd '' I, prod.snd '' X, _, _⟩, 
+  simp only [congr_equiv_apply_flat, equiv.coe_trans, coe_prod_comm, preimage_compl, 
+    partition_one_flat_iff] at hF, 
+
+  simp_rw [← disjoint_compl_left_iff_subset, compl_compl, disjoint_compl_left_iff_subset] at hF, 
+
+  refine ⟨prod.snd '' I, prod.snd '' Xᶜ, _, _⟩, 
   { rw partitionable_iff_is_Union, 
     refine ⟨λ i, prod.snd '' (I ∩ (prod.fst ⁻¹' {i})), _, λ i, _⟩,
     { rw [←image_Union, ←inter_Union, ←bUnion_univ, bUnion_preimage_singleton, preimage_univ, 
       inter_univ]},
     simp only [congr_equiv_apply_indep, direct_sum_indep_iff] at hI₁,
-    convert hI₁ i, 
-    ext, 
-    simp},  
-  convert hIX, 
+    convert hI₁ i, ext, simp},  
+  
+  have hI : (prod.snd '' I).ncard = I.ncard,
   { refine ncard_image_of_inj_on _,
     rintro ⟨i₁,e⟩ h₁ ⟨i₂,e'⟩ h₂ (rfl : e = e'),
     simp only [prod.mk.inj_iff, eq_self_iff_true, and_true], 
@@ -81,18 +92,42 @@ begin
       pi.one_apply, ncard_le_one_iff, mem_inter_iff, mem_preimage, function.comp_app,   
       sigma_equiv_prod_apply, prod.swap_prod_mk, mem_singleton_iff, and_imp, sigma.forall] at hI₂, 
     simpa using (@hI₂ e e i₂ ⟨e,i₁⟩ h₂ rfl h₁ rfl).symm},
+
+  rw hI, 
+  refine le_of_le_of_eq (add_le_add (le_of_eq _) _) hIX.symm, 
+  
   { simp only [congr_equiv_apply_r, direct_sum_r_eq], 
-    convert rfl, ext a', convert rfl, ext e, 
-    simp only [mem_image, prod.exists, exists_eq_right, mem_preimage, sigma_equiv_prod_apply], 
-    -- If `X` contains something from a cell, it should contain everything. 
-    refine ⟨_, λ h, ⟨_,h⟩⟩, 
-    rintro ⟨a,ha⟩, 
-    sorry, 
-    -- simp_rw [flat_iff_r_lt_r_insert, not_mem_compl_iff] at hF, 
-    -- have := hF _ ha, 
+    convert rfl, ext i, convert rfl, ext e, 
+    simp only [mem_compl_iff, mem_image, prod.exists, exists_eq_right, not_exists_not, 
+      mem_preimage, sigma_equiv_prod_apply], 
+    refine ⟨λ h, h _, λ hie x, _⟩,  
+    obtain (hdj | hss) := hF e,
+    { exact (@disjoint.ne_of_mem _ _ _ hdj ⟨e,i⟩ ⟨e,i⟩ (by simpa) rfl rfl).elim},
+    exact @hss ⟨e,x⟩ rfl},
+  
+  
+  
+  simp only [congr_equiv_apply_r, equiv.coe_trans, coe_prod_comm, preimage_compl, 
+    partition_matroid_r_eq, pi.one_apply, ←finsum_mem_one], 
+   
+  refine finsum_le_finsum (to_finite _) (to_finite _) (λ i, _ ), 
+  
+  simp only [finsum_eq_dif, mem_image, mem_compl_iff, prod.exists, exists_eq_right, dite_eq_ite, 
+    mem_inter_iff, mem_preimage, function.comp_app, sigma_equiv_prod_apply, prod.swap_prod_mk, 
+    mem_singleton_iff, le_min_iff], 
+  
+  split, 
+  { split_ifs; simp},
+  split_ifs, swap, exact nat.zero_le _, 
 
+  -- use finsum_mem_diff
+  
 
-     },
+  
+  
+  
+  
+
   
 end 
 

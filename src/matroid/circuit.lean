@@ -56,6 +56,15 @@ begin
   linarith, 
 end 
 
+lemma circuit_iff_dep_forall_diff_singleton_indep :
+  M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
+begin
+  rw [circuit_def, and.congr_right_iff], 
+  refine λ hdep, ⟨λ h e heC, (h _ (diff_singleton_ssubset heC)), λ h I hIC, _⟩, 
+  obtain ⟨e, heC,heI⟩ := exists_of_ssubset hIC, 
+  exact (h e heC).subset (subset_diff_singleton hIC.subset heI), 
+end   
+
 lemma circuit.r (hC : M.circuit C) :
   M.r C = C.ncard - 1 :=
 by rw [hC.card, nat.add_succ_sub_one, add_zero]

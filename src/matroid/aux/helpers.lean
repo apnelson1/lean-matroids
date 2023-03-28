@@ -170,6 +170,12 @@ begin
   rw h'.1, 
 end 
 
+lemma sigma_equiv_prod_mk {α : Type*} {i : ι} : 
+  (equiv.sigma_equiv_prod ι α) ∘ (sigma.mk i) = prod.mk i := 
+by {ext; simp}
+
+
+
 variables [finite ι]
 
 lemma sigma.ncard_eq_finsum_ncard_image_preimage_mk (x : set (Σ i, α i)) (hx : x.finite) :

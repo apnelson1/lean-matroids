@@ -551,6 +551,14 @@ begin
   exact (M.cl_mono hCX) (hC.subset_cl_diff_singleton e heC), 
 end 
 
+lemma flat_iff_forall_circuit :
+  M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
+begin
+  rw [flat_iff_cl_self], 
+  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩, 
+  { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
+  exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF), 
+end    
 
 /- ### Basis exchange -/
 /- These lemmas doesn't actually use closure in their statements, but we prove them using closure.

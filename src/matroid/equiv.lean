@@ -90,7 +90,7 @@ end
 by simp [←image_equiv_eq_preimage_symm]
 
 @[simp] lemma congr_equiv_apply_r {e : E₁ ≃ E₂} {M₁ : matroid E₁} (X : set E₂) :
-  (M₁.congr_equiv e).r X = M₁.r (e ⁻¹' X):= 
+  (M₁.congr_equiv e).r X = M₁.r (e ⁻¹' X) := 
 begin
   obtain ⟨I, hI⟩ := (M₁.congr_equiv e).exists_basis X, 
   rw [←hI.r, hI.indep.r], 
@@ -100,6 +100,37 @@ end
 
 @[simp] lemma congr_equiv_apply_symm_r {e : E₁ ≃ E₂} {M₂ : matroid E₂} (X : set E₁) :
   (M₂.congr_equiv e.symm).r X = M₂.r (e '' X) := 
+by simp [←image_equiv_eq_preimage_symm]
+
+@[simp] lemma congr_equiv_apply_circuit {e : E₁ ≃ E₂} {M₁ : matroid E₁} {C : set E₂} :
+  (M₁.congr_equiv e).circuit C ↔ M₁.circuit (e ⁻¹' C) :=
+begin
+  simp_rw [circuit_iff_dep_forall_diff_singleton_indep, congr_equiv_apply_indep, preimage_diff], 
+  convert iff.rfl, 
+  rw eq_iff_iff, 
+  refine ⟨λ h x hxC, _,λ h x (hx : e x ∈ C), _⟩, 
+  { convert h (e.symm x) (by simpa), 
+    rw [←image_singleton, preimage_equiv_eq_image_symm]},
+  convert h _ hx, 
+  rw [←image_singleton, preimage_image_eq _ e.injective], 
+end 
+
+@[simp] lemma congr_equiv_apply_symm_circuit {e : E₁ ≃ E₂} {M₂ : matroid E₂} {C : set E₁} :
+  (M₂.congr_equiv e.symm).circuit C = M₂.circuit (e '' C) := 
+by simp [←image_equiv_eq_preimage_symm]
+
+@[simp] lemma congr_equiv_apply_flat {e : E₁ ≃ E₂} {M₁ : matroid E₁} {F : set E₂} :
+  (M₁.congr_equiv e).flat F ↔ M₁.flat (e ⁻¹' F) :=
+begin
+  simp_rw [flat_def, congr_equiv_apply_basis], 
+  refine ⟨λ h I X hIF hFX, _,λ h I X hIF hFX, _⟩, 
+  { rw [←image_subset_iff], 
+    exact h (e '' I) (e '' X) (by simpa) (by simpa)},
+  exact (equiv.preimage_subset e X F).mp (h (⇑e ⁻¹' I) (⇑e ⁻¹' X) hIF hFX), 
+end 
+
+@[simp] lemma congr_equiv_apply_symm_flat {e : E₁ ≃ E₂} {M₂ : matroid E₂} {F : set E₁} :
+  (M₂.congr_equiv e.symm).flat F = M₂.flat (e '' F) := 
 by simp [←image_equiv_eq_preimage_symm]
 
 end iso

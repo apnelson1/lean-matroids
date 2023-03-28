@@ -26,7 +26,6 @@ namespace matroid
 
 section project 
 
-
 /-- contract `C` and replace it with a set of loops to get a matroid on the same ground set.  
 Often more convenient than just contracting `C` because the underlying type is preserved. -/
 def project (M : matroid E) (C : set E) : 

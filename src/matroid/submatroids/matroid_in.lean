@@ -178,7 +178,7 @@ def to_matroid (M : matroid_in α) (hX : M.ground = X) :
     convert hB, 
     rw [inter_eq_left_iff_subset, ←hX], 
     apply matroid_in.subset_ground_of_disjoint_loops, 
-    exact hB.indep.disjoint_cl_empty,  
+    exact hB.indep.disjoint_loops,  
   end,
   base_exchange' := begin
     subst hX, 

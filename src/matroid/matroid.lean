@@ -24,7 +24,10 @@ def exchange_property (P : set E → Prop) : Prop :=
 
 instance {E : Type*} [finite E] : 
   finite (matroid E) := 
-finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by {ext, dsimp only at h, rw h}))   
+finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by {ext, dsimp only at h, rw h}))  
+
+instance {E : Type*} : nonempty (matroid E) := 
+  ⟨⟨λ B, B = univ, ⟨_,rfl⟩, λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim⟩⟩ 
 
 namespace matroid 
 /- None of these definitions require finiteness -/
@@ -76,19 +79,7 @@ def coloop (M : matroid E) (e : E) : Prop :=
 def nonloops (M : matroid E) : set E :=
   (M.cl ∅)ᶜ 
 
-section examples 
 
-/-- The matroid whose only basis is the whole ground set -/
-def free_matroid_on (E : Type*) : matroid E := 
-⟨λ B, B = univ, ⟨_,rfl⟩, λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim⟩
-
-/-- The matroid whose only basis is empty -/
-def loopy_on (E : Type*) : matroid E := 
-⟨λ B, B = ∅, ⟨_,rfl⟩, λ B B' hB hB' a ha, by {rw hB at ha, exact (not_mem_empty _ ha.1).elim}⟩
-
-instance {E : Type*} : nonempty (matroid E) := ⟨free_matroid_on E⟩ 
-
-end examples 
 
 end defs 
 
