@@ -97,7 +97,7 @@ begin
 end 
 
 /-- We can choose a minimizing pair `I,X` where `X` is a flat of `M₁` -/
-lemma exists_common_ind_with_flat (M₁ M₂ : matroid E) : 
+lemma exists_common_ind_with_flat_left (M₁ M₂ : matroid E) : 
   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₁.flat X :=
 begin
   obtain ⟨I,X₀, h₀⟩ := exists_common_ind M₁ M₂, 
@@ -109,8 +109,15 @@ begin
   exact M₂.r_mono (compl_subset_compl.mpr (subset_cl _ _)), 
 end 
 
+lemma exists_common_ind_with_flat_right (M₁ M₂ : matroid E) : 
+  ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₂.flat Xᶜ :=
+begin
+  obtain ⟨I,X₀,h₀,h₁,hX₀,hF⟩ := exists_common_ind_with_flat_left M₂ M₁,
+  exact ⟨I, X₀ᶜ,h₁,h₀,by rwa [add_comm, compl_compl],by rwa compl_compl⟩,   
+end 
+
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`. 
-  Is `find_greatest` really the right way to do this?  -/
+  Is `find_greatest` really the right way to define this?  -/
 noncomputable def max_common_ind (M₁ M₂ : matroid E) :=
 nat.find_greatest (λ n, ∃ I, M₁.indep I ∧ M₂.indep I ∧ I.ncard = n) ((univ : set E).ncard)
 

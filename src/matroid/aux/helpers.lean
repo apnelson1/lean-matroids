@@ -189,7 +189,6 @@ begin
   apply inter_subset_right, 
 end 
 
-
 end sigma 
 
 section finsum
@@ -208,6 +207,16 @@ begin
     exact λ i hi h', h i hi}, 
   { rw [finite.coe_to_finset, inter_assoc, inter_eq_self_of_subset_right (subset_union_right _ _)]}, 
   rw [finite.coe_to_finset, inter_assoc, inter_eq_self_of_subset_right (subset_union_left _ _)],
+end 
+
+lemma finsum_le_finsum {ι N : Type*} [ordered_add_comm_monoid N] {f g : ι → N} 
+(hf : f.support.finite) (hg : g.support.finite) (h : ∀ i, f i ≤ g i) : 
+  ∑ᶠ i, f i ≤ ∑ᶠ i, g i :=
+begin
+  rw [←finsum_mem_univ], 
+  nth_rewrite 1 ←finsum_mem_univ, 
+  apply finsum_mem_le_finsum_mem; 
+  simpa, 
 end 
 
 /- I wasn't able to prove either of the following lemmas by reducing to their corresponding finset
@@ -249,20 +258,4 @@ end
 
 
 end finsum
-
-
--- @[simp] lemma sigma.subset_image_mk_iff_preimage_mk_subset {ι : Type*} {α : ι → Type*} {j : ι} 
--- {x : set (Σ i, α i)} {y : set (α j)} : 
---   x ⊆ sigma.mk j '' y ↔ sigma.mk j ⁻¹' x ⊆ y :=
--- begin
---   rw [sigma.subset_iff], 
---   refine ⟨λ h a ha, by simpa using h j ha, λ h i, _⟩,
---   obtain (rfl | hne) := eq_or_ne i j, 
---   { rwa preimage_image_eq _ sigma_mk_injective}, 
---   simp only [preimage_image_sigma_mk_of_ne hne], 
-
-  
-  -- { },
-  -- split, 
-  -- { },  -- rw ←preimage_image_eq I (@sigma_mk_injective _ _ j),  
 
