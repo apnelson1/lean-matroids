@@ -110,8 +110,9 @@ lemma matrix_rep.apply {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep
 
 -- show that if the submatrices for `{e}`, `{f}` have the same column space, then the 
 -- submatrix for `{e,f}` has rank `1`, contradicting simplicity. 
+--lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E) :
 
-variables (h𝔽 : field 𝔽) (V : submodule 𝔽 ( E → 𝔽 ))[fintype V] (M : matroid E)
+variables (h𝔽 : field 𝔽) (V : submodule 𝔽 ( E → 𝔽 ))[fintype V]
 variables [fintype {S : subspace 𝔽 V | finrank 𝔽 S = 1}]
 
 --lemma simple_rep_inj 
@@ -123,7 +124,7 @@ def simple (M : matroid E) : Prop := ∀ (e f : E), e ≠ f → M.r {e, f} = 2
 
 def submodule.proj_to_set2 (x : E) := submodule.proj_to_set V ({x} : set E)
 
-lemma inj_of_simple : simple M → is_subspace_rep h𝔽 V M → 
+/-lemma inj_of_simple : simple M → is_subspace_rep h𝔽 V M → 
   function.injective (submodule.proj_to_set2) :=
 begin
   sorry,
@@ -163,5 +164,5 @@ begin
   have h6 : univ.ncard ≤ fintype.card ↥{S : subspace (zmod 2) ↥V | finrank (zmod 2) ↥S = 1},
   
   sorry,
-end
+end-/
 
