@@ -91,24 +91,6 @@ begin
   rw [(@infinite_univ _ h).ncard, @nat.card_eq_zero_of_infinite _ h],
 end
 
-@[simp] lemma finsum_mem_one {α : Type*} (s : set α) :
-  ∑ᶠ a ∈ s, 1 = s.ncard :=
-begin
-  have hsupp := @function.support_const α _ _ _ (nat.one_ne_zero), 
-  obtain (h | h) := s.finite_or_infinite, 
-  { have h' := h, 
-    rw [←inter_univ s, ← hsupp] at h', 
-    convert finsum_mem_eq_sum _ h', 
-    rw [←finset.card_eq_sum_ones, ncard_eq_to_finset_card _ h], 
-    congr', 
-    rw [hsupp, inter_univ]},
-  rw [h.ncard, finsum_mem_eq_zero_of_infinite], 
-  rwa [hsupp, inter_univ], 
-end  
-
-@[simp] lemma finsum_one (α : Type*) :
-  ∑ᶠ (a : α), 1 = nat.card α :=
-by rw [←finsum_mem_univ, finsum_mem_one, ncard_univ]
 @[simp] lemma ncard_empty (α : Type*) :
   (∅ : set α).ncard = 0 :=
 by simp only [ncard_eq_zero]

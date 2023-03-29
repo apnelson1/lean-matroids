@@ -178,6 +178,26 @@ by {ext; simp}
 
 variables [finite ι]
 
+
+@[simp] lemma finsum_mem_one {α : Type*} (s : set α) :
+  ∑ᶠ a ∈ s, 1 = s.ncard :=
+begin
+  have hsupp := @function.support_const α _ _ _ (nat.one_ne_zero), 
+  obtain (h | h) := s.finite_or_infinite, 
+  { have h' := h, 
+    rw [←inter_univ s, ← hsupp] at h', 
+    convert finsum_mem_eq_sum _ h', 
+    rw [←finset.card_eq_sum_ones, ncard_eq_to_finset_card _ h], 
+    congr', 
+    rw [hsupp, inter_univ]},
+  rw [h.ncard, finsum_mem_eq_zero_of_infinite], 
+  rwa [hsupp, inter_univ], 
+end  
+
+@[simp] lemma finsum_one (α : Sort*) :
+  ∑ᶠ (a : α), 1 = nat.card α :=
+by rw [←finsum_mem_univ, finsum_mem_one, ncard_univ]
+
 lemma sigma.ncard_eq_finsum_ncard_image_preimage_mk (x : set (Σ i, α i)) (hx : x.finite) :
   x.ncard = ∑ᶠ i, (sigma.mk i '' (sigma.mk i ⁻¹' x)).ncard :=
 begin
@@ -225,6 +245,61 @@ begin
   simpa, 
 end 
 
+/-- If `f ≤ g` pointwise on `s`, but the sum of `g` is at most the sum of `f`, then `f = g` on `s`-/
+lemma eq_of_finsum_mem_ge_finsum_mem_of_forall_le {ι N : Type*} [ordered_cancel_add_comm_monoid N] 
+{f g : ι → N} {s : set ι} (hf : (s ∩ f.support).finite) (hg : (s ∩ g.support).finite) 
+(h_le : ∀ i ∈ s, f i ≤ g i) (h_ge : ∑ᶠ i ∈ s, g i ≤ ∑ᶠ i ∈ s, f i) {a : ι} (ha : a ∈ s) :
+  f a = g a :=
+begin
+  refine (h_le a ha).antisymm _, 
+  set s' := s \ {a} with hs', 
+  have hs'f : ((s \ {a}) ∩ f.support).finite, from  
+    hf.subset (inter_subset_inter_left _ (diff_subset _ _)),
+  have hs'g : ((s \ {a}) ∩ g.support).finite, from  
+    hg.subset (inter_subset_inter_left _ (diff_subset _ _)),
+  rw [←insert_eq_of_mem ha, ←insert_diff_singleton, 
+    finsum_mem_insert' _ (not_mem_diff_singleton _ _) hs'f, 
+    finsum_mem_insert' _ (not_mem_diff_singleton _ _) hs'g] at h_ge, 
+  exact le_of_add_le_add_right
+    ((add_le_add_left (finsum_mem_le_finsum_mem hs'f hs'g (λ i hi, h_le _ hi.1)) (g a)).trans h_ge),
+end 
+
+lemma finsum_le_finsum_of_subset  {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M}  
+{s t : set ι}  (h : s ⊆ t) (ht : t.finite) :
+ ∑ᶠ x ∈ s, f x ≤ ∑ᶠ x ∈ t, f x :=
+begin
+  rw [←inter_union_diff t s, inter_eq_right_iff_subset.mpr h, 
+    finsum_mem_union (@disjoint_sdiff_self_right _ s t _) (ht.subset h) (ht.diff _)], 
+  exact le_add_right rfl.le, 
+end 
+
+lemma finsum_le_finsum_of_subset'  {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M}  
+{s t : set ι}  (h : s ⊆ t) (ht : (t ∩ f.support).finite) :
+ ∑ᶠ x ∈ s, f x ≤ ∑ᶠ x ∈ t, f x :=
+begin
+  rw ←finsum_mem_inter_support, 
+  nth_rewrite 1 [←finsum_mem_inter_support], 
+  apply finsum_le_finsum_of_subset (inter_subset_inter_left _ h) ht, 
+end 
+
+lemma mem_le_finsum {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M} {x : ι}
+{t : set ι}  (h : x ∈ t) (ht : t.finite) :
+  f x ≤ ∑ᶠ x ∈ t, f x :=
+begin
+  rw ←@finsum_mem_singleton _ _ _ f x,  
+  exact finsum_le_finsum_of_subset (singleton_subset_iff.mpr h) ht, 
+end 
+
+lemma mem_le_finsum' {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M} {x : ι}
+{t : set ι}  (h : x ∈ t) (ht : (t ∩ f.support).finite) :
+  f x ≤ ∑ᶠ x ∈ t, f x :=
+begin
+  rw ←@finsum_mem_singleton _ _ _ f x,  
+  exact finsum_le_finsum_of_subset' (singleton_subset_iff.mpr h) ht, 
+end 
+
+
+
 /- I wasn't able to prove either of the following lemmas by reducing to their corresponding finset
   versions - it gave a horrible mess. But induction works fine. -/
 lemma ncard_sUnion_le {α : Type*} (s : set (set α)) (hs : s.finite) (hs' : ∀ x ∈ s, set.finite x):
@@ -261,6 +336,57 @@ begin
     bUnion_insert] at hPt, 
   exact (add_lt_add_iff_left _).mp (hPt.trans_le (ncard_union_le _ _)), 
 end  
+
+@[simp] lemma finsum_mem_boole  {α : Type*} (s : set α) (p : α → Prop) :
+  ∑ᶠ x ∈ s, ite (p x) 1 0 = (s ∩ set_of p).ncard :=
+begin
+  have hsupp : s ∩ set_of p = (s ∩ function.support (λ x, ite (p x) 1 0)), by {ext, simp},
+  cases (s ∩ set_of p).finite_or_infinite,
+  { have h' : (s ∩ function.support (λ x, ite (p x) 1 0)).finite,  by rwa ←hsupp,   
+    rw [finsum_mem_eq_sum _ h', ncard_eq_to_finset_card _ h], 
+    simp only [finset.sum_boole, finset.filter_true_of_mem, finite.mem_to_finset, mem_inter_iff, 
+      function.mem_support, ne.def, ite_eq_right_iff, nat.one_ne_zero, not_forall, not_false_iff, 
+      exists_prop, and_true, and_imp, imp_self, implies_true_iff, nat.cast_id], 
+    convert rfl}, 
+  rw [finsum_mem_eq_zero_of_infinite, h.ncard], 
+  rwa ←hsupp,  
+end 
+
+@[simp] lemma finsum_boole {α : Type*} (p : α → Prop) :
+  ∑ᶠ x, ite (p x) 1 0 = (set_of p).ncard :=
+by rw [←finsum_mem_univ, finsum_mem_boole, univ_inter]
+
+lemma ncard_eq_finsum_fiber {α ι : Type*} {s : set α} (hs : s.finite) (f : α → ι) :
+  s.ncard = ∑ᶠ (i : ι), (s ∩ f ⁻¹' {i}).ncard :=
+begin
+  by_contra' h', 
+  obtain ⟨t,hts,ht,hmin⟩ := set.finite.exists_minimal_subset hs h', 
+  have ht_ne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using ht},
+  obtain ⟨x,hxt⟩ := ht_ne,
+  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt) (λ h, ht _), 
+  rw [←ncard_diff_singleton_add_one hxt (hs.subset hts), h, ←finsum_mem_univ], 
+  nth_rewrite 1 ←finsum_mem_univ, 
+  rw [←insert_eq_of_mem (mem_univ (f x)), ←insert_diff_singleton, finsum_mem_insert', 
+    finsum_mem_insert', add_right_comm], 
+  { convert rfl, 
+    {  sorry,},
+    ext i,
+    apply finsum_congr (λ hi, _),  
+    convert rfl using 2, 
+      },
+
+
+  -- have hfin : ∀ i,  (s ∩ f ⁻¹' {i}).finite, from λ i, hs.subset (inter_subset_left _ _), 
+  -- have h' : (f '' s).finite := hs.image f,  
+  -- rw [ncard_eq_to_finset_card _ hs, 
+  --   @finset.card_eq_sum_card_fiberwise _ _ _ f hs.to_finset h'.to_finset], 
+  -- { rw [←finsum_mem_univ, ←finsum_mem_inter_support, finsum_eq_sum], simp,   },
+  -- rw finsum_mem_eq_finite_to_finset_sum, 
+  
+  
+  -- conv_rhs {congr, funext, rw ←finsum_mem_one},
+  -- rw [←finsum_mem_one], 
+end 
 
 
 end finsum

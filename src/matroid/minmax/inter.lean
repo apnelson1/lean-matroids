@@ -1,4 +1,5 @@
 import ..submatroids.pseudominor
+import ..constructions.direct_sum
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size 
 of the largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ,
@@ -10,7 +11,7 @@ open_locale classical
 
 open matroid set 
 
-variables {E : Type*} [finite E] {M₁ M₂ : matroid E} {I A : set E}
+variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} {I A : set E}
 
 section intersection 
 
@@ -154,7 +155,7 @@ begin
   exact (h J hJ₁ hJ₂).not_lt hn', 
 end 
 
-theorem matroid_intersection (M₁ M₂ : matroid E) : 
+theorem matroid_intersection_minmax (M₁ M₂ : matroid E) : 
   max_common_ind M₁ M₂ = ⨅ X, M₁.r X + M₂.r Xᶜ :=
 begin
   rw [max_common_ind_eq_iff], 
@@ -163,6 +164,43 @@ begin
   exact (le_cinfi_iff (order_bot.bdd_below _)).mpr (common_ind_le_r_add_r_compl hJ₁ hJ₂),    
 end 
 
-
 end intersection
+
+section rado 
+
+variables {ι : Type*} [finite ι]
+
+/-- Given a partition `f` of the ground set `E` of a matroid `M` and a transveral `x` of the
+  cells of `f` that is independent in `M`, the rank in `M` of the union of any subcollection 
+  `S` of the cells must be at least the size of the collection -/
+lemma rado_necessary {f : E → ι} {x : ι → E} (hx : ∀ i, f (x i) = i) (h_ind : M.indep (range x)) 
+(S : set ι) :
+  S.ncard ≤ M.r (⋃ i ∈ S, f ⁻¹' {i}) :=
+begin
+  have hS := (h_ind.subset (image_subset_range x S)).r, 
+  rw [ncard_image_of_injective _ (λ i j hij, by rw [←hx i, hij, hx j] : x.injective)] at hS, 
+  rw ←hS, 
+  refine M.r_mono _, 
+  rintro f ⟨i, hi, rfl⟩, 
+  exact mem_bUnion hi (hx i),
+end 
+
+lemma rado_sufficient (f : E → ι) (h : ∀ (S : set ι), S.ncard ≤ M.r (⋃ i ∈ S, f ⁻¹' {i})) :
+  ∃ (x : ι → E), (∀ i, f (x i) = i) ∧ M.indep (range x) :=
+begin
+  set M' := partition_matroid_on f 1 with hM', 
+  obtain ⟨I, X, hI₁, hI₂, hIX, hF⟩ := exists_common_ind_with_flat_right M M', 
+  simp_rw [hM', indep_iff_r_eq_card, partition_matroid_on_r_eq, pi.one_apply] at hI₂, 
+  
+  -- rw [←finsum_mem_one] at hI₂, 
+  
+
+end   
+
+  
+  
+  
+
+
+end rado 
 
