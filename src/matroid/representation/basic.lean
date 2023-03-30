@@ -1,8 +1,9 @@
 import ..dual
 import linear_algebra.finite_dimensional
 import data.matrix.rank 
+import data.matrix.basic
 import data.zmod.basic
-import ..uniform
+import ..constructions.basic
 import .field_stuff
 
 noncomputable theory 
@@ -66,6 +67,9 @@ def matroid.is_representable (M : matroid E) (𝔽 : Type*) [h𝔽 : field 𝔽]
 def matrix.row_set (P : matrix ρ E R) : set (E → R) := 
   set.range (λ i, (λ a, P i a))
 
+def matrix.column_set (P : matrix ρ E R) : set (ρ → R) := 
+  matrix.row_set Pᵀ
+
 -- def matrix.row_set' (P : matroid ρ E R) : set ()
 
 /- The row space of a `ρ × E` matrix over `𝔽`. -/
@@ -110,7 +114,17 @@ lemma matrix_rep.apply {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep
 
 -- show that if the submatrices for `{e}`, `{f}` have the same column space, then the 
 -- submatrix for `{e,f}` has rank `1`, contradicting simplicity. 
---lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E) :
+--lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E) : 
+-- span 𝔽 (range Mᵀ) is column space
+variables [fintype ρ] [fintype E]
+lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E)
+ : span 𝔽 (range (matrix.col_submatrix P {e})ᵀ) = span 𝔽 (range (matrix.col_submatrix P {f})ᵀ) →
+  rank matrix.col_submatrix P {e, f} = 1 :=
+begin
+  
+  sorry,
+end
+
 
 variables (h𝔽 : field 𝔽) (V : submodule 𝔽 ( E → 𝔽 ))[fintype V]
 variables [fintype {S : subspace 𝔽 V | finrank 𝔽 S = 1}]
@@ -166,3 +180,4 @@ begin
   sorry,
 end-/
 
+end submodule_stuff
