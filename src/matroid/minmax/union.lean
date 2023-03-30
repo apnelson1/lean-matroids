@@ -15,28 +15,42 @@ variables {ι E : Type*} [finite E] [finite ι] {M : ι → matroid E} {I A X : 
 
 /-- A set is partitionable with respect to a collection of matroids on `E` if it admits a partition   
   into sets that are independent in these matroids  -/
+-- def partitionable (M : ι → matroid E) (I : set E) : Prop := 
+--   ∃ f : I → ι, ∀ i, (M i).indep (I ∩ (coe '' (f⁻¹' {i})))
+
 def partitionable (M : ι → matroid E) (I : set E) : Prop := 
-  ∃ f : I → ι, ∀ i, (M i).indep (I ∩ (coe '' (f⁻¹' {i})))
+  ∃ (f : ι → set E), (I = ⋃ i, f i) ∧ (∀ i, (M i).indep (f i)) ∧ pairwise (disjoint on f)
 
 lemma partitionable_iff_is_Union :
-  partitionable M I ↔ ∃ J : ι → set E, (I = ⋃ i, J i) ∧ ∀ i, (M i).indep (J i) :=
+  partitionable M I ↔ ∃ (f : ι → set E), (I = ⋃ i, f i) ∧ (∀ i, (M i).indep (f i)) :=
 begin
-  split, 
-  { rintro ⟨f, hf⟩, 
-    refine ⟨_, subset_antisymm (λ x hx, mem_Union_of_mem (f ⟨x,hx⟩) _) (Union_subset _), hf⟩, 
-    { exact ⟨hx, by simpa⟩},
-    exact λ _, inter_subset_left _ _},
-  rintro ⟨J, hIJ, hJ⟩, 
-  have h : ∀ (x : I), ∃ i, (x : E) ∈ J i,  
-  { intro x,  
-    obtain ⟨J,⟨i,rfl⟩,hxi⟩ :=  (hIJ.subset x.2), 
-    exact ⟨i, hxi⟩},
-  choose f hf using h, 
-  refine ⟨f, λ i, (hJ i).subset _⟩,
-  rintro x ⟨hxI, ⟨x,h,rfl⟩⟩, 
-  convert hf x,
-  rw eq_comm, 
-  exact h,   
+  refine ⟨λ ⟨f, h, hf, h'⟩, ⟨f, h, hf⟩, _⟩, 
+  rintro ⟨f,rfl,hf⟩, 
+  have hinv : ∀ (e : ⋃ (i : ι), f i), ∃ i, (e : E) ∈ f i,  
+  { rintro ⟨e,he⟩, exact mem_Union.mp he},
+  
+  choose g hg using hinv, 
+  have hss : ∀ i, coe '' (g ⁻¹' {i}) ⊆ f i,
+  { rintro i x ⟨y,hy,rfl⟩, 
+    rw [mem_preimage, mem_singleton_iff] at hy, subst hy, 
+    exact hg y},
+  
+  refine ⟨λ i, coe '' (g ⁻¹' {i}), subset_antisymm _ _, λ i, (hf i).subset (hss i), _⟩, 
+  { refine Union_subset (λ i x hx, mem_Union_of_mem (g ⟨x, mem_Union_of_mem _ hx⟩) _),
+    simp only [mem_Union, mem_image, mem_preimage, mem_singleton_iff, set_coe.exists, 
+      subtype.coe_mk, exists_and_distrib_right, exists_eq_right, eq_self_iff_true, exists_prop, 
+      and_true], 
+    exact ⟨_, hx⟩}, 
+  { exact Union_subset (λ i, subset_Union_of_subset i (hss i))},
+  rintro i j hij s (h1 : s ⊆ _) (h2 : s ⊆ _) i his, 
+  have h1' := h1 his, 
+  have h2' := h2 his, 
+  simp only [mem_Union, mem_image, mem_preimage, mem_singleton_iff, set_coe.exists, 
+    subtype.coe_mk, exists_and_distrib_right, exists_eq_right] at h1' h2',
+  obtain ⟨⟨i₁,hi₁⟩,rfl⟩ := h1',    
+  obtain ⟨⟨i₂,hi₂⟩,rfl⟩ := h2', 
+  exfalso, 
+  simpa using hij,  
 end  
 
 lemma partitionable_ub {M : ι → matroid E} {I : set E} (X : set E) (h : partitionable M I) :
@@ -46,7 +60,7 @@ begin
   refine add_le_add _ 
     (ncard_le_of_subset (by {rw compl_eq_univ_diff, exact diff_subset_diff_left (subset_univ _)})),
 
-  obtain ⟨J, rfl, hJ⟩ := partitionable_iff_is_Union.mp h, 
+  obtain ⟨J, rfl, hJ, -⟩ :=  h, 
   rw [Union_inter], 
   refine (ncard_Union_le _ (λ _, to_finite _)).trans _, 
   refine finsum_le_finsum (to_finite _) (to_finite _) (λ i, _), 
@@ -129,59 +143,113 @@ begin
   rwa mem_compl_iff at hx, 
 end 
 
-
-
-
-
-
-
-
-
-
-
-
--- example (M : ι → matroid E) : false := 
--- begin
-  
-  
---   -- set M₁ := copy_sum M with hM₁, 
---   -- set M₁ := (matroid.sigma M).congr_equiv (sigma_equiv_prod ι E) with hM₁, 
---   -- set one_unif : ∀ E, matroid ι := λ (e : E), unif ι 1,  
---   -- set M₂ := (copy_sum one_unif).congr_equiv (prod_comm _ _), 
---   set M₂ := (direct_sum M).congr_equiv (sigma_equiv_prod ι E), 
---   set M₁ := (partition_matroid (λ (e : E), ι) (λ _, 1)).congr_equiv 
---     ((sigma_equiv_prod E ι).trans (prod_comm _ _)), 
-
---   have hM₁ : ∀ (I : set (ι × E)), M₁.indep I ↔ ∀ (e : E), (I ∩ (prod.snd ⁻¹' {e})).ncard ≤ 1, 
---   { intro I, 
---     simp only [congr_equiv_apply_indep, equiv.coe_trans, coe_prod_comm, 
---       partition_matroid_indep_iff], 
---     refine forall_congr (λ e, _),
---     convert iff.rfl using 2,
-    
---     convert (ncard_image_of_injective _ 
---       ((prod_comm _ _).trans (sigma_equiv_prod E ι).symm).symm.injective),  
---     ext, 
---     simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, symm_trans_apply, prod_comm_symm,
---      symm_symm, sigma_equiv_prod_apply, prod_comm_apply, prod.swap_prod_mk, mem_image, 
---       function.comp_app, sigma.exists], 
---     split, 
---     { rintro ⟨hxI, rfl⟩, use [x.2,x.1], simpa},
---     rintro ⟨a,b,⟨h,rfl⟩,rfl⟩, 
---     exact ⟨h,rfl⟩},
-
---     obtain ⟨I,X, hI₁,hI₂, hIX⟩ := exists_common_ind M₁ M₂, 
-
-
-    
-  
-
-    
-
-
-
---   -- have hB : ∀ B, M₁.base B ↔ ∀ i, (M i).base 
---   -- set M₁ : matroid (ι × E) := matroid.sigma _, 
--- end 
-
 end partitionable
+
+
+
+
+section partitionable_sets
+
+variables {ι E : Type*} [finite E] [finite ι] {M : ι → matroid E} {I A X S : set E}
+
+lemma partitionable_ub_subset (hX : I ⊆ S) (h : partitionable M I) :
+  I.ncard ≤ ∑ᶠ i, (M i).r X + (S \ X).ncard := 
+begin
+  rw [←ncard_inter_add_ncard_diff_eq_ncard I X], 
+   refine add_le_add _ (ncard_le_of_subset (diff_subset_diff_left hX) (to_finite _)), 
+  obtain ⟨J, rfl, hJ⟩ := partitionable_iff_is_Union.mp h, 
+  rw [Union_inter], 
+  refine (ncard_Union_le _ (λ _, to_finite _)).trans _, 
+  refine finsum_le_finsum (to_finite _) (to_finite _) (λ i, _), 
+  rw [←((hJ i).inter_right _).r], 
+  apply r_inter_right_le_r, 
+end 
+
+/-- A version of matroid union that is relative to a subset. -/
+theorem matroid_union_subset (M : ι → matroid E) (S : set E): 
+  ∃ (I ⊆ S) (X ⊆ S), partitionable M I ∧ I.ncard = ∑ᶠ i, (M i).r X + (S \ X).ncard := 
+begin
+  suffices : ∃ (I ⊆ S) (X ⊆ S), partitionable M I ∧ ∑ᶠ i, (M i).r X + (S \ X).ncard ≤ I.ncard, 
+  { obtain ⟨I, hIS, X, hXS, hI, h⟩ := this, 
+    exact ⟨I, hIS, X, hXS, hI, (partitionable_ub_subset hIS hI).antisymm h⟩},
+  obtain ⟨I, X, hpart, hcard⟩ := matroid_union (λ i, M i ‖ S), 
+  use I, 
+  
+  obtain ⟨J, rfl, hJ⟩ := partitionable_iff_is_Union.mp hpart, 
+  simp only [indep_lrestrict_iff] at hJ, 
+  simp_rw [lrestrict_r] at hcard, 
+
+  refine ⟨Union_subset (λ i, (hJ i).2 ), X ∩ S, inter_subset_right _ _, _, _⟩,
+  { rw partitionable_iff_is_Union, 
+    exact ⟨_,rfl,λi, (hJ i).1⟩ },
+  
+  simp only [hcard, diff_inter_self_eq_diff, add_le_add_iff_left, compl_eq_univ_diff], 
+  exact ncard_le_of_subset (diff_subset_diff_left (subset_univ _)), 
+end 
+
+noncomputable def max_partitionable_set (M : ι → matroid E) (X : set E) : ℕ :=  
+  ⨅ A, ∑ᶠ i, (M i).r A + (X \ A).ncard
+
+
+
+-- noncomputable def partitionable_sets_matroid (M : ι → matroid E) : 
+--   matroid E :=
+-- matroid_of_r (max_partitionable_set M)
+-- (λ X, by {convert cinfi_le' _ (∅ : set E), simp}) 
+-- (λ X Y hXY, le_cinfi (λ Z, (cinfi_le' _ Z).trans 
+--   (add_le_add_left (ncard_le_of_subset (diff_subset_diff_left hXY) (to_finite _)) _)))
+-- (begin
+--   simp only [max_partitionable_set], 
+--   intros X Y, 
+-- end )
+
+-- lemma ncard_max_partitionable_subset_eq (M : ι → matroid E) 
+
+
+def partitionable_sets_matroid (M : ι → matroid E) : 
+  matroid E :=
+matroid_of_indep (partitionable M) 
+⟨∅, partitionable_iff_is_Union.mpr ⟨λ i, ∅, by simp, λ _, empty_indep _⟩⟩   
+(begin
+  simp_rw partitionable_iff_is_Union, 
+  rintro I J hIJ ⟨s, rfl, hi⟩, 
+  refine ⟨λ i, (s i) ∩ I, _, λ i, (hi i).subset (inter_subset_left _ _)⟩,    
+  rwa [←Union_inter, eq_comm, inter_eq_right_iff_subset], 
+end )
+(begin
+  --simp_rw partitionable_iff_is_Union, 
+  rintro I J ⟨I, rfl, hI, hIdj⟩ ⟨J, rfl, hJ, hJdj⟩ hlt, 
+  by_contra' h', 
+
+  have hss : (⋃ i, J i) ⊆ ⋃ i, (M i).cl (I i),  
+  { rintro e ⟨J₀,⟨k,rfl⟩,(hek : e ∈ J k)⟩,
+    obtain (⟨I₀,⟨i,rfl⟩,(hei : e ∈ I i)⟩ | hne) := em (e ∈ ⋃ i, I i), 
+    { exact mem_Union_of_mem i (((M i).subset_cl _) hei)}, 
+    -- by_contra h'', rw [not_mem_iff] at h'', 
+     },
+  -- have h_ex : ∃ i, (I i).ncard < (J i).ncard, 
+  -- { by_contra' h, 
+  --   simp_rw [←finsum_mem_one, finsum_mem_Union hIdj (λ i, to_finite _), 
+  --     finsum_mem_Union hJdj (λ i, to_finite _), finsum_mem_one] at hlt, 
+  --   exact hlt.not_le (finsum_le_finsum (to_finite _) (to_finite _) h)},
+  -- obtain ⟨i, hi⟩ := h_ex, 
+  -- obtain ⟨e ,heJ, heI, he⟩ := (hI i).augment (hJ i) hi,  
+  -- refine ⟨e, mem_Union_of_mem _ heJ, _ , _⟩,  
+  -- { rintro ⟨x, ⟨⟨j,rfl⟩,h⟩⟩,simp at h,   },
+
+   
+end) 
+
+
+
+
+
+
+
+
+
+
+
+end partitionable_sets
+
+

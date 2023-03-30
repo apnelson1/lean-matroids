@@ -79,8 +79,6 @@ def coloop (M : matroid E) (e : E) : Prop :=
 def nonloops (M : matroid E) : set E :=
   (M.cl ∅)ᶜ 
 
-
-
 end defs 
 
 section base

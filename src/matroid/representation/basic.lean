@@ -7,7 +7,8 @@ import ..constructions.basic
 import .field_stuff
 
 noncomputable theory 
-open_locale classical 
+open_locale classical
+open_locale matrix  
 
 universes u v w z
 
@@ -117,11 +118,13 @@ lemma matrix_rep.apply {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep
 --lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E) : 
 -- span 𝔽 (range Mᵀ) is column space
 variables [fintype ρ] [fintype E]
-lemma col_space {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) (e f : E)
- : span 𝔽 (range (matrix.col_submatrix P {e})ᵀ) = span 𝔽 (range (matrix.col_submatrix P {f})ᵀ) →
-  rank matrix.col_submatrix P {e, f} = 1 :=
+lemma submatrix_rank_one_of_span_eq_span {M : matroid E} {P : matrix ρ E 𝔽} (h : is_matrix_rep P M) 
+(e f : E) (h_span : span 𝔽 (range (matrix.col_submatrix P {e})ᵀ) 
+                    = span 𝔽 (range (matrix.col_submatrix P {f})ᵀ)) :
+  (matrix.col_submatrix P {e, f}).rank = 1 :=
 begin
-  
+  rw [matrix.rank], 
+  -- have := matrix.transpose, 
   sorry,
 end
 
