@@ -105,30 +105,28 @@ begin
     { exact (@disjoint.ne_of_mem _ _ _ hdj ⟨e,i⟩ ⟨e,i⟩ (by simpa) rfl rfl).elim},
     exact @hss ⟨e,x⟩ rfl},
   
-  
-  
   simp only [congr_equiv_apply_r, equiv.coe_trans, coe_prod_comm, preimage_compl, 
     partition_matroid_r_eq, pi.one_apply, ←finsum_mem_one], 
-   
-  refine finsum_le_finsum (to_finite _) (to_finite _) (λ i, _ ), 
-  
-  simp only [finsum_eq_dif, mem_image, mem_compl_iff, prod.exists, exists_eq_right, dite_eq_ite, 
-    mem_inter_iff, mem_preimage, function.comp_app, sigma_equiv_prod_apply, prod.swap_prod_mk, 
-    mem_singleton_iff, le_min_iff], 
-  
-  split, 
-  { split_ifs; simp},
-  split_ifs, swap, exact nat.zero_le _, 
 
-  -- use finsum_mem_diff
+  nth_rewrite_rhs 0 ←finsum_mem_univ, 
+  refine (finsum_mem_le_finsum_mem (to_finite _) (to_finite _) _).trans 
+    (finsum_le_finsum_of_subset (subset_univ (prod.snd '' Xᶜ)) (to_finite _)), 
   
-
+  rintro i ⟨⟨x1,x2⟩,hx, rfl⟩, 
+  simp only [mem_inter_iff, mem_compl_iff, mem_preimage, function.comp_app, 
+    sigma_equiv_prod_apply, prod.swap_prod_mk, mem_singleton_iff, le_min_iff, le_refl, true_and], 
   
   
+  conv_rhs {congr, funext, rw finsum_eq_if,  },
   
+  rw ←finsum_mem_univ, 
   
-
+  refine le_trans _ (mem_le_finsum (mem_univ ((sigma_equiv_prod _ _).symm ⟨x2,x1⟩)) 
+    (to_finite _)), 
   
+  rw [sigma_equiv_prod_symm_apply, if_pos], 
+  simp only [eq_self_iff_true, and_true], 
+  rwa mem_compl_iff at hx, 
 end 
 
 
