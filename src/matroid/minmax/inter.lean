@@ -1,11 +1,9 @@
 import ..submatroids.pseudominor
 import ..constructions.direct_sum
 
-/- Here we prove Edmonds' matroid intersection theorem: given two matroids M₁ and M₂ on α, the size 
-of the largest set that is independent in both matroids is equal to the minimum of M₁.r X + M₂.r Xᶜ,
-taken over all X ⊆ E. The proof is really by induction on the size of the ground set, but to make 
-things easier we instead do induction on the number of nonloops, applying the induction hypothesis 
-to loopifications and projections of M₁ and M₂.  -/
+/- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the 
+  largest set that is independent in both matroids has size equal to the min of `M₁.r X + M₂.r Xᶜ`,
+  taken over all `X ⊆ E`. -/
 
 open_locale classical 
 
@@ -186,75 +184,56 @@ section rado
 
 variables {ι : Type*} [finite ι]
 
-/-- Given a partition `f` of the ground set `E` of a matroid `M` and a transveral `x` of the
-  cells of `f` that is independent in `M`, the rank in `M` of the union of any subcollection 
-  `S` of the cells must be at least the size of the collection -/
 lemma rado_necessary {f : E → ι} {x : ι → E} (hx : ∀ i, f (x i) = i) (h_ind : M.indep (range x)) 
 (S : set ι) :
-  S.ncard ≤ M.r (⋃ i ∈ S, f ⁻¹' {i}) :=
+  S.ncard ≤ M.r (f ⁻¹' S) :=
 begin
   have hS := (h_ind.subset (image_subset_range x S)).r, 
   rw [ncard_image_of_injective _ (λ i j hij, by rw [←hx i, hij, hx j] : x.injective)] at hS, 
   rw ←hS, 
   refine M.r_mono _, 
-  rintro f ⟨i, hi, rfl⟩, 
-  exact mem_bUnion hi (hx i),
+  rintro f ⟨i, hi, rfl⟩,
+  rwa [mem_preimage, hx], 
 end 
 
-lemma rado_sufficient (f : E → ι) (h : ∀ (S : set ι), S.ncard ≤ M.r (⋃ i ∈ S, f ⁻¹' {i})) :
+lemma rado_sufficient (f : E → ι) (h : ∀ (S : set ι), S.ncard ≤ M.r (f ⁻¹' S)) :
   ∃ (x : ι → E), (∀ i, f (x i) = i) ∧ M.indep (range x) :=
 begin
   set M' := partition_matroid_on f 1 with hM', 
   obtain ⟨I, X, hI₁, hI₂, hIX, hF⟩ := exists_common_ind_with_flat_right M M', 
   obtain ⟨hIb₁,hIb₂⟩ := common_ind_eq_spec hI₁ hI₂ hIX.symm.le, 
 
-  simp_rw [hM', indep_iff_r_eq_card, partition_matroid_on_r_eq, pi.one_apply] at hI₂, 
-  rw [ncard_eq_finsum_fiber (to_finite I) f] at hI₂, 
-  
   have h_inj : inj_on f I, 
-  { intros a ha b hb hab, 
-    have h_eq := eq_of_finsum_ge_finsum_of_forall_le (to_finite _) (to_finite _) 
-      (by exact λ i, min_le_right _ _) hI₂.symm.le, 
-    simp only [min_eq_right_iff, ncard_le_one_iff] at h_eq, 
-    exact @h_eq (f a) a b ⟨ha, by simp⟩ ⟨hb, by {rw hab, exact mem_singleton _} ⟩},
-  
-  have preimage_ne : ∀ i, (f ⁻¹' {i}).nonempty, 
-  { simp_rw nonempty_iff_ne_empty, exact λ i h', by simpa [h'] using h {i}},
+  { refine λ a ha b hb hab, by_contra (λ (hne : a ≠ b), _),  
+    have hcard := (partition_matroid_on_indep_iff.mp hI₂) (f a), 
+    rw [pi.one_apply, ncard_le_one_iff] at hcard, 
+    exact hne (hcard ⟨ha, (by simp)⟩ ⟨hb, by simp [hab]⟩)},
 
-  have foo' : ∀ i, (I ∩ f ⁻¹' {i}).nonempty, 
-  { intro i, 
-    obtain ⟨a,(rfl : f a = i)⟩ := preimage_ne i, 
-    simp_rw nonempty_iff_ne_empty, 
-    rintro h_empty, 
-    
-    
-    -- simp only [ncard_singleton, mem_singleton_iff, Union_Union_eq_left] at this, 
-    have hge := hIb₂.r, 
-    simp_rw [hM', partition_matroid_on_r_eq, pi.one_apply] at hge, 
-    have h_eq := eq_of_finsum_ge_finsum_of_forall_le (to_finite _) (to_finite _) _ 
-      hge.le (f a), 
-    { apply nonempty_iff_ne_empty.mp (preimage_ne (f a)), 
-      dsimp only at h_eq, 
-      rw [inter_right_comm] at h_eq,  
-      simp [h_empty] at h_eq,   },
-    
-
-
-    }, 
-  -- simp_rw [hM', partition_matroid_on_r_eq, pi.one_apply, ←ncard_inter_add_ncard_diff_eq_ncard I X] 
-    -- at hIX, 
+  have hXc := (h (f '' Xᶜ)ᶜ).trans (M.r_mono _ : _ ≤ M.r X), swap, 
+  { simp only [preimage_subset_iff, mem_compl_iff, mem_image, not_exists, not_and, not_imp_not],
+    exact λ a h, h _ rfl},
   
+  simp only [partition_matroid_on_one_r_eq, pi.one_apply] at hIX, 
+  have hineq := (add_le_add_right hXc _).trans_eq hIX.symm, 
+  rw [add_comm, ncard_add_ncard_compl, ←ncard_univ, ←ncard_image_of_inj_on h_inj] at hineq, 
+  have himage := eq_of_subset_of_ncard_le (subset_univ _) hineq, 
   
-  -- have := eq_of_finsum_mem_ge_finsum_mem_of_forall_le (to_finite _) (to_finite _), 
-  -- rw [←finsum_mem_one] at hI₂, 
-  
+  have hinv : ∀ i, ∃ e ∈ I, f e = i, 
+  { simp_rw [←mem_image_iff_bex, himage], exact mem_univ},   
 
+  choose x hx using hinv, 
+  refine ⟨x, λi, (hx i).2, hI₁.subset _⟩,
+  rintro e ⟨i,hi,rfl⟩,
+  exact (hx i).1, 
 end   
 
-  
-  
-  
+/-- Rado's theorem: Given a partition `f : E → ι` of the ground set `E` of a matroid `M`, there is a 
+  transversal of `f` that is independent in `M` if and only if the rank of the preimage of every set 
+  `S` in `ι` is at least its cardinality. -/
+theorem rado_iff {M : matroid E} {f : E → ι} : 
+  (∃ (x : ι → E), (∀ i, f (x i) = i) ∧ M.indep (range x)) ↔ ∀ S, ncard S ≤ M.r (f ⁻¹' S) :=
+⟨λ h S, exists.elim h (λ x hx, rado_necessary hx.1 hx.2 _) , rado_sufficient _⟩
 
-
+  
 end rado 
 

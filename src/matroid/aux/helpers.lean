@@ -9,6 +9,8 @@ noncomputable theory
 open_locale classical 
 open_locale big_operators
 
+
+
 /-! 
 A few helper lemmas for a separate PR 
 -/
@@ -178,7 +180,6 @@ by {ext; simp}
 
 variables [finite ι]
 
-
 @[simp] lemma finsum_mem_one {α : Type*} (s : set α) :
   ∑ᶠ a ∈ s, 1 = s.ncard :=
 begin
@@ -205,6 +206,13 @@ begin
     finsum_mem_Union (sigma.image_preimage_mk_pairwise_disjoint x)], 
   { simp [←finsum_mem_one]},
   exact λ i, hx.subset (by simp), 
+end 
+
+lemma min_one_ncard_eq_ite {α : Type*} {s : set α} (hs : s.finite): 
+  min 1 s.ncard = ite (s.nonempty) 1 0 :=
+begin
+  obtain (rfl | h) := s.eq_empty_or_nonempty, simp, 
+  rwa [if_pos h, min_eq_left_iff, nat.add_one_le_iff, ncard_pos hs], 
 end 
 
 @[simp] lemma sigma.ncard_preimage_mk (x : set (Σ i, α i)) (i : ι) :
@@ -308,43 +316,23 @@ begin
   exact finsum_le_finsum_of_subset' (singleton_subset_iff.mpr h) ht, 
 end 
 
-
-
-/- I wasn't able to prove either of the following lemmas by reducing to their corresponding finset
-  versions - it gave a horrible mess. But induction works fine. -/
 lemma ncard_sUnion_le {α : Type*} (s : set (set α)) (hs : s.finite) (hs' : ∀ x ∈ s, set.finite x):
   (⋃₀ s).ncard ≤ ∑ᶠ x ∈ s, ncard x := 
 begin
-  by_contra' h', 
-  obtain ⟨t,hts,ht,hmin⟩ := set.finite.exists_minimal_subset hs h', 
-  have ht_ne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using ht},
-  obtain ⟨x,hxt⟩ := ht_ne,
-  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt), 
-
-  have ht_eq : insert x (t \ {x}) = t, by simpa using insert_eq_of_mem hxt,
-  
-  rw [← ht_eq, sUnion_insert, finsum_mem_insert _ (not_mem_diff_singleton _ _) 
-    (hs.subset ((diff_subset _ _).trans hts))] at ht, 
-  exact (add_lt_add_iff_left _).mp (ht.trans_le (ncard_union_le _ _)), 
+  refine set.finite.induction_on hs (by simp) (λ a t hat ht h, _),
+  rw [sUnion_insert, finsum_mem_insert _ hat ht],
+  exact (ncard_union_le _ _).trans (add_le_add rfl.le h), 
 end 
 
 lemma ncard_Union_le {ι α : Type*} [finite ι] (s : ι → set α) (h : ∀ i, (s i).finite) :
   (⋃ i, s i).ncard ≤ ∑ᶠ i, (s i).ncard := 
 begin
-  rw [←finsum_mem_univ, ←bUnion_univ], 
-  by_contra' h', 
-  set P : set ι → Prop := λ t, ∑ᶠ i ∈ t, (s i).ncard < (⋃ (x ∈ t), s x).ncard with hP,  
-  have h_univ : P univ := h', 
-  obtain ⟨t,-,hPt,hmin⟩ :=  set.finite.exists_minimal_subset (to_finite _) h_univ,   
-  simp_rw [hP] at hPt hmin, 
-  have hne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using hPt},
-  obtain ⟨x,hxt⟩ := hne,   
-  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt), 
-
-  have ht_eq : insert x (t \ {x}) = t, by simpa using insert_eq_of_mem hxt,
-  rw [←ht_eq, finsum_mem_insert _ (not_mem_diff_singleton _ _) (@to_finite _ (t \ {x}) _), 
-    bUnion_insert] at hPt, 
-  exact (add_lt_add_iff_left _).mp (hPt.trans_le (ncard_union_le _ _)), 
+   suffices h' : ∀ (t : set ι), (⋃ i ∈ t, s i).ncard ≤ ∑ᶠ (i ∈ t), (s i).ncard, 
+   { convert h' univ; simp}, 
+  refine λ t, (to_finite t).induction_on (by simp) _,
+  intros a t₀ hat₀ ht₀ IH, 
+  rw [bUnion_insert, finsum_mem_insert _ hat₀ ht₀],  
+  exact (ncard_union_le _ _).trans (add_le_add rfl.le IH), 
 end  
 
 @[simp] lemma finsum_mem_boole  {α : Type*} (s : set α) (p : α → Prop) :

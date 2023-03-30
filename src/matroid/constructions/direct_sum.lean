@@ -311,7 +311,7 @@ def partition_matroid_on (f : E → ι) (rks : ι → ℕ) :
   matroid E :=
 (partition_matroid (λ i, {x // f x = i}) rks).congr_equiv (equiv.sigma_fiber_equiv f)
   
-lemma partition_matroid_on_indep_iff {I : set E}: 
+@[simp] lemma partition_matroid_on_indep_iff {I : set E}: 
   (partition_matroid_on f rks).indep I ↔ ∀ i, (I ∩ f ⁻¹' {i}).ncard ≤ rks i :=
 begin
   simp only [partition_matroid_on, congr_equiv_apply_indep, partition_matroid_indep_iff], 
@@ -324,7 +324,7 @@ begin
   simp
 end 
 
-lemma partition_matroid_on_r_eq (X : set E) : 
+@[simp] lemma partition_matroid_on_r_eq (X : set E) : 
   (partition_matroid_on f rks).r X = ∑ᶠ i, min (rks i) (X ∩ f ⁻¹' {i}).ncard :=
 begin
   simp only [partition_matroid_on, congr_equiv_apply_r, partition_matroid_r_eq], 
@@ -337,6 +337,15 @@ begin
   simp,
 end 
 
+lemma partition_matroid_on_one_r_eq (X : set E) : 
+  (partition_matroid_on f 1).r X = (f '' X).ncard :=
+begin
+  simp only [partition_matroid_on_r_eq, pi.one_apply], 
+  rw [←finsum_mem_one], 
+  apply finsum_congr (λ i, _), 
+  rw [finsum_eq_if, min_one_ncard_eq_ite (to_finite (X ∩ f ⁻¹' {i}))],
+  convert rfl, 
+end 
 
 
 end partition_on
