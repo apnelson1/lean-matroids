@@ -22,8 +22,24 @@ theorem common_ind_le_r_add_r_compl (hI₁ : M₁.indep I) (hI₂ : M₂.indep I
 begin
   rw [←ncard_inter_add_ncard_diff_eq_ncard I A, ←(hI₁.inter_right A).r, ←(hI₂.diff A).r, 
     diff_eq_compl_inter],
-  exact add_le_add (M₁.r_mono (inter_subset_right I A)) (M₂.r_mono (inter_subset_left _ _)), 
+  exact add_le_add (M₁.r_inter_right_le_r I A) (M₂.r_inter_left_le_r Aᶜ I), 
 end
+
+/-- A common independent set attaining the bound must intersect `A` and `Aᶜ` in bases in the 
+  respective matroids -/
+lemma common_ind_eq_spec (hI₁ : M₁.indep I) (hI₂ : M₂.indep I) {A : set E}
+(h : M₁.r A + M₂.r Aᶜ ≤ I.ncard) : 
+  M₁.basis (I ∩ A) A ∧ M₂.basis (I ∩ Aᶜ) Aᶜ :=
+begin
+  have h₁i := hI₁.inter_right A, 
+  have h₂i := hI₂.inter_right Aᶜ, 
+  simp_rw [basis_iff_indep_card, ←h₁i.r, ←h₂i.r], 
+  rw [←ncard_inter_add_ncard_diff_eq_ncard I A, diff_eq_compl_inter, inter_comm Aᶜ, 
+    ←h₁i.r, ←h₂i.r] at h,  
+  refine ⟨⟨hI₁.inter_right A, inter_subset_right _ _, _⟩, 
+    ⟨hI₂.inter_right _,inter_subset_right _ _,_⟩⟩; 
+  linarith [M₁.r_inter_right_le_r I A, M₂.r_inter_right_le_r I Aᶜ], 
+end 
 
 /-- The hard direction of matroid intersection : existence -/
 lemma exists_common_ind (M₁ M₂ : matroid E) : 
@@ -190,8 +206,46 @@ lemma rado_sufficient (f : E → ι) (h : ∀ (S : set ι), S.ncard ≤ M.r (⋃
 begin
   set M' := partition_matroid_on f 1 with hM', 
   obtain ⟨I, X, hI₁, hI₂, hIX, hF⟩ := exists_common_ind_with_flat_right M M', 
+  obtain ⟨hIb₁,hIb₂⟩ := common_ind_eq_spec hI₁ hI₂ hIX.symm.le, 
+
   simp_rw [hM', indep_iff_r_eq_card, partition_matroid_on_r_eq, pi.one_apply] at hI₂, 
+  rw [ncard_eq_finsum_fiber (to_finite I) f] at hI₂, 
   
+  have h_inj : inj_on f I, 
+  { intros a ha b hb hab, 
+    have h_eq := eq_of_finsum_ge_finsum_of_forall_le (to_finite _) (to_finite _) 
+      (by exact λ i, min_le_right _ _) hI₂.symm.le, 
+    simp only [min_eq_right_iff, ncard_le_one_iff] at h_eq, 
+    exact @h_eq (f a) a b ⟨ha, by simp⟩ ⟨hb, by {rw hab, exact mem_singleton _} ⟩},
+  
+  have preimage_ne : ∀ i, (f ⁻¹' {i}).nonempty, 
+  { simp_rw nonempty_iff_ne_empty, exact λ i h', by simpa [h'] using h {i}},
+
+  have foo' : ∀ i, (I ∩ f ⁻¹' {i}).nonempty, 
+  { intro i, 
+    obtain ⟨a,(rfl : f a = i)⟩ := preimage_ne i, 
+    simp_rw nonempty_iff_ne_empty, 
+    rintro h_empty, 
+    
+    
+    -- simp only [ncard_singleton, mem_singleton_iff, Union_Union_eq_left] at this, 
+    have hge := hIb₂.r, 
+    simp_rw [hM', partition_matroid_on_r_eq, pi.one_apply] at hge, 
+    have h_eq := eq_of_finsum_ge_finsum_of_forall_le (to_finite _) (to_finite _) _ 
+      hge.le (f a), 
+    { apply nonempty_iff_ne_empty.mp (preimage_ne (f a)), 
+      dsimp only at h_eq, 
+      rw [inter_right_comm] at h_eq,  
+      simp [h_empty] at h_eq,   },
+    
+
+
+    }, 
+  -- simp_rw [hM', partition_matroid_on_r_eq, pi.one_apply, ←ncard_inter_add_ncard_diff_eq_ncard I X] 
+    -- at hIX, 
+  
+  
+  -- have := eq_of_finsum_mem_ge_finsum_mem_of_forall_le (to_finite _) (to_finite _), 
   -- rw [←finsum_mem_one] at hI₂, 
   
 

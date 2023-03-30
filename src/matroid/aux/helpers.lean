@@ -264,6 +264,16 @@ begin
     ((add_le_add_left (finsum_mem_le_finsum_mem hs'f hs'g (λ i hi, h_le _ hi.1)) (g a)).trans h_ge),
 end 
 
+lemma eq_of_finsum_ge_finsum_of_forall_le {ι N : Type*} [ordered_cancel_add_comm_monoid N]
+{f g : ι → N} (hf : f.support.finite) (hg : g.support.finite) (h_le : ∀ i, f i ≤ g i) 
+(h_ge : ∑ᶠ i, g i ≤ ∑ᶠ i, f i) (a : ι) : 
+   f a = g a :=
+begin
+  rw [←finsum_mem_univ f, ←finsum_mem_univ g] at h_ge, 
+  exact eq_of_finsum_mem_ge_finsum_mem_of_forall_le (by rwa univ_inter) (by rwa univ_inter)
+    (λ i _, h_le i) h_ge (mem_univ a), 
+end 
+
 lemma finsum_le_finsum_of_subset  {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M}  
 {s t : set ι}  (h : s ⊆ t) (ht : t.finite) :
  ∑ᶠ x ∈ s, f x ≤ ∑ᶠ x ∈ t, f x :=
@@ -359,33 +369,30 @@ by rw [←finsum_mem_univ, finsum_mem_boole, univ_inter]
 lemma ncard_eq_finsum_fiber {α ι : Type*} {s : set α} (hs : s.finite) (f : α → ι) :
   s.ncard = ∑ᶠ (i : ι), (s ∩ f ⁻¹' {i}).ncard :=
 begin
-  by_contra' h', 
-  obtain ⟨t,hts,ht,hmin⟩ := set.finite.exists_minimal_subset hs h', 
-  have ht_ne : t.nonempty, by { rw nonempty_iff_ne_empty, rintro rfl, simpa using ht},
-  obtain ⟨x,hxt⟩ := ht_ne,
-  apply hmin (t \ {x}) (set.diff_singleton_ssubset hxt) (λ h, ht _), 
-  rw [←ncard_diff_singleton_add_one hxt (hs.subset hts), h, ←finsum_mem_univ], 
-  nth_rewrite 1 ←finsum_mem_univ, 
-  rw [←insert_eq_of_mem (mem_univ (f x)), ←insert_diff_singleton, finsum_mem_insert', 
-    finsum_mem_insert', add_right_comm], 
-  { convert rfl, 
-    {  sorry,},
-    ext i,
-    apply finsum_congr (λ hi, _),  
-    convert rfl using 2, 
-      },
-
-
-  -- have hfin : ∀ i,  (s ∩ f ⁻¹' {i}).finite, from λ i, hs.subset (inter_subset_left _ _), 
-  -- have h' : (f '' s).finite := hs.image f,  
-  -- rw [ncard_eq_to_finset_card _ hs, 
-  --   @finset.card_eq_sum_card_fiberwise _ _ _ f hs.to_finset h'.to_finset], 
-  -- { rw [←finsum_mem_univ, ←finsum_mem_inter_support, finsum_eq_sum], simp,   },
-  -- rw finsum_mem_eq_finite_to_finset_sum, 
   
+  have h' : (function.support (λ i, (s ∩ f ⁻¹' {i}).ncard)).finite, 
+  { apply (hs.image f).subset, 
+    rintro i (h : ¬ (_ = 0)), 
+    rw [(ncard_eq_zero (hs.subset (inter_subset_left _ _))), ←ne.def, ←nonempty_iff_ne_empty] at h, 
+     obtain ⟨x, hxs, hx⟩ := h, 
+     exact ⟨x, hxs, by simpa using hx⟩},
   
-  -- conv_rhs {congr, funext, rw ←finsum_mem_one},
-  -- rw [←finsum_mem_one], 
+  rw [ncard_eq_to_finset_card _ hs,
+    @finset.card_eq_sum_card_fiberwise _ _ _ f (hs.to_finset) ((hs.image f).to_finset)], 
+  { rw [←finsum_mem_univ, ←finsum_mem_inter_support, univ_inter, 
+     finsum_mem_eq_finite_to_finset_sum _ h', finset.sum_congr], 
+    { ext, 
+      simp_rw [finite.mem_to_finset, mem_image, function.mem_support, ne.def, 
+          ncard_eq_zero (hs.subset (inter_subset_left _ _)), eq_empty_iff_forall_not_mem, 
+        not_forall, mem_inter_iff, not_not, mem_preimage, mem_singleton_iff]},
+
+    intros x hx,
+    rw [ncard_eq_to_finset_card _ (hs.subset (inter_subset_left _ _))] , 
+    convert rfl, 
+    ext, 
+    simp},
+  simp only [finite.mem_to_finset, mem_image], 
+  exact λ x hx, ⟨x, hx, rfl⟩,  
 end 
 
 
