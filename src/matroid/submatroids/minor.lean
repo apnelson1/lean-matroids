@@ -26,7 +26,7 @@ instance : has_coe_to_fun (minor_embedding M₀ M) (λ a, E₀ → E) := ⟨λ �
 /-- Two `minor_embedding`s are equivalent if they differ only in choice of their contract and
   delete-sets-/
 def equiv (φ₁ φ₂ : M₀ →m M) :=
-  (φ₁ : E₀ → E) = (φ₂ : E₀ → E)  
+  (φ₁ : E₀ → E) = (φ₂ : E₀ → E)
 
 @[simp] lemma coe_to_embedding (φ : M₀ →m M) :
   (φ.to_embedding : E₀ → E) = (φ : E₀ → E) :=
@@ -37,7 +37,7 @@ rfl
 φ.to_embedding.injective.eq_iff
 
 lemma injective (φ : M₀ →m M) :
-  function.injective φ := 
+  function.injective φ :=
 φ.to_embedding.injective
 
 /-- The contract-set of a `minor_embedding` -/
@@ -87,10 +87,10 @@ begin
   split,
   { rintro ⟨hi,hss,h⟩,
     refine ⟨hi,hss,λ J hJ hssJ hJss, _⟩,
-    have h'J : ∃ J₀, φ '' J₀ = J, 
+    have h'J : ∃ J₀, φ '' J₀ = J,
     { rw [←subset_range_iff_exists_image_eq],
       exact hJss.trans (φ.image_subset_ground X₀)} ,
-    obtain ⟨J₀,rfl⟩ := h'J, 
+    obtain ⟨J₀,rfl⟩ := h'J,
     rw [image_subset_image_iff φ.injective] at hssJ hJss,
     rw [←φ.indep_iff] at hJ,
     rw [h _ hJ hssJ hJss]},
@@ -143,7 +143,7 @@ def trans (φ₀₁ : M₀ →m M₁) (φ₁₂ : M₁ →m M₂) :
 
 @[simp] lemma trans_apply (φ₀₁ : M₀ →m M₁) (φ₁₂ : M₁ →m M₂) (x : E₀) :
   (φ₀₁.trans φ₁₂) x = φ₁₂ (φ₀₁ x) :=
-rfl 
+rfl
 
 @[simp] lemma trans_apply_image (φ₀₁ : M₀ →m M₁) (φ₁₂ : M₁ →m M₂) (X : set E₀) :
   (φ₀₁.trans φ₁₂) '' X = φ₁₂ '' (φ₀₁ '' X) :=
@@ -188,7 +188,7 @@ def dual (φ : M₀ →m M) :
   disj := φ.D_disjoint_ground.symm,
   indep_iff' := begin
     intro X,
-  
+
     -- rw [dual_indep_iff_coindep],
   end  }
 
@@ -196,7 +196,7 @@ def dual (φ : M₀ →m M) :
   independent and whose delete-set is coindependent -/
 theorem exists_indep_coindep_embedding (φ : M₀ →m M) :
   ∃ (ψ : M₀ →m M), ψ.equiv φ ∧ M.indep ψ.C ∧ M.coindep φ.D :=
-sorry       
+sorry
 
 
 
@@ -210,7 +210,7 @@ def is_iso_minor (M₀ : matroid E₀) (M : matroid E) : Prop :=
 /-- A matroid `M₀` on a subtype is a minor of `M` if there is a `minor_embedding` whose associated
   embedding function is the inclusion map. -/
 def is_minor {X : set E} (M₀ : matroid X) (M : matroid E) : Prop :=
-  ∃ (φ : M₀ →m M), (φ : X → E) = coe 
+  ∃ (φ : M₀ →m M), (φ : X → E) = coe
 
 infix ` ≤m ` : 25 := is_iso_minor
 

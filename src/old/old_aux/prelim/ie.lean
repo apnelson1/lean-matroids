@@ -15,8 +15,8 @@ begin
   revert s,
   refine induction_set_size_insert _ (by simp) _,
   intros s a ha IH,
- 
 
-   
+
+
 
 end

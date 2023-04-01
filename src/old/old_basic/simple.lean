@@ -64,7 +64,7 @@ lemma rank_pair_of_simple_set (h : M.is_simple_set S) (hef : e ≠ f) (he : e �
   M.r {e,f} = 2 :=
 begin
   rw [indep_iff_r.mp (h {e,f} _ (by rw size_pair hef)), size_pair hef],
-  rw ← singleton_subset_iff at he hf,  
+  rw ← singleton_subset_iff at he hf,
   convert union_subset he hf,
 end
 
@@ -97,7 +97,7 @@ begin
   refine eq_of_rank_one_simple h (le_antisymm hef _),
   rw ← rank_singleton_of_simple h e,
   apply rank_mono,
-  simp, 
+  simp,
 end
 
 lemma loopless_of_simple (hM : M.is_simple) :
@@ -138,9 +138,9 @@ lemma loopless_set_iff_all_nonloops {M : matroid α} {S : set α} :
 begin
   simp_rw [nonloop_iff_r, is_loopless_set, size_le_one_iff_empty_or_singleton, indep_iff_r],
   refine ⟨λ h, λ e he ,_  , λ h, λ X hX h', _⟩,
-  {rw ← size_singleton e, exact h _ (singleton_subset_iff.mpr he) (or.inr ⟨e, rfl⟩)}, 
+  {rw ← size_singleton e, exact h _ (singleton_subset_iff.mpr he) (or.inr ⟨e, rfl⟩)},
   rcases h' with (rfl | ⟨e,rfl⟩), simp,
-  rw [size_singleton, h e (singleton_subset_iff.mp hX)], 
+  rw [size_singleton, h e (singleton_subset_iff.mp hX)],
 end
 
 lemma loopless_set_iff_subset_nonloops {M : matroid α} {S : set α} :
@@ -167,7 +167,7 @@ begin
   simp_rw [loopless_set_iff_all_nonloops, nonloop_iff_not_loop] at hS,
   push_neg at hS hn,
   obtain ⟨e,⟨he,he'⟩⟩ := hS,
-  exact hn e he he',   
+  exact hn e he he',
 end
 
 lemma exists_loop_of_not_loopless {M : matroid α} (h : ¬M.is_loopless) :
@@ -198,7 +198,7 @@ begin
   rcases size_eq_two_iff_pair.mp h2 with ⟨e,f,hef,rfl⟩,
   by_contra hn,
   cases pair_subset_iff.mp hXS with he hf,
- 
+
   suffices heq : e = f, rw [heq, pair_eq_singleton, size_singleton] at h2, norm_num at h2,
   apply h.2 e f he hf, rw parallel_iff_dep _ _, right,
     rwa [←dep_iff_not_indep] at hn,
@@ -207,18 +207,18 @@ end
 
 lemma simple_iff_no_loops_or_parallel_pairs {M : matroid α} :
   M.is_simple ↔ M.is_loopless ∧ ∀ (e f : α), M.parallel e f → e = f :=
-by {rw [simple_iff_univ_simple, simple_set_iff_no_loops_or_parallel_pairs], tidy, } 
+by {rw [simple_iff_univ_simple, simple_set_iff_no_loops_or_parallel_pairs], tidy, }
 
 lemma simple_set_exchange (hS : M.is_simple_set S) (he : e ∈ S) (hp : M.parallel e f) :
   M.is_simple_set (S \ {e} ∪ {f}) :=
 begin
-  rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at ⊢ hS, 
+  rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at ⊢ hS,
   simp only [mem_union_iff, mem_diff, mem_singleton_iff, mem_singleton_iff],
   refine ⟨λ x hxS, _, λ x y hxS hyS hxy, _⟩,
   { obtain (⟨hxS, -⟩ | rfl) := hxS, exact hS.1 x hxS, exact hp.nonloop_right},
   obtain (⟨hxS, hxe⟩ | rfl) := hxS; obtain (⟨hyS, hye⟩ | rfl) := hyS,
   { exact hS.2 _ _ hxS hyS hxy},
-  { exact false.elim ((ne.symm hxe) (hS.2 e x he hxS (hp.trans hxy.symm)))}, 
+  { exact false.elim ((ne.symm hxe) (hS.2 e x he hxS (hp.trans hxy.symm)))},
   { exact false.elim ((ne.symm hye) (hS.2 e y he hyS (hp.trans hxy)))},
   refl,
 end
@@ -226,7 +226,7 @@ end
 lemma simple_set_exchange' (hS : M.is_simple_set S) (hf : f ∈ S) (hp : M.parallel e f) :
   M.is_simple_set ((S ∪ {e}) \ {f}) :=
 begin
-  rcases em (e = f) with (rfl | hef), 
+  rcases em (e = f) with (rfl | hef),
   rw [union_mem_singleton hf],
   exact simple_of_subset_simple hS (diff_subset _ _),
   rw ← exchange_comm (ne.symm hef),
@@ -240,7 +240,7 @@ begin
   rw indep_loopify_iff,
   refine ⟨hS Y hY hsize, _⟩,
   rw [← disjoint_iff_inter_eq_empty],
-  exact disjoint_of_subset_left hY hX, 
+  exact disjoint_of_subset_left hY hX,
 end
 
 lemma loopify_simple_iff_simple_disjoint :
@@ -252,7 +252,7 @@ begin
   obtain ⟨e, hx, hx'⟩ :=  not_disjoint_iff.mp hn,
   simp_rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops,
     nonloop_iff_not_loop] at h,
-  exact h.1 e hx (loop_of_loopify _ hx'), 
+  exact h.1 e hx (loop_of_loopify _ hx'),
 end
 
 
@@ -296,7 +296,7 @@ lemma si_is_simple (M : matroid α) :
   (si M).is_simple :=
 begin
   let f := M.choose_transversal,
-  refine simple_iff_no_loops_or_parallel_pairs.mpr ⟨(M.si_is_loopless), λ P Q hPQ, _⟩, 
+  refine simple_iff_no_loops_or_parallel_pairs.mpr ⟨(M.si_is_loopless), λ P Q hPQ, _⟩,
   apply eq_of_parallel_range_transversal f,
   obtain ⟨-,-,hr⟩ := hPQ,
   refine ⟨_,_,_⟩, all_goals {try {apply nonloop_of_range_transversal}},
@@ -332,7 +332,7 @@ begin
     rw [simple_set_iff_no_loops_or_parallel_pairs, loopless_set_iff_all_nonloops] at h,
     exact loop_iff_not_nonloop.mp (loop_of_loopify N heD) (h.1 e heS)},
   simp_rw [is_simple_set, indep_loopify_iff],
-  exact λ X hX hsize, ⟨h.1 X hX hsize, disjoint_of_subset_left' hX h.2⟩, 
+  exact λ X hX hsize, ⟨h.1 X hX hsize, disjoint_of_subset_left' hX h.2⟩,
 end
 
 lemma simple_loopify_to_iff {R : set α}:
@@ -353,7 +353,7 @@ begin
   obtain ⟨φ,C, hrange, hr, hCi, hCr⟩ := iminor_of_iff_exists_good_C.mp hNM',
   obtain ⟨C',D',hC'D', h⟩ := pminor_iff_exists_pr_lp_disjoint.mp hM'M, substI h,
   clear hM'M hNM',
- 
+
   have hrange' : range φ ∩ (C' ∪ D') = ∅,
   { by_contra hn,
     obtain ⟨e,he⟩ := ne_empty_iff_has_mem.mp hn, clear hn,
@@ -361,18 +361,18 @@ begin
     obtain ⟨f,rfl⟩ := mem_range.mp heφ, clear heφ,
     specialize hr {f},
     --have := @rank_single_of_loopless β _inst_2 N hN f,
-   
+
     rw [rank_single_of_loopless hN, image_singleton] at hr,
     rw [union_comm, rank_eq_rank_union_rank_zero C _, sub_self] at hr,
     exact one_ne_zero hr,
     apply rank_zero_of_subset_rank_zero (singleton_subset_iff.mpr heC),
     apply rank_zero_of_pr_lp, },
   have hCC'D' : C ∩ (C' ∪ D') = ∅,
- 
+
   rw [←size_zero_iff_empty,
         ←rank_zero_of_inter_rank_zero C (rank_zero_of_pr_lp M C' D'),
         ←r_indep (inter_indep_of_indep_left _ (C' ∪ D') hCi)],
- 
+
   refine iminor_of_iff_exists_embedding.mpr ⟨φ, C ∪ C', _, λ X, _⟩,
   { rw [disjoint_iff_inter_eq_empty] at *,
     rw disjoint_iff_subset_compl at *,
@@ -380,15 +380,15 @@ begin
     intros x,
     simp only [and_imp, compl_union, mem_inter_eq, mem_compl_eq],
     tauto},
- 
+
   have h' : ∀ Z: set α, Z ∩ (C' ∪ D') = ∅ → D' ∩ Z = ∅,
   { intros Z hZ, rw inter_comm, apply disjoint_of_subset_right' (subset_union_right C' D') hZ, },
 
-  rw [hr X, loopify_rank_of_disjoint (M ⟋ C') (h' _ hCC'D'), ←union_assoc, 
+  rw [hr X, loopify_rank_of_disjoint (M ⟋ C') (h' _ hCC'D'), ←union_assoc,
       loopify_rank_of_disjoint (M ⟋ C'), project_r, project_r], ring,
 
   rw [inter_distrib_left, h' _ hCC'D', disjoint_of_subset_right' _ (h' _ hrange'), union_self],
-  apply image_subset_range, 
+  apply image_subset_range,
 end
 
 
@@ -398,12 +398,12 @@ lemma iminor_iff_iminor_si {N : matroid β} {M : matroid α} (hN : N.is_simple) 
   N.is_iminor_of (si M) ↔ N.is_iminor_of M :=
 begin
   refine ⟨λ h, iminor_trans h M.si_is_iminor, λ h, iminor_of_iff_exists_embedding.mpr _⟩,
- 
+
   obtain ⟨ce⟩ := iminor_of_iff_exists_con_emb.mp h,
   -- all elements of N map to nonloops of M...
   have hnl : ∀ x, M.is_nonloop (ce.e x), from
     λ x, ce.nonloop_of_nonloop (nonloop_of_simple hN x),
- 
+
   -- so we can define a map φ' taking β to nonloops of M
   set φ' : β → M.nonloop := λ x, ⟨ce.e x, hnl x⟩ with hφ',
 
@@ -412,14 +412,14 @@ begin
 
   -- the contract map is basically (parallel_class_of) ∘ φ, modulo punctuation
   refine ⟨⟨λ b, parallel_class_of' (φ' b), λ x y hxy, _⟩, C', _, λ X, _⟩,
- 
+
   -- the contract map is injective
   { dsimp only at hxy,
     simp only [hφ', parallel_class_of'_eq, hφ', subtype.mk_eq_mk, subtype.coe_mk] at hxy,
     have hr := ce.rank_le_rank_image {x,y},
     rw [image_pair, (parallel_of_parallel_cl_eq_left (hnl x) hxy).2.2]  at hr,
     exact eq_of_rank_le_one_simple hN hr},
- 
+
   -- the contract set is disjoint from the contract map's range
   { simp only [parallel_class_of'_eq, function.embedding.coe_fn_mk, subtype.coe_mk,
       ←disjoint_iff_inter_eq_empty, disjoint_left,  forall_apply_eq_imp_iff', mem_range,
@@ -433,10 +433,10 @@ begin
 
   -- the rank functions agree. A bit nasty
   convert ce.on_rank X using 2, swap,
-  { rw hC', exact M.si_r_eq_r_parallel_cl_image _, }, 
+  { rw hC', exact M.si_r_eq_r_parallel_cl_image _, },
   rw [hC', ← M.si_r_eq_r_parallel_cl_image],
   convert rfl,
-  ext P, rcases P with ⟨P, hP⟩, 
+  ext P, rcases P with ⟨P, hP⟩,
   simp only [mem_parallel_cl_image_of_iff, mem_image, parallel_class_of'_eq,
   mem_union_eq, subtype.mk_eq_mk, function.embedding.coe_fn_mk, subtype.coe_mk,
   nonempty_inter_iff_exists_right],

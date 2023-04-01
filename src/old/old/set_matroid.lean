@@ -43,7 +43,7 @@ variables {α : Type v} [matroids α]
 
 def γ (M : α) := (matroids.type_map M).1 -- matroid elements have type γ
 def E (M: α) : (set (γ M)) := set.univ  -- E is the ground set viewed as a set, not a type.
-def r (M : α) (X : set (γ M) ) : ℤ := (matroids.to_matroid M).r X 
+def r (M : α) (X : set (γ M) ) : ℤ := (matroids.to_matroid M).r X
 def R1l (M : α) (X : set (γ M)) : 0 ≤ r M X := (matroids.to_matroid M).R1l X
 def R1u (M:  α) (X: set (γ M))  : r M X ≤ size X := (matroids.to_matroid M).R1u X
 def R2 (M : α) {X Y : set (γ M)} (h : X ⊆ Y) : r M X ≤ r M Y := (matroids.to_matroid M).R2 h
@@ -56,7 +56,7 @@ begin
     have := finsize (∅ : set (γ M)),
     sorry,
     --simp only [card_empty, int.coe_nat_zero] at this,
-    --linarith,    
+    --linarith,
 end
 --by { have h := R1 M ∅, rwa [card_empty, le_zero_iff_eq] at h }
 
@@ -99,8 +99,8 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
   to_matroid := λ (M' : submatroid M),
   { r := λ X, r M X,
     R1 := λ X,
-    begin   
-        split,       
+    begin
+        split,
         apply (R1 M X).1,
         simp only [coe_subtype_size],
         exact (R1 M X).2,
@@ -132,7 +132,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
 
       split,
       linarith [R2 M (subset_union_right ↑X M'.C)],
-     
+
       have h1 := rank_subadditive M X M'.C,
       have := (R1 M X).2,
       rw coe_subtype_size X,
@@ -155,26 +155,26 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         intros X Y,
         --rw ← coe_subtype_union,
         suffices : r M (↑(X ∪ Y) ∪ M'.C) + r M (↑(X ∩ Y) ∪ M'.C) ≤ r M (↑X ∪ M'.C) + r M (↑Y ∪ M'.C), by linarith,
-       
-        
+
+
         --calc r M (↑(X ∪ Y) ∪ M'.C) - r M M'.C + (r M (↑(X ∩ Y) ∪ M'.C) - r M M'.C) ≤ r M (↑(X ∪ Y) ∪ M'.C) + (r M (↑(X ∩ Y) ∪ M'.C) - 2*(r M M'.C) : by linarith
         --... = r M (↑X ∪ M'.C) - r M M'.C + (r M (↑Y ∪ M'.C) - r M M'.C) : sorry,
         --... =
 
         --sorry,
         --exact this,
-       
+
         --{linarith,},
         --rw @image_union (finset (↑(M'.C))ᶜ) () _ _ _ X Y ,
         --sorry,
-       
+
         /-intros X Y,
         let X' := X.image subtype.val,
         let Y' := Y.image subtype.val,
         rw [image_union, image_inter],
         have := R3 M (X' ∪ M'.C) (Y' ∪ M'.C),
         simp only [@union_unions _ _ X' Y' _, inter_unions]  at this,
-       
+
         linarith,
         intros x y,
         exact subtype.eq,-/
@@ -193,7 +193,7 @@ def dual (M : α) [fintype (γ M)] : matroid_on (γ M) :=
     have h2 := rank_subadditive M X (Xᶜ),
     have h3 := lambda_conn_nonegative M X,
     --unfold lambda_conn at h3,
-   
+
     calc size X - r (E M) + r Xᶜ = size X - r X + (r X + r Xᶜ - r (E M)) : by linarith
                         ...      ≥ size X - r X                          : by linarith [lambda_conn_nonegative M X]
                         ...      ≥ 0                                     : by linarith [(R1 M X).2],

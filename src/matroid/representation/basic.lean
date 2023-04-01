@@ -74,7 +74,7 @@ def matrix.column_set (P : matrix ρ E R) : set (ρ → R) :=
 -- def matrix.row_set' (P : matroid ρ E R) : set ()
 
 /- The row space of a `ρ × E` matrix over `𝔽`. -/
-@[reducible] def matrix.row_space (P : matrix ρ E 𝔽) : submodule 𝔽 (E → 𝔽) := 
+@[reducible] def matrix.row_space (P : matrix ρ E 𝔽) : submodule 𝔽 (E → 𝔽) :=
   submodule.span 𝔽 P.row_set
 
 /- A matrix represents `M` if its row space is a subspace representation of `M` -/

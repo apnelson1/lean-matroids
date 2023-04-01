@@ -49,7 +49,7 @@ by {cases M, cases M', dsimp only at *, induction h', induction h, refl,}
   M₁ = M₂ :=
 begin
   apply ext' h_ground, ext X,
-  specialize h_r (X ∩ M₁.E) (by simp), 
+  specialize h_r (X ∩ M₁.E) (by simp),
   rw (by simp : X = (X ∩ M₁.E) ∪ (X ∩ M₁.Eᶜ)),
   have h₁ := matroid.rank_zero_of_inter_rank_zero X M₁.support,
   have h₂ := matroid.rank_zero_of_inter_rank_zero X M₂.support, rw ←h_ground at h₂,
@@ -126,7 +126,7 @@ lemma of_mat_as_mat_on {E E' : set α} (N : matroid E) (h : E' = E) :
 begin
   ext : 1, convert rfl,
   intros X hX,
-  simp only [of_mat, as_mat_on], 
+  simp only [of_mat, as_mat_on],
   convert rfl, exact h.symm,
   ext Y, unfold r, dsimp only, congr' 1,
   simp [h] with coe_up,
@@ -134,7 +134,7 @@ end
 
 lemma of_mat_inj {R : set α} (N N' : matroid R) :
   of_mat N = of_mat N' → N = N' :=
-λ h, by {ext, rw [r_of_mat,r_of_mat,h]} 
+λ h, by {ext, rw [r_of_mat,r_of_mat,h]}
 
 def as_matroid_in (M : matroid α) : matroid_in α := ⟨univ, M, by simp⟩
 
@@ -179,7 +179,7 @@ def is_indep [f : fintype α] (M : matroid_in α) (X : set α) : Prop :=
 lemma indep_iff_r (M : matroid_in α) (X : set α) :
   is_indep M X ↔ M.r X = size X :=
 begin
-  rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r], 
+  rw [is_indep, lift_mat_set_property], dsimp only, rw [matroid.indep_iff_r],
   simp only with coe_up msimp,
   refine ⟨λ h, _, λ h, _⟩,
   { rw subset_iff_inter_eq_left at h, rw ←h.1, exact h.2},
@@ -216,7 +216,7 @@ begin
     rwa subset_iff_inter_eq_left.mp h at h',
     refine ⟨h', (λ Y hY, _), h⟩,
     have hYE : Y ∩ M.E = Y := subset_iff_inter_eq_left.mp (subset.trans hY.1 h),
-    rw subset_iff_inter_eq_left at h, 
+    rw subset_iff_inter_eq_left at h,
     specialize h'' (inter_subtype _ Y) _, swap,
     { simp only with coe_up at h'',
       convert h'';
@@ -231,7 +231,7 @@ end
 
 lemma circuit_iff_carrier {M : matroid_in α} {C : set α} :
   M.is_circuit C ↔ M.carrier.is_circuit C ∧ C ⊆ M.E :=
-by {simp_rw [circuit_iff_r, matroid.circuit_iff_r, r_carrier_eq_r], tauto} 
+by {simp_rw [circuit_iff_r, matroid.circuit_iff_r, r_carrier_eq_r], tauto}
 
 lemma circuit_iff_subtype {M : matroid_in α} {X : set α} :
   M.is_circuit X ↔ X ⊆ M.E ∧ M.as_mat.is_circuit (inter_subtype M.E X) :=
@@ -275,7 +275,7 @@ begin
   simp_rw [indep_iff_r, dual_r, ←r_carrier_eq_r, diff_eq, subset_iff_inter_eq_left],
   refine ⟨λ h, _, λ h, _⟩,
   { have h1 := size_mono_inter_left X M.E,
-    have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,  
+    have h2 := M.carrier.rank_mono_inter_left M.E Xᶜ,
     refine ⟨eq_of_eq_size_subset (inter_subset_left _ _) (by linarith) , by linarith⟩},
   rw [h.1, h.2], simp,
 end
@@ -327,7 +327,7 @@ def isom_to_matroid_of_isom {M : matroid_in α} {N : matroid β} (i : isom M (N 
     mem_univ, function.comp_app, exists_eq_right, exists_prop_of_true, equiv.coe_trans,
     subtype.coe_eta, equiv.set.univ_apply, subtype.coe_mk, coe_E],
     split;
-    {rintros ⟨x,hx,⟨hxX, h'⟩⟩, refine ⟨x,hx,hxX,_⟩, try {rw h', simp}, try {rw ←h', simp},},      
+    {rintros ⟨x,hx,⟨hxX, h'⟩⟩, refine ⟨x,hx,hxX,_⟩, try {rw h', simp}, try {rw ←h', simp},},
   end ⟩
 
 lemma is_isom_to_matroid_iff_is_isom_to_coe {M : matroid_in α} {N : matroid β} :

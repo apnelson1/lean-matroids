@@ -63,7 +63,7 @@ def loop (e : α) : Prop :=
   M.circuit {e}
 
 def coloop (e : α) : Prop :=
-  ∀ B, M.base B → e ∈ B  
+  ∀ B, M.base B → e ∈ B
 
 def cocircuit (K : set α) : Prop :=
   M.hyperplane (M.ground \ K)
@@ -173,7 +173,7 @@ def to_matroid (M : matroid_in α) (hX : M.ground = X) :
   matroid X :=
 { base := M.carrier.base ∘ (set.image coe),
   exists_base' := begin
-    obtain ⟨B,hB⟩ := M.carrier.exists_base', 
+    obtain ⟨B,hB⟩ := M.carrier.exists_base',
     refine ⟨coe ⁻¹' B, _⟩, simp only [function.comp_app, subtype.image_preimage_coe],
     convert hB,
     rw [inter_eq_left_iff_subset, ←hX],
@@ -187,11 +187,11 @@ def to_matroid (M : matroid_in α) (hX : M.ground = X) :
     have ha' : (a : α) ∈ (coe '' B₁) \ (coe '' B₂),
     { rw [←image_diff (subtype.coe_injective), mem_image], exact ⟨a,ha,rfl⟩},
     obtain ⟨y,hy,hy'⟩ :=  hB₁.exchange hB₂ ha',
-    refine ⟨⟨y, _⟩, _, _⟩, 
+    refine ⟨⟨y, _⟩, _, _⟩,
     { exact mem_ground_of_nonloop (hB₂.indep.nonloop_of_mem hy.1), },
     { simp only [←image_diff (subtype.coe_injective), mem_image,
         subtype.exists, subtype.coe_mk, exists_and_distrib_right, exists_eq_right] at hy,
-      obtain ⟨hy'',h_eq⟩ := hy, 
+      obtain ⟨hy'',h_eq⟩ := hy,
       exact h_eq},
     rwa [function.comp_app, image_insert_eq, image_diff subtype.coe_injective, image_singleton],
   end }
@@ -216,7 +216,7 @@ def of_matroid_in {ground : set α} (M : matroid ground) :
       rw [hxx', ←mem_preimage, preimage_diff] at hx,
       obtain ⟨y, hy, hBy⟩ := hB₁.exchange hB₂ hx,
       rw [←preimage_diff, mem_preimage] at hy,
-      refine ⟨y,hy,_,_⟩, 
+      refine ⟨y,hy,_,_⟩,
       { rw [←singleton_union, preimage_union, preimage_diff], rw [←singleton_union] at hBy,
         convert hBy using 2,
         { ext, simp [subtype.coe_inj]},
@@ -224,7 +224,7 @@ def of_matroid_in {ground : set α} (M : matroid ground) :
         { ext, rw [hx'_def], simp only [mem_singleton_iff, subtype.coe_mk, mem_preimage],
           simp_rw [hxx'], rw [subtype.coe_inj], refl}},
       rw insert_subset,
-      exact ⟨y.2, (diff_subset _ _).trans hB₁ss⟩, 
+      exact ⟨y.2, (diff_subset _ _).trans hB₁ss⟩,
     end },
   support :=
   (begin
@@ -321,7 +321,7 @@ begin
     { simpa using hJ.subset_ground},
     { convert hJ, simpa using hJ.subset_ground},
     { simpa using hIJ },
-    rw [←preimage_image_eq X subtype.coe_injective, preimage_subset_preimage_iff], 
+    rw [←preimage_image_eq X subtype.coe_injective, preimage_subset_preimage_iff],
     { exact hJX},
     simp only [subtype.range_coe_subtype, set_of_mem_eq, hJ.subset_ground]},
   rw [←hI'.r, hI'.indep.r, ncard_image_of_injective _ subtype.coe_injective],

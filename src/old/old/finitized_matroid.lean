@@ -44,7 +44,7 @@ variables {α : Type v} [matroids α]
 def fin_cert (M: α) := (matroids.to_matroid M).fin_cert
 def γ (M : α) := matroids.γ M -- matroid elements have type γ
 def E (M: α) : (finset (γ M)) := (fin_cert M).elems -- E is the ground set viewed as a set, not a type.
-def r (M : α) (X : finset (γ M) ) : ℤ := (matroids.to_matroid M).r X --@((matroids.to_matroid M).r) sorry sorry X 
+def r (M : α) (X : finset (γ M) ) : ℤ := (matroids.to_matroid M).r X --@((matroids.to_matroid M).r) sorry sorry X
 def R1 (M : α) (X : finset (γ M)) : 0 ≤ r M X ∧ r M X ≤ X.card := (matroids.to_matroid M).R1 X
 def R2 (M : α) {X Y : finset (γ M)} (h : X ⊆ Y) : r M X ≤ r M Y := (matroids.to_matroid M).R2 h
 def R3 (M : α) (X Y : finset (γ M)) : r M (X ∪ Y) + r M (X ∩ Y) ≤ r M X + r M Y := (matroids.to_matroid M).R3 X Y
@@ -53,7 +53,7 @@ def R3 (M : α) (X Y : finset (γ M)) : r M (X ∪ Y) + r M (X ∩ Y) ≤ r M X 
 begin
     have := R1 M ∅,
     simp only [card_empty, int.coe_nat_zero] at this,
-    linarith,    
+    linarith,
 end
 --by { have h := R1 M ∅, rwa [card_empty, le_zero_iff_eq] at h }
 
@@ -103,14 +103,14 @@ begin
     apply subtype.ext,
 end -/
 
-   
+
 
 structure submatroid (M : α) :=
 (F : finset (γ M))
 
 --set_option pp.beta true
 --set_option pp.universes true
---set_option pp.notation false 
+--set_option pp.notation false
 --set_option pp.implicit true
 set_option pp.proofs true
 
@@ -121,11 +121,11 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
     fin_cert := @fintype.subtype (γ M) (λ x, (x ∈ M'.F)) M'.F (by simp),
     r := λ X, r M (X.image subtype.val),
     R1 := λ X,
-    begin   
-        split,       
+    begin
+        split,
         apply (R1 M (X.image subtype.val)).1,
         --have := (R1 M (X.image subtype.val)).2,
-        
+
         sorry,
         --simp,
         --apply (R1 M (X.image subtype.val)).2,
@@ -166,11 +166,11 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
      simp,
      simp,
      intros hg,
-     split, 
-     apply (fin_cert M).complete, 
+     split,
+     apply (fin_cert M).complete,
      exact hg,
   end,
-  
+
     r := sorry, --λ X, r M (X ∪ M'.C) - r M M'.C,
 
     R1 := λ X,
@@ -178,7 +178,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
       sorry,
       /-split,
       linarith [R2 M (subset_union_right ↑X M'.C)],
-     
+
       have h1 := rank_subadditive M X M'.C,
       have := (R1 M X).2,
       rw coe_subtype_size X,
@@ -212,35 +212,35 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         ⊢ r M (↑(X ∪ Y) ∪ M'.C) - r M M'.C + (r M (↑(X ∩ Y) ∪ M'.C) - r M M'.C)
            ≤ r M (↑X ∪ M'.C) - r M M'.C + (r M (↑Y ∪ M'.C) - r M M'.C)
         -/
-       
+
         /-suffices: r M (↑(X ∪ Y) ∪ M'.C) + r M (↑(X ∩ Y) ∪ M'.C) ≤ r M (↑X ∪ M'.C) + r M (↑Y ∪ M'.C),
         {
             linarith,
         },-/
 
         --sorry,
-       
+
         --rw ← coe_subtype_union,
-       
-        
+
+
         --calc r M (↑(X ∪ Y) ∪ M'.C) - r M M'.C + (r M (↑(X ∩ Y) ∪ M'.C) - r M M'.C) ≤ r M (↑(X ∪ Y) ∪ M'.C) + (r M (↑(X ∩ Y) ∪ M'.C) - 2*(r M M'.C) : by linarith
         --... = r M (↑X ∪ M'.C) - r M M'.C + (r M (↑Y ∪ M'.C) - r M M'.C) : sorry,
         --... =
 
         --sorry,
         --exact this,
-       
+
         --{linarith,},
         --rw @image_union (finset (↑(M'.C))ᶜ) () _ _ _ X Y ,
         --sorry,
-       
+
         /-intros X Y,
         let X' := X.image subtype.val,
         let Y' := Y.image subtype.val,
         rw [image_union, image_inter],
         have := R3 M (X' ∪ M'.C) (Y' ∪ M'.C),
         simp only [@union_unions _ _ X' Y' _, inter_unions]  at this,
-       
+
         linarith,
         intros x y,
         exact subtype.eq,-/
@@ -264,7 +264,7 @@ def dual (M : α) : matroid_on (γ M) :=
     have h2 := rank_subadditive M X (Xᶜ),
     have h3 := lambda_conn_nonegative M X,
     --unfold lambda_conn at h3,
-   
+
     calc size X - r (E M) + r Xᶜ = size X - r X + (r X + r Xᶜ - r (E M)) : by linarith
                         ...      ≥ size X - r X                          : by linarith [lambda_conn_nonegative M X]
                         ...      ≥ 0                                     : by linarith [(R1 M X).2],
@@ -288,7 +288,7 @@ variable (X : finset (γ M))
 
 def dual_equiv (M : α) : matroid_contraction M ≃ submatroid (dual M) :=
 begin
-   
+
 end
 lemma dual_types (M: α) (X: finset (γ M)) : (matroids.γ (dual (delete M X))) = (matroids.γ (contract (dual M) X)) :=
 begin

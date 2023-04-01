@@ -21,7 +21,7 @@ def is_indep_pair (M₁ M₂ : matroid α) := λ (p : set α × set α), M₁.is
 def is_basis_pair (M₁ M₂ : matroid α) := λ (p : set α × set α), M₁.is_basis p.1 ∧ M₂.is_basis p.2
 
 /-- type of disjoint pairs of sets in α -/
-def is_disjoint (pair : (set α × set α)) := pair.1 ∩ pair.2 = ∅ 
+def is_disjoint (pair : (set α × set α)) := pair.1 ∩ pair.2 = ∅
 
 /-- type of pairs of independent sets of M₁,M₂ respectively -/
 def indep_pair (M₁ M₂ : matroid α) := {p : set α × set α // is_indep_pair M₁ M₂ p }
@@ -113,7 +113,7 @@ begin
   prod.exists],
   cases exists_basis M₁ with B₁ hB₁,
   cases exists_basis M₂ with B₂ hB₂,
-  from ⟨B₁, B₂, hB₁, hB₂⟩, 
+  from ⟨B₁, B₂, hB₁, hB₂⟩,
 end
 
 lemma exists_inter_bases (M₁ M₂ : matroid α) :
@@ -146,7 +146,7 @@ instance coe_common_ind (M₁ M₂ : matroid α) : has_coe (common_ind M₁ M₂
   ⟨λ X, X.val⟩
 
 
-end prelim  
+end prelim
 
 section params
 
@@ -155,10 +155,10 @@ def ν (M₁ M₂ : matroid α) : ℤ :=
   max_val (λ (X : common_ind M₁ M₂), size X.val)
 
 /-- size of the largest set that is the union of independent sets of M₁ and M₂-/
-def π₂ (M₁ M₂ : matroid α) : ℤ := 
+def π₂ (M₁ M₂ : matroid α) : ℤ :=
   max_val (λ (Ip : indep_pair M₁ M₂), union_size Ip.val)
 
-end params 
+end params
 
 section lists
 
@@ -208,7 +208,7 @@ def is_union_indep_list'' (Ms : list (matroid α)) : (set α) → Prop :=
   λ Y, ∃ (Xs : indep_list Ms), list_union Xs.val = Y
 
 def is_indep_pair_list : list (matroid α × set α) → Prop :=
-  λ Ps, (∀ p ∈ Ps, is_matroid_indep_pair p) 
+  λ Ps, (∀ p ∈ Ps, is_matroid_indep_pair p)
 
 def indep_pair_list := {Ps : list (matroid α × set α) // is_indep_pair_list Ps}
 
@@ -239,11 +239,11 @@ begin
   induction Ms,
   from ⟨list.nil, by dec_trivial⟩,
   rcases Ms_ih with ⟨Ms',⟨h1,h2⟩⟩ ,
-  refine ⟨Ms'.cons ∅, ⟨by simp [h1], λ MX, _⟩⟩, 
+  refine ⟨Ms'.cons ∅, ⟨by simp [h1], λ MX, _⟩⟩,
   simp only [list.mem_cons_iff, list.zip_cons_cons],
   rintro ⟨c1, c2⟩,
   apply empty_indep, apply h2, from H,
-  -- I imagine this shouldn't be so hard 
+  -- I imagine this shouldn't be so hard
 end
 
 instance indep_list_fintype (Ms : list (matroid α)) : fintype (indep_list Ms) :=
@@ -277,7 +277,7 @@ instance indep_nil_list_subsingleton :
 
 
 
--- These next two lemmas are TODO - they should be provable and useful. Commented to avoid sorries 
+-- These next two lemmas are TODO - they should be provable and useful. Commented to avoid sorries
 
 /-lemma indep_list_iff_exists_zip (Ms : list (matroid α)) (X : set α) :
   is_union_indep_list Ms X ↔
@@ -288,9 +288,9 @@ instance indep_nil_list_subsingleton :
       list_union (list.unzip zMs).2 = X
     ) :=
 begin
- 
+
 end
- 
+
 
 
 
@@ -299,7 +299,7 @@ lemma union_of_indep_cons (Ms : list (matroid α)) (N : matroid α) (X : set α)
 begin
   unfold is_union_indep_list,
   simp only [exists_exists_eq_and, exists_and_distrib_left, subtype.val_eq_coe],
-  refine ⟨λ h, _, λ h, _⟩, 
+  refine ⟨λ h, _, λ h, _⟩,
   rcases h with ⟨⟨Xs, hXs⟩, hu⟩,
   induction Xs with Xhd Xtl, simp at hu,
 end-/

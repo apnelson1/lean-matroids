@@ -42,7 +42,7 @@ lemma size_common_ind_le_nu {M₁ M₂ : rankfun U} {X : set U} :
 lemma exists_max_common_ind (M₁ M₂ : rankfun U) :
   ∃ I, is_common_ind M₁ M₂ I ∧ size I = ν M₁ M₂ ∧ ∀ J, is_common_ind M₁ M₂ J → size J ≤ size I :=
 max_size_over_spec (is_common_ind M₁ M₂) exists_common_ind
-  
+
 lemma nu_nonneg (M₁ M₂ : rankfun U) :
   0 ≤ ν M₁ M₂ :=
   by {rw ←(size_empty U), from size_common_ind_le_nu (empty_is_common_ind _ _)}
@@ -92,8 +92,8 @@ refine nonneg_int_strong_induction _ (λ N₁ N₂ hloops, _) (λ n hn IH N₁ N
 rw [size_zero_iff_empty, compl_empty_iff] at hloops,
 have h' : (ub_fn N₁ N₂) (loops N₁) = 0 :=  by
 {
-  simp_rw h_ub_fn, 
-  linarith [R0 N₂ (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂, 
+  simp_rw h_ub_fn,
+  linarith [R0 N₂ (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂,
                             R2 N₂ (cover_compl_subset hloops)],
 },
 linarith [nu_nonneg N₁ N₂, min_is_lb (ub_fn N₁ N₂) (loops N₁)],
@@ -146,8 +146,8 @@ have h_nu_c : ν N₁c N₂c ≤ k-1 := by
       indep_of_project_indep hIc'.1 (nonloop_iff_indep.mp h_e_nl.1),
       indep_of_project_indep hIc'.2 (nonloop_iff_indep.mp h_e_nl.2)
     ⟩
-  ],                                                         
-},                            
+  ],
+},
 
 -- these next two claims let us apply IH to deletion/contraction
 have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by
@@ -158,7 +158,7 @@ have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by
   rw ←union_distrib_union_left at h_add_e,
   have := size_monotone h_add_e,
   rw [size_union_singleton_compl he, ←hN₁d, ←hN₂d] at this,
-  rw [compl_size] at ⊢ hsize, linarith, 
+  rw [compl_size] at ⊢ hsize, linarith,
 },
 
 have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by
@@ -169,8 +169,8 @@ have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by
   rw ←union_distrib_union_left at h_add_e,
   have := size_monotone h_add_e,
   rw [size_union_singleton_compl he, ←hN₁c, ←hN₂c] at this,
-  rw [compl_size] at ⊢ hsize, linarith, 
-}, 
+  rw [compl_size] at ⊢ hsize, linarith,
+},
 
 -- apply IH to deletion, get minimizer Ad
 rcases IH _ (size_nonneg _) h_more_loops_d N₁d N₂d rfl with hd,
@@ -212,7 +212,7 @@ begin
   let h_ind := max_common_ind_is_common_ind M₁ M₂,
   rw ←hI at h_ind,
   set A := arg_min (λ X, M₁.r X + M₂.r Xᶜ) with hX,
-  refine ⟨I, ⟨A, ⟨h_ind,_⟩⟩⟩, 
+  refine ⟨I, ⟨A, ⟨h_ind,_⟩⟩⟩,
   rw [hI, size_max_common_ind_eq_nu, matroid_intersection M₁ M₂],
   from (arg_min_attains _).symm,
 end
@@ -236,7 +236,7 @@ begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩,
   rw ←hIB₁B₂ at hY', split,
   refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₁),
-  apply inter_subset_left,   
+  apply inter_subset_left,
   refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
@@ -265,7 +265,7 @@ begin
   rcases exists_max_common_ind M₁ M₂
     with ⟨I, hI_ind, hIsize, hI'I⟩,
   rcases max_over_spec (is_inter_bases M₁ M₂) exists_inter_bases size
-    with ⟨J,hJ_inter,hJsize, hYJ⟩, 
+    with ⟨J,hJ_inter,hJsize, hYJ⟩,
   rw [←hIsize, ←hJsize],
   apply le_antisymm,
   rw common_ind_iff_subset_inter_bases at hI_ind,
@@ -296,7 +296,7 @@ def is_union_two_bases (M₁ M₂ : rankfun U) : set U → Prop :=
 
 /-- is the union of independent -/
 --def is_partitionable (Mset : list (rankfun U)) : set U → Prop :=
-  --λ X, ∃ f: Mset → set U, ∀ M : Mset, is_indep M.val (f M) ∧ set.sUnion (set.range f) = X 
+  --λ X, ∃ f: Mset → set U, ∀ M : Mset, is_indep M.val (f M) ∧ set.sUnion (set.range f) = X
 
 lemma two_partitionable_iff_union_two_indep {M₁ M₂ : rankfun U} :
   is_two_partitionable M₁ M₂ = is_union_two_indep M₁ M₂ :=
@@ -317,15 +317,15 @@ lemma two_partitionable_iff_subset_union_two_bases {M₁ M₂ : rankfun U} :
 begin
   rw [two_partitionable_iff_union_two_indep], ext X,
   refine ⟨λ h,_,λ h,_⟩,
- 
+
   rcases h with ⟨I₁, I₂, hI₁, hI₂, hIX⟩,
-  cases extends_to_basis hI₁ with B₁ hB₁, 
+  cases extends_to_basis hI₁ with B₁ hB₁,
   cases extends_to_basis hI₂ with B₂ hB₂,
   refine ⟨B₁ ∪ B₂, ⟨B₁, B₂, hB₁.2, hB₂.2, rfl ⟩, _⟩,
   rw hIX, apply union_subset_union hB₁.1 hB₂.1,
 
   rcases h with ⟨Y, ⟨B₁, B₂, hB₁, hB₂, hBY⟩, hXY⟩,
-  refine ⟨X ∩ B₁, X ∩ B₂, inter_indep_of_indep_right (basis_is_indep hB₁), inter_indep_of_indep_right (basis_is_indep hB₂), _ ⟩,  
+  refine ⟨X ∩ B₁, X ∩ B₂, inter_indep_of_indep_right (basis_is_indep hB₁), inter_indep_of_indep_right (basis_is_indep hB₂), _ ⟩,
   rw [←inter_distrib_left, hBY, eq_comm, ←subset_iff_inter_eq_left],
   from hXY,
 end
@@ -384,11 +384,11 @@ begin
     with ⟨X, hXu, hsX, hYX⟩,
   rcases max_size_over_spec (is_subset_union_two_bases M₁ M₂) (exists_subset_union_two_bases M₁ M₂)
     with ⟨X', hX'u, hsX', hYX'⟩,
- 
+
   erw [←hsX, ←hsX'],
   cases hX'u with Y hY,
   linarith [hYX Y hY.1, size_monotone hY.2],
- 
+
   have hPQ := union_two_bases_is_subset_union_two_bases M₁ M₂,
   refine max_over_subset_le_max
     (is_union_two_bases M₁ M₂)
@@ -408,7 +408,7 @@ def prop_pairs {α : Type u} (P₁ P₂ : α → Prop) := {x : α // P₁ x} × 
 instance pp_fin {α : Type u} [fintype α] {P₁ P₂ : α → Prop} : fintype (prop_pairs P₁ P₂) :=
 begin
   --letI empty_indep: fintype {x : α // P₁ x} := infer_instance,
-  --letI indep_of_subset_indep: fintype {x : α // P₂ x} := infer_instance, 
+  --letI indep_of_subset_indep: fintype {x : α // P₂ x} := infer_instance,
   unfold prop_pairs, apply_instance,
   --from @prod.fintype _ _ (fintype.subtype_of_fintype (is_basis M₁)) (fintype.subtype_of_fintype (is_basis M₂)),
 end
@@ -426,9 +426,9 @@ begin
   --haveI empty_indep : fintype {B : set U // is_basis M₁ B} := by library_search,
   --haveI indep_of_subset_indep : fintype {B : set U // is_basis M₂ B} := infer_instance,
   --exact @prod.fintype _ _ (fintype.subtype_of_fintype (is_basis M₁)) (fintype.subtype_of_fintype (is_basis M₂)),
- 
+
   --unfold basis_pairs,
- 
+
   -- assumption,
 end
 
@@ -458,11 +458,11 @@ begin
   },
   have h3 : max_val_over (is_inter_bases M₁ (dual M₂)) exists_inter_bases size
           = max_val_over cond2 (by {rw ←h2, apply exists_inter_bases}) size := by congr',
-   
+
   rw h3,
   sorry
 
- 
+
 end
 -/
 

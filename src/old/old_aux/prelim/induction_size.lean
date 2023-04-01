@@ -74,10 +74,10 @@ lemma strong_induction (P : set α → Prop) :
 begin
   intros h_augment,
   let  Q : ℤ → Prop := λ n, ∀ Y : set α, size Y = n → P Y,
-  suffices : ∀ n, 0 ≤ n → Q n, 
+  suffices : ∀ n, 0 ≤ n → Q n,
   from λ Z, this (size Z) (size_nonneg _)  Z rfl,
   refine nonneg_int_strong_induction Q _ _,
- 
+
   intros Y hY, rw [size_zero_iff_empty] at hY, rw hY,
   refine h_augment _ _,
   from λ X hX, false.elim (ssubset_empty _ hX),
@@ -105,7 +105,7 @@ lemma maximal_example (P : set α → Prop){X : set α} :
 begin
   intro h, rw ←compl_compl X at h,
   rcases minimal_example (λ S, P Sᶜ) h with ⟨Y,⟨hY₁, hY₂, hY₃⟩⟩,
-  use Yᶜ, refine ⟨subset_compl_comm.mpr hY₁, hY₂,λ Z hZ, _⟩, 
+  use Yᶜ, refine ⟨subset_compl_comm.mpr hY₁, hY₂,λ Z hZ, _⟩,
   rw ←compl_compl Z, exact hY₃ Zᶜ (compl_ssubset_comm.mp hZ),
 end
 
@@ -118,7 +118,7 @@ lemma maximal_example_aug (P : set α → Prop){X : set α} :
 begin
   intro hPX,
   rcases maximal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmax⟩⟩⟩,
-  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ {e}) (ssub_of_add_nonmem he) ⟩⟩⟩, 
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmax (Y ∪ {e}) (ssub_of_add_nonmem he) ⟩⟩⟩,
 end
 
 lemma maximal_example_aug_from_empty (P : set α → Prop) :
@@ -130,7 +130,7 @@ lemma minimal_example_remove (P : set α → Prop){X : set α} :
 begin
   intro hPX,
   rcases minimal_example P hPX with ⟨Y, ⟨hXY, ⟨hPY, hmin⟩⟩⟩,
-  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (ssubset_of_remove_mem he) ⟩⟩⟩, 
+  from ⟨Y, ⟨hXY, ⟨hPY, λ e he, hmin (Y \ {e}) (ssubset_of_remove_mem he) ⟩⟩⟩,
 end
 
 /-lemma minimal_example_size (P : set α → Prop) (hP : set.nonempty P) :

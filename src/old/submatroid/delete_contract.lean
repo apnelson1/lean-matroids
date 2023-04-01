@@ -119,7 +119,7 @@ lemma con_del_eq_del_con' (M : matroid_in α) (C D : set α) :
   M / C \ D = M \ (D \ C) / C :=
 begin
   rw [del_eq_del_inter_E, con_del_eq_del_con, del_eq_del_inter_E M (D \ C)],
-  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm], 
+  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm],
   ext, simp, tauto,
 end
 
@@ -128,7 +128,7 @@ lemma del_con_eq_con_del' (M : matroid_in α) (C D : set α) :
   M \ D / C = M / (C \ D) \ D :=
 begin
   rw [con_eq_con_inter_E, ←con_del_eq_del_con, con_eq_con_inter_E M (C \ D)],
-  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm], 
+  congr' 2, simp [diff_eq, ←inter_assoc, inter_right_comm],
   {ext, simp, tauto},
 end
 
@@ -181,7 +181,7 @@ end
 lemma dual_con_del (M : matroid_in α){C D : set α} (hi : C ∩ D = ∅) :
   (M / C \ D).dual = M.dual / D \ C :=
 by {rw [dual_del _ D, dual_con _ C, con_del_eq_del_con], rwa inter_comm,}
-   
+
 lemma dual_con_del' (M : matroid_in α){C D : set α} (hi : C ∩ D = ∅) :
   (M / C \ D).dual = M.dual \ C / D :=
 by {rw [dual_con_del _ hi, con_del_eq_del_con],  rwa inter_comm,}
@@ -191,7 +191,7 @@ lemma con_rank_ground (M : matroid_in α) (C : set α) :
 begin
   simp only [diff_eq] with msimp,
   rw r_eq_inter_r, convert rfl,
-  rw [inter_distrib_left, ←inter_assoc, inter_self, ←inter_distrib_left], simp,   
+  rw [inter_distrib_left, ←inter_assoc, inter_self, ←inter_distrib_left], simp,
 end
 
 lemma indep_del_iff_indep_loopify {M : matroid_in α} {D X : set α} :
@@ -225,8 +225,8 @@ begin
   set emb : M.cd_pair → (set α × set α) := λ e, ⟨e.C, e.D⟩ with hemb,
   refine fintype.of_injective emb (λ p₁ p₂ h, _),
   rw hemb at h, dsimp only at h,
-  ext : 1, 
-  tidy,  
+  ext : 1,
+  tidy,
 end
 
 def cd_pair.trivial (M : matroid_in α) : cd_pair M :=
@@ -237,7 +237,7 @@ def cd_pair.switch {M : matroid_in α} (p : cd_pair M ) : cd_pair M  :=
 
 def cd_pair.of_eq_E {M M': matroid_in α} (p : cd_pair M) (hE : M'.E = M.E) :
   cd_pair M' :=
-⟨p.C,p.D, p.disj, by simpa [hE] using p.C_ss_E, by simpa [hE] using p.D_ss_E⟩ 
+⟨p.C,p.D, p.disj, by simpa [hE] using p.C_ss_E, by simpa [hE] using p.D_ss_E⟩
 
 lemma cd_pair.rank {M : matroid_in α} (p : cd_pair M) (X : set α) (hX : X ⊆ (M / p.C \ p.D).E) :
   (M / p.C \ p.D).r X = M.r (X ∪ p.C) - M.r p.C :=

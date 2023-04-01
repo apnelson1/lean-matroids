@@ -60,7 +60,7 @@ let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in
     have hi : (ef X ∪ C) ∩ (ef Y ∪ C) = ef (X ∩ Y) ∪ C := by sorry, --rw ←boolalg.union_distrib_left; rw ←emb.on_inter,
     have hs := M.r.s (ef X ∪ C) (ef Y ∪ C),
     rw [hu, hi] at hs, unfold_coes,
-    linarith [hs],     
+    linarith [hs],
   end,
   pos := sorry,
   monotone := begin

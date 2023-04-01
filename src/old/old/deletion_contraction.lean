@@ -189,7 +189,7 @@ begin
   ...                       = size X.val + (M.r ((E ∩ X.valᶜ) ∪ Eᶜ) - M.r Eᶜ)
                                          - (M.r ( E           ∪ Eᶜ) - M.r Eᶜ) : by rw [h₁, h₂]
   ...                       = (dual (corestrict E M)).r X                     : rfl
- 
+
 end
 
 ----------------------------------------------------------------
@@ -254,7 +254,7 @@ begin
   simp,
   unfold restrict corestrict,
   simp,
- 
+
 
 
 end
@@ -337,7 +337,7 @@ in {
     have hi : (f X ∪ CE) ∩ (f Y ∪ CE) = f (X ∩ Y) ∪ CE := by rw [←union_distrib_right, ←emb.on_inter],
     have hs := M.R3 (f X ∪ CE) (f Y ∪ CE),
     rw [hu, hi] at hs,
-    linarith [hs],     
+    linarith [hs],
   end,
 }
 -/

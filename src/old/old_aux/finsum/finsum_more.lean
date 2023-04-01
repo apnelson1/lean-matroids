@@ -27,7 +27,7 @@ by_contra (λ hn, by {rw finsum_in_eq_zero_of_infinite hn at h, exact h rfl, })
 @[simp] lemma finsum_empty_set_type:
   ∑ᶠ (i : ((∅ : set α) : Type*)), f i = 0 :=
 begin
-  rw [finsum_eq_finsum_in_univ, set.univ_eq_empty_iff.mpr, finsum_in_empty], 
+  rw [finsum_eq_finsum_in_univ, set.univ_eq_empty_iff.mpr, finsum_in_empty],
   by_contra, obtain ⟨x,hx⟩ := h,
   rwa set.mem_empty_eq at hx,
 end
@@ -92,7 +92,7 @@ begin
   { refine set.infinite_mono (λ x hx, _) ht,
     rw [set.mem_inter_iff, function.mem_support] at hx ⊢,
     exact ⟨by_contra (λ hn, hx.2 (hf _ hx.1 hn)),λ hn, hx.2 hn⟩},
-  rw [finsum_in_eq_zero_of_infinite hs, finsum_in_eq_zero_of_infinite ht], 
+  rw [finsum_in_eq_zero_of_infinite hs, finsum_in_eq_zero_of_infinite ht],
 end
 
 lemma finsum_eq_finsum_in_subset
@@ -152,7 +152,7 @@ begin
   { simp_rw [set.disjoint_left, hp₀, hp₁, set.mem_image, set.mem_powerset_iff],
     rintros a ha ⟨x, hxs, rfl⟩,
     exact h (set.mem_of_mem_of_subset (set.mem_insert a x) ha)},
- 
+
   have hU : p₀ ∪ p₁ = (insert a s).powerset,
   { ext t,
     simp_rw [hp₀, hp₁, set.mem_union, set.mem_image, set.mem_powerset_iff,
@@ -207,24 +207,24 @@ begin
   rw finsum_in_inter_support,
   conv in (_ ∩ _) {dsimp only, rw ht'},
   rw [ht'] at hs,
- 
+
   rw [finsum_in_eq_finset_sum''' _ hs, set.sigma_to_finset hs, finset.sum_sigma],
- 
+
   have hs' := hs,
   rw [set.sigma_finite_iff, ← hs''] at hs',
- 
+
   have hat' : ∀ a ∈ s, ∑ᶠ (b : β a) in t a, f ⟨a, b⟩ = ∑ᶠ (b : β a) in t' a, f ⟨a, b⟩,
   { intros a ha, rw [finsum_in_inter_support, ht'_def], congr', ext, simp [if_pos ha], },
 
   rw [← finsum_in_eq_finsum_in_of_subset
-    (by {intros x, simp only [and_imp, set.mem_sep_eq], tauto}: s' ⊆ s)], 
+    (by {intros x, simp only [and_imp, set.mem_sep_eq], tauto}: s' ⊆ s)],
   swap,
   { simp only [ht'_def, and_imp, set.mem_sep_eq, not_and, set.mem_diff, ne.def],
     intros x hx hx', specialize hx' hx,
     rw if_pos hx at hx',
     exact finsum_in_eq_zero_of_eq_zero (λ b hb, by_contra (λ hb', hx' ⟨b, ⟨hb, hb'⟩⟩ ))},
- 
- 
+
+
   rw finsum_in_eq_finset_sum''' _ hs'.1,
   apply finset.sum_congr, congr' 1, rw ←hs'',
 
@@ -242,7 +242,7 @@ lemma finsum_in_sigma' {α : Type*} {β : α → Type*} (s : set α) (t : Π (a 
   ∑ᶠ x in s.sigma t, f x = ∑ᶠ a in s, ∑ᶠ b in t a, f ⟨a, b⟩ :=
 begin
   rw [finsum_in_sigma], rw [set.sigma_inter, set.sigma_finite_iff],
-  refine ⟨ by {convert hs, ext, simp [set.nonempty_def]}, λ a ha, _⟩, 
+  refine ⟨ by {convert hs, ext, simp [set.nonempty_def]}, λ a ha, _⟩,
   exact set.finite.subset (hst a ha) (λ x hx, by simpa using hx),
 end
 
@@ -253,7 +253,7 @@ lemma finsum_comm_dep {α : Type*} (s : set α) (t : α → set β) (f : α → 
   ∑ᶠ x in s, (∑ᶠ y in t x, f x y) = ∑ᶠ y, ∑ᶠ x in {i ∈ s | y ∈ t i}, f x y :=
 begin
   set f' := λ (p : Σ (a : α), β), f p.1 p.2 with hf',
- 
+
   have hfin : ((s.sigma t) ∩ function.support f').finite,
   { rw [set.sigma_inter, set.sigma_finite_iff],
     refine ⟨_, λ a ha, _⟩,
@@ -262,7 +262,7 @@ begin
       simp only [set.mem_sep_eq, not_and, not_not, ne.def, function.mem_support] at hx hx',
       simpa [hx' hx.1] using hx},
     convert hst a ha using 1, ext x, simp},
- 
+
   have hfin' : (((set.univ : set β).sigma (λ y, {i ∈ s | y ∈ t i}))
                   ∩ function.support (f' ∘ set.sigma_swap)).finite,
   { rw [set.sigma_inter, set.finite.iff_of_bij_on (set.sigma_invert _ _)] at hfin,
@@ -271,19 +271,19 @@ begin
     ext b a,
     congr' 1,
     simp only [set.sigma_swap, set.mem_sep_eq, set.mem_inter_eq, and_self_left,
-    function.comp_app, eq_iff_iff, ne.def, function.mem_support], 
+    function.comp_app, eq_iff_iff, ne.def, function.mem_support],
     rw and_assoc},
 
   rw ← finsum_in_sigma s t f' hfin,
   nth_rewrite_rhs 0 finsum_eq_finsum_in_univ,
-  convert finsum_in_sigma set.univ (λ y, {i ∈ s | y ∈ t i}) (f' ∘ set.sigma_swap) hfin' using 1, 
+  convert finsum_in_sigma set.univ (λ y, {i ∈ s | y ∈ t i}) (f' ∘ set.sigma_swap) hfin' using 1,
 
   rw set.sigma_eq_univ_sigma,
   have := @finsum_in_eq_of_bij_on _ _ _ _ _ _ (f' ∘ set.sigma_swap) f' set.sigma_swap
     (set.sigma_univ_invert (λ y, {i ∈ s | y ∈ t i}))
     (by simp),
   convert this.symm using 2,
- 
+
   rw ← set.sigma_eq_univ_sigma,
   ext,
   simp [set.sigma],
@@ -301,7 +301,7 @@ begin
   refine finset.sum_involution (λ a _, g a) _ _ _ _,
   any_goals {simp_rw [set.finite.mem_to_finset, set.mem_inter_iff, function.mem_support]},
   any_goals {tauto},
-    exact λ a h hne hg, hne (h_ne a h.1 hg), 
+    exact λ a h hne hg, hne (h_ne a h.1 hg),
   refine λ a h, ⟨h_mem a h.1, (λ hg, _)⟩,
   specialize h_neg a h.1,
   rw [hg, add_zero] at h_neg,
@@ -346,7 +346,7 @@ begin
   by_cases hc : c = 0, simp [hc],
   rw [finsum_in_eq_zero_of_infinite hs, finsum_in_eq_zero_of_infinite, mul_zero],
   convert hs using 3,
-  ext, simp [hc],  
+  ext, simp [hc],
 end
 
 lemma mul_distrib_finsum'
@@ -361,7 +361,7 @@ end
 lemma mul_distrib_finsum [no_zero_divisors M] (c : M) :
   c * (∑ᶠ x, f x) = ∑ᶠ x, c * f x :=
 by {rw [finsum_eq_finsum_in_univ, finsum_eq_finsum_in_univ], apply mul_distrib_finsum_in}
- 
+
 end ring
 
 section group
@@ -386,7 +386,7 @@ end
 
 
 lemma finsum_in_neg_distrib (f : α → M) (s : set α) :
-  ∑ᶠ i in s, - f i = - ∑ᶠ i in s, f i :=  
+  ∑ᶠ i in s, - f i = - ∑ᶠ i in s, f i :=
 begin
   by_cases hs : (s ∩ function.support f).finite,
     exact finsum_in_hom' (- (add_monoid_hom.id M)) hs,
@@ -394,7 +394,7 @@ begin
 end
 
 lemma finsum_neg_distrib (f : α → M) :
-  ∑ᶠ i, - f i = - ∑ᶠ i, f i :=  
+  ∑ᶠ i, - f i = - ∑ᶠ i, f i :=
 by {repeat {rw finsum_eq_finsum_in_univ}, exact finsum_in_neg_distrib _ _}
 
 --lemma finsum_in_sub_distrib {M : Type*} [add_comm_group M] {f g : α → M} {s : set α} :
@@ -405,7 +405,7 @@ lemma finsum_in_sub_distrib'
 begin
   simp_rw [sub_eq_add_neg, ← finsum_in_neg_distrib],
   convert finsum_in_add_distrib' _ _, assumption,
-  rwa ← function.support_neg at hg, 
+  rwa ← function.support_neg at hg,
 end
 
 lemma finsum_in_sub_distrib (hs : s.finite) :
@@ -448,7 +448,7 @@ begin
   exact λ x hx, hfg _ (finset.mem_filter.mp hx).2,
 end
 
-lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M] (hs : s.finite) (hfg : ∀ x ∈ s, f x ≤ g x): 
+lemma finsum_in_le_finsum_in [ordered_add_comm_monoid M] (hs : s.finite) (hfg : ∀ x ∈ s, f x ≤ g x):
   ∑ᶠ i in s, f i ≤ ∑ᶠ i in s, g i :=
 by {apply finsum_in_le_finsum_in' hfg;  exact set.finite.subset hs (set.inter_subset_left _ _)}
 
@@ -512,7 +512,7 @@ lemma finsum_eq_zero_iff_of_nonneg [ordered_add_comm_monoid M]
   ∑ᶠ x, f x = 0 ↔ ∀ x, f x = 0 :=
 begin
   rw [finsum_eq_finsum_in_univ, finsum_in_eq_zero_iff_of_nonneg_supp],
-  tauto, rwa [set.univ_inter], tauto, 
+  tauto, rwa [set.univ_inter], tauto,
 end
 
 lemma finsum_le_zero_iff_of_nonneg [ordered_add_comm_monoid M]
@@ -562,7 +562,7 @@ lemma finsum_in_lt_finsum_in_supp [ordered_cancel_add_comm_monoid M]
 begin
   convert @finset.sum_lt_sum α M ((hf.to_finset ∪ hg.to_finset).filter s) f g _ _ _,
   { apply finsum_in_eq_finset_sum_filter_union hf hg},
-  { rw finset.union_comm, apply finsum_in_eq_finset_sum_filter_union hg hf}, 
+  { rw finset.union_comm, apply finsum_in_eq_finset_sum_filter_union hg hf},
   { exact λ x hx, hle _ (finset.mem_filter.mp hx).2},
   obtain ⟨i,his, hi⟩ := hlt,
   refine ⟨i, _, hi⟩,
@@ -587,7 +587,7 @@ begin
   { apply set.finite.subset hf _, exact set.inter_subset_right _ _, },
   { apply set.finite.subset hg _, exact set.inter_subset_right _ _, },
   { exact λ i hi, hle i, },
-  exact (let ⟨i, hi⟩ := hlt in ⟨i, set.mem_univ _, hi⟩),  
+  exact (let ⟨i, hi⟩ := hlt in ⟨i, set.mem_univ _, hi⟩),
 end
 
 lemma finsum_in_eq_finsum_in_iff_of_le_supp [ordered_cancel_add_comm_monoid M]

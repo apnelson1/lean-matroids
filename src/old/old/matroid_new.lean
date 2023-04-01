@@ -46,7 +46,7 @@ def f: (ℕ × ℕ) → ℕ := λ p, p.1 + p.2
 #check f
 #check (curry f)
 #eval ((curry f 3) 5)
-   
+
 /-def submatroid' (M : matroid E) (F : finset E) : matroid ( ??? ) :=
 { r := sorry,
 R1 := sorry,
@@ -98,11 +98,11 @@ lemma easy (M : matroid E) (F: set E)[decidable_pred F] : (submatroid E M F).r (
 begin
   -- convert M.R2 F univ (subset_univ F),
     -- sorry,
-    -- calc (submatroid E M F).r univ = M.r F              : _ 
+    -- calc (submatroid E M F).r univ = M.r F              : _
     --                     ...        ≤ M.r univ           : M.R2 F univ (subset_univ F),
     simp,
     exact M.R2 F univ (subset_univ F),
-   
+
 end
 
 
@@ -118,9 +118,9 @@ end
 
 /-lemma empty_rank_zero (M : matroid E) : M.r ∅ = 0 :=
 begin
-   
+
     cases (M.R1 ∅),
-   
+
     have : size ∅ = 0, sorry,
     --unfold size at right,
 

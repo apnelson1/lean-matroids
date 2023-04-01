@@ -38,7 +38,7 @@ variables {γ : Type u} [fintype γ] (M : matroid γ)
 abbreviation E (M : matroid γ) : finset γ := univ
 
 @[simp]
-lemma r_empty_eq_zero : M.r ∅ = 0 := 
+lemma r_empty_eq_zero : M.r ∅ = 0 :=
 by linarith [(M.R0 ∅), (M.R1 ∅), @size_empty γ]
 
 @[simp]
@@ -89,7 +89,7 @@ def dual (M : matroid γ) : matroid γ :=
     have h : M.r Xᶜ ≤ M.r M.E := M.R2 (subset_univ _),
     linarith,
   end,
- 
+
   R2 := λ X Y hXY, begin
     -- want to show: |X| + r(E \ X) < |Y| + r(E \ Y)
     have YsetminusX : size (Y \ X) = size Y - size X,
@@ -421,9 +421,9 @@ begin
     split,
     exact h.2,
     exact h.1,
-rw h,   
+rw h,
 -- we r here nao
-   
+
 end
 
 lemma dual_minors (M : matroid γ) (M' : minor M) :

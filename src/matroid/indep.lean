@@ -45,7 +45,7 @@ begin
   suffices h_mod : ∀ {p} {I₁ I₂ B₁ B₂}, M.base B₁ → M.base B₂ → I₁ ⊆ B₁ → I₂ ⊆ B₂ →
     I₁.ncard < I₂.ncard → (B₂ \ (I₂ ∪ B₁)).ncard = p → ∃ x ∈ I₂, x ∉ I₁ ∧ M.indep (insert x I₁),
   { obtain ⟨⟨BI,hBI,hIBI⟩,⟨BJ, hBJ, hJBJ⟩⟩ := ⟨hI,hJ⟩,
-    exact h_mod hBI hBJ hIBI hJBJ hIJ rfl },       
+    exact h_mod hBI hBJ hIBI hJBJ hIJ rfl },
   clear hI hJ hIJ I J,
   intro p, induction p with p IH,
   all_goals
@@ -64,7 +64,7 @@ begin
 
     have hB₁ss : B₁ ⊆ I₁ ∪ B₂,
     { intros y hyB₁,
-      rw [mem_union, or_iff_not_imp_right], 
+      rw [mem_union, or_iff_not_imp_right],
       intro hyB₂,
       obtain ⟨x,hx, hB'⟩ := hB₁.exchange hB₂ ⟨hyB₁, hyB₂⟩,
       obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hx.1 h_le,
@@ -75,17 +75,17 @@ begin
       apply subset_diff_singleton hI₁B₁ hyI₁},
     have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss
                           ... = _       : union_diff_right
-                          ... ⊆ I₁ \ I₂ : diff_subset_diff_right hI₂B₂, 
+                          ... ⊆ I₁ \ I₂ : diff_subset_diff_right hI₂B₂,
 
 
     have hle₁ := ncard_le_of_subset hss₁,
-  
+
     rwa [(ncard_eq_ncard_iff_ncard_diff_eq_ncard_diff (to_finite _) (to_finite _)).mp
       (hB₁.card_eq_card_of_base hB₂), h₁₂, ← ncard_le_ncard_iff_ncard_diff_le_ncard_diff] at hle₁,
-  
+
     -- , h₁₂,
     --   ← ncard_le_ncard_iff_ncard_diff_le_ncard_diff] at hle₁
-    
+
       },
   have h_ne : (B₂ \ (I₂ ∪ B₁)).nonempty,
   { rw [←ncard_pos, h_le], apply nat.succ_pos _},
@@ -98,7 +98,7 @@ begin
 
 
   refine IH hB₁ hB' hI₁B₁ hI₂B' h_lt _,
-  suffices h_set_eq : (insert y (B₂ \ {x})) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x}, 
+  suffices h_set_eq : (insert y (B₂ \ {x})) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x},
   { rw [←nat.succ_inj', h_set_eq, ←h_le, nat.succ_eq_add_one, ncard_diff_singleton_add_one],
     exact ⟨hxB₂, not_or hxI₂ hxB₁⟩},
   rw [insert_diff_of_mem _ (mem_union_right _ hyB₁)],
@@ -158,7 +158,7 @@ begin
   have heB' : e ∉ B',
   { intro heB',
     have hBB' : B ⊆ B',
-    { refine subset_trans _ (insert_subset.mpr ⟨heB',hIB'⟩), 
+    { refine subset_trans _ (insert_subset.mpr ⟨heB',hIB'⟩),
       rw [insert_comm, insert_diff_singleton],
       refine (subset_insert _ _).trans (subset_insert _ _)},
     rw ←hB.eq_of_subset_indep hB'.indep hBB' at hIB',
@@ -225,7 +225,7 @@ iff.rfl
 @[simp] lemma basis_empty_iff (M : matroid E) :
   M.basis I ∅ ↔ I = ∅ :=
 begin
-  refine ⟨λ h, subset_empty_iff.mp h.subset, _⟩,   
+  refine ⟨λ h, subset_empty_iff.mp h.subset, _⟩,
   rintro rfl,
   exact ⟨M.empty_indep, empty_subset _, λ J h h' hJ, h'.antisymm hJ⟩,
 end
@@ -292,22 +292,22 @@ by {obtain ⟨I, -, hI⟩ := M.empty_indep.subset_basis_of_subset (empty_subset 
 lemma basis.exists_base (hI : M.basis I X) :
   ∃ B, M.base B ∧ I = B ∩ X :=
 begin
-  obtain ⟨B,hB, hIB⟩ := hI.indep, 
+  obtain ⟨B,hB, hIB⟩ := hI.indep,
   refine ⟨B, hB, subset_antisymm (subset_inter hIB hI.subset) _⟩,
   rw hI.eq_of_subset_indep (hB.indep.inter_right X) (subset_inter hIB hI.subset)
     (inter_subset_right _ _),
-end 
+end
 
 lemma basis_iff_base_inter :
   M.basis I X ↔ ∃ B, M.base B ∧ I = B ∩ X ∧
     ∀ B', M.base B' → B ∩ X ⊆ B' ∩ X → B ∩ X = B' ∩ X :=
 begin
-  refine ⟨λ h, _,_⟩, 
+  refine ⟨λ h, _,_⟩,
   { obtain ⟨B,hB,rfl⟩ := h.exists_base,
     refine ⟨B,hB,rfl,λ B' hB' hss,
       h.eq_of_subset_indep (hB'.indep.inter_right X) hss (inter_subset_right _ _)⟩},
   rintros ⟨B,hB,rfl,hBmax⟩,
-  refine ⟨hB.indep.inter_right X, inter_subset_right _ _, _⟩, 
+  refine ⟨hB.indep.inter_right X, inter_subset_right _ _, _⟩,
   rintros J ⟨B',hB',hB'J⟩ hBXJ hJX ,
   refine hBXJ.antisymm _,
   rw hBmax B' hB' (subset_inter (hBXJ.trans hB'J) (inter_subset_right _ _)),
@@ -357,7 +357,7 @@ def matroid_of_indep (indep : set E → Prop)
       obtain ⟨e,heJ,heB',he⟩ :=
         ind_aug B' J hB'.1 hJ (hB'B.trans_lt (ncard_lt_ncard hss)),
       exact heB' (by simpa using hB'.2 _ he (subset_insert _ _))},
-  
+
     simp_rw [h_base_iff _ _ hB₁, mem_diff],
     have hcard : (B₁ \ {x}).ncard < B₂.ncard,
     { rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one hxB₁],
@@ -369,7 +369,7 @@ def matroid_of_indep (indep : set E → Prop)
     have heB₁ : e ∉ B₁,
     { simp only [mem_diff, mem_singleton_iff, not_and, not_not] at heB₁x,
       exact λ h', hex (heB₁x h')},
-  
+
     refine ⟨e,⟨heB₂,heB₁⟩,he,_⟩,
     rwa [ncard_insert_of_not_mem heB₁x, ncard_diff_singleton_add_one],
   end  }
@@ -418,7 +418,7 @@ end from_axioms
 --   exists_base' :=
 --   begin
 --     obtain ⟨B,hB,hBmax⟩ := finite.exists_maximal indep exists_ind,
---     exact ⟨B, hB, λ I hBI hI, (hBmax _ hI hBI).symm⟩, 
+--     exact ⟨B, hB, λ I hBI hI, (hBmax _ hI hBI).symm⟩,
 --   end,
 --   base_exchange' :=
 --   begin
@@ -428,6 +428,6 @@ end from_axioms
 --       (λ J hB₂J hJ, hB₂J.ne ((hB₂max _ hB₂J.subset hJ).symm)),
 --     refine ⟨y, mem_of_mem_of_subset hy _, hyI, λ I hyI hI, _⟩  ,
 --     { rw [diff_diff_right, inter_singleton_eq_empty.mpr hx.2, union_empty]},
-  
+
 
 --     -- rintro I J hI hJ hImax ⟨J',hJJ',hJ'⟩,

@@ -31,7 +31,7 @@ begin
   conv in (_ * _) {rw ← pow_succ},
   rw [← pow_zero q, finsum_Ico_shift, Ico_ℕ_eq_Ioo, nat.zero_add, nat.sub_self,
    ← finsum_in_insert, Ioo_insert_left_eq_Ico];
-  simp [set.Ioo_ℕ_finite], 
+  simp [set.Ioo_ℕ_finite],
 end
 
 lemma pg_size'_rat (q : ℤ) (n : ℕ) (hq : 2 ≤ q) : (pg_size' q n : ℚ) = (q^n - 1)/(q - 1) :=
@@ -83,8 +83,8 @@ begin
   obtain ⟨M,hM⟩ := min_counterexample_nonneg_int_param
     _ (λ (M : matroid α), size (M.nonloops)) (λ s, size_nonneg _) hn,
   push_neg at hM,
-  rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩, 
- 
+  rcases hM with ⟨⟨hMq, hMs⟩, hM_min⟩,
+
   /- The counterexample doesn't have rank zero, so it has a nonloop e-/
   by_cases hr : M.r univ ≤ 0,
   { linarith [pg_size_nonneg q (M.r univ) (by linarith : 0 ≤ q),
@@ -104,20 +104,20 @@ begin
   have h_le : ∑ᶠ (L : set α) in lines, (M.ε L - 1) ≤  q * ((M ⟋ {e}).ε univ),
   { convert fin.finsum_in_le_finsum_in h_L_ub,
     rw [int.finsum_in_const_eq_mul_size, hlines, ε_proj_nonloop _ he]},
- 
+
   /- Since `M ⟋ e` isn't a counterexample, it doesn't have too many points  -/
   specialize hM_min (M ⟋ {e})
     (size_strict_monotone (project_nonloop_fewer_nonloops he))
     (pminor_has_no_uniform_minor (by norm_num) (by linarith) (pr_is_pminor M {e}) hMq),
- 
+
   /- Now `M`, being a counterexample, has lots of points, whereas `M ⟋ e` doesn't have too many.
   This is a contradiction. -/
   have hlt := calc
     pg_size q (M.r univ)  < 1 + ∑ᶠ (L : set α) in lines, (M.ε L - 1)
                         : hMs
-                      ... ≤ 1 + q * (M ⟋ {e}).ε univ                
+                      ... ≤ 1 + q * (M ⟋ {e}).ε univ
                         : add_le_add_left h_le 1
-                      ... ≤ 1 + q * (pg_size q ((M ⟋ {e}).r univ))  
+                      ... ≤ 1 + q * (pg_size q ((M ⟋ {e}).r univ))
                         : add_le_add_left ((mul_le_mul_left (by linarith : 0 < q)).mpr hM_min) 1,
 
   rw [project_r, univ_union, rank_nonloop he, ← pg_size_rec q (by linarith : 1 ≤ M.r univ)] at hlt,
@@ -136,7 +136,7 @@ begin
   exact pminor_has_no_uniform_minor (by norm_num : (1 : ℤ) ≤ 2) (by linarith : 2 ≤ q + 2)
     (lp_is_pminor _ _) h,
 end
- 
+
 
 
 

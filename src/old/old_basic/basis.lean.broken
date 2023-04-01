@@ -40,7 +40,7 @@ def B_to_I3 (M : basis_family α) : satisfies_I3 (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep, satisfies_I3, and_imp, exists_imp_distrib],
   intros I₁ I₂ HI₁ltI₂ B₁ HB₁ HIB₁ B₂ HB₂ HJB₂,
- 
+
   -- B₁ = B₂
 
   have HB_case := eq_or_exists_mem_diff_of_size_eq (basis_have_same_size M B₂ B₁ HB₂ HB₁),
@@ -124,7 +124,7 @@ begin
           {
             -- not empty, get goal.
             have Hx : (∃ x, x ∈ B₁ \ (I₁ ∪ B₂)) := sorry,
-            cases Hx with x Hx,       
+            cases Hx with x Hx,
             -- again, tactic...
             have HB₁x : x ∈ B₁ \ B₂ := sorry,
             have := M.B2 B₁ B₂ HB₁ HB₂ x HB₁x,

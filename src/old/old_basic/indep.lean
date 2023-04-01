@@ -9,7 +9,7 @@ noncomputable theory
 
 variables {α : Type*} [fintype α]
 
-namespace indep_family 
+namespace indep_family
 
 
 def is_set_basis (M : indep_family α) :=
@@ -79,7 +79,7 @@ lemma I_to_r_max (M : indep_family α) (X : set α) :
   ∃ B, B ⊆ X ∧ M.indep B ∧ size B = M.I_to_r X :=
   by {use M.choose_set_basis X, have h := M.choice_of_set_basis_is_valid X,
             from ⟨h.1,⟨h.2.1,rfl⟩⟩}
-   
+
 lemma I_to_r_ub {M : indep_family α} {I X : set α} :
   I ⊆ X → M.indep I → size I ≤ M.I_to_r X :=
 begin
@@ -142,7 +142,7 @@ lemma I_to_r_eq_rank_basis_union {M : indep_family α} {B X: set α} (Y : set α
 begin
   intro h,
   rcases M.has_ext_to_basis (subset.trans (h.1) (subset_union_left X Y)) h.2.1 with ⟨Bα, ⟨hαs, hαb⟩⟩,
-  have h₁ := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1, 
+  have h₁ := I_to_r_ub (_ : Bα ⊆ B ∪ Y) hαb.2.1,
   { linarith [M.I_to_R2 _ _ (union_subset_union_left Y h.1), I_to_r_of_set_basis hαb]},
   have : B = Bα ∩ X := by
   { have := I_to_r_ub (inter_subset_right Bα X) (M.I2 _ _ (inter_subset_left Bα X) hαb.2.1),
@@ -157,7 +157,7 @@ lemma I_to_R3 (M : indep_family α) :
   satisfies_R3 M.I_to_r :=
 begin
   intros X Y,
-  rcases M.has_nested_basis_pair (inter_subset_left X Y) with ⟨BI, BX, ⟨hss, ⟨hBI, hBX⟩⟩⟩,  
+  rcases M.has_nested_basis_pair (inter_subset_left X Y) with ⟨BI, BX, ⟨hss, ⟨hBI, hBX⟩⟩⟩,
   rcases M.has_ext_to_basis (subset.trans hBI.1 (inter_subset_right X Y)) hBI.2.1 with ⟨BY, ⟨hBIBY,hBY⟩⟩,
   rcases M.has_ext_to_basis (subset_union_left BX BY) hBX.2.1 with ⟨Bα, ⟨hBXBα,hBα⟩⟩,
   rw [←I_to_r_eq_rank_basis_union Y hBX, union_comm BX _,
@@ -173,7 +173,7 @@ end indep_family
 namespace matroid
 
 def of_indep_family (MI: indep_family α) : matroid α :=
-  ⟨MI.I_to_r, MI.I_to_R0, MI.I_to_R1, MI.I_to_R2, MI.I_to_R3⟩ 
+  ⟨MI.I_to_r, MI.I_to_R0, MI.I_to_R1, MI.I_to_R2, MI.I_to_R3⟩
 
 lemma indep_of_indep_family (MI : indep_family α) :
   (matroid.of_indep_family MI).is_indep = MI.indep :=

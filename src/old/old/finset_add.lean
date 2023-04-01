@@ -55,7 +55,7 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
       intros b hb,
       exact h2 b hb,
     end
-   
+
     lemma em_ss {E : finset α} : ∅ ⊆ E :=
     begin
         exact empty_subset E,
@@ -76,7 +76,7 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
 
     lemma size_empt : size (∅ : finset α) = 0 := sorry
 
-   
+
     lemma maximal_ss (S: finset α) (C ⊆ powerset S) (hempt: ∅ ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, X ⊂ Y → ¬ Y ∈ C) :=
     begin
       sorry,

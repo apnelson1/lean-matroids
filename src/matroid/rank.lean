@@ -37,7 +37,7 @@ begin
     exact h (ncard_lt_ncard hIssJ) (ncard_mono hJX) J hJX hJ rfl},
   rintros ⟨I, ⟨hIX, rfl⟩⟩,
   refine ⟨ncard_mono (by simpa using hIX.subset),or.inr ⟨I,hIX.subset,hIX.indep,rfl⟩,_⟩,
-  rintro n hIn hnX J hJX hJ rfl,  
+  rintro n hIn hnX J hJX hJ rfl,
   exact hIn.not_le (hJ.le_card_basis hJX hIX),
 end
 
@@ -50,7 +50,7 @@ begin
   obtain ⟨I, hI, hIX, rfl⟩ := h,
   rw ←hJ.2,
   exact hI.le_card_basis hIX hJ.1,
-end  
+end
 
 lemma r_le_iff {X : set E} {n : ℕ} :
   M.r X ≤ n ↔ (∀ I, M.indep I → I ⊆ X → I.ncard ≤ n) :=
@@ -345,7 +345,7 @@ lemma rk_le_card_add_r_compl (M : matroid E) (X : set E) :
 begin
   rw [rk_def, ←union_compl_self X],
   exact (M.r_union_le_add_r _ _).trans (add_le_add_right (M.r_le_card _) _),
-end 
+end
 
 lemma rank_eq_of_le_supset (h : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
   M.r X = M.r Y :=
@@ -435,7 +435,7 @@ begin
   have hXZ := h.trans_le (M.r_mono (subset_union_right X Z)),
 
   rw [←hI.card, ←hJ.card] at hXZ,
-  obtain ⟨e,heJ,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hXZ, 
+  obtain ⟨e,heJ,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hXZ,
 
   have hlt : M.r X < M.r (insert e X),
   { refine lt_of_lt_of_le _ (M.r_mono (@insert_subset_insert _ e _ _ hI.subset)),
@@ -444,7 +444,7 @@ begin
   have heX : e ∉ X,
   { refine λ heX, hlt.ne _, rw [insert_eq_of_mem heX], },
   have heZ : e ∈ Z,
-    from or.resolve_left (hJ.subset heJ) heX, 
+    from or.resolve_left (hJ.subset heJ) heX,
   exact ⟨e,heZ,hlt⟩,
 end
 
@@ -503,7 +503,7 @@ lemma base_iff_indep_card_eq_r :
 begin
   refine ⟨λ hB, ⟨hB.indep, hB.card⟩ ,
     λ h, base_iff_maximal_indep.mpr ⟨h.1, λ I hI hBI, eq_of_subset_of_ncard_le hBI _⟩⟩,
-  rw [h.2], exact hI.card_le_rk, 
+  rw [h.2], exact hI.card_le_rk,
 end
 
 /- Nullity -/
@@ -609,7 +609,7 @@ matroid_of_indep (λ I, r I = I.ncard)
   { refine (exists_of_ssubset hss).imp _,
     rintro e ⟨heK,heI⟩,
     have heJ : e ∈ J, { by_contra, cases (hKIJ heK); tauto },
-    refine ⟨heJ, heI, _⟩, 
+    refine ⟨heJ, heI, _⟩,
     exact r_eq_card_of_subset_of_r_le_card_submod r r_le_card r_submod
       (insert_subset.mpr ⟨heK, hIK⟩) hK},
   rintro rfl,

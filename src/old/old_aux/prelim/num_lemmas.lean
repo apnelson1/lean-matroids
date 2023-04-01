@@ -106,7 +106,7 @@ begin
   rw h,
   simp only [int.nat_abs_of_nat, gpow_neg, int.nat_abs_neg, group.gpow_eq_has_pow, gpow_coe_nat],
   apply units.inv_eq_of_mul_eq_one,
-  simp only [units.coe_neg_one, units.coe_pow, ← pow_add, ← two_mul], 
+  simp only [units.coe_neg_one, units.coe_pow, ← pow_add, ← two_mul],
   apply nat.neg_one_pow_of_even,
   exact ⟨_, rfl⟩,
 end

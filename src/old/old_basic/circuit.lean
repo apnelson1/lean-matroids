@@ -62,26 +62,26 @@ begin
   suffices : ∀ I J, ¬bad_pair I J,
     push_neg at this, from λ I J hIJ hI hJ, this I J hIJ hI hJ,
   by_contra h, push_neg at h, rcases h with ⟨I₀,⟨J₀, h₀⟩⟩,
- 
+
   --choose a bad pair with D = I-J minimal
   let bad_pair_diff : set α → Prop := λ D, ∃ I J, bad_pair I J ∧ I \ J = D,
   have hD₀ : bad_pair_diff (I₀ \ J₀) := ⟨I₀,⟨J₀,⟨h₀,rfl⟩⟩⟩,
-  rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩, 
+  rcases minimal_example bad_pair_diff hD₀ with ⟨D,⟨_, ⟨⟨I, ⟨J, ⟨hbad, hIJD⟩⟩⟩,hDmin⟩⟩⟩,
   rcases hbad with ⟨hsIJ, ⟨hI,⟨hJ,h_non_aug⟩ ⟩  ⟩ ,
   rw ←hIJD at hDmin, clear h_left hD₀ h₀ I₀ J₀ hIJD D,
   ------------------
- 
+
   have hJI_nonempty : 0 < size (J \ I) := by
   { have := size_induced_partition I J,
     rw inter_comm at this,
     linarith [size_nonneg (I \ J), hsIJ, size_induced_partition J I]},
- 
+
   have hIJ_nonempty : I \ J ≠ ∅ := by
   { intro h, rw diff_empty_iff_subset at h,
     cases exists_mem_of_size_pos hJI_nonempty with e he,
     refine h_non_aug e he (C_to_indep_of_subset_indep M _ _ (_ : I ∪ {e} ⊆ J) hJ),
     from union_subset h (subset_of_mem_of_subset he (diff_subset _ _))},
- 
+
   cases ne_empty_has_mem hIJ_nonempty with e he, -- choose e from I -J
 
   --There exists f ∈ J-I contained in all ccts of J ∪ {e}
@@ -90,13 +90,13 @@ begin
     by_cases hJe : C_to_I M (J ∪ {e}) , -- Either J ∪ {e} has a circuit or doesn't
     { cases exists_mem_of_size_pos hJI_nonempty with f hf,
       exact ⟨f, ⟨hf, λ C hCJe hC, false.elim ((hJe _ hCJe) hC)⟩ ⟩},
-    
+
     -- let Ce be a circuit contained in J ∪ {e}
     unfold C_to_I at hJe, push_neg at hJe, rcases hJe with ⟨Ce, ⟨hCe₁, hCe₂⟩⟩ ,
- 
+
     have : Ce ∩ (J \ I) ≠ ∅,
     { by_contra hn, push_neg at hn, rw ←subset_compl_iff_disjoint at hn,
-      refine hI Ce _ hCe₂, 
+      refine hI Ce _ hCe₂,
       have hCeJI : Ce ⊆ J ∪ I,
       { refine subset.trans hCe₁ (union_subset (subset_union_left _ _) _),
         rw singleton_subset_iff, apply mem_of_mem_of_subset he,
@@ -106,14 +106,14 @@ begin
     tauto,},
 
     cases ne_empty_has_mem this with f hf,
-    refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩, 
+    refine ⟨f, ⟨_, λ C hCJe hC, _⟩⟩,
     apply mem_of_mem_of_subset hf (inter_subset_right _ _),
     rw ←(union_mem_singleton_le_one_circuit e hJ ⟨hC, hCJe⟩ ⟨hCe₂, hCe₁⟩) at hf,
     from mem_of_mem_of_subset hf (inter_subset_left _ _),
   end,
   rcases this with ⟨f, ⟨hFJI, hfC⟩⟩,
   set J' := (J ∪ {e}) \ {f} with hdefJ',
- 
+
   have hJ'₀: J' \ I ⊆ (J ∪ I), {
     set_ext, simp, tauto,
     --intros x hx, simp at *, tauto,
@@ -135,24 +135,24 @@ begin
   have hJ's : size I < size J',
   { rw mem_diff at he hFJI,
     rwa [hdefJ', size_union_singleton_remove hFJI.1 he.2], },
- 
+
   have hJ'ssu : I \ J' ⊂ I \ J,
   { rw hdefJ',
     rw mem_diff at hFJI,
     simp_rw [diff_eq, compl_compl_inter_right, compl_union, inter_distrib_left,
     inter_comm _ {f}, nonmem_disjoint hFJI.2, union_empty, ←inter_assoc, ←diff_eq],
     apply ssubset_of_remove_mem he, },
- 
+
   have hIJ' : ¬bad_pair I J' :=
     λ hIJ', hDmin (I \ J') hJ'ssu ⟨I,⟨J',⟨hIJ', rfl⟩⟩⟩,
   push_neg at hIJ', rcases hIJ' hJ's hI hJ' with ⟨g,⟨hg₁,hg₂⟩⟩ ,
 
   by_cases g ∈ J \ I,
   from h_non_aug g h hg₂,
- 
+
   specialize @hJ'₀ g hg₁,
   simp only [mem_inter_eq, not_and, mem_diff, mem_compl_eq, mem_union] at h ⊢ hJ'₀ hg₁,
-  tauto, 
+  tauto,
 end
 
 end cct_family
@@ -166,7 +166,7 @@ def of_cct_family (M : cct_family α) : matroid α :=
   of_indep_family (indep_family.of_cct_family M)
 
 lemma cct_of_cct_family (M : cct_family α) :
-  (of_cct_family M).is_circuit = M.cct := 
+  (of_cct_family M).is_circuit = M.cct :=
 begin
   ext C, rw [is_circuit],
   erw matroid.indep_of_indep_family, dsimp only,
@@ -180,7 +180,7 @@ begin
   from false.elim (h₂ _ h _ (subset_refl _) hX₂),
   rw ←h, from hX₂,
   push_neg, from ⟨_, ⟨subset_refl _, h⟩⟩,
-  from M.C2 _ _ hXY h (subset.lt_of_le_of_lt hX hY), 
+  from M.C2 _ _ hXY h (subset.lt_of_le_of_lt hX hY),
 end
 
 end matroid 

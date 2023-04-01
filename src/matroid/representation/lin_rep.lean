@@ -47,7 +47,7 @@ lemma foo (h : M.is_representable 𝔽) :
 begin
   obtain ⟨ι, ⟨φ⟩⟩ := h,
   obtain ⟨B, hB⟩ := M.exists_base,
-  have := of_base φ hB, 
+  have := of_base φ hB,
 end
 
 

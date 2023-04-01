@@ -209,7 +209,7 @@ lemma rw_compl : u ∈ xᶜ ↔ ¬(u ∈ x) :=
 
 lemma rw_sdiff : u ∈ x \ y ↔ u ∈ x ∧ u ∉ y := begin
   rewrite sdiff_eq,
-  rewrite <- rw_compl, 
+  rewrite <- rw_compl,
   rw rw_inf,
 end
 

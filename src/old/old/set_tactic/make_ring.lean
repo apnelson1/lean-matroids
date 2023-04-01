@@ -11,7 +11,7 @@ variables {α : Type*} [boolean_algebra α]
 
 -- commutativity/associativity with explicit params for easier rewriting
 lemma inf_comm' (X Y : α) : X ⊓ Y = Y ⊓ X := by apply inf_comm
-lemma inf_assoc' (X Y Z : α) : X ⊓ Y ⊓ Z = X ⊓ (Y ⊓ Z) := by apply inf_assoc 
+lemma inf_assoc' (X Y Z : α) : X ⊓ Y ⊓ Z = X ⊓ (Y ⊓ Z) := by apply inf_assoc
 
 lemma inf_right_comm (X Y Z : α) : X ⊓ Y ⊓ Z = X ⊓ Z ⊓ Y := by rw [inf_assoc, inf_comm' Y, ←inf_assoc]
 
@@ -37,7 +37,7 @@ begin
   rw [inf_comm' Y Xᶜ, inf_comm' Z, inf_comm' Z, inf_comm' Y X, inf_right_comm Y,
       inf_assoc' Z, inf_comm' Y, inf_comm' Z, inf_comm' Yᶜ, inf_comm' Z Y],
     nth_rewrite 1 ←sup_assoc,
-    nth_rewrite 4 sup_comm, 
+    nth_rewrite 4 sup_comm,
     repeat {rw ←sup_assoc},
     repeat {rw ←inf_assoc},
 end
@@ -47,7 +47,7 @@ lemma inf_distrib_diff (X Y Z : α) : X ⊓ (Y \ Z) = (X ⊓ Y) \ (X ⊓ Z) :=
 
 lemma symm_diff_distrib_inf_left (X Y Z : α) : X ⊓ (symm_diff Y Z)  = symm_diff (X ⊓ Y) (X ⊓ Z) :=
   by simp only [symm_diff, inf_sup_left, inf_sup_right, inf_distrib_diff]
-   
+
 lemma symm_diff_distrib_inf_right (X Y Z : α) : (symm_diff X Y) ⊓ Z  = symm_diff (X ⊓ Z) (Y ⊓ Z) :=
   by {rw [inf_comm', inf_comm' X, inf_comm' Y], apply symm_diff_distrib_inf_left}
 
@@ -57,7 +57,7 @@ lemma symm_diff_inter (X Y : α) :
 
 lemma sup_sdiff (X Y : α) :
   X ⊔ (X \ Y) = X :=
-  by simp 
+  by simp
 
 lemma top_symm_diff (X : α) :
   symm_diff ⊤ X = Xᶜ :=
@@ -73,7 +73,7 @@ lemma symm_diff_self (X : α) :
 
 @[simp] lemma diff_bot (X : α) :
   X \ ⊥ = X :=
-  by simp 
+  by simp
 
 @[simp] lemma le_iff_inf (X Y : α) :
   X ≤ Y ↔ X ⊓ Y = X :=
@@ -152,12 +152,12 @@ lemma diff_to_ring {X Y : α} :
   by {ring SOP, rw two_eq_zero, from mul_zero X}
 
 lemma add_self_left (X Y : α) :
-   X + (X + Y) = Y := 
+   X + (X + Y) = Y :=
    by rw [←add_assoc, add_self, zero_add]
 
 @[simp] lemma prod_comp_cancel (X : α) : X*(X+1) = 0 :=
   by {ring SOP, simp}
- 
+
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : α} :
   (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1) :=
   begin

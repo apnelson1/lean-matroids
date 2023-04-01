@@ -13,7 +13,7 @@ section partitionable
 
 variables {ι E : Type*} [finite E] [finite ι] {M : ι → matroid E} {I A X : set E}
 
-/-- A set is partitionable with respect to a collection of matroids on `E` if it admits a partition 
+/-- A set is partitionable with respect to a collection of matroids on `E` if it admits a partition
   into sets that are independent in these matroids  -/
 -- def partitionable (M : ι → matroid E) (I : set E) : Prop :=
 --   ∃ f : I → ι, ∀ i, (M i).indep (I ∩ (coe '' (f⁻¹' {i})))
@@ -47,7 +47,7 @@ begin
   have h2' := h2 his,
   simp only [mem_Union, mem_image, mem_preimage, mem_singleton_iff, set_coe.exists,
     subtype.coe_mk, exists_and_distrib_right, exists_eq_right] at h1' h2',
-  obtain ⟨⟨i₁,hi₁⟩,rfl⟩ := h1',  
+  obtain ⟨⟨i₁,hi₁⟩,rfl⟩ := h1',
   obtain ⟨⟨i₂,hi₂⟩,rfl⟩ := h2',
   exfalso,
   simpa using hij,
@@ -71,7 +71,7 @@ end
 theorem matroid_union (M : ι → matroid E) :
   ∃ I X, partitionable M I ∧ I.ncard = ∑ᶠ i, (M i).r X + Xᶜ.ncard :=
 begin
-  suffices h : ∃ I X : set E, partitionable M I ∧ ∑ᶠ i, (M i).r Xᶜ + X.ncard ≤ I.ncard, 
+  suffices h : ∃ I X : set E, partitionable M I ∧ ∑ᶠ i, (M i).r Xᶜ + X.ncard ≤ I.ncard,
   { obtain ⟨I, X, hI, hle⟩ := h,
     refine ⟨I, Xᶜ, hI, _⟩,
     rw compl_compl,
@@ -103,7 +103,7 @@ begin
     rintro ⟨i₁,e⟩ h₁ ⟨i₂,e'⟩ h₂ (rfl : e = e'),
     simp only [prod.mk.inj_iff, eq_self_iff_true, and_true],
     simp only [congr_equiv_apply_indep, equiv.coe_trans, coe_prod_comm, partition_matroid_indep_iff,
-      pi.one_apply, ncard_le_one_iff, mem_inter_iff, mem_preimage, function.comp_app, 
+      pi.one_apply, ncard_le_one_iff, mem_inter_iff, mem_preimage, function.comp_app,
       sigma_equiv_prod_apply, prod.swap_prod_mk, mem_singleton_iff, and_imp, sigma.forall] at hI₂,
     simpa using (@hI₂ e e i₂ ⟨e,i₁⟩ h₂ rfl h₁ rfl).symm},
 
@@ -209,11 +209,11 @@ noncomputable def max_partitionable_set (M : ι → matroid E) (X : set E) : ℕ
 def partitionable_sets_matroid (M : ι → matroid E) :
   matroid E :=
 matroid_of_indep (partitionable M)
-⟨∅, partitionable_iff_is_Union.mpr ⟨λ i, ∅, by simp, λ _, empty_indep _⟩⟩ 
+⟨∅, partitionable_iff_is_Union.mpr ⟨λ i, ∅, by simp, λ _, empty_indep _⟩⟩
 (begin
   simp_rw partitionable_iff_is_Union,
   rintro I J hIJ ⟨s, rfl, hi⟩,
-  refine ⟨λ i, (s i) ∩ I, _, λ i, (hi i).subset (inter_subset_left _ _)⟩,  
+  refine ⟨λ i, (s i) ∩ I, _, λ i, (hi i).subset (inter_subset_left _ _)⟩,
   rwa [←Union_inter, eq_comm, inter_eq_right_iff_subset],
 end )
 (begin
@@ -249,9 +249,9 @@ end )
       -- refine ⟨⟨k, by simp⟩ , λ i, subset_Union_of_subset i _⟩,
       -- split_ifs,
       -- { subst h, simp},
-    
+
     -- by_contra h'', rw [not_mem_iff] at h'',
-   
+
   -- have h_ex : ∃ i, (I i).ncard < (J i).ncard,
   -- { by_contra' h,
   --   simp_rw [←finsum_mem_one, finsum_mem_Union hIdj (λ i, to_finite _),
@@ -262,7 +262,7 @@ end )
   -- refine ⟨e, mem_Union_of_mem _ heJ, _ , _⟩,
   -- { rintro ⟨x, ⟨⟨j,rfl⟩,h⟩⟩,simp at h,   },
 
- 
+
 end)
 
 

@@ -27,19 +27,19 @@ fintype.exists_max f
   unfreezingI {obtain ⟨a₀⟩ := _inst_2},
   obtain ⟨a, -, ha⟩ :=
     set.finite.exists_maximal_wrt f set.univ (set.finite.of_fintype _) ⟨a₀, set.mem_univ a₀⟩,
-  refine ⟨a, λ x, _⟩, 
+  refine ⟨a, λ x, _⟩,
   rcases le_total (f x) (f a) with (h | h), exact h,
   exact le_of_eq (ha x (set.mem_univ _) h).symm, -/
 --end
 
 lemma exists_min (f : α → β) :
   ∃ x, ∀ y, f x ≤ f y :=
-let f' : _ → (order_dual β) := f in exists_max f' 
+let f' : _ → (order_dual β) := f in exists_max f'
 
 /-- maximum value of f -/
 def max_val (f : α → β) : β :=
   f (classical.some (exists_max f))
- 
+
 /-- minimum value of f -/
 def min_val (f : α → β) : β :=
   f (classical.some (exists_min f))
@@ -210,7 +210,7 @@ begin
   rcases max_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩,
   rcases @max_spec _ _ _ (nonempty.map φ non_empt) _ f with ⟨a', ⟨ha'₁, ha'₂⟩⟩,
   rw [←ha₁, ←ha'₁],
-  apply ha'₂, 
+  apply ha'₂,
 end
 
 lemma min_le_min_compose [non_empt : nonempty α] [fintype α'] (φ : α → α') (f : α' → β) :
@@ -219,7 +219,7 @@ begin
   rcases min_spec (f ∘ φ) with ⟨a, ⟨ha₁, ha₂⟩⟩,
   rcases @min_spec _ _ _ (nonempty.map φ non_empt) _ f with ⟨a', ⟨ha'₁, ha'₂⟩⟩,
   rw [←ha₁, ←ha'₁],
-  apply ha'₂, 
+  apply ha'₂,
 end
 
 --instance prod_fin [fintype α']: nonempty (fintype (α × α')) :=
@@ -235,7 +235,7 @@ begin
   rcases max_spec f' with ⟨a', ⟨ha'₁, ha'₂⟩⟩,
   rcases max_spec f_prod with ⟨⟨x,x'⟩,⟨hx₁, hx₂⟩⟩,
   rw [←ha₁,←ha'₁,←hx₁],
-  apply le_antisymm, 
+  apply le_antisymm,
   from hx₂ ⟨a,a'⟩, apply g_mono, apply ha₂, apply ha'₂,
 end
 
@@ -249,7 +249,7 @@ begin
   rcases min_spec f' with ⟨a', ⟨ha'₁, ha'₂⟩⟩,
   rcases min_spec f_prod with ⟨⟨x,x'⟩,⟨hx₁, hx₂⟩⟩,
   rw [←ha₁,←ha'₁,←hx₁],
-  apply le_antisymm, 
+  apply le_antisymm,
   apply g_mono, apply ha₂, apply ha'₂, from hx₂ ⟨a,a'⟩,
 end
 
@@ -285,7 +285,7 @@ end
 lemma sum_of_max (f : α → β) (f' : α' → β) :
   max_val f + max_val f' = max_val (λ a : α × α', f a.1 + f' a.2) :=
 max_zip f f' (λ (b : β × β), b.1+b.2) (λ _ _ _ _ h₁ h₂, add_le_add h₁ h₂)
- 
+
 lemma sum_of_min (f : α → β) (f' : α' → β) :
   min_val f + min_val f' = min_val (λ a : α × α', f a.1 + f' a.2) :=
 min_zip f f' (λ (b : β × β), b.1+b.2) (λ _ _ _ _ h₁ h₂, add_le_add h₁ h₂)
@@ -308,7 +308,7 @@ def as_list (f : α → β) : list (α × β) :=
   let s := (infer_instance : fintype α).elems.val in (s.map (λ a, (⟨a,f a⟩ : α × β))).to_list
 
 def val_list (f : α → β) : list β :=
-  (as_list f).unzip.2 
+  (as_list f).unzip.2
 
 
 /-- folds the commutative, associative operation op over the elements of β indexed by α
@@ -324,7 +324,7 @@ begin
   set ms := (multiset.map (λ (a : α), (a, f a)) (fintype.elems α).val),
   have hl := ms.coe_to_list, rw ←hl,
   have := multiset.coe_fold_r op b (val_list f),   --b ms.to_list,
-  sorry,  
+  sorry,
 end
 
 
@@ -350,7 +350,7 @@ def Inter (f : α → set γ) : set γ :=
 lemma Inter_eq_setInter (f : α → set γ) :
   Inter f = set.Inter f :=
 begin
-  rw  [Inter, fold_eq_fold_list], 
+  rw  [Inter, fold_eq_fold_list],
   --induction as_list f,
   dsimp, sorry,
 end

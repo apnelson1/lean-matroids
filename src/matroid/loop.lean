@@ -34,7 +34,7 @@ lemma loop_iff_r :
   M.loop e ↔ M.r {e} = 0 :=
 begin
   refine ⟨loop.r, λ h, _⟩,
-  rw [loop_def, circuit_def, ←r_lt_card_iff_dep, h, ncard_singleton], 
+  rw [loop_def, circuit_def, ←r_lt_card_iff_dep, h, ncard_singleton],
   refine ⟨zero_lt_one, λ I hI, _⟩,
   rw [ssubset_singleton_iff.mp hI],
   apply empty_indep,
@@ -50,7 +50,7 @@ begin
     exact h _ hB.1 (singleton_subset_iff.mp hB.2)},
   convert M.empty_indep,
   rwa ssubset_singleton_iff at hI,
-end 
+end
 
 lemma loop_iff_dep :
   M.loop e ↔ ¬M.indep {e} :=
@@ -67,7 +67,7 @@ begin
   rw [loop_iff_dep, not_iff_comm, not_mem_cl_iff_forall_insert_basis_insert],
   split,
   { rintro ⟨-,h⟩, simpa using (h ∅ M.empty_basis_empty).indep},
-  refine λ h, ⟨not_mem_empty _, λ I hI, _⟩,   
+  refine λ h, ⟨not_mem_empty _, λ I hI, _⟩,
   rw ←basis_self_iff_indep at h,
   rw basis_empty_iff at hI, subst hI,
   convert h;
@@ -88,7 +88,7 @@ lemma loop.dep_of_mem (he : M.loop e) (h : e ∈ X) :
 
 lemma loop.not_mem_indep (he : M.loop e) (hI : M.indep I) :
   e ∉ I :=
-λ h, he.dep_of_mem h hI 
+λ h, he.dep_of_mem h hI
 
 lemma indep.nonloop_of_mem (hI : M.indep I) (h : e ∈ I) :
   ¬ M.loop e :=
@@ -137,7 +137,7 @@ begin
     exact insert_subset.mpr ⟨he B hB, hIB⟩},
   subst hIB',
   rw [←hI.r, hI.indep.r, ←hB.r, hB.indep.r, ncard_insert_of_not_mem heI],
-end 
+end
 
 lemma coloop_iff_r_compl_add_one_eq :
   M.coloop e ↔ M.r {e}ᶜ + 1 = M.rk :=
@@ -188,6 +188,6 @@ begin
   { rw h, exact empty_subset _},
   have := disjoint_iff_inter_eq_empty.mp hI.indep.disjoint_loops,
   rwa inter_eq_left_iff_subset.mpr h at this,
-end 
+end
 
 end matroid

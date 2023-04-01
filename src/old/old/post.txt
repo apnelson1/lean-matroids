@@ -19,7 +19,7 @@ prove the following:
 
 Lemma: For all A ⊆ E we have (M / A)* = M* \ D.
 
-That is, contraction and deletion are dual operations. These statements all seem simple enough, but I can't find a satisfactory way to set them up and prove them in lean. 
+That is, contraction and deletion are dual operations. These statements all seem simple enough, but I can't find a satisfactory way to set them up and prove them in lean.
 
 A couple of years ago, Bryan Chen formalized a number of results about matroids in lean: see https://github.com/bryangingechen/lean-matroids . He started from a different, equivalent definition of matroids
 that does not involve a function, but encoded the above definition towards the end of his file, defining a matroid structure (paraphrased) as follows:

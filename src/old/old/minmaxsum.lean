@@ -40,19 +40,19 @@ def max_val_over (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
 lemma max_over_is_ub (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
   ∀ X, P X → f X ≤ max_val_over P hP f :=
 λ X hX, classical.some_spec (exists_arg_max_over_subtype P hP (λ X, f X.val)) ⟨X, hX⟩
- 
+
 lemma arg_max_over_attains (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
   P (arg_max_over P hP f) ∧ f (arg_max_over P hP f) = max_val_over P hP f :=
 let X' := (classical.some (exists_arg_max_over_subtype P hP (λ X, f X.val))) in
-⟨X'.property, rfl⟩ 
+⟨X'.property, rfl⟩
 
 lemma max_over_spec (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
   ∃ X, P X ∧ (f X = max_val_over P hP f) ∧ (∀ Y, P Y → f Y ≤ f X)  :=
 let prev := arg_max_over_attains P hP f in
-⟨arg_max_over P hP f,⟨prev.1,prev.2,max_over_is_ub P hP f⟩⟩ 
+⟨arg_max_over P hP f,⟨prev.1,prev.2,max_over_is_ub P hP f⟩⟩
 
 /-- minimum value of f over subsets of U satisfying P -/
-def arg_min_over (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) : set U := 
+def arg_min_over (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) : set U :=
   (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))).val
 
 /-- subset of U attaining minimum value of f subject to satisfying P -/
@@ -69,7 +69,7 @@ lemma min_over_is_lb (P : set U → Prop) (hP : set.nonempty P) (f : set U → �
 lemma arg_min_over_attains (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
   P (arg_min_over P hP f) ∧ f (arg_min_over P hP f) = min_val_over P hP f :=
 let X' := (classical.some (exists_arg_min_over_subtype P hP (λ X, f X.val))) in
-⟨X'.property, rfl⟩   
+⟨X'.property, rfl⟩
 
 lemma min_over_spec (P : set U → Prop) (hP : set.nonempty P) (f : set U → α) :
   ∃ X, P X ∧ (f X = min_val_over P hP f) ∧ (∀ Y, P Y → f X ≤ f Y)   :=
@@ -107,7 +107,7 @@ lemma arg_min_attains (f : set U → α) :
 
 lemma min_spec (f : set U → α) :
   ∃ X, (∀ Y, f X ≤ f Y) ∧ (f X = min_val f) :=
-⟨arg_min f, ⟨min_is_lb f, arg_min_attains f⟩ ⟩ 
+⟨arg_min f, ⟨min_is_lb f, arg_min_attains f⟩ ⟩
 
 lemma max_spec (f : set U → α) :
   ∃ X, (∀ Y, f Y ≤ f X) ∧ (f X = max_val f) :=
@@ -118,7 +118,7 @@ lemma max_spec (f : set U → α) :
 
 /-- largest set satisfying P -/
 def arg_max_size_over (P : set U → Prop) (hP : set.nonempty P) : set U :=
-  arg_max_over P hP size 
+  arg_max_over P hP size
 
 /-- size of largest set satisfying P -/
 def max_size_over (P : set U → Prop) (hP : set.nonempty P) : ℤ :=
@@ -127,7 +127,7 @@ def max_size_over (P : set U → Prop) (hP : set.nonempty P) : ℤ :=
 lemma max_size_over_is_ub (P : set U → Prop) (hP : set.nonempty P) :
   ∀ X, P X → size X ≤ max_size_over P hP:=
 max_over_is_ub P hP size
- 
+
 lemma arg_max_size_over_attains (P : set U → Prop) (hP : set.nonempty P) :
   P (arg_max_size_over P hP) ∧ size (arg_max_size_over P hP) = max_size_over P hP :=
   arg_max_over_attains P hP size
@@ -139,7 +139,7 @@ lemma max_size_over_spec (P : set U → Prop) (hP : set.nonempty P) :
 
 /-- smallest set satisfying P -/
 def arg_min_size_over (P : set U → Prop) (hP : set.nonempty P) : set U :=
-  arg_min_over P hP size 
+  arg_min_over P hP size
 
 /-- size of smallest set satisfying P -/
 def min_size_over (P : set U → Prop) (hP : set.nonempty P) : ℤ :=
@@ -148,7 +148,7 @@ def min_size_over (P : set U → Prop) (hP : set.nonempty P) : ℤ :=
 lemma min_size_over_is_lb (P : set U → Prop) (hP : set.nonempty P) :
   ∀ X, P X → min_size_over P hP ≤ size X :=
 min_over_is_lb P hP size
- 
+
 lemma arg_min_size_over_attains (P : set U → Prop) (hP : set.nonempty P) :
   P (arg_min_size_over P hP) ∧ size (arg_min_size_over P hP) = min_size_over P hP :=
   arg_min_over_attains P hP size
@@ -216,7 +216,7 @@ begin
   erw [←hX'₂, ←hX₂],
   from le_antisymm (hg (hX₃ _ hX'₁)) (hX'₃ _ hX₁),
 end
- 
+
 
 
 /-

@@ -42,7 +42,7 @@ begin
     rw image_preimage_eq_of_subset hX, },
   rintros ⟨S, C, hdisj, hsize, hr⟩,
   rw [eq_comm, ← size_fin' _ hb] at hsize,
-  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,  
+  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,
   refine ⟨φ, C, hdisj, λ F, _⟩,
   convert hr (φ '' F) (λ x, by tidy),
   rw [size_image_emb, canonical_unif_r ha],
@@ -64,7 +64,7 @@ begin
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],
     rw image_preimage_eq_of_subset hX},
   rw [canonical_unif_r ha, ← type_size_eq, size_fin' _ (le_trans ha hab), min_eq_left hab] at hrank,
-  linarith, 
+  linarith,
 end
 
 def matroid.has_unif_restr (M : matroid α) (a b : ℤ) :=
@@ -77,7 +77,7 @@ iff.rfl
 lemma has_unif_restr_iff (ha : 0 ≤ a) (hb : 0 ≤ b) :
   M.has_unif_restr a b ↔ ∃ S : set α, (size S = b) ∧ (∀ X ⊆ S, M.r X = min a (size X)) :=
 begin
-  rw [has_unif_restr_def, irestr_of_iff_exists_map], 
+  rw [has_unif_restr_def, irestr_of_iff_exists_map],
   split,
   { rintros ⟨φ, hr⟩,
     refine ⟨range φ, _, λ X hX, _⟩,
@@ -87,7 +87,7 @@ begin
     rw [canonical_unif_r ha, size_preimage_embed_subset_range _ _ hX],  },
   rintros ⟨S, hsize, hr⟩,
   rw [eq_comm, ← size_fin' _ hb] at hsize,
-  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,  
+  obtain ⟨φ, rfl⟩ := exists_emb_of_type_size_eq_size_set hsize,
   refine ⟨φ, λ F, _⟩,
   convert (hr (φ '' F) (λ x, by tidy)).symm using 1,
   rw [size_image_emb, canonical_unif_r ha],
@@ -132,7 +132,7 @@ begin
   rcases le_or_lt (size X) 2 with (hX | hX),
   { rw [rank_subset_simple_set hL (subset.trans hXL' hL') hX, min_eq_right hX]},
   rw min_eq_left (le_of_lt hX),
-  refine le_antisymm (le_trans (M.rank_mono (subset.trans hXL' hL')) hr) _, 
+  refine le_antisymm (le_trans (M.rank_mono (subset.trans hXL' hL')) hr) _,
   convert rank_subset_simple_set_lb hL (subset.trans hXL' hL'),
   rw min_eq_left (le_of_lt hX),
 end
@@ -152,7 +152,7 @@ begin
   by_contra hn, push_neg at hn,
   refine hM (has_uniform_minor_of_has_unif_restriction
     (line_restr_of_ε (by linarith : 0 ≤ l+2) (hL.r.le) _)),
-  have := (int.add_one_le_of_lt hn), 
+  have := (int.add_one_le_of_lt hn),
   rwa [add_assoc] at this,
 end
 

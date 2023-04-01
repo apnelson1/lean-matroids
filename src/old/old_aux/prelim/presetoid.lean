@@ -154,7 +154,7 @@ begin
   refine disjoint_left.mpr (λ a ha₁ ha₂, hC₁C₂ _),
   obtain ⟨⟨x₁,h₁,rfl⟩,⟨x₂,h₂,rfl⟩⟩ := ⟨mem_classes_iff.mp hC₁, mem_classes_iff.mp hC₂⟩,
   rw mem_cl_iff at ha₁ ha₂,
-  rw (cl_eq_cl_iff h₁), 
+  rw (cl_eq_cl_iff h₁),
   transitivity, symmetry, exact ha₁, assumption,
 end
 
@@ -162,7 +162,7 @@ lemma sUnion_classes_eq_compl_kernel :
   ⋃₀ S.classes = S.kernelᶜ :=
 begin
   ext x,
-  simp only [kernel, exists_prop, not_not, mem_set_of_eq, mem_classes_iff, mem_compl_eq], 
+  simp only [kernel, exists_prop, not_not, mem_set_of_eq, mem_classes_iff, mem_compl_eq],
   split,
   { rintro ⟨P, ⟨a, ha, rfl⟩, haP⟩,
     exact rel_self_of_rel (mem_cl_iff.mp haP), },
@@ -185,7 +185,7 @@ begin
     push_neg at hP,
     obtain ⟨e,f,⟨heX, heP⟩,⟨hfX,hfP⟩,hef⟩ := hP.2,
     exact hef ((h e f heX hfX).mp (rel_of_mems_class hP.1 heP hfP ))},
-  rw [is_simple_set] at hn, 
+  rw [is_simple_set] at hn,
   push_neg at hn,
 
   obtain ⟨e,f,he,hf,hef⟩ := hn,
@@ -230,7 +230,7 @@ begin
   refine ⟨λ h x, by {ext, finish}, λ h x y, _⟩,
   specialize h y,
   simp only [ext_iff, mem_singleton_iff, mem_set_of_eq] at h,
-  apply h,  
+  apply h,
 end
 
 end simple
@@ -252,12 +252,12 @@ begin
   convert size_disjoint_collection_eq_type_size_iff
     (λ s hs, class_nonempty (mem_classes_iff_is_class.mpr hs))
     (S.eqv_classes_pairwise_disj),
-  rw [simple_iff, ← iff_iff_eq], 
+  rw [simple_iff, ← iff_iff_eq],
   congr' 2,
- 
-  refine iff_iff_eq.mp ⟨λ h, _, λ h, _⟩, 
+
+  refine iff_iff_eq.mp ⟨λ h, _, λ h, _⟩,
   { ext x, simp only [exists_prop, mem_univ, mem_set_of_eq, iff_true],
-    refine ⟨S.cl x, mem_sep (mem_def.mp (nonempty.to_subtype ⟨x, mem_cl_self_iff.mpr _⟩)) _ , _⟩, 
+    refine ⟨S.cl x, mem_sep (mem_def.mp (nonempty.to_subtype ⟨x, mem_cl_self_iff.mpr _⟩)) _ , _⟩,
     { apply not_not.mp, rw [← mem_kernel_iff, h], apply not_mem_empty },
     { exact ⟨x,rfl⟩},
     { rw mem_cl_self_iff, apply not_not.mp, rw [← mem_kernel_iff, h], apply not_mem_empty }},
@@ -267,7 +267,7 @@ begin
   obtain ⟨X, h₁, h₂⟩ := h x,
   rw mem_def at h₁,
   obtain ⟨a, rfl⟩ := h₁.2,
-  apply rel_of_mems_cl h₂ h₂,    
+  apply rel_of_mems_cl h₂ h₂,
 end
 
 

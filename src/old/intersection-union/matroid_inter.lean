@@ -72,22 +72,22 @@ begin
     rw [matroid_inter_ub_fn, rank_loops, ← nonloops_eq_compl_loops, zero_add,
       rank_zero_of_subset_rank_zero hN N₂.rank_loops]},
 
-  linarith [ν_nonneg N₁ N₂, min_is_lb (matroid_inter_ub_fn N₁ N₂) (loops N₁)], 
- 
+  linarith [ν_nonneg N₁ N₂, min_is_lb (matroid_inter_ub_fn N₁ N₂) (loops N₁)],
+
   -- we now assume that the result holds for any strictly loopier pair of matroids,
   -- and that there is at least one common nonloop; call it e.
- 
+
   rintros ⟨N₁,N₂⟩ hsize IH, dsimp only at hsize IH ⊢,
   set k := ν N₁ N₂ with hk,
   --rw ←hsize at hn,
   obtain ⟨e, he_mem⟩  := exists_mem_of_size_pos hsize,
   have  h_e_nl := he_mem,
   rw [mem_inter_iff, ← nonloop_iff_mem_nonloops] at h_e_nl,
- 
+
   -- contract and delete (loopify/project) e from both elements of the pairs, to get
   -- strictly loopier pairs to which we'll apply the IH, along with the associated maximizers
   set N₁d := N₁ ⟍ {e} with hN₁d,
-  set N₂d := N₂ ⟍ {e} with hN₂d, 
+  set N₂d := N₂ ⟍ {e} with hN₂d,
   set N₁c := N₁ ⟋ {e} with hN₁c,
   set N₂c := N₂ ⟋ {e} with hN₂c,
 
@@ -99,13 +99,13 @@ begin
   { have := projected_set_rank_zero N₁ {e},
     rw [←hN₁c, mem_indep_r heIc hIc_ind.1] at this,
     exact one_ne_zero this},
- 
+
   -- ν does not get larger upon deletion
   have h_nu_d : ν N₁d N₂d ≤ k :=  by
   { rw [ν, ←hId_eq_max, hk, ν],
     convert max_is_ub (λ (X : common_ind N₁ N₂), size X.val) ⟨Id, _⟩,
     from ⟨indep_of_loopify_indep hId_ind.1, indep_of_loopify_indep hId_ind.2⟩},
- 
+
   -- ν goes down upon contraction
   have h_nu_c : ν N₁c N₂c ≤ k-1 := by
   { rw [hk, ν, ν, ←hIc_eq_max],
@@ -114,15 +114,15 @@ begin
     linarith only [size_union_nonmem_singleton heIc, this],
     split, all_goals {apply indep_union_project_set_of_project_indep},
     exact hIc_ind.1, exact (nonloop_iff_indep.mp h_e_nl.1),
-    exact hIc_ind.2, exact (nonloop_iff_indep.mp h_e_nl.2)},                            
- 
+    exact hIc_ind.2, exact (nonloop_iff_indep.mp h_e_nl.2)},
+
   -- `(N₁ ⟍ e, N₂ ⟍ e)` is loopier than `(N₁, N₂)`.
   have h_fewer_nonloops_d : size (N₁d.nonloops ∩ N₂d.nonloops) < size (N₁.nonloops ∩ N₂.nonloops),
   { rw [hN₁d, hN₂d, loopify_nonloops_eq, loopify_nonloops_eq, diff_inter_diff_right,
         size_remove_mem he_mem],
     apply sub_one_lt, },
 
-  -- so is `(N₁ ⟋ e , N₂ ⟋ e)`. 
+  -- so is `(N₁ ⟋ e , N₂ ⟋ e)`.
   have h_fewer_nonloops_c : size (N₁c.nonloops ∩ N₂c.nonloops) < size (N₁.nonloops ∩ N₂.nonloops),
   { rw [hN₁c, hN₂c, project_nonloops_eq, project_nonloops_eq],
     refine size_strict_monotone ((ssubset_iff_of_subset _).mpr ⟨e, he_mem, _⟩),
@@ -158,7 +158,7 @@ begin
   unfold matroid_inter_ub_fn at hi hu,
   rw [compl_union, compl_union, ←diff_eq] at hu,
   rw [compl_diff, compl_inter] at hi,
- 
+
   -- contradict submodularity.
   have sm1 := N₁.rank_submod (Ac ∪ {e}) (Ad \ {e}),
   have sm2 := N₂.rank_submod (Acᶜ ∪ {e}) (Adᶜ \ {e}),
@@ -172,7 +172,7 @@ theorem matroid_intersection_exists_pair_eq (M₁ M₂ : matroid α) :
 begin
   rcases max_spec (λ (I : common_ind M₁ M₂), size I.val) with ⟨⟨I,h_ind⟩,h_eq_max, hI_ub⟩,
   rcases min_spec (λ X, M₁.r X + M₂.r Xᶜ) with ⟨A, hA_eq_min, hA_lb⟩,
-  refine ⟨I, A, ⟨h_ind,_⟩⟩, 
+  refine ⟨I, A, ⟨h_ind,_⟩⟩,
   dsimp only at *,
   rw [h_eq_max, hA_eq_min],
   apply matroid_intersection,

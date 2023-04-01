@@ -7,7 +7,7 @@ open_locale classical
 noncomputable theory
 
 
-def subftype {A : ftype} (ground : set A) : ftype := 
+def subftype {A : ftype} (ground : set A) : ftype :=
   {E := {x : A // x ∈ ground}, fin := by {apply_instance}}
 
 @[ext] structure embed (A B : ftype) :=
@@ -73,8 +73,8 @@ instance coe_set_from_subftype {A : ftype} {S : set A} : has_coe (set (subftype 
 
 --instance coe_single_from_subftype {A : ftype} {S : set A} : has_coe (single (subftype S)) (single A) := ⟨(embed.from_subset S).single_emb⟩
 
---@[simp] lemma coe_single_subftype_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: single A) : set A) = (e : set A) := rfl 
---lemma coe_subftype_single_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: subftype S) : set A) = (e : set A) := rfl 
+--@[simp] lemma coe_single_subftype_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: single A) : set A) = (e : set A) := rfl
+--lemma coe_subftype_single_compose {A : ftype} {S : set A} (e : single (subftype S)) : ((e: subftype S) : set A) = (e : set A) := rfl
 
 @[simp] lemma subftype_coe_size {A : ftype} {S : set A} (X : set (subftype S)) : size X = size (X : set A) :=
   ((embed.from_subftype S).on_size X).symm

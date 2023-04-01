@@ -26,10 +26,10 @@ lemma weak_image_iff_indep:
   N ≤ M ↔ ∀ X, N.is_indep X → M.is_indep X :=
 begin
   simp_rw indep_iff_r,
-  refine ⟨λ h, λ X hX, le_antisymm (M.rank_le_size _) _, λ h, λ Y, _⟩, 
+  refine ⟨λ h, λ X hX, le_antisymm (M.rank_le_size _) _, λ h, λ Y, _⟩,
   {  rw ←hX, apply h},
   rcases exists_basis_of N Y with ⟨BN,⟨hN1, ⟨hN2, hN3⟩⟩⟩,
-  exact le_trans (by rw [h _ hN2, ←hN3, hN2]) (M.rank_mono hN1), 
+  exact le_trans (by rw [h _ hN2, ←hN3, hN2]) (M.rank_mono hN1),
 end
 
 lemma indep_of_weak_image_indep (h : N ≤ M){I : set α} (hI : N.is_indep I) :
@@ -43,7 +43,7 @@ by simp_rw [weak_image_iff_indep, indep_iff_not_dep, not_imp_not]
 lemma weak_image_iff_cct:
   N ≤ M ↔ ∀ C, M.is_circuit C → ∃ C', N.is_circuit C' ∧ C' ⊆ C :=
 begin
-  simp_rw [weak_image_iff_dep, dep_iff_contains_circuit], 
+  simp_rw [weak_image_iff_dep, dep_iff_contains_circuit],
   refine ⟨λ h, λ C hC, _, λ h, λ X hX, _⟩,
   {  apply h, exact ⟨C,hC,subset_refl _⟩,},
   rcases hX with ⟨C, ⟨h', h''⟩⟩,
@@ -61,7 +61,7 @@ lemma weak_image_tfae:
 begin
   tfae_have : 1 ↔ 2, unfold has_le.le is_weak_image,
   tfae_have : 1 ↔ 3, apply weak_image_iff_indep,
-  tfae_have : 1 ↔ 4, apply weak_image_iff_dep, 
+  tfae_have : 1 ↔ 4, apply weak_image_iff_dep,
   tfae_have : 1 ↔ 5, apply weak_image_iff_cct,
   tfae_finish,
 end
@@ -110,7 +110,7 @@ lemma weak_image_of_quotient (h : N ≼ M) :
 lemma quotient_of_cl (h : ∀ X, M.cl X ⊆ N.cl X) :
    N ≼ M :=
 begin
-  set P : set α × set α → Prop := 
+  set P : set α × set α → Prop :=
   (λ p, p.1 ⊆ p.2 → N.r p.2 - N.r p.1 ≤ M.r p.2 - M.r p.1 ) with hP,
   suffices : ∀ p, P p, exact λ X Y, this ⟨X,Y⟩,
   apply nonneg_int_strong_induction_param P (λ p, size (p.2 \ p.1)),
@@ -118,7 +118,7 @@ begin
   { rintros ⟨X,Y⟩ hs hXY, dsimp only at *,
     rw [size_zero_iff_empty, diff_empty_iff_subset] at hs,
     rw [subset.antisymm hXY hs, sub_self, sub_self],  },
-  rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,  
+  rintros ⟨X,Y⟩ h_size h' hXY, dsimp only at *,
   cases exists_mem_of_size_pos h_size with e he,
   specialize h' ⟨X, Y \ {e}⟩ _ _,
   { dsimp only, rw [diff_right_comm, size_remove_mem he], linarith},
@@ -202,7 +202,7 @@ begin
   rcases maximal_example_aug (λ X, ¬N.r X = M.r X) hn with ⟨Y, hXY, h',h''⟩,
   dsimp only at h'', simp_rw [not_not] at h'', clear hXY hn X,
   have hY : Y ≠ univ := λ hY, by {rw ←hY at hr, exact h' hr },
-  cases ne_univ_iff_has_nonmem.mp hY with e heY, 
+  cases ne_univ_iff_has_nonmem.mp hY with e heY,
   specialize h'' e heY,
   have hle := weak_image_of_quotient h,
   rw quotient_iff_cl at h,
@@ -210,7 +210,7 @@ begin
   { rw [(mem_cl_iff_r.mp hM)] at h'',
     rw [←h'', eq_comm, ←mem_cl_iff_r] at h',
     exact h' (mem_of_mem_of_subset hM (h _))},
-  rw nonmem_cl_iff_r at hM, 
+  rw nonmem_cl_iff_r at hM,
   linarith [int.le_sub_one_of_le_of_ne (hle _) h', rank_augment_single_ub N Y e],
 end
 

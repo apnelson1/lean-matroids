@@ -18,7 +18,7 @@ variables {α β : Type*} {s s' t t' r r': set α}
 
 
 @[simp] lemma absorb_union_inter (s t : set α) : s ∪ (s ∩ t) = s :=
-by calc s ∪ (s ∩ t) = (s ∩ univ) ∪ (s ∩ t) : by rw inter_univ 
+by calc s ∪ (s ∩ t) = (s ∩ univ) ∪ (s ∩ t) : by rw inter_univ
                 ... = s : by rw [←inter_distrib_left, union_comm, union_univ, inter_univ ]
 
 @[simp] lemma absorb_inter_union (s t : set α) : s ∩ (s ∪ t) = s :=
@@ -31,7 +31,7 @@ lemma union_distrib_union_left (s t r : set α) : (s ∪ t) ∪ r = (s ∪ r) �
 by rw [union_assoc s r, union_comm r, union_assoc t, union_self, union_assoc]
 
 lemma union_distrib_union_right (s t r : set α) : s ∪ (t ∪ r) = (s ∪ t) ∪ (s ∪ r) :=
-by rw [union_comm s, union_distrib_union_left t r s, union_comm s, union_comm s]  
+by rw [union_comm s, union_distrib_union_left t r s, union_comm s, union_comm s]
 
 @[simp] lemma inter_right_self (s t : set α) : s ∩ t ∩ t = s ∩ t :=
 by rw [inter_assoc, inter_self]
@@ -76,7 +76,7 @@ by {apply nonempty_subtype.mpr, from ⟨_,empty_subset _⟩,  }
 instance subtype_coe : has_coe {t : set α // t ⊆ s} (set α) := coe_subtype
 
 lemma subset_empty : s ⊆ ∅ → s = ∅ :=
-λ hs, subset.antisymm hs (empty_subset s) 
+λ hs, subset.antisymm hs (empty_subset s)
 
 lemma ssubset_empty (s : set α) : ¬ s ⊂ ∅ :=
 λ h, by {rw ssubset_iff_subset_ne at h, from h.2 (subset_empty h.1)}
@@ -92,7 +92,7 @@ lemma subset_compl_disjoint (h : s ⊆ tᶜ) : s ∩ t = ∅ :=
 by {rw subset_iff_inter_eq_left at h, rw [←h, inter_assoc], simp}
 
 lemma disjoint_iff_subset_compl : s ∩ t = ∅ ↔ s ⊆ tᶜ :=
-⟨λ h, disjoint_compl_subset h, λ h, subset_compl_disjoint h⟩  
+⟨λ h, disjoint_compl_subset h, λ h, subset_compl_disjoint h⟩
 
 lemma disjoint_iff_inter_compl_eq_left : s ∩ t = ∅ ↔ s ∩ tᶜ = s :=
 by rw [disjoint_iff_subset_compl, subset_iff_inter_eq_left]
@@ -111,7 +111,7 @@ begin
   refine ⟨λ h, _, λ h, _⟩,
   { nth_rewrite 0 ←(subset_iff_union_eq_left.mp h),
     rw [diff_eq, union_distrib_left], simp,},
-  rw h, simp, 
+  rw h, simp,
 end
 
 lemma subset_iff_disjoint_compl : s ⊆ t ↔ s ∩ tᶜ = ∅ :=
@@ -185,7 +185,7 @@ lemma inter_subset_union (s t : set α) : s ∩ t ⊆ s ∪ t :=
   subset.trans (inter_subset_left s t) (subset_union_left s t)
 
 lemma subset_of_inter_mp : s ⊆ t ∩ r → s ⊆ t ∧ s ⊆ r :=
-  λ h, ⟨subset.trans h (inter_subset_left _ _), subset.trans h (inter_subset_right _ _)⟩ 
+  λ h, ⟨subset.trans h (inter_subset_left _ _), subset.trans h (inter_subset_right _ _)⟩
 
 lemma subset_of_set_and_compl : s ⊆ t → s ⊆ tᶜ → s = ∅ :=
   λ h1 h2, by {have := subset_inter h1 h2, rw inter_compl_self at this,
@@ -234,8 +234,8 @@ lemma subset_of_subset_diff (h : s ⊆ t \ r) : s ⊆ t :=
 lemma eq_of_union_eq_inter : s ∪ t = s ∩ t → s = t :=
 begin
   intro h, apply subset.antisymm,
-  calc s ⊆ (s ∪ t) : subset_union_left _ _ ... = s ∩ t : h ... ⊆ t : inter_subset_right _ _, 
-  calc t ⊆ (s ∪ t) : subset_union_right _ _ ... = s ∩ t : h ... ⊆ s : inter_subset_left _ _, 
+  calc s ⊆ (s ∪ t) : subset_union_left _ _ ... = s ∩ t : h ... ⊆ t : inter_subset_right _ _,
+  calc t ⊆ (s ∪ t) : subset_union_right _ _ ... = s ∩ t : h ... ⊆ s : inter_subset_left _ _,
 end
 
 lemma union_of_disjoint : s ∩ t = ∅ → s ∩ r = ∅ → s ∩ (t ∪ r) = ∅ :=
@@ -360,7 +360,7 @@ lemma infinite_of_union (hs : s.infinite) (t : set α) :
   (s ∪ t).infinite :=
 set.infinite_mono (set.subset_union_left _ _) hs
 
-lemma finite.diff (hs : s.finite) (t : set α) : (s \ t).finite := 
+lemma finite.diff (hs : s.finite) (t : set α) : (s \ t).finite :=
   set.finite.subset hs (set.diff_subset _ _)
 
 lemma finite.inter_left (hs : s.finite) (t : set α) : (s ∩ t).finite :=
@@ -482,7 +482,7 @@ end
 @[simp] lemma symm_diff_eq_self_iff {s t : set α } :
   s.symm_diff t = s ↔ t = ∅ :=
 ⟨λ h, by rwa [symm_diff_comm, symm_diff_eq_iff, symm_diff_self] at h, by {rintro rfl, simp}⟩
- 
+
 end symm_diff
 
 end set
@@ -505,7 +505,7 @@ lemma set.sigma_inter (s : set α) (t : Π (a : α), set (β a)) (r : set (sigma
   (s.sigma t) ∩ r = s.sigma (λ a, (t a) ∩ { b ∈ t a | (⟨a,b⟩ : sigma β) ∈ r}) :=
 by {ext, simp [set.sigma], tauto}
 
- 
+
 lemma set.sigma_singleton_eq  (a : α) (t : Π (a : α), set (β a)) :
   ({a} : set α).sigma t = sigma.mk a '' t a :=
 begin
@@ -537,7 +537,7 @@ begin
     simp only [set.nonempty_def, exists_prop, set.mem_Union, set.mem_sep_eq,
      set.mem_singleton_iff, set.mem_set_of_eq, set.sigma],
     refine ⟨λ h, ⟨x.1, ⟨⟨h.1, _, h.2⟩, rfl , h.2⟩⟩, λ h, _⟩,
-    obtain ⟨a, ⟨has, b, hba⟩, ⟨rfl, ha'⟩⟩ := h, 
+    obtain ⟨a, ⟨has, b, hba⟩, ⟨rfl, ha'⟩⟩ := h,
     exact ⟨has, ha'⟩},
   intros a ha,
   simp only,
@@ -550,13 +550,13 @@ lemma set.sigma_to_finset {s : set α} {t : Π a, set (β a)}
 (h : (s.sigma t).finite) :
   h.to_finset = finset.sigma (set.sigma_finite_iff.mp h).1.to_finset
                 (λ a : α, dite (a ∈ s) (λ ha, ((set.sigma_finite_iff.mp h).2 a ha).to_finset)
-                                       (λ _, finset.empty)) :=                     
+                                       (λ _, finset.empty)) :=
 begin
   ext x,
   simp only [set.mem_sep_eq, set.finite.mem_to_finset, finset.mem_sigma, set.nonempty_def],
   split_ifs with h h',
   { simp only [set.finite.mem_to_finset, set.sigma, set.mem_set_of_eq], cases x, tauto},
-  rw [set.sigma, set.mem_set_of_eq], 
+  rw [set.sigma, set.mem_set_of_eq],
   exact ⟨λ h₁, false.elim (h h₁.1), λ h₁, false.elim (finset.not_mem_empty _ h₁.2)⟩,
 end
 
@@ -593,7 +593,7 @@ begin
   convert set.sigma_univ_invert _ using 1,
   ext x, repeat {rw set.sigma},
   cases x,
-  simp only [true_and, set.mem_sep_eq, set.mem_univ, set.mem_set_of_eq], 
+  simp only [true_and, set.mem_sep_eq, set.mem_univ, set.mem_set_of_eq],
   split_ifs;
   tauto,
 end

@@ -36,7 +36,7 @@ section defs
 
 /-- A set is independent if it is contained in a base.  -/
 def indep (M : matroid E) (I : set E) : Prop :=
-  ∃ B, M.base B ∧ I ⊆ B 
+  ∃ B, M.base B ∧ I ⊆ B
 
 /-- A basis for a set `X` is a maximal independent subset of `X`
   (Often in the literature, the word 'basis' is used to refer to what we call a 'base')-/
@@ -49,7 +49,7 @@ def circuit (M : matroid E) (C : set E) : Prop :=
 
 /-- A flat is a maximal set having a given basis  -/
 def flat (M : matroid E) (F : set E) : Prop :=
-  ∀ I X, M.basis I F → M.basis I X → X ⊆ F  
+  ∀ I X, M.basis I F → M.basis I X → X ⊆ F
 
 /-- The closure of a set is the intersection of the flats containing it -/
 def cl (M : matroid E) (X : set E) : set E :=
@@ -65,7 +65,7 @@ def cocircuit (M : matroid E) (K : set E) : Prop :=
 
 /-- A coindependent set is one that contains no cocircuit -/
 def coindep (M : matroid E) (I : set E) : Prop :=
-  ¬ ∃ K ⊆ I, M.cocircuit K   
+  ¬ ∃ K ⊆ I, M.cocircuit K
 
 /-- A loop is a singleton circuit -/
 def loop (M : matroid E) (e : E) : Prop :=

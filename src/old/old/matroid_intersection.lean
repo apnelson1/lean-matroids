@@ -78,17 +78,17 @@ begin
   rw [size_zero_iff_bot, top_iff_compl_bot] at hloops,
   have h' : (ub_fn N₁ N₂) (loops N₁) = 0 :=  by
   {
-      simp_rw h_ub_fn, 
-      linarith [R0 N₂ (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂, 
+      simp_rw h_ub_fn,
+      linarith [R0 N₂ (loops N₁)ᶜ, rank_loops N₁, rank_loops N₂,
                                 R2 N₂ (cover_compl_subset hloops)],
   },
   linarith [nu_nonneg N₁ N₂, min_is_lb (ub_fn N₁ N₂) (loops N₁)],
- 
+
   --inductive step
   set k := ν N₁ N₂ with hk,
   rw ←hsize at hn,
   cases exists_mem_of_size_pos hn with e he,
- 
+
   have h_e_nl : (is_nonloop N₁ e) ∧ (is_nonloop N₂ e) := by split;
   {
     rw [nonloop_iff_not_mem_loops, ←mem_compl_iff],
@@ -112,7 +112,7 @@ begin
     rw [←hN₁c, mem_indep_r heIc hIc'.1] at this,
     from one_ne_zero this,
   },
- 
+
   have h_nu_d : ν N₁d N₂d ≤ k := by
   {
     rw [←size_largest_common_ind_eq_nu, ←hId, hk],
@@ -132,8 +132,8 @@ begin
         indep_of_project_indep hIc'.1 (nonloop_iff_indep.mp h_e_nl.1),
         indep_of_project_indep hIc'.2 (nonloop_iff_indep.mp h_e_nl.2)
       ⟩
-    ],                                                         
-  },                            
+    ],
+  },
 
   -- these next two claims let us apply IH to deletion/contraction
   have h_more_loops_d : size (loops N₁d ∪ loops N₂d)ᶜ < n := by
@@ -144,7 +144,7 @@ begin
     rw ←union_distrib_union_left at h_add_e,
     have := size_monotone h_add_e,
     rw [size_union_singleton_compl he, ←hN₁d, ←hN₂d] at this,
-    rw [compl_size] at ⊢ hsize, linarith, 
+    rw [compl_size] at ⊢ hsize, linarith,
   },
 
   have h_more_loops_c : size (loops N₁c ∪ loops N₂c)ᶜ < n := by
@@ -155,9 +155,9 @@ begin
     rw ←union_distrib_union_left at h_add_e,
     have := size_monotone h_add_e,
     rw [size_union_singleton_compl he, ←hN₁c, ←hN₂c] at this,
-    rw [compl_size] at ⊢ hsize, linarith, 
-  }, 
- 
+    rw [compl_size] at ⊢ hsize, linarith,
+  },
+
   -- apply IH to deletion, get minimizer Ad
   rcases IH _ h_more_loops_d N₁d N₂d rfl with hd,
   set Ad := arg_min (ub_fn N₁d N₂d) with hAd,
@@ -198,7 +198,7 @@ begin
   let h_ind := largest_common_ind_is_common_ind M₁ M₂,
   rw ←hI at h_ind,
   set A := arg_min (λ X, M₁.r X + M₂.r Xᶜ) with hX,
-  refine ⟨I, ⟨A, ⟨h_ind,_⟩⟩⟩, 
+  refine ⟨I, ⟨A, ⟨h_ind,_⟩⟩⟩,
   rw [hI, size_largest_common_ind_eq_nu, matroid_intersection M₁ M₂],
   from (arg_min_attains _).symm,
 end

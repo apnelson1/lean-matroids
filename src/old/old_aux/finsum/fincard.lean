@@ -10,7 +10,7 @@ variables {α : Type*} {β : Type*}
 
 open set
 
-def fincard (s : set α) : ℕ := ∑ᶠ x in s, 1 
+def fincard (s : set α) : ℕ := ∑ᶠ x in s, 1
 
 def fincard_t (α : Type*) := fincard (set.univ : set α)
 
@@ -167,11 +167,11 @@ theorem fincard_preimage_eq_sum (f : α → β){t : set β}
 (ht : t.finite) (ht' : (f ⁻¹' t).finite) :
 fincard (f⁻¹' t) = ∑ᶠ y in t, fincard {x | f x = y} :=
 begin
-  have := fincard_preimage_eq_sum' f ht' ht, rw inter_self at this, 
+  have := fincard_preimage_eq_sum' f ht' ht, rw inter_self at this,
   rw [this, finsum_in_def, finsum_in_def], congr', ext,
   split_ifs, swap, refl,
   convert fincard_img_emb (function.embedding.refl α) _,
-  ext, simp, rintro rfl, assumption, 
+  ext, simp, rintro rfl, assumption,
 end
 
 @[simp] lemma nat.finsum_const_eq_mul_fincard_t (b : ℕ) :
@@ -211,7 +211,7 @@ lemma fincard_diff {s t : set α} (hs : s.finite) (hst : t ⊆ s) :
   (fincard (s \ t) : ℤ) = fincard s - fincard t :=
 begin
   unfold fincard,
-  have := @finsum_in_sdiff _ _ _ (1 : α → ℕ) _ _ hs hst, 
+  have := @finsum_in_sdiff _ _ _ (1 : α → ℕ) _ _ hs hst,
   change ∑ᶠ (i : α) in t, 1 + ∑ᶠ (i : α) in s \ t, 1 = ∑ᶠ (i : α) in s, 1 at this,
   simp [← this],
 end
@@ -223,7 +223,7 @@ begin
     symm_diff_alt,
     fincard_diff (hs.union ht) (subset.trans (inter_subset_left _ _) (subset_union_left _ _)),
     fincard_union hs ht],
-  linarith,  
+  linarith,
 end
 
 lemma fincard_symm_diff_mod2 {s t : set α} (hs : s.finite) (ht : t.finite) :
@@ -244,7 +244,7 @@ begin
   intros n hempt,
   induction n with n ih,
   { intros ih s hfin hsize, rwa (fincard_eq_zero_iff_empty hfin).mp hsize, },
-  intros h' s hfin hcard, 
+  intros h' s hfin hcard,
   obtain ⟨e,he⟩ := nonempty_of_fincard_pos (by {rw hcard, simp} : 0 < fincard s),
   rw [fincard_remove he hfin, nat.one_add] at hcard,
   convert h' _ _ (nonmem_removal s e) (ih h' (s \ {e}) (finite.diff hfin _) (nat.succ.inj hcard)),
@@ -254,7 +254,7 @@ end
 
 
 section incl_excl
- 
+
 variables {M : Type*} [add_comm_group M]
 
 def signed_convolution (f : set α → M) (s : set α) : M :=
@@ -274,7 +274,7 @@ begin
       (a.powerset)
       ((-1)^(fincard a))
       (set.finite.subset (ha_fin _ ha) (inter_subset_left _ _))),
- 
+
   rw finsum_comm_dep, rotate,
   { apply hs'.subset, rintros x ⟨hx, hx'⟩, assumption},
   { exact λ a ha, set.finite.subset (ha_fin _ ha) (inter_subset_left _ _)},
@@ -299,7 +299,7 @@ begin
   { rintros a ⟨has, hya⟩,
     rw ←  add_gsmul,
     convert zero_gsmul _,
-    apply nat.neg_one_pow_sum_eq_zero_of_sum_odd,   
+    apply nat.neg_one_pow_sum_eq_zero_of_sum_odd,
     rw [← zmod.eq_one_iff_odd, nat.cast_add,
       fincard_symm_diff_mod2 (hs.subset has) (set.finite_singleton _),
       add_comm, ← add_assoc, ← two_mul],
@@ -339,6 +339,6 @@ begin
   convert finsum_incl_excl f hs' using 1,
   { sorry},
   rw [finsum_in_inter_support,  finsum_in_inter_support _ (s'.powerset)],
--/ 
+-/
 
-  
+

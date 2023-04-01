@@ -38,7 +38,7 @@ begin
   cases a,
   { exfalso, exact lt_irrefl 0 h},
   simp only [mem_Ioo, and.congr_left_iff, sub_zero, succ_sub_succ_eq_sub, mem_Ico, nat.lt_iff_succ_le],
-  tauto,  
+  tauto,
 end
 
 lemma Ico_ℕ_eq_Icc (a b : ℕ) (h : a < b) :
@@ -80,7 +80,7 @@ theorem set.Ico_ℕ_finite (l u : ℕ) :
   (Ico l u).finite :=
 begin
   by_cases h: l < u,
-  { rw Ico_ℕ_eq_Icc _ _ h, apply set.Icc_ℕ_finite _ _}, 
+  { rw Ico_ℕ_eq_Icc _ _ h, apply set.Icc_ℕ_finite _ _},
   rw Ico_eq_empty, simp, simpa using h,
 end
 
@@ -151,7 +151,7 @@ begin
   ext x,
   rcases em (x = l) with (rfl | hl),
     simpa [lt_irrefl, le_refl],
-  simp [eq_false_intro hl, ne.le_iff_lt (ne.symm hl)],  
+  simp [eq_false_intro hl, ne.le_iff_lt (ne.symm hl)],
 end
 
 @[simp] lemma Ico_insert_right_eq_Icc (hab : l ≤ u) :

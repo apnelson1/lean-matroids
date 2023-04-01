@@ -40,7 +40,7 @@ lemma base_exchange {M : matroid E} {B₁ B₂ : set E} {x : E}
 (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hxB₁ : x ∈ B₁) (hxB₂ : x ∉ B₂) :
   ∃ y, (y ∈ B₂ ∧ y ∉ B₁) ∧ M.base (B₁ \ {x} ∪ {y})   :=
 M.base_exchange' B₁ B₂ hB₁ hB₂ x ⟨hxB₁,hxB₂⟩
- 
+
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   B₁.to_finset.card = B₂.to_finset.card :=
 begin
@@ -53,9 +53,9 @@ begin
   induction i with i IH,
   { rintros B B' - - h,
     simp only [le_zero_iff, finset.card_eq_zero, finset.sdiff_eq_empty_iff_subset] at h,
-    apply finset.card_mono, exact finset.le_iff_subset.mpr h}, 
+    apply finset.card_mono, exact finset.le_iff_subset.mpr h},
   refine λ B B' hB hB' hcard, le_of_not_lt (λ hlt, _ ) ,
-  obtain ⟨x, hxB', hxB⟩ := finset.exists_mem_sdiff_of_card_lt_card hlt, 
+  obtain ⟨x, hxB', hxB⟩ := finset.exists_mem_sdiff_of_card_lt_card hlt,
 
   obtain ⟨y, ⟨(hyB : y ∈ B), (hyB' : y ∉ B')⟩, hB''⟩ := base_exchange hB' hB hxB' hxB,
 
@@ -64,17 +64,17 @@ begin
     rwa [finset.union_comm, ← finset.insert_eq, finset.card_insert_of_not_mem,
       finset.sdiff_singleton_eq_erase, finset.card_erase_add_one hxB'] at hcard,
     simpa using hyB'},
- 
+
   suffices hss : (B' \ {x} ∪ {y}) \ B ⊂ B' \ B,
   { exact nat.le_of_lt_succ ((finset.card_lt_card hss).trans_le hcard)},
 
   refine (finset.ssubset_iff_of_subset (λ a, _) ).mpr ⟨x,  _⟩,
   { simp only [finset.mem_sdiff, finset.mem_union, finset.mem_singleton, and_imp],
     rintros (⟨haB',hax⟩ | rfl) haB,  tauto, tauto},
- 
+
   simp only [finset.mem_sdiff, finset.mem_union, finset.mem_singleton, eq_self_iff_true, not_true,
     and_false, false_or, not_and, not_not, exists_prop],
- 
+
   refine ⟨⟨hxB', hxB⟩, _⟩,
   rintro rfl, exact hyB,
 end
@@ -82,7 +82,7 @@ end
 section indep
 
 /-- A set is independent in a matroid if it is contained in a base.  -/
-def indep {E : Type*} (M : matroid E) : set E → Prop := λ I, ∃ B, M.base B ∧ I ⊆ B  
+def indep {E : Type*} (M : matroid E) : set E → Prop := λ I, ∃ B, M.base B ∧ I ⊆ B
 
 lemma indep_iff_subset_base :
   M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B :=
@@ -103,42 +103,42 @@ lemma indep.augment (hI : M.indep I) (hJ : M.indep J) (hIJ : I.to_finset.card < 
   ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
 begin
   suffices h_mod : ∀ {p} {I₁ I₂ B₁ B₂}, M.base B₁ → M.base B₂ → I₁ ⊆ B₁ → I₂ ⊆ B₂ →
-    I₁.to_finset.card < I₂.to_finset.card → (B₂ \ (I₂ ∪ B₁)).to_finset.card = p → 
+    I₁.to_finset.card < I₂.to_finset.card → (B₂ \ (I₂ ∪ B₁)).to_finset.card = p →
       ∃ x ∈ I₂, x ∉ I₁ ∧ M.indep (insert x I₁),
   { obtain ⟨⟨BI,hBI,hIBI⟩,⟨BJ, hBJ, hJBJ⟩⟩ := ⟨hI,hJ⟩,
-    exact h_mod hBI hBJ hIBI hJBJ hIJ rfl },        
+    exact h_mod hBI hBJ hIBI hJBJ hIJ rfl },
   clear hI hJ hIJ I J,
   intro p, induction p with p IH,
   all_goals
   { intros _ _ _ _ hB₁ hB₂ hI₁B₁ hI₂B₂ h_lt h_le} ,
   { simp only [to_finset_diff, finset.card_eq_zero, finset.sdiff_eq_empty_iff_subset,
       to_finset_subset, coe_to_finset] at h_le,
-   
+
     by_contradiction h_con, push_neg at h_con,
 
     have h₁₂ : B₂ \ B₁ = I₂ \ I₁,
     { apply subset_antisymm,
-      {  calc _ ⊆ _  : diff_subset_diff_left h_le 
+      {  calc _ ⊆ _  : diff_subset_diff_left h_le
             ... = _  : union_diff_right
              ... ⊆ _ : diff_subset_diff_right hI₁B₁},
-      rintros x ⟨hxI₂, hxI₁⟩, 
+      rintros x ⟨hxI₂, hxI₁⟩,
       exact ⟨mem_of_mem_of_subset hxI₂ hI₂B₂,
         λ hxB₁, h_con _ hxI₂ hxI₁ ⟨B₁, hB₁, insert_subset.mpr ⟨ hxB₁,hI₁B₁⟩⟩⟩},
 
     have hB₁ss : B₁ ⊆ I₁ ∪ B₂,
     { intros y hyB₁,
-      rw [mem_union, or_iff_not_imp_right],  
+      rw [mem_union, or_iff_not_imp_right],
       intro hyB₂,
-      obtain ⟨x,⟨hxB₂, hxB₁⟩, hB'⟩ := base_exchange hB₁ hB₂ hyB₁ hyB₂, 
+      obtain ⟨x,⟨hxB₂, hxB₁⟩, hB'⟩ := base_exchange hB₁ hB₂ hyB₁ hyB₂,
       obtain (hxI₂ | hxB₁') := mem_of_mem_of_subset hxB₂ h_le,
       swap, exact (hxB₁ hxB₁').elim,
       by_contradiction hyI₁,
       refine h_con x hxI₂ (not_mem_subset hI₁B₁ hxB₁)
-        ⟨_, hB', insert_subset.mpr ⟨by simp, subset_union_of_subset_left _ _⟩⟩, 
+        ⟨_, hB', insert_subset.mpr ⟨by simp, subset_union_of_subset_left _ _⟩⟩,
       apply subset_diff_singleton hI₁B₁ hyI₁},
-    have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss 
+    have hss₁ := calc B₁ \ B₂ ⊆ _       : diff_subset_diff_left hB₁ss
                           ... = _       : union_diff_right
-                          ... ⊆ I₁ \ I₂ : diff_subset_diff_right hI₂B₂,  
+                          ... ⊆ I₁ \ I₂ : diff_subset_diff_right hI₂B₂,
 
     rw [← to_finset_subset_to_finset, to_finset_diff, to_finset_diff] at hss₁,
 
@@ -150,13 +150,13 @@ begin
   have h_ne : (B₂ \ (I₂ ∪ B₁)).nonempty,
   { rw [← set.to_finset_nonempty, ←finset.card_pos, h_le], apply nat.succ_pos _},
   obtain ⟨x, hxB₂, hx'⟩ := h_ne,
-  rw [set.mem_union, not_or_distrib] at hx', obtain ⟨hxI₂, hxB₁⟩:= hx', 
-  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := base_exchange hB₂ hB₁ hxB₂ hxB₁, 
+  rw [set.mem_union, not_or_distrib] at hx', obtain ⟨hxI₂, hxB₁⟩:= hx',
+  obtain ⟨y, ⟨hyB₁, hyB₂⟩, hB'⟩ := base_exchange hB₂ hB₁ hxB₂ hxB₁,
   have hI₂B' : I₂ ⊆ B₂ \ {x} ∪ {y},
   { apply set.subset_union_of_subset_left, apply subset_diff_singleton hI₂B₂ hxI₂},
 
   refine IH hB₁ hB' hI₁B₁ hI₂B' h_lt _,
-  suffices h_set_eq : (B₂ \ {x} ∪ {y}) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x},  
+  suffices h_set_eq : (B₂ \ {x} ∪ {y}) \ (I₂ ∪ B₁) = (B₂ \ (I₂ ∪ B₁)) \ {x},
   { simp_rw h_set_eq,  rw [to_finset_diff, finset.card_sdiff, h_le],
     { simp},
     simp only [to_finset_subset, coe_to_finset, singleton_subset_iff, mem_diff, mem_union],
@@ -171,7 +171,7 @@ lemma indep.ssubset_indep_of_card_lt (hI : M.indep I) (hJ : M.indep J)
   ∃ I', M.indep I' ∧ I ⊂ I' ∧ I' ⊆ I ∪ J :=
 begin
   obtain ⟨e, heJ, heI, hI'⟩ := hI.augment hJ hIJ,
-  exact ⟨_, hI', ssubset_insert heI, insert_subset.mpr ⟨or.inr heJ,subset_union_left _ _⟩⟩, 
+  exact ⟨_, hI', ssubset_insert heI, insert_subset.mpr ⟨or.inr heJ,subset_union_left _ _⟩⟩,
 end
 
 lemma base.indep (hB : M.base B) : M.indep B := ⟨B, hB, subset_rfl⟩
@@ -197,14 +197,14 @@ begin
   refine ⟨λ h, ⟨h.indep, λ _, h.eq_of_subset_indep ⟩,λ h, _⟩,
   obtain ⟨⟨B', hB', hBB'⟩, h⟩ := h,
   rwa h _ hB'.indep hBB',
-end 
+end
 
 lemma eq_of_indep_iff_indep_forall (h : ∀ I, (M₁.indep I ↔ M₂.indep I)) :
   M₁ = M₂ :=
 begin
   ext B,
   have hI : M₁.indep = M₂.indep, by { ext ,apply h},
-  simp_rw [base_iff_maximal_indep, hI], 
+  simp_rw [base_iff_maximal_indep, hI],
 end
 
 
@@ -238,10 +238,10 @@ begin
       exact ⟨hI₁, subset_refl _, hI₁X⟩}⟩,
   have h' := inds_of.exists_max_image (λ I, I.to_finset.card) hne,
   simp only [mem_to_finset, mem_set_of_eq, and_imp, exists_prop] at h',
-  obtain ⟨I, ⟨hI, hI₁I, hIX⟩,hJ⟩ := h',  
-  refine ⟨I, hI₁I, hI, hIX, λ I' hI' hII' hI'X, _⟩, 
+  obtain ⟨I, ⟨hI, hI₁I, hIX⟩,hJ⟩ := h',
+  refine ⟨I, hI₁I, hI, hIX, λ I' hI' hII' hI'X, _⟩,
   simpa using finset.eq_of_subset_of_card_le _ (hJ _ hI' (hI₁I.trans hII') hI'X),
-  simpa, 
+  simpa,
 end
 
 lemma indep.le_card_basis (hI : M.indep I) (hIX : I ⊆ X) (hJX : M.basis J X) :
@@ -272,7 +272,7 @@ noncomputable def r {E : Type*} (M : matroid E) : set E → ℕ :=
   λ X, nat.find_greatest (λ n, ∃ I, I ⊆ X ∧ M.indep I ∧ n = nat.card I) (nat.card X)
 
 /-- The rank `M.rk` of a matroid `M` is the rank of its ground set -/
-@[reducible] noncomputable def rk (M : matroid E) := M.r univ 
+@[reducible] noncomputable def rk (M : matroid E) := M.r univ
 
 /-- This is the useful definition of rank -/
 lemma eq_r_iff {n : ℕ} : M.r X = n ↔ ∃ I, M.basis I X ∧ I.to_finset.card = n :=
@@ -283,15 +283,15 @@ begin
   { rintros ⟨hnX, rfl | ⟨I, hIX, hI, rfl⟩, h⟩,
     { simp_rw [pos_iff_ne_zero, ←or_iff_not_imp_left] at h,
       obtain ⟨I, hI⟩ := M.exists_basis X,
-      refine ⟨I, hI, (@h I.to_finset.card).elim id (λ h', _)⟩,  
+      refine ⟨I, hI, (@h I.to_finset.card).elim id (λ h', _)⟩,
       exact (h' (finset.card_mono (by simpa using hI.subset)) I hI.subset hI.indep rfl).elim},
-    refine ⟨I, ⟨hI, hIX, λ J hJ hIJ hJX, 
+    refine ⟨I, ⟨hI, hIX, λ J hJ hIJ hJX,
       (eq_or_ssubset_of_subset hIJ).elim id (λ hIssJ, false.elim _)⟩, rfl⟩,
     exact h (finset.card_lt_card (to_finset_ssubset_to_finset.mpr hIssJ))
       (finset.card_le_of_subset (to_finset_subset_to_finset.mpr hJX)) J hJX hJ rfl},
   rintros ⟨I, ⟨hIX, rfl⟩⟩,
   refine ⟨finset.card_mono (by simpa using hIX.subset),or.inr ⟨I,hIX.subset,hIX.indep,rfl⟩,_⟩,
-  rintro n hIn hnX J hJX hJ rfl,   
+  rintro n hIn hnX J hJX hJ rfl,
   exact hIn.not_le (hJ.le_card_basis hJX hIX),
 end
 
@@ -304,8 +304,8 @@ begin
     exact ⟨I', hJ.1.indep.subset hI', hI'.trans hJ.1.subset, by simp⟩},
   obtain ⟨I, hI, hIX, rfl⟩ := h,
   rw ←hJ.2,
-  exact hI.le_card_basis hIX hJ.1, 
-end   
+  exact hI.le_card_basis hIX hJ.1,
+end
 
 lemma r_le_iff {X : set E} {n : ℕ} :
   M.r X ≤ n ↔ (∀ I, M.indep I → I ⊆ X → I.to_finset.card ≤ n) :=
@@ -375,7 +375,7 @@ begin
   refine M.r_mono (λ z hz, by_contra (λ hz', _)),
   rw [mem_union, decidable.not_or_iff_and_not] at hz',
   have hzX : z ∈ X, {cases (mem_of_mem_of_subset hz hI'.subset); tauto},
- 
+
   have := hIX.eq_of_subset_indep
     (hI'.indep.subset (insert_subset.mpr ⟨hz,hII'⟩))
     (subset_insert z I) (insert_subset.mpr ⟨hzX, hIX.subset⟩),
@@ -389,20 +389,20 @@ lemma r_inter_add_r_union_le_r_add_r (M : matroid E) (X Y : set E) :
 begin
   obtain ⟨Ii, hIi⟩ := M.exists_basis (X ∩ Y),
   obtain ⟨IX, hIX, hIX'⟩ :=
-    hIi.indep.subset_basis_of_subset (hIi.subset.trans (inter_subset_left _ _)), 
+    hIi.indep.subset_basis_of_subset (hIi.subset.trans (inter_subset_left _ _)),
   obtain ⟨IY, hIY, hIY'⟩ :=
-    hIi.indep.subset_basis_of_subset (hIi.subset.trans (inter_subset_right _ _)), 
+    hIi.indep.subset_basis_of_subset (hIi.subset.trans (inter_subset_right _ _)),
   rw [←hIX'.r_eq_r_union, union_comm, ←hIY'.r_eq_r_union, ←hIi.card, ←hIX'.card, ←hIY'.card,
     ←finset.card_inter_add_card_union, ←to_finset_inter, ←to_finset_union, union_comm],
   refine add_le_add
     (finset.card_mono (to_finset_subset_to_finset.mpr (subset_inter hIX hIY))) _,
   convert M.r_le_card (IX ∪ IY),
-end 
+end
 
 lemma eq_of_r_eq_r_forall (h : ∀ X, M₁.r X = M₂.r X) :
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_r_eq_card,h I])
- 
+
 end rank
 
 end matroid
@@ -437,14 +437,14 @@ def matroid_of_indep (indep : set E → Prop)
     { intros B B' hB', split,
       { refine λ hB, ⟨hB.1, le_of_not_lt (λ hlt, _)⟩,
         obtain ⟨e,heB,heB',he⟩ := ind_aug B B' hB.1 hB'.1 hlt,
-        exact heB' (by simpa using hB.2 _ he (subset_insert _ _))}, 
+        exact heB' (by simpa using hB.2 _ he (subset_insert _ _))},
       rintros ⟨hBI, hB'B⟩ ,
       refine ⟨hBI, λ J hJ hBJ, (hBJ.antisymm (by_contra (λhJB, _))).symm⟩,
       have hss := ssubset_of_subset_not_subset hBJ hJB,
       obtain ⟨e,heJ,heB',he⟩ :=
         ind_aug B' J hB'.1 hJ (hB'B.trans_lt (finset.card_lt_card (by simpa))),
       exact heB' (by simpa using hB'.2 _ he (subset_insert _ _))},
-   
+
     simp_rw [h_base_iff _ _ hB₁, mem_diff, union_singleton],
     have hcard : (B₁ \ {x}).to_finset.card < B₂.to_finset.card,
     { rw [nat.lt_iff_add_one_le, to_finset_diff, to_finset_singleton,
@@ -453,7 +453,7 @@ def matroid_of_indep (indep : set E → Prop)
 
     obtain ⟨e,heB₂,heB₁,he⟩ :=
       ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁.1) hB₂.1 (by convert hcard),
-   
+
     have hex : e ≠ x := by {rintro rfl, simpa using heB₁},
     have heB₁ : e ∉ B₁,
     { simp only [mem_diff, mem_singleton_iff, not_and, not_not] at heB₁,
@@ -501,7 +501,7 @@ lemma r_eq_card_of_subset_of_r_le_card_submod (r : set E → ℕ) (r_le_card : �
   r I = nat.card I :=
 begin
   haveI := fintype.of_finite E,
-  refine le_antisymm (r_le_card I) _, 
+  refine le_antisymm (r_le_card I) _,
   have rdiff := r_le_card (J \ I),
   rw [nat.card_eq_to_finset_card] at ⊢ hJ rdiff,
   rw [to_finset_diff] at rdiff,
@@ -516,24 +516,24 @@ end
 lemma extend_to_basis_of_r (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ nat.card X)
 (r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y)
 (I X : set E) (hI : r I = nat.card I) (hIX : I ⊆ X) :
-  ∃ J, I ⊆ J ∧ J ⊆ X ∧ r J = nat.card J ∧ r J = r X := 
+  ∃ J, I ⊆ J ∧ J ⊆ X ∧ r J = nat.card J ∧ r J = r X :=
 begin
   haveI := fintype.of_finite E,
   obtain ⟨J, ⟨hIJ, hJX, hJ₀⟩, hJ'⟩ :=
    finite.exists_maximal (λ J, I ⊆ J ∧ J ⊆ X ∧ nat.card J ≤ r J) (⟨I, rfl.subset, hIX, hI.symm.le⟩),
   have hJ := hJ₀.antisymm' (r_le_card _),
-  refine ⟨J, hIJ, hJX, hJ, hJX.ssubset_or_eq.elim (λ hJX', _) (congr_arg _)⟩, 
+  refine ⟨J, hIJ, hJX, hJ, hJX.ssubset_or_eq.elim (λ hJX', _) (congr_arg _)⟩,
   obtain ⟨Y, ⟨hJY,hYX,hYr⟩, hYmax⟩ :=
    finite.exists_maximal (λ Y, J ⊆ Y ∧ Y ⊆ X ∧ r Y ≤ r J) ⟨J, rfl.subset, hJX, rfl.le⟩,
   refine hYX.ssubset_or_eq.elim (λ hYX, false.elim _)
-    (by {rintro rfl, exact (r_mono _  _ hJX).antisymm hYr,}), 
-  obtain ⟨e,heX,heY⟩ := exists_of_ssubset hYX, 
+    (by {rintro rfl, exact (r_mono _  _ hJX).antisymm hYr,}),
+  obtain ⟨e,heX,heY⟩ := exists_of_ssubset hYX,
   have heJ : e ∉ J := λ heJ, heY (mem_of_mem_of_subset heJ hJY),
   have hsm := r_submod (J ∪ {e}) Y,
- 
+
   rw [inter_distrib_right, singleton_inter_eq_empty.mpr heY, union_empty,
     inter_eq_self_of_subset_left hJY, union_right_comm, union_eq_self_of_subset_left hJY] at hsm,
- 
+
   have hYe : r Y < r (Y ∪ {e}),
   { rw [lt_iff_not_le],
     intro hYe,
@@ -556,7 +556,7 @@ def matroid_of_r (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ nat.card X)
 (r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) :
   matroid E :=
 matroid_of_indep (λ I, r I = nat.card I)
-⟨∅, (r_le_card _).antisymm (by simp)⟩ 
+⟨∅, (r_le_card _).antisymm (by simp)⟩
 (λ _ _, r_eq_card_of_subset_of_r_le_card_submod r r_le_card r_submod)
 (begin
   haveI := fintype.of_finite E,
@@ -568,9 +568,9 @@ matroid_of_indep (λ I, r I = nat.card I)
     rintro e ⟨heK,heI⟩,
     simp only [nat.card_eq_fintype_card, fintype.card_of_finset, exists_prop,
       nat.card_eq_to_finset_card],
-    have heJ : e ∈ J, { by_contra, cases (hKIJ heK); tauto }, 
+    have heJ : e ∈ J, { by_contra, cases (hKIJ heK); tauto },
     refine ⟨heJ, heI, _⟩,
-    rw ←nat.card_eq_to_finset_card,  
+    rw ←nat.card_eq_to_finset_card,
     exact r_eq_card_of_subset_of_r_le_card_submod r r_le_card r_submod
       (insert_subset.mpr ⟨heK, hIK⟩) hK},
   rintro rfl,

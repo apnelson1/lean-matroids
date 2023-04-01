@@ -28,7 +28,7 @@ begin
   rw [inter_comm Y Xᶜ, inter_comm Z, inter_comm Z, inter_comm Y X, inter_right_comm Y, inter_assoc Z
       , inter_comm Y, inter_comm Z, inter_comm Yᶜ, inter_comm Z Y],
     nth_rewrite 1 ←union_assoc,
-    nth_rewrite 4 union_comm, 
+    nth_rewrite 4 union_comm,
     repeat {rw ←union_assoc},
     repeat {rw ←inter_assoc}
 end
@@ -42,8 +42,8 @@ lemma symm_diff_distrib_inter_right (X Y Z : A) : (symm_diff X Y) ∩ Z  = symm_
 lemma symm_diff_inter (X Y : A) :
   symm_diff X (X ∩ Y) = X \ Y :=
   by rw [symm_diff_alt, absorb_union_inter, diff_eq, compl_inter, inter_distrib_left,
-     union_comm, union_inter_compl_self, compl_inter, inter_distrib_left, union_comm, union_inter_compl_self, ← diff_eq] -- inter_compl_self, bot_union, compl_inter, inter_distrib_left], 
- 
+     union_comm, union_inter_compl_self, compl_inter, inter_distrib_left, union_comm, union_inter_compl_self, ← diff_eq] -- inter_compl_self, bot_union, compl_inter, inter_distrib_left],
+
 lemma top_symm_diff (X : A) :
   symm_diff ⊤ X = Xᶜ :=
   by {unfold symm_diff, simp only [top_diff, diff_top, union_bot]}
@@ -110,7 +110,7 @@ mk_simp_attribute ba_simp "ba_simplg"
 
 @[simp, ba_simp] lemma times_idem (X : A) : X*X = X := inter_idem X
 @[simp, ba_simp] lemma plus_zero (X : A) : X+0 = X := add_zero X
-@[simp, ba_simp] lemma zero_plus (X : A) : 0+X = X := zero_add X  
+@[simp, ba_simp] lemma zero_plus (X : A) : 0+X = X := zero_add X
 @[simp, ba_simp] lemma times_zero (X : A) : X*0 = 0 := inter_bot X
 @[simp, ba_simp] lemma zero_times (X : A) : 0*X = 0 := bot_inter X
 @[simp, ba_simp] lemma times_one (X : A) : X*1 = X := inter_top X
@@ -165,7 +165,7 @@ lemma one_side {X Y : A} : X = Y ↔ X + Y = 0 :=
 
 @[simp, ba_simp] lemma prod_comp_cancel (X : A) : X*(X+1) = 0 :=
   by {ring SOP, simp }
- 
+
 lemma expand_product {X₁ X₂ Y₁ Y₂ S : A} : (X₁ * S + X₂ * (S+1)) * (Y₁ * S + Y₂ * (S+1)) = X₁ * Y₁ * S + X₂ * Y₂ * (S+1) :=
   by {apply one_side.mpr, ring, ring SOP, simp only with ba_simp, ring, simp}
 

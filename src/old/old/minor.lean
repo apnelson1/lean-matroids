@@ -45,7 +45,7 @@ let C := Rᶜ, f := embed.from_subftype R in
       by {simp only, linarith},
     simp only [subftype_coe_inter, subftype_coe_union],
     have h := M.R3 (X ∪ C) (Y ∪ C),
-    rw [←union_distrib_right, ←union_distrib_union_left] at h, 
+    rw [←union_distrib_right, ←union_distrib_union_left] at h,
     assumption,
   },
 ⟩
@@ -53,7 +53,7 @@ let C := Rᶜ, f := embed.from_subftype R in
 @[simp] def corestrict_nested_pair {B : ftype} {R₀ R₁ : set B} (h : R₀ ⊆ R₁) (M : rankfun (subftype R₁)) : rankfun (subftype R₀)  :=
 let
   r := M.r,
-  f := (embed.from_nested_pair h), 
+  f := (embed.from_nested_pair h),
   φ := f.img,
   C := (φ (set.univ))ᶜ in
 ⟨
@@ -105,7 +105,7 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
   to_minor (restrict A hAZ ((corestrict Z (subset_univ Z)) self)) M = to_minor (corestrict A (subset_union_left A Zᶜ) ((restrict (A ∪ Zᶜ) (subset_univ (A ∪ Zᶜ))) self)) M :=
   let f := (embed.from_subftype A).f, hAZc := subset_union_left A Zᶜ, hAZc_univ := subset_univ (A ∪ Zᶜ) in
   begin
-   
+
     ext X,
     have set_eq : (A ∪ Zᶜ) \ A = univ \ Z
       := by {rw [diff_eq, inter_distrib_right, ←compl_union, union_comm Z,
@@ -114,7 +114,7 @@ lemma switch_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
 
     have RHS : M'.r X = M.r (X ∪ ((A ∪ Zᶜ) \ A)) - M.r ((A ∪ Zᶜ) \ A) :=
       by {rw hM',convert rfl; simp,},
-   
+
     rw set_eq at RHS,
     convert RHS.symm,
     simp [to_minor],
@@ -137,21 +137,21 @@ lemma dual_restrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
     },
     have hempty : (Z\A)ᶜ = A ∪ (univ \ Z) :=
       by {rw [←empty_union (Z\A), hJ ∅ (empty_subset _), diff_empty]},
-   
-   
+
+
     have := calc (to_minor (corestrict A hAZ (restrict Z (subset_univ Z) self)) (dual M)).r X
-           = (size ((X:set U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r univ) - (size (Z\A) + M.r (Z\A)ᶜ - M.r univ )      
+           = (size ((X:set U) ∪ (Z\A)) + M.r ((X ∪ (Z\A))ᶜ) - M.r univ) - (size (Z\A) + M.r (Z\A)ᶜ - M.r univ )
             : by {simp [to_minor, dual], }
-       ... = size (X:set U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ                                                  
+       ... = size (X:set U) + M.r ((X ∪ (Z\A))ᶜ) - M.r  (Z\A)ᶜ
             : by linarith [size_modular (X :set U) (Z\A), hset, emb.on_size X]
-       ... = size (X:set U) + M.r ((A \ X) ∪ (univ \ Z)) - M.r (A ∪ (univ \ Z))                                       
+       ... = size (X:set U) + M.r ((A \ X) ∪ (univ \ Z)) - M.r (A ∪ (univ \ Z))
             : by {congr', finish}
-       ... = size (X:set U) + (M.r ((A \ X) ∪ (univ \ Z)) - M.r (univ \ Z)) - (M.r (A ∪ (univ \ Z)) - M.r (univ \ Z))       
+       ... = size (X:set U) + (M.r ((A \ X) ∪ (univ \ Z)) - M.r (univ \ Z)) - (M.r (A ∪ (univ \ Z)) - M.r (univ \ Z))
             : by linarith
-       ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M)).r X                    
+       ... = (dual (to_minor (restrict A hAZ (corestrict Z (subset_univ Z) self)) M)).r X
             : by {simp [dual, to_minor],} ,
 
-    rw ←switch_restrict_corestrict, assumption,        
+    rw ←switch_restrict_corestrict, assumption,
   end
 
 lemma dual_corestrict_restrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
@@ -180,7 +180,7 @@ end
 lemma dual_restrict (M: rankfun U) (A : set U) :
   dual (to_minor (restrict A (subset_univ A) self) M) = to_minor (corestrict A (subset_univ A) self) (dual M) :=
     by rw [←(corestrict_univ _ (restrict A (subset_univ A) self)), dual_corestrict_restrict, restrict_univ]
-   
+
 lemma dual_corestrict (M: rankfun U) (A : set U) :
   dual (to_minor (corestrict A (subset_univ A) self) M) = to_minor (restrict A (subset_univ A) self) (dual M) :=
     by rw [←(restrict_univ _ (corestrict A (subset_univ A) self)), dual_restrict_corestrict, corestrict_univ]
@@ -194,19 +194,19 @@ lemma restrict_restrict (M : rankfun U) (A Z : set U) (hAZ : A ⊆ Z) :
   to_minor (restrict A hAZ (restrict Z (subset_univ Z) self)) M = to_minor (restrict A (subset_univ A) self) M :=
   let f := (embed.from_subftype A).f in
   by {ext X,calc _ = M.r (f X) : rfl ...= _ : rfl}
-    
+
 #check minor_on
 
 /-lemma corestrict_corestrict {M : rankfun U} (A Z : set U) (hAZ : A ⊆ Z) :
-  to_minor (corestrict A hAZ (corestrict Z (subset_univ Z) self)) M = to_minor (corestrict A (subset_univ A) self) M :=  
+  to_minor (corestrict A hAZ (corestrict Z (subset_univ Z) self)) M = to_minor (corestrict A (subset_univ A) self) M :=
   begin
     nth_rewrite 0 ←(dual_dual M),
     have := dual_restrict (dual M) A,
-   
+
     --unfold to_minor at *,
-   
-   
-   
+
+
+
     --←dual_restrict,
     /-let U' := subftype Z,
     let expr := ((corestrict univ (subset_refl univ) self) : minor_on (univ : set U')),
@@ -214,10 +214,10 @@ lemma restrict_restrict (M : rankfun U) (A Z : set U) (hAZ : A ⊆ Z) :
     have := corestrict_univ M₀ expr-/
     --have := @corestrict_univ (subftype Z) M₀ univ expr,
     --nth_rewrite 0 ←(dual_dual M),
-   
-   
+
+
     --have :=
-    --calc 
+    --calc
     sorry,
   end-/
 
@@ -243,7 +243,7 @@ lemma corestriction_of_reduced {M : rankfun U} (A Z Z' : set U) (hZ'A : Z' ⊆ A
     have LHS :=
     calc     (to_minor (corestrict Z' hZ'A (reduced_expr A Z hAZ)) M).r X
            = (corestrict_nested_pair hZ'A M').r X                                                   : rfl
-      ...  = M.r (X ∪ (A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z) - (M.r ((A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z)) : rfl 
+      ...  = M.r (X ∪ (A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z) - (M.r ((A \ Z') ∪ (univ \ Z)) - M.r (univ \ Z)) : rfl
       ...  = M.r (X ∪ (A \ Z') ∪ (univ \ Z)) - M.r ((A \ Z') ∪ (univ \ Z))                                : by linarith
       ...  = M.r (X ∪ (univ \ J)) - M.r (univ \ J)                                                        : by rw [union_assoc, equiv],
 
@@ -259,7 +259,7 @@ lemma has_reduced_expr {M : rankfun U} {E : set U} (expr : minor_on E) :
 begin
   induction expr with X₁ E₁ hX₁E₁ minor_expr IH
                     X₁ A₁ hX₁A₁ minor_expr IH,
-  /- self -/                 
+  /- self -/
   { use univ,  use subset_refl univ, simp [reduced_expr], rw [restrict_univ, corestrict_univ] },
   /-restrict-/
   {
@@ -280,7 +280,7 @@ begin
 end
 
 /-lemma has_representation {M : rankfun U} {E : set U} (expr : minor_on E) :
-  (∃ (C D : set U) (hCD : C ∩ D = ∅), 
+  (∃ (C D : set U) (hCD : C ∩ D = ∅),
     (C ∪ D)ᶜ = E
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) :=
 begin
@@ -289,11 +289,11 @@ end-/
 
 
 /-lemma has_good_representation {M : rankfun U} {E : set U} (expr : minor_on E) :
-  (∃ (C D : set U) (hCD : C ∩ D = ∅), 
+  (∃ (C D : set U) (hCD : C ∩ D = ∅),
     (C ∪ D)ᶜ = E ∧
     is_indep M C ∧ is_coindep M D
     ∧ ((to_minor (contract_delete C D hCD) M) ≅ (to_minor expr M))) := sorry-/
- 
+
 end minor
 end ftype
 
@@ -306,7 +306,7 @@ end ftype
   ∃ z, z ∈ Z ∧ M.r X < M.r (X ∪ z) :=
 let
     hcr    : Z \ X ⊆ X ∪ Z         := subset.trans (diff_subset Z X) (subset_union_right X Z),
-    hr     : X ∪ Z ⊆ univ             :=  subset_univ (X ∪ Z), 
+    hr     : X ∪ Z ⊆ univ             :=  subset_univ (X ∪ Z),
     hdiff  : (X ∪ Z) \ (Z \ X) = X := union_diff_diff _ _,
     hunion : (Z \ X) ∪ X = X ∪ Z   := by rw [union_comm _ X, union_diff]
 in

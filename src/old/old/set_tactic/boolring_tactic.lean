@@ -136,7 +136,7 @@ meta def tactic.interactive.simplify_sets (extra_sets : (parse (optional ids_lis
     to_ring_eqn,
     -- Some goals are already discharged by this point, so everything else
     -- goes in a try block.
-   
+
     tactic.try (simp none tt ([``(freealg.on_one %%vname_expr),
                    ``(freealg.on_add %%vname_expr),
                    ``(freealg.on_mul %%vname_expr),

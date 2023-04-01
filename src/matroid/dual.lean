@@ -43,7 +43,7 @@ by {ext B, rw [←compl_compl B, ←dual_base_iff, h, dual_base_iff]}
 
 @[simp] lemma dual_inj_iff :
   M₁.dual = M₂.dual ↔ M₁ = M₂ :=
-⟨dual_inj, congr_arg _⟩ 
+⟨dual_inj, congr_arg _⟩
 
 end dual
 

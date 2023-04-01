@@ -16,10 +16,10 @@ variables {U₀ U V W: ftype}--[nonempty U₀]
 
 /- given an injection emb, and a set equal to the range of emb, outputs an equivalence between the
 domain and the subtype corresponding to the range.
-def subtype_inv_inj (emb : U₀ ↪ U){E : set U} (hE : E = set.range emb) : E ≃ U₀ :=  
+def subtype_inv_inj (emb : U₀ ↪ U){E : set U} (hE : E = set.range emb) : E ≃ U₀ :=
 let h : Π (y : E), (∃ x : U₀, emb x = y) :=
   by {rintros ⟨y,hy⟩, rw [hE, set.mem_range] at hy, cases hy with x hx, from ⟨x, by simp [hx]⟩},
- desc : Π (y : E), {x : U₀ // emb x = y} :=  
+ desc : Π (y : E), {x : U₀ // emb x = y} :=
   λ y, classical.indefinite_description _ (h y) in
 {
   to_fun := λ y, (desc y).val,
@@ -53,7 +53,7 @@ def subset_equiv {R : set U} : {X : set U // X ⊆ R} ≃ set (⟨R⟩ : ftype) 
     intro X, ext x, cases x with x xp,  simp only [set.mem_set_of_eq],
     refine ⟨λ h, _, λ h, _⟩,
     {unfold_projs at h, rcases h with ⟨a,h1,h2⟩, simp_rw ←h2, convert h1, simp},
-    exact ⟨⟨x,xp⟩, ⟨h,by simp⟩⟩,  
+    exact ⟨⟨x,xp⟩, ⟨h,by simp⟩⟩,
   end, }
 
 
@@ -80,7 +80,7 @@ def compose {M : matroid U} {N : matroid V} {O : matroid W} (i₁ : isom M N) (i
   bij := equiv.trans i₁.bij i₂.bij,
   rank_preserving :=
   begin
-    ext X, rw [i₁.rank_preserving, i₂.rank_preserving], 
+    ext X, rw [i₁.rank_preserving, i₂.rank_preserving],
     simp only [equiv.to_fun_as_coe, ftype.ftype_coe, function.comp_app, equiv.coe_trans],
     apply congr_arg, ext x,  simp,
   end
@@ -128,7 +128,7 @@ begin
       {apply congr_arg, unfold_coes, simp} },
     {cases hab with φ, refine ⟨inv φ, λ X, _⟩, rw [hab_h ((inv φ) X), inv], unfold_coes, simp},
   cases hab with i₁ h₁, cases hbc with i₂ h₂,
-  from ⟨compose i₁ i₂, λ X, by {unfold_coes at *, simp [h₁,h₂,congr_arg, compose]}⟩, 
+  from ⟨compose i₁ i₂, λ X, by {unfold_coes at *, simp [h₁,h₂,congr_arg, compose]}⟩,
 end
 
 lemma strong_iso_same_groundset (N N' : emb_mat U) :
@@ -161,7 +161,7 @@ begin
   from (N.emb.inj' hx'.2).symm,
 end
   --ite (X ⊆ N.ground) (some 0 : option ℤ) (none : option ℤ)
- 
+
   --N.mat.r ((N.emb.subtype_inv_inj (rfl : N.ground = set.range N.emb))'' X)
 
 lemma strong_iso_same_pullback_r (N N' : emb_mat U) :
@@ -175,7 +175,7 @@ begin
   refine ⟨λ h, _, λ h, ⟨φ.inv_fun x',⟨_,by simp⟩⟩⟩,
     {rcases h with ⟨x, ⟨hx₁,hx₂⟩⟩, rw ←hx₂, from hx₁,},
   rw ←hφ₂,
-  convert h, 
+  convert h,
   rw hφ₂,
   congr', unfold_coes, simp,
 end
@@ -199,7 +199,7 @@ def matroid_in (U : ftype) := quot (λ (N N' : emb_mat U), N.strongly_iso N')
 namespace matroid_in
 
 /-- the groundset of N, viewed as a (set U)-/
-def groundset : matroid_in U → set U := quotient.lift 
+def groundset : matroid_in U → set U := quotient.lift
   (λ (N : emb_mat U), N.groundset) emb_mat.strong_iso_same_groundset
 
 /-- the groundset of N, viewed as an ftype -/
@@ -299,7 +299,7 @@ lemma as_matroid_is_rep (M : matroid_in U) :
   M = ⟦{mat := M.as_matroid, emb := function.embedding.subtype _ }⟧ :=
 begin
   rcases M.rep_spec with ⟨M₀,h⟩, rw ←h, apply quotient.sound,
- 
+
   simp only [has_equiv.equiv, setoid.r, emb_mat.strongly_iso, as_matroid, r_ftype],
   dsimp only [ftype.ftype_coe],
   refine ⟨⟨_,_⟩,λ x, _⟩,
@@ -319,7 +319,7 @@ end
 begin
   intro X,
   convert as_matroid_r_eq N X.val,
- 
+
 end -/
 
 --lemma iso_to (M₀ : emb_mat U) :
@@ -348,7 +348,7 @@ def matroid_in_ext (M M' : matroid_in U) :
   M.groundset = M'.groundset → M.r = M'.r → M = M' :=
 begin
   intros h h',
-  rw [as_matroid_is_rep M, as_matroid_is_rep M', quotient.sound], 
+  rw [as_matroid_is_rep M, as_matroid_is_rep M', quotient.sound],
   refine ⟨⟨_,_⟩,λ x, _⟩,
   {exact {to_fun := λ x, ⟨x.val, by {rw ←h, exact x.property,}⟩ ,
           inv_fun := λ x, ⟨x.val, by {rw h, exact x.property,}⟩,
@@ -389,7 +389,7 @@ section minor
 /-- minor relation between two matroid_in U-/
 def is_minor (N M : matroid_in U) : Prop :=
   (N.groundset ⊆ M.groundset) ∧
-  ∃ C ⊆ M.groundset \ N.groundset, (∀ X ⊆ N.groundset, N.r X = M.r (X ∪ C) - M.r C) 
+  ∃ C ⊆ M.groundset \ N.groundset, (∀ X ⊆ N.groundset, N.r X = M.r (X ∪ C) - M.r C)
 
 /-- minor relation between a matroid_in U and a matroid U -/
 def is_minor_of (N : matroid_in U) (M : matroid U) :=
@@ -397,7 +397,7 @@ def is_minor_of (N : matroid_in U) (M : matroid U) :=
 
 /-- N is isomorphic to a minor of M -/
 def is_emb_minor (N : matroid U₀) (M : matroid U) :=
-  ∃ emb : U₀ ↪ U, is_minor_of ⟦(⟨N,emb⟩:emb_mat U)⟧ M 
+  ∃ emb : U₀ ↪ U, is_minor_of ⟦(⟨N,emb⟩:emb_mat U)⟧ M
 
 lemma minor_trans: transitive (λ (M₁ M₂ : matroid_in U), is_minor M₁ M₂) :=
 begin
@@ -416,7 +416,7 @@ end
 
  def contract_to_matroid (M : matroid_in U) (C : set U) : matroid ⟨(M.groundset \ C : set U)⟩ :=
 let mtype : ftype := ⟨(M.groundset \ C : set U)⟩,
-φ : mtype → U := λ x, x.val  in 
+φ : mtype → U := λ x, x.val  in
 { r := λ X, M.r (φ '' X ∪ C) - M.r C,
   R0 :=
   begin
@@ -439,7 +439,7 @@ def contract_to_matroid_in (M : matroid_in U) (C : set U) : matroid_in U :=
 
 def delete_to_matroid (M: matroid_in U) (D : set U) : matroid ⟨(M.groundset \ D : set U)⟩  :=
 let mtype : ftype := ⟨(M.groundset \ D : set U)⟩,
-φ : mtype → U := λ x, x.val  in 
+φ : mtype → U := λ x, x.val  in
 { r := λ X, M.r (φ '' X),
   R0 := sorry,
   R1 :=
@@ -456,7 +456,7 @@ lemma foo (M : matroid_in U){C D : set U} (hi : C ∩ D = ∅) (hu : C ∪ D ⊆
   delete_to_matroid_in (contract_to_matroid_in M C) D =  contract_to_matroid_in (delete_to_matroid_in M D) C :=
 begin
   apply matroid_in.matroid_in_ext,
-  unfold delete_to_matroid_in contract_to_matroid_in, repeat {rw groundset_correct}, set_solver, 
+  unfold delete_to_matroid_in contract_to_matroid_in, repeat {rw groundset_correct}, set_solver,
   --simp, sorry,
 end
 
@@ -468,7 +468,7 @@ def contract_to_emb (M : matroid_in U) (C : set M.ground) : emb_mat U :=
 {
   U₀ := ⟨(Cᶜ : set M.ground)⟩,
   mat := sorry,
-  emb := (function.embedding.subtype (λ x, x ∈ Cᶜ)).trans M.embed, 
+  emb := (function.embedding.subtype (λ x, x ∈ Cᶜ)).trans M.embed,
 }
 
 end minor
@@ -543,7 +543,7 @@ begin
       {apply congr_arg, unfold_coes, simp} },
     {cases hab with φ, refine ⟨inv φ, λ X, _⟩, rw [hab_h ((inv φ) X), inv], unfold_coes, simp},
   cases hab with i₁ h₁, cases hbc with i₂ h₂,
-  from ⟨compose i₁ i₂, λ X, by {unfold_coes at *, simp [h₁,h₂,congr_arg, compose]}⟩, 
+  from ⟨compose i₁ i₂, λ X, by {unfold_coes at *, simp [h₁,h₂,congr_arg, compose]}⟩,
 end
 
 /- the ground set is an invariant of equivalence classes under strong isomorphism -/
@@ -573,7 +573,7 @@ namespace minor
 def emb_to_minor (M : matroid U) := @quotient.mk (emb_minor M) _
 
 /- returns the ground set of a minor of M (as a subset of the ftype for M) -/
-def ground {M : matroid U} : minor M → set U := quotient.lift 
+def ground {M : matroid U} : minor M → set U := quotient.lift
   (λ (N : emb_minor M), N.ground )
   (λ N N' hNN', emb_minor.strong_iso_same_groundset N N' hNN' )
 

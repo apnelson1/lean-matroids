@@ -104,8 +104,8 @@ begin
   refine ⟨λ hC, _,_⟩,
   { have h_dep : ∃ i, ¬(M i).indep (sigma.mk i ⁻¹' C),
     { by_contra' h, rw [←direct_sum_indep_iff] at h, exact hC.dep h, },
-    obtain ⟨i,hi⟩ := h_dep,  
-  
+    obtain ⟨i,hi⟩ := h_dep,
+
     have h_forall : ∀ j ≠ i, sigma.mk j ⁻¹' C = ∅,
     { refine λ j hj, eq_empty_of_forall_not_mem (λ e he, hi _),
       have hjC : (⟨j,e⟩ : (Σ i, E i)) ∈ C, from he,
@@ -114,7 +114,7 @@ begin
       convert diff_empty,
       convert preimage_image_sigma_mk_of_ne hj.symm {e},
       rw [image_singleton]},
-  
+
     have hC₀ : C = sigma.mk i '' (sigma.mk i ⁻¹' C),
     { nth_rewrite 0 ←Union_image_preimage_sigma_mk_eq_self C,
       refine subset_antisymm (Union_subset (λ j, _)) (subset_Union _ i),
@@ -124,7 +124,7 @@ begin
       exact (not_mem_empty _ ((h_forall _ hne).subset h')).elim, },
     refine ⟨_,_,_,hC₀⟩,
     simp_rw [circuit_iff_dep_forall_diff_singleton_indep, direct_sum_indep_iff] at hC ⊢,
-    refine ⟨hi, λ e he, _⟩,  
+    refine ⟨hi, λ e he, _⟩,
     convert hC.2 ⟨i,e⟩ he i using 1,
     ext,
     simp},
@@ -132,7 +132,7 @@ begin
   rintro ⟨i,C, ⟨hC,hmin⟩, rfl⟩,
 
   refine ⟨⟨i,by rwa preimage_image_eq _ sigma_mk_injective⟩, _⟩,
-  rintro ⟨j,e⟩ ⟨f,hf,⟨h'⟩⟩ j,   
+  rintro ⟨j,e⟩ ⟨f,hf,⟨h'⟩⟩ j,
   rw preimage_diff,
   obtain (rfl | hne) := eq_or_ne i j,
   { rw [preimage_image_eq _ sigma_mk_injective], convert hmin f hf, ext, simp},
@@ -152,7 +152,7 @@ begin
     simp},
   rintro ⟨i,C₀,hC₀,rfl⟩ ⟨f,hf,rfl⟩ h',
   refine h i C₀ f hC₀ hf _,
-  rintro x ⟨hxC₀,(hne : x ≠ f)⟩, 
+  rintro x ⟨hxC₀,(hne : x ≠ f)⟩,
   exact h' ⟨⟨_,hxC₀,rfl⟩,by simpa⟩,
 end
 
@@ -289,7 +289,7 @@ begin
 end
 
 lemma partition_one_flat_iff {F : set (Σ i, E i)} :
-  (partition_matroid E 1).flat F ↔ ∀ i, (fst ⁻¹' {i} ⊆ F) ∨ (disjoint F (fst ⁻¹' {i})) := 
+  (partition_matroid E 1).flat F ↔ ∀ i, (fst ⁻¹' {i} ⊆ F) ∨ (disjoint F (fst ⁻¹' {i})) :=
 begin
   simp only [partition_matroid, pi.one_apply, direct_sum_flat_iff, unif_flat_iff, ncard_preimage_mk,
     nat.lt_one_iff, ncard_eq_zero],
@@ -298,7 +298,7 @@ begin
   { simp_rw [eq_univ_iff_forall, eq_iff_iff],
     exact ⟨λ h x, h (rfl : sigma.fst ⟨i,x⟩ = i), λ h, by {rintro ⟨j,e⟩ (rfl : j = i), exact h _}⟩},
   simp_rw [eq_iff_iff, ←disjoint_iff_inter_eq_empty],
-end 
+end
 
 end partition
 

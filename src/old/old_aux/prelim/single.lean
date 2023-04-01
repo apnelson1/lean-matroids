@@ -7,7 +7,7 @@ universes u v w
 
 open_locale classical
 variables {α : Type*}
- 
+
 lemma mem_coe_inj_iff {e f : α} :
   ({e} : set α) = ({f}  : set α) ↔ e = f :=
 by {exact singleton_eq_singleton_iff}
@@ -51,7 +51,7 @@ by {rw [←not_forall, not_iff_not], refine ⟨λ h x, _, λ h, _⟩, rw h, from
 lemma nested_singletons_eq {e f: α} (hef : ({e} : set α) ⊆ ({f} : set α)) :
    e = f :=
 by rwa [singleton_subset_iff, mem_singleton_iff] at hef
- 
+
 lemma nonmem_disjoint {e : α} {X : set α} :
   e ∉ X → ({e} ∩ X : set α) = ∅ :=
 by tidy
@@ -101,7 +101,7 @@ by rw [←mem_compl_iff, compl_inter, mem_union_iff, mem_compl_iff, mem_compl_if
 lemma mem_diff_iff {e : α} {X Y : set α} :
   e ∈ X \ Y ↔ e ∈ X ∧ e ∉ Y :=
 by simp only [mem_diff]
- 
+
 lemma subset_iff_elems_contained {X Y : set α} :
   X ⊆ Y ↔ ∀ e, e ∈ X → e ∈ Y :=
 by refl
@@ -124,7 +124,7 @@ by tidy
 
 lemma nonmem_of_nonmem_supset {s t : set α} {e : α} :
    e ∉ t → s ⊆ t → e ∉ s :=
-by tidy 
+by tidy
 
 lemma eq_iff_same_elems {X Y : set α} :
   X = Y ↔ ∀ e, e ∈ X ↔ e ∈ Y :=
@@ -137,7 +137,7 @@ by tidy
 lemma subset_of_removal {X Y : set α} {e : α} :
   X ⊆ Y → e ∉ X → X ⊆ Y \ {e} :=
 by tidy
- 
+
 lemma subset_of_subset_add_nonmem {X Y: set α} {e : α} :
   X ⊆ Y ∪ {e} → e ∉ X → X ⊆ Y :=
 begin
@@ -157,7 +157,7 @@ begin
   rw [inter_distrib_left, inter_distrib_right, inter_assoc _ {e}, inter_right_comm _ _ Y],
   simp only [inter_compl_self, union_empty, inter_empty],
 end
- 
+
 lemma ssub_of_add_compl {X : set α} {e : α} :
   e ∈ Xᶜ → X ⊂ X ∪ {e} :=
 begin
@@ -194,7 +194,7 @@ by tidy
 lemma mem_diff_ssubset {X Y : set α} :
   X ⊂ Y → ∃ e, e ∈ Y \ X :=
 λ h, ssubset_diff_nonempty h
-   
+
 lemma mem_only_larger_ssubset {X Y : set α} :
   X ⊂ Y → ∃ e, e ∈ Y ∧ e ∉ X :=
 λ h, by {have := mem_diff_ssubset h, simp_rw mem_diff_iff at this, assumption}
@@ -211,11 +211,11 @@ lemma remove_union_mem_singleton {X : set α} {e : α} :
   e ∈ X → (X \ {e}) ∪ {e} = X :=
 λ heX, by {rw [←singleton_subset_iff, subset_iff_union_eq_left,union_comm] at heX,
           rw [diff_eq, union_distrib_right, compl_union_self, inter_univ, heX]}
-  
+
 lemma exists_mem_diff_of_finite_infinite {X Y : set α} (hX : X.finite) (hY : Y.infinite) :
   ∃ e ∈ Y, e ∉ X :=
 by {by_contra hn, push_neg at hn, exact hY (hX.subset hn)}
- 
+
 lemma add_remove_nonmem {X : set α} {e : α} :
   e ∉ X → (X ∪ {e}) \ {e} = X :=
 begin
@@ -341,7 +341,7 @@ lemma ssubset_singleton_iff_empty {e : α} {X : set α} :
   X ⊂ {e} ↔ X = ∅ :=
 begin
   rw [ssubset_iff_subset_ne, subset_singleton_iff_self_or_empty],
-  exact ⟨λ h, by tauto, λ h, ⟨by {left, assumption}, by {rw h, apply (singleton_ne_empty e).symm}⟩⟩,  
+  exact ⟨λ h, by tauto, λ h, ⟨by {left, assumption}, by {rw h, apply (singleton_ne_empty e).symm}⟩⟩,
 end
 
 lemma ssubset_pair {e f : α} {X : set α} :

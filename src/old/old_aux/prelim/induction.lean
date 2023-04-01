@@ -52,7 +52,7 @@ lemma nonneg_int_induction_minus :
 begin
   intros h0 IH,
   apply nonneg_int_strong_induction _ h0,
-  from λ n hn0 IHs, IH n hn0 (IHs _ (int.le_sub_one_of_lt hn0) (sub_one_lt _)), 
+  from λ n hn0 IHs, IH n hn0 (IHs _ (int.le_sub_one_of_lt hn0) (sub_one_lt _)),
 end
 
 /-- Induction on nonnegative integers with base case 0, and inductive step n → n+1 -/
@@ -60,7 +60,7 @@ lemma nonneg_int_induction :
   P 0 → (∀ n, 0 ≤ n → P n → P (n+1)) → (∀ n₀, 0 ≤ n₀ → P n₀) :=
 begin
   refine λ h IHplus, (nonneg_int_induction_minus P h (λ n hn, _)),
-  have := λ hminus, IHplus (n-1) (int.le_sub_one_of_lt hn) hminus, 
+  have := λ hminus, IHplus (n-1) (int.le_sub_one_of_lt hn) hminus,
   norm_num at this, assumption,
 end
 
@@ -90,7 +90,7 @@ begin
   apply nonneg_int_strong_induction Q h,
   intros n hn hnI a ha,
   refine h' _ (by {rw ha, from hn}) (λ a' ha', _),
-  from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl, 
+  from hnI (f a') (f_nonneg a') (by {rw ←ha ,from ha'}) _ rfl,
 end
 
 lemma min_counterexample_nonneg_int_param (P : α → Prop) (f : α → ℤ) (f_nonneg : ∀ a : α, 0 ≤ f a) :
@@ -104,7 +104,7 @@ begin
   have := f_nonneg a',
     -- linarith should work here before the rw but for some reason it doesn't. Look into this.
   rw ha at h',
-  linarith,  
+  linarith,
 end
 
 

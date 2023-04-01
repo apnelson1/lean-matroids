@@ -9,7 +9,7 @@ def is_minor {U: boolalg} {E : U} : rankfun (subalg E) → rankfun U → Prop :=
 
 
 
-structure minor_on' (U: boolalg) (M: rankfun U) (E : U) := 
+structure minor_on' (U: boolalg) (M: rankfun U) (E : U) :=
 (mat : rankfun (subalg E))
 (is_minor : is_minor mat M)
 
@@ -23,7 +23,7 @@ let r := M.r, C := Eᶜ in
   ⟨
   λ X, M.r (X ∪ C) - M.r C,
   λ X, by {rw sub_nonneg, exact M.R2 C (X ∪ C) (subset_union_right X C)},
-  λ X, by linarith [subalg_coe_size X, M.R0 (X ∩ C), M.R3 X C, M.R1 X], 
+  λ X, by linarith [subalg_coe_size X, M.R0 (X ∩ C), M.R3 X C, M.R1 X],
   λ X Y hXY, by linarith [M.R2 (X ∪ C) (Y ∪ C) (subset_union_subset_left X Y C (subalg_coe_subset hXY))] ,
   λ X Y, by
   {
@@ -31,7 +31,7 @@ let r := M.r, C := Eᶜ in
     have h := M.R3 (X ∪ C) (Y ∪ C),
     rw [←union_distrib_right, ←union_distrib_union_left] at h, refine h,
   },⟩,
-  is_minor := ⟨C, ⟨inter_compl_self E, λ X, rfl⟩⟩, 
+  is_minor := ⟨C, ⟨inter_compl_self E, λ X, rfl⟩⟩,
 }
 
 def restrict' (U : boolalg) (M : rankfun U) (E : U) : minor_on' U M E :=
@@ -44,5 +44,5 @@ let r := M.r in
 lemma corestrict_corestrict' (U : boolalg) (M : rankfun U) (E F : U) (h : E ⊆ F) :
   corestrict' (subalg F) (corestrict' U M F).mat E = corestrict' U M E
 
- 
+
 end boolalg 

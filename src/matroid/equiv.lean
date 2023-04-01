@@ -28,7 +28,7 @@ infix ` ≃i ` :75 :=  matroid.iso
 instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, E₁ → E₂) :=
   ⟨λ e, e.to_fun⟩
 
-def iso.refl (M : matroid E) : M ≃i M := ⟨equiv.refl E, λ B, by simp⟩ 
+def iso.refl (M : matroid E) : M ≃i M := ⟨equiv.refl E, λ B, by simp⟩
 def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := ⟨e.to_fun.symm, λ B, by {rw e.on_base, simp, }⟩
 
 /-- An equivalence between types induces a map from a matroid on one type to one on another -/
@@ -82,7 +82,7 @@ begin
     rw ←e.image_preimage I,
     exact image_subset e hIJ},
   have h' := h (e ⁻¹' J) hJ (preimage_mono hIJ) (preimage_mono hJX),
-  rwa preimage_eq_preimage e.surjective at h', 
+  rwa preimage_eq_preimage e.surjective at h',
 end
 
 @[simp] lemma congr_equiv_apply_symm_basis {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I X : set E₁} :

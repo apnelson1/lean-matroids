@@ -140,7 +140,7 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
   to_matroid := λ (M' : submatroid M),
   { r := λ (X : finset M'.F), @r _ _ M (X.image subtype.val),
     R1 := λ (X : finset M'.F),
-    begin   
+    begin
         split,
         apply (R1 M (X.image subtype.val)).1,
 
@@ -148,7 +148,7 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
         apply int.coe_nat_le_coe_nat_of_le,
         apply card_image_le,
         --apply ,
-     
+
     end,
     R2 := λ s₁ s₂ hs, R2 M (image_subset_image hs),
     R3 := λ s₁ s₂, by { rw [image_union, image_inter], apply R3 M, apply subtype.ext, } } }
@@ -172,7 +172,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
       let X' := X.image subtype.val,
       split,
       linarith [R2 M (subset_union_right X' M'.C : M'.C ⊆ X' ∪ M'.C)],
-     
+
       have := rank_subadditive X' M'.C,
 
       calc r (X' ∪ M'.C) - r M'.C ≤ r X'        : by linarith
@@ -196,7 +196,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         rw [image_union, image_inter],
         have := R3 M (X' ∪ M'.C) (Y' ∪ M'.C),
         simp only [@union_unions _ _ X' Y' _, inter_unions]  at this,
-       
+
         linarith,
         intros x y,
         exact subtype.eq,

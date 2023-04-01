@@ -137,7 +137,7 @@ noncomputable def of_support_finite
 { support := hf.to_finset,
   to_fun := f,
   mem_support_to_fun := λ a, set.finite.mem_to_finset hf }
- 
+
 
 lemma of_support_finite_def {f : α → β} {hf : (function.support f).finite} :
   (of_support_finite hf : α → β) = f := rfl

@@ -47,7 +47,7 @@ lemma circuit.card (hC : M.circuit C) :
 begin
   obtain ⟨e,he⟩ := hC.nonempty,
   have hss : C \ {e} ⊂ C, by {refine ssubset_of_ne_of_subset _ (diff_subset _ _),
-    simpa only [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]}, 
+    simpa only [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]},
   have hlb := M.r_mono hss.subset,
   have hub := r_lt_card_of_dep hC.dep,
   rw [←nat.add_one_le_iff] at hub,
@@ -63,7 +63,7 @@ begin
   refine λ hdep, ⟨λ h e heC, (h _ (diff_singleton_ssubset heC)), λ h I hIC, _⟩,
   obtain ⟨e, heC,heI⟩ := exists_of_ssubset hIC,
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
-end 
+end
 
 lemma circuit.r (hC : M.circuit C) :
   M.r C = C.ncard - 1 :=
@@ -87,7 +87,7 @@ begin
   obtain ⟨C,⟨hCX,hCdep⟩,hmin⟩ := finite.exists_minimal (λ Y, Y ⊆ X ∧ ¬M.indep Y) ⟨_,rfl.subset,hX⟩,
   exact ⟨C, hCX, ⟨hCdep,λ I hIC,
     by_contra (λ hI, hIC.ne ((hmin I ⟨hIC.subset.trans hCX,hI⟩ hIC.subset).symm))⟩⟩,
-end 
+end
 
 lemma dep_iff_supset_circuit :
   ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
@@ -283,19 +283,19 @@ begin
     obtain ⟨Cf, hCfT, hCf⟩ := hTi,
     refine ⟨Cf, hCfT.trans (diff_subset _ _), hCf, _, _⟩,
     { exact mt (@hCfT f) (not_mem_diff_of_mem (mem_singleton f))},
-  
+
     refine by_contra (λ heCf, hK Cf (λ x hxCf, _) hCf),
-  
+
     exact mem_of_mem_insert_of_ne (hCfT hxCf).1 (by {rintro rfl, exact heCf hxCf})},
 
   obtain ⟨g,hgK,hgI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hIK,
-  obtain ⟨Cg, hCgss, hCg, hgCg, heCg⟩ := hCf g ⟨hgK,hgI⟩,    
+  obtain ⟨Cg, hCgss, hCg, hgCg, heCg⟩ := hCf g ⟨hgK,hgI⟩,
 
   have hg_ex : ∃ g', g' ∈ Cg ∧ g' ∈ K \ I,
   { by_contra' hg',
     exact hI _ (λ x hx,
       or.elim (hCgss hx) (λ h, h.symm ▸ heI) (λ hxK, by_contra (λ hxI, hg' _ hx ⟨hxK, hxI⟩))) hCg},
-  obtain ⟨g', hg', hg'KI⟩ := hg_ex, 
+  obtain ⟨g', hg', hg'KI⟩ := hg_ex,
 
   obtain ⟨Cg', hCg'ss, hCg', hgCg', heCg'⟩ := hCf g' hg'KI,
   have hne : Cg ≠ Cg',
@@ -325,5 +325,5 @@ begin
   exact (hI _ hC₀C _ rfl.subset hC₀).elim,
 end
 
-end from_axioms 
+end from_axioms
 

@@ -157,7 +157,7 @@ by rw [indep_iff_r_eq_card, unif_r, min_eq_right_iff]
 lemma unif_free_iff_card_le_r :
   nat.card E ≤ r ↔ unif E r = free_on E :=
 by rw [←univ_indep_iff_free, unif_indep_iff, ncard_univ]
- 
+
 lemma unif_base_iff {B : set E} (hr : r ≤ nat.card E):
   (unif E r).base B ↔ B.ncard = r :=
 begin
@@ -179,7 +179,7 @@ begin
     have hCe := h.2 (C \ {e}) (diff_singleton_ssubset he),
     rw [←add_le_add_iff_right 1, ncard_diff_singleton_add_one he] at hCe,
     exact hCe.antisymm (nat.add_one_le_iff.mpr h.1)},
-  refine ⟨by linarith, λ I hIC, (add_le_add_iff_right 1).mp _⟩,  
+  refine ⟨by linarith, λ I hIC, (add_le_add_iff_right 1).mp _⟩,
   rw [←h, ←nat.lt_iff_add_one_le],
   exact ncard_lt_ncard hIC,
 end
@@ -242,7 +242,7 @@ end matroid
       specialize h4 h5,
       rcases h4 with ⟨x, ⟨hx1, hx2⟩⟩,
       simp at hx1,
-    
+
       sorry,
     end }
 

@@ -95,11 +95,11 @@ def minor_matroid_to_minor_iso {M : matroid α} {M' : matroid β} {N : matroid_i
     simp only with msimp, congr,
     simp_rw [←equiv.preimage_eq_iff_eq_image, preimage_union, preimage_diff, equiv.preimage_image],
     congr' 1, unfold_coes, ext,
-   
+
     conv {congr, rw mem_diff, congr, rw mem_preimage, rw mem_image, congr, funext,
     rw mem_image, conv {congr, congr, funext, conv {congr, skip, dsimp, }} }, rw mem_image,
     split,
-    { rintro ⟨⟨⟨y,hy⟩,⟨⟨⟨z,hz⟩,⟨hzX,hy'⟩⟩,h'⟩ ⟩,hxD⟩, 
+    { rintro ⟨⟨⟨y,hy⟩,⟨⟨⟨z,hz⟩,⟨hzX,hy'⟩⟩,h'⟩ ⟩,hxD⟩,
       dsimp only at h', subst h',
       exact ⟨⟨z,hz⟩,⟨hzX,by {by {simp at hy', assumption, }, }⟩⟩},
     rintro ⟨⟨y,hy⟩,⟨hyx,rfl⟩⟩,
@@ -108,7 +108,7 @@ def minor_matroid_to_minor_iso {M : matroid α} {M' : matroid β} {N : matroid_i
       rwa [diff_diff, ←image_union, P.union, coe_E, univ_diff, univ_diff, equiv.image_compl,
       compl_compl, equiv.image_mem_image_iff_mem], },
     refine ⟨⟨⟨y,hy⟩,hyx,_⟩,rfl⟩,
-    rw subtype.mk_eq_mk, refl,  
+    rw subtype.mk_eq_mk, refl,
   end⟩
 
 def image_minor_iso_minor {N M : matroid_in α} {M' : matroid_in β}
@@ -116,7 +116,7 @@ def image_minor_iso_minor {N M : matroid_in α} {M' : matroid_in β}
   isom N (M' / (i.equiv '' (coe ⁻¹' P.C)) \ (i.equiv '' (coe ⁻¹' P.D))) :=
 let iN := minor_isom_minor_as_mat P,
     iN' := minor_isom_minor_as_mat (image_minor_pair i P),
-    P' := minor_pair_to_as_mat P, 
+    P' := minor_pair_to_as_mat P,
     i' := minor_matroid_to_minor_iso P' i in
     have h : (
       ↑(M'.as_mat) / ⇑(i.equiv) '' P'.C \ ⇑(i.equiv) '' P'.D
@@ -159,7 +159,7 @@ def minor_emb.to_con_emb {N : matroid β} {M : matroid α} (me : minor_emb N M) 
       function.embedding.coe_fn_mk, iff_false, equiv.inv_fun_as_coe, to_cd_pair_as_coe,
       exists_imp_distrib],
     rintros y rfl hxy,
-    cases me.i.equiv.symm y with z hz, 
+    cases me.i.equiv.symm y with z hz,
     exact ne_empty_iff_has_mem.mpr ⟨_,(mem_inter hz hxy)⟩ me.P.NE_inter_C, },
   on_rank := λ X, by {
     cases me with N' P i, dsimp only,
@@ -256,7 +256,7 @@ def is_irestr_of (N : matroid β) (M : matroid α) := nonempty (restr_emb N M)
 
 lemma iminor_of_iff (N : matroid β) (M : matroid α) :
   N.is_iminor_of M ↔ ∃ (N' : matroid_in α), N'.is_minor M ∧ N'.is_isom_to_matroid N :=
-by {split, rintros ⟨N',P,i⟩, exact ⟨N',⟨P⟩,⟨i⟩⟩, rintros ⟨N',⟨P⟩,⟨i⟩⟩, exact ⟨⟨P,i⟩⟩} 
+by {split, rintros ⟨N',P,i⟩, exact ⟨N',⟨P⟩,⟨i⟩⟩, rintros ⟨N',⟨P⟩,⟨i⟩⟩, exact ⟨⟨P,i⟩⟩}
 
 lemma irestr_of_iff (N : matroid β) (M : matroid α) :
   N.is_irestr_of M ↔ ∃ (M' : matroid_in α), M'.is_restriction M ∧ M'.is_isom_to_matroid N :=
@@ -294,7 +294,7 @@ begin
   { rintros ⟨M',h_minor, ⟨φ, ⟨hrange, hr⟩⟩⟩,
     obtain ⟨P,⟨hPi,hPs⟩⟩ := matroid_in.minor_pair.minor_has_indep_coindep_pair' h_minor,
     rw matroid_in.indep_iff_coe at hPi,
-    refine ⟨φ, P.C,_, λ X, _, hPi ,_⟩, 
+    refine ⟨φ, P.C,_, λ X, _, hPi ,_⟩,
     { rw hrange, exact P.NE_inter_C, },
     { rw [hr X, P.rank (φ '' X) (by {rw ←hrange, apply image_subset_range})], refl},
     simp only [←indep_iff_r.mp hPi] with msimp at hPs,
@@ -342,7 +342,7 @@ begin
     rw [matroid_in.minor_pair.rank P, hC] at hr, convert hr, simp,
     rw ←hrange, apply image_subset_range, },
   rintros ⟨φ, hr⟩,
-  refine ⟨(M : matroid_in α) ∣ range φ, matroid_in.restriction_to_is_restriction _ _,φ, ⟨_,λ X, _⟩⟩, 
+  refine ⟨(M : matroid_in α) ∣ range φ, matroid_in.restriction_to_is_restriction _ _,φ, ⟨_,λ X, _⟩⟩,
     simp,
   rw hr X, simp [subset_iff_inter_eq_left.mp (image_subset_range _ _)],
 end
@@ -363,7 +363,7 @@ def minor_emb_of_minor_emb_of_isom {N : matroid α} {M' : matroid β} {M : matro
   P := (M : matroid_in γ).to_minor_pair (i.equiv '' e.P.C) (i.equiv '' e.P.D),
   i := isom_to_matroid_of_isom ((e.P.minor_matroid_to_minor_iso i).symm.trans
                                                   (isom_of_isom_to_matroid e.i))}
-   
+
 lemma iminor_of_irestr {N : matroid α} {M : matroid β} (h : N.is_irestr_of M) :
   N.is_iminor_of M :=
 let ⟨re⟩ := h in ⟨restr_emb.to_minor_emb re⟩
@@ -402,7 +402,7 @@ con_emb.to_minor_emb ({
   e := e₁.trans e₂,
   C := (e₂ '' C₁) ∪ C₂,
   disj := by {rw [disjoint_iff_inter_eq_empty, inter_distrib_left,
-                          union_empty_iff, function.embedding.trans], 
+                          union_empty_iff, function.embedding.trans],
     unfold_coes at ⊢ h₁ h₂, dsimp only,  split,
     { rwa [range_comp, image_inter e₂.inj', image_eq_empty, ← disjoint_iff_inter_eq_empty]},
     rw disjoint_iff_inter_eq_empty at h₂,

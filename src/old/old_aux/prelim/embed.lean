@@ -33,7 +33,7 @@ image_eq_image subtype.coe_injective
 @[coe_up] lemma subtype_coe_ssubset  {X Y : set S} :
   (X ⊂ Y) ↔ ((X : set α) ⊂ (Y : set α)) :=
 by simp_rw [ssubset_iff_subset_not_supset, subtype_coe_subset]
- 
+
 @[coe_up] lemma subtype_coe_union {X Y : set S} :
   (((X ∪ Y) : set S) : set α) = (X ∪ Y ) :=
 image_union subtype.val X Y
@@ -65,7 +65,7 @@ by rw [compl_eq_univ_diff, subtype_coe_diff, coe_univ]
 @[coe_up] lemma coNE_inter_subtype (X : set α) :
   ((inter_subtype S X) : set α) = X ∩ S :=
 begin
-  ext x, simp only [inter_subtype, set.mem_image, set.mem_inter_eq], 
+  ext x, simp only [inter_subtype, set.mem_image, set.mem_inter_eq],
   refine ⟨λ h, _, λ h, _⟩,
   { rcases h with ⟨⟨y,hy⟩,h,rfl⟩, simp only [subtype.coe_mk], exact ⟨h,hy⟩},
   exact ⟨⟨x,h.2⟩,⟨h.1,by simp⟩⟩,

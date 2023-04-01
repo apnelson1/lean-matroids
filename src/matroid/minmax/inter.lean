@@ -47,7 +47,7 @@ begin
   by_contra' hcon,
   have hcon' : ∀ I X, M₁.indep I → M₂.indep I → I.ncard < M₁.r X + M₂.r Xᶜ, from
     λ I X hI₁ hI₂, lt_of_le_of_ne (common_ind_le_r_add_r_compl hI₁ hI₂ X) (hcon I X hI₁ hI₂),
-  
+
   -- Construct a minimal counterexample (wrt the number of nonloops of `M₁`)
   obtain ⟨M,hM,hpmin⟩ := finite.exists_minimal_wrt (ncard ∘ matroid.nonloops)
     { M | ∃ M', _} (to_finite _) ⟨M₁, ⟨M₂, hcon'⟩⟩,
@@ -128,7 +128,7 @@ lemma exists_common_ind_with_flat_right (M₁ M₂ : matroid E) :
   ∃ I X, M₁.indep I ∧ M₂.indep I ∧ I.ncard = M₁.r X + M₂.r Xᶜ ∧ M₂.flat Xᶜ :=
 begin
   obtain ⟨I,X₀,h₀,h₁,hX₀,hF⟩ := exists_common_ind_with_flat_left M₂ M₁,
-  exact ⟨I, X₀ᶜ,h₁,h₀,by rwa [add_comm, compl_compl],by rwa compl_compl⟩, 
+  exact ⟨I, X₀ᶜ,h₁,h₀,by rwa [add_comm, compl_compl],by rwa compl_compl⟩,
 end
 
 /-- The cardinality of a largest common independent set of matroids `M₁,M₂`.
@@ -148,7 +148,7 @@ begin
     split,
     {
       refine λ h, ⟨⟨_, M₁.empty_indep, M₂.empty_indep⟩, λ I hI₁ hI₂, _⟩,
-      suffices hcI : ¬(0 < I.ncard), by rwa [not_lt, le_zero_iff, ncard_eq_zero] at hcI, 
+      suffices hcI : ¬(0 < I.ncard), by rwa [not_lt, le_zero_iff, ncard_eq_zero] at hcI,
       exact λ hcI, h hcI (ncard_mono (subset_univ _)) I hI₁ hI₂ rfl},
     refine λ h n hpos hn I hI₁ hI₂ hcard, _,
     rw [←hcard, h.2 I hI₁ hI₂] at hpos,
@@ -175,7 +175,7 @@ begin
   rw [max_common_ind_eq_iff],
   obtain ⟨I, X, hI₁, hI₂, heq⟩ := exists_common_ind M₁ M₂,
   refine ⟨⟨I, hI₁, hI₂, (cinfi_le' _ _).trans_eq heq.symm⟩, λ J hJ₁ hJ₂, _ ⟩,
-  exact (le_cinfi_iff (order_bot.bdd_below _)).mpr (common_ind_le_r_add_r_compl hJ₁ hJ₂),  
+  exact (le_cinfi_iff (order_bot.bdd_below _)).mpr (common_ind_le_r_add_r_compl hJ₁ hJ₂),
 end
 
 end intersection
@@ -219,13 +219,13 @@ begin
   have himage := eq_of_subset_of_ncard_le (subset_univ _) hineq,
 
   have hinv : ∀ i, ∃ e ∈ I, f e = i,
-  { simp_rw [←mem_image_iff_bex, himage], exact mem_univ}, 
+  { simp_rw [←mem_image_iff_bex, himage], exact mem_univ},
 
   choose x hx using hinv,
   refine ⟨x, λi, (hx i).2, hI₁.subset _⟩,
   rintro e ⟨i,hi,rfl⟩,
   exact (hx i).1,
-end 
+end
 
 /-- Rado's theorem: Given a partition `f : E → ι` of the ground set `E` of a matroid `M`, there is a
   transversal of `f` that is independent in `M` if and only if the rank of the preimage of every set

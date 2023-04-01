@@ -36,7 +36,7 @@ begin
 
   convert iff.rfl,
   refine iff_iff_eq.mp ⟨λ h P hP e f he hf, h _ _ he.1 hf.1 _,
-                        λ h e f he hf hef, h (M.ps.cl e) _ e f ⟨he, _⟩ ⟨hf,_⟩ ⟩, 
+                        λ h e f he hf hef, h (M.ps.cl e) _ e f ⟨he, _⟩ ⟨hf,_⟩ ⟩,
   { obtain ⟨a, ha, rfl⟩ := hP, exact presetoid.rel_of_mems_cl he.2 hf.2  },
   { exact ⟨e, presetoid.rel_self_of_rel hef, rfl⟩ },
   { rw presetoid.mem_cl_iff, exact  presetoid.rel_self_of_rel hef},
@@ -56,10 +56,10 @@ end
 lemma r_le_ε (M : matroid α) (X : set α) :
   M.r X ≤ M.ε X :=
 begin
-  rw ε_eq_largest_simple_subset, 
+  rw ε_eq_largest_simple_subset,
   obtain ⟨⟨Y, hYX, hYs⟩, hY', hY''⟩ := max_spec (λ (S : M.simple_subset_of X), size (S : set α)),
   obtain ⟨B, hB ⟩ := M.exists_basis_of X,
-  rw [← hY', ← hB.size_eq_r], 
+  rw [← hY', ← hB.size_eq_r],
   convert hY'' ⟨B, ⟨simple_of_indep hB.indep, hB.is_subset_of⟩⟩,
 end
 
@@ -79,7 +79,7 @@ begin
   rw [ε_eq_largest_simple_subset],
   let X' : M.simple_subset_of X :=
     ⟨X, ⟨simple_of_subset_simple hM (subset_univ _), subset_refl _⟩⟩,
-  exact attained_ub_is_max' _ X' (size X) rfl.le (λ Y, size_monotone Y.2.2), 
+  exact attained_ub_is_max' _ X' (size X) rfl.le (λ Y, size_monotone Y.2.2),
 end
 
 lemma ε_eq_size_iff_simple_set {M : matroid α} {X : set α} :
@@ -116,7 +116,7 @@ begin
   have hX' : M.r X = 1 := le_antisymm h (le_of_not_lt hX),
   rw [hX', size_le_one_iff_mem_unique],
   refine λ P P' hP hP', _,
-  rcases P with ⟨P,hPp⟩, rcases P' with ⟨P', hPp'⟩, 
+  rcases P with ⟨P,hPp⟩, rcases P' with ⟨P', hPp'⟩,
   obtain ⟨e, he, rfl⟩ := rep_parallel_class hPp,
   obtain ⟨e', he', rfl⟩ := rep_parallel_class hPp',
   obtain ⟨⟨x,⟨hx,hxp⟩⟩,⟨x',⟨hx',hxp'⟩⟩⟩ := ⟨hP,hP'⟩,
@@ -144,7 +144,7 @@ begin
   intros e he,
   rw [← loop_iff_mem_loops, loop_iff_r, ← ε_eq_pc_matroid_r, ε_eq_r_of_r_le_one],
   { rwa [← loop_iff_r, loop_iff_mem_loops],},
- 
+
   exact rank_single_ub M e,
   -- What the hell? VVV
   recover, apply_instance,
@@ -156,7 +156,7 @@ begin
   rw ε_eq_num_parallel_classes_inter,
   convert (size_image_inj M.parallel_class_point_equiv.injective _).symm,
   ext P, cases P with P hP,
-  simp only [mem_set_of_eq, subtype.val_eq_coe], 
+  simp only [mem_set_of_eq, subtype.val_eq_coe],
   split,
   { rintros ⟨x,hx⟩,
     rw [mem_inter_iff, mem_diff, ← nonloop_iff_not_mem_loops] at hx,
@@ -167,7 +167,7 @@ begin
     rw cl_eq_parallel_cl_union_loops,},
   simp only [and_imp, exists_imp_distrib],
   rintros ⟨Q,hQ⟩ ⟨x, hx⟩ hxQ,
-  simp only [subtype.mk_eq_mk, parallel_class_point_equiv_apply] at hxQ, 
+  simp only [subtype.mk_eq_mk, parallel_class_point_equiv_apply] at hxQ,
   subst hxQ,
   refine ⟨x, _⟩,
   simp only [mem_union, mem_inter_iff, mem_diff,
@@ -183,7 +183,7 @@ begin
   ext P,
   cases P with P hP,
   refine ⟨λ h, (nonempty_of_r_nonzero M _), _⟩,
-  { have hPF : P \ M.loops ⊆ F := subset.trans (diff_subset _ _) h, 
+  { have hPF : P \ M.loops ⊆ F := subset.trans (diff_subset _ _) h,
     rw [subset_iff_inter_eq_left.mp hPF, rank_eq_rank_diff_loops, hP.r],
     norm_num },
   obtain ⟨e,he,rfl⟩ := point_iff_cl_nonloop.mp hP,
@@ -199,7 +199,7 @@ begin
   rw [point, type_size_type_of_eq_size_set_of],
   convert ε_flat_eq_num_points M.univ_is_flat,
   ext P,
-  exact ⟨λ h, ⟨h, subset_univ _⟩, λ h, h.1⟩, 
+  exact ⟨λ h, ⟨h, subset_univ _⟩, λ h, h.1⟩,
 end
 
 lemma ε_univ_eq_size_set_of_points (M : matroid α):
@@ -216,7 +216,7 @@ end
 /-- this is the workhorse for Kung's Theorem - it gives a formula for the number of points of M
 in terms of the lengths of lines of M through e -/
 lemma ε_as_ε_proj_nonloop {M : matroid α} {e : α} (he : M.is_nonloop e):
-  M.ε univ = 1 + ∑ᶠ L in { L | M.is_line L ∧ e ∈ L}, (M.ε L - 1) := 
+  M.ε univ = 1 + ∑ᶠ L in { L | M.is_line L ∧ e ∈ L}, (M.ε L - 1) :=
 begin
   set lines := {L : set α | M.is_line L ∧ e ∈ L},
   have hcle : ∀ L ∈ lines, disjoint {P | M.is_point P ∧ P ⊆ L ∧ P ≠ M.cl {e}} {M.cl {e}},
@@ -231,7 +231,7 @@ begin
     refine ⟨λ h, by {by_cases h' : X = M.cl {e}; tauto, } , λ h, _⟩,
     rcases h with (h₁ | rfl), tauto,
     exact ⟨point_of_cl_nonloop he, subset_flat _ _ (singleton_subset_iff.mpr hL.2) (hL.1.flat)⟩},
-    
+
   rw [finsum_in_eq_of_eq h₁, ← size_bUnion, ← size_singleton (M.cl {e} : set α),
    ← size_union_of_disjoint, ε_univ_eq_size_set_of_points], rotate,
   { rw [disjoint_iff_inter_eq_empty, inter_bUnion],
@@ -244,7 +244,7 @@ begin
     rintros a ha hay - - hax,
     obtain ⟨f, hf, rfl⟩ := point_iff_cl_nonloop.mp ha,
     rw [cl_eq_cl_iff_parallel_cl_eq_parallel_cl, ← parallel_iff_parallel_cl_eq_left hf],
-    apply parallel_of_rank_le_one hf he, 
+    apply parallel_of_rank_le_one hf he,
     refine le_trans (M.rank_mono _) (rank_inter_lines_le_one hx hy hxy),
     have := singleton_subset_iff.mp (subset.trans (M.subset_cl {f}) hay),
     have := singleton_subset_iff.mp (subset.trans (M.subset_cl {f}) hax),
@@ -254,14 +254,14 @@ begin
 
   convert rfl,
   ext P,
-  simp only [exists_prop, mem_Union, singleton_union, mem_set_of_eq, mem_insert_iff, ne.def], 
+  simp only [exists_prop, mem_Union, singleton_union, mem_set_of_eq, mem_insert_iff, ne.def],
   refine ⟨by { rintros (rfl | h), exact point_of_cl_nonloop he, tauto, }, λ h, _⟩,
 
   obtain ⟨f, hf, rfl⟩ := point_iff_cl_nonloop.mp h,
   simp only [cl_eq_cl_iff_parallel_cl_eq_parallel_cl, ← parallel_iff_parallel_cl_eq_left hf],
- 
+
   by_cases hef : M.parallel f e, left, assumption, right,
- 
+
   refine ⟨M.cl {e,f}, ⟨⟨cl_is_flat _ _,_⟩,_⟩ , _, _, hef⟩,
   { rw [rank_cl, pair_comm, rank_two_of_not_parallel hf he hef] },
   { exact mem_of_mem_of_subset (mem_insert _ _) (subset_cl _ _) },
@@ -278,13 +278,13 @@ begin
   obtain ⟨⟨S,hS⟩,  hS', hS''⟩ := max_spec (λ (S : M.simple_set), size (S : set α)),
   rw [← hS', eq_comm],
   dsimp only [subtype.coe_mk],
-  by_cases he : e ∈ S, 
+  by_cases he : e ∈ S,
   { have hf : f ∉ S, from λ hf,
     by {rw simple_set_iff_no_loops_or_parallel_pairs at hS, exact hef (hS.2 _ _ he hf hpara)},
     set S' := (S \ {e}) ∪ {f} with hS'_def,
     have hS' : (M ⟍ {e}).is_simple_set S',
     { rw [loopify_simple_iff_simple_disjoint, disjoint_singleton_right, hS'_def],
-      refine ⟨simple_set_exchange hS he hpara, λ he, _⟩, 
+      refine ⟨simple_set_exchange hS he hpara, λ he, _⟩,
       rw [mem_union, mem_diff_iff, mem_singleton_iff, mem_singleton_iff] at he, tauto},
     refine attained_ub_is_max' _ ⟨S', hS'⟩ _ _ _,
     { rw [subtype.coe_mk, hS'_def, size_remove_union_singleton he hf]},

@@ -1,4 +1,4 @@
-import boolalg 
+import boolalg
 import boolalg_ring
 import init.meta.interactive_base
 

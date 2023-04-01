@@ -37,7 +37,7 @@ begin
   rintros ⟨Y, ⟨B₁,B₂,hB₁,hB₂, hIB₁B₂⟩,hY'⟩,
   rw ←hIB₁B₂ at hY', split,
   refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₁),
-  apply inter_subset_left,   
+  apply inter_subset_left,
   refine indep_of_subset_indep (subset.trans hY' _) (basis_is_indep hB₂),
   apply inter_subset_right,
 end
@@ -74,7 +74,7 @@ begin
   apply le_antisymm,
   { rw is_common_ind_iff_is_subset_inter_bases at hI_ind,
     rcases hI_ind with ⟨Y,⟨⟨B₁',B₂',⟨hB₁',hB₂',hY⟩⟩,h'⟩⟩,
-    have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this, 
+    have := h_size_ub ⟨⟨B₁',B₂'⟩, ⟨hB₁', hB₂'⟩⟩, rw inter_size at this, dsimp at this,
     rw ←hY at h',
     linarith [size_monotone h'],},
   refine hI_ub
@@ -108,7 +108,7 @@ theorem π₂_eq_ν_plus_r (M₁ M₂ : matroid α) :
   π₂ M₁ M₂ = ν M₁ (M₂.dual) + M₂.r univ :=
 begin
   rw [eq_comm,max_common_indep_inter_bases, π₂_eq_max_union_bases],
- 
+
   -- bijection φ that we will use to reindex summation
   set φ : basis_pair M₁ M₂ → basis_pair M₁ (dual M₂) := λ p, ⟨⟨p.val.1, p.val.2ᶜ⟩,_⟩ with hφ,
   swap,
@@ -118,22 +118,22 @@ begin
     rw [←cobasis_iff_compl_basis, cobasis_iff, dual_dual],
     from p.property.2, },
   -- ... and is surjective
- 
-  have hφ_sur : function.surjective φ := by 
-  { refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp, 
+
+  have hφ_sur : function.surjective φ := by
+  { refine λ Bp, ⟨⟨⟨Bp.val.1,Bp.val.2ᶜ⟩,⟨Bp.property.1,_⟩⟩,_⟩, dsimp,
     rw [←cobasis_iff_compl_basis, cobasis_iff], from Bp.property.2,
     rw hφ,  simp,},
   -- use φ to reindex so LHS/RHS are being summed over the same set
   have := max_reindex φ hφ_sur (λ pair, inter_size pair.val),
   erw ←this,
- 
+
   -- bring addition inside the max
   rw max_add_commute,
- 
+
   -- it remains show the functions we're maximizing are the same
   convert rfl,
   ext Bp,
-  rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,  
+  rcases Bp with ⟨⟨B₁,B₂⟩,hB⟩,
   dsimp [union_size,inter_size] at ⊢,
   linarith [size_basis hB.1, size_basis hB.2, size_modular B₁ B₂, size_induced_partition_inter B₁ B₂],
 end
@@ -147,7 +147,7 @@ begin
   rw [π₂_eq_ν_plus_r, matroid_intersection,  min_add_commute _ (M₂.r univ)],
   congr', ext X,
   rw [dual_r, compl_compl],
-  linarith, 
+  linarith,
 end
 
 end two_union
@@ -171,7 +171,7 @@ begin
     by {split; {rw indep_loopify_to_iff, rcases Ip with ⟨_,⟨⟨_,_⟩,⟨_,_⟩⟩⟩, split; assumption}}⟩
   with hφ,
   have hφ_sur : function.surjective φ := λ Ip,
-  by {rcases Ip with ⟨p, ⟨h₁,h₂⟩⟩, 
+  by {rcases Ip with ⟨p, ⟨h₁,h₂⟩⟩,
       rw indep_loopify_to_iff at h₁ h₂,
       cases h₁, cases h₂,
       refine ⟨⟨p,⟨⟨_,_⟩,⟨_,_⟩⟩⟩ ,_⟩; try {assumption},
@@ -186,28 +186,28 @@ theorem two_matroid_union_on_subset (X : set α) :
   = min_val (λ A : {Y : set α // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A) :=
 begin
   rw [indep_pair_of_subset_as_indep_pair_loopify, two_matroid_union],
- 
+
   rcases min_spec (λ A : {Y : set α // Y ⊆ X}, size (X \ A) + M₁.r A + M₂.r A)
     with ⟨A, hA', hA⟩,
   rcases min_spec (λ A : set α, size Aᶜ + (M₁|X).r A + (M₂|X).r A)
     with ⟨B, hB', hB⟩,
- 
+
   rw [←hA', ←hB'], clear hA' hB',
   simp_rw [loopify_to_r] at *,
   have hXB : Xᶜ ⊆ B,
   begin
-    rw [subset_iff_union_eq_left, eq_comm],  
+    rw [subset_iff_union_eq_left, eq_comm],
     suffices : ¬B ⊂ (Xᶜ ∪ B),
-    from eq_of_subset_not_ssubset  (subset_union_right Xᶜ B) this, 
+    from eq_of_subset_not_ssubset  (subset_union_right Xᶜ B) this,
     intro h,
     have h' := hB (Xᶜ ∪ B),
     simp only [inter_distrib_right, compl_inter_self, compl_compl,
-    set.compl_union, empty_union, add_le_add_iff_right] at h', 
+    set.compl_union, empty_union, add_le_add_iff_right] at h',
     rw [←compl_compl_union_left, compl_size, compl_size] at h',
     linarith [size_strict_monotone h],
-  end, 
+  end,
   apply le_antisymm,
- 
+
   convert hB (Xᶜ ∪ A),
   { simp [compl_compl_union_left, diff_eq]},
   repeat
@@ -218,7 +218,7 @@ begin
   convert hA ⟨B ∩ X, inter_subset_right _ _⟩,
   dsimp only [subtype.coe_mk],
   ext,
-  simp only [mem_inter_eq, not_and, mem_diff, subtype.coe_mk, mem_compl_eq], 
+  simp only [mem_inter_eq, not_and, mem_diff, subtype.coe_mk, mem_compl_eq],
   specialize @hXB x, rw mem_compl_iff at hXB,
   tauto,
 end
@@ -233,7 +233,7 @@ def r : set α → ℤ :=
 lemma R0 :
   satisfies_R0 (r M₁ M₂) :=
 λ X, by { apply lb_le_max, intro Ip, apply size_nonneg}
- 
+
 lemma R1 :
   satisfies_R1 (r M₁ M₂) :=
 by {intro X, apply max_le_ub, from λ Ip, size_monotone (union_subset Ip.2.2.1 Ip.2.2.2)}
@@ -254,7 +254,7 @@ lemma R3 :
 begin
   intros X Y, unfold r,
   repeat {rw [two_matroid_union_on_subset]},
-  repeat {rw [sum_of_min]}, 
+  repeat {rw [sum_of_min]},
   have hu : ∀ p : {Y // Y ⊆ X} × {Y_1 // Y_1 ⊆ Y}, p.1.1 ∪ p.2.1 ⊆ X ∪ Y :=
     λ p, set.union_subset_union p.1.2 p.2.2,
   have hi : ∀ p : {Y // Y ⊆ X} × {Y_1 // Y_1 ⊆ Y}, p.1.1 ∩ p.2.1 ⊆ X ∩ Y :=
@@ -328,20 +328,20 @@ begin
     -- base case
     {use loopy α,
     simp_rw [loopy_matroid_indep_iff_empty, is_union_indep_tuple],
-    refine λ X, ⟨λ h, _, λ h, _⟩, 
+    refine λ X, ⟨λ h, _, λ h, _⟩,
       {refine ⟨⟨λ i, fin_zero_elim i, λ i, fin_zero_elim i⟩,_⟩,
         simp only,
-        rw [h, eq_comm, Union_eq_empty], 
+        rw [h, eq_comm, Union_eq_empty],
         exact fin_zero_elim,  },
     cases h with Is hIs, rw hIs,
     simp only [set.Union_eq_empty, subtype.val_eq_coe],
     apply fin_zero_elim},
- 
+
   set Ms₀ := fin.tail Ms,
   set N := Ms 0 with hN,
   cases IH Ms₀ with Mα₀ hMα₀, clear IH,
   refine ⟨two_union_matroid.union Mα₀ N, λ X, _⟩,
-  rw [two_union_matroid.indep_iff_union, is_union_two_indep], dsimp only, 
+  rw [two_union_matroid.indep_iff_union, is_union_two_indep], dsimp only,
   refine ⟨λ h, _, λ h, _⟩,
   { rcases h with ⟨I₁,I₂,h₁,h₂,rfl⟩,
     rw hMα₀ at h₁, rcases h₁ with ⟨⟨Is₀,h₃⟩,rfl⟩,
@@ -375,7 +375,7 @@ begin
   have hφ' : function.surjective φ,
   { rintros ⟨I,hI⟩,
     rw hφ, simp only [subtype.mk_eq_mk, subtype.val_eq_coe],
-    rw union_matroid_indep_iff at hI,  
+    rw union_matroid_indep_iff at hI,
     cases hI with Is hIs,
     use Is, convert hIs.symm, },
   rw max_reindex φ hφ' (λ I, size I.val), trivial,
@@ -405,18 +405,18 @@ begin
   set φ : N.indep × (indep_tuple (fin.tail Ms)) → indep_tuple Ms := λ Is,
     ⟨fin.cons Is.1.val Is.2.val, λ i,
       begin
-        revert i, refine λ i, fin.cases _ (λ i₀, _) i, 
+        revert i, refine λ i, fin.cases _ (λ i₀, _) i,
         convert Is.1.property,
         convert Is.2.property i₀, simp,
-      end ⟩ with hφ, 
- 
+      end ⟩ with hφ,
+
   have hφ' : function.surjective φ := sorry,
   erw [←(max_reindex φ hφ' (λ Is, size (set.Union Is.val))), hφ],
- 
+
   sorry,
- 
- 
- 
+
+
+
 end
 -/
 
@@ -433,7 +433,7 @@ def indep_tuple {n : ℕ} (Ms : fin n → matroid α) : Type :=
 
 instance indep_tuple_nonempty {n : ℕ} (Ms : fin n → matroid α ) : nonempty (indep_tuple Ms) :=
 by {apply nonempty_subtype.mpr, from ⟨(λ x, ∅), λ i, (Ms i).empty_indep ⟩}
- 
+
 instance indep_tuple_fintype {n : ℕ} (Ms: fin n → matroid α) : fintype (indep_tuple Ms) :=
 by {unfold indep_tuple, apply_instance }
 
@@ -506,7 +506,7 @@ begin
   ext x,
   unfold matroid_union_lb_fn union_of_tuple, dsimp only,
   rw [size_zero_iff_empty, set.Union_eq_empty],
-  from λ i, fin_zero_elim i, 
+  from λ i, fin_zero_elim i,
 end
 
 
@@ -516,14 +516,14 @@ begin
   induction n with n IH,
 
   -- base case
-  simp only [matroid_union_ub_fn, add_zero, fin.sum_univ_zero, lb_fn_trivial, max_const], 
+  simp only [matroid_union_ub_fn, add_zero, fin.sum_univ_zero, lb_fn_trivial, max_const],
   rw attained_lb_is_min' (λ (X : set α), size Xᶜ ) (univ : set α) 0 _ _;
   simp [size_nonneg],
- 
+
   cases nat.eq_zero_or_pos n with hn,
 
   -- one-matroid case
-  subst hn, 
+  subst hn,
   unfold matroid_union_lb_fn matroid_union_ub_fn union_of_tuple,
   simp_rw [union_fin_one, sum_fin_one],
   apply minmax_eq_cert,
@@ -532,18 +532,18 @@ begin
   have Bprop : ∀ (i : fin 1), (Ms i).is_indep (Bfn i) := by
     {intros i,  rw h_Bfn, dsimp only, convert (basis_is_indep hB)},
 
-  refine ⟨⟨Bfn, Bprop⟩, univ, _⟩, 
-  simp [size_basis hB],  
+  refine ⟨⟨Bfn, Bprop⟩, univ, _⟩,
+  simp [size_basis hB],
 
   intros Is A,
   rw ←indep_iff_r.mp (Is.property 0),
   have hd := (dual (Ms 0)).rank_nonneg Aᶜ,
   rw [dual_r , compl_compl] at hd,
   linarith [(Ms 0).rank_mono (subset_univ (Is.val 0))],
- 
-  --have := rank_le_univ M0 
- 
- 
+
+  --have := rank_le_univ M0
+
+
 
   --let Bt : indep_tuple Ms := ⟨⟨λ (i : fin n.succ), B⟩ , by {}⟩,
   --use ⟨⟨λ i, B⟩, _⟩,
@@ -551,19 +551,19 @@ begin
   --rw hn at Ms,
   rcases max_spec (matroid_union_lb_fn Ms) with ⟨Is, ⟨hIs₁, hIs₂⟩⟩,
   rcases min_spec (matroid_union_ub_fn Ms) with ⟨A, ⟨hA₁, hA₂⟩⟩,
-  
+
   rw [←hIs₁, ←hA₁],
   sorry,
   --unfold matroid_union_ub_fn matroid_union_lb_fn,
 
 
- 
- 
- 
 
 
- 
-                   
+
+
+
+
+
 
 end
 -/ 

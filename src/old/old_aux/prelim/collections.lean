@@ -39,8 +39,8 @@ lemma contains_min {P : set α → Prop} {X : set α} :
 minimal_example P
 
 lemma max_contains {P : set α → Prop} {X : set α} :
-  P X → ∃ Y, X ⊆ Y ∧ is_maximal P Y := 
-maximal_example P 
+  P X → ∃ Y, X ⊆ Y ∧ is_maximal P Y :=
+maximal_example P
 
 -- Union/Intersection-closed collections of sets
 
@@ -51,7 +51,7 @@ lemma union_closed_iff_compl_inter_closed (P : set α → Prop) :
   union_closed P ↔ inter_closed (λ X, P Xᶜ) :=
 begin
   refine ⟨λ h, ⟨by {rw compl_univ, exact h.1},λ X Y hX hY, _⟩,
-          λ h,⟨by {rw ←compl_univ, exact h.1},λ X Y hX hY,_⟩ ⟩, 
+          λ h,⟨by {rw ←compl_univ, exact h.1},λ X Y hX hY,_⟩ ⟩,
   rw compl_inter, exact h.2 _ _ hX hY,
   rw [←compl_compl (X ∪ Y), compl_union],
   rw ←compl_compl X at hX,
@@ -60,7 +60,7 @@ begin
 end
 
 lemma inter_closed_exists_min (P : set α → Prop) :
-  inter_closed P → ∃ X, is_minimal P X := 
+  inter_closed P → ∃ X, is_minimal P X :=
 λ h, by {cases (contains_min h.1) with Y, use Y, exact h_1.2}
 
 lemma inter_closed_min_unique (P : set α → Prop) :
@@ -79,7 +79,7 @@ lemma inter_closed_min_iff_in_and_lb {P : set α → Prop} (hP : inter_closed P)
   end
 
 lemma union_closed_exists_max (P : set α → Prop) :
-  union_closed P → ∃ X, is_maximal P X := 
+  union_closed P → ∃ X, is_maximal P X :=
   λ h, by {cases (max_contains h.1) with Y, use Y, exact h_1.2}
 
 lemma union_closed_max_unique (P : set α → Prop) :
@@ -113,7 +113,7 @@ lemma min_of_inter_closed_in {P : set α → Prop} (h : inter_closed P) :
 lemma min_of_inter_closed_is_lb {P : set α → Prop} (h : inter_closed P) :
   is_lb P (min_of_inter_closed h) :=
   begin
-    intros X hX, rcases contains_min hX with ⟨Y, ⟨hY₁, hY₂⟩⟩, 
+    intros X hX, rcases contains_min hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,
     rwa inter_closed_min_unique P h _ _  hY₂
       ((classical.some_spec (inter_closed_exists_min P h))) at hY₁,
   end
@@ -127,7 +127,7 @@ lemma is_min_of_inter_closed {P : set α → Prop} (h : inter_closed P) {X : set
 begin
   intros hX hlb,
   refine inter_closed_min_unique P h X (min_of_inter_closed h) ⟨hX,λ Y hY hPY, _⟩ ⟨_,λ Y hY hPY,_⟩,
-  exact ssubset_not_supset hY (hlb Y hPY),    
+  exact ssubset_not_supset hY (hlb Y hPY),
   exact min_of_inter_closed_in h,
   refine ssubset_not_supset (subset.lt_of_le_of_lt (hlb _ hPY) hY ) _,
   exact (min_of_inter_closed_is_lb h) _ hX,
@@ -147,7 +147,7 @@ lemma max_of_union_closed_in {P : set α → Prop} (h : union_closed P) :
 lemma max_of_union_closed_is_ub {P : set α → Prop} (h : union_closed P) :
   is_ub P (max_of_union_closed h) :=
 begin
-  intros X hX, rcases max_contains hX with ⟨Y, ⟨hY₁, hY₂⟩⟩, 
+  intros X hX, rcases max_contains hX with ⟨Y, ⟨hY₁, hY₂⟩⟩,
   rwa union_closed_max_unique
     P h _ _  hY₂ ((classical.some_spec (union_closed_exists_max P h))) at hY₁
 end
@@ -197,13 +197,13 @@ lemma union_all_subset_iff (P : set α → Prop) (X : set α) :
   union_all P ⊆ X ↔ is_ub P X :=
   begin
     refine ⟨λ h, λ Y hY, _ , λ h, min_of_inter_closed_is_lb (ub_inter_closed P) _ h ⟩,
-    exact subset.trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h, 
+    exact subset.trans (min_of_inter_closed_in (ub_inter_closed P) Y hY) h,
   end
 
 lemma union_all_ub (P : set α → Prop) :
   is_ub P (union_all P) :=
   (union_all_subset_iff P _).mp (subset_refl _ )
- 
+
 end extrema
 section size
 
@@ -241,7 +241,7 @@ lemma size_sUnion_of_common_inter' {I : set α} {S : set (set α)}
 (hne : S.nonempty) (h : ∀ X X' ∈ S, X ≠ X' → X ∩ X' = I) :
   size (⋃₀ S) =  ∑ᶠ X in S, size X - (size S - 1) * (size I)  :=
 begin
-  rw [size_sUnion_of_common_inter hne h], 
+  rw [size_sUnion_of_common_inter hne h],
   have hsub : ∑ᶠ (X : set α) in S, (size X - size I)
             = ∑ᶠ (X : set α) in S, size X - ∑ᶠ (X : set α) in S, size I,
   { apply fin.finsum_in_sub_distrib, } ,

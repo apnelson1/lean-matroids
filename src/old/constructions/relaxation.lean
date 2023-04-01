@@ -70,7 +70,7 @@ begin
   rw if_pos h,
   rcases hC with ⟨h₁,h₂⟩,
   rw circuit_iff_r at h₁,
-  rw h, linarith, 
+  rw h, linarith,
   rw if_neg h,
   from M.rank_le_size X,
 end
@@ -87,7 +87,7 @@ begin
     { linarith [circuit_hyperplane_ssupset_rank hC h',
         relax.r_of_not_C M (ne_of_ssubset h').symm]},
       rwa [←h', relax.r_of_C_eq_univ]},
-  linarith [relax.r_of_not_C M h, r_le_relax_r M C Y, rank_mono M hXY], 
+  linarith [relax.r_of_not_C M h, r_le_relax_r M C Y, rank_mono M hXY],
 end
 
 lemma relax.R3 {M : matroid α} {C : set α} :
@@ -97,10 +97,10 @@ begin
   { intros X Y, simp_rw relax_junk_r_eq hC, apply rank_submod},
   intros X Y,
   by_cases hi : X ∩ Y = C; by_cases hu : X ∪ Y = C,
- 
+
   simp only [ eq_of_union_eq_inter (eq.trans hu hi.symm), inter_self, union_self],
 
-  rw [relax.r_of_not_C M hu,hi], 
+  rw [relax.r_of_not_C M hu,hi],
   have hCXY' : (C ⊆ X) ∧ (C ⊆ Y) := by {simp_rw ←hi, from ⟨inter_subset_left _ _, inter_subset_right _ _⟩, },
   have hCXY : (C ⊂ X ∨ X = C) ∧ (C ⊂ Y ∨ Y = C) := by {simp_rw [eq_comm, ←subset_iff_ssubset_or_eq], from hCXY'},
   rcases hCXY with ⟨(hCX | hCX), (hCY|hCY)⟩,
@@ -126,7 +126,7 @@ begin
   rw [hCX], linarith [relax.r_of_not_C M (ne_of_ssubset hCY), M.rank_mono (inter_subset_right C Y)],
   rw [hCY, hCX, inter_self], linarith [r_le_relax_r M C C],
 
-  rw [relax.r_of_not_C M hi, relax.r_of_not_C M hu], 
+  rw [relax.r_of_not_C M hi, relax.r_of_not_C M hu],
   linarith [M.R3 X Y, r_le_relax_r M C X, r_le_relax_r M C Y],
 end
 
@@ -153,10 +153,10 @@ begin
   ext X,
   have hCuniv : univ ≠ C,
   { intro h, have := circuit_hyperplane_rank hC, rw ←h at this, linarith},
-  by_cases h : X = Cᶜ,  
+  by_cases h : X = Cᶜ,
   { simp_rw [dual_r, h, compl_compl, relax, relax.r_of_C hC, relax.r_of_C hCc],
     rw [dual_r, compl_compl, relax.r_of_not_C M hCuniv], linarith},
- 
+
   have h' : Xᶜ ≠ C := λ hcon, by {rw [←hcon, compl_compl] at h, finish},
   simp_rw [dual_r, relax_r_def, relax.r_of_not_C _ h, dual_r,
     relax.r_of_not_C M h', relax.r_of_not_C M hCuniv ],
@@ -198,7 +198,7 @@ begin
     cases hZ,
     assumption,
     rw [←is_cocircuit, cocircuit_iff_r, coindep_iff_r, hXZ] at hZ,
-    linarith,  
+    linarith,
   },
   rw (compl_pair hXZ) at this,
   cases this with hXhp _,
@@ -206,11 +206,11 @@ begin
   let hch : is_circuit_hyperplane M₁ X := ⟨hXcct, hXhp⟩,
   use hch,
   ext Y,
-  by_cases hYX : Y = X,  
-  simp_rw [hYX, relax, relax.r_of_C hch],  
+  by_cases hYX : Y = X,
+  simp_rw [hYX, relax, relax.r_of_C hch],
   linarith [r_cct hXcct, r_indep hXind],
   simp_rw [relax, relax.r_of_not_C _ hYX, eq_comm],
-  from h_other Y hYX, 
+  from h_other Y hYX,
 end
 
 lemma single_rank_disagreement_univ (hα : nonempty α){M₁ M₂ : matroid α} :

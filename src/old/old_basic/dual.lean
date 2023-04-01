@@ -1,4 +1,4 @@
-import matroid.axioms 
+import matroid.axioms
 import prelim.collections prelim.size
 
 universes u

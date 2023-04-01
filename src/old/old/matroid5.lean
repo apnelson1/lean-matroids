@@ -259,10 +259,10 @@ begin
     apply heq_of_eq, rw ←(eq_of_heq hXX'),
 
     calc M.dual.dual.rank X = M.dual.rank Xᶜ + size X - M.dual.rank ⊤                                                 : rfl
-    ...                     = (M.rank Xᶜᶜ + size Xᶜ - M.rank ⊤) + size X - (M.rank ⊤ᶜ + size (⊤ : M.A) - M.rank ⊤)   : rfl 
+    ...                     = (M.rank Xᶜᶜ + size Xᶜ - M.rank ⊤) + size X - (M.rank ⊤ᶜ + size (⊤ : M.A) - M.rank ⊤)   : rfl
     ...                     = M.rank Xᶜᶜ + (size X + size Xᶜ - size (⊤ : M.A)) - (M.rank ⊤ᶜ)                          : by linarith
     ...                     = M.rank X + (size (⊤ : M.A) - size (⊤ : M.A)) - M.rank ⊥                                 : by rw [compl_compl, size_compl_sum, compl_top]
-    ...                     = M.rank X                                                                                 : by linarith [rank_bot M]  
+    ...                     = M.rank X                                                                                 : by linarith [rank_bot M]
 end
 
 
@@ -301,7 +301,7 @@ def minor.as_matroid {M : matroid} (m : minor M) : matroid :=
   end,
   R2 :=
   begin
-    intros X Y hXY, rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,   
+    intros X Y hXY, rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,
     linarith [M.R2 (subset_union_subset_left (emb.func X) (emb.func Y) C (embedding_on_subset emb hXY )), hCr X, hCr Y],
   end,
   R3 :=

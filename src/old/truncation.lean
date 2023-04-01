@@ -94,7 +94,7 @@ end matroid
 
 
 
-/-def indep (M : indep_family E) (n : ℤ) : set E → Prop := 
+/-def indep (M : indep_family E) (n : ℤ) : set E → Prop :=
   λ X, M.indep X ∧ size X ≤ max 0 n
 
 lemma I1 (M : indep_family E) (n : ℤ) :
@@ -128,7 +128,7 @@ end-/
       cases h2 with h1 h2,
       rw indep_iff_r_eq_card at h1,
       rw h2 at h1,
-     
+
       sorry,
     end,
   base_exchange' := _ }-/

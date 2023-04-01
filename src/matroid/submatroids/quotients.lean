@@ -61,7 +61,7 @@ end
 
 lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) :
   ∃ C' ⊆ C, N.circuit C' :=
-weak_image_iff_circuit.mp h _ hC 
+weak_image_iff_circuit.mp h _ hC
 
 lemma weak_image_tfae:
   tfae
@@ -218,7 +218,7 @@ lemma eq_of_quotient_of_rk_eq_rk (h : N ≼ M) (hr : N.rk = M.rk) :
 begin
   refine eq_of_r_eq_r_forall _,
   by_contra' h',
-  obtain ⟨S, hS, hmax⟩ := finite.exists_maximal _ h', 
+  obtain ⟨S, hS, hmax⟩ := finite.exists_maximal _ h',
   apply hS,
   obtain ⟨e,heS⟩ := (ne_univ_iff_exists_not_mem S).mp (by {rintro rfl, exact hS hr}),
   have hi : M.r (insert e S) = N.r (insert e S),
