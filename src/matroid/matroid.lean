@@ -1,5 +1,5 @@
-import .aux.ncard
-import .aux.helpers
+import mathlib.ncard
+import mathlib.helpers
 
 -- noncomputable theory
 open_locale classical

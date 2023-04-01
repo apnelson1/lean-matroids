@@ -1,9 +1,9 @@
 
-import tactic 
+import algebra.big_operators.finprod
+import mathlib.ncard
 import order.complete_lattice
 import set_theory.cardinal.finite
-import ..aux.ncard
-import algebra.big_operators.finprod
+import tactic
 
 noncomputable theory 
 open_locale classical 
