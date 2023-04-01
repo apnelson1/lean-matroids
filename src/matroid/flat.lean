@@ -312,7 +312,7 @@ lemma indep_iff_cl_ssubset_ssubset_forall :
   M.indep I ↔ ∀ J ⊂ I, M.cl J ⊂ M.cl I :=
 begin
   refine ⟨λ hI J hJI, _,
-    λ h, indep_iff_cl_diff_ne_forall.mpr (λ x hx, (h _ (diff_singleton_ssubset hx)).ne)⟩,
+    λ h, indep_iff_cl_diff_ne_forall.mpr (λ x hx, (h _ $ diff_singleton_ssubset.2 hx).ne)⟩,
   obtain ⟨e,heI,heJ⟩ := exists_of_ssubset hJI,
   exact (M.cl_subset_cl_of_subset (subset_diff_singleton hJI.subset heJ)).trans_ssubset
     ((M.cl_subset_cl_of_subset (diff_subset I {e})).ssubset_of_ne
@@ -1022,7 +1022,7 @@ matroid E :=
       have hyA : y ∈ A,
       { by_contra hyA,
         exact hB₁.2 _ (((subset_insert_iff_of_not_mem hyA).mp hAs.subset).trans_ssubset
-          (diff_singleton_ssubset hx.1)) hA},
+          $ diff_singleton_ssubset.2 hx.1) hA },
       have hy' : B₁ ⊆ cl (A \ {y}),
       { refine λ z hz, by_contra (λ hz', _ ),
         have hzA : z ∈ cl (insert y (A \ {y})),
@@ -1047,13 +1047,13 @@ matroid E :=
         exact hAs.subset.trans (insert_subset_insert (diff_subset _ _))},
       have hA' := cl_mono _ _ hy',
       rw [hB₁.1, univ_subset_iff, cl_idem] at hA',
-      refine (diff_singleton_ssubset hyA).ne.symm (hAmin _ ⟨_,hA'⟩ (diff_subset _ _)),
+      refine (diff_singleton_ssubset.2 hyA).ne.symm (hAmin _ ⟨_,hA'⟩ (diff_subset _ _)),
       exact (diff_subset _ _).trans_ssubset hAs},
 
   have ht : B₂ ⊆ _ := subset_trans _ (union_subset hss (subset_cl (B₁ \ {x}))),
   { have ht' := cl_mono _ _ ht,
     rw [hB₂.1, cl_idem, univ_subset_iff] at ht',
-    exact hB₁.2 _ (diff_singleton_ssubset hx.1) ht'},
+    exact hB₁.2 _ (diff_singleton_ssubset.2 hx.1) ht'},
   nth_rewrite 0 [←diff_union_inter B₂ B₁],
   apply union_subset_union rfl.subset,
   rintros y ⟨hy2,hy1⟩,
@@ -1103,7 +1103,7 @@ begin
     rw [hcon],
     apply subset_univ},
   obtain ⟨B, hBu, hBmax, hIB⟩ := h,
-  refine hBmax _ (diff_singleton_ssubset (hIB hI)) _,
+  refine hBmax _ (diff_singleton_ssubset.2 $ hIB hI) _,
   rwa cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem,
   have hdiff := cl_mono _ _  (@diff_subset_diff_left _ _ _ {x} hIB),
   rw [hcl] at hdiff,
@@ -1127,7 +1127,7 @@ begin
   have hImin' : ∀ x ∈ I, M.cl (I \ {x}) = cl (I \ {x}),
   { by_contra' h,
     obtain ⟨x,hxI,hne⟩ := h,
-    exact (diff_singleton_ssubset hxI).ne.symm (hImin _ hne (diff_subset _ _))},
+    exact (diff_singleton_ssubset.2 hxI).ne' (hImin _ hne  $diff_subset _ _) },
 
   set indep : set E → Prop := λ I, ∀ x ∈ I, cl (I \ {x}) ≠ cl I with h_indep,
 
@@ -1149,7 +1149,7 @@ begin
   obtain ⟨x,hx⟩:= hI,
   obtain (hxI | hxI) := em (x ∈ cl I),
   { obtain ⟨hxI', B, ⟨hB, hBmin⟩, hxIB⟩ := hx.mpr hxI,
-    refine hBmin (B \ {x}) (diff_singleton_ssubset (hxIB (mem_insert _ _))) _,
+    refine hBmin (B \ {x}) (diff_singleton_ssubset.2 $ hxIB $ mem_insert _ _) _,
     rwa [cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem],
     have hIBx : I ⊆ B \ {x}, from ((subset_diff_singleton ((subset_insert _ _).trans hxIB)) hxI'),
     exact cl_mono I (B \ {x}) hIBx hxI},

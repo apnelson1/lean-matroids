@@ -68,7 +68,7 @@ def matroid.is_representable (M : matroid E) (𝔽 : Type*) [h𝔽 : field 𝔽]
 def matrix.row_set (P : matrix ρ E R) : set (E → R) :=
   set.range (λ i, (λ a, P i a))
 
-def matrix.column_set (P : matrix ρ E R) : set (ρ → R) :=
+def matrix.column_set (P : matrix E ρ R) : set (E → R) :=
   matrix.row_set Pᵀ
 
 -- def matrix.row_set' (P : matroid ρ E R) : set ()

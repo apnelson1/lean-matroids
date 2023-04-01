@@ -24,7 +24,7 @@ hC.2 _ hXC
 
 lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) :
   M.indep (C \ {e}) :=
-hC.ssubset_indep (diff_singleton_ssubset he)
+hC.ssubset_indep (diff_singleton_ssubset.2 he)
 
 lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) :
   X = C :=
@@ -60,7 +60,7 @@ lemma circuit_iff_dep_forall_diff_singleton_indep :
   M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
 begin
   rw [circuit_def, and.congr_right_iff],
-  refine λ hdep, ⟨λ h e heC, (h _ (diff_singleton_ssubset heC)), λ h I hIC, _⟩,
+  refine λ hdep, ⟨λ h e heC, (h _ $ diff_singleton_ssubset.2 heC), λ h I hIC, _⟩,
   obtain ⟨e, heC,heI⟩ := exists_of_ssubset hIC,
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
 end

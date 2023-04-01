@@ -87,21 +87,6 @@ begin
   rw preimage_image_eq _ subtype.coe_injective,
 end
 
-lemma set.diff_singleton_ssubset_iff {α : Type*} {e : α} {S : set α} :
-  S \ {e} ⊂ S ↔ e ∈ S :=
-⟨ λ h, by_contra (λ he, h.ne (by rwa [sdiff_eq_left, disjoint_singleton_right])),
-  λ h, ssubset_of_ne_of_subset
-    (by rwa [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]) (diff_subset _ _)⟩
-
-lemma set.diff_singleton_ssubset {α : Type*} {e : α} {S : set α} (heS : e ∈ S) :
-  S \ {e} ⊂ S :=
-set.diff_singleton_ssubset_iff.mpr heS
-
-lemma insert_diff_singleton_comm {α : Type*} {X : set α} {e f : α} (hef : e ≠ f) :
-  insert e (X \ {f}) = (insert e X) \ {f} :=
-by rw [←union_singleton, ←union_singleton, union_diff_distrib,
-  diff_singleton_eq_self (by simpa using hef.symm : f ∉ {e})]
-
 lemma function.injective.compl_image {α β : Type*} {f : α → β} (hf : f.injective) (X : set α) :
   (f '' X)ᶜ = f '' (Xᶜ) ∪ (range f)ᶜ :=
 begin

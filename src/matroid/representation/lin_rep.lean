@@ -48,6 +48,7 @@ begin
   obtain ⟨ι, ⟨φ⟩⟩ := h,
   obtain ⟨B, hB⟩ := M.exists_base,
   have := of_base φ hB,
+  sorry
 end
 
 

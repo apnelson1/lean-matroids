@@ -61,7 +61,7 @@ end
 
 lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) :
   ∃ C' ⊆ C, N.circuit C' :=
-weak_image_iff_circuit.mp h _ hC
+weak_image_iff_circuit.mp h _ hC 
 
 lemma weak_image_tfae:
   tfae
@@ -159,8 +159,7 @@ begin
   obtain ⟨C,hCX,hC⟩ := dep_iff_supset_circuit.mp h',
   obtain ⟨e,heC⟩ := hC.nonempty,
   have he := (hC.subset_cl_diff_singleton e).trans (h (C \ {e})),
-  exact ((cl_subset_cl_of_subset_cl he).trans_ssubset
-    ((hX.subset hCX).cl_diff_singleton_ssubset heC)).ne rfl,
+  exact (cl_subset_cl_of_subset_cl he).not_ssubset ((hX.subset hCX).cl_diff_singleton_ssubset heC),
 end
 
 lemma indep.quotient (hI : N.indep I) (h : N ≼ M) :
@@ -218,7 +217,7 @@ lemma eq_of_quotient_of_rk_eq_rk (h : N ≼ M) (hr : N.rk = M.rk) :
 begin
   refine eq_of_r_eq_r_forall _,
   by_contra' h',
-  obtain ⟨S, hS, hmax⟩ := finite.exists_maximal _ h',
+  obtain ⟨S, hS, hmax⟩ := finite.exists_maximal _ h', 
   apply hS,
   obtain ⟨e,heS⟩ := (ne_univ_iff_exists_not_mem S).mp (by {rintro rfl, exact hS hr}),
   have hi : M.r (insert e S) = N.r (insert e S),

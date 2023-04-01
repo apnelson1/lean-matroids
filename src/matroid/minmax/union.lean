@@ -243,8 +243,7 @@ end )
       have hei := not_mem_subset (subset_Union _ i) h'',
       exact ((hI i).not_mem_cl_iff.mp hei).2},
     apply hI},
-
-
+  sorry
 
       -- refine ⟨⟨k, by simp⟩ , λ i, subset_Union_of_subset i _⟩,
       -- split_ifs,

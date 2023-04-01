@@ -176,7 +176,7 @@ begin
   simp_rw [circuit_def, unif_indep_iff, not_le],
   refine ⟨λ h, _,λ h, _⟩,
   { obtain ⟨e,he⟩ := nonempty_of_ncard_ne_zero (ne_zero_of_lt h.1),
-    have hCe := h.2 (C \ {e}) (diff_singleton_ssubset he),
+    have hCe := h.2 (C \ {e}) (diff_singleton_ssubset.2 he),
     rw [←add_le_add_iff_right 1, ncard_diff_singleton_add_one he] at hCe,
     exact hCe.antisymm (nat.add_one_le_iff.mpr h.1)},
   refine ⟨by linarith, λ I hIC, (add_le_add_iff_right 1).mp _⟩,

@@ -424,7 +424,7 @@ end from_axioms
 --   begin
 --     rintro B₁ B₂ ⟨hB₁,hB₁max⟩ ⟨hB₂,hB₂max⟩ x hx,
 --     obtain ⟨y,hy,hyI⟩ := ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁) hB₂
---       ⟨B₁, diff_singleton_ssubset hx.1, hB₁⟩
+--       ⟨B₁, diff_singleton_ssubset.2 hx.1, hB₁⟩
 --       (λ J hB₂J hJ, hB₂J.ne ((hB₂max _ hB₂J.subset hJ).symm)),
 --     refine ⟨y, mem_of_mem_of_subset hy _, hyI, λ I hyI hI, _⟩  ,
 --     { rw [diff_diff_right, inter_singleton_eq_empty.mpr hx.2, union_empty]},
