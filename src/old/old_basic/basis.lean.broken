@@ -1,11 +1,11 @@
 /- Basis Axioms. This whole file is ancient and todo -/
 
-import ftype.basic ftype.induction ftype.collections .rankfun .indep 
+import ftype.basic ftype.induction ftype.collections .rankfun .indep
 
-open ftype 
+open ftype
 
 local attribute [instance] classical.prop_decidable
-noncomputable theory 
+noncomputable theory
 
 variables {α : ftype}
 
@@ -40,8 +40,8 @@ def B_to_I3 (M : basis_family α) : satisfies_I3 (basis_to_indep M.basis) :=
 begin
   simp only [basis_to_indep, satisfies_I3, and_imp, exists_imp_distrib],
   intros I₁ I₂ HI₁ltI₂ B₁ HB₁ HIB₁ B₂ HB₂ HJB₂,
-  
-  -- B₁ = B₂ 
+ 
+  -- B₁ = B₂
 
   have HB_case := eq_or_exists_mem_diff_of_size_eq (basis_have_same_size M B₂ B₁ HB₂ HB₁),
   cases HB_case,
@@ -76,7 +76,7 @@ begin
       cases Hcase1,
       {
         have Hminimaldiff := @minimal_example α
-          (fun (X : set α), 
+          (fun (X : set α),
             ∃ B : set α, M.basis B ∧ I₂ ⊆ B ∧ X = B \ (I₂ ∪ B₁))
           (B₂ \ (I₂ ∪ B₁))
           (begin
@@ -88,8 +88,8 @@ begin
           end)
         ,
         simp only [not_exists, and_imp, not_and, ne.def, ssubset_iff] at Hminimaldiff,
-        rcases Hminimaldiff with 
-          ⟨X, ⟨_, ⟨⟨B₂', ⟨HB₂', ⟨HB₂'I₂, HX⟩⟩⟩, 
+        rcases Hminimaldiff with
+          ⟨X, ⟨_, ⟨⟨B₂', ⟨HB₂', ⟨HB₂'I₂, HX⟩⟩⟩,
                     Hminimal⟩⟩⟩,
         -- Two cases: B₂ - (I₂ ∪ B₁) = ⊥ or not
         have Hcase2 : (B₂ \ (I₂ ∪ B₁) = ⊥ ∨ ¬ B₂ \ (I₂ ∪ B₁) = ⊥), apply em,
@@ -119,12 +119,12 @@ begin
             -- |I₁ - I₂| ≥ |B₁ - B₂| = |B₂ - B₁| = |I₂ - I₁|,
             -- hence |I₁| ≥ |I₂|
             have : size I₁ ≥ size I₂ := sorry,
-            linarith, 
+            linarith,
           },
           {
             -- not empty, get goal.
             have Hx : (∃ x, x ∈ B₁ \ (I₁ ∪ B₂)) := sorry,
-            cases Hx with x Hx,        
+            cases Hx with x Hx,       
             -- again, tactic...
             have HB₁x : x ∈ B₁ \ B₂ := sorry,
             have := M.B2 B₁ B₂ HB₁ HB₂ x HB₁x,
@@ -172,7 +172,7 @@ begin
         split,
           -- b is in the difference (want something to_I turn ∩ <-> ∧)
           sorry,
-          -- 
+          --
           use B₁, split, assumption,
             -- b ∈ I₁, so we're all good.
             sorry,

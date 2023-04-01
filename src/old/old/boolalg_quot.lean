@@ -1,23 +1,23 @@
 import tactic.ext
---import tactic.ring 
+--import tactic.ring
 import tactic.linarith
-import tactic.tidy 
-import tactic 
-import boolalg 
+import tactic.tidy
+import tactic
+import boolalg
 local attribute [instance] classical.prop_decidable
 
 
-namespace boolalg 
+namespace boolalg
 
-def equivalence_closed (A : boolalg){r : single A → single A → Prop} (hr : equivalence r) : A → Prop := 
-  λ X, ∀ e f : single A, (e:A) ⊆ X → r e f → (f:A) ⊆ X 
+def equivalence_closed (A : boolalg){r : single A → single A → Prop} (hr : equivalence r) : A → Prop :=
+  λ X, ∀ e f : single A, (e:A) ⊆ X → r e f → (f:A) ⊆ X
 
-def quotient_alg (A : boolalg) {r : single A → single A → Prop} (hr : equivalence r) : boolalg := 
-{ 
+def quotient_alg (A : boolalg) {r : single A → single A → Prop} (hr : equivalence r) : boolalg :=
+{
   member := {X: A // equivalence_closed A hr X},
   bot := ⟨⊥, fun X e f he ref, false.elim (sorry : ¬e ⊆ ⊥)⟩,
-  top := ⟨⊤, sorry⟩, 
-  inter := λ X Y, ⟨X.1 ∩ Y.1, sorry ⟩, 
+  top := ⟨⊤, sorry⟩,
+  inter := λ X Y, ⟨X.1 ∩ Y.1, sorry ⟩,
   union := _,
   compl := _,
   size := _,

@@ -1,13 +1,13 @@
 import tactic data.finset
 
-namespace finset 
+namespace finset
 variables {α : Type*} {β : Type*} [decidable_eq α]
 
 
 
  def size (A: finset α) := (card A: ℤ)
 
- lemma union_subset_union_left {s₁ s₂ : finset α} (t) (h : s₁ ⊆ s₂) : s₁ ∪ t ⊆ s₂ ∪ t := 
+ lemma union_subset_union_left {s₁ s₂ : finset α} (t) (h : s₁ ⊆ s₂) : s₁ ∪ t ⊆ s₂ ∪ t :=
     begin
         intros x hx ,
         simp,
@@ -24,7 +24,7 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
         finish [finset.subset_iff],
     end
 
-    lemma ss_eq {A E E': finset α} : (A ⊆ E) → (E = E') → (A ⊆ E') := 
+    lemma ss_eq {A E E': finset α} : (A ⊆ E) → (E = E') → (A ⊆ E') :=
     begin
         intros h h',
         rw ← h',
@@ -39,9 +39,9 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
       sorry,
     end
 
-    lemma finset_eq {A B: finset α} : (A = B) ↔ ((∀ x ∈ A, x ∈ B) ∧ (∀ x ∈ B, x ∈ A)) := 
+    lemma finset_eq {A B: finset α} : (A = B) ↔ ((∀ x ∈ A, x ∈ B) ∧ (∀ x ∈ B, x ∈ A)) :=
     begin
-      split, 
+      split,
       intros h,
       rw h,
       split,
@@ -55,11 +55,11 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
       intros b hb,
       exact h2 b hb,
     end
-    
+   
     lemma em_ss {E : finset α} : ∅ ⊆ E :=
     begin
         exact empty_subset E,
-    end 
+    end
 
     def inter_subset {A B E: finset α} (hA : A ⊆ E) (hB : B ⊆ E) := subset.trans (inter_subset_left A B) hA
 
@@ -68,7 +68,7 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
       sorry,
     end
 
-    lemma sdiff_tel {E X Y : finset α} : (X ⊆ Y) → (Y ⊆ E) → (E \ Y ) ∪ (Y \ X) = (E \ X) := 
+    lemma sdiff_tel {E X Y : finset α} : (X ⊆ Y) → (Y ⊆ E) → (E \ Y ) ∪ (Y \ X) = (E \ X) :=
     begin
       intros hXY hYE,
       sorry,
@@ -76,41 +76,41 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
 
     lemma size_empt : size (∅ : finset α) = 0 := sorry
 
-    
-    lemma maximal_ss (S: finset α) (C ⊆ powerset S) (hempt: ∅ ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, X ⊂ Y → ¬ Y ∈ C) := 
+   
+    lemma maximal_ss (S: finset α) (C ⊆ powerset S) (hempt: ∅ ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, X ⊂ Y → ¬ Y ∈ C) :=
     begin
       sorry,
     end
 
-    lemma minimal_ss (S: finset α) (C ⊆ powerset S) (h_full : S ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, Y ⊂ X → ¬ Y ∈ C) := 
+    lemma minimal_ss (S: finset α) (C ⊆ powerset S) (h_full : S ∈ C) : ∃ X ∈ C, (∀ Y ∈ powerset S, Y ⊂ X → ¬ Y ∈ C) :=
     begin
       sorry,
     end
 
-    lemma maximal_ss_property (S: finset α){P: finset α → Prop} (hempt: P ∅) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
+    lemma maximal_ss_property (S: finset α){P: finset α → Prop} (hempt: P ∅) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) :=
     begin
       sorry,
     end
 
-    lemma minimal_ss_property (S: finset α){P: finset α → Prop} (hfull: P S) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, Y ⊂ X → ¬ (P Y)) := 
+    lemma minimal_ss_property (S: finset α){P: finset α → Prop} (hfull: P S) : ∃ (X ⊆ S), P X ∧ (∀ Y ⊆ S, Y ⊂ X → ¬ (P Y)) :=
     begin
       sorry,
     end
 
-    lemma extends_to_maximal_property (S: finset α){X₀ : finset α} {P: finset α → Prop} (hempt: P X₀) : ∃ (X ⊆ S), (X₀ ⊆ X) ∧ (P X) ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) := 
+    lemma extends_to_maximal_property (S: finset α){X₀ : finset α} {P: finset α → Prop} (hempt: P X₀) : ∃ (X ⊆ S), (X₀ ⊆ X) ∧ (P X) ∧ (∀ Y ⊆ S, X ⊂ Y → ¬ (P Y)) :=
     begin
       sorry,
     end
 
-    @[simp] lemma m0 {E: finset α} {e : α} : e ∈ E → {e} ⊆ E := (singleton_subset_iff.symm).mp 
+    @[simp] lemma m0 {E: finset α} {e : α} : e ∈ E → {e} ⊆ E := (singleton_subset_iff.symm).mp
 
     example {E: finset α} {e : α} : e ∈ E → {e} ⊆ E :=
     begin
-      simp, 
+      simp,
     end
 
 
-end finset 
+end finset
 
 /-namespace finset
 /- For mathlib? -/

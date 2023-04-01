@@ -107,7 +107,7 @@ lemma distinct : AB.A ≠ AB.B := @AB.no_confusion _ _ _
 
 def Aeq : Type := {x : AB // x = AB.A}
 def Ane : Type := {x : AB // x ≠ AB.B}
-lemma same : Aeq = Ane := 
+lemma same : Aeq = Ane :=
   congr_arg (@subtype AB) (funext (@AB.rec (fun x, (x = AB.A) = (x ≠ AB.B))
   (propext (iff.intro (fun _, distinct) (fun _, eq.refl AB.A)))
   (propext (iff.intro (fun h _, distinct h.symm) (fun h, false.elim (h (eq.refl AB.B)))))))

@@ -3,7 +3,7 @@ Copyright (c) 2020 Kexing Ying and Kevin Buzzard. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Kexing Ying, Kevin Buzzard
 -/
-import .extra 
+import .extra
 import data.set.finite
 import algebra.big_operators
 import data.support
@@ -137,7 +137,7 @@ noncomputable def of_support_finite
 { support := hf.to_finset,
   to_fun := f,
   mem_support_to_fun := λ a, set.finite.mem_to_finset hf }
-  
+ 
 
 lemma of_support_finite_def {f : α → β} {hf : (function.support f).finite} :
   (of_support_finite hf : α → β) = f := rfl
@@ -463,7 +463,7 @@ begin
   split; intro ha; rcases ha with ⟨x, hx₀, hx₁⟩,
     exact ⟨x, (set.finite.mem_to_finset hs).2 hx₀, (set.finite.mem_to_finset (ht _)).2 hx₁⟩,
     exact ⟨x, (set.finite.mem_to_finset hs).1 hx₀, (set.finite.mem_to_finset (ht _)).1 hx₁⟩
-end 
+end
 
 /-- An alternative version of `finsum_in_bUnion` in which we sum on the a fintype rather than a
   finite set. -/
@@ -687,5 +687,5 @@ begin
     { exact (finsum_in_eq_zero_of_infinite hs).symm ▸ hp₀ }
 end
 
-end finsum 
+end finsum
 

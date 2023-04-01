@@ -59,7 +59,7 @@ begin
   intros h,
   ext v;
   simp_rw [submodule.mem_span_singleton],
-  --refine ⟨λ ⟨n, hn⟩, _, λ n, _⟩, 
+  --refine ⟨λ ⟨n, hn⟩, _, λ n, _⟩,
   split,
   rintros ⟨n, hn⟩,
   rw [← hn, h, smul_smul],
@@ -108,7 +108,7 @@ begin
   rw [← module.card_fintype b, ← card_singleton (0 : V), card_compl],
 end
 
-variables {K V} 
+variables {K V}
 def subspace_rem_zero (S : submodule K V) : set V := S \ {0}
 
 noncomputable def subspace_rem_zero_finset [fintype V] (S : submodule K V) : finset V := (subspace_rem_zero S).to_finset
@@ -117,7 +117,7 @@ noncomputable def subspace_rem_zero_finset [fintype V] (S : submodule K V) : fin
 variables [nontrivial K] (p : submodule K V) [no_zero_smul_divisors K p]
 lemma span_singleton_eq_iff_mem_dim_one (m : V) (hk : m ≠ 0) : (K ∙ m) = p ↔ m ∈ p ∧ finite_dimensional.finrank K p = 1 :=
 begin
-  refine ⟨λ h2, _, λ h2, _⟩, 
+  refine ⟨λ h2, _, λ h2, _⟩,
   { rw ← h2,
     refine ⟨submodule.mem_span_singleton_self m, finrank_span_singleton hk⟩ },
   ext;
@@ -141,7 +141,7 @@ begin
   { rw [← submodule.coe_smul, hs, submodule.coe_mk] },
   rw [subspace_eq_of_basis_scalar K V m a s h16 h17, submodule.mem_span_singleton],
   use r,
-  rw [← submodule.coe_mk x h4, ← hr, submodule.coe_smul], 
+  rw [← submodule.coe_mk x h4, ← hr, submodule.coe_smul],
 end
 
 noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
@@ -156,7 +156,7 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
       simp only [mem_image, set.mem_to_finset, set.mem_set_of_eq, exists_prop] at h2,
       rcases h2 with ⟨P, ⟨hP1, hP2⟩⟩,
       have hxH : x ∈ H,
-      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero, set.to_finset_diff, 
+      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero, set.to_finset_diff,
           id.def, mem_sdiff, set.mem_to_finset, set_like.mem_coe, set.mem_singleton_iff] at hx,
         exact hx.1 },
       have hyP : y ∈ P,
@@ -164,8 +164,8 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
           set.to_finset_diff, mem_sdiff, set.mem_to_finset, set_like.mem_coe, set.mem_singleton_iff] at hY2,
         exact hY2.1 },
       have hx0 : x ≠ 0,
-      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero, 
-          set.to_finset_diff, id.def, mem_sdiff, set.mem_to_finset, 
+      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero,
+          set.to_finset_diff, id.def, mem_sdiff, set.mem_to_finset,
           set_like.mem_coe, set.mem_singleton_iff] at hx,
         exact hx.2 },
       by_contra hxy,
@@ -186,7 +186,7 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
         rw mem_image at h1,
         rcases h1 with ⟨S, ⟨h4, h5⟩⟩,
         rw [subspace_rem_zero_finset, subspace_rem_zero] at h5,
-        simp only [← h5, set.to_finset_diff, id.def, mem_sdiff, set.mem_to_finset, 
+        simp only [← h5, set.to_finset_diff, id.def, mem_sdiff, set.mem_to_finset,
           set_like.mem_coe, set.mem_singleton_iff] at h2,
         exact h2.2 },
       { use subspace_rem_zero_finset (K ∙ a),
@@ -195,7 +195,7 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
         { use (K ∙ a),
           refine ⟨_, rfl⟩,
           rw ← finrank_span_singleton h },
-        rw [subspace_rem_zero_finset, subspace_rem_zero, set.mem_to_finset, 
+        rw [subspace_rem_zero_finset, subspace_rem_zero, set.mem_to_finset,
           set.mem_diff, set_like.mem_coe, set.mem_singleton_iff],
         exact ⟨submodule.mem_span_singleton_self a, h⟩ },
     end,
@@ -204,8 +204,8 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
       by_contra,
       simp at h,
       rcases h with ⟨a, ⟨ha1, ha2⟩⟩,
-      simp only [subspace_rem_zero_finset, subspace_rem_zero, set.to_finset_diff, 
-        sdiff_eq_empty_iff_subset, set.to_finset_subset, set.coe_to_finset, 
+      simp only [subspace_rem_zero_finset, subspace_rem_zero, set.to_finset_diff,
+        sdiff_eq_empty_iff_subset, set.to_finset_subset, set.coe_to_finset,
         set.subset_singleton_iff, set_like.mem_coe] at ha2,
       have h2 : finite_dimensional.finrank K a = 0,
       { rw finrank_zero_iff_forall_zero,
@@ -217,10 +217,10 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
       rw [← ha1, ← h2],
     end }
 
-lemma card_subspace_rem_zero [fintype V] [nontrivial V] : 
+lemma card_subspace_rem_zero [fintype V] [nontrivial V] :
   (∀ (x : finset V), x ∈ finset.image subspace_rem_zero_finset ({S : submodule K V | finite_dimensional.finrank K S = 1}.to_finset) → finset.card x = (fintype.card K) - 1) :=
 begin
-  simp_rw [mem_image, set.mem_to_finset, set.mem_set_of_eq, 
+  simp_rw [mem_image, set.mem_to_finset, set.mem_set_of_eq,
     subspace_rem_zero_finset, subspace_rem_zero],
   rintros x ⟨h, ⟨ha, hb⟩⟩,
   have h6 : 0 < finite_dimensional.finrank K ↥h,
@@ -235,9 +235,9 @@ begin
   { use (equiv.of_bijective h9.to_equiv h9.to_equiv.bijective) },
   rw [← hb, ← (span_singleton_eq_iff_mem_dim_one h y.1 hy').2 ⟨y.2, ha⟩,
     set.to_finset_diff, card_sdiff, set.to_finset_card],
-  simp only [set_like.coe_sort_coe, ← fintype.card_eq.2 h13, 
+  simp only [set_like.coe_sort_coe, ← fintype.card_eq.2 h13,
     set.to_finset_card, set.card_singleton],
-  simp only [set.to_finset_subset, set.coe_to_finset, 
+  simp only [set.to_finset_subset, set.coe_to_finset,
     set.singleton_subset_iff, set_like.mem_coe, submodule.zero_mem],
 end
 
@@ -250,32 +250,32 @@ begin
   have h6 : (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), i.card) = (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), ((fintype.card K) - 1)),
   apply sum_congr rfl,
   { exact λ a ha, card_subspace_rem_zero a ha },
-  
+
   rw @sum_const _ (finset V) of_span.parts _ ((fintype.card K) - 1) at h6,
   simp at h6,
   rw nonzero_elems K V (finite_dimensional.fin_basis K V) at h5,
   simp at h5,
   rw [← h5, h6],
   simp,
-  left, 
+  left,
   rw of_span,
   simp only,
   rw [finset.card_image_of_injective, set.to_finset_card],
   intros a b hg,
-  rw [subspace_rem_zero_finset, subspace_rem_zero_finset, subspace_rem_zero, 
+  rw [subspace_rem_zero_finset, subspace_rem_zero_finset, subspace_rem_zero,
     subspace_rem_zero, set.to_finset_inj] at hg,
   ext;
-  by_cases x ∈ ({0} : set V), 
+  by_cases x ∈ ({0} : set V),
   { simp only [set.mem_singleton_iff] at h,
     rw h,
     refine ⟨λ ha, submodule.zero_mem _, λ hb, submodule.zero_mem _⟩ },
   refine ⟨λ ha, _, λ hb, _⟩,
-  { have ha' : x ∈ ↑a, 
+  { have ha' : x ∈ ↑a,
     apply ha,
     have hm := (set.mem_diff x).2 ⟨ha', h⟩,
     rw [hg, set.mem_diff] at hm,
     apply hm.1 },
-  { have hb' : x ∈ ↑b, 
+  { have hb' : x ∈ ↑b,
     apply hb,
     have hm := (set.mem_diff x).2 ⟨hb', h⟩,
     rw [← hg, set.mem_diff] at hm,
@@ -285,15 +285,15 @@ end
 variables [fintype (subspace K V)]
 -- for general dimension of the subspace we might be able to set up an induction argument
 -- need to show that if S is k-dimensional subspace, there are k (unique?) 1-dimensional subspaces whose closure is S
-lemma dim_unique_subspaces [nontrivial V] (S : subspace K V) (h : 0 < finite_dimensional.finrank K S) : 
-  ∃ (X : set (submodule K V)), 
+lemma dim_unique_subspaces [nontrivial V] (S : subspace K V) (h : 0 < finite_dimensional.finrank K S) :
+  ∃ (X : set (submodule K V)),
     ∀ (y : submodule K V), y ∈ X → finite_dimensional.finrank K y = 1 ∧
     fintype.card X = finite_dimensional.finrank K S ∧ (Sup X) = S :=
 begin
   have B := (finite_dimensional.fin_basis K V),
   /-have M := λ x : (fin (finite_dimensional.finrank K ↥S)), K ∙ B ↑x,
   --have M2 := λ (y : subspace K V), ∃ x : fin (finite_dimensional.finrank K ↥S), (M x) = y.to_submodule,
-  have M2 := set.image M (@univ (fin (finite_dimensional.finrank K ↥S)) _), 
+  have M2 := set.image M (@univ (fin (finite_dimensional.finrank K ↥S)) _),
   use M2,-/
   sorry,
 end

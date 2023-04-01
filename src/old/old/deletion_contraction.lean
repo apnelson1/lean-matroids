@@ -189,7 +189,7 @@ begin
   ...                       = size X.val + (M.r ((E ∩ X.valᶜ) ∪ Eᶜ) - M.r Eᶜ)
                                          - (M.r ( E           ∪ Eᶜ) - M.r Eᶜ) : by rw [h₁, h₂]
   ...                       = (dual (corestrict E M)).r X                     : rfl
-  
+ 
 end
 
 ----------------------------------------------------------------
@@ -254,7 +254,7 @@ begin
   simp,
   unfold restrict corestrict,
   simp,
-  
+ 
 
 
 end
@@ -310,7 +310,7 @@ def delete {U : boolalg} (D E : U) : (D ⊆ E) →
   rankfun (subalg E) → rankfun (subalg (Dᶜ ∩ {e})) :=
 fun hDE M, let
   emb : embed (subalg (Dᶜ ∩ {e})) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
-  f := emb.f, 
+  f := emb.f,
   DE := push E ⟨D, hDE⟩
 in {
   r := (fun X, M.r (f X)),
@@ -324,7 +324,7 @@ def contract {U : boolalg} (C E : U) : (C ⊆ E) →
   rankfun (subalg E) → rankfun (subalg (Cᶜ ∩ {e})) :=
 fun hCE M, let
   emb : embed (subalg (Cᶜ ∩ {e})) (subalg E) := embed.from_nested_pair (inter_subset_right _ _),
-  f := emb.f, 
+  f := emb.f,
   CE := push E ⟨C, hCE⟩
 in {
   r := (fun X, M.r ((f X) ∪ CE) - M.r CE),
@@ -334,10 +334,10 @@ in {
   R3 := λ X Y,
   begin
     have hu : (f X ∪ CE) ∪ (f Y ∪ CE) = f (X ∪ Y) ∪ CE := by rw [←union_distrib_union_left,←emb.on_union],
-    have hi : (f X ∪ CE) ∩ (f Y ∪ CE) = f (X ∩ Y) ∪ CE := by rw [←union_distrib_right, ←emb.on_inter], 
-    have hs := M.R3 (f X ∪ CE) (f Y ∪ CE), 
+    have hi : (f X ∪ CE) ∩ (f Y ∪ CE) = f (X ∩ Y) ∪ CE := by rw [←union_distrib_right, ←emb.on_inter],
+    have hs := M.R3 (f X ∪ CE) (f Y ∪ CE),
     rw [hu, hi] at hs,
-    linarith [hs],      
+    linarith [hs],     
   end,
 }
 -/

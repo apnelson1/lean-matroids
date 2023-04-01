@@ -21,7 +21,7 @@ structure matroid :=
 (R3 : ∀ {X Y : set E}, r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y)
 
 def submatroid (M : matroid α) {F: set α} {hF: F ⊆ M.E} : matroid α :=
-{   E := F, 
+{   E := F,
     r := λ s, M.r $ ((by library_search) :),
     R1 := λ s, le_trans (M.R1 _) card_image_le,
     R2 := λ s₁ s₂ hs, M.R2 $ image_subset_image hs,

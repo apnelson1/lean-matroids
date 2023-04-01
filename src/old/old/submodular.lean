@@ -28,7 +28,7 @@ structure boolalg.embed_ (b b' : boolalg.boolalg) :=
   (on_size (X : b) : boolalg.size X = boolalg.size (f X))
 
 lemma boolalg.embed.on_subset_ {b b' : boolalg.boolalg} (emb : boolalg.embed b b') {X Y : b} :
-  (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := sorry 
+  (X ⊆ Y) → (emb.f X) ⊆ (emb.f Y) := sorry
 
 def powersetalg_ : Type → boolalg.boolalg := sorry
 def subalg_ {b : boolalg.boolalg} (E : b) : boolalg.boolalg := sorry
@@ -50,19 +50,19 @@ structure preminor (M : matroid) :=
   (disjoint : C ∩ {e} = ⊥)
 
 def preminor.r {M : matroid} (N : preminor M) : rankfun (subalg_ N.E) :=
-let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in 
+let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in
 {
   f := (fun (X : subalg_ N.E), M.r (ef X ∪ N.C) - M.r N.C),
-  s := 
+  s :=
   begin
     intros X Y,
     have hu : (ef X ∪ C) ∪ (ef Y ∪ C) = ef (X ∪ Y) ∪ C := by rw ←boolalg.union_distrib_union_left; rw ←emb.on_union,
-    have hi : (ef X ∪ C) ∩ (ef Y ∪ C) = ef (X ∩ Y) ∪ C := by sorry, --rw ←boolalg.union_distrib_left; rw ←emb.on_inter, 
-    have hs := M.r.s (ef X ∪ C) (ef Y ∪ C), 
+    have hi : (ef X ∪ C) ∩ (ef Y ∪ C) = ef (X ∩ Y) ∪ C := by sorry, --rw ←boolalg.union_distrib_left; rw ←emb.on_inter,
+    have hs := M.r.s (ef X ∪ C) (ef Y ∪ C),
     rw [hu, hi] at hs, unfold_coes,
-    linarith [hs],      
+    linarith [hs],     
   end,
-  pos := sorry, 
+  pos := sorry,
   monotone := begin
     intros X Y hXY,
     have := M.r.monotone (ef X ∪ C) (ef Y ∪ C) (boolalg.subset_union_subset_left (ef X) (ef Y) C (emb.on_subset hXY )),
@@ -76,19 +76,19 @@ let emb := @subalg_.embed_ M.alg_ N.E, ef := emb.f, C := N.C in
 /-
 begin
     intros X Y, rcases m.kernel with ⟨C,emb,⟨h0,hC,hCr⟩⟩,
-    let f := emb.func, 
+    let f := emb.func,
     have hu : (f X ∪ C) ∪ (f Y ∪ C) = f (X ∪ Y) ∪ C := by rw ←union_distrib_union_left; rw ←emb.on_union,
-    have hi : (f X ∪ C) ∩ (f Y ∪ C) = f (X ∩ Y) ∪ C := by rw ←union_distrib_left; rw ←emb.on_inter, 
-    have hs := M.s (f X ∪ C) (f Y ∪ C), 
-    rw [hu, hi] at hs, 
+    have hi : (f X ∪ C) ∩ (f Y ∪ C) = f (X ∩ Y) ∪ C := by rw ←union_distrib_left; rw ←emb.on_inter,
+    have hs := M.s (f X ∪ C) (f Y ∪ C),
+    rw [hu, hi] at hs,
     linarith [hCr X, hCr Y, hCr (X ∪ Y), hCr (X ∩ Y), hR3],
-  end, 
+  end,
 -/
 
 def minor (M : matroid) : Type* :=
-  quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r) 
+  quot (fun (N₁ N₂ : preminor M), N₁.r = N₂.r)
 
---def minor.alg {M: matroid} (N : minor M) : 
+--def minor.alg {M: matroid} (N : minor M) :
 
 structure protominor (M : matroid) :=
   (E : M.alg_)
@@ -101,5 +101,5 @@ def preminor_to_protominor {M : matroid} (N : preminor M) : protominor M := {
 
 def preminor_to_protominor_respects_support {M : matroid} (N₁ N₂ : preminor M) (h : N₁.r = N₂.r) : preminor_to_protominor N₁ = preminor_to_protominor N₂
     := sorry
-#check quot.lift 
+#check quot.lift
 -- power_set_alg {γ : Type} [decidable_eq γ] (S : finset γ) : boolalg

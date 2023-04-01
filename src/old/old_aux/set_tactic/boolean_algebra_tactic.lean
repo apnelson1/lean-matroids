@@ -209,18 +209,18 @@ lemma rw_compl : u ∈ xᶜ ↔ ¬(u ∈ x) :=
 
 lemma rw_sdiff : u ∈ x \ y ↔ u ∈ x ∧ u ∉ y := begin
   rewrite sdiff_eq,
-  rewrite <- rw_compl,  
+  rewrite <- rw_compl, 
   rw rw_inf,
 end
 
-instance boolalg_base_ext_lemmas (α : Type*) [boolean_algebra α] 
-  : (boolalg_ext_lemmas α (ultrafilter α)) := 
+instance boolalg_base_ext_lemmas (α : Type*) [boolean_algebra α]
+  : (boolalg_ext_lemmas α (ultrafilter α)) :=
 {
   simpl_eq := by apply rw_eq,
   simpl_lt := by apply lt_iff_le_not_le,
   ext_bot := by apply rw_bot,
-  ext_sdiff := by apply rw_sdiff, 
-  ext_le := by apply rw_le, 
+  ext_sdiff := by apply rw_sdiff,
+  ext_le := by apply rw_le,
   ext_meet := by apply rw_sup,
   ext_join := by apply rw_inf,
 }

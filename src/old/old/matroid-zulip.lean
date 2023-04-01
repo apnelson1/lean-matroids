@@ -1,4 +1,4 @@
-import data.finset data.set 
+import data.finset data.set
 
 noncomputable theory
 open_locale classical
@@ -6,7 +6,7 @@ open finset
 
 variables (E : Type*)[fintype E]
 
--- infinite matroid where every set has finite rank. 
+-- infinite matroid where every set has finite rank.
 
 def size (X: set E) := (15 :ℕ)
 
@@ -25,11 +25,11 @@ def submatroid (M : finitary_matroid E) (F : finset E) : finitary_matroid (coe F
   R3 := λ s₁ s₂, by { rw [image_union, image_inter], apply M.R3, exact λ _ _, subtype.ext } }
 
 
-#check (set.univ) 
+#check (set.univ)
 
---def deletion (M: finitary_matroid E) (D: set E) := submatroid M (λ x : E, (x ∉ D)) 
+--def deletion (M: finitary_matroid E) (D: set E) := submatroid M (λ x : E, (x ∉ D))
 
 def contraction (M: finitary_matroid E) (C : finset E) : finitary_matroid (coe Cᶜ: set E) :=
 {
-    r := λ X, M.r ((coe X: finset E) ∪ C) 
+    r := λ X, M.r ((coe X: finset E) ∪ C)
 }

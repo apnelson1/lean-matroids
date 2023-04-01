@@ -1,14 +1,14 @@
 import data.fintype.basic
-import data.set 
+import data.set
 import data.finset
 import tactic
-import size 
+import size
 
 noncomputable theory
 localized "attribute [instance, priority 100000] classical.prop_decidable
   noncomputable theory" in classical
 open_locale classical
-open finset 
+open finset
 
 universes u v
 
@@ -45,7 +45,7 @@ If only `has_coe` could infer the universe variables, this wouldn't be needed.
 -/
 notation `↟`:max x:max := has_coe_to_matroid.coe x
 
-instance (γ: Type u) [finite : fintype γ]: 
+instance (γ: Type u) [finite : fintype γ]:
     has_coe_to_matroid (matroid_on γ finite) :=
     ⟨λ G, ⟨γ, G⟩⟩
 
@@ -54,7 +54,7 @@ variables {γ : Type u} [finite : fintype γ] (M : matroid_on γ finite)
 abbreviation E (M : matroid_on γ finite) : finset γ := univ
 
 @[simp]
-lemma r_empty_eq_zero: M.r ∅ = 0 :=  
+lemma r_empty_eq_zero: M.r ∅ = 0 := 
 by linarith [(M.R0 ∅), (M.R1 ∅), @size_empty γ]
 
 @[simp]
@@ -88,7 +88,7 @@ structure struct_r_univ_compl_eq_zero :=
   (term : M.r M.Eᶜ = 0)
 @[simp] def nice_r_univ_compl_eq_zero :=
   let γ := M.γ,
-    finite := M.class_finite in  
+    finite := M.class_finite in 
   struct_r_univ_compl_eq_zero.term (struct_r_univ_compl_eq_zero.mk finite (r_univ_compl_eq_zero M))
 #check nice_r_univ_compl_eq_zero
 

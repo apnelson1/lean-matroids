@@ -1,5 +1,5 @@
 import data.fintype.basic
-import data.set 
+import data.set
 import data.finset
 import tactic
 
@@ -7,7 +7,7 @@ noncomputable theory
 localized "attribute [instance, priority 100000] classical.prop_decidable
   noncomputable theory" in classical
 open_locale classical
-open finset 
+open finset
 
 universes u
 variables {γ : Type u}
@@ -15,7 +15,7 @@ variables {γ : Type u}
 def size (X : finset γ) := (coe X.card : ℤ)
 def type_size (γ : Type u) [fintype γ] := (coe (fintype.card γ) : ℤ)
 
-lemma size_empty : size (∅:finset γ) = 0 := 
+lemma size_empty : size (∅:finset γ) = 0 :=
 begin
     unfold size, simp,
 end
