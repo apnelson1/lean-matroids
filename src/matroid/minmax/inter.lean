@@ -49,8 +49,8 @@ begin
     λ I X hI₁ hI₂, lt_of_le_of_ne (common_ind_le_r_add_r_compl hI₁ hI₂ X) (hcon I X hI₁ hI₂),
 
   -- Construct a minimal counterexample (wrt the number of nonloops of `M₁`)
-  obtain ⟨M,hM,hpmin⟩ := finite.exists_minimal_wrt (ncard ∘ matroid.nonloops)
-    { M | ∃ M', _} (to_finite _) ⟨M₁, ⟨M₂, hcon'⟩⟩,
+  obtain ⟨M,hM,hpmin⟩ := (to_finite _ : {M | ∃ M', _}.finite).exists_minimal_wrt
+    (ncard ∘ matroid.nonloops) ⟨M₁, ⟨M₂, hcon'⟩⟩,
 
   clear hcon hcon' M₁ M₂,
   obtain ⟨M₁,M₂,hcon⟩ := ⟨M,hM⟩,

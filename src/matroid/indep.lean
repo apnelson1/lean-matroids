@@ -1,5 +1,5 @@
+import mathlib.data.set.finite
 import .matroid
-
 
 variables {E : Type*} [finite E] {M : matroid E} {I J I' J' I₁ I₂ B B' X Y : set E} {e f : E}
 

@@ -1,23 +1,17 @@
-import data.finset.basic
-import combinatorics.simple_graph.basic
 import algebra.module.submodule.basic
+import combinatorics.simple_graph.basic
+import data.finset.basic
+import data.setoid.partition
 import linear_algebra.finite_dimensional
 import linear_algebra.finrank
 import linear_algebra.finsupp
-import data.setoid.partition
 import linear_algebra.projective_space.basic
 import linear_algebra.span
 
-universes u v w
-
 open finset
 
-variables {α : Type u} [decidable_eq α]
-
-
-
-variables [fintype α]
-
+universes u v w
+variables {α : Type u} [decidable_eq α] [fintype α]
 
 -- any d-dimensional vector space over GF(q) has exactly (q^d-1) / (q - 1) 1-dimensional subspaces
 -- do i count it as fintype.card or do i try to do set of subspaces?

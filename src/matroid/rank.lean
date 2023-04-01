@@ -1,4 +1,5 @@
 import .indep
+import tactic.linarith
 
 noncomputable theory
 open_locale classical

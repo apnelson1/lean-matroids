@@ -1,5 +1,4 @@
 import mathlib.ncard
-import mathlib.helpers
 
 -- noncomputable theory
 open_locale classical

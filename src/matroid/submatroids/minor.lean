@@ -1,3 +1,4 @@
+import mathlib.data.set.image
 import .pseudominor
 
 noncomputable theory
@@ -188,7 +189,7 @@ def dual (φ : M₀ →m M) :
   disj := φ.D_disjoint_ground.symm,
   indep_iff' := begin
     intro X,
-
+    sorry
     -- rw [dual_indep_iff_coindep],
   end  }
 

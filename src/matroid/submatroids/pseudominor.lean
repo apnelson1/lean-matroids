@@ -1,3 +1,5 @@
+import mathlib.data.set.basic
+import mathlib.order.boolean_algebra
 import .quotients
 
 /-!
@@ -542,7 +544,7 @@ lemma project_loopify_swap (M : matroid E) (C D : set E) :
 begin
   refine eq_of_cl_eq_cl_forall (λ X, _),
   simp only [project_cl_eq, loopify_cl_eq],
-  rw [union_diff_distrib, diff_diff_cancel_right, @diff_eq_compl_inter _ D C,
+  rw [union_diff_distrib, sdiff_sdiff_cancel_right, @diff_eq_compl_inter _ D C,
     @diff_eq_compl_inter _ X (Cᶜ ∩ D), compl_inter, compl_compl, inter_distrib_right,
     union_right_comm, union_eq_right_iff_subset.mpr (inter_subset_left _ _), ←diff_eq_compl_inter,
     union_comm C, union_eq_union_iff_left],
@@ -557,7 +559,7 @@ end
 lemma loopify_project_swap (M : matroid E) (C D : set E) :
   M ⟍ D ⟋ C = M ⟋ (C \ D) ⟍ D :=
 begin
-  rw [project_loopify_swap, diff_diff_cancel_right],
+  rw [project_loopify_swap, sdiff_sdiff_cancel_right],
   nth_rewrite 0 ←inter_union_diff C D,
   rw [union_comm, ←project_project],
   apply project_eq_of_loops,

@@ -1,4 +1,5 @@
 import ..dual
+import tactic.tfae
 
 open_locale classical
 

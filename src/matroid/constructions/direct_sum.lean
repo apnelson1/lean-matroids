@@ -1,6 +1,6 @@
+import mathlib.finsum_ncard
 import .basic
 import ..equiv
-import algebra.big_operators.finprod
 
 noncomputable theory
 
