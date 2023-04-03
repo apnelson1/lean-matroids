@@ -23,12 +23,12 @@ def is_representable (M : matroid E) (𝔽 : Type*) [field 𝔽] : Prop :=
   ∃ ι, nonempty (rep 𝔽 M ι)
 
 lemma of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : 
-  φ.to_fun e ∈ submodule.span 𝔽 (φ.to_fun '' B) := 
+  φ e ∈ submodule.span 𝔽 (φ '' B) := 
 begin
   by_cases e ∈ B,
-  { have h2 := @submodule.subset_span 𝔽 _ _ _ _ (φ.to_fun '' B),
-    have h3 : φ.to_fun e ∈ (φ.to_fun '' B),
-    apply (set.mem_image φ.to_fun B (φ.to_fun e)).2,
+  { have h2 := @submodule.subset_span 𝔽 _ _ _ _ (φ '' B),
+    have h3 : φ e ∈ (φ '' B),
+    apply (set.mem_image φ B (φ e)).2,
     use e,
     use h,
     have h4 := set.mem_of_subset_of_mem h2 h3,
@@ -48,7 +48,12 @@ end
 
 lemma foo (h : M.is_representable 𝔽) : 
   nonempty (rep 𝔽 M (fin M.rk))  := 
-sorry 
+begin
+  obtain ⟨ι, ⟨φ⟩⟩ := h,
+  obtain ⟨B, hB⟩ := M.exists_base,
+  have := of_base φ hB,
+  sorry,
+end
 
 
 
