@@ -1,5 +1,8 @@
 import linear_algebra.linear_independent
+import data.zmod.basic
+import ..constructions.basic
 import ..dual 
+--import .field_stuff
 
 noncomputable theory 
 open_locale classical
@@ -15,6 +18,9 @@ structure rep (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type*):=
 
 def is_representable (M : matroid E) (𝔽 : Type*) [field 𝔽] : Prop := 
   ∃ ι, nonempty (rep 𝔽 M ι) 
+
+/- A matroid is binary if it has a `GF(2)`-representation -/
+def is_binary (M : matroid E) := is_representable M (zmod 2)
 
 lemma of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : 
   φ.to_fun e ∈ submodule.span 𝔽 (φ.to_fun '' B) := 
@@ -34,17 +40,36 @@ begin
   by_contra h3,
   apply h2,
   rw linear_independent_insert' h,
-  refine ⟨_, h3⟩,
-  rw rep.valid,
-  apply base.indep hB,
+  refine ⟨(φ.valid B).2 (base.indep hB), h3⟩,
 end 
 
-
+--noncomputable?
 lemma foo (h : M.is_representable 𝔽) : 
   nonempty (rep 𝔽 M (fin M.rk))  := 
-sorry 
+begin
+  
+  sorry,
+end
 
-
+/-lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
+begin
+  by_contra h2,
+  rw is_binary at h2,
+  have h3 := foo h2,
+  /-have h1 := @num_subspaces_dim_one (zmod 2) V _ _ _ _ _ sorry _ sorry,
+  simp at h1,
+  have h3 := hV univ,
+  rw canonical_unif_r at h3,
+  rw ncard_univ at h3,
+  simp at h3,
+  have h4 : finrank (zmod 2) ↥V = 2,
+  sorry,
+  rw h4 at h1,
+  have h5 := ncard_univ (fin 4),
+  have h6 : univ.ncard ≤ fintype.card ↥{S : subspace (zmod 2) ↥V | finrank (zmod 2) ↥S = 1},-/
+  
+  sorry,
+end-/
 
 
 -- lemma foo (e f : E) (hne : e ≠ f) (h : M.r {e,f} = 1) : 
