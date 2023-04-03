@@ -6,7 +6,7 @@ An example of why eq and heq for structures is not completely unreasonable.
 We want equality of foo's to mean:
 * equivalent predicates P, and
 * functions f which agree on the subset defined by P.
--/ 
+-/
 structure foo : Type :=
   (P : nat → Prop)
   (f : subtype P → bool)

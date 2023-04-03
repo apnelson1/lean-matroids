@@ -11,7 +11,7 @@ instance set_ext_lemmas (T : Type*) :
   simpl_lt := by tidy,
   ext_bot := by tidy,
   ext_sdiff := by tidy,
-  ext_le := by tidy, 
+  ext_le := by tidy,
   ext_meet := by tidy,
   ext_join := by tidy,
 }
@@ -29,13 +29,13 @@ instance set_ext_lemmas_top (T : Type*) :
 }
 end extensionality
 
-namespace cleanup 
+namespace cleanup
 lemma set_union_sup (T : Type*) (A B : set T) : (A ∪ B) = (A ⊔ B) := by refl
 lemma set_inter_inf (T : Type*) (A B : set T) : (A ∩ B) = (A ⊓ B) := by refl
 lemma set_subset_le (T : Type*) (A B : set T) : (A ⊆ B) = (A ≤ B) := by refl
 lemma set_subset_lt (T : Type*) (A B : set T) : (A ⊂ B) = (A < B) := by refl
 lemma set_univ_top (T : Type*) : (set.univ : set T) = ⊤ := by refl
-lemma set_empt_bot (T : Type*) : (∅ : set T) = ⊥ := by refl 
+lemma set_empt_bot (T : Type*) : (∅ : set T) = ⊥ := by refl
 
 meta def set_cleanup : tactic unit :=
   `[simp only [cleanup.set_union_sup, cleanup.set_inter_inf, cleanup.set_subset_le,

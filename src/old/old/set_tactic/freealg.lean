@@ -1,12 +1,12 @@
-import set_tactic.make_ring 
+import set_tactic.make_ring
 namespace freealg
 
 /----------------------------------------------------------------------------------
- 
+
  Builds a 'free boolean algebra' whose elements are commutative sums of squarefree
  monomials in n-1 indeterminates X₀, X₁, ... with coefficients mod 2. These elements
- are encoded internally as boolean vectors, via a map under which addition is 'xor' and 
- multiplication is 'and', both coordinate-wise. 
+ are encoded internally as boolean vectors, via a map under which addition is 'xor' and
+ multiplication is 'and', both coordinate-wise.
 
 ------------------------------------------------------------------------------------/
 
@@ -30,7 +30,7 @@ def var : forall {n : nat} (i : nat), (i < n) → (freealg n)
 | (n+1) (i+1) Hi := let coeff : freealg n := var i (nat.lt_of_succ_lt_succ Hi) in (coeff, coeff)
 
 def add : forall {n : nat}, (freealg n) → (freealg n) → (freealg n)
-| 0 a b := bxor a b 
+| 0 a b := bxor a b
 | (n+1) a b := (add a.1 b.1, add a.2 b.2)
 
 def mul : forall {n : nat}, (freealg n) → (freealg n) → (freealg n)

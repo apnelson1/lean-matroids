@@ -1,7 +1,7 @@
 import tactic data.finset
 open_locale classical
 
-namespace finset 
+namespace finset
 
 
 
@@ -10,46 +10,46 @@ variables {α : Type*} {β : Type*} [decidable_eq α]
 
 def size{β : Type*} (X: finset β) := ((card X) : ℤ)
 
-def subset_fintype{β: Type*} (hβ : fintype β) (X: finset β) := fintype 
+def subset_fintype{β: Type*} (hβ : fintype β) (X: finset β) := fintype
 
 
-@[simp] lemma empt_size{β : Type*} : size (∅ : finset β) = 0 := 
+@[simp] lemma empt_size{β : Type*} : size (∅ : finset β) = 0 :=
 begin
     sorry,
 end
 
-@[simp] lemma partition_univ {β : Type*} [fintype β] (X: finset β) : X ∪ Xᶜ = univ := 
+@[simp] lemma partition_univ {β : Type*} [fintype β] (X: finset β) : X ∪ Xᶜ = univ :=
 begin
     apply subset.antisymm,
-    exact subset_univ _, 
+    exact subset_univ _,
     intros x hx,
     simp only [mem_union],
-    by_cases x ∈ X, 
+    by_cases x ∈ X,
     left,
-    exact h, 
-    right, 
-    rw compl_eq_univ_sdiff, 
+    exact h,
+    right,
+    rw compl_eq_univ_sdiff,
     apply mem_sdiff.mpr,
     split,
     exact hx,
     exact h,
-    --yuck.... 
+    --yuck....
 end
 
-@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X := 
+@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X :=
 begin
     unfold size,
     simp only [int.coe_nat_inj'],
     apply card_image_of_injective,
     exact subtype.val_injective
-end 
+end
 
 
-lemma union_subset_union_left{A B C : finset α} : (A ⊆ B) → ((A ∪ C) ⊆ (B ∪ C)) := 
+lemma union_subset_union_left{A B C : finset α} : (A ⊆ B) → ((A ∪ C) ⊆ (B ∪ C)) :=
 begin
     intros hAB,
     intros x hx,
-    simp only [mem_union], 
+    simp only [mem_union],
     simp only [mem_union] at hx,
     cases hx,
     left,

@@ -11,13 +11,13 @@ def size{β : Type*} (X: finset β) := ((card X) : ℤ )
 
 #check subtype.val
 
-@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X := 
+@[simp] lemma size_subtype{β : Type*} {Y: set β} {X : finset Y} : size (X.image subtype.val)  = size X :=
 begin
     unfold size,
     simp only [int.coe_nat_inj'],
     apply card_image_of_injective,
     exact subtype.val_injective
-end 
+end
 
 universes u v
 
@@ -30,12 +30,12 @@ structure matroid_on (E : Type u) :=
 class matroids (α : Type v) :=
 (E : α → Type u)
 (to_matroid : Π (M : α), matroid_on (E M))
--- M is the name of the matroid, (E M) is the ground set of the matroid; the function to_matroid maps the name M to the structure of 
--- matroid M (i.e. a rank function and proofs of axioms). 
+-- M is the name of the matroid, (E M) is the ground set of the matroid; the function to_matroid maps the name M to the structure of
+-- matroid M (i.e. a rank function and proofs of axioms).
 
--- TOY EXAMPLES *************************** 
+-- TOY EXAMPLES ***************************
 
--- Defines two matroids: a 'true matroid' and a 'false matroid' on the same ground sets (in general, ground sets need not be the same). 
+-- Defines two matroids: a 'true matroid' and a 'false matroid' on the same ground sets (in general, ground sets need not be the same).
 --The true matroid is free, false matroid has rank zero ,
 
 namespace hidden
@@ -98,7 +98,7 @@ def R3 (M : α) (X Y : finset (E M)) : r (X ∪ Y) + r (X ∩ Y) ≤ r X + r Y :
 @[simp] lemma r_empty_eq_zero (M : α) : r (∅ : finset (E M)) = 0 := sorry
 --by { have h := R1 M ∅, rwa [card_empty, le_zero_iff_eq] at h }
 
-lemma rank_subadditive {M : α} (X Y : finset (E M)) : r (X ∪ Y) ≤ r X + r Y := sorry 
+lemma rank_subadditive {M : α} (X Y : finset (E M)) : r (X ∪ Y) ≤ r X + r Y := sorry
 --le_trans (nat.le.intro rfl) (R3 M X Y)
 
 lemma r_le_union {M : α} (X Y : finset (E M)) : r X ≤ r (X ∪ Y) :=
@@ -130,7 +130,7 @@ def my_finite_subset : (set my_finite_set)
 
 example : (@submatroid my_α my_instance the_unit) := { F := my_finite_subset }
 --submatroid : Π {α : Type u_2} [_inst_1 : matroids α], α → Type u_3
---Type ?m1 -> Type ?m1 + 1 
+--Type ?m1 -> Type ?m1 + 1
 -- END TOY ***************************
 
 @[simp] def raise{β : Type*} {Y: set β} (X : finset Y) := X.image subtype.val
@@ -140,7 +140,7 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
   to_matroid := λ (M' : submatroid M),
   { r := λ (X : finset M'.F), @r _ _ M (X.image subtype.val),
     R1 := λ (X : finset M'.F),
-    begin    
+    begin
         split,
         apply (R1 M (X.image subtype.val)).1,
 
@@ -148,7 +148,7 @@ instance submatroid.matroid (M : α) : matroids (submatroid M) :=
         apply int.coe_nat_le_coe_nat_of_le,
         apply card_image_le,
         --apply ,
-      
+
     end,
     R2 := λ s₁ s₂ hs, R2 M (image_subset_image hs),
     R3 := λ s₁ s₂, by { rw [image_union, image_inter], apply R3 M, apply subtype.ext, } } }
@@ -167,12 +167,12 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
 { E := λ M', ↥((↑M'.C : set (E M))ᶜ),
   to_matroid := λ M',
   { r := λ X, r (X.image subtype.val ∪ M'.C) - r M'.C,
-    R1 := λ X, 
+    R1 := λ X,
     begin
       let X' := X.image subtype.val,
       split,
       linarith [R2 M (subset_union_right X' M'.C : M'.C ⊆ X' ∪ M'.C)],
-      
+
       have := rank_subadditive X' M'.C,
 
       calc r (X' ∪ M'.C) - r M'.C ≤ r X'        : by linarith
@@ -188,7 +188,7 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         have := R2 M ((union_subset_union_left this) : (X' ∪ M'.C ⊆ Y' ∪ M'.C)),
         linarith,
     end,
-    R3 := 
+    R3 :=
     begin
         intros X Y,
         let X' := X.image subtype.val,
@@ -196,11 +196,11 @@ instance matroid_contraction.matroid (M : α) : matroids (matroid_contraction M)
         rw [image_union, image_inter],
         have := R3 M (X' ∪ M'.C) (Y' ∪ M'.C),
         simp only [@union_unions _ _ X' Y' _, inter_unions]  at this,
-        
+
         linarith,
         intros x y,
         exact subtype.eq,
-    end, 
+    end,
     }
  }
 

@@ -1,12 +1,12 @@
-import order.lattice 
+import order.lattice
 import order.boolean_algebra
 
-universe u 
+universe u
 
 class boolalg_ext_lemmas
-  (T : Type*) (E : Type*) 
-  [has_mem E T] 
-  [has_sup T] 
+  (T : Type*) (E : Type*)
+  [has_mem E T]
+  [has_sup T]
   [has_inf T]
   [has_sdiff T]
   [has_bot T]
@@ -17,7 +17,7 @@ class boolalg_ext_lemmas
   (simpl_lt : ∀ {A B : T}, A < B ↔ A ≤ B ∧ ¬ B ≤ A)
   (ext_bot : ∀ {e}, e ∈ (⊥ : T) ↔ false)
   (ext_sdiff : ∀ {A B : T} e, e ∈ A \ B ↔ e ∈ A ∧ ¬ e ∈ B)
-  (ext_le : ∀ {A B : T}, A ≤ B ↔ ∀ e, e ∈ A → e ∈ B) 
+  (ext_le : ∀ {A B : T}, A ≤ B ↔ ∀ e, e ∈ A → e ∈ B)
   (ext_meet : ∀ {A B : T} {e}, e ∈ (A ⊔ B) ↔ e ∈ A ∨ e ∈ B)
   (ext_join : ∀ {A B : T} {e}, e ∈ (A ⊓ B) ↔ e ∈ A ∧ e ∈ B)
 

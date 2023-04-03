@@ -1,4 +1,4 @@
-import boolalg  
+import boolalg
 import boolalg_ring
 import init.meta.interactive_base
 
@@ -27,7 +27,7 @@ def var : forall {n : nat} (i : nat), (i < n) → (freealg n)
 | (n+1) (i+1) Hi := let coeff : freealg n := var i (nat.lt_of_succ_lt_succ Hi) in (coeff, coeff)
 
 def plus : forall {n : nat}, (freealg n) → (freealg n) → (freealg n)
-| 0 a b := bxor a b 
+| 0 a b := bxor a b
 | (n+1) a b := (plus a.1 b.1, plus a.2 b.2)
 
 def times : forall {n : nat}, (freealg n) → (freealg n) → (freealg n)
@@ -100,10 +100,10 @@ begin
   set_to_ring_eqn,
   have := on_zero vars,
   have : X = _ := on_var vars 0 zero_lt_one,
-  rw this, 
+  rw this,
   --erw [(rfl : X = vars 1)], --, on_var vars (one_lt_two)],
   simp only [on_zero vars , on_one vars, on_plus vars, on_times vars],
-  refl, 
+  refl,
 end
 
 end /-namespace-/ freealg
@@ -115,7 +115,7 @@ open lean.parser
 
   --have hx : X = _ := on_var _ _ vars (by norm_num : 0 < 6),
 open tactic
-open tactic.interactive 
+open tactic.interactive
 open freealg
 
 meta def ids_list : lean.parser (list name) := types.list_of ident
@@ -131,11 +131,11 @@ meta def tactic.interactive.introduce_varmap_rewrite (vname : parse ident) (vars
   do
     names <- vars.mmap (fun name, get_local name),
     («let» vname ``(vector _ %%(vars.length)) $ meta_build_vector (names.map to_pexpr)),
-    mmap 
+    mmap
       (λ (pair : (nat × expr)),
         let name := prod.snd pair in
         let idx := prod.fst pair in
-        do 
+        do
           vname_expr <- get_local vname,
           hname <- get_unused_name `Hv,
           («have» hname ``(%%name = _) ``(on_var %%vname_expr %%idx (by norm_num))),
@@ -161,7 +161,7 @@ meta def tactic.interactive.simplify_sets (sets : parse ids_list) : tactic unit 
                     list.nil loc.wildcard,
     refl
 
---#print tactic.interactive.simplify_sets 
+--#print tactic.interactive.simplify_sets
 
 lemma baz {A : boolalg} (X Y Z : A) : X = X := begin
   introduce_varmap_rewrite V [X, Y, Z],

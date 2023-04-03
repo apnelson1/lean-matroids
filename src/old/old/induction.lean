@@ -10,7 +10,7 @@ import order.bounded_lattice  -- For the has_bot / has_top notation classes.
 section API
 
 -- The operations needed on the boolalg A.
-def A : Type := sorry   
+def A : Type := sorry
 
 instance A_has_bot : has_bot A := sorry
 instance A_has_top : has_top A := sorry
