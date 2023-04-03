@@ -239,7 +239,7 @@ def matroid_of_circuit
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
-matroid E :=
+  matroid E :=
 matroid_of_indep (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
 (λ I J hIJ hJ C hCI, hJ C (hCI.trans hIJ))
 begin
@@ -312,7 +312,7 @@ end
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
-(matroid_of_circuit circuit empty_not_circuit antichain elimination).circuit = circuit :=
+  (matroid_of_circuit circuit empty_not_circuit antichain elimination).circuit = circuit :=
 begin
   ext C,
   simp_rw [matroid_of_circuit, matroid.circuit_def, matroid_of_indep_apply, not_forall, not_not,

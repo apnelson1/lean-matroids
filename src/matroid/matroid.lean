@@ -66,17 +66,18 @@ def cocircuit (M : matroid E) (K : set E) : Prop :=
 def coindep (M : matroid E) (I : set E) : Prop :=
   ¬ ∃ K ⊆ I, M.cocircuit K
 
-/-- A loop is a singleton circuit -/
+/-- A loop is a member of the closure of the empty set -/
 def loop (M : matroid E) (e : E) : Prop :=
-  M.circuit {e}
+  e ∈ M.cl ∅
+
+/-- A `nonloop` is an element that is not a loop -/
+def nonloop (M : matroid E) (e : E) : Prop :=
+  ¬ M.loop e 
 
 /-- A coloop is an element contained in every basis -/
 def coloop (M : matroid E) (e : E) : Prop :=
   ∀ B, M.base B → e ∈ B
 
-/-- The set of nonloops of `M` is the complement of the set `M.cl ∅` of loops -/
-def nonloops (M : matroid E) : set E :=
-  (M.cl ∅)ᶜ
 
 end defs
 

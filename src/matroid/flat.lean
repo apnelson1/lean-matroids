@@ -257,6 +257,10 @@ begin
   exact not_mem_empty _ he,
 end
 
+lemma cl_exchange_iff :
+  e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
+⟨cl_exchange, cl_exchange⟩  
+
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) :
   M.cl (X \ {e}) = M.cl X :=
 begin
@@ -333,16 +337,19 @@ begin
     ←hI.r] at hIi,
 end
 
-lemma indep.cl_diff_singleton_ssubset (hI : M.indep I) (he : e ∈ I) :
-  M.cl (I \ {e}) ⊂  M.cl I :=
+lemma indep.mem_cl_iff (hI : M.indep I) :
+  x ∈ M.cl I ↔ x ∈ I ∨ ¬ M.indep (insert x I) :=
+by rw [←not_iff_not, hI.not_mem_cl_iff, not_or_distrib, not_not] 
+
+lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
+
+lemma indep.cl_diff_singleton_ssubset (hI : M.indep I) (he : e ∈ I) : M.cl (I \ {e}) ⊂  M.cl I :=
 ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_forall.mp hI _ he)
 
-lemma indep.cl_ssubset_ssubset (hI : M.indep I) (hJI : J ⊂ I) :
-  M.cl J ⊂ M.cl I :=
+lemma indep.cl_ssubset_ssubset (hI : M.indep I) (hJI : J ⊂ I) : M.cl J ⊂ M.cl I :=
 indep_iff_cl_ssubset_ssubset_forall.mp hI J hJI
 
-lemma subset_cl_iff_r_union_eq_r :
-  X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
+lemma subset_cl_iff_r_union_eq_r : X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y := 
 begin
   refine ⟨λ h, r_union_eq_of_r_all_insert_le (λ e he, by rw mem_cl.mp (h he)),
     λ hu e heX, mem_cl.mpr ((M.r_mono (subset_insert _ _)).antisymm' _)⟩,
