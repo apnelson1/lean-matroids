@@ -74,6 +74,9 @@ def loop (M : matroid E) (e : E) : Prop :=
 def nonloop (M : matroid E) (e : E) : Prop :=
   ¬ M.loop e 
 
+def nonloops (M : matroid E) : set E :=
+  {e | M.nonloop e}
+
 /-- A coloop is an element contained in every basis -/
 def coloop (M : matroid E) (e : E) : Prop :=
   ∀ B, M.base B → e ∈ B

@@ -110,7 +110,7 @@ lemma coloop.dual_loop (he : M.coloop e) :
   M.dual.loop e :=
 begin
   simp_rw [loop_iff_dep, dual_indep_iff, not_exists, not_and, disjoint_singleton_right, 
-    not_not_mem, ←coloop_iff_forall_mem_base], 
+    not_not_mem],  
   exact he, 
 end 
 

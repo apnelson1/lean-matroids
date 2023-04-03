@@ -68,12 +68,12 @@ begin
   -- Projecting/loopifying `e` gives non-counterexamples (by minimality), so there exist pairs
   -- with equality in these minors.
   have hd' := ncard_lt_ncard (strict_pminor_of_loopify_nonloop he₁).nonloops_ssubset_nonloops,
-  refine hd'.ne.symm (hpmin (M₁ ⟍ {e}) ⟨M₂ ⟍ {e},_⟩ hd'.le),
+  refine hd'.ne.symm (hpmin (M₁ ⟍ e) ⟨M₂ ⟍ e,_⟩ hd'.le),
   by_contra' hd,
   obtain ⟨Id,Xd, hId₁, hId₂, hId⟩ := hd,
 
   have hc' := ncard_lt_ncard (strict_pminor_of_project_nonloop he₁).nonloops_ssubset_nonloops,
-  refine hc'.ne.symm (hpmin (M₁ ⟋ {e}) ⟨M₂ ⟋ {e},_⟩ hc'.le),
+  refine hc'.ne.symm (hpmin (M₁ ⟋ e) ⟨M₂ ⟋ e,_⟩ hc'.le),
   by_contra' hc,
   obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
 
@@ -84,8 +84,8 @@ begin
   have hic : (Xc ∩ Xd \ {e})ᶜ = (insert e (Xcᶜ ∪ Xdᶜ)),
   { apply compl_injective,
     simp_rw [←union_singleton, compl_union, compl_compl, diff_eq_compl_inter, inter_comm {e}ᶜ]},
-
-  simp_rw [r_loopify, hic] at hi,
+  
+  simp_rw [loopify_elem, r_loopify, hic] at hi,
   zify at hIc hId hcon,
 
   have hu := hcon (insert e Ic) (insert e (Xc ∪ Xd))

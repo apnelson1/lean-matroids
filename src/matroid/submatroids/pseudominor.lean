@@ -22,6 +22,20 @@ Kung's theorem and the matroid intersection theorem are currently both proved in
 noncomputable theory
 open set
 
+section symbols 
+
+@[class] structure has_con (α β : Type*) :=
+(con : α → β → α)
+
+@[class] structure has_del (α β : Type*) :=
+(del : α → β → α)
+
+infix ` ⟋ ` :75 :=  has_con.con
+
+infix ` ⟍ ` :75 :=  has_del.del 
+
+end symbols 
+
 variables {E : Type*} [finite E] {e f : E} {M N : matroid E} {X Y D C F B I I₀ R : set E}
 
 namespace matroid
@@ -39,7 +53,12 @@ matroid_of_cl
   (λ X, by {simp only [cl_union_cl_left_eq_cl_union, union_assoc, union_self]} )
   (λ X e f hf, by {rw [insert_union] at ⊢ hf, exact cl_exchange hf})
 
-infix ` ⟋ ` :75 :=  matroid.project
+instance {E : Type*} [finite E] : has_con (matroid E) (set E) := ⟨matroid.project⟩  
+instance {E : Type*} [finite E] : has_con (matroid E) E := ⟨λ M e, M.project {e}⟩  
+
+-- @[simp] lemma project_def 
+
+-- infix ` ⟋ ` :75 :=  matroid.project
 
 /-- Project every element outside `R` -/
 def project_to (M : matroid E) (R : set E) : matroid E :=
@@ -47,9 +66,9 @@ def project_to (M : matroid E) (R : set E) : matroid E :=
 
 @[simp] lemma project_cl_eq (M : matroid E) (C X : set E) :
   (M ⟋ C).cl X = M.cl (X ∪ C) :=
-by simp only [project, matroid_of_cl_apply]
+by simp only [has_con.con, matroid.project, matroid_of_cl_apply]
 
-@[simp] lemma project_empty (M : matroid E) : M ⟋ ∅ = M :=
+@[simp] lemma project_empty (M : matroid E) : M ⟋ (∅ : set E) = M :=
 eq_of_cl_eq_cl_forall (λ X, by simp_rw [project_cl_eq, union_empty])
 
 @[simp] lemma project_project (M : matroid E) (C₁ C₂ : set E) :
@@ -212,9 +231,9 @@ begin
 end
 
 @[simp] lemma coe_r_project (M : matroid E) (C X : set E) :
-  ((M.project C).r X : ℤ) = M.r (X ∪ C) - M.r C :=
+  ((M ⟋ C).r X : ℤ) = M.r (X ∪ C) - M.r C :=
 begin
-  obtain ⟨I,hI⟩ := (M.project C).exists_basis X,
+  obtain ⟨I,hI⟩ := (M ⟋ C).exists_basis X,
   obtain ⟨I₀,hI₀⟩ := M.exists_basis C,
   obtain ⟨h1,h2⟩  := project_basis_iff_forall.mp hI,
   specialize h2 _ hI₀,
@@ -248,7 +267,7 @@ lemma basis.project_eq_project (hI : M.basis I X) :
   M ⟋ I = M ⟋ X :=
 by rw [←project_cl_eq_project, ←M.project_cl_eq_project X, hI.cl]
 
-lemma project_cl_empty_eq :
+@[simp] lemma project_loops_eq :
   (M ⟋ C).cl ∅ = M.cl C :=
 by rw [project_cl_eq, empty_union]
 
@@ -276,9 +295,12 @@ begin
   exact (M.subset_cl C) heC, 
 end    
 
-lemma indep_project_singleton_iff (he : ¬M.loop e) (heI : e ∉ I) :
-  (M ⟋ {e}).indep I ↔ M.indep (insert e I) :=
+@[simp] lemma project_elem (M : matroid E) (e : E) : M ⟋ e = M ⟋ ({e} : set E) := rfl 
+
+lemma indep_project_singleton_iff (he : M.nonloop e) (heI : e ∉ I) :
+  (M ⟋ e).indep I ↔ M.indep (insert e I) :=
 begin
+  rw [project_elem], 
   rw [nonloop_iff_indep] at he, 
   split, 
   { intro h, 
@@ -291,14 +313,14 @@ begin
 end 
 
 lemma r_project_singleton_add_one (he : ¬M.loop e) (X : set E) :
-  (M ⟋ {e}).r X  + 1 = M.r (insert e X) :=
-by {zify, rw [coe_r_project, nonloop_iff_r.mp he], simp}
+  (M ⟋ e).r X  + 1 = M.r (insert e X) :=
+by {zify, rw [project_elem, coe_r_project, nonloop_iff_r.mp he], simp}
 
 lemma coe_r_project_singleton (he : ¬M.loop e) (X : set E) :
-  ((M ⟋ {e}).r X : ℤ) = M.r (insert e X) - 1 :=
+  ((M ⟋ e).r X : ℤ) = M.r (insert e X) - 1 :=
 by {rw ←r_project_singleton_add_one he X, simp}
 
-lemma not_mem_of_indep_project_singleton (h : (M ⟋ {e}).indep I) :
+lemma not_mem_of_indep_project_singleton (h : (M ⟋ e).indep I) :
   e ∉ I :=
 (loop_of_project_mem (mem_singleton e)).not_mem_indep h
 
@@ -315,7 +337,10 @@ def loopify (M : matroid E) (D : set E) :
   exists_base' := M.exists_basis Dᶜ,
   base_exchange' := λ I₁ I₂ h₁ h₂ e, h₁.exchange h₂}
 
-infix ` ⟍ ` :75 :=  matroid.loopify
+instance {E : Type*} [finite E] : has_del (matroid E) (set E) := ⟨matroid.loopify⟩ 
+instance {E : Type*} [finite E] : has_del (matroid E) E := ⟨λ M e, M.loopify {e}⟩  
+
+@[simp] lemma loopify_elem (M : matroid E) (e : E) : M ⟍ e = M ⟍ ({e} : set E) := rfl 
 
 @[simp] lemma base_loopify_iff :
   (M ⟍ D).base B ↔ M.basis B Dᶜ  :=
@@ -348,7 +373,7 @@ begin
 end
 
 @[simp] lemma loopify_empty (M : matroid E):
-  M ⟍ ∅ = M  :=
+  M ⟍ (∅ : set E) = M  :=
 eq_of_indep_iff_indep_forall (λ I, by simp)
 
 lemma circuit_loopify_iff :
@@ -418,9 +443,13 @@ begin
   exact ⟨heD, hCX.2⟩,
 end
 
-@[simp] lemma loop_of_loopify_iff :
+@[simp] lemma loop_loopify_iff :
   (M ⟍ D).loop e ↔ M.loop e ∨ e ∈ D :=
-by {simp_rw [loop_iff_mem_cl_empty, loopify_cl_eq, empty_diff], refl}
+by { simp_rw [loop_iff_mem_cl_empty, loopify_cl_eq, empty_diff], refl }
+
+@[simp] lemma nonloop_loopify_iff :
+  (M ⟍ D).nonloop e ↔ M.nonloop e ∧ e ∉ D :=
+by simp_rw [nonloop_iff_not_loop, loop_loopify_iff, not_or_distrib] 
 
 lemma loopified_subset_loops (M : matroid E) (D : set E) :
   D ⊆ (M ⟍ D).cl ∅ :=
@@ -431,8 +460,9 @@ lemma loop_of_loopify (h : e ∈ D) :
 by {rw loop_iff_mem_cl_empty, exact M.loopified_subset_loops D h}
 
 @[simp] lemma loopify_nonloops (M : matroid E) (D : set E) :
-  (M ⟍ D).nonloops = M.nonloops \ D :=
-by {ext, simp_rw [mem_diff, mem_nonloops_iff_not_loop, loop_of_loopify_iff, not_or_distrib]}
+  ((M ⟍ D).cl ∅)ᶜ  = (M.cl ∅)ᶜ \ D :=
+by { ext, simp_rw [mem_diff, mem_compl_iff, ←loop_iff_mem_cl_empty, ←not_or_distrib, not_iff_not, 
+  loop_loopify_iff] }
 
 lemma basis_loopify_iff :
   (M ⟍ D).basis I X ↔ disjoint I D ∧ M.basis I (X \ D) :=
@@ -500,7 +530,7 @@ lemma loopify_loopify_comm (M : matroid E) (D D' : set E) :
   M ⟍ D ⟍ D' = M ⟍ D' ⟍ D :=
 by rw [loopify_loopify, union_comm, loopify_loopify]
 
-lemma not_mem_of_indep_loopify_singleton (h : (M ⟍ {e}).indep I) :
+lemma not_mem_of_indep_loopify_singleton (h : (M ⟍ ({e} : set E)).indep I) :
   e ∉ I :=
 (loop_of_loopify (mem_singleton e)).not_mem_indep h
 
@@ -521,18 +551,22 @@ lemma loopify_eq_lrestrict_compl (M : matroid E) (D : set E) :
   (M ⟍ D) = (M ‖ Dᶜ) :=
 by rw [lrestrict, compl_compl]
 
-lemma loopify_compl_le_lrestrict (M : matroid E) (D : set E) :
+lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) :
   M ⟍ Dᶜ = M ‖ D :=
 rfl
 
+lemma lrestrict_nonloop_iff :
+  (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
+by rw [lrestrict, nonloop_loopify_iff, not_mem_compl_iff]   
+
 @[simp] lemma lrestrict.nonloops (M : matroid E) (R : set E):
-  (M ‖ R).nonloops = M.nonloops ∩ R :=
-by rw [lrestrict, loopify_nonloops, diff_compl]
+  ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
+by { ext, simp_rw [mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty, ←nonloop_iff_not_loop, 
+  lrestrict_nonloop_iff] }
 
 @[simp] lemma indep_lrestrict_iff :
   (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
 by simp [lrestrict, disjoint_compl_right_iff_subset, and_comm]
-
 
 end lrestrict
 
@@ -587,7 +621,7 @@ end
 /-- a pminor (pseudominor) of a matroid M is a matroid on the same ground set arising
 -- from loopifications and/or projections of M  -/
 def pminor (N M : matroid E) :=
-  ∃ C D, N = M ⟋ C ⟍ D
+  ∃ (C D : set E), N = M ⟋ C ⟍ D
 
 def strict_pminor (N M : matroid E) :=
   pminor N M ∧ N ≠ M
@@ -676,7 +710,6 @@ lemma pminor_antisymm (h : N ≤p M) (h' : M ≤p N) :
   M = N :=
 h'.weak_image.antisymm h.weak_image
 
-
 lemma pminor.eq_of_loops_subset_loops (h : N ≤p M) (h_loops : N.cl ∅ ⊆ M.cl ∅) :
   N = M :=
 begin
@@ -687,14 +720,14 @@ begin
 end
 
 lemma strict_pminor_of_project_nonloop (he : ¬M.loop e) :
-  M ⟋ {e} <p M :=
+  M ⟋ e <p M :=
 begin
   refine (project_pminor M {e}).strict_pminor_of_ne (λ h, he _),
   rwa [project_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
 end
 
 lemma strict_pminor_of_loopify_nonloop (he : ¬M.loop e) :
-  M ⟍ {e} <p M :=
+  M ⟍ e <p M :=
 begin
   refine (loopify_pminor M {e}).strict_pminor_of_ne (λ h, he _),
   rwa [loopify_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
@@ -704,14 +737,14 @@ lemma strict_pminor_of_project_loopify_r_ne_zero (h : M.r (C ∪ D) ≠ 0) :
   M ⟋ C ⟍ D <p M :=
 begin
   refine (project_loopify_pminor _ _ _).strict_pminor_of_ne
-    (λ hC, h (r_zero_iff_subset_loops.mpr _)),
+    (λ hC, h (r_eq_zero_iff_subset_loops.mpr _)),
   rwa [project_loopify_eq_self_iff_subset_loops] at hC,
 end
 
 lemma strict_pminor_of_project_r_ne_zero (h : M.r (C) ≠ 0) :
   M ⟋ C <p M :=
 begin
-  refine (project_pminor _ _).strict_pminor_of_ne (λ hC, h (r_zero_iff_subset_loops.mpr _)),
+  refine (project_pminor _ _).strict_pminor_of_ne (λ hC, h (r_eq_zero_iff_subset_loops.mpr _)),
   rwa [project_eq_self_iff_subset_loops] at hC,
 end
 
@@ -725,17 +758,13 @@ end
 
 lemma pminor.nonloops_subset_nonloops (h : N ≤p M) :
   N.nonloops ⊆ M.nonloops :=
-begin
-  obtain ⟨C,D,rfl⟩ := @id _ h,
-  rw [nonloops, nonloops, compl_subset_compl],
-  exact h.loops_supset_loops,
-end
+by { simp_rw [nonloops_eq_compl_cl_empty, compl_subset_compl], exact h.loops_supset_loops } 
 
 lemma strict_pminor.nonloops_ssubset_nonloops (h : N <p M) :
   N.nonloops ⊂ M.nonloops :=
 begin
   refine (h.pminor.nonloops_subset_nonloops).ssubset_of_ne (λ he, h.ne _),
-  rw [nonloops, nonloops, compl_inj_iff] at he,
+  rw [nonloops_eq_compl_cl_empty, nonloops_eq_compl_cl_empty, compl_inj_iff] at he,
   exact h.pminor.eq_of_loops_subset_loops he.subset,
 end
 
