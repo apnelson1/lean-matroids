@@ -6,7 +6,7 @@ import data.finsupp
 
 variables {α : Type*}
 
-open set 
+open set
 
 lemma set.insert_inter_of_mem {α : Type*} {s₁ s₂ : set α} {a : α} (h : a ∈ s₂) :
   insert a s₁ ∩ s₂ = insert a (s₁ ∩ s₂) :=

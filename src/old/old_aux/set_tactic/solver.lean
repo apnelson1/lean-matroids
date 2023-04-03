@@ -21,16 +21,16 @@ universe u
 meta def get_boolalg_typ (consider_function_types := ff) (e : expr) : tactic (list expr) :=
   ((do
     `(%%boolalg_typ) <- tactic.infer_type e,
-    match boolalg_typ with 
-    -- finset T gets returned directly 
+    match boolalg_typ with
+    -- finset T gets returned directly
     | `(finset %%set_typ) := do return [boolalg_typ]
     -- set T gets returned directly
     | `(set %%set_typ) := do return [boolalg_typ]
     -- work needs to be done if we're not working with sets/finsets,
     -- but with a type with a [boolean_algebra T] instance on it.
-    | _ := (do 
+    | _ := (do
         boolalg_hyp <- tactic.to_expr ``(infer_instance : boolean_algebra %%boolalg_typ),
-        match boolalg_typ with 
+        match boolalg_typ with
         -- Function types are usually not useful
         | `(_ -> _) := if consider_function_types then return [boolalg_typ] else return []
         -- Prop is not useful
@@ -44,26 +44,26 @@ meta def get_boolalg_typ (consider_function_types := ff) (e : expr) : tactic (li
 
 meta def boolean_algebra_types_in_expr (consider_function_types := ff) : expr → tactic (list expr)
 | e :=
-  do 
+  do
     e_inner <- (match e with
-      -- This mostly handles basic expressions 
+      -- This mostly handles basic expressions
       | expr.local_const unique pretty _ _ := get_boolalg_typ consider_function_types e
       -- applications
-      | expr.app e1 e2 := 
-        do l1 <- boolean_algebra_types_in_expr e1, 
+      | expr.app e1 e2 :=
+        do l1 <- boolean_algebra_types_in_expr e1,
           l2 <- boolean_algebra_types_in_expr e2,
           return (l1 ++ l2)
       -- abstracts
       | expr.lam _ _ argtyp body :=
-        do l1 <- boolean_algebra_types_in_expr argtyp, 
+        do l1 <- boolean_algebra_types_in_expr argtyp,
           l2 <- boolean_algebra_types_in_expr body,
           return (l1 ++ l2)
       | expr.pi _ _ argtyp body :=
-        do l1 <- boolean_algebra_types_in_expr argtyp, 
+        do l1 <- boolean_algebra_types_in_expr argtyp,
           l2 <- boolean_algebra_types_in_expr body,
           return (l1 ++ l2)
-      | expr.elet _ argtyp argval body := 
-        do l1 <- boolean_algebra_types_in_expr argtyp, 
+      | expr.elet _ argtyp argval body :=
+        do l1 <- boolean_algebra_types_in_expr argtyp,
           l2 <- boolean_algebra_types_in_expr argval,
           l3 <- boolean_algebra_types_in_expr body,
           return (l1 ++ l2 ++ l3)
@@ -72,7 +72,7 @@ meta def boolean_algebra_types_in_expr (consider_function_types := ff) : expr �
     e_outer <- get_boolalg_typ consider_function_types e,
     return (e_inner ++ e_outer)
 
-def unique_list {T: Type*} [decidable_eq T]: list T -> list T 
+def unique_list {T: Type*} [decidable_eq T]: list T -> list T
 | [] := []
 | (x :: xs) := let tl := unique_list xs in
                 if list.mem x tl then tl else x :: tl
@@ -116,7 +116,7 @@ meta def rewrite_for_type (type : expr) : (tactic unit) := do
 meta def gather_types (consider_function_types := ff) : (tactic (list expr)) := do
   goal <- tactic.target,
   hyps <- tactic.local_context,
-  types <- (do 
+  types <- (do
             types_in_expr <- (goal :: hyps).mmap (boolean_algebra_types_in_expr consider_function_types),
             return (unique_list (list.foldr list.append [] types_in_expr))),
   --tactic.trace "Boolean algebra types:",
@@ -130,7 +130,7 @@ meta def set_ext (consider_function_types := ff) : (tactic unit) := do
   tactic.try cleanup.set_cleanup,
   types <- gather_types consider_function_types,
   types.mmap rewrite_for_type,
-  tactic.skip 
+  tactic.skip
 
 
 meta def specialize_all (ename : expr) : (tactic unit) := do
@@ -141,7 +141,7 @@ meta def specialize_all (ename : expr) : (tactic unit) := do
     tactic.skip),
   tactic.skip
 
-meta def introduce_and_specialize : (tactic unit) := do 
+meta def introduce_and_specialize : (tactic unit) := do
   target <- tactic.target,
   match target with
   | expr.lam nm _ argtyp body := do
@@ -160,7 +160,7 @@ meta def introduce_and_specialize : (tactic unit) := do
 meta def clear_existential_hyp (hyp : expr) : (tactic (option expr)) := do
   htyp <- tactic.infer_type hyp,
   match htyp with
-  | `(@Exists _ _) := do 
+  | `(@Exists _ _) := do
       [(_, [witness, _])] <- tactic.cases hyp,
       return (some witness)
   | _ := return none
@@ -169,12 +169,12 @@ meta def clear_existential_hyp (hyp : expr) : (tactic (option expr)) := do
 meta def forall_hypotheses (f : expr -> tactic unit) : (tactic unit) := do
   context <- tactic.local_context,
   result <- context.mmap (fun hyp, (f hyp >> return tt) <|> return ff),
-  if (result.filter (fun (x : bool), x)).empty then 
-    tactic.fail "could not apply function to any hypothesis" 
+  if (result.filter (fun (x : bool), x)).empty then
+    tactic.fail "could not apply function to any hypothesis"
   else tactic.skip
 
 meta def clear_existentials_hyp_and_specialize : (tactic unit) := do
-  forall_hypotheses (fun hyp, 
+  forall_hypotheses (fun hyp,
     do some witness <- clear_existential_hyp hyp, specialize_all witness
   ) <|> tactic.fail "no existentials present"
 
@@ -204,13 +204,13 @@ meta def split_goal : (tactic unit) := do
   | `(_ /\ _) := tactic.split >> tactic.skip
   | _ := tactic.fail "not a conjunction"
   end
- 
+
 meta def finisher_step : (tactic unit) := do
   -- push negatives everywhere
   tactic.try `[push_neg at *],
   tactic.try `[push_neg],
   -- try introducing a name and specializing
-  introduce_and_specialize 
+  introduce_and_specialize
   <|>
   -- if that fails, eliminate existentials in the goal by filling them in
   -- with a metavariable.
@@ -241,7 +241,7 @@ meta def set_solver_finisher : (tactic unit) := do
     -- if there is a disjunction in the goal, try either side
     | `(_ \/ _) := ((tactic.left >> set_solver_finisher) <|> (tactic.right >> set_solver_finisher)) >> tactic.skip
     -- if there is a disjucntion in the hypothesis, split it and make sure both sides work.
-    | _ := (do 
+    | _ := (do
       mvar1 <- tactic.mk_mvar,
       mvar2 <- tactic.mk_mvar,
       disj <- tactic.find_assumption `(%%mvar1 \/ %%mvar2),
@@ -301,14 +301,14 @@ example (α : Type*) [boolean_algebra α]  (A B C D E F G : α) :
 begin
   tactic.timetac "slow" $ set_solver,
 end
- 
+
 example (α : Type*) (C E : set α) (hCE : C ⊓ E = ∅) :
-  C ⊔ (E ⊔ C)ᶜ = Eᶜ := 
+  C ⊔ (E ⊔ C)ᶜ = Eᶜ :=
 by {set_solver, }
 
-example (α : Type*) (C E : set α) (h : C ⊓ E = ⊥) : 
-  C ⊓ (C ⊔ E)ᶜ = ∅ := 
-by {set_solver, } 
+example (α : Type*) (C E : set α) (h : C ⊓ E = ⊥) :
+  C ⊓ (C ⊔ E)ᶜ = ∅ :=
+by {set_solver, }
 
 example (X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ : set nat) :
   (X₀ ⊔ X₁ ⊔ (X₂ ⊓ X₃) ⊔ X₄ ⊔ X₅ ⊔ (X₆ ⊓ X₇ ⊓ X₈) ⊔ X₉)ᶜ

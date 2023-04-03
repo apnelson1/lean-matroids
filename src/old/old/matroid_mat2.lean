@@ -68,7 +68,7 @@ instance i3 {A : fin_bool_alg} : has_top A := {top := A.top}
 instance i4 {A : fin_bool_alg} : has_inter A := {inter := A.inter}
 instance i5 {A : fin_bool_alg} : has_union A := {union := A.union}
 instance i6 {A : fin_bool_alg} : has_compl A := {compl := A.compl}
-instance i7 {A : fin_bool_alg} : has_subset A := {subset := A.contained} 
+instance i7 {A : fin_bool_alg} : has_subset A := {subset := A.contained}
 
 abbreviation size {A : fin_bool_alg} (X : A) : ℤ := A.size X
 

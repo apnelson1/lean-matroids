@@ -1,14 +1,14 @@
 import data.fintype.basic
-import data.set 
+import data.set
 import data.finset
 import tactic
-import size 
+import size
 
 noncomputable theory
 localized "attribute [instance, priority 100000] classical.prop_decidable
   noncomputable theory" in classical
 open_locale classical
-open finset 
+open finset
 
 universes u v
 
@@ -38,7 +38,7 @@ variables {γ : Type u} [fintype γ] (M : matroid γ)
 abbreviation E (M : matroid γ) : finset γ := univ
 
 @[simp]
-lemma r_empty_eq_zero : M.r ∅ = 0 :=  
+lemma r_empty_eq_zero : M.r ∅ = 0 :=
 by linarith [(M.R0 ∅), (M.R1 ∅), @size_empty γ]
 
 @[simp]
@@ -84,13 +84,13 @@ def dual (M : matroid γ) : matroid γ :=
   R0 := λ X, begin
     linarith [r_compl M X, M.R1 X],
   end,
-  R1 := λ X, 
+  R1 := λ X,
   begin
     have h : M.r Xᶜ ≤ M.r M.E := M.R2 (subset_univ _),
     linarith,
   end,
-  
-  R2 := λ X Y hXY, begin 
+
+  R2 := λ X Y hXY, begin
     -- want to show: |X| + r(E \ X) < |Y| + r(E \ Y)
     have YsetminusX : size (Y \ X) = size Y - size X,
     { exact size_sdiff hXY },
@@ -105,7 +105,7 @@ def dual (M : matroid γ) : matroid γ :=
     sorry,
   end }
 
-end matroid 
+end matroid
 /--
 A "submatroid" is the matroid restricted to a subset then contracted.
 The rank function is then meant to be for subsets of `E` that contain
@@ -113,14 +113,14 @@ The rank function is then meant to be for subsets of `E` that contain
 -/
 
 
-@[ext] structure minor {γ : Type u} [fintype γ] (M : matroid γ) := 
+@[ext] structure minor {γ : Type u} [fintype γ] (M : matroid γ) :=
 (C : finset γ)
 (D : finset γ)
 (H : C ∩ D = ∅)
 
-namespace minor 
+namespace minor
 variables {γ : Type u} [fintype γ] {M : matroid γ}
-def r (M' : minor M) (X : finset γ) : ℤ := M.r (X ∪ M'.C) - M.r M'.C --This allows rank-evaluations of sets intersecting C ∪ D - maybe this is ok. 
+def r (M' : minor M) (X : finset γ) : ℤ := M.r (X ∪ M'.C) - M.r M'.C --This allows rank-evaluations of sets intersecting C ∪ D - maybe this is ok.
 
 lemma R0 (M' : minor M) (X : finset γ) : 0 ≤ M'.r X :=
 begin
@@ -150,16 +150,16 @@ def to_matroid (M' : minor M) : matroid (↑(M.E \ M'.C \ M'.D) : set γ) :=
   R2 := λ X Y hs, M'.R2 (map_subset_map.mpr hs),
   R3 := λ X Y, by { rw [map_union, map_inter], apply M'.R3 } }
 @[simp]
-def delete (M' : minor M) (D' : finset γ) (H : D' ∩ (M'.C ∪ M'.D) = ∅) : minor M := 
-{ C := M'.C , D := D' ∪ M'.D, H := 
+def delete (M' : minor M) (D' : finset γ) (H : D' ∩ (M'.C ∪ M'.D) = ∅) : minor M :=
+{ C := M'.C , D := D' ∪ M'.D, H :=
 begin
   have := M'.H,
-  sorry, 
-end, 
+  sorry,
+end,
 }
 @[simp]
-def contract (M' : minor M) (C': finset γ) (H: C' ∩ (M'.C ∪ M'.D) = ∅) : minor M := 
-{ C := C' ∪ M'.C, D := M'.D, H := sorry, 
+def contract (M' : minor M) (C': finset γ) (H: C' ∩ (M'.C ∪ M'.D) = ∅) : minor M :=
+{ C := C' ∪ M'.C, D := M'.D, H := sorry,
 }
 
 
@@ -172,7 +172,7 @@ def dual (M' : minor M) : minor M.dual :=
 instance : has_top (minor M) :=
 { top := { C := ∅, D := ∅, H := by tidy } }
 
-end minor 
+end minor
 
 
 @[ext]
@@ -244,7 +244,7 @@ To delete from a matroid `M`, there is also the definition `M.delete D`
 to get a `submatroid M`.
 -/
 @[simp]
-def delete (M' : submatroid M) (D : finset γ) : submatroid M := 
+def delete (M' : submatroid M) (D : finset γ) : submatroid M :=
 { E := M'.E \ D, F := M'.F \ D,
   F_sub := begin
     intro x, simp only [and_imp, mem_sdiff],
@@ -353,17 +353,17 @@ def mcontract (M : matroid γ) (F : finset γ) : minor M :=
   { C := F, D := ∅, H := inter_empty F }
 
 lemma cd_rank_equal (M : matroid γ) (X : finset γ) : (delete M X).dual.r =
-  (contract M.dual X).r := 
+  (contract M.dual X).r :=
 begin
-  sorry, 
+  sorry,
 end
 
 lemma cd_matroid_equal (M : matroid γ) (X : finset γ) : (delete M X).dual== (contract M.dual X) :=
 begin
-  sorry, 
+  sorry,
 end
 
---lemma something {C: finset γ} {D: finset γ} (h: C ∩ D = ∅) : D ∩ C = ∅ := 
+--lemma something {C: finset γ} {D: finset γ} (h: C ∩ D = ∅) : D ∩ C = ∅ :=
 
 
 def make_minor (M : matroid γ) (C D : finset γ) (h : C ∩ D = ∅) : minor M :=
@@ -372,12 +372,12 @@ def make_minor (M : matroid γ) (C D : finset γ) (h : C ∩ D = ∅) : minor M 
 lemma mdelete_D (M : matroid γ) (D : finset γ) : (M.mdelete D).D = D := rfl
 
 lemma clear_emptl {C D : finset γ} (h : C ∩ D = ∅) : C ∩ (∅ ∪ D) = ∅ := by tidy
-lemma clear_emptr {C D : finset γ} (h : C ∩ D = ∅) : D ∩ (C ∪ ∅) = ∅ := sorry 
+lemma clear_emptr {C D : finset γ} (h : C ∩ D = ∅) : D ∩ (C ∪ ∅) = ∅ := sorry
 
 
 lemma cd_eq_dc (M: matroid γ) (C: finset γ) (D: finset γ) (h: C ∩ D = ∅) :
   (minor.contract (mdelete M D) C (clear_emptl h)) =
-  (minor.delete (mcontract M C) D (clear_emptr h)) := 
+  (minor.delete (mcontract M C) D (clear_emptr h)) :=
 by apply minor.ext; simp
 
 
@@ -385,28 +385,28 @@ lemma cd_eq_dc_m (M: matroid γ) (C: finset γ) (D: finset γ) (h: C ∩ D = ∅
   minor.to_matroid (minor.contract (mdelete M D) C (clear_emptl h)) ==
   minor.to_matroid (minor.delete (mcontract M C) D (clear_emptr h)) := by rw cd_eq_dc
 
-variables M : matroid γ 
-variables C D : finset γ 
+variables M : matroid γ
+variables C D : finset γ
 lemma cd_eq_dc_dual (M : matroid γ)  (C D : finset γ ) (h : C ∩ D = ∅) :
-  (make_minor M C D h).dual = M.dual.make_minor D C (sorry : D ∩ C = ∅) := 
+  (make_minor M C D h).dual = M.dual.make_minor D C (sorry : D ∩ C = ∅) :=
   begin
     unfold make_minor, tidy,
   end
 lemma cd_eq_dc_dual_m (M : matroid γ)  (C D : finset γ ) (h : C ∩ D = ∅) :
-(make_minor M C D h).dual.to_matroid = (M.dual.make_minor D C (sorry : D ∩ C = ∅)).to_matroid := 
+(make_minor M C D h).dual.to_matroid = (M.dual.make_minor D C (sorry : D ∩ C = ∅)).to_matroid :=
 begin
   unfold make_minor, tidy,
 end
 
 lemma dual_minors_r (M : matroid γ) (M' : minor M) :
-  M'.dual.to_matroid.r == M'.to_matroid.dual.r := 
+  M'.dual.to_matroid.r == M'.to_matroid.dual.r :=
 begin
-  unfold minor.to_matroid, 
+  unfold minor.to_matroid,
   unfold minor.dual,
   unfold matroid.dual,
-  simp, 
-  ext, 
-  tidy, 
+  simp,
+  ext,
+  tidy,
   have h: {x // x ∉ M'.C ∧ x ∉ M'.D} = {x // x ∉ M'.dual.C ∧ x ∉ M'.dual.D},
     apply congr_arg subtype,
     apply funext,
@@ -421,15 +421,15 @@ begin
     split,
     exact h.2,
     exact h.1,
-rw h,    
+rw h,
 -- we r here nao
-    
+
 end
 
 lemma dual_minors (M : matroid γ) (M' : minor M) :
-  M'.dual.to_matroid == M'.to_matroid.dual := 
+  M'.dual.to_matroid == M'.to_matroid.dual :=
 begin
-  unfold minor.to_matroid, 
+  unfold minor.to_matroid,
   unfold minor.dual,
   unfold matroid.dual,
 

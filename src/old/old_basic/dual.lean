@@ -1,17 +1,17 @@
-import matroid.axioms  
-import prelim.collections prelim.size 
+import matroid.axioms
+import prelim.collections prelim.size
 
-universes u 
+universes u
 
 ----------------------------------------------------------------
-open set 
-noncomputable theory 
+open set
+noncomputable theory
 
-namespace matroid 
+namespace matroid
 
 section dual
 variables {α : Type*} [fintype α]
- 
+
 lemma rank_empt (M : matroid α) :
   M.r ∅ = 0 :=
 le_antisymm (calc M.r ∅ ≤ _ : M.R1 ∅ ... = 0 : size_empty α) (M.R0 ∅)
@@ -53,7 +53,7 @@ fun M, {
     ... ≤ size X       + M.r Xᶜ        - M.r univ + (size Y       + M.r Yᶜ        - M.r univ) : by linarith [size_modular X Y, M.R3 Xᶜ Yᶜ]),
 }
 
--- Duality is an involution 
+-- Duality is an involution
 @[simp] lemma dual_dual (M : matroid α) :
   dual (dual M) = M :=
 begin
@@ -64,18 +64,18 @@ begin
 end
 
 lemma dual_inj {M₁ M₂ : matroid α} :
-  dual M₁ = dual M₂ → M₁ = M₂ := 
+  dual M₁ = dual M₂ → M₁ = M₂ :=
 λ h, by rw [←dual_dual M₁, ←dual_dual M₂, h]
 
 lemma dual_inj_iff {M₁ M₂ : matroid α} :
-  dual M₁ = dual M₂ ↔ M₁ = M₂ := 
+  dual M₁ = dual M₂ ↔ M₁ = M₂ :=
 ⟨λ h, dual_inj h, λ h, by rw h⟩
 
 lemma dual_r (M : matroid α) (X : set α) :
-  (dual M).r X = size X + M.r Xᶜ - M.r univ := 
-rfl 
+  (dual M).r X = size X + M.r Xᶜ - M.r univ :=
+rfl
 
 end /-section-/ dual
 
-end matroid 
+end matroid
 
