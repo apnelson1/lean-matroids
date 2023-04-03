@@ -223,6 +223,15 @@ begin
   apply inter_subset_right, 
 end 
 
+lemma ncard_range_of_injective {α β : Type*} {f : α → β} (hf : f.injective) : 
+  (range f).ncard = nat.card α :=
+by rw [←ncard_univ, ←image_univ, ncard_image_of_injective _ hf]
+
+lemma ncard_eq_nat_card_subtype {α : Type*} (s : set α) :
+  s.ncard = nat.card s := 
+by rw [←ncard_univ, ←ncard_image_of_injective _ subtype.coe_injective, image_univ, 
+  subtype.range_coe_subtype, set_of_mem_eq]
+
 end sigma 
 
 section finsum
@@ -386,3 +395,8 @@ end
 
 end finsum
 
+lemma compl_image_of_injective {α β : Type*} {f : α → β} {s : set α} (hf : f.injective) : 
+  (f '' s)ᶜ = (f '' sᶜ) ∪ (range f)ᶜ :=
+by rw [←compl_inj_iff, compl_union, compl_compl, compl_compl, compl_eq_univ_diff s, image_diff hf, 
+    diff_eq_compl_inter, compl_inter, compl_compl, inter_distrib_right, image_univ, 
+    compl_inter_self, union_empty, inter_eq_left_iff_subset.mpr (image_subset_range _ _ )]

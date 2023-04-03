@@ -33,6 +33,10 @@ def dual (M : matroid E) : matroid E :=
   M.dual.base B ↔ M.base Bᶜ :=
 iff.rfl 
 
+lemma base_iff_dual_base_compl : 
+  M.base B ↔ M.dual.base Bᶜ :=
+by rw [←compl_compl B, dual_base_iff, compl_compl, compl_compl]
+
 @[simp] lemma dual_dual (M : matroid E): 
   M.dual.dual = M :=
 by {ext, simp}
@@ -105,13 +109,12 @@ end
 lemma coloop.dual_loop (he : M.coloop e) :
   M.dual.loop e :=
 begin
-  rw [loop_def, circuit_def, dual_indep_iff],
-  simp only [ssubset_singleton_iff, disjoint_singleton_right, not_exists, not_and, not_not_mem, 
-    forall_eq], 
-  exact ⟨he, empty_indep _⟩, 
+  simp_rw [loop_iff_dep, dual_indep_iff, not_exists, not_and, disjoint_singleton_right, 
+    not_not_mem, ←coloop_iff_forall_mem_base], 
+  exact he, 
 end 
 
-@[simp] lemma dual_coloop_if_loop :
+@[simp] lemma dual_coloop_iff_loop :
   M.dual.coloop e ↔ M.loop e :=
 ⟨λ h, by {rw ← dual_dual M, exact h.dual_loop}, loop.dual_coloop⟩ 
 

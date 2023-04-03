@@ -927,6 +927,18 @@ begin
   exact (hY.symm.trans_subset (M.cl_mono hYH)), 
 end  
 
+lemma coindep_iff_cl_compl_eq_univ :
+  M.coindep I ↔ M.cl Iᶜ = univ :=
+begin
+  rw [coindep, ←not_iff_not, not_not, ←ne.def, subset_hyperplane_iff_cl_ne_univ],  
+  simp_rw [cocircuit], 
+  split, 
+  { rintro ⟨K, hKI, hK⟩, exact ⟨_, hK, compl_subset_compl.mpr hKI⟩},
+  rintro ⟨H, hH, hIH⟩, 
+  exact ⟨Hᶜ, compl_subset_comm.mp hIH, by rwa compl_compl⟩,     
+end 
+  
+
 /- This follows more easily from a rank argument, but I'm trying to avoid rank. -/
 lemma hyperplane.inter_right_covby_of_inter_left_covby 
 (hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) (h : M.covby (H₁ ∩ H₂) H₁) : 

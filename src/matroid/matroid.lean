@@ -67,9 +67,9 @@ def cocircuit (M : matroid E) (K : set E) : Prop :=
 def coindep (M : matroid E) (I : set E) : Prop := 
   ¬ ∃ K ⊆ I, M.cocircuit K     
 
-/-- A loop is a singleton circuit -/
+/-- A loop is an element of the closure of the empty set -/
 def loop (M : matroid E) (e : E) : Prop :=
-  M.circuit {e}
+  e ∈ M.cl ∅  
 
 /-- A coloop is an element contained in every basis -/
 def coloop (M : matroid E) (e : E) : Prop :=

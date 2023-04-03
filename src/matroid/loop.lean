@@ -15,64 +15,41 @@ open set
 
 namespace matroid
 
-lemma loop_def : 
-  M.loop e ↔ M.circuit {e} :=
+lemma loop_iff_mem_cl_empty :
+  M.loop e ↔ e ∈ M.cl ∅ :=
 iff.rfl 
-
-lemma loop.circuit (he : M.loop e) : 
-  M.circuit {e} :=
-he
 
 lemma loop.r (he : M.loop e) :
   M.r {e} = 0 :=
-begin
- have h := he.circuit.card, 
- rwa [ncard_singleton, self_eq_add_left] at h, 
-end 
+(nat.zero_le _).antisymm' (by {convert M.r_mono (singleton_subset_iff.mpr he), rw [r_cl, r_empty]}) 
 
 lemma loop_iff_r :
   M.loop e ↔ M.r {e} = 0 :=
-begin
-  refine ⟨loop.r, λ h, _⟩, 
-  rw [loop_def, circuit_def, ←r_lt_card_iff_dep, h, ncard_singleton],   
-  refine ⟨zero_lt_one, λ I hI, _⟩, 
-  rw [ssubset_singleton_iff.mp hI], 
-  apply empty_indep, 
-end  
+⟨loop.r, λ h, by rwa [loop_iff_mem_cl_empty, mem_cl, r_empty, insert_emptyc_eq]⟩
+   
+lemma loop_iff_dep : 
+  M.loop e ↔ ¬M.indep {e} :=
+by {rw [loop_iff_mem_cl_empty, iff_not_comm, M.empty_indep.not_mem_cl_iff], simp}
+
+lemma nonloop_iff_indep : 
+  (¬ M.loop e) ↔ M.indep {e} := 
+by rw [not_iff_comm, loop_iff_dep]  
+
+lemma loop_iff_circuit : 
+  M.loop e ↔ M.circuit {e} :=
+by {simp_rw [loop_iff_dep, circuit_def, ssubset_singleton_iff], simp [empty_indep]}
+
+lemma loop.circuit (he : M.loop e) : 
+  M.circuit {e} :=
+loop_iff_circuit.mp he 
 
 lemma loop_iff_not_mem_base_forall :
   M.loop e ↔ ∀ B, M.base B → e ∉ B :=
 begin
-  refine ⟨λ h B hB heB, h.circuit.dep (hB.indep.subset (singleton_subset_iff.mpr heB)),
-    λ h, _⟩, 
-  refine ⟨λ h_ind, _,λ I hI, _⟩, 
-  { obtain ⟨B,hB⟩ := h_ind.exists_base_supset, 
-    exact h _ hB.1 (singleton_subset_iff.mp hB.2)},
-  convert M.empty_indep, 
-  rwa ssubset_singleton_iff at hI, 
+  rw ←not_iff_not, 
+  simp_rw [nonloop_iff_indep, not_forall, not_not_mem, ←singleton_subset_iff, exists_prop], 
+  refl, 
 end   
-
-lemma loop_iff_dep : 
-  M.loop e ↔ ¬M.indep {e} :=
-⟨circuit.dep, λ h, loop_iff_not_mem_base_forall.mpr 
-  (λ B hB heB, h (hB.indep.subset (singleton_subset_iff.mpr heB)))⟩  
-
-lemma nonloop_iff_indep : 
-  (¬ M.loop e) ↔ M.indep {e} := 
-by rw [not_iff_comm, loop_iff_dep]
-
-lemma loop_iff_mem_cl_empty :
-  M.loop e ↔ e ∈ M.cl ∅ :=
-begin
-  rw [loop_iff_dep, not_iff_comm, not_mem_cl_iff_forall_insert_basis_insert], 
-  split, 
-  { rintro ⟨-,h⟩, simpa using (h ∅ M.empty_basis_empty).indep},
-  refine λ h, ⟨not_mem_empty _, λ I hI, _⟩,     
-  rw ←basis_self_iff_indep at h, 
-  rw basis_empty_iff at hI, subst hI, 
-  convert h; 
-  simp,
-end 
 
 lemma cl_empty_eq_loops (M : matroid E) : 
   M.cl ∅ = {e | M.loop e} :=
@@ -115,7 +92,7 @@ lemma loop.eq_of_circuit_mem (he : M.loop e) (hC : M.circuit C) (h : e ∈ C) :
   C = {e} :=
 by rw he.circuit.eq_of_subset_circuit hC (singleton_subset_iff.mpr h)
 
-lemma coloop_def : 
+lemma coloop_iff_forall_mem_base : 
   M.coloop e ↔ ∀ B, M.base B → e ∈ B :=
 iff.rfl 
 

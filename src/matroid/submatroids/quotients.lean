@@ -84,14 +84,7 @@ nat.eq_zero_of_le_zero ((weak_image.r_le h X).trans_eq hX)
 
 lemma loop.weak_image (he : M.loop e) (h : N ≤w M) :
   N.loop e :=
-begin
-  obtain ⟨C,hCe,hC⟩ :=  he.circuit.supset_circuit_of_weak_image h, 
-  rw [loop_def], 
-  convert hC,  
-  by_contra h', 
-  rw ssubset_singleton_iff.mp (hCe.ssubset_of_ne (ne.symm h')) at hC, 
-  simpa using hC.nonempty, 
-end
+by_contra (λ heN, loop_iff_dep.mp he (h _ (nonloop_iff_indep.mp heN)))
 
 lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) :
   ¬ M.loop e :=

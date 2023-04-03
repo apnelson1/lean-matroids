@@ -20,13 +20,13 @@ variables {E α : Type*} [finite E] [finite α]
   will happen. 
   -/
 
-/-- A matroid on some subset `ground` of `α`. Implemented as a `matroid` in which the elements 
-outside `ground` are all loops. The matroid `carrier` is a detail of this implentation, and not 
+/-- A matroid on some subset `E` of `α`. Implemented as a `matroid` in which the elements 
+outside `E` are all loops. The matroid `carrier` is a detail of this implentation, and not 
 intended to be accessed directly.  -/
 @[ext] structure matroid_in (α : Type*) [finite α] :=
-(ground : set α)
+(E : set α)
 (carrier : matroid α)
-(support : groundᶜ ⊆ carrier.cl ∅)
+(support : Eᶜ ⊆ carrier.cl ∅)
 
 namespace matroid_in 
 
@@ -51,13 +51,13 @@ def r (X : set α) : ℕ :=
   M.carrier.r X 
 
 def flat (F : set α) : Prop := 
-  F ⊆ M.ground ∧ ∀ I X, M.basis I F → M.basis I X → X ⊆ F 
+  F ⊆ M.E ∧ ∀ I X, M.basis I F → M.basis I X → X ⊆ F 
 
 def cl (X : set α) : set α := 
   ⋂₀ {F | M.flat F ∧ X ⊆ F}
 
 def hyperplane (H : set α) : Prop :=
-  M.flat H ∧ H ⊂ M.ground ∧ (∀ F, H ⊂ F → M.flat F → F = M.ground)
+  M.flat H ∧ H ⊂ M.E ∧ (∀ F, H ⊂ F → M.flat F → F = M.E)
 
 def loop (e : α) : Prop :=
   M.circuit {e} 
@@ -66,7 +66,7 @@ def coloop (e : α) : Prop :=
   ∀ B, M.base B → e ∈ B    
 
 def cocircuit (K : set α) : Prop :=
-  M.hyperplane (M.ground \ K)
+  M.hyperplane (M.E \ K)
 
 end defs 
 
@@ -78,11 +78,11 @@ section carrier
   used for basic API setup. -/
 
 lemma subset_ground_of_disjoint_loops (hX : disjoint X (M.carrier.cl ∅)) : 
-  X ⊆ M.ground :=
+  X ⊆ M.E :=
 (subset_compl_iff_disjoint_right.mpr hX).trans (compl_subset_comm.mp M.support) 
 
 lemma mem_ground_of_nonloop (he : ¬M.carrier.loop e) : 
-  e ∈ M.ground :=
+  e ∈ M.E :=
 begin
   rw [loop_iff_mem_cl_empty] at he, 
   by_contra h', 
@@ -91,19 +91,36 @@ begin
 end 
 
 lemma subset_ground_of_base_carrier (hB : M.carrier.base B) : 
-  B ⊆ M.ground := 
+  B ⊆ M.E := 
 λ e he, mem_ground_of_nonloop (hB.indep.nonloop_of_mem he)  
+
+lemma subset_ground_of_indep_carrier (hI : M.carrier.indep I) : 
+  I ⊆ M.E :=
+by {obtain ⟨B, hB, hIB⟩ := hI, exact hIB.trans (subset_ground_of_base_carrier hB)}
 
 lemma indep_iff_carrier_indep :
   M.indep I ↔ M.carrier.indep I := 
 by simp_rw [matroid_in.indep, matroid_in.base, matroid.indep_iff_subset_base]
 
 lemma r_ground_compl (M : matroid_in α) :
-  M.r (M.groundᶜ) = 0 :=
+  M.r (M.Eᶜ) = 0 :=
 begin
   refine r_eq_zero_of_loopy (λ e he, by_contra (λ he', he (mem_ground_of_nonloop _))), 
   rwa loop_iff_r, 
 end 
+
+lemma flat_iff_carrier {F : set α} : 
+  M.flat F ↔ M.carrier.flat (F ∪ M.Eᶜ) ∧ F ⊆ M.E :=
+begin
+  
+end 
+
+-- lemma cl_eq_carrier_cl_inter_ground (M : matroid_in α) (X : set α) : 
+--   M.cl X = M.carrier.cl X ∩ M.E :=
+-- begin
+--   rw [cl, flat], 
+-- end 
+
 
 end carrier 
 
@@ -111,8 +128,8 @@ lemma base.indep (hB : M.base B) :
   M.indep B := 
 ⟨B, hB, subset.rfl⟩ 
 
-lemma indep.subset_ground (hI : M.indep I) : 
-  I ⊆ M.ground := 
+lemma indep.subset_E (hI : M.indep I) : 
+  I ⊆ M.E := 
 let ⟨B,hB,hIB⟩ := hI in hIB.trans (subset_ground_of_base_carrier hB)
 
 lemma r_le_r_of_subset (M : matroid_in α) (hXY : X ⊆ Y) : 
@@ -147,29 +164,23 @@ lemma basis.indep (hI : M.basis I X) :
   M.indep I := 
 @matroid.basis.indep _ _ M.carrier _ _ hI 
 
-lemma r_eq_r_inter_ground (X : set α): 
-  M.r X = M.r (X ∩ M.ground) := 
+lemma r_eq_r_inter_E (X : set α): 
+  M.r X = M.r (X ∩ M.E) := 
 begin
-  rw [matroid_in.r, ←compl_compl M.ground, inter_comm, ←diff_eq_compl_inter, 
+  rw [matroid_in.r, ←compl_compl M.E, inter_comm, ←diff_eq_compl_inter, 
     ←r_eq_r_diff_r_zero X M.r_ground_compl], 
   refl, 
 end 
 
-lemma eq_of_base_iff_base {M₁ M₂ : matroid_in E} (h : M₁.ground = M₂.ground) 
+lemma eq_of_base_iff_base {M₁ M₂ : matroid_in E} (h : M₁.E = M₂.E) 
 (h' : ∀ B, M₁.base B ↔ M₂.base B) : 
   M₁ = M₂ :=
-begin
-  apply matroid_in.ext, 
-    assumption,
-  ext B, 
-  exact h' B, 
-end 
-  
+by {apply matroid_in.ext, assumption, ext B, exact h' B}
 
 section equivalence 
 
 /-- A `matroid_in` gives a matroid on a subtype -/
-def to_matroid (M : matroid_in α) (hX : M.ground = X) : 
+def to_matroid_of_ground_eq (M : matroid_in α) (hX : M.E = X) : 
   matroid X :=
 { base := M.carrier.base ∘ (set.image coe),
   exists_base' := begin
@@ -196,12 +207,14 @@ def to_matroid (M : matroid_in α) (hX : M.ground = X) :
     rwa [function.comp_app, image_insert_eq, image_diff subtype.coe_injective, image_singleton], 
   end }
 
+def to_matroid (M : matroid_in α) : matroid (M.E) := M.to_matroid_of_ground_eq rfl 
+
 /-- A `matroid` on a subtype gives a `matroid_in` -/
-def of_matroid_in {ground : set α} (M : matroid ground) :
+def of_matroid_in {E : set α} (M : matroid E) :
   matroid_in α :=
-{ ground := ground,
+{ E := E,
   carrier := 
-  { base := λ B, M.base (coe ⁻¹' B) ∧ B ⊆ ground ,
+  { base := λ B, M.base (coe ⁻¹' B) ∧ B ⊆ E ,
     exists_base' := 
     (begin
       obtain ⟨B,hB⟩ := M.exists_base, 
@@ -211,7 +224,7 @@ def of_matroid_in {ground : set α} (M : matroid ground) :
     base_exchange' := 
     begin
       rintro B₁ B₂ ⟨hB₁,hB₁ss⟩ ⟨hB₂,hB₂ss⟩ x hx, 
-      set x' : ground := ⟨x, hB₁ss hx.1⟩ with hx'_def, 
+      set x' : E := ⟨x, hB₁ss hx.1⟩ with hx'_def, 
       have hxx' : x = coe x', rw [hx'_def, subtype.coe_mk],  
       rw [hxx', ←mem_preimage, preimage_diff] at hx, 
       obtain ⟨y, hy, hBy⟩ := hB₁.exchange hB₂ hx, 
@@ -228,23 +241,23 @@ def of_matroid_in {ground : set α} (M : matroid ground) :
     end },
   support := 
   (begin
-    rintro e (he : e ∉ ground), 
+    rintro e (he : e ∉ E), 
     rw [←loop_iff_mem_cl_empty, loop_iff_not_mem_base_forall],  
     rintro B ⟨-,hB⟩ heB, 
     exact he (hB heB), 
   end) }
 
-/-- A `matroid_in α` with ground set `X` is the same thing as a `matroid X`-/
+/-- A `matroid_in α` with E set `X` is the same thing as a `matroid X`-/
 def matroid_in_equiv_subtype {E : set α} : 
-  {M : matroid_in α // M.ground = E} ≃ matroid E := 
-{ to_fun := λ M, to_matroid M.1 M.2,
+  {M : matroid_in α // M.E = E} ≃ matroid E := 
+{ to_fun := λ M, to_matroid_of_ground_eq M.1 M.2,
   inv_fun := λ M, ⟨of_matroid_in M, rfl⟩, 
   left_inv := begin
     rintro ⟨M, hM⟩, 
     subst hM, 
     ext, refl, 
-    simp only [function.comp_app, subtype.image_preimage_coe, of_matroid_in, to_matroid, 
-      subtype.coe_mk], 
+    simp only [function.comp_app, subtype.image_preimage_coe, of_matroid_in, 
+      to_matroid_of_ground_eq, subtype.coe_mk], 
     split, 
     { rintro ⟨hB, hBG⟩, convert hB, rwa [eq_comm, inter_eq_left_iff_subset]},
     intro hB, 
@@ -254,17 +267,17 @@ def matroid_in_equiv_subtype {E : set α} :
   right_inv := begin
     rintro M, 
     ext B, 
-    simp only [of_matroid_in, function.comp_app, image_subset_iff, to_matroid, 
+    simp only [of_matroid_in, function.comp_app, image_subset_iff, to_matroid_of_ground_eq, 
       subtype.coe_preimage_self, subset_univ, and_true], 
     rw preimage_image_eq _ (subtype.coe_injective), 
   end }
 
 
 @[simp] lemma matroid_in_equiv_subtype_apply_base {E : set α} {B : set E} 
-(M : {M : matroid_in α // M.ground = E}) :
+(M : {M : matroid_in α // M.E = E}) :
   (matroid_in_equiv_subtype M).base B ↔ (M : matroid_in α).base (coe '' B) := 
-by simp only [matroid_in_equiv_subtype, to_matroid, matroid_in.base, subtype.val_eq_coe, 
-  equiv.coe_fn_mk]
+by simp only [matroid_in_equiv_subtype, to_matroid_of_ground_eq, matroid_in.base, 
+  subtype.val_eq_coe, equiv.coe_fn_mk]
 
 @[simp] lemma matroid_in_equiv_subtype_apply_symm_base {B E : set α} (M : matroid E) :
   (matroid_in_equiv_subtype.symm M : matroid_in α).base B ↔ M.base (coe ⁻¹' B) ∧ B ⊆ E := 
@@ -272,7 +285,7 @@ by simp only [matroid_in_equiv_subtype, of_matroid_in, matroid_in.base,
     equiv.coe_fn_symm_mk, subtype.coe_mk]
  
 @[simp] lemma matroid_in_equiv_subtype_apply_indep {E : set α} {I : set E} 
-(M : {M : matroid_in α // M.ground = E}) :
+(M : {M : matroid_in α // M.E = E}) :
   (matroid_in_equiv_subtype M).indep I ↔ (M : matroid_in α).indep (coe '' I) := 
 begin
   simp_rw [indep_iff_subset_base, matroid_in.indep, matroid_in_equiv_subtype_apply_base,  
@@ -284,7 +297,7 @@ begin
   refine ⟨_, _, hIB⟩, 
   convert hB, 
   simp_rw [subtype.image_preimage_coe, ← M.2],
-  exact inter_eq_left_iff_subset.mpr (hB.indep.subset_ground), 
+  exact inter_eq_left_iff_subset.mpr (hB.indep.subset_E), 
 end 
 
 @[simp] lemma matroid_in_equiv_subtype_apply_symm_indep {I E : set α} (M : matroid E) :
@@ -307,7 +320,7 @@ begin
 end 
 
 @[simp] lemma matroid_in_equiv_subtype_apply_r {E : set α} 
-(M : {M : matroid_in α // M.ground = E}) (X : set E) : 
+(M : {M : matroid_in α // M.E = E}) (X : set E) : 
   (matroid_in_equiv_subtype M).r X = (M : matroid_in α).r (coe '' X) := 
 begin
   obtain ⟨I, hIX⟩ := (matroid_in_equiv_subtype M).exists_basis X, 
@@ -318,12 +331,12 @@ begin
   have hI' : M.basis (coe '' I) (coe '' X), 
   { refine ⟨hIX.1, (image_subset _ hIX.2.1), λ J hJ hIJ hJX, _⟩,
     rw hIX.2.2 (coe ⁻¹' J) _ _ _, 
-    { simpa using hJ.subset_ground},
-    { convert hJ, simpa using hJ.subset_ground},
+    { simpa using hJ.subset_E},
+    { convert hJ, simpa using hJ.subset_E},
     { simpa using hIJ },
     rw [←preimage_image_eq X subtype.coe_injective, preimage_subset_preimage_iff],   
     { exact hJX},
-    simp only [subtype.range_coe_subtype, set_of_mem_eq, hJ.subset_ground]},
+    simp only [subtype.range_coe_subtype, set_of_mem_eq, hJ.subset_E]},
   rw [←hI'.r, hI'.indep.r, ncard_image_of_injective _ subtype.coe_injective], 
 end 
 
@@ -331,15 +344,45 @@ end
   (matroid_in_equiv_subtype.symm M : matroid_in α).r X = M.r (coe ⁻¹' X) :=
 begin
   set M' := (matroid_in_equiv_subtype.symm M) with hM', 
-  rw [r_eq_r_inter_ground, ←preimage_inter_range, subtype.range_coe], 
-  set X' := X ∩ (M' : matroid_in α).ground with hX'_def, 
+  rw [r_eq_r_inter_E, ←preimage_inter_range, subtype.range_coe], 
+  set X' := X ∩ (M' : matroid_in α).E with hX'_def, 
   have hX' : coe '' (coe ⁻¹' X' : set E) = X', 
   { rw image_preimage_eq_iff, simp [hX'_def], convert inter_subset_right _ _},
   rw [←hX', ←matroid_in_equiv_subtype_apply_r, hM', equiv.apply_symm_apply], 
   refl, 
 end 
 
+lemma eq_coe_image_preimage {E : set α} (M : matroid_in α) (h : M.E = E): 
+  M = matroid_in_equiv_subtype.symm (matroid_in_equiv_subtype ⟨M, h⟩) := 
+by simp only [equiv.symm_apply_apply, subtype.coe_mk]
+
 end equivalence 
+
+section ext
+
+lemma eq_of_indep_iff_indep {M₁ M₂ : matroid_in E} (h : M₁.E = M₂.E) 
+(h' : ∀ I, M₁.indep I ↔ M₂.indep I) : 
+  M₁ = M₂ :=
+begin
+  rw [eq_coe_image_preimage M₁ h], 
+  convert (eq_coe_image_preimage M₂ (rfl : M₂.E = M₂.E)).symm using 3, 
+  refine eq_of_indep_iff_indep_forall (λ I, _), 
+  simp_rw [matroid_in_equiv_subtype_apply_indep, subtype.coe_mk, h'], 
+end 
+
+lemma eq_of_r_eq_r {M₁ M₂ : matroid_in E} (h : M₁.E = M₂.E) 
+(h' : ∀ X, M₁.r X = M₂.r X) : 
+  M₁ = M₂ :=
+begin
+  rw [eq_coe_image_preimage M₁ h], 
+  convert (eq_coe_image_preimage M₂ (rfl : M₂.E = M₂.E)).symm using 3, 
+  refine eq_of_r_eq_r_forall (λ I, _), 
+  simp_rw [matroid_in_equiv_subtype_apply_r, subtype.coe_mk, h'], 
+end 
+
+
+
+end ext 
 
 section dual
 
@@ -347,53 +390,32 @@ section dual
 def dual (M : matroid_in α) : matroid_in α := 
   matroid_in_equiv_subtype.symm (matroid_in_equiv_subtype ⟨M, rfl⟩).dual 
 
+reserve postfix `*` :90 
+
+notation (name := matroid_in_dual) M* := matroid_in.dual M 
+
 lemma dual_base_iff : 
-  M.dual.base B ↔ M.base (M.ground \ B) ∧ B ⊆ M.ground :=
+  M*.base B ↔ M.base (M.E \ B) ∧ B ⊆ M.E :=
 by simp [dual, image_compl_preimage]
 
-@[simp] lemma dual_ground (M : matroid_in α): 
-  M.dual.ground = M.ground := 
+@[simp] lemma dual_E (M : matroid_in α): 
+  M*.E = M.E := 
 rfl 
 
 @[simp] lemma dual_dual (M : matroid_in α) :
-  M.dual.dual = M :=
+  M** = M :=
 begin
   apply eq_of_base_iff_base _ (λ B, _),
     simp, 
-  simp only [dual_base_iff, dual_ground, sdiff_sdiff_right_self, inf_eq_inter], 
+  simp only [dual_base_iff, dual_E, sdiff_sdiff_right_self, inf_eq_inter], 
   split, 
   { rintro ⟨⟨h, -⟩, hB⟩, rwa [inter_eq_right_iff_subset.mpr hB] at h},
   intro hB, 
-  have h := hB.indep.subset_ground, 
+  have h := hB.indep.subset_E, 
   exact ⟨⟨by rwa inter_eq_right_iff_subset.mpr h, diff_subset _ _⟩, h⟩, 
 end 
 
 end dual
-
-section minor
-
-def contract (M : matroid_in α) (C : set α) : matroid_in α := 
-{ ground := M.ground \ C,
-  carrier := M.carrier ⟋ C,
-  support := 
-  begin
-    simp only [project_cl_eq, empty_union, diff_eq_compl_inter, compl_inter, compl_compl], 
-    exact union_subset (M.carrier.subset_cl C) 
-      (M.support.trans (M.carrier.cl_mono (empty_subset _))),
-  end  }
-
--- def delete (M : matroid_in α) (D : set α) : matroid_in α := 
--- { ground := M.ground \ D,
---   carrier := M.carrier ⟍ D,
---   support := 
---   begin
---     simp, 
---   end  }
-
-
--- instance {α : Type*} : has_sdiff (M : matroid_in α) (set α)
-
-end minor
 
 
 

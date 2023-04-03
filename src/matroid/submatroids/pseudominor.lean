@@ -222,7 +222,7 @@ begin
   exact disjoint_of_subset_right (hI₀.subset.trans (M.subset_cl _)) h1, 
 end 
 
-lemma indep.project_indep_iff (hI₀ : M.indep I₀) (hI : M.indep I) : 
+lemma indep.project_indep_iff (hI₀ : M.indep I₀) : 
   (M ⟋ I₀).indep I ↔ disjoint I I₀ ∧ M.indep (I ∪ I₀) :=
 begin
   simp_rw [project_indep_iff_exists], 
@@ -246,7 +246,7 @@ lemma basis.project_eq_project (hI : M.basis I X) :
   M ⟋ I = M ⟋ X :=
 by rw [←project_cl_eq_project, ←M.project_cl_eq_project X, hI.cl]   
 
-lemma project_cl_empty_eq : 
+lemma project_loops_eq : 
   (M ⟋ C).cl ∅ = M.cl C :=
 by rw [project_cl_eq, empty_union]
 
@@ -270,7 +270,7 @@ lemma project_eq_self_iff_subset_loops :
   M ⟋ C = M ↔ C ⊆ M.cl ∅ :=
 begin
   refine ⟨λ h e heC, _, project_eq_of_loops⟩, 
-  rw [←h, project_cl_empty_eq],
+  rw [←h, project_loops_eq],
   exact (M.subset_cl C) heC, 
 end    
 
@@ -280,12 +280,11 @@ begin
   rw [nonloop_iff_indep] at he, 
   split, 
   { intro h, 
-    have := he.project_indep_iff (indep_of_project_indep h), 
+    have := he.project_indep_iff, 
     rw [this, union_singleton] at h, 
     exact h.2},
   intro h, 
-  rw [he.project_indep_iff (h.subset (subset_insert _ _)), union_singleton, 
-    disjoint_singleton_right], 
+  rw [he.project_indep_iff, union_singleton, disjoint_singleton_right], 
   exact ⟨heI, h⟩,    
 end 
 
@@ -486,7 +485,7 @@ lemma r_loopify_of_disjoint (h : disjoint X D) :
   (M ⟍ D).r X = M.r X :=
 by rw [r_loopify, sdiff_eq_left.mpr h] 
 
-lemma loopify_loopify (M : matroid E) (D D' : set E) :
+@[simp] lemma loopify_loopify (M : matroid E) (D D' : set E) :
   M ⟍ D ⟍ D' = M ⟍ (D ∪ D') :=
 begin
   refine eq_of_indep_iff_indep_forall (λ I, _), 
