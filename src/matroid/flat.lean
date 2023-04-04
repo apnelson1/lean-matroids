@@ -755,21 +755,16 @@ end
 
 /- ### Hyperplanes -/
 
-lemma hyperplane_def :
-  M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
+lemma hyperplane_def : M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
 iff.rfl
 
-lemma hyperplane.flat (hH : M.hyperplane H) :
-  M.flat H :=
-hH.1
+lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := hK  
 
-lemma hyperplane.ssubset_univ (hH : M.hyperplane H) :
-  H ⊂ univ :=
-hH.2.1
+lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H := hH.1
 
-lemma univ_not_hyperplane (M : matroid E) :
-  ¬ M.hyperplane univ :=
-λ h, h.2.1.ne rfl
+lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ := hH.2.1
+
+lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.2.1.ne rfl
 
 lemma hyperplane.eq_of_subset (h₁ : M.hyperplane H₁) (h₂ : M.hyperplane H₂) (h : H₁ ⊆ H₂) :
   H₁ = H₂ :=

@@ -1,10 +1,11 @@
 import .flat
 
 /-
-  A `loop` of a matroid is a one-element circuit. The set of loops of `M` is equal to `M.cl ∅`,
-  and we prefer this notation instead of `{e | M.loop e}` or similar.
+  A `loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.  
+  Thus, the set of loops of `M` is equal to `M.cl ∅`, and we prefer this notation instead of 
+  `{e | M.loop e}` or similar. A `nonloop` is simply an element that is not a loop, but we give 
+  it a definition for the sake of dot notation. 
 -/
-
 
 open_locale classical
 
@@ -40,9 +41,14 @@ begin
   rw ncard_singleton,  
 end 
 
+lemma loop_iff_not_mem_base_forall : M.loop e ↔ ∀ B, M.base B → e ∉ B :=
+by simp_rw [loop_iff_dep, indep_iff_subset_base, not_exists, not_and, singleton_subset_iff]
+
 lemma loop.circuit (he : M.loop e) : M.circuit {e} := loop_iff_circuit.mp he 
 
 lemma loop.r (he : M.loop e) : M.r {e} = 0 := loop_iff_r.mp he 
+
+lemma loop.dep (he : M.loop e) : ¬ M.indep {e} := loop_iff_dep.mp he 
 
 lemma loop.mem_cl (he : M.loop e) (X : set E) : e ∈ M.cl X :=
 M.cl_mono (empty_subset _) he 
@@ -59,6 +65,9 @@ lemma loop.not_mem_indep (he : M.loop e) (hI : M.indep I) : e ∉ I :=
 lemma loop.eq_of_circuit_mem (he : M.loop e) (hC : M.circuit C) (h : e ∈ C) : C = {e} :=
 by rw he.circuit.eq_of_subset_circuit hC (singleton_subset_iff.mpr h)
 
+lemma cocircuit.nonloop_of_mem {K : set E} (hK : M.cocircuit K) (he : e ∈ K) : M.nonloop e := 
+λ h, (h.mem_flat hK.compl_hyperplane.flat) he
+
 lemma indep.disjoint_loops (hI : M.indep I) : disjoint I (M.cl ∅) :=
 by_contra (λ h, let ⟨e,⟨heI,he⟩⟩ := not_disjoint_iff.mp h in loop.not_mem_indep he hI heI)
 
@@ -68,6 +77,9 @@ lemma cl_eq_loops_of_subset (h : X ⊆ M.cl ∅) : M.cl X = M.cl ∅ :=
 lemma loop.cl (he : M.loop e) : M.cl {e} = M.cl ∅ :=
 cl_eq_loops_of_subset (singleton_subset_iff.mpr he)
 
+lemma loop_iff_cl_eq_cl_empty : M.loop e ↔ M.cl {e} = M.cl ∅ :=
+⟨λ h, by rw h.cl ,λ h, by { rw [loop_iff_mem_cl_empty, ←h], exact M.mem_cl_self e }⟩
+
 lemma r_eq_zero_iff_forall_loop : M.r X = 0 ↔ ∀ e ∈ X, M.loop e :=
 begin
   refine ⟨λ h e he, loop_iff_r.mpr ((nat.zero_le _).antisymm' _), λ h, (nat.zero_le _).antisymm' _⟩,
@@ -76,11 +88,26 @@ begin
   rwa [r_cl, r_empty] at h', 
 end 
 
-lemma r_zero_iff_subset_loops : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
+lemma r_eq_zero_iff_subset_loops : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
+
+lemma cl_union_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
+  M.cl (X ∪ Y) = M.cl X := 
+by rw [←cl_union_cl_right_eq_cl_union, cl_eq_loops_of_subset hY, cl_union_cl_right_eq_cl_union, 
+    union_empty]
+
+lemma cl_diff_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
+  M.cl (X \ Y) = M.cl X := 
+by rw [←cl_union_eq_cl_of_subset_loops hY, diff_union_self, cl_union_eq_cl_of_subset_loops hY]
 
 /- ### Nonloops -/
 
+
 lemma nonloop_iff_not_loop : M.nonloop e ↔ ¬ M.loop e := iff.rfl 
+
+lemma nonloops_eq_compl_cl_empty : M.nonloops = (M.cl ∅)ᶜ := rfl 
+
+@[simp] lemma compl_nonloops_eq_cl_empty : (M.nonloops)ᶜ = M.cl ∅ := 
+by rw [nonloops_eq_compl_cl_empty, compl_compl] 
 
 lemma loop_or_nonloop (M : matroid E) (e : E) : M.loop e ∨ M.nonloop e := em _ 
 
@@ -129,34 +156,20 @@ begin
   exact hef.trans hfx, 
 end 
 
-lemma nonloop.cl_eq_cl_iff_dep (he : M.nonloop e) : M.cl {e} = M.cl {f} ↔ e = f ∨ ¬ M.indep {e,f} := 
+lemma nonloop.cl_eq_cl_iff_dep (he : M.nonloop e) (hf : M.nonloop f) : 
+  M.cl {e} = M.cl {f} ↔ e = f ∨ ¬ M.indep {e,f} := 
 begin
-  obtain (hf | hf) := M.loop_or_nonloop f, 
-  { rw hf.cl,  },
-  -- have h' := @indep.mem_cl_iff _ _ M {f} e, 
-  -- rw [mem_singleton_iff] at h', 
   refine ⟨λ hef, _, _⟩,
   { have hf : f ∈ M.cl {e}, by {rw hef, exact M.mem_cl_self f },
     rw [pair_comm, eq_comm, ←mem_singleton_iff], 
     exact he.indep.mem_cl_iff.mp hf},  
   rintro (rfl | hdep), refl, 
-  apply he.cl_eq_of_mem_cl, 
-  
-  have := he.indep.mem_cl_iff, 
-
+  apply he.cl_eq_of_mem_cl (hf.indep.mem_cl_iff.mpr (or.inr hdep)),  
 end 
-
--- lemma cl_singleton_eq_cl_singleton_iff :
---   M.cl {e} = M.cl {f} ↔ (M.loop e ∧ M.loop f) ∨ (M.nonloop e ∧ M.nonloop f ∧ M.parallel ) 
-
-
-
-
-
 
 /- ### Coloops -/ 
 
-lemma coloop_def : M.coloop e ↔ ∀ B, M.base B → e ∈ B := iff.rfl
+lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ B, M.base B → e ∈ B := iff.rfl
 
 lemma coloop.r_compl_add_one (he : M.coloop e) : M.r {e}ᶜ + 1 = M.rk :=
 begin
@@ -208,5 +221,7 @@ begin
   exact hC.dep (hB.indep.subset h),
 end
 
+lemma circuit.not_coloop_of_mem (hC : M.circuit C) (heC : e ∈ C) : ¬M.coloop e :=  
+λ h, h.not_mem_circuit hC heC 
 
 end matroid

@@ -10,40 +10,28 @@ open set
 
 namespace matroid
 
-lemma circuit_def :
-  M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I :=
-iff.rfl
+lemma circuit_def : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := iff.rfl
 
-lemma circuit.dep (hC : M.circuit C) :
-  ¬M.indep C :=
-hC.1
+lemma circuit.dep (hC : M.circuit C) : ¬M.indep C := hC.1
 
-lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) :
-  M.indep X :=
-hC.2 _ hXC
+lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) : M.indep X := hC.2 _ hXC
 
-lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) :
-  M.indep (C \ {e}) :=
+lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) : M.indep (C \ {e}) :=
 hC.ssubset_indep (diff_singleton_ssubset.2 he)
 
-lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) :
-  X = C :=
+lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : X = C :=
 eq_of_le_of_not_lt hXC (hX ∘ hC.ssubset_indep)
 
-lemma circuit.not_ssubset (hC : M.circuit C) (hC' : M.circuit C') :
-  ¬ (C' ⊂ C) :=
+lemma circuit.not_ssubset (hC : M.circuit C) (hC' : M.circuit C') : ¬ (C' ⊂ C) :=
 λ h, hC'.1 (hC.2 _ h)
 
-lemma circuit.nonempty (hC : M.circuit C) :
-  C.nonempty :=
+lemma circuit.nonempty (hC : M.circuit C) : C.nonempty :=
 by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
 
-lemma empty_not_circuit (M : matroid E) :
-  ¬M.circuit ∅ :=
+lemma empty_not_circuit (M : matroid E) : ¬M.circuit ∅ :=
 λ h, by simpa using h.nonempty
 
-lemma circuit.card (hC : M.circuit C) :
-  C.ncard = M.r C + 1 :=
+lemma circuit.card (hC : M.circuit C) : C.ncard = M.r C + 1 :=
 begin
   obtain ⟨e,he⟩ := hC.nonempty,
   have hss : C \ {e} ⊂ C, by {refine ssubset_of_ne_of_subset _ (diff_subset _ _),
@@ -65,40 +53,33 @@ begin
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
 end
 
-lemma circuit.r (hC : M.circuit C) :
-  M.r C = C.ncard - 1 :=
+lemma circuit.r (hC : M.circuit C) : M.r C = C.ncard - 1 :=
 by rw [hC.card, nat.add_succ_sub_one, add_zero]
 
-lemma circuit.coe_r_eq (hC : M.circuit C) :
-  (M.r C : ℤ) = C.ncard - 1 :=
+lemma circuit.coe_r_eq (hC : M.circuit C) : (M.r C : ℤ) = C.ncard - 1 :=
 by rw [hC.card, nat.cast_add, nat.cast_one, add_tsub_cancel_right]
 
-lemma circuit.eq_of_dep_subset_self (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) :
-  C = X :=
+lemma circuit.eq_of_dep_subset_self (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : C = X :=
 by_contra (λ h, hX (hC.ssubset_indep (ssubset_of_subset_of_ne hXC (ne.symm h))))
 
 lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ⊆ C₂) :
   C₁ = C₂ :=
 (hC₂.eq_of_dep_subset_self hC₁.dep h).symm
 
-lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) :
-  ∃ C ⊆ X, M.circuit C :=
+lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) : ∃ C ⊆ X, M.circuit C :=
 begin
   obtain ⟨C,⟨hCX,hCdep⟩,hmin⟩ := finite.exists_minimal (λ Y, Y ⊆ X ∧ ¬M.indep Y) ⟨_,rfl.subset,hX⟩,
   exact ⟨C, hCX, ⟨hCdep,λ I hIC,
     by_contra (λ hI, hIC.ne ((hmin I ⟨hIC.subset.trans hCX,hI⟩ hIC.subset).symm))⟩⟩,
 end
 
-lemma dep_iff_supset_circuit :
-  ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
+lemma dep_iff_supset_circuit : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
 ⟨exists_circuit_subset_of_dep, λ ⟨C, hCX, hC⟩ hX, hC.dep (hX.subset hCX)⟩
 
-lemma indep_iff_forall_subset_not_circuit :
-  M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C :=
+lemma indep_iff_forall_subset_not_circuit : M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C :=
 by {rw ← not_iff_not, simp_rw [dep_iff_supset_circuit, not_forall, not_not]}
 
-lemma exists_circuit_iff_card_lt_rk :
-  M.rk < (univ : set E).ncard ↔ ∃ C, M.circuit C :=
+lemma exists_circuit_iff_card_lt_rk : M.rk < (univ : set E).ncard ↔ ∃ C, M.circuit C :=
 begin
   rw [matroid.rk, r_lt_card_iff_dep, dep_iff_supset_circuit],
   split,
@@ -150,83 +131,6 @@ begin
   simp only [insert_diff_of_mem, mem_singleton] at h,
   refine hC.dep (hX.subset (h.trans (diff_subset _ _))),
 end
-
--- this needs some cleaning up (as do the other lemmas it uses)
--- lemma base_exchange2 {M : matroid E} {X Y : set E} {a : E}
--- (hX : M.base X) (hY : M.base Y) (haX : a ∈ Y) (haY : a ∉ X) :
---   ∃ b, (b ∈ X ∧ b ∉ Y) ∧ M.base (X \ {b} ∪ {a})   :=
--- begin
---   have h1 : ¬ M.indep (insert a X),
---   apply base.insert_dep hX haY,
---   -- X ∪ {a} has unique circuit C(a, X)
---   have h3 := indep.unique_circuit_of_insert (base.indep hX) a h1,
---   rcases (indep.unique_circuit_of_insert (base.indep hX) a h1) with ⟨C, ⟨hC1, hC2⟩⟩,
---   /-have h5 := exists_of_exists_unique h3,
---   simp at h5,
---   rcases h5 with ⟨C2, ⟨hC, ⟨hCaX⟩⟩⟩,-/
---   -- C(a, X) dep, Y indep
---   have h4 := circuit.dep hC1.2.1,
---   have h5 := base.indep hY,
---   -- C(a, X) \ Y ≠ ∅
---   have h6 : set.nonempty (C \ Y),
---   apply nonempty_of_not_subset,
---   by_contra,
---   apply h4,
---   apply indep_mono h h5,
---   -- let b ∈ C(a, X) \ Y
---   rw set.nonempty at h6,
---   cases h6 with b hb,
---   rw mem_diff at hb,
---   have h7 : b ∈ X,
---   have h8 := mem_of_subset_of_mem hC1.1 hb.1,
---   simp at h8,
---   have h9 := ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
---   cc,
---   -- then b ∈ X ∧ b ∉ Y
---   have h10 : ¬ C ⊆ (X \ {b} ∪ {a}),
---   simp,
---   rw not_subset,
---   use b,
---   refine ⟨hb.1, _⟩,
---   simp,
---   exact ne.symm (has_mem.mem.ne_of_not_mem haX hb.2),
---   -- then (X \ {b} ∪ {a}) indep since it doesn't contain C(a, X)
---   use b,
---   refine ⟨⟨h7, hb.2⟩, _⟩,
---   have h11 : M.indep (X \ {b} ∪ {a}),
---   by_contra h12,
---   rw dep_iff_supset_circuit at h12,
---   rcases h12 with ⟨C', ⟨hC1', hC2'⟩⟩,
---   have h12 := union_subset_union (diff_subset X {b}) (subset.refl {a}),
---   have h13 := subset_trans hC1' h12,
---   specialize hC2 C',
---   simp at hC2,
---   simp at h13,
---   have hCX : ¬ C' ⊆ X,
---   by_contra hCX',
---   apply circuit.dep hC2' (indep_mono hCX' (base.indep hX)),
---   specialize hC2 h13 hC2' (set.mem_of_nsubset_insert_iff ⟨h13, hCX⟩),
---   rw hC2 at hC1',
---   apply h10,
---   exact hC1',
---   -- therefore it is basis
---   have h14 := base_of_ncard_eq_indep hX ⟨h11, _⟩,
---   apply h14,
---   rw ncard_union_eq,
---   rw ncard_diff,
---   simp_rw ncard_singleton,
---   have h15 : 0 < X.ncard,
---   rw ncard_pos,
---   use ⟨b, h7⟩,
---   rw nat.sub_add_cancel,
---   rw nat.add_one_le_iff,
---   exact h15,
---   simp,
---   exact h7,
---   simp only [disjoint_singleton_right, mem_diff, mem_singleton_iff, not_and_distrib],
---   left,
---   exact haY,
--- end
 
 end matroid
 

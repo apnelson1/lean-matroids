@@ -81,7 +81,7 @@ lemma loopy_iff_univ_r_zero :
 begin
   rw univ_loops_iff_loopy_on,
   refine ⟨λ h, by {rw ← h, simp}, λ h, _⟩,
-  rwa [r_zero_iff_subset_loops, univ_subset_iff] at h,
+  rwa [r_eq_zero_iff_subset_loops, univ_subset_iff] at h,
 end
 
 end free_loopy
