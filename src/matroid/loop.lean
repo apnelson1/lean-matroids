@@ -11,7 +11,7 @@ open_locale classical
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E}
   {I C X Y Z F F₁ F₂ : set E} {e f x y z : E}
-
+    
 open set
 
 namespace matroid

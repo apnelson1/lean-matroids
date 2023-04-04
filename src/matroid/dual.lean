@@ -82,6 +82,10 @@ begin
   refine h Hᶜ (compl_subset_compl.mpr hYH) (by rwa compl_compl),
 end
 
+lemma coindep_iff_disjoint_base : 
+  M.coindep X ↔ ∃ B, M.base B ∧ disjoint B X :=   
+by rw [←dual_indep_iff_coindep, dual_indep_iff]
+
 lemma dual_indep_iff_r :
   M.dual.indep X ↔ M.r Xᶜ = M.rk :=
 begin
