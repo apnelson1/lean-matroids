@@ -34,6 +34,8 @@ infix ` ⟋ ` :75 :=  has_con.con
 
 infix ` ⟍ ` :75 :=  has_del.del 
 
+-- infix ` ‖ ` :75 :=  has_restr.restr 
+
 end symbols 
 
 variables {E : Type*} [finite E] {e f : E} {M N : matroid E} {X Y D C F B I I₀ R : set E}
@@ -538,26 +540,25 @@ end loopify
 
 section lrestrict
 
-/-- loopify all elements of M outside R -/
-def lrestrict (M : matroid E) (R : set E) : matroid E := M ⟍ Rᶜ
+/-- Restriction is deletion of the complement -/
+def has_del.restr {α β : Type*} [has_del α β] [has_compl β] (M : α) (R : β) : α := M ⟍ Rᶜ
 
-infix ` ‖ `  :75 :=  matroid.lrestrict
+infix ` ‖ ` :75 :=  has_del.restr
 
-@[simp] lemma lrestrict_r (M : matroid E) (R X : set E) :
-  (M ‖ R).r X = M.r (X ∩ R) :=
-by simp [lrestrict]
+lemma restr_eq_del {α β : Type*} [has_del α β] [has_compl β] (M : α) (R : β) : M ‖ R = M ⟍ Rᶜ := 
+rfl 
 
-lemma loopify_eq_lrestrict_compl (M : matroid E) (D : set E) :
-  (M ⟍ D) = (M ‖ Dᶜ) :=
-by rw [lrestrict, compl_compl]
+@[simp] lemma lrestrict_r (M : matroid E) (R X : set E) : (M ‖ R).r X = M.r (X ∩ R) :=
+by simp [restr_eq_del]
 
-lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) :
-  M ⟍ Dᶜ = M ‖ D :=
-rfl
+lemma loopify_eq_lrestrict_compl (M : matroid E) (D : set E) : (M ⟍ D) = (M ‖ Dᶜ) :=
+by rw [restr_eq_del, compl_compl]
+
+lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) : M ⟍ Dᶜ = M ‖ D := rfl
 
 lemma lrestrict_nonloop_iff :
   (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
-by rw [lrestrict, nonloop_loopify_iff, not_mem_compl_iff]   
+by rw [restr_eq_del, nonloop_loopify_iff, not_mem_compl_iff]   
 
 @[simp] lemma lrestrict.nonloops (M : matroid E) (R : set E):
   ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
@@ -566,7 +567,7 @@ by { ext, simp_rw [mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty, ←no
 
 @[simp] lemma indep_lrestrict_iff :
   (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
-by simp [lrestrict, disjoint_compl_right_iff_subset, and_comm]
+by simp [restr_eq_del, disjoint_compl_right_iff_subset, and_comm]
 
 end lrestrict
 

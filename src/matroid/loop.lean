@@ -11,7 +11,7 @@ open_locale classical
 
 variables {E : Type*} [finite E] {M M₁ M₂ : matroid E}
   {I C X Y Z F F₁ F₂ : set E} {e f x y z : E}
-
+    
 open set
 
 namespace matroid
@@ -102,7 +102,9 @@ by rw [←cl_union_eq_cl_of_subset_loops hY, diff_union_self, cl_union_eq_cl_of_
 /- ### Nonloops -/
 
 
-lemma nonloop_iff_not_loop : M.nonloop e ↔ ¬ M.loop e := iff.rfl 
+@[simp] lemma not_loop_iff : ¬ M.loop e ↔ M.nonloop e := iff.rfl 
+
+@[simp] lemma not_nonloop_iff : ¬ M.nonloop e ↔ M.loop e := by rw [←not_loop_iff, not_not]
 
 lemma nonloops_eq_compl_cl_empty : M.nonloops = (M.cl ∅)ᶜ := rfl 
 
@@ -125,10 +127,10 @@ lemma indep.nonloop_of_mem (hI : M.indep I) (h : e ∈ I) : ¬ M.loop e :=
 
 lemma circuit.nonloop_of_mem_of_one_lt_card (hC : M.circuit C) (h : 1 < C.ncard) (he : e ∈ C) :
   M.nonloop e :=
-nonloop_iff_not_loop.mpr (λ hlp, by simpa [hlp.eq_of_circuit_mem hC he] using h)
+not_loop_iff.mp (λ hlp, by simpa [hlp.eq_of_circuit_mem hC he] using h)
 
 lemma nonloop_of_not_mem_cl (h : e ∉ M.cl X) : M.nonloop e :=
-nonloop_iff_not_loop.mpr (λ he, h (he.mem_cl X))
+not_loop_iff.mp (λ he, h (he.mem_cl X))
 
 lemma nonloop.mem_cl_singleton (he : M.nonloop e) (hef : e ∈ M.cl {f}) : f ∈ M.cl {e} :=
 begin

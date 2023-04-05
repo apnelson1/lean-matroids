@@ -1,4 +1,4 @@
-import ..dual
+import .dual
 import tactic.tfae
 
 open_locale classical
@@ -20,37 +20,27 @@ def weak_image (N M : matroid E) :=
 reserve infixl ` ≤w `:75
 infix ` ≤w ` := weak_image
 
-lemma weak_image_def :
-  N ≤w M ↔ ∀ I, N.indep I → M.indep I :=
-iff.rfl
+lemma weak_image_def : N ≤w M ↔ ∀ I, N.indep I → M.indep I := iff.rfl
 
-lemma indep.weak_image (hI : N.indep I) (h : N ≤w M)  :
-  M.indep I :=
-h _ hI
+lemma indep.weak_image (hI : N.indep I) (h : N ≤w M) : M.indep I := h _ hI
 
-lemma weak_image_iff_r:
-  N ≤w M ↔ ∀ X, N.r X ≤ M.r X :=
+lemma weak_image_iff_r : N ≤w M ↔ ∀ X, N.r X ≤ M.r X :=
 begin
   simp_rw [r_le_iff, le_r_iff],
-  refine ⟨λ h X I hIN hIX, ⟨I,h _ hIN, hIX, rfl⟩, λ h I hI, _⟩,
-  obtain ⟨J,hJ,hJI,hJ'⟩ := h I I hI subset.rfl,
+  refine ⟨λ h X I hIX hIN, ⟨I, hIX, h _ hIN, rfl⟩, λ h I hI, _⟩,
+  obtain ⟨J,hJI,hJ,hJ'⟩ := h I I subset.rfl hI,
   rwa [←eq_of_subset_of_ncard_le hJI hJ'.symm.le],
 end
 
-lemma weak_image.r_le (h : N ≤w M) (X : set E) :
-  N.r X ≤ M.r X :=
-weak_image_iff_r.mp h X
+lemma weak_image.r_le (h : N ≤w M) (X : set E) : N.r X ≤ M.r X := weak_image_iff_r.mp h X
 
-lemma weak_image_iff_dep:
-  N ≤w M ↔ ∀ X, ¬M.indep X → ¬N.indep X :=
+lemma weak_image_iff_dep : N ≤w M ↔ ∀ X, ¬M.indep X → ¬N.indep X :=
 by simp_rw [weak_image_def, not_imp_not]
 
-lemma weak_image.dep (h : N ≤w M) (hX : ¬M.indep X) :
-  ¬ N.indep X :=
+lemma weak_image.dep (h : N ≤w M) (hX : ¬M.indep X) : ¬ N.indep X :=
 weak_image_iff_dep.mp h _ hX
 
-lemma weak_image_iff_circuit:
-  N ≤w M ↔ ∀ C, M.circuit C → ∃ C' ⊆ C, N.circuit C' :=
+lemma weak_image_iff_circuit : N ≤w M ↔ ∀ C, M.circuit C → ∃ C' ⊆ C, N.circuit C' :=
 begin
   simp_rw [weak_image_iff_dep, dep_iff_supset_circuit],
   refine ⟨λ h, λ C hC, _, λ h, λ X hX, _⟩,
@@ -60,11 +50,11 @@ begin
   refine ⟨C', h1.trans h', h2⟩,
 end
 
-lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) :
+lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) : 
   ∃ C' ⊆ C, N.circuit C' :=
 weak_image_iff_circuit.mp h _ hC 
 
-lemma weak_image_tfae:
+lemma weak_image_tfae :
   tfae
 [ N ≤w M,
   ∀ X, N.r X ≤ M.r X,
@@ -79,24 +69,19 @@ begin
   tfae_finish,
 end
 
-lemma weak_image.rank_zero_of_rank_zero (h : N ≤w M) (hX : M.r X = 0) :
-  N.r X = 0 :=
+lemma weak_image.rank_zero_of_rank_zero (h : N ≤w M) (hX : M.r X = 0) : N.r X = 0 :=
 nat.eq_zero_of_le_zero ((weak_image.r_le h X).trans_eq hX)
 
-lemma loop.weak_image (he : M.loop e) (h : N ≤w M) :
-  N.loop e :=
+lemma loop.weak_image (he : M.loop e) (h : N ≤w M) : N.loop e :=
 by_contra (λ heN, loop_iff_dep.mp he (h _ (nonloop_iff_indep.mp heN)))
 
-lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) :
-  ¬ M.loop e :=
+lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) : ¬ M.loop e :=
 λ he', he (he'.weak_image h)
 
-lemma weak_image.trans {M₀ M₁ M₂ : matroid E} (h₀₁ : M₀ ≤w M₁) (h₁₂ : M₁ ≤w M₂) :
-  M₀ ≤w M₂ :=
+lemma weak_image.trans {M₀ M₁ M₂ : matroid E} (h₀₁ : M₀ ≤w M₁) (h₁₂ : M₁ ≤w M₂) : M₀ ≤w M₂ :=
 λ I hI, h₁₂ I (h₀₁ I hI)
 
-lemma weak_image.antisymm (h : M ≤w N) (h' : N ≤w M) :
-  M = N :=
+lemma weak_image.antisymm (h : M ≤w N) (h' : N ≤w M) : M = N :=
 eq_of_indep_iff_indep_forall (λ I, ⟨λ hI, h I hI, λ hI, h' I hI⟩)
 
 end weak_image
@@ -112,11 +97,10 @@ def is_quotient (N M : matroid E) :=
 reserve infixl ` ≼ `:75
 infix ` ≼ ` :=  is_quotient
 
-lemma is_quotient.cl_subset (h : N ≼ M) (X : set E) :
-  M.cl X ⊆ N.cl X :=
+lemma is_quotient.cl_subset (h : N ≼ M) (X : set E) : M.cl X ⊆ N.cl X :=
 h X
 
-lemma is_quotient.r_le_r_of_subset (h : N ≼ M) (hXY : X ⊆ Y) :
+lemma is_quotient.r_le_r_of_subset (h : N ≼ M) (hXY : X ⊆ Y) : 
   (N.r Y : ℤ)  - N.r X ≤ M.r Y - M.r X :=
 begin
   by_contra' hlt,
@@ -137,8 +121,7 @@ begin
   linarith [N.r_insert_le_add_one Z e],
 end
 
-lemma is_quotient_iff_r :
-  N ≼ M ↔ ∀ X Y, X ⊆ Y → (N.r Y : ℤ)  - N.r X ≤ M.r Y - M.r X :=
+lemma is_quotient_iff_r : N ≼ M ↔ ∀ X Y, X ⊆ Y → (N.r Y : ℤ)  - N.r X ≤ M.r Y - M.r X :=
 begin
   refine ⟨λ h X Y hXY, h.r_le_r_of_subset hXY, λ h Z e he, _⟩,
   have hle := h _ _ (subset_insert e Z),
@@ -146,8 +129,7 @@ begin
   apply mem_cl_of_r_insert_le hle,
 end
 
-lemma is_quotient.weak_image (h : N ≼ M) :
-   N ≤w M :=
+lemma is_quotient.weak_image (h : N ≼ M) : N ≤w M :=
 begin
   refine λ X hX, by_contra (λ h', _),
   obtain ⟨C,hCX,hC⟩ := dep_iff_supset_circuit.mp h',
@@ -156,13 +138,11 @@ begin
   exact (cl_subset_cl_of_subset_cl he).not_ssubset ((hX.subset hCX).cl_diff_singleton_ssubset heC),
 end
 
-lemma indep.quotient (hI : N.indep I) (h : N ≼ M) :
-  M.indep I :=
+lemma indep.quotient (hI : N.indep I) (h : N ≼ M) : M.indep I :=
 hI.weak_image h.weak_image
 
 /- TODO : prove without rank (or with relative rank)-/
-lemma quotient_iff_dual_quotient :
-  N ≼ M ↔ M.dual ≼ N.dual :=
+lemma quotient_iff_dual_quotient : N ≼ M ↔ M.dual ≼ N.dual :=
 begin
   suffices h' : ∀ (N M : matroid E), N ≼ M → M.dual ≼ N.dual,
   exact ⟨λ h, h' _ _ h, λ h, by {convert h' _ _ h; rw dual_dual, }⟩,
@@ -172,8 +152,7 @@ begin
   linarith,
 end
 
-lemma is_quotient_iff_flat :
-  N ≼ M ↔ ∀ F, N.flat F → M.flat F :=
+lemma is_quotient_iff_flat : N ≼ M ↔ ∀ F, N.flat F → M.flat F :=
 begin
   rw [is_quotient],
   refine ⟨λ h F hNF, _, λ h, _⟩,
@@ -183,9 +162,7 @@ begin
   exact λ X F hF hXF, (h _ hF).cl_subset_of_subset hXF,
 end
 
-lemma flat.quotient (hF : N.flat F) (h : N ≼ M) :
-  M.flat F :=
-(is_quotient_iff_flat.mp h) F hF
+lemma flat.quotient (hF : N.flat F) (h : N ≼ M) : M.flat F := (is_quotient_iff_flat.mp h) F hF
 
 lemma quotient_tfae :
   tfae
@@ -202,12 +179,9 @@ begin
   tfae_finish,
 end
 
-lemma quotient_iff_cl :
-  N ≼ M ↔ ∀ X, M.cl X ⊆ N.cl X :=
-by apply @tfae.out _ quotient_tfae 0 3
+lemma quotient_iff_cl : N ≼ M ↔ ∀ X, M.cl X ⊆ N.cl X := by apply @tfae.out _ quotient_tfae 0 3
 
-lemma eq_of_quotient_of_rk_eq_rk (h : N ≼ M) (hr : N.rk = M.rk) :
-  N = M :=
+lemma eq_of_quotient_of_rk_eq_rk (h : N ≼ M) (hr : N.rk = M.rk) : N = M :=
 begin
   refine eq_of_r_eq_r_forall _,
   by_contra' h',
