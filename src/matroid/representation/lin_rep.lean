@@ -36,6 +36,16 @@ begin
   apply h2, 
 end
 
+lemma indep_of_local_inj (φ : rep 𝔽 M ι) {I : set E} (hI : M.indep I) : set.inj_on φ I := 
+begin
+  rw ← φ.valid at hI,
+  intros x hx y hy hxy,
+  by_contra hne,
+  have hl : ¬ linear_independent 𝔽 (coe : (φ '' {x, y}) → (ι → 𝔽)),
+  sorry,
+  sorry,
+end
+
 lemma of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : 
   φ e ∈ submodule.span 𝔽 (φ '' B) := 
 begin
@@ -65,17 +75,16 @@ begin
   sorry,
 end-/
 
-lemma span_base (φ : rep 𝔽 M ι) [fintype 𝔽] (B : set E) (hB : M.base B) : (submodule.span 𝔽 (φ '' set.univ)) = submodule.span 𝔽 (φ '' B) :=
+lemma span_base (φ : rep 𝔽 M ι) (B : set E) (hB : M.base B) : (submodule.span 𝔽 (φ '' set.univ)) = submodule.span 𝔽 (φ '' B) :=
 begin
   apply submodule.span_eq_span (λ x h, _) (λ x h, _),
-  rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
-  rw ← hy2,
-  apply of_base φ hB,
-  apply submodule.subset_span,
-  rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
-  rw set.mem_image,
-  simp only [set.mem_univ, true_and],
-  use ⟨y, hy2⟩,
+  { rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
+    rw ← hy2,
+    apply (of_base φ hB) },
+  { rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
+    apply submodule.subset_span,
+    simp only [set.mem_image, set.mem_univ, true_and],
+    use ⟨y, hy2⟩ },
 end
 
 lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (φ '' set.univ)) = M.rk :=
@@ -83,11 +92,10 @@ begin
   cases M.exists_base with B hB,
   -- need basis for this to work
   have h3 := finite_dimensional.fin_basis 𝔽 (submodule.span 𝔽 (set.range φ)),
-  rw span_base φ B hB,
-  rw finrank_span_set_eq_card (φ '' B),
+  rw [span_base φ B hB, finrank_span_set_eq_card (φ '' B)],
   have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  --rw set.image,
-  sorry,
+  { simp_rw set.to_finset_card,
+    rw ← set.card_image_of_inj_on (indep_of_local_inj φ (base.indep hB)) }, 
   rw h6,
   simp only [← base.card hB, set.ncard_def, set.to_finset_card, nat.card_eq_fintype_card],
   have h8 : linear_independent 𝔽 (λ (x : B), φ.to_fun (x : E)),
