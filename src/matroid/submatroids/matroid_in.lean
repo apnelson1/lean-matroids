@@ -1,4 +1,4 @@
-import .pseudominor
+import ..pseudominor
 
 open_locale classical
 noncomputable theory

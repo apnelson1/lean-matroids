@@ -69,6 +69,8 @@ eq_r_iff.mpr ⟨I, ⟨hI, subset_refl _, λ _ _, subset_antisymm⟩, rfl⟩
 
 lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := by rw [←hIX.card, hIX.indep.r]
 
+lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard := by rw [←hIX.r, ←hIX.indep.r]
+
 lemma base.r (hB : M.base B) : M.r B = M.rk := by { rw base_iff_basis_univ at hB, rw hB.r }  
 
 lemma base.card (hB : M.base B) : B.ncard = M.rk := by { rw base_iff_basis_univ at hB, rw hB.card } 
@@ -105,6 +107,9 @@ lt_of_le_of_ne (M.r_le_card X) (by rwa indep_iff_r_eq_card at hX)
 lemma r_lt_card_iff_dep : M.r X < X.ncard ↔ ¬M.indep X := ⟨λ h hI, (h.ne hI.r),r_lt_card_of_dep⟩
 
 lemma r_le_rk (M : matroid E) (X : set E) : M.r X ≤ M.rk := M.r_mono (subset_univ _)
+
+lemma indep.card_le_r_of_subset (hI : M.indep I) (h : I ⊆ X) : I.ncard ≤ M.r X :=
+by { rw [←hI.r], exact M.r_mono h }  
 
 lemma indep.card_le_rk (hI : M.indep I) : I.ncard ≤ M.rk := 
 hI.r.symm.trans_le (M.r_mono (subset_univ I))
