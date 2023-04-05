@@ -249,6 +249,14 @@ by rw [cl_union_cl_left_eq_cl_union, cl_union_cl_right_eq_cl_union]
   M.cl (insert e (M.cl X)) = M.cl (insert e X) :=
 by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 
+@[simp] lemma r_union_cl_right_eq_r_union (M : matroid E) (X Y : set E) : 
+  M.r (X ∪ M.cl Y) = M.r (X ∪ Y) :=
+by rw [←r_cl, cl_union_cl_right_eq_cl_union, r_cl]
+
+@[simp] lemma r_union_cl_left_eq_r_union (M : matroid E) (X Y : set E) : 
+  M.r (M.cl X ∪ Y) = M.r (X ∪ Y) :=
+by rw [←r_cl, cl_union_cl_left_eq_cl_union, r_cl]
+
 lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) :
   f ∈ M.cl (insert e X) \ M.cl X :=
 begin
@@ -336,6 +344,10 @@ begin
   rwa [←r_lt_card_iff_dep, ←nat.add_one_le_iff, ncard_insert_of_not_mem hxI, add_le_add_iff_right,
     ←hI.r] at hIi,
 end
+
+lemma indep.insert_indep_iff_of_not_mem (hI : M.indep I) (he : e ∉ I) :
+  M.indep (insert e I) ↔ e ∉ M.cl I := 
+⟨λ h, hI.not_mem_cl_iff.mpr ⟨he,h⟩, λ h, (hI.not_mem_cl_iff.mp h).2⟩
 
 lemma indep.mem_cl_iff (hI : M.indep I) :
   x ∈ M.cl I ↔ x ∈ I ∨ ¬ M.indep (insert x I) :=

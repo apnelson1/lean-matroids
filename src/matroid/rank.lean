@@ -223,8 +223,6 @@ by {convert M.r_le_card _, simp}
 
 lemma r_le_univ (M : matroid E) (X : set E) : M.r X ≤ M.r univ := M.r_mono (subset_univ X)
 
-lemma r_compl_univ (M : matroid E) : M.r (univᶜ) = 0 := by rw [compl_univ, r_empty]
-
 lemma r_eq_r_of_subset_le (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : M.r X = M.r Y :=
 (M.r_mono hXY).antisymm hYX
 
@@ -365,6 +363,15 @@ by {simp_rw ←(union_comm X), apply submod_three}
 lemma submod_three_disj (M : matroid E) (X Y Y' : set E) (hYY' : Y ∩ Y' = ∅) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') :=
 by {have := submod_three M X Y Y', rwa [hYY', union_empty] at this}
+
+lemma r_union_add_r_le_r_union_add_r_of_subset (M : matroid E) (hXY : X ⊆ Y) (Z : set E) : 
+  M.r (Y ∪ Z) + M.r X ≤ M.r (X ∪ Z) + M.r Y :=
+begin
+  have hsm := M.r_submod (X ∪ Z) Y, 
+  rw [union_right_comm, union_eq_right_iff_subset.mpr hXY, inter_distrib_right, 
+    inter_eq_left_iff_subset.mpr hXY] at hsm, 
+  exact le_trans (add_le_add_left (M.r_le_r_union_left _ _) _) hsm, 
+end  
 
 theorem r_augment (h : M.r X < M.r Z) : ∃ z ∈ Z, M.r X < M.r (insert z X) :=
 begin
