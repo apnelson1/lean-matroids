@@ -24,6 +24,28 @@ instance : has_coe_to_fun (rep 𝔽 M ι) (λ _, E → (ι → 𝔽)) := ⟨λ �
 def is_representable (M : matroid E) (𝔽 : Type*) [field 𝔽] : Prop :=
   ∃ ι, nonempty (rep 𝔽 M ι)
 
+lemma linear_independent_iff_coe (φ : rep 𝔽 M ι) {X : set E} :
+  linear_independent 𝔽 (coe : (φ '' X) → (ι → 𝔽)) ↔ linear_independent 𝔽 (λ (e : X), φ (e : E)) :=
+begin
+  split,
+  intros h,
+  
+  sorry,
+  intros h,
+  have h2 := linear_independent.image_of_comp X φ coe h,
+  apply h2, 
+end
+
+lemma indep_of_local_inj (φ : rep 𝔽 M ι) {I : set E} (hI : M.indep I) : set.inj_on φ I := 
+begin
+  rw ← φ.valid at hI,
+  intros x hx y hy hxy,
+  by_contra hne,
+  have hl : ¬ linear_independent 𝔽 (coe : (φ '' {x, y}) → (ι → 𝔽)),
+  sorry,
+  sorry,
+end
+
 lemma of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : 
   φ e ∈ submodule.span 𝔽 (φ '' B) := 
 begin
@@ -36,8 +58,8 @@ begin
     have h4 := set.mem_of_subset_of_mem h2 h3,
     simp at h4,
     exact h4 },
-  have h2 : ¬ linear_independent 𝔽 (λ f : insert e B, φ.to_fun (f : E)),
-  { rw rep.valid,
+  have h2 : ¬ linear_independent 𝔽 (λ (x : insert e B), φ.to_fun (x : E)),
+  { rw rep.valid φ (insert e B),
     apply base.dep_of_insert hB h },
   by_contra h3,
   apply h2,
@@ -53,30 +75,36 @@ begin
   sorry,
 end-/
 
-lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (set.range φ)) = M.rk :=
+lemma span_base (φ : rep 𝔽 M ι) (B : set E) (hB : M.base B) : (submodule.span 𝔽 (φ '' set.univ)) = submodule.span 𝔽 (φ '' B) :=
+begin
+  apply submodule.span_eq_span (λ x h, _) (λ x h, _),
+  { rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
+    rw ← hy2,
+    apply (of_base φ hB) },
+  { rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
+    apply submodule.subset_span,
+    simp only [set.mem_image, set.mem_univ, true_and],
+    use ⟨y, hy2⟩ },
+end
+
+lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (φ '' set.univ)) = M.rk :=
 begin
   cases M.exists_base with B hB,
   -- need basis for this to work
   have h3 := finite_dimensional.fin_basis 𝔽 (submodule.span 𝔽 (set.range φ)),
-  have h4 := of_base φ hB,
-  have h5 : (submodule.span 𝔽 (set.range φ)) = submodule.span 𝔽 (φ '' B),
-  ext;
-  split,
-  intros h,
-  sorry,
-  sorry,
-  rw h5,
-  rw finrank_span_set_eq_card (φ '' B),
+  rw [span_base φ B hB, finrank_span_set_eq_card (φ '' B)],
   have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  --rw set.image,
-  sorry,
+  { simp_rw set.to_finset_card,
+    rw ← set.card_image_of_inj_on (indep_of_local_inj φ (base.indep hB)) }, 
   rw h6,
   simp only [← base.card hB, set.ncard_def, set.to_finset_card, nat.card_eq_fintype_card],
-  
-  sorry,
+  have h8 : linear_independent 𝔽 (λ (x : B), φ.to_fun (x : E)),
+  rw rep.valid,
+  apply base.indep hB,
+  apply linear_independent.image_of_comp B φ coe h8,
 end
 
--- can we do this without matrix row operations?
+
 lemma foo (h : M.is_representable 𝔽) : 
   nonempty (rep 𝔽 M (fin M.rk))  := 
 begin
@@ -100,7 +128,7 @@ begin
     simp at h1,
     
     have h4 : finite_dimensional.finrank (zmod 2) ↥(submodule.span (zmod 2) (⇑φ '' set.univ)) = 2,
-    { rw finrank_span_eq_card,
+    { rw finrank_span_set_eq_card,
       sorry },
     rw h4 at h1,
     have h5 := ncard_univ (fin 4),
