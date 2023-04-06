@@ -13,15 +13,17 @@ noncomputable theory
 
 section free_loopy
 
-variables {E : Type*} {X I B : set E} {r s t : ℕ} [finite E] {M : matroid E}
+variables {E : Type*} [finite E] {X I B : set E} {r s t : ℕ} [finite E] {M : matroid E}
 
 /-- The matroid whose only basis is the whole ground set -/
-def free_on (E : Type*) : matroid E :=
-⟨λ B, B = univ, ⟨_,rfl⟩, λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim⟩
+def free_on (E : Type*) [finite E] : matroid E :=
+matroid_of_base_of_finite
+(λ B, B = univ) (⟨_,rfl⟩) (λ B B' hB hB' a ha, (ha.2 (by convert mem_univ a)).elim)
 
 /-- The matroid whose only basis is empty -/
-def loopy_on (E : Type*) : matroid E :=
-⟨λ B, B = ∅, ⟨_,rfl⟩, λ B B' hB hB' a ha, by {rw hB at ha, exact (not_mem_empty _ ha.1).elim}⟩
+def loopy_on (E : Type*) [finite E] : matroid E := 
+matroid_of_base_of_finite
+(λ B, B = ∅) ⟨_,rfl⟩ (λ B B' hB hB' a ha, by {rw hB at ha, exact (not_mem_empty _ ha.1).elim })
 
 lemma free_indep (I : set E) :
   (free_on E).indep I  :=
@@ -32,7 +34,7 @@ lemma univ_indep_iff_free {M : matroid E} :
 begin
   simp_rw [matroid.ext_iff, free_on, indep, univ_subset_iff, exists_eq_right],
   rw [function.funext_iff],
-  simp_rw [eq_iff_iff],
+  simp_rw [eq_iff_iff, matroid_of_base_of_finite_apply],
   exact ⟨λ h a, ⟨λ ha, ha.eq_of_subset_base h (subset_univ _), λ ha, by rwa ha⟩, λ h, by rw h⟩,
 end
 
@@ -44,7 +46,7 @@ by {rw ← indep_iff_r_eq_card, apply free_indep}
   (loopy_on E).base X ↔ X = ∅ :=
 iff.rfl
 
-lemma loopy_on.empty_base (E : Type*) :
+lemma loopy_on.empty_base (E : Type*) [finite E] :
   (loopy_on E).base ∅ :=
 @rfl _ ∅
 
@@ -54,7 +56,7 @@ by simp only [indep_iff_subset_base, loopy_on_base_iff_empty, exists_eq_left, su
 
 @[simp] lemma loopy_matroid_indep_iff_empty :
   (loopy_on E).indep X ↔ X = ∅ :=
-by simp only [loopy_on, indep, exists_eq_left, subset_empty_iff]
+by simp only [loopy_on, matroid_of_base_of_finite_apply, indep, exists_eq_left, subset_empty_iff]
 
 @[simp] lemma empty_base_iff_loopy_on :
   M.base ∅ ↔ M = loopy_on E :=
@@ -135,13 +137,10 @@ variables {E : Type*} [finite E] {s t r : ℕ} {M : matroid E}
 
 /-- The matroid whose bases are the `r`-sets. If `E` is smaller than `r`, then this is the free
   matroid. TODO : define without rank  -/
-def unif (E : Type*) [finite E] (r : ℕ) : matroid E :=
-  tr (free_on E) r
+def unif (E : Type*) [finite E] (r : ℕ) : matroid E := tr (free_on E) r
 
 /-- the rank-a uniform matroid on b elements with ground set `fin' b`. Free if `b ≤ a`. -/
-def canonical_unif (a b : ℕ) :
-  matroid (fin b) :=
-unif (fin b) a
+def canonical_unif (a b : ℕ) : matroid (fin b) := unif (fin b) a
 
 @[simp] lemma unif_r (X : set E) :
   (unif E r).r X = min r (X.ncard) :=
@@ -213,17 +212,20 @@ begin
   { intro h, linarith [ncard_add_ncard_compl X]},
 end
 
-lemma unif_simple_iff (E : Type*) [finite E] (hE : 2 ≤ nat.card E) {r : ℕ} :
-  (unif E r).simple ↔ 2 ≤ r :=
+lemma unif_loopless_iff (E : Type*) (hE : nonempty E) [finite E] : (unif E r).loopless ↔ 0 < r :=
+by simp [loopless, loopless_set, nonloop_iff_indep, ←nat.add_one_le_iff]
+
+lemma unif_simple_iff (E : Type*) [finite E] (hE : 1 < nat.card E) {r : ℕ} :
+  (unif E r).simple ↔ 1 < r :=
 begin
-  rw [←nat.lt_iff_add_one_le, ←ncard_univ, one_lt_ncard_iff] at hE, 
+  rw [←ncard_univ, one_lt_ncard_iff] at hE, 
   obtain ⟨a,b,-,-,hab⟩ := hE, 
   simp_rw [simple_iff_forall_pair_indep, unif_indep_iff], 
-  obtain (hlt | hle) := lt_or_le r 2, 
-  { refine iff_of_false _ hlt.not_le,
+  obtain (hle | hlt) := le_or_lt r 1, 
+  { refine iff_of_false _ hle.not_lt,
     push_neg, 
-    refine ⟨a,b,by rwa [ncard_eq_two.mpr ⟨a,b,hab,rfl⟩]⟩ },
-  refine iff_of_true (λ e f, le_trans _ hle) hle, 
+    refine ⟨a,b, hle.trans_lt (by { rw [ncard_eq_two.mpr ⟨a,b,hab,rfl⟩], exact one_lt_two }) ⟩ },
+  refine iff_of_true (λ e f, le_trans _ hlt) hlt, 
   rw [←union_singleton], 
   exact (ncard_union_le _ _).trans (by simp), 
 end

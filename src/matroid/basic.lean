@@ -162,7 +162,6 @@ def nonloops (M : matroid E) : set E :=
 def coloop (M : matroid E) (e : E) : Prop :=
   ∀ B, M.base B → e ∈ B
 
-
 end defs
 
 section base
@@ -196,6 +195,8 @@ let ⟨B₀,hB₀⟩ := ‹finitary M›.exists_finite_base in hB₀.1.finite_of
 instance finitary_of_finite [finite E] {M : matroid E} : finitary M := 
 let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
 
+lemma finitary_of_finite_base (hB : M.base B) (h : B.finite) : finitary M := ⟨⟨B, hB, h⟩⟩   
+
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
@@ -203,7 +204,8 @@ end base
 
 section of_finitary 
 
-def matroid_of_finite_base {E : Type*} (base : set E → Prop) 
+/-- A collection of bases with the exchange property and at least one finite member is a matroid -/
+def matroid_of_exists_finite_base {E : Type*} (base : set E → Prop) 
   (exists_finite_base : ∃ B, base B ∧ B.finite)
   (base_exchange' : exchange_property base) : 
 matroid E := 
@@ -213,21 +215,45 @@ matroid E :=
   maximality := 
   begin
     rintro I X ⟨B, hB, hIB⟩ hIX, 
-    have hfin : ∀ B', base B' → B'.finite, 
+    have hfin : ∀ {B'}, base B' → B'.finite, 
     { obtain ⟨Bfin, hBfin, hfin⟩ := exists_finite_base, 
       exact λ B' hB', finite_of_finite_of_exch base_exchange' hBfin hfin hB' },
     set W := {Y : set E | (λ (I : set E), ∃ (B : set E), base B ∧ I ⊆ B) Y ∧ I ⊆ Y ∧ Y ⊆ X}, 
-    have hW : (ncard '' W).finite, 
-    { refine (set.finite_le_nat (B.ncard)).subset _, 
-      rintro i ⟨S,⟨⟨BS,hBS,hSBS⟩,-⟩,rfl⟩, 
-      have h' := ncard_le_of_subset hSBS (hfin _ hBS), 
-      },
+    
+    have hW : ∀ {S : set E}, S ∈ W → S.finite ∧ S.ncard ≤ B.ncard, 
+    { rintro S ⟨⟨BS,hBS,hSBS⟩,-⟩,  
+      rw [←card_eq_card_of_exchange base_exchange' hBS hB], 
+      exact ⟨(hfin hBS).subset hSBS, ncard_le_of_subset hSBS (hfin hBS)⟩},
 
-    -- { suffices : ∀ i ∈ ncard '' W, i ≤ B.ncard, 
-    --   { apply set.finite_of_finite_image ()},
-    --    },
+    have hW' : (ncard '' W).finite, 
+    { refine (set.finite_le_nat (B.ncard)).subset _, rintro i ⟨S,hS,rfl⟩, exact (hW hS).2 },
 
-  end  }
+    obtain ⟨n, ⟨S, hS, rfl⟩, h⟩ :=  finite.exists_maximal_wrt id _ hW' 
+      (set.nonempty.image _ ⟨I, ⟨⟨B, hB, hIB⟩,subset.rfl, hIX⟩⟩), 
+    
+    refine ⟨S, hS, λ S' (hS' : S' ∈ W) hSS', _⟩, 
+    have hSfin := (hW hS').1, 
+    rw eq_of_subset_of_ncard_le hSS' _ hSfin,  
+    exact (h _ (mem_image_of_mem _ hS') (ncard_le_of_subset hSS' hSfin)).symm.le,
+  end }
+
+@[simp] lemma matroid_of_exists_finite_base_apply {E : Type*} (base : set E → Prop) 
+  (exists_finite_base : ∃ B, base B ∧ B.finite) (base_exchange' : exchange_property base) : 
+(matroid_of_exists_finite_base base exists_finite_base base_exchange').base = base := rfl 
+
+/-- A matroid constructed with a finite base is `finitary` -/
+instance {E : Type*} {base : set E → Prop} {exists_finite_base : ∃ B, base B ∧ B.finite} 
+{base_exchange' : exchange_property base} : 
+  finitary (matroid_of_exists_finite_base base exists_finite_base base_exchange') := 
+⟨exists_finite_base⟩  
+
+def matroid_of_base_of_finite {E : Type*} [finite E] (base : set E → Prop)
+(exists_base : ∃ B, base B) (base_exchange' : exchange_property base) : matroid E :=
+matroid_of_exists_finite_base base (let ⟨B,hB⟩ := exists_base in ⟨B,hB,to_finite _⟩) base_exchange'
+
+@[simp] lemma matroid_of_base_of_finite_apply {E : Type*} [finite E] (base : set E → Prop) 
+(exists_base : ∃ B, base B) (base_exchange' : exchange_property base) : 
+(matroid_of_base_of_finite base exists_base base_exchange').base = base := rfl 
 
 
 

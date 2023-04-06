@@ -12,11 +12,9 @@ namespace matroid
 section dual
 
 /-- The dual of a matroid. Its bases are the complements of bases -/
-def dual (M : matroid E) : matroid E :=
-{ base := λ B, M.base Bᶜ,
-  exists_base' := exists.elim M.exists_base (λ B hb, ⟨Bᶜ, by rwa compl_compl⟩),
-  base_exchange' :=
-  begin
+def dual (M : matroid E) : matroid E := matroid_of_base_of_finite
+ (λ B, M.base Bᶜ) (exists.elim M.exists_base (λ B hb, ⟨Bᶜ, by rwa compl_compl⟩))
+  (begin
     rintro B₁ B₂ hB₁ hB₂ x ⟨hx₁,hx₂⟩,
     rw [←mem_compl_iff] at hx₂,
     rw [←not_mem_compl_iff] at hx₁,
@@ -27,7 +25,7 @@ def dual (M : matroid E) : matroid E :=
       singleton_union, inter_comm, ←diff_eq_compl_inter, ←insert_diff_singleton_comm],
     rintro rfl,
     exact hx₁ hy.2,
-  end }
+  end)
 
 @[simp] lemma dual_base_iff :
   M.dual.base B ↔ M.base Bᶜ :=

@@ -1018,14 +1018,14 @@ def matroid_of_cl (cl : set E → set E)
   (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
   (cl_idem : ∀ X, cl (cl X) = cl X )
   (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) :
-matroid E :=
-{ base := λ B, cl B = univ ∧ ∀ X ⊂ B, cl X ≠ univ,
-  exists_base' :=
-  let ⟨B,hB,hBmin⟩ := finite.exists_minimal (λ B, cl B = univ)
+matroid E := matroid.matroid_of_base_of_finite
+  (λ B, cl B = univ ∧ ∀ X ⊂ B, cl X ≠ univ)
+  
+  (let ⟨B,hB,hBmin⟩ := finite.exists_minimal (λ B, cl B = univ)
       ⟨univ, eq_univ_of_univ_subset (subset_cl _)⟩ in
-    ⟨B, hB, λ X hXB hX, hXB.ne.symm (hBmin _ hX hXB.subset)⟩,
-  base_exchange' :=
-  begin
+    ⟨B, hB, λ X hXB hX, hXB.ne.symm (hBmin _ hX hXB.subset)⟩)
+  
+  (begin
     intros B₁ B₂ hB₁ hB₂ x hx,
     by_contra' h,
     have h₁ : ∀ y ∈ B₂, y ∉ cl (B₁ \ {x}) → cl (insert y (B₁ \ {x})) = univ,
@@ -1087,7 +1087,7 @@ matroid E :=
   use hy1,
   rintro rfl,
   exact hx.2 hy2,
-  end }
+  end )
 
 lemma matroid_of_cl_aux (cl : set E → set E)
   (subset_cl : ∀ X, X ⊆ cl X )
