@@ -1,4 +1,5 @@
 import ..dual
+import ..simple
 
 /-
 Basic matroid constructions; free/loopy matroids, truncation, dual, etc.
@@ -210,6 +211,27 @@ begin
     unif_base_iff (le_of_add_le_left h.le)],
   zify at *, split;
   { intro h, linarith [ncard_add_ncard_compl X]},
+end
+
+lemma unif_simple_iff (E : Type*) [fintype E] (hE : 2 ≤ fintype.card E) {r : ℕ} (hr : 0 ≤ r) :
+  (unif E r).simple ↔ 2 ≤ r :=
+begin
+  --rw type_size_eq at hE,
+  refine ⟨λ h, by_contra (λ hn, _), λ h, _⟩,
+  { push_neg at hn,
+    by_cases r = 0,
+    /-obtain ⟨X,hX⟩ := has_set_of_size  (by norm_num : (0 : ℤ) ≤ 2) hE,
+    have h' := (h X (subset_univ X) (le_of_eq hX)),
+    rw [indep_iff_r, hX] at h',
+    have h'' := rank_le_univ (unif E r) X,
+
+    rw [h', unif_r hr, min_eq_left] at h'';
+    linarith-/
+    sorry },
+  rintros X - hX,
+  rw [indep_iff_r, unif_r hr, min_eq_right],
+  -- linarith fails here - why???
+  exact le_trans hX h,
 end
 
 end uniform
