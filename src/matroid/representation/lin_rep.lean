@@ -55,7 +55,7 @@ begin
   have h2 := loopless_set.indep_of_mem hl (set.mem_univ x),
   rw ← φ.valid at h2,
   have h3 := linear_independent.image_of_comp {x} φ coe h2,
-  apply @linear_independent.ne_zero _ 𝔽 _,
+  --apply @linear_independent.ne_zero _ 𝔽 _,
   sorry,
 end
 
@@ -75,13 +75,19 @@ begin
   apply eq.symm hxy,
 end
 
-lemma card_simple_rep (φ : rep 𝔽 M ι) (hs : simple M) : fintype.card E ≤ fintype.card (φ '' set.univ) :=
+lemma simple_rep_subset_nonzero (φ : rep 𝔽 M ι) (hs : simple M) : φ '' set.univ ⊆ submodule.span 𝔽 (φ '' set.univ) \ {0} :=
 begin
-  have h2 := inj_of_simple φ hs,
-  rw fintype.card, 
-  sorry,
+  intros x hx,
+  rw set.mem_diff,
+  split,
+  have h2 := @submodule.subset_span 𝔽 _ _ _ _ (φ '' set.univ),
+  apply set.mem_of_subset_of_mem h2 hx,
+  simp,
+  rcases hx with ⟨y, ⟨hy1, hy2⟩⟩,
+  rw ← hy2, 
+  apply non_zero_of_loopless φ (simple_set.loopless_set hs),
 end
-
+ 
 lemma of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : 
   φ e ∈ submodule.span 𝔽 (φ '' B) := 
 begin
@@ -140,9 +146,12 @@ begin
   apply linear_independent.image_of_comp B φ coe h8,
 end
 
-lemma of_rank_set (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] (X : set E) : 
+lemma of_rank_set (φ : rep 𝔽 M ι) [fintype 𝔽] (X : set E) [fintype (submodule.span 𝔽 (φ '' X))] : 
   finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (φ '' X)) = M.r X :=
 begin
+  cases M.exists_basis X with I hI,
+  have h3 := finite_dimensional.fin_basis 𝔽 (submodule.span 𝔽 (φ '' X)),
+  
   sorry,
 end
 
@@ -151,7 +160,8 @@ begin
   have h2 := nonloop.r hx,
   by_contra h3,
   have h4 : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 {φ x}) = 0,
-  rw h3,
+  --rw finrank_eq_zero,
+  --rw h3,
   sorry,
 end
 
@@ -192,21 +202,31 @@ begin
   sorry,
 end
 
+namespace submodule
 lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
 begin
   by_contra h2,
   cases foo h2 with φ,
   rw [canonical_unif, unif_rk] at φ,
-  { -- the two sorry's are for fintype instance on set of submodules & nontrivial submodule
-    have h2 := fintype.card_le_of_injective φ (inj_of_simple φ U24_simple),
-    simp at h2,
-    have h1 := @num_subspaces_dim_one (zmod 2) (submodule.span (zmod 2) (φ '' set.univ)) _ _ _ _ _ sorry _ sorry,
-    simp at h1,
-    have h4 := of_rank φ,
-    rw unif_rk at h4,
-    rw h4 at h1,
-    have h5 := ncard_univ (fin 4),
-    have h6 : univ.ncard ≤ fintype.card ↥{S : subspace (zmod 2) ↥V | finrank (zmod 2) ↥S = 1},
+  { have h8 := set.card_le_of_subset (simple_rep_subset_nonzero φ U24_simple),
+    -- need basis
+    have h10 := finite_dimensional.fin_basis (zmod 2) (submodule.span (zmod 2) (⇑φ '' set.univ)),
+    have h9 := module.card_fintype h10,
+    rw of_rank at h9,
+    rw unif_rk at h9,
+    simp_rw ← set.to_finset_card at h8,
+    rw set.to_finset_diff at h8,
+    rw finset.card_sdiff at h8,
+    simp_rw set.to_finset_card at h8,
+    simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
+    simp only [set_like.coe_sort_coe, set.card_singleton] at h8,
+    rw h9 at h8,
+    have h11 : fintype.card ↥(⇑φ '' set.univ) = fintype.card (fin 4),
+    rw set.card_image_of_injective set.univ (inj_of_simple φ U24_simple),
+    tauto,
+    rw h11 at h8,
+    simp at h8,
+    
     sorry, },
   simp,
 end
