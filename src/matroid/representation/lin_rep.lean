@@ -3,6 +3,7 @@ import data.zmod.basic
 import ..constructions.basic
 import ..dual ..simple
 import .field_stuff
+import analysis.inner_product_space.gram_schmidt_ortho
 import ...mathlib.ncard
 
 noncomputable theory
@@ -111,12 +112,6 @@ begin
   apply base.indep hB,
 end 
 
-/-lemma base_iff_basis (φ : rep 𝔽 M ι) {B : set E} :
-  M.base B ↔ basis _ 𝔽 (submodule.span 𝔽 (φ '' set.univ)) :=
-begin
-  sorry,
-end-/
-
 lemma span_base (φ : rep 𝔽 M ι) (B : set E) (hB : M.base B) : (submodule.span 𝔽 (φ '' set.univ)) = submodule.span 𝔽 (φ '' B) :=
 begin
   apply submodule.span_eq_span (λ x h, _) (λ x h, _),
@@ -127,6 +122,20 @@ begin
     apply submodule.subset_span,
     simp only [set.mem_image, set.mem_univ, true_and],
     use ⟨y, hy2⟩ },
+end
+
+-- this feels silly
+lemma rep_basis_of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) :
+  _root_.basis B 𝔽 (submodule.span 𝔽 (φ '' set.univ)) :=
+begin
+  rw span_base φ _ hB,
+  have h2 := basis.mk (linear_independent_span ((φ.valid B).2 (base.indep hB))),
+  rw set.image_eq_range,
+  apply h2,
+  simp,
+  rw ← submodule.span_univ,
+  --rw submodule.span_span,
+  sorry,
 end
 
 lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (φ '' set.univ)) = M.rk :=
@@ -189,7 +198,9 @@ lemma foo (h : M.is_representable 𝔽) :
 begin
   obtain ⟨ι, ⟨φ⟩⟩ := h,
   obtain ⟨B, hB⟩ := M.exists_base,
-  have := of_base φ hB,
+  have h1 := of_base φ hB,
+  have h2 := basis.mk (linear_independent_span ((φ.valid B).2 (base.indep hB))),
+  --have h2 := gram_schmidt_linear_independent,
   sorry,
 end
 
@@ -212,11 +223,12 @@ begin
     -- need basis
     have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2) (submodule.span (zmod 2) (⇑φ '' set.univ))),
     rw [of_rank, unif_rk] at h9,
-    { simp_rw [← set.to_finset_card, set.to_finset_diff] at h8,
+    { -- there's probably a cleaner way to talk about the card of diff than going
+      -- between fintype and finset cards
+      simp_rw [← set.to_finset_card, set.to_finset_diff] at h8,
       rw finset.card_sdiff at h8,
-      { simp_rw set.to_finset_card at h8,
+      { simp only [set.to_finset_card, set_like.coe_sort_coe, set.card_singleton] at h8,
         simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
-        simp only [set_like.coe_sort_coe, set.card_singleton] at h8,
         rw h9 at h8,
         have h11 : fintype.card ↥(⇑φ '' set.univ) = fintype.card (fin 4),
         rw set.card_image_of_injective set.univ (inj_of_simple φ U24_simple),
