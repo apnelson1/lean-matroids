@@ -71,6 +71,9 @@ lemma cocircuit.nonloop_of_mem {K : set E} (hK : M.cocircuit K) (he : e ∈ K) :
 lemma indep.disjoint_loops (hI : M.indep I) : disjoint I (M.cl ∅) :=
 by_contra (λ h, let ⟨e,⟨heI,he⟩⟩ := not_disjoint_iff.mp h in loop.not_mem_indep he hI heI)
 
+lemma indep.eq_empty_of_subset_loops (hI : M.indep I) (h : I ⊆ M.cl ∅) : I = ∅ :=
+eq_empty_iff_forall_not_mem.mpr (λ e he, loop.not_mem_indep (h he) hI he) 
+
 lemma cl_eq_loops_of_subset (h : X ⊆ M.cl ∅) : M.cl X = M.cl ∅ :=
 (cl_subset_cl_of_subset_cl h).antisymm (M.cl_mono (empty_subset _))
 

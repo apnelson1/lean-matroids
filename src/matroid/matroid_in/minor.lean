@@ -1,4 +1,4 @@
-import .matroid_in
+import .basic
 
 open_locale classical 
 noncomputable theory
@@ -11,7 +11,7 @@ namespace matroid_in
 
 section con_del
 
-variables {I C D B X Y : set α} {M : matroid_in α}
+variables {I J C D B X Y : set α} {M : matroid_in α}
 
 /-- Contract a set from a `matroid_in α` to give a smaller `matroid_in α`-/
 def contract (M : matroid_in α) (C : set α) : matroid_in α := 
@@ -52,9 +52,14 @@ instance {α : Type*} [finite α] : has_del (matroid_in α) α := ⟨λ M e, M.d
 @[simp] lemma delete_coe (M : matroid_in α) (D : set α) : 
   ((M ⟍ D : matroid_in α) : matroid α) = (M : matroid α) ⟍ D := rfl 
 
+@[simp] lemma restrict_coe (M : matroid_in α) (R : set α) : 
+  ((M ‖ R : matroid_in α) : matroid α) = (M : matroid α) ‖ R := rfl  
+
 @[simp] lemma delete_elem (M : matroid_in α) (e : α) : M ⟍ e = M ⟍ ({e} : set α) := rfl 
 
-@[simp] lemma delete_ground (M : matroid_in α) (D : set α): (M ⟍ D).E = M.E \ D := rfl 
+@[simp] lemma delete_ground (M : matroid_in α) (D : set α) : (M ⟍ D).E = M.E \ D := rfl 
+
+@[simp] lemma restrict_ground (M : matroid_in α) (R : set α) : (M ‖ R).E = M.E ∩ R := diff_compl
 
 @[simp] lemma contract_contract (M : matroid_in α) (C₁ C₂ : set α) : M ⟋ C₁ ⟋ C₂ = M ⟋ (C₁ ∪ C₂) :=
 eq_of_coe_eq_coe (by simp [diff_diff]) (by simp)
@@ -95,6 +100,29 @@ eq_of_coe_eq_coe (by simp [diff_diff]) (by simp)
 
 lemma delete_comm (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₂ ⟍ D₁ :=
 by rw [delete_delete, delete_delete, union_comm]
+
+lemma delete_delete_diff (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
+begin
+  nth_rewrite 0 ←inter_union_diff D₂ D₁, 
+  rw [union_comm, ←delete_delete, delete_eq_self_iff_disjoint_ground],  
+  exact disjoint_of_subset (inter_subset_right _ _) (diff_subset _ _) (disjoint_sdiff_right), 
+end 
+
+lemma contract_contract_diff (M : matroid_in α) (C₁ C₂ : set α) : 
+  M ⟋ C₁ ⟋ C₂  = M ⟋ C₁ ⟋ (C₂ \ C₁)   :=
+begin
+  nth_rewrite 0 ←inter_union_diff C₂ C₁, 
+  rw [union_comm, ←contract_contract, contract_eq_self_iff_disjoint_ground],  
+  exact disjoint_of_subset (inter_subset_right _ _) (diff_subset _ _) (disjoint_sdiff_right), 
+end 
+
+lemma contract_delete_diff (M : matroid_in α) (C D : set α) : 
+  M ⟋ C ⟍ D = M ⟋ C ⟍ (D \ C) := 
+begin
+  nth_rewrite 0 ←inter_union_diff D C,
+  rw [union_comm, ←delete_delete, delete_eq_self_iff_disjoint_ground], 
+  exact disjoint_of_subset (inter_subset_right _ _) (diff_subset _ _) (disjoint_sdiff_right), 
+end  
 
 lemma contract_delete_comm (M : matroid_in α) {C D : set α} (hCD : disjoint C D) : 
   M ⟋ C ⟍ D = M ⟍ D ⟋ C := 
@@ -161,6 +189,19 @@ begin
   rw [contract_cl, empty_union], 
 end  
 
+lemma basis.contract_eq (h : M.basis I X) : 
+  M ⟋ X = M ⟋ I ⟍ (X \ I) :=
+begin
+  nth_rewrite 0 ←union_diff_cancel h.subset, 
+  rw [←contract_contract, contract_eq_delete_of_subset_loops], 
+  rw [contract_cl, empty_union], 
+  exact diff_subset_diff_left h.subset_cl, 
+end  
+
+lemma indep.contract_indep_iff (hI : M.indep I) : 
+  (M ⟋ I).indep J ↔ disjoint J I ∧ M.indep (J ∪ I)  :=
+matroid.indep.project_indep_iff hI
+
 @[simp] lemma delete_r_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).r X = M.r (X \ D) :=
 by rw [r_eq_coe_r, r_eq_coe_r, delete_coe, r_loopify]
 
@@ -194,7 +235,7 @@ end con_del
 
 section minor
 
-variables {M M' : matroid_in α} {C D R : set α}
+variables {M M' M₀ : matroid_in α} {C D R X Y : set α}
 
 /-- The minor order on `matroid_in α` -/
 instance {α : Type*} [finite α] : partial_order (matroid_in α) := 
@@ -227,7 +268,7 @@ instance {α : Type*} [finite α] : partial_order (matroid_in α) :=
     rw [←inter_eq_left_iff_subset, inter_comm, 
       (disjoint_of_subset_right (subset_union_left _ _) h).inter_eq] at hD, 
     simp [←hC,←hD], 
-  end  } 
+  end } 
 
 /-- Contracting and deleting any set gives a minor, even if they overlap or are not contained in the 
   ground set -/
@@ -241,6 +282,9 @@ begin
   exact disjoint_of_subset (inter_subset_left _ _) (inter_subset_left _ _) (disjoint_sdiff_right),  
 end 
 
+lemma ground_subset_ground_of_minor (h : M₀ ≤ M) : M₀.E ⊆ M.E := 
+by { obtain ⟨C,D,rfl,h⟩ := h, exact (diff_subset _ _).trans (diff_subset _ _) } 
+
 lemma con_minor (M : matroid_in α) (C : set α) : M ⟋ C ≤ M := by simpa using con_del_minor M C ∅ 
 
 lemma del_minor (M : matroid_in α) (D : set α) : M ⟍ D ≤ M := by simpa using con_del_minor M ∅ D
@@ -249,7 +293,81 @@ lemma restr_minor (M : matroid_in α) (R : set α) : M ‖ R ≤ M := del_minor 
 
 lemma con_restr_minor (M : matroid_in α) (C R : set α) : (M ⟋ C) ‖ R ≤ M := con_del_minor _ _ _
 
--- lemma eq_restr_of_minor_contract (h : M' ≤ M ⟋ C)
+lemma contract_restr_eq_restr_iff_skew_coe (hCR : disjoint C R) : 
+  (M ⟋ C) ‖ R = M ‖ R ↔ (M : matroid α).skew C R :=
+begin
+  rw [skew_iff_project_lrestrict_eq_lrestrict, ←contract_coe, ←restrict_coe, ←restrict_coe], 
+  refine ⟨congr_arg _,λ h, eq_of_coe_eq_coe _ h⟩, 
+  rw [restrict_ground, restrict_ground, contract_ground, diff_eq, inter_right_comm, ←diff_eq, 
+    inter_diff_assoc, hCR.sdiff_eq_right], 
+end
+
+lemma exists_indep_contr_of_minor (h : M₀ ≤ M) : ∃ I, M.indep I ∧ M₀ = (M ⟋ I) ‖ M₀.E := 
+begin
+  obtain ⟨C, D, rfl, hdj, hC, hD⟩ := h, 
+  obtain ⟨I, hI⟩ := M.exists_basis hC, 
+  refine ⟨I, hI.indep, _⟩, 
+  rw [hI.contract_eq, delete_ground, delete_delete, delete_ground, contract_ground, diff_diff, 
+    diff_diff, ←union_assoc, union_diff_cancel hI.subset, restr_eq_del, diff_eq M.E,  
+    compl_inter, compl_compl, ←delete_delete _ M.Eᶜ, ←delete_delete, ←contract_delete_diff,
+    delete_delete, delete_eq_self_of_disjoint_ground (_ : disjoint M.Eᶜ (M ⟋ I).E)], 
+  exact disjoint_of_subset_right (diff_subset _ _) disjoint_compl_left, 
+end   
+
+lemma skew_iff_contract_restr_eq_restr (hC : C ⊆ M.E) (hR : R ⊆ M.E) (hCR : disjoint C R) :
+  M.skew C R ↔ (M ⟋ C) ‖ R = M ‖ R  :=
+begin
+  rw [contract_restr_eq_restr_iff_skew_coe hCR], 
+  exact ⟨skew.to_coe, λ h, ⟨h,hC,hR⟩⟩, 
+end 
+
+lemma union_skew_iff_contract : 
+  (M ⟋ C).skew X Y ↔ M.skew (X ∪ C) (Y ∪ C) :=
+begin
+  
+  -- simp_rw [skew_iff_r], 
+end 
+
+
+lemma scum_restr (h : M₀ ≤ M) :
+  ∃ (I : set α), M₀ = M ⟋ I ‖ M₀.E ∧ M.indep I ∧ (M ⟋ I).cl M₀.E = M.E \ I :=
+begin
+  have h0 : ∃ I₀, M.indep I₀ ∧ M₀ ≤ M ⟋ I₀, from ⟨∅, (M : matroid α).empty_indep, by simpa⟩, 
+  obtain ⟨I, ⟨hI,h1⟩, hImax⟩ := finite.exists_maximal _ h0, 
+  obtain ⟨I', hI', hI'E⟩ := exists_indep_contr_of_minor h1, 
+
+  have hI' : I' = ∅, 
+  { have hu := hImax (I ∪ I') ⟨_,_⟩ (subset_union_left _ _), 
+    { have h' := subset_inter hI'.subset_ground (by { rw hu, apply subset_union_right } : I' ⊆ I), 
+      rwa [contract_ground, diff_inter_self, subset_empty_iff] at h' },
+    { rw [hI.contract_indep_iff, union_comm] at hI', exact hI'.2 },
+    rw [hI'E, contract_contract], 
+    apply restr_minor},
+
+  subst hI', 
+  rw contract_empty at hI'E, 
+  simp_rw [contract_cl],
+
+  refine ⟨I, hI'E, hI, (diff_subset_diff_left (M.cl_subset_ground _)).antisymm (λ e he, _)⟩,  
+  by_contra h', 
+  simp only [mem_diff, not_and, not_not_mem] at h', 
+  have he' : e ∉ M.cl (M₀.E ∪ I), from λ he', he.2 (h' he'), 
+  have hnl := nonloop_of_not_mem_cl he.1 he', 
+  have hsk := (hnl.singleton_skew_iff 
+    (union_subset (ground_subset_ground_of_minor h) hI.subset_ground)).mpr he', 
+  have hsk' := hsk.subset_right (subset_union_left _ _), 
+
+  -- have := contract_restr_eq_restr_iff_skew hI.subset_ground (ground_subset_ground_of_minor h), 
+
+  
+
+  -- have := contract_re
+  
+  
+
+  -- obtain ⟨I, ⟨hI, ⟨C,D,rfl,hCD,hCE,hDE⟩⟩, hImax⟩ := finite.exists_maximal _ h0,  
+end 
+ 
 
 theorem scum (h : M' ≤ M) : 
   ∃ (I X : set α), M ⟋ I ⟍ X = M' ∧ M.indep I ∧ M.coindep X ∧ disjoint I X := 

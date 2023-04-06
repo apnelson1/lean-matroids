@@ -47,7 +47,7 @@ def base (B : set α) : Prop := (M : matroid α).base B
 def indep (I : set α) : Prop := (M : matroid α).indep I 
   -- ∃ B, M.base B ∧ I ⊆ B
 
-def basis (I X : set α) : Prop := (M : matroid α).basis I X 
+def basis (I X : set α) : Prop := (M : matroid α).basis I X ∧ X ⊆ M.E   
   -- M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J
 
 def circuit (C : set α) : Prop := (M : matroid α).circuit C ∧ C ⊆ M.E  
@@ -80,6 +80,8 @@ def cocircuit (K : set α) : Prop := (M : matroid α).cocircuit K
 
 def coindep (X : set α) : Prop := (M : matroid α).coindep X ∧ X ⊆ M.E   
 
+def skew (X Y : set α) : Prop := (M : matroid α).skew X Y ∧ X ⊆ M.E ∧ Y ⊆ M.E 
+
 end defs
 
 section basic 
@@ -99,10 +101,14 @@ hX.subset_compl_right.trans (compl_subset_comm.mp M.support)
 lemma subset_loops_coe_of_disjoint_ground (hX : disjoint X M.E) : X ⊆ (M : matroid α).cl ∅ :=
 hX.subset_compl_right.trans (compl_ground_subset_loops_coe _) 
 
+-- ### Independence 
+
 lemma indep.subset_ground (hI : M.indep I) : I ⊆ M.E := 
   subset_ground_of_disjoint_loops_coe (matroid.indep.disjoint_loops hI)
 
 lemma base_iff_coe : M.base B ↔ (M : matroid α).base B := iff.rfl 
+
+lemma base.to_coe (hB : M.base B) : (M : matroid α).base B := hB 
 
 lemma exists_base (M : matroid_in α) : ∃ B, M.base B := matroid.exists_base M  
 
@@ -112,6 +118,8 @@ lemma base.subset_ground (hB : M.base B) : B ⊆ M.E := hB.indep.subset_ground
 
 lemma indep_iff_coe : M.indep I ↔ (M : matroid α).indep I := iff.rfl 
 
+lemma indep.to_coe (hI : M.indep I) : (M : matroid α).indep I := hI 
+
 lemma indep_iff_subset_base : M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B := iff.rfl   
 
 lemma indep.subset (hI : M.indep I) (hX : X ⊆ I) : M.indep X := matroid.indep.subset hI hX 
@@ -120,23 +128,33 @@ lemma indep.r (hI : M.indep I) : M.r I = I.ncard := matroid.indep.r hI
 
 lemma indep_iff_r_eq_card : M.indep I ↔ M.r I = I.ncard := matroid.indep_iff_r_eq_card 
 
-lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) : ∃ J, I ⊆ J ∧ M.basis J X :=
-matroid.indep.subset_basis_of_subset hI hIX   
+lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) (hX : X ⊆ M.E) : 
+  ∃ J, I ⊆ J ∧ M.basis J X :=
+begin
+  obtain ⟨J, hIJ, hJ⟩ := matroid.indep.subset_basis_of_subset hI hIX, 
+  exact ⟨J, hIJ, ⟨hJ, hX⟩⟩,   
+end 
+-- matroid.indep.subset_basis_of_subset hI hIX   
 
 lemma circuit.subset_ground (hC : M.circuit C) : C ⊆ M.E := hC.2 
 
 lemma circuit_iff : M.circuit C ↔ (¬ M.indep C ∧ (∀ I ⊂ C, M.indep I)) ∧ C ⊆ M.E := 
 ⟨λ h, ⟨h.1, h.subset_ground⟩, id⟩
 
-lemma basis_iff_coe : M.basis I X ↔ (M : matroid α).basis I X := iff.rfl 
+lemma basis.to_coe (h : M.basis I X) : (M : matroid α).basis I X := h.1
 
-lemma basis.indep (hIX : M.basis I X) : M.indep I := matroid.basis.indep hIX 
+lemma basis.indep (hIX : M.basis I X) : M.indep I := matroid.basis.indep hIX.1
 
-lemma basis.subset (hIX : M.basis I X) : I ⊆ X := matroid.basis.subset hIX 
+lemma basis.subset (hIX : M.basis I X) : I ⊆ X := matroid.basis.subset hIX.1 
 
-lemma exists_basis (M : matroid_in α) (X : set α) : ∃ I, M.basis I X := matroid.exists_basis M X
+lemma basis.subset_ground (hIX : M.basis I X) : X ⊆ M.E := hIX.2  
 
-lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := matroid.basis.r hIX
+lemma exists_basis (M : matroid_in α) (hX : X ⊆ M.E) : ∃ I, M.basis I X := 
+by { obtain ⟨I, hI⟩ := matroid.exists_basis (M : matroid α) X,   exact ⟨I, hI, hX⟩ } 
+
+lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := matroid.basis.r hIX.1
+
+-- ### Closure and flats 
 
 lemma cl_eq_coe_cl_inter (M : matroid_in α) (X : set α) : M.cl X = (M : matroid α).cl X ∩ M.E := rfl
 
@@ -162,6 +180,9 @@ lemma subset_cl_iff_cl_subset_cl (hX : X ⊆ M.E) : X ⊆ M.cl Y ↔ M.cl X ⊆ 
 ⟨λ h, inter_subset_inter (matroid.cl_subset_cl_of_subset_cl (h.trans (M.cl_subset_coe_cl _))) 
   subset.rfl, λ h, subset_trans (subset_cl hX) h⟩
 
+lemma basis.subset_cl (hIX : M.basis I X) : X ⊆ M.cl I :=
+subset_inter (matroid.basis.subset_cl hIX.1) hIX.subset_ground
+
 lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E := hF.2 
 
 lemma flat.cl (hF : M.flat F) : M.cl F = F := 
@@ -176,9 +197,13 @@ begin
     union_empty], 
 end 
 
+-- ### loops and nonloops 
+
 lemma loop.mem_ground (he : M.loop e) : e ∈ M.E := he.2 
 
 lemma loop.dep (he : M.loop e) : ¬ M.indep {e} := matroid.loop.dep he.1 
+
+lemma loop.to_coe (he : M.loop e) : (M : matroid α).loop e := he.1 
 
 lemma loop_iff_dep (he : e ∈ M.E) : M.loop e ↔ ¬ M.indep {e} := 
 ⟨loop.dep, λ h, ⟨matroid.loop_iff_dep.mpr h, he⟩⟩ 
@@ -187,12 +212,19 @@ lemma loop_iff_mem_cl_empty : M.loop e ↔ e ∈ M.cl ∅ := iff.rfl
 
 lemma nonloop_iff_coe (e : α) : M.nonloop e ↔ (M : matroid α).nonloop e := iff.rfl 
 
+lemma nonloop.to_coe (he : M.nonloop e) : (M : matroid α).nonloop e := he 
+
 lemma nonloop.indep (he : M.nonloop e) : M.indep {e} := matroid.nonloop.indep he 
 
 lemma nonloop_iff_indep : M.nonloop e ↔ M.indep {e} := matroid.nonloop_iff_indep 
 
 lemma nonloop.mem_ground (he : M.nonloop e) : e ∈ M.E := 
 singleton_subset_iff.mp he.indep.subset_ground 
+
+lemma nonloop_of_not_mem_cl (he : e ∈ M.E) (h : e ∉ M.cl X) : M.nonloop e :=
+nonloop_of_not_mem_cl (λ h', h ⟨h',he⟩)
+
+-- ### rank 
 
 lemma le_r_iff {n : ℕ} : n ≤ M.r X ↔ ∃ I ⊆ X, M.indep I ∧ I.ncard = n := matroid.le_r_iff
 
@@ -215,6 +247,9 @@ lemma rk_eq_rk_coe (M : matroid_in α) : M.rk = (M : matroid α).rk := rfl
 lemma rk_eq_r_ground (M : matroid_in α) : M.rk = M.r M.E := 
 by rw [rk, matroid.rk_def, ←r_eq_coe_r, r_eq_r_inter_ground, univ_inter]
 
+
+-- ### Cocircuits etc 
+
 lemma cocircuit_iff_coe (K : set α) : M.cocircuit K ↔ (M : matroid α).cocircuit K := iff.rfl 
 
 lemma cocircuit.subset_ground (hK : M.cocircuit K) : K ⊆ M.E := 
@@ -230,13 +265,53 @@ begin
   tauto, 
 end 
 
--- lemma coindep_iff_not_disjoint_hyperplane : M.coindep X ↔ \p
+lemma coindep.to_coe (h : M.coindep X) : (M : matroid α).coindep X := h.1 
+
+-- ### Skewness 
+
+lemma skew.to_coe (h : M.skew X Y) : (M : matroid α).skew X Y := h.1 
+
+lemma skew.subset_ground_left (h : M.skew X Y) : X ⊆ M.E := h.2.1
+
+lemma skew.subset_ground_right (h : M.skew X Y) : Y ⊆ M.E := h.2.2
+
+lemma skew.symm (h : M.skew X Y) : M.skew Y X := ⟨h.to_coe.symm, h.2.2, h.2.1⟩ 
+
+lemma skew.comm : M.skew X Y ↔ M.skew Y X := ⟨skew.symm, skew.symm⟩ 
+
+lemma skew.subset_left (h : M.skew X Y) {X' : set α} (hX'X : X' ⊆ X) : M.skew X' Y :=
+⟨h.to_coe.subset_left hX'X, hX'X.trans h.2.1, h.2.2⟩ 
+
+lemma skew.subset_right (h : M.skew X Y) {Y' : set α} (hY'Y : Y' ⊆ Y) : M.skew X Y' :=
+⟨h.to_coe.subset_right hY'Y, h.2.1, hY'Y.trans h.2.2⟩ 
+
+lemma skew.r_add (h : M.skew X Y) : M.r X + M.r Y = M.r (X ∪ Y) := h.to_coe.r_add 
+
+lemma skew_iff_r (hX : X ⊆ M.E) (hY : Y ⊆ M.E) : M.skew X Y ↔ M.r X + M.r Y = M.r (X ∪ Y) :=
+⟨skew.r_add, λ h, ⟨matroid.skew_iff_r.mpr h, hX,hY⟩⟩   
+
+lemma skew.cl_left (h : M.skew X Y) : M.skew (M.cl X) Y := 
+⟨h.to_coe.cl_left.subset_left (M.cl_subset_coe_cl _), M.cl_subset_ground X, h.2.2⟩
+
+lemma skew.cl_right (h : M.skew X Y) : M.skew X (M.cl Y) := (h.symm.cl_left).symm 
+
+lemma nonloop.singleton_skew_iff (he : M.nonloop e) (hX : X ⊆ M.E) : M.skew {e} X ↔ e ∉ M.cl X := 
+by rw [skew, he.to_coe.singleton_skew_iff, singleton_subset_iff, cl_eq_coe_cl_inter, mem_inter_iff, 
+    ←(true_iff _).mpr hX, and_true, ←(true_iff _).mpr he.mem_ground, and_true, and_true]
+
+lemma nonloop.skew_singleton_iff (he : M.nonloop e) (hX : X ⊆ M.E) : M.skew X {e} ↔ e ∉ M.cl X :=
+by rw [skew.comm, he.singleton_skew_iff hX]
+
 
 -- TODO : hyperplanes, flats, cl definitions are equivalent to the usual ones. 
 
 lemma eq_of_coe_eq_coe {M₁ M₂ : matroid_in α} (h : M₁.E = M₂.E) (h' : (M₁ : matroid α) = M₂) :
   M₁ = M₂ := 
 by { ext, rw [ground_eq_E,h,ground_eq_E], simp_rw [carrier_eq_coe, h'] }
+
+-- lemma eq_iff_coe_eq_coe {M₁ M₂ : matroid_in α} :
+--   M₁ = M₂ ↔ M₁.E = M₂.E ∧ (M₁ : matroid α) = M₂ :=
+ 
 
 end basic
 

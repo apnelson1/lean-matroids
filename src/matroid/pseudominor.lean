@@ -1,6 +1,7 @@
 import mathlib.data.set.basic
 import mathlib.order.boolean_algebra
 import .quotients
+import .connectivity
 
 /-!
 # Projections, Loopifications and Pseudominors
@@ -451,7 +452,7 @@ by { simp_rw [loop_iff_mem_cl_empty, loopify_cl_eq, empty_diff], refl }
 
 @[simp] lemma nonloop_loopify_iff :
   (M ⟍ D).nonloop e ↔ M.nonloop e ∧ e ∉ D :=
-by simp_rw [nonloop_iff_not_loop, loop_loopify_iff, not_or_distrib] 
+by simp_rw [←not_loop_iff, loop_loopify_iff, not_or_distrib] 
 
 lemma loopified_subset_loops (M : matroid E) (D : set E) :
   D ⊆ (M ⟍ D).cl ∅ :=
@@ -556,18 +557,30 @@ by rw [restr_eq_del, compl_compl]
 
 lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) : M ⟍ Dᶜ = M ‖ D := rfl
 
-lemma lrestrict_nonloop_iff :
-  (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
+lemma lrestrict_nonloop_iff : (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
 by rw [restr_eq_del, nonloop_loopify_iff, not_mem_compl_iff]   
 
-@[simp] lemma lrestrict.nonloops (M : matroid E) (R : set E):
-  ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
-by { ext, simp_rw [mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty, ←nonloop_iff_not_loop, 
+@[simp] lemma lrestrict.nonloops (M : matroid E) (R : set E) : ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
+by { ext, simp_rw [mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty, not_loop_iff, 
   lrestrict_nonloop_iff] }
 
-@[simp] lemma indep_lrestrict_iff :
-  (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
+@[simp] lemma indep_lrestrict_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
 by simp [restr_eq_del, disjoint_compl_right_iff_subset, and_comm]
+
+lemma skew_iff_project_lrestrict_eq_lrestrict :
+  M.skew C R ↔ (M ⟋ C) ‖ R = M ‖ R :=
+begin
+  refine ⟨λ h, _,λ h, _⟩, 
+  { refine eq_of_r_eq_r_forall (λ X, _), 
+    zify, 
+    simp_rw [lrestrict_r, coe_r_project, ←(h.symm.subset_left (inter_subset_right X _)).r_add], 
+    simp only [nat.cast_add, add_tsub_cancel_right] },
+  rw skew_iff_r, 
+  apply_fun (λ M, M.r univ) at h, 
+  zify at *, 
+  rw [lrestrict_r, lrestrict_r, univ_inter, coe_r_project, union_comm] at h, 
+  simp [←h],
+end 
 
 end lrestrict
 
