@@ -37,7 +37,7 @@ lemma finite.strong_induction_on {s : set α} {P : set α → Prop} (hs : s.fini
 (IH : ∀ t ⊆ s, (∀ t₀ ⊂ t, P t₀) → P t) : P s :=
 begin
   by_contra' hs', 
-  obtain ⟨s₀, hs₀, hmin⟩ :=  finite.exists_minimal_subset hs hs', 
+  obtain ⟨s₀, hs₀, hmin⟩ := finite.exists_minimal_subset hs hs', 
   simp_rw [not_not] at hmin, 
   exact hmin.1 (IH _ hs₀ hmin.2), 
 end 
