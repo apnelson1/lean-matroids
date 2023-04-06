@@ -202,7 +202,7 @@ begin
   sorry,
 end
 
-namespace submodule
+-- this doesn't have sorry's but it relies on foo and U24_simple which do
 lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
 begin
   by_contra h2,
@@ -210,24 +210,26 @@ begin
   rw [canonical_unif, unif_rk] at φ,
   { have h8 := set.card_le_of_subset (simple_rep_subset_nonzero φ U24_simple),
     -- need basis
-    have h10 := finite_dimensional.fin_basis (zmod 2) (submodule.span (zmod 2) (⇑φ '' set.univ)),
-    have h9 := module.card_fintype h10,
-    rw of_rank at h9,
-    rw unif_rk at h9,
-    simp_rw ← set.to_finset_card at h8,
-    rw set.to_finset_diff at h8,
-    rw finset.card_sdiff at h8,
-    simp_rw set.to_finset_card at h8,
-    simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
-    simp only [set_like.coe_sort_coe, set.card_singleton] at h8,
-    rw h9 at h8,
-    have h11 : fintype.card ↥(⇑φ '' set.univ) = fintype.card (fin 4),
-    rw set.card_image_of_injective set.univ (inj_of_simple φ U24_simple),
-    tauto,
-    rw h11 at h8,
-    simp at h8,
-    
-    sorry, },
+    have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2) (submodule.span (zmod 2) (⇑φ '' set.univ))),
+    rw [of_rank, unif_rk] at h9,
+    { simp_rw [← set.to_finset_card, set.to_finset_diff] at h8,
+      rw finset.card_sdiff at h8,
+      { simp_rw set.to_finset_card at h8,
+        simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
+        simp only [set_like.coe_sort_coe, set.card_singleton] at h8,
+        rw h9 at h8,
+        have h11 : fintype.card ↥(⇑φ '' set.univ) = fintype.card (fin 4),
+        rw set.card_image_of_injective set.univ (inj_of_simple φ U24_simple),
+        tauto,
+        -- linarith doesn't see the contradiction unless i simplify the inequality
+        simp only [h11, fintype.card_fin, pow_two, two_mul, nat.succ_add_sub_one] at h8,
+        linarith },
+      -- this comes from finset.card_sdiff, will make nicer later
+      simp only [set.to_finset_subset, set.coe_to_finset, set.singleton_subset_iff, 
+        set_like.mem_coe, submodule.zero_mem] },
+    -- this part comes from unif_rk needing 2 ≤ 4, will make nicer later
+    simp only [nat.card_eq_fintype_card, fintype.card_fin, bit0_le_bit0, 
+      nat.one_le_bit0_iff, nat.lt_one_iff]},
   simp,
 end
 
