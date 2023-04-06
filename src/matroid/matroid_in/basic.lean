@@ -158,6 +158,13 @@ lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := matroid.basis.r hIX.1
 
 lemma cl_eq_coe_cl_inter (M : matroid_in α) (X : set α) : M.cl X = (M : matroid α).cl X ∩ M.E := rfl
 
+lemma cl_coe_eq (M : matroid_in α) (X : set α) : (M : matroid α).cl X = M.cl X ∪ M.Eᶜ :=
+begin
+  rw [cl, union_distrib_right, union_compl_self, inter_univ, eq_comm, union_eq_left_iff_subset],
+  refine subset_trans _ ((M : matroid α).cl_mono (empty_subset X)), 
+  exact compl_ground_subset_loops_coe _, 
+end  
+
 lemma cl_subset_ground (M : matroid_in α) (X : set α) : M.cl X ⊆ M.E := inter_subset_right _ _
 
 lemma subset_cl (hX : X ⊆ M.E) : X ⊆ M.cl X := subset_inter (matroid.subset_cl M X) hX
@@ -165,8 +172,19 @@ lemma subset_cl (hX : X ⊆ M.E) : X ⊆ M.cl X := subset_inter (matroid.subset_
 lemma cl_subset_coe_cl (M : matroid_in α) (X : set α) : M.cl X ⊆ (M : matroid α).cl X := 
 inter_subset_left _ _ 
 
-lemma cl_mono (hXY : X ⊆ Y) (hY : Y ⊆ M.E) : M.cl X ⊆ M.cl Y := 
+lemma cl_mono (M : matroid_in α) (hXY : X ⊆ Y) : M.cl X ⊆ M.cl Y := 
 subset_inter ((M.cl_subset_coe_cl _).trans (matroid.cl_mono M hXY)) (cl_subset_ground _ _)
+
+lemma cl_eq_cl_inter_ground (M : matroid_in α) (X : set α) : M.cl X = M.cl (X ∩ M.E) :=
+begin
+  refine (M.cl_mono (inter_subset_left _ _)).antisymm' _, 
+  rw [cl, cl, ←union_empty (X ∩ M.E), ←cl_union_cl_right_eq_cl_union],   
+  refine inter_subset_inter_left _ ((M : matroid α).cl_mono _), 
+  rw [union_distrib_right], 
+  refine subset_inter (subset_union_left _ _) ((subset_univ X).trans _), 
+  refine (union_compl_self M.E).symm.trans_subset (union_subset_union_right _ _), 
+  exact compl_ground_subset_loops_coe _, 
+end 
 
 @[simp] lemma cl_cl (M : matroid_in α) (X : set α) : M.cl (M.cl X) = M.cl X := 
 begin
@@ -267,13 +285,29 @@ end
 
 lemma coindep.to_coe (h : M.coindep X) : (M : matroid α).coindep X := h.1 
 
+lemma coindep_iff_not_exists_cocircuit_subset (hX : X ⊆ M.E) : 
+  M.coindep X ↔ ¬ ∃ K ⊆ X, M.cocircuit K :=
+by simp_rw [coindep, matroid.coindep_iff_not_exists_cocircuit_subset, ←(true_iff _).mpr hX, 
+  and_true, cocircuit]
+  
+lemma coindep_iff_cl_compl_eq_ground (hX : X ⊆ M.E) : 
+  M.coindep X ↔ M.cl (M.E \ X) = M.E :=
+begin
+  rw [coindep, matroid.coindep_iff_cl_compl_eq_univ, cl_coe_eq, cl_eq_cl_inter_ground, 
+    ←diff_eq_compl_inter, ← (true_iff _).mpr hX, and_true], 
+  refine ⟨λ hu, (cl_subset_ground _ _).antisymm _, λ h, _⟩,
+  { rwa [←compl_compl (M.cl _), ←compl_inter, ←compl_inj_iff, compl_univ, compl_compl, 
+      ←disjoint_iff_inter_eq_empty, disjoint_compl_left_iff_subset] at hu },
+  rw [h, union_compl_self], 
+end 
+
 -- ### Skewness 
 
 lemma skew.to_coe (h : M.skew X Y) : (M : matroid α).skew X Y := h.1 
 
-lemma skew.subset_ground_left (h : M.skew X Y) : X ⊆ M.E := h.2.1
+lemma skew.left_subset_ground (h : M.skew X Y) : X ⊆ M.E := h.2.1
 
-lemma skew.subset_ground_right (h : M.skew X Y) : Y ⊆ M.E := h.2.2
+lemma skew.right_subset_ground (h : M.skew X Y) : Y ⊆ M.E := h.2.2
 
 lemma skew.symm (h : M.skew X Y) : M.skew Y X := ⟨h.to_coe.symm, h.2.2, h.2.1⟩ 
 
@@ -557,6 +591,21 @@ by linarith [M.dual_r_cast_eq hX]
 
 lemma dual_inj_iff {M₁ M₂ : matroid_in α} : M₁* = M₂* ↔ M₁ = M₂ := 
 ⟨λ h, by rw [←dual_dual M₁, h, dual_dual], congr_arg _⟩ 
+
+@[simp] lemma dual_indep_iff_coindep : M*.indep X ↔ M.coindep X := 
+begin
+  simp_rw [indep_iff_subset_base, dual_base_iff, base_iff_coe, coindep, 
+    matroid.coindep_iff_disjoint_base], 
+  split, 
+  { rintro ⟨B, ⟨hBc, hBE⟩, hXB⟩, 
+    exact ⟨⟨_, hBc, disjoint_of_subset_right hXB disjoint_sdiff_left⟩, hXB.trans hBE⟩ },
+  rintro ⟨⟨B, (hB : M.base B), hdj⟩, hX⟩,  
+  refine ⟨M.E \ B, ⟨_,diff_subset _ _⟩, subset_diff.mpr ⟨hX,hdj.symm⟩ ⟩,  
+  rwa [sdiff_sdiff_right_self, inf_eq_inter, inter_eq_right_iff_subset.mpr hB.subset_ground], 
+end 
+
+@[simp] lemma dual_coindep_iff_indep : M*.coindep X ↔ M.indep X := 
+by rw [←dual_dual M, dual_indep_iff_coindep, dual_dual]
 
 end dual
 
