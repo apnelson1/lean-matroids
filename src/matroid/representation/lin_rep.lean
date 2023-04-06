@@ -1,14 +1,15 @@
 import linear_algebra.linear_independent linear_algebra.basis
 import data.zmod.basic
 import ..constructions.basic
-import ..dual
+import ..dual ..simple
 import .field_stuff
 import ...mathlib.ncard
 
 noncomputable theory
 open_locale classical
 
-variables {E 𝔽 ι : Type*} [field 𝔽] [fintype E] {M : matroid E}
+variables {E 𝔽 ι : Type*} [field 𝔽] [fintype E] {M : matroid E} [nontrivial 𝔽]
+-- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
 
 namespace matroid
@@ -43,6 +44,41 @@ begin
   by_contra hne,
   have hl : ¬ linear_independent 𝔽 (coe : (φ '' {x, y}) → (ι → 𝔽)),
   sorry,
+  sorry,
+end
+
+-- want lemma that says if it's a simple matroid the cardinality of E
+-- is leq that of the submodule
+
+lemma non_zero_of_loopless (φ : rep 𝔽 M ι) (hl : loopless M) (x : E) : φ x ≠ 0 :=
+begin
+  have h2 := loopless_set.indep_of_mem hl (set.mem_univ x),
+  rw ← φ.valid at h2,
+  have h3 := linear_independent.image_of_comp {x} φ coe h2,
+  apply @linear_independent.ne_zero _ 𝔽 _,
+  sorry,
+end
+
+lemma inj_of_simple (φ : rep 𝔽 M ι) (hs : simple M) : function.injective φ :=
+begin
+  intros x y hxy,
+  have h := simple_set.pair_indep_of_mem hs (set.mem_univ x) (set.mem_univ y), 
+  rw ← φ.valid at h,
+  by_contra hxy2,
+  rw ← set.mem_singleton_iff at hxy2,
+  have h3 := (linear_independent_insert' hxy2).1 h,
+  apply h3.2,
+  simp,
+  rw submodule.mem_span_singleton,
+  use 1,
+  simp only [one_smul],
+  apply eq.symm hxy,
+end
+
+lemma card_simple_rep (φ : rep 𝔽 M ι) (hs : simple M) : fintype.card E ≤ fintype.card (φ '' set.univ) :=
+begin
+  have h2 := inj_of_simple φ hs,
+  rw fintype.card, 
   sorry,
 end
 
@@ -104,6 +140,39 @@ begin
   apply linear_independent.image_of_comp B φ coe h8,
 end
 
+lemma of_rank_set (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (submodule.span 𝔽 (set.range φ))] (X : set E) : 
+  finite_dimensional.finrank 𝔽 (submodule.span 𝔽 (φ '' X)) = M.r X :=
+begin
+  sorry,
+end
+
+lemma non_zero_of_nonloop (φ : rep 𝔽 M ι) (x : E) (hx : M.nonloop x) : φ x ≠ (0 : ι → 𝔽) :=
+begin
+  have h2 := nonloop.r hx,
+  by_contra h3,
+  have h4 : finite_dimensional.finrank 𝔽 (submodule.span 𝔽 {φ x}) = 0,
+  rw h3,
+  sorry,
+end
+
+lemma rep_cl_eq_span_rep (φ : rep 𝔽 M ι) (X : set E): (φ '' M.cl X) = submodule.span 𝔽 (φ '' X) :=
+begin
+  ext;
+  split,
+  intros h,
+  rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
+  by_cases y ∈ X, 
+  rw ← hy2, 
+  apply set.mem_of_subset_of_mem (submodule.subset_span),
+  apply (set.mem_image φ X (φ y)).2,
+  use y,
+  refine ⟨h, rfl⟩,
+  rw cl_def at hy1,
+  --rw submodule.mem_span,
+  sorry,
+  sorry,
+end
+
 
 lemma foo (h : M.is_representable 𝔽) : 
   nonempty (rep 𝔽 M (fin M.rk))  := 
@@ -118,18 +187,23 @@ end
 def matroid.is_binary (M : matroid E) :=
   matroid.is_representable M (zmod 2)
 
+lemma U24_simple : (canonical_unif 2 4).simple :=
+begin
+  sorry,
+end
+
 lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
 begin
   by_contra h2,
   cases foo h2 with φ,
   rw [canonical_unif, unif_rk] at φ,
   { -- the two sorry's are for fintype instance on set of submodules & nontrivial submodule
+    have h2 := fintype.card_le_of_injective φ (inj_of_simple φ U24_simple),
+    simp at h2,
     have h1 := @num_subspaces_dim_one (zmod 2) (submodule.span (zmod 2) (φ '' set.univ)) _ _ _ _ _ sorry _ sorry,
     simp at h1,
-    
-    have h4 : finite_dimensional.finrank (zmod 2) ↥(submodule.span (zmod 2) (⇑φ '' set.univ)) = 2,
-    { rw finrank_span_set_eq_card,
-      sorry },
+    have h4 := of_rank φ,
+    rw unif_rk at h4,
     rw h4 at h1,
     have h5 := ncard_univ (fin 4),
     have h6 : univ.ncard ≤ fintype.card ↥{S : subspace (zmod 2) ↥V | finrank (zmod 2) ↥S = 1},
