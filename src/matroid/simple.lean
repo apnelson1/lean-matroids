@@ -35,6 +35,9 @@ def simple_set (M : matroid E) (X : set E) : Prop := ∀ e f ∈ X, M.indep {e,f
 /-- the property of a matroid having no loops or parallel pairs -/
 @[reducible] def simple (M : matroid E) : Prop := M.simple_set univ 
 
+lemma simple_iff_forall_pair_indep : M.simple ↔ ∀ e f, M.indep {e,f} := 
+⟨λ h e f, h e (mem_univ e) f (mem_univ f), λ h e he f hf, h e f⟩    
+
 lemma simple_set.subset (h : M.simple_set Y) (hXY : X ⊆ Y) : M.simple_set X := 
 λ e he f hf, h e (hXY he) f (hXY hf)  
 

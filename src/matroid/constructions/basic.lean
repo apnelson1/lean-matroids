@@ -216,22 +216,16 @@ end
 lemma unif_simple_iff (E : Type*) [finite E] (hE : 2 ≤ nat.card E) {r : ℕ} :
   (unif E r).simple ↔ 2 ≤ r :=
 begin
-  --rw type_size_eq at hE,
-  refine ⟨λ h, by_contra (λ hn, _), λ h, _⟩,
-  { push_neg at hn,
-    by_cases r = 0,
-    /-obtain ⟨X,hX⟩ := has_set_of_size  (by norm_num : (0 : ℤ) ≤ 2) hE,
-    have h' := (h X (subset_univ X) (le_of_eq hX)),
-    rw [indep_iff_r, hX] at h',
-    have h'' := rank_le_univ (unif E r) X,
-
-    rw [h', unif_r hr, min_eq_left] at h'';
-    linarith-/
-    sorry },
-  rintros X - hX,
-  rw [indep_iff_r, unif_r hr, min_eq_right],
-  -- linarith fails here - why???
-  exact le_trans hX h,
+  rw [←nat.lt_iff_add_one_le, ←ncard_univ, one_lt_ncard_iff] at hE, 
+  obtain ⟨a,b,-,-,hab⟩ := hE, 
+  simp_rw [simple_iff_forall_pair_indep, unif_indep_iff], 
+  obtain (hlt | hle) := lt_or_le r 2, 
+  { refine iff_of_false _ hlt.not_le,
+    push_neg, 
+    refine ⟨a,b,by rwa [ncard_eq_two.mpr ⟨a,b,hab,rfl⟩]⟩ },
+  refine iff_of_true (λ e f, le_trans _ hle) hle, 
+  rw [←union_singleton], 
+  exact (ncard_union_le _ _).trans (by simp), 
 end
 
 end uniform
