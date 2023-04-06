@@ -76,7 +76,7 @@ end
 
 lemma skew.r_add (h : M.skew X Y) : M.r X + M.r Y = M.r (X ∪ Y) := skew_iff_r.mp h 
 
-/- these proofs doesn't need to use rank -/
+/- these proofs doesn't need to use rank, but are much easier that way for now  -/
 lemma skew.cl_left (h : M.skew X Y) : M.skew (M.cl X) Y := 
 by rwa [skew_iff_r, r_union_cl_left_eq_r_union, r_cl, ←skew_iff_r]
 
