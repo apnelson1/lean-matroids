@@ -192,6 +192,42 @@ begin
   sorry,
 end
 
+section other_rep 
+
+variables {W W' : Type*} [add_comm_monoid W] [module 𝔽 W] [add_comm_monoid W'] [module 𝔽 W'] 
+
+structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_monoid W] [module 𝔽 W] (M : matroid E) :=
+(to_fun : E → W)
+(valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun (e : E)) ↔ M.indep I)
+
+instance : has_coe_to_fun (rep' 𝔽 W M) (λ _, E → W) := ⟨λ φ, φ.to_fun⟩
+
+def rep'.to_submodule (φ : rep' 𝔽 W M) : submodule 𝔽 W := submodule.span 𝔽 (set.range φ.to_fun)
+
+-- def rep'.to_submodule_fun (φ : rep' 𝔽 W M) : 
+
+lemma rep'.mem_to_submodule (φ : rep' 𝔽 W M) (x : E) : φ.to_fun x ∈ φ.to_submodule := 
+by { rw [rep'.to_submodule], refine submodule.subset_span _, simp }
+
+def rep'.compose (φ : rep' 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : rep' 𝔽 W' M :=
+{ to_fun := λ x, e ⟨φ.to_fun x, φ.mem_to_submodule x⟩,
+  valid := 
+  begin
+    intros I, 
+    rw [←φ.valid],  
+    convert linear_map.linear_independent_iff e.to_linear_map sorry using 1,
+    
+    -- have := ((linear_equiv.refl 𝔽 W).to_linear_map.dom_restrict (φ.to_submodule)).linear_independent_iff sorry, 
+    rw ← iff_iff_eq, 
+    sorry,  
+    
+    --rw linear_independent_equiv,  
+  end  }
+
+end other_rep
+
+-- lemma rep_equiv (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι ι' : Type*) (φ : rep 𝔽 M ι) 
+-- (e : (ι → 𝔽))
 
 lemma foo (h : M.is_representable 𝔽) : 
   nonempty (rep 𝔽 M (fin M.rk))  := 

@@ -213,7 +213,7 @@ begin
   { intro h, linarith [ncard_add_ncard_compl X]},
 end
 
-lemma unif_simple_iff (E : Type*) [fintype E] (hE : 2 ≤ fintype.card E) {r : ℕ} (hr : 0 ≤ r) :
+lemma unif_simple_iff (E : Type*) [finite E] (hE : 2 ≤ nat.card E) {r : ℕ} :
   (unif E r).simple ↔ 2 ≤ r :=
 begin
   --rw type_size_eq at hE,

@@ -73,30 +73,30 @@ begin
   exact ncard_le_one_iff.mp hef.le (by simp) (by simp), 
 end
 
-lemma simple_set_iff_cl_inj_on : 
-  M.simple_set X ↔ M.loopless_set X ∧ inj_on (λ e, M.cl {e}) X := 
-begin
-  refine ⟨λ h, ⟨h.loopless_set, λ e he f hf (hef : M.cl {e} = M.cl {f}), _⟩, λ h, _⟩,
-  { have he' := singleton_subset_iff.mp ((M.subset_cl {e}).trans hef.subset), 
-    rw (h.loopless_set.indep_of_mem hf).mem_cl_iff at he',
-    exact he'.elim id (λ hi, (hi (h e he f hf)).elim) },
+-- lemma simple_set_iff_cl_inj_on : 
+--   M.simple_set X ↔ M.loopless_set X ∧ inj_on (λ e, M.cl {e}) X := 
+-- begin
+--   refine ⟨λ h, ⟨h.loopless_set, λ e he f hf (hef : M.cl {e} = M.cl {f}), _⟩, λ h, _⟩,
+--   { have he' := singleton_subset_iff.mp ((M.subset_cl {e}).trans hef.subset), 
+--     rw (h.loopless_set.indep_of_mem hf).mem_cl_iff at he',
+--     exact he'.elim id (λ hi, (hi (h e he f hf)).elim) },
 
 
-  intros e he f hf, 
-  have hcl : f ∉ M.cl {e}, 
-  { intro hfe, },
-  rw [pair_comm],
-  exact ((h.1.nonloop_of_mem he).indep.not_mem_cl_iff.mp hcl).2, 
+--   intros e he f hf, 
+--   have hcl : f ∉ M.cl {e}, 
+--   { intro hfe, },
+--   rw [pair_comm],
+--   exact ((h.1.nonloop_of_mem he).indep.not_mem_cl_iff.mp hcl).2, 
 
 
 
-  -- have := h.1.indep_of_mem he, 
-  -- have := this.not_mem_cl_iff, 
-  -- rw h.2 he hf,
-  -- { rw [pair_eq_singleton, ←nonloop_iff_indep], 
-  --   exact h.1.nonloop_of_mem hf }, 
+--   -- have := h.1.indep_of_mem he, 
+--   -- have := this.not_mem_cl_iff, 
+--   -- rw h.2 he hf,
+--   -- { rw [pair_eq_singleton, ←nonloop_iff_indep], 
+--   --   exact h.1.nonloop_of_mem hf }, 
   
-end 
+-- end 
 
 end simple 
 
