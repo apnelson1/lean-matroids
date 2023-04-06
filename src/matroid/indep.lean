@@ -325,18 +325,16 @@ lemma base.basis_univ (hB : M.base B) :
   M.basis B univ :=
 base_iff_basis_univ.mp hB
 
--- lemma basis.ncard_eq_ncard (hI : M.basis I X) (hJ : M.basis J X) : I.ncard = J.ncard :=
--- begin
---   suffices : ∀ I J, M.basis I X → M.basis J X → I.ncard ≤ J.ncard, 
---     from (this I J hI hJ).antisymm (this J I hJ hI),    
---   clear hI hJ I J, intros I J hI hJ, 
-
---   obtain (hf | hi) := I.finite_or_infinite, 
---   { obtain (hf' | hi') := J.finite_or_infinite, 
---     { }, 
---      },
---   convert zero_le _, rw hi.ncard, 
--- end
+lemma basis.card_eq_card [finitary M] (hI : M.basis I X) (hJ : M.basis J X) : I.ncard = J.ncard :=
+begin
+  suffices : ∀ I J, M.basis I X → M.basis J X → I.ncard ≤ J.ncard, 
+     from (this I J hI hJ).antisymm (this J I hJ hI),    
+  clear hI hJ I J, 
+  refine λ I J hI hJ, le_of_not_lt (λ hlt, _), 
+  obtain ⟨x, hxI,hxJ, hi⟩ := hJ.indep.augment hI.indep hlt, 
+  exact hxJ ((hJ.eq_of_subset_indep hi (subset_insert _ _) 
+    (insert_subset.mpr ⟨hI.subset hxI, hJ.subset⟩)).symm.subset (mem_insert _ _)), 
+end
 
 end basis
 

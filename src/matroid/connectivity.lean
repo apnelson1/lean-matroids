@@ -8,8 +8,7 @@ namespace matroid
 
 variables {E ι : Type*} [finite E] {X Y X' Y'  I C : set E} {e f : E} {M : matroid E}
 
-/-- Two sets are `skew` if any pair of their independent subsets are disjoint with independent union 
-  (equivalently, the sum of their ranks is the rank of their union) -/
+/-- Two sets are `skew` if any pair of their independent subsets are disjoint with independent union (equivalently, the sum of their ranks is the rank of their union) -/
 def skew (M : matroid E) (X Y : set E) : Prop :=
   ∀ (I ⊆ X) (J ⊆ Y), M.indep I → M.indep J → disjoint I J ∧ M.indep (I ∪ J) 
 
