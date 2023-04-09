@@ -39,7 +39,8 @@ def direct_sum (M : ∀ i, matroid (E i)) :
     convert diff_empty.symm,
     ext,
     simpa using hne},
-  end}
+  end,
+  maximality := sorry }
 
 @[simp] lemma direct_sum_base_iff {B : set (Σ i, E i)} :
   (direct_sum M).base B ↔ ∀ i, (M i).base ((sigma.mk i) ⁻¹' B) :=
@@ -228,7 +229,8 @@ def sum (M₁ : matroid E₁) (M₂ : matroid E₂) :
     convert hB.1 using 1,
     ext,
     simp,
-  end}
+  end,
+  maximality := sorry }
 
 @[simp] lemma sum_base_iff {B : set (E₁ ⊕ E₂)} :
   (M₁.sum M₂).base B ↔ M₁.base (sum.inl ⁻¹' B) ∧ M₂.base (sum.inr ⁻¹' B) :=

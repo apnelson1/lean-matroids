@@ -28,8 +28,6 @@ def proj_to_set (𝔽 : Type*) [field 𝔽] (X : set E) := linear_map.fun_left �
   (proj_to_set 𝔽 X v) a = v (coe a) :=
 rfl
 
-#check proj_to_set
-
 lemma proj_to_set_range_eq_top (𝔽 : Type*) [field 𝔽] (X : set E):
   (proj_to_set 𝔽 X).range = ⊤ :=
 begin
@@ -134,9 +132,6 @@ variables [fintype {S : subspace 𝔽 V | finrank 𝔽 S = 1}]
 --lemma simple_rep_inj
 -- define simple to mean every pair has rank 2
 def simple (M : matroid E) : Prop := ∀ (e f : E), e ≠ f → M.r {e, f} = 2
-
-#check (λ x : E, submodule.proj_to_set V ({x} : set E))
-#check submodule.proj_to_set V
 
 def submodule.proj_to_set2 (x : E) := submodule.proj_to_set V ({x} : set E)
 

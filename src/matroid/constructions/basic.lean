@@ -213,14 +213,14 @@ begin
 end
 
 lemma unif_loopless_iff (E : Type*) (hE : nonempty E) [finite E] : (unif E r).loopless ↔ 0 < r :=
-by simp [loopless, loopless_set, nonloop_iff_indep, ←nat.add_one_le_iff]
+by simp [loopless, loopless_on, ←indep_singleton, ←nat.add_one_le_iff]
 
 lemma unif_simple_iff (E : Type*) [finite E] (hE : 1 < nat.card E) {r : ℕ} :
   (unif E r).simple ↔ 1 < r :=
 begin
   rw [←ncard_univ, one_lt_ncard_iff] at hE, 
   obtain ⟨a,b,-,-,hab⟩ := hE, 
-  simp_rw [simple_iff_forall_pair_indep, unif_indep_iff], 
+  simp_rw [simple, unif_indep_iff], 
   obtain (hle | hlt) := le_or_lt r 1, 
   { refine iff_of_false _ hle.not_lt,
     push_neg, 

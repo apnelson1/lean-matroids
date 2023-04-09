@@ -52,19 +52,12 @@ lemma valid (φ : rep 𝔽 M ι) : linear_independent 𝔽 (λ e : I, φ e) ↔ 
 protected lemma is_representable {ι : Type u} (φ : rep 𝔽 M ι) : is_representable.{_ _ u} 𝔽 M :=
 ⟨ι, ⟨φ⟩⟩
 
-lemma linear_independent_iff_coe (φ : rep 𝔽 M ι) {X : set E} :
-  linear_independent 𝔽 (coe : φ '' X → ι → 𝔽) ↔ linear_independent 𝔽 (λ e : X, φ e) :=
-begin
-  refine ⟨_, _⟩,
-  intros h,
-
-  sorry,
-  intros h,
-  apply linear_independent.image_of_comp X φ coe h,
-end
-
 lemma inj_on_of_indep (φ : rep 𝔽 M ι) (hI : M.indep I) : inj_on φ I :=
 inj_on_iff_injective.2 (φ.valid.2 hI).injective
+
+lemma linear_independent_iff_coe (φ : rep 𝔽 M ι) (hI : M.indep I) :
+  linear_independent 𝔽 (λ e : I, φ e) ↔ linear_independent 𝔽 (coe : φ '' I → ι → 𝔽) :=
+linear_independent_image $ inj_on_of_indep _ hI
 
 -- want lemma that says if it's a simple matroid the cardinality of E
 -- is leq that of the submodule
@@ -103,19 +96,9 @@ begin
   exact of_base _ hB _,
 end
 
--- this feels silly
 lemma basis_of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (range φ)) :=
-begin
-  rw ←span_base _ hB,
-  have h2 := basis.mk (linear_independent_span (φ.valid.2 hB.indep)),
-  rw image_eq_range,
-  apply h2,
-  simp,
-  rw ← span_univ,
-  --rw span_span,
-  sorry,
-end
+by { rw [←span_base _ hB, image_eq_range], exact basis.span (φ.valid.2 hB.indep) }
 
 lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (span 𝔽 (set.range φ))] :
   finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
@@ -212,8 +195,7 @@ begin
 end
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
-def matroid.is_binary (M : matroid E) :=
-  M.is_representable (zmod 2)
+@[reducible, inline] def matroid.is_binary (M : matroid E) := M.is_representable (zmod 2)
 
 lemma U24_simple : (canonical_unif 2 4).simple :=
 begin
@@ -240,7 +222,6 @@ begin
         rw h9 at h8,
         have h11 : fintype.card (range φ) = fintype.card (fin 4),
         rw card_range_of_injective (φ.injective_of_simple U24_simple),
-        tauto,
         -- linarith doesn't see the contradiction unless I simplify the inequality
         simp only [h11, fintype.card_fin, pow_two, two_mul, nat.succ_add_sub_one] at h8,
         linarith },
