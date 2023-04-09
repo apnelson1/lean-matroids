@@ -116,12 +116,14 @@ by rw [nonloops_eq_compl_cl_empty, compl_compl]
 
 lemma loop_or_nonloop (M : matroid E) (e : E) : M.loop e ∨ M.nonloop e := em _ 
 
-lemma nonloop_iff_indep : M.nonloop e ↔ M.indep {e} := by rw [nonloop, not_iff_comm, loop_iff_dep]
+@[simp] lemma indep_singleton : M.indep {e} ↔ M.nonloop e := by rw [nonloop, loop_iff_dep, not_not]
+
+alias indep_singleton ↔ indep.nonloop nonloop.indep
+
+attribute [protected] indep.nonloop nonloop.indep
 
 lemma nonloop_iff_r : M.nonloop e ↔ M.r {e} = 1 :=
-by rw [nonloop_iff_indep, indep_iff_r_eq_card, ncard_singleton]
-
-lemma nonloop.indep (h : M.nonloop e) : M.indep {e} := nonloop_iff_indep.mp h 
+by rw [←indep_singleton, indep_iff_r_eq_card, ncard_singleton]
 
 lemma nonloop.r (he : M.nonloop e) : M.r {e} = 1 := nonloop_iff_r.mp he 
 

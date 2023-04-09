@@ -36,13 +36,13 @@ begin
 end
 
 lemma flat_iff_r_lt_r_insert :
-  M.flat F ↔ ∀ e ∉ F, M.r F < M.r (insert e F) :=
+  M.flat F ↔ ∀ ⦃e⦄, e ∉ F → M.r F < M.r (insert e F) :=
 begin
   refine ⟨λ hF e heF, nat.lt_iff_add_one_le.mpr (hF.r_insert_of_not_mem heF).symm.le,
     λ h, flat_def.mpr (λ I X hIF hIX, _)⟩,
   by_contra' hXF,
   obtain ⟨e,heX,heF⟩ := not_subset.mp hXF,
-  apply (h e heF).ne,
+  apply (h heF).ne,
   rw [←hIF.r_eq_r_insert, hIX.r_eq_r_insert, insert_eq_of_mem heX, ←hIF.r, ←hIX.r],
 end
 
@@ -122,7 +122,7 @@ lemma mem_cl :
 begin
   have hF := M.flat_of_cl X,
   rw flat_iff_r_lt_r_insert at hF,
-  refine ⟨λ hecl, by_contra (λ hne, _),λ h, by_contra (λ heX, (hF e heX).ne _)⟩,
+  refine ⟨λ hecl, by_contra (λ hne, _),λ h, by_contra (λ heX, (hF heX).ne _)⟩,
   { have hlem : ∃ F, M.flat F ∧ X ⊆ F ∧ e ∉ F,
     { have hr := r_insert_eq_add_one_of_r_ne hne,
       have heX : e ∉ X,
@@ -164,7 +164,7 @@ begin
   refine ⟨λ h, (M.r_mono (subset_insert _ _)).antisymm' _, λ h, _⟩,
   { rw ←h,
     exact M.r_mono (insert_subset_insert (M.subset_cl _))},
-  convert (@r_union_eq_of_subset_of_r_eq _ _ M _ _ (M.cl X) (subset_insert x X) h.symm).symm
+  convert (@r_union_eq_of_subset_of_r_eq _ _ _ _ _ (M.cl X) (subset_insert x X) h.symm).symm
     using 1,
   { rw [insert_union, union_eq_right_iff_subset.mpr (M.subset_cl X)]},
   rw [union_eq_right_iff_subset.mpr (M.subset_cl X), r_cl],
@@ -249,11 +249,11 @@ by rw [cl_union_cl_left_eq_cl_union, cl_union_cl_right_eq_cl_union]
   M.cl (insert e (M.cl X)) = M.cl (insert e X) :=
 by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 
-@[simp] lemma r_union_cl_right_eq_r_union (M : matroid E) (X Y : set E) : 
+@[simp] lemma r_union_cl_right_eq_r_union (M : matroid E) (X Y : set E) :
   M.r (X ∪ M.cl Y) = M.r (X ∪ Y) :=
 by rw [←r_cl, cl_union_cl_right_eq_cl_union, r_cl]
 
-@[simp] lemma r_union_cl_left_eq_r_union (M : matroid E) (X Y : set E) : 
+@[simp] lemma r_union_cl_left_eq_r_union (M : matroid E) (X Y : set E) :
   M.r (M.cl X ∪ Y) = M.r (X ∪ Y) :=
 by rw [←r_cl, cl_union_cl_left_eq_cl_union, r_cl]
 
@@ -267,7 +267,7 @@ end
 
 lemma cl_exchange_iff :
   e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
-⟨cl_exchange, cl_exchange⟩  
+⟨cl_exchange, cl_exchange⟩
 
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) :
   M.cl (X \ {e}) = M.cl X :=
@@ -346,12 +346,12 @@ begin
 end
 
 lemma indep.insert_indep_iff_of_not_mem (hI : M.indep I) (he : e ∉ I) :
-  M.indep (insert e I) ↔ e ∉ M.cl I := 
+  M.indep (insert e I) ↔ e ∉ M.cl I :=
 ⟨λ h, hI.not_mem_cl_iff.mpr ⟨he,h⟩, λ h, (hI.not_mem_cl_iff.mp h).2⟩
 
 lemma indep.mem_cl_iff (hI : M.indep I) :
   x ∈ M.cl I ↔ x ∈ I ∨ ¬ M.indep (insert x I) :=
-by rw [←not_iff_not, hI.not_mem_cl_iff, not_or_distrib, not_not] 
+by rw [←not_iff_not, hI.not_mem_cl_iff, not_or_distrib, not_not]
 
 lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
 
@@ -361,7 +361,7 @@ ssubset_of_subset_of_ne (M.cl_mono (diff_subset _ _)) (indep_iff_cl_diff_ne_fora
 lemma indep.cl_ssubset_ssubset (hI : M.indep I) (hJI : J ⊂ I) : M.cl J ⊂ M.cl I :=
 indep_iff_cl_ssubset_ssubset_forall.mp hI J hJI
 
-lemma subset_cl_iff_r_union_eq_r : X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y := 
+lemma subset_cl_iff_r_union_eq_r : X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
 begin
   refine ⟨λ h, r_union_eq_of_r_all_insert_le (λ e he, by rw mem_cl.mp (h he)),
     λ hu e heX, mem_cl.mpr ((M.r_mono (subset_insert _ _)).antisymm' _)⟩,
@@ -770,7 +770,7 @@ end
 lemma hyperplane_def : M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
 iff.rfl
 
-lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := hK  
+lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := hK
 
 lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H := hH.1
 
@@ -826,6 +826,7 @@ begin
   { subst hH', exact hH.1.ne rfl},
   apply hF.eq_of_le_r_subset (M.univ_flat) (subset_univ _),
   rw hH.2 _ hHF,
+  refl,
 end
 
 lemma hyperplane.r_add_one (hH : M.hyperplane H) :
@@ -851,7 +852,7 @@ lemma hyperplane_iff_flat_r_eq :
   M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
 begin
   refine ⟨λ h, ⟨h.1,h.r_add_one⟩,λ h,
-    ⟨h.1,ssubset_univ_iff.mpr (λ hH, by {subst hH, simpa using h.2}), λ F hHF hF,
+    ⟨h.1,ssubset_univ_iff.mpr (λ hH, by {subst hH, simpa [rk] using h.2}), λ F hHF hF,
       hF.eq_univ_of_rk_le_r _⟩⟩,
   rw [←h.2, nat.add_one_le_iff],
   exact h.1.r_strict_mono hF hHF,
@@ -944,14 +945,14 @@ end
 lemma coindep_iff_cl_compl_eq_univ :
   M.coindep I ↔ M.cl Iᶜ = univ :=
 begin
-  rw [coindep, ←not_iff_not, not_not, ←ne.def, subset_hyperplane_iff_cl_ne_univ],  
-  simp_rw [cocircuit], 
-  split, 
+  rw [coindep, ←not_iff_not, not_not, ←ne.def, subset_hyperplane_iff_cl_ne_univ],
+  simp_rw [cocircuit],
+  split,
   { rintro ⟨K, hKI, hK⟩, exact ⟨_, hK, compl_subset_compl.mpr hKI⟩},
-  rintro ⟨H, hH, hIH⟩, 
-  exact ⟨Hᶜ, compl_subset_comm.mp hIH, by rwa compl_compl⟩,     
-end 
-  
+  rintro ⟨H, hH, hIH⟩,
+  exact ⟨Hᶜ, compl_subset_comm.mp hIH, by rwa compl_compl⟩,   
+end
+
 
 /- This follows more easily from a rank argument, but I'm trying to avoid rank. -/
 lemma hyperplane.inter_right_covby_of_inter_left_covby
@@ -1020,11 +1021,11 @@ def matroid_of_cl (cl : set E → set E)
   (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) :
 matroid E := matroid.matroid_of_base_of_finite
   (λ B, cl B = univ ∧ ∀ X ⊂ B, cl X ≠ univ)
-  
+
   (let ⟨B,hB,hBmin⟩ := finite.exists_minimal (λ B, cl B = univ)
       ⟨univ, eq_univ_of_univ_subset (subset_cl _)⟩ in
     ⟨B, hB, λ X hXB hX, hXB.ne.symm (hBmin _ hX hXB.subset)⟩)
-  
+
   (begin
     intros B₁ B₂ hB₁ hB₂ x hx,
     by_contra' h,
