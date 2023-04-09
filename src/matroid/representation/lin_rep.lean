@@ -126,6 +126,7 @@ begin
   sorry,
 end
 
+-- actually this might not even be true i gotta think about it
 lemma cl_eq_span_rep (φ : rep 𝔽 M ι) (X : set E): φ '' M.cl X = span 𝔽 (φ '' X) :=
 begin
   ext;
