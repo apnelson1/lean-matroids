@@ -2,8 +2,7 @@ import .indep
 import tactic.linarith
 
 /-
-Currently nothing in this file works without (at least) `finite_rk`, so finite-rank sets in infinite
-matroids aren't meaningfully handled. But this is probably ok. 
+Currently nothing in this file works without (at least) `finite_rk`, so finite-rank sets in infinite matroids aren't meaningfully handled. But this is probably ok. 
 -/
 
 noncomputable theory
@@ -496,8 +495,6 @@ by {zify, simp_rw [cast_nullity], linarith [M.r_add_card_le_r_add_card_of_subset
 end matroid
 
 section from_axioms
-variables {E : Type*}
-
 variables {E : Type*} [finite E]
 
 lemma r_eq_card_of_subset_of_r_le_card_submod

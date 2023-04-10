@@ -19,6 +19,15 @@ lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) : M.indep X := hC
 lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) : M.indep (C \ {e}) :=
 hC.ssubset_indep (diff_singleton_ssubset.2 he)
 
+lemma circuit.diff_singleton_basis (hC : M.circuit C) (he : e ∈ C) : M.basis (C \ {e}) C :=
+begin
+  refine (hC.diff_singleton_indep he).basis_of_forall_insert (diff_subset _ _) (λ f hf hI, _), 
+  simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hf, 
+  have := hf.2 (hf.1), subst this, 
+  rw [insert_diff_singleton, insert_eq_of_mem he] at hI, 
+  exact hC.dep hI, 
+end 
+
 lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : X = C :=
 eq_of_le_of_not_lt hXC (hX ∘ hC.ssubset_indep)
 

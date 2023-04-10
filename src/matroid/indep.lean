@@ -356,6 +356,17 @@ begin
   exact (hJ'X heJ').elim (λ  h, (heJ h).elim) id, 
 end 
 
+lemma basis.insert_basis_insert (hI : M.basis I X) (h : M.indep (insert e I)) : 
+  M.basis (insert e I) (insert e X) :=
+begin
+  obtain (he | he) := em (e ∈ I), 
+  { rwa [insert_eq_of_mem he, insert_eq_of_mem (hI.subset he)] },
+  refine ⟨h, insert_subset_insert hI.subset, λ J hJ hIJ hJX, hIJ.antisymm _⟩,   
+  rw [insert_subset] at hIJ, 
+  rw [←singleton_union, ←diff_subset_iff] at hJX, 
+  rw hI.eq_of_subset_indep (hJ.diff {e}) (subset_diff_singleton hIJ.2 he) hJX, 
+  simp only [insert_diff_singleton, subset_insert], 
+end 
 
 lemma basis.card_eq_card [finite_rk M] (hI : M.basis I X) (hJ : M.basis J X) : I.ncard = J.ncard :=
 begin
