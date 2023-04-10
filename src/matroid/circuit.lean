@@ -3,7 +3,7 @@ import .rank
 noncomputable theory
 open_locale classical
 
-variables {E : Type*} [finite E] {M M₁ M₂ : matroid E}
+variables {E : Type*} {M M₁ M₂ : matroid E} [matroid.finite_rk M]
   {I C C' C₁ C₂ X : set E} {e : E}
 
 open set
@@ -28,8 +28,15 @@ lemma circuit.not_ssubset (hC : M.circuit C) (hC' : M.circuit C') : ¬ (C' ⊂ C
 lemma circuit.nonempty (hC : M.circuit C) : C.nonempty :=
 by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
 
-lemma empty_not_circuit (M : matroid E) : ¬M.circuit ∅ :=
+lemma empty_not_circuit (M : matroid E) [finite_rk M] : ¬M.circuit ∅ :=
 λ h, by simpa using h.nonempty
+
+lemma circuit.finite [finite_rk M] (hC : M.circuit C) : C.finite := 
+begin
+  obtain ⟨e, he⟩ := hC.nonempty, 
+  have hfin := (hC.diff_singleton_indep he).finite.union (to_finite {e}), 
+  rwa [diff_union_self, union_singleton, insert_eq_of_mem he] at hfin, 
+end 
 
 lemma circuit.card (hC : M.circuit C) : C.ncard = M.r C + 1 :=
 begin
@@ -37,11 +44,8 @@ begin
   have hss : C \ {e} ⊂ C, by {refine ssubset_of_ne_of_subset _ (diff_subset _ _),
     simpa only [ne.def, sdiff_eq_left, disjoint_singleton_right, not_not_mem]},
   have hlb := M.r_mono hss.subset,
-  have hub := r_lt_card_of_dep hC.dep,
-  rw [←nat.add_one_le_iff] at hub,
   rw [(hC.ssubset_indep hss).r] at hlb,
-  have := ncard_diff_singleton_add_one he,
-  linarith,
+  linarith [ncard_diff_singleton_add_one he hC.finite, r_lt_card_of_dep_of_finite hC.finite hC.dep],
 end
 
 lemma circuit_iff_dep_forall_diff_singleton_indep :
@@ -68,9 +72,14 @@ lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C
 
 lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) : ∃ C ⊆ X, M.circuit C :=
 begin
-  obtain ⟨C,⟨hCX,hCdep⟩,hmin⟩ := finite.exists_minimal (λ Y, Y ⊆ X ∧ ¬M.indep Y) ⟨_,rfl.subset,hX⟩,
-  exact ⟨C, hCX, ⟨hCdep,λ I hIC,
-    by_contra (λ hI, hIC.ne ((hmin I ⟨hIC.subset.trans hCX,hI⟩ hIC.subset).symm))⟩⟩,
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  have hIX : I ⊂ X := hI.subset.ssubset_of_ne (by { rintro rfl, exact hX hI.indep }),
+  obtain ⟨e,heX, heI⟩ := exists_of_ssubset hIX, 
+  obtain ⟨C, hCeI, hC, hmin⟩ := @set.finite.exists_minimal_subset _ _ 
+    (λ D, ¬ M.indep D) (hI.finite.insert e) 
+    (hI.dep_of_ssubset (ssubset_insert heI) (insert_subset.mpr ⟨heX, hIX.subset⟩)), 
+  simp only [not_not] at hmin, 
+  exact ⟨C,hCeI.trans (insert_subset.mpr ⟨heX, hIX.subset⟩), hC, hmin⟩, 
 end
 
 lemma dep_iff_supset_circuit : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
@@ -79,7 +88,7 @@ lemma dep_iff_supset_circuit : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
 lemma indep_iff_forall_subset_not_circuit : M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C :=
 by {rw ← not_iff_not, simp_rw [dep_iff_supset_circuit, not_forall, not_not]}
 
-lemma exists_circuit_iff_card_lt_rk : M.rk < (univ : set E).ncard ↔ ∃ C, M.circuit C :=
+lemma exists_circuit_iff_card_lt_rk [finite E] : M.rk < (univ : set E).ncard ↔ ∃ C, M.circuit C :=
 begin
   rw [matroid.rk, r_lt_card_iff_dep, dep_iff_supset_circuit],
   split,
@@ -97,15 +106,17 @@ begin
   by_cases he : e ∈ (C₁ ∪ C₂), swap,
   { have h' := subset_union_left C₁ C₂,
     exact ⟨C₁, subset_diff_singleton h' (λ he', he (h' he')), hC₁⟩},
-  simp_rw [←dep_iff_supset_circuit, ←r_lt_card_iff_dep, nat.lt_iff_add_one_le],
+  rw [←dep_iff_supset_circuit, ←r_lt_card_iff_dep_of_finite _, nat.lt_iff_add_one_le],
+  swap, apply_instance, swap, exact (hC₁.finite.union hC₂.finite).diff _, 
 
   have hss : C₁ ∩ C₂ ⊂ C₁ := ssubset_of_ne_of_subset
     (by {simp only [ne.def, inter_eq_left_iff_subset],
       exact λ h', h (hC₁.eq_of_subset_circuit hC₂ h')}) (inter_subset_left _ _),
-  linarith [hC₁.card, hC₂.card, ncard_inter_add_ncard_union C₁ C₂,
-      (hC₁.ssubset_indep hss).r, M.r_inter_add_r_union_le_r_add_r C₁ C₂,
-      ncard_diff_singleton_add_one he,
-      M.r_mono (diff_subset (C₁ ∪ C₂) {e})],
+  
+  linarith [hC₁.card, hC₂.card, ncard_inter_add_ncard_union C₁ C₂ hC₁.finite hC₂.finite,
+    (hC₁.ssubset_indep hss).r, M.r_inter_add_r_union_le_r_add_r C₁ C₂,
+    ncard_diff_singleton_add_one he (hC₁.finite.union hC₂.finite),     
+    M.r_mono (diff_subset (C₁ ∪ C₂) {e})],
 end
 
 lemma set.mem_of_nsubset_insert_iff {s t : set E} {a : E} (h : s ⊆ insert a t ∧ ¬ s ⊆ t) : a ∈ s :=
@@ -137,9 +148,7 @@ end matroid
 section from_axioms
 
 /-- A collection of sets satisfying the circuit axioms determines a matroid -/
-def matroid_of_circuit
-  (circuit : set E → Prop)
-  (empty_not_circuit : ¬ circuit ∅)
+def matroid_of_circuit [finite E] (circuit : set E → Prop) (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
@@ -210,8 +219,7 @@ begin
   exact union_subset hCgss hCg'ss,
 end
 
-@[simp] lemma matroid_of_circuit_apply
-  (circuit : set E → Prop)
+@[simp] lemma matroid_of_circuit_apply [finite E] (circuit : set E → Prop)
   (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
