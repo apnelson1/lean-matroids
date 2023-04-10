@@ -129,7 +129,7 @@ def circuit (M : matroid E) (C : set E) : Prop :=
 
 /-- A flat is a maximal set having a given basis  -/
 def flat (M : matroid E) (F : set E) : Prop :=
-  ∀ I X, M.basis I F → M.basis I X → X ⊆ F
+  ∀ ⦃I X⦄, M.basis I F → M.basis I X → X ⊆ F
 
 /-- The closure of a set is the intersection of the flats containing it -/
 def cl (M : matroid E) (X : set E) : set E :=
@@ -137,7 +137,7 @@ def cl (M : matroid E) (X : set E) : set E :=
 
 /-- A hyperplane is a maximal proper subflat -/
 def hyperplane (M : matroid E) (H : set E) : Prop :=
-  M.flat H ∧ H ⊂ univ ∧ (∀ F, H ⊂ F → M.flat F → F = univ)
+  M.flat H ∧ H ⊂ univ ∧ ∀ ⦃F⦄, H ⊂ F → M.flat F → F = univ
 
 /-- A cocircuit is the complement of a hyperplane -/
 def cocircuit (M : matroid E) (K : set E) : Prop :=
@@ -145,7 +145,7 @@ def cocircuit (M : matroid E) (K : set E) : Prop :=
 
 /-- A coindependent set is one that contains no cocircuit -/
 def coindep (M : matroid E) (I : set E) : Prop :=
-  ¬ ∃ K ⊆ I, M.cocircuit K
+  ∀ ⦃K⦄, K ⊆ I → ¬ M.cocircuit K
 
 /-- A loop is a member of the closure of the empty set -/
 def loop (M : matroid E) (e : E) : Prop :=
@@ -160,7 +160,7 @@ def nonloops (M : matroid E) : set E :=
 
 /-- A coloop is an element contained in every basis -/
 def coloop (M : matroid E) (e : E) : Prop :=
-  ∀ B, M.base B → e ∈ B
+  ∀ ⦃B⦄, M.base B → e ∈ B
 
 end defs
 

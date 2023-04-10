@@ -47,7 +47,8 @@ def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂)  :
     simp_rw [←union_singleton, preimage_union, preimage_diff] at ⊢ hBy,
     convert hBy;
     simp [preimage_equiv_eq_image_symm],
-  end}
+  end,
+  maximality := sorry }
 
 @[simp] lemma congr_equiv_apply_base {e : E₁ ≃ E₂} {M₁ : matroid E₁} {B : set E₂} :
   (M₁.congr_equiv e).base B ↔ M₁.base (e ⁻¹' B) :=
