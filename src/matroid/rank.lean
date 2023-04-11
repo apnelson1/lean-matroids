@@ -89,7 +89,7 @@ end
 lemma indep_iff_r_eq_card [finite E] : M.indep I ↔ M.r I = I.ncard :=
 indep_iff_r_eq_card_of_finite (to_finite _)
 
-lemma basis_iff_indep_card [finite E] : M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.r X :=
+lemma basis_iff_indep_card : M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ I.ncard = M.r X :=
 begin
   refine ⟨λ hI, ⟨hI.indep, hI.subset, hI.card⟩, _⟩,
   rintro ⟨hI, hIX, hIcard⟩,
@@ -97,7 +97,7 @@ begin
   rw [eq_comm, ←hI.r] at hIcard,
   have h := ((M.r_mono hI'X.subset).trans_eq hIcard).antisymm (M.r_mono hII'),
   rw [hI.r, hI'X.indep.r] at h,
-  rwa [eq_of_subset_of_ncard_le hII' h.le],
+  rwa [eq_of_subset_of_ncard_le hII' h.le hI'X.finite],
 end
 
 @[simp] lemma r_empty (M : matroid E) [finite_rk M] : 
