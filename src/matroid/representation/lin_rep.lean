@@ -203,6 +203,11 @@ begin
   sorry,
 end
 
+lemma U23_binary : (canonical_unif 2 3).is_binary :=
+begin
+  sorry,
+end
+
 -- this doesn't have sorry's but it relies on foo and U24_simple which do
 lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
 begin
