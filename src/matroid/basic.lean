@@ -112,7 +112,7 @@ namespace matroid
 
 section defs
 
-class finitary (M : matroid E) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
+class finite_rk (M : matroid E) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
 
 /-- A set is independent if it is contained in a base.  -/
 def indep (M : matroid E) (I : set E) : Prop :=
@@ -189,20 +189,20 @@ lemma base.infinite_of_infinite (hB : M.base B) (h : B.infinite) (hB₁ : M.base
   B₁.infinite :=
 by_contra (λ hB_inf, (hB₁.finite_of_finite (not_infinite.mp hB_inf) hB).not_infinite h)
 
-lemma base.finite [finitary M] (hB : M.base B) : B.finite := 
-let ⟨B₀,hB₀⟩ := ‹finitary M›.exists_finite_base in hB₀.1.finite_of_finite hB₀.2 hB
+lemma base.finite [finite_rk M] (hB : M.base B) : B.finite := 
+let ⟨B₀,hB₀⟩ := ‹finite_rk M›.exists_finite_base in hB₀.1.finite_of_finite hB₀.2 hB
 
-instance finitary_of_finite [finite E] {M : matroid E} : finitary M := 
+instance finite_rk_of_finite [finite E] {M : matroid E} : finite_rk M := 
 let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
 
-lemma finitary_of_finite_base (hB : M.base B) (h : B.finite) : finitary M := ⟨⟨B, hB, h⟩⟩   
+lemma finite_rk_of_finite_base (hB : M.base B) (h : B.finite) : finite_rk M := ⟨⟨B, hB, h⟩⟩   
 
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
 end base
 
-section of_finitary 
+section of_finite_rk 
 
 /-- A collection of bases with the exchange property and at least one finite member is a matroid -/
 def matroid_of_exists_finite_base {E : Type*} (base : set E → Prop) 
@@ -241,10 +241,10 @@ matroid E :=
   (exists_finite_base : ∃ B, base B ∧ B.finite) (base_exchange' : exchange_property base) : 
 (matroid_of_exists_finite_base base exists_finite_base base_exchange').base = base := rfl 
 
-/-- A matroid constructed with a finite base is `finitary` -/
+/-- A matroid constructed with a finite base is `finite_rk` -/
 instance {E : Type*} {base : set E → Prop} {exists_finite_base : ∃ B, base B ∧ B.finite} 
 {base_exchange' : exchange_property base} : 
-  finitary (matroid_of_exists_finite_base base exists_finite_base base_exchange') := 
+  finite_rk (matroid_of_exists_finite_base base exists_finite_base base_exchange') := 
 ⟨exists_finite_base⟩  
 
 def matroid_of_base_of_finite {E : Type*} [finite E] (base : set E → Prop)
@@ -255,11 +255,7 @@ matroid_of_exists_finite_base base (let ⟨B,hB⟩ := exists_base in ⟨B,hB,to_
 (exists_base : ∃ B, base B) (base_exchange' : exchange_property base) : 
 (matroid_of_base_of_finite base exists_base base_exchange').base = base := rfl 
 
-
-
-end of_finitary 
-
-
+end of_finite_rk 
 
 end matroid
 
