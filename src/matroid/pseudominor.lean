@@ -304,7 +304,7 @@ lemma indep_project_singleton_iff (he : M.nonloop e) (heI : e ∉ I) :
   (M ⟋ e).indep I ↔ M.indep (insert e I) :=
 begin
   rw [project_elem], 
-  rw [nonloop_iff_indep] at he, 
+  rw [←indep_singleton] at he, 
   split, 
   { intro h, 
     have := he.project_indep_iff, 
@@ -338,7 +338,13 @@ def loopify (M : matroid E) (D : set E) :
   matroid E :=
 { base := (λ I, M.basis I Dᶜ),
   exists_base' := M.exists_basis Dᶜ,
-  base_exchange' := λ I₁ I₂ h₁ h₂ e, h₁.exchange h₂}
+  base_exchange' := λ I₁ I₂ h₁ h₂ e, h₁.exchange h₂,
+  maximality := 
+  begin
+  sorry 
+    -- rintro I X ⟨B, hB, hIB⟩ hIX,  
+    -- intros X I B, simp, 
+  end }
 
 instance {E : Type*} [finite E] : has_del (matroid E) (set E) := ⟨matroid.loopify⟩ 
 instance {E : Type*} [finite E] : has_del (matroid E) E := ⟨λ M e, M.loopify {e}⟩  

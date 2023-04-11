@@ -255,9 +255,93 @@ matroid_of_exists_finite_base base (let ⟨B,hB⟩ := exists_base in ⟨B,hB,to_
 (exists_base : ∃ B, base B) (base_exchange' : exchange_property base) : 
 (matroid_of_base_of_finite base exists_base base_exchange').base = base := rfl 
 
+/-- A version of the independence axioms that avoids cardinality -/
+def matroid_of_indep {E : Type*} (indep : set E → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
+  ∃ x ∈ B \ I, indep (insert x I))
+(h_maximal : exists_maximal_subset_property indep) : matroid E :=
+{ base := λ B, B ∈ maximals (⊆) indep,
+  exists_base' := 
+  begin
+    obtain ⟨B, ⟨hB,-,-⟩, hB₁⟩ :=  h_maximal ∅ univ h_empty (subset_univ _),  
+    exact ⟨B, ⟨hB,λ B' hB' hBB', hB₁ ⟨hB', empty_subset _,subset_univ _⟩ hBB'⟩⟩,  
+  end,
+  base_exchange' := 
+  begin
+    rintros B B' ⟨hB,hBmax⟩ ⟨hB',hB'max⟩ e he, 
+    obtain ⟨f,hf,hfB⟩ :=  h_aug (h_subset hB (diff_subset B {e})) _ ⟨hB',hB'max⟩, 
+    simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hf, 
+    have hfB' : f ∉ B, 
+    { intro hfB, have := hf.2 hfB, subst this, exact he.2 hf.1 }, 
+    { refine ⟨f, ⟨hf.1, hfB'⟩, by_contra (λ hnot, _)⟩,
+      obtain ⟨x,hxB, hind⟩ :=  h_aug hfB hnot ⟨hB, hBmax⟩, 
+      simp only [mem_diff, mem_insert_iff, mem_singleton_iff, not_or_distrib, not_and, not_not] 
+        at hxB, 
+      have := hxB.2.2 hxB.1, subst this, 
+      rw [insert_comm, insert_diff_singleton, insert_eq_of_mem he.1] at hind, 
+      exact not_mem_subset (hBmax hind (subset_insert _ _)) hfB' (mem_insert _ _) },
+    simp only [maximals, mem_sep_iff, diff_singleton_subset_iff, not_and, not_forall, exists_prop],
+    exact λ _, ⟨B, hB, subset_insert _ _, λ hss, (hss he.1).2 rfl⟩, 
+  end,
+  maximality := 
+  begin
+    rintro I X ⟨B, hB,  hIB⟩ hIX, 
+    obtain ⟨J, ⟨hJ, hIJ, hJX⟩, hJmax⟩ := h_maximal I X (h_subset hB.1 hIB) hIX, 
+    obtain ⟨BJ, hBJ⟩ := h_maximal J univ hJ (subset_univ _), 
+    refine ⟨J, ⟨⟨BJ,_, hBJ.1.2.1⟩ ,hIJ,hJX⟩, _⟩,  
+    { exact ⟨hBJ.1.1, λ B' hB' hBJB', hBJ.2 ⟨hB',hBJ.1.2.1.trans hBJB', subset_univ _⟩ hBJB'⟩ },
+    simp only [mem_set_of_eq, and_imp, forall_exists_index], 
+    refine λ  A B' hB' hAB' hIA hAX hJA, hJmax ⟨h_subset hB'.1 hAB',hIA,hAX⟩ hJA, 
+  end  }
+
+@[simp] lemma matroid_of_indep_apply {E : Type*} (indep : set E → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
+  ∃ x ∈ B \ I, indep (insert x I))
+(h_maximal : exists_maximal_subset_property indep) : 
+(matroid_of_indep indep h_empty h_subset h_aug h_maximal).indep = indep :=
+begin
+  ext I, 
+  simp only [matroid.indep, matroid_of_indep], 
+  refine ⟨λ ⟨B, hB, hIB⟩, h_subset hB.1 hIB, λ hI, _⟩, 
+  obtain ⟨B, ⟨hB, hIB, -⟩, hBmax⟩ :=  h_maximal I univ hI (subset_univ _), 
+  exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', subset_univ _⟩ hBB'⟩, hIB⟩, 
+end 
+
 end of_finite_rk 
 
+variables {I B B' X B₁ B₂ : set E} {M : matroid E}
+
+lemma indep.exists_insert_of_not_base (hI : M.indep I) (hI' : ¬M.base I) (hB : M.base B) : 
+  ∃ e ∈ B \ I, M.indep (insert e I) :=
+begin
+  obtain ⟨B', hB', hIB'⟩ := hI, 
+  obtain ⟨x, hxB', hx⟩ := exists_of_ssubset (hIB'.ssubset_of_ne (by { rintro rfl, exact hI' hB' })), 
+  obtain (hxB | hxB) := em (x ∈ B), 
+  { exact ⟨x, ⟨hxB, hx⟩ , ⟨B', hB', insert_subset.mpr ⟨hxB',hIB'⟩⟩⟩ },
+  obtain ⟨e,he, hbase⟩ := hB'.exchange hB ⟨hxB',hxB⟩,    
+  exact ⟨e, ⟨he.1, not_mem_subset hIB' he.2⟩, 
+    ⟨_, hbase, insert_subset_insert (subset_diff_singleton hIB' hx)⟩⟩,  
+end  
+
+-- lemma indep 
+
+def dual (M : matroid E) : matroid E := 
+matroid_of_indep (λ I, ∃ B, M.base B ∧ disjoint I B) 
+(M.exists_base.imp (λ B hB, ⟨hB, empty_disjoint B⟩))
+(λ I J ⟨B, hB, hJB⟩ hIJ, ⟨B, hB, disjoint_of_subset_left hIJ hJB⟩) 
+(begin
+  rintro I B' ⟨B, hB, hIB⟩ hI hB',   
+  -- have := M.maximality (B' \ I) (B' \ I ∪ B) ⟨B', hB', _⟩, 
+end) 
+ sorry 
+
+
+
 end matroid
+
+-- lemma ind_aug {I B : set E} ()
 
 -- TODO : prove strong basis exchange (and hence define duality) in this file.
 

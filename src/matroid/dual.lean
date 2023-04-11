@@ -65,7 +65,8 @@ lemma dual_indep_iff_coindep :
 begin
   rw [dual_indep_iff, ←compl_compl X],
   set Y := Xᶜ with hY,
-  simp_rw [disjoint_compl_right_iff_subset, coindep, not_exists, cocircuit],
+  
+  simp_rw [disjoint_compl_right_iff_subset, coindep, cocircuit],
   rw [(by {split, tauto, tauto} : (∃ (B : set E), M.base B ∧ B ⊆ Y) ↔ (∃ B ⊆ Y, M.base B)),
     base_subset_iff_cl_eq_univ],
 
@@ -77,7 +78,7 @@ begin
   rintro h, by_contra h',
   rw [←ne.def, subset_hyperplane_iff_cl_ne_univ] at h',
   obtain ⟨H, hH, hYH⟩ := h',
-  refine h Hᶜ (compl_subset_compl.mpr hYH) (by rwa compl_compl),
+  exact h (compl_subset_compl.mpr hYH) (by rwa compl_compl),
 end
 
 lemma coindep_iff_disjoint_base : 
