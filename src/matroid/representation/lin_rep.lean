@@ -41,6 +41,11 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ �
 
 namespace rep
 
+def rep.mk (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
+  rep 𝔽 M ι := 
+{ to_fun := f,
+  valid' := valid }
+
 instance fun_like : fun_like (rep 𝔽 M ι) E (λ _, ι → 𝔽) :=
 { coe := to_fun,
   coe_injective' := λ f g h, by cases f; cases g; congr' }
@@ -200,6 +205,29 @@ end
 
 lemma U24_simple : (canonical_unif 2 4).simple :=
 begin
+  sorry,
+end
+
+lemma U23_binary : (canonical_unif 2 3).is_binary :=
+begin
+  -- want rep (zmod 2) M (fin M.rk)
+  have h := finite_dimensional.fin_basis (zmod 2) (fin 3 → zmod 2),
+  rw matroid.is_binary,
+  rw matroid.is_representable,
+  cases (canonical_unif 2 3).exists_base with B h2,
+  have h3 : 2 ≤ nat.card (fin 3), 
+  sorry,
+  rw canonical_unif at h2,
+  rw unif_base_iff h3 at h2,
+  have h4 : B ⊆ set.univ,
+  simp,
+  have h5 : nat.card (@set.univ (fin 3)) = 3,
+  sorry,
+  -- plan is to map base elements to basis vectors and then third element
+  -- to their linear combination
+  have h6 : ∃ (a : fin 3), set.univ = B ∪ {a},
+  sorry,
+  --have h2 := rep.mk,
   sorry,
 end
 
