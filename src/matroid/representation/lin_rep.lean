@@ -198,6 +198,7 @@ end other_rep
 -- lemma rep_equiv (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι ι' : Type*) (φ : rep 𝔽 M ι)
 -- (e : (ι → 𝔽))
 
+-- i think we're doing something wrong, it can't be this complicated
 lemma foo (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (span 𝔽 (set.range φ))] :
   nonempty (rep 𝔽 M (fin M.rk))  :=
 begin
@@ -216,6 +217,7 @@ begin
   --rw linear_map.linear_independent_iff l.to_linear_map,
   --convert linear_map.linear_independent_iff l.to_linear_map sorry using 1,
   --have h2 := gram_schmidt_linear_independent,
+  sorry,
   sorry,
   --have h2 := @mem_range_self (ι → 𝔽) E φ x,
 end
