@@ -178,7 +178,8 @@ def rep'.compose (φ : rep' 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : re
     convert linear_map.linear_independent_iff e.to_linear_map sorry using 1,
 
     -- have := ((linear_equiv.refl 𝔽 W).to_linear_map.dom_restrict (φ.to_submodule)).linear_independent_iff sorry,
-    rw ← iff_iff_eq,
+    rw ← iff_iff_eq,           
+    --rw rep.valid φ,                      
     sorry,
 
     --rw linear_independent_equiv,
