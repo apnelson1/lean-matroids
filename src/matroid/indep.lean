@@ -325,47 +325,56 @@ lemma base.basis_univ (hB : M.base B) :
   M.basis B univ :=
 base_iff_basis_univ.mp hB
 
-lemma basis.Union {ι : Type*} [nonempty ι] (X : ι → set E) (hI : ∀ i, M.basis I (X i)) : 
-  M.basis I (⋃ i, X i) :=
-begin
-  let i₀ := ‹nonempty ι›.some, 
-  refine ⟨(hI i₀).indep, (hI i₀).subset.trans (subset_Union _ _), 
-    λ J hJ hIJ hJX, hIJ.antisymm (λ e he, _)⟩, 
-  obtain ⟨i, hei⟩ := mem_Union.mp (hJX he), 
-  rw (hI i).eq_of_subset_indep (hJ.subset (insert_subset.mpr ⟨he, hIJ⟩)) (subset_insert _ _)
-    (insert_subset.mpr ⟨hei, (hI i).subset⟩), 
-  exact mem_insert _ _, 
-end 
 
 lemma indep.basis_of_forall_insert (hI : M.indep I) (hIX : I ⊆ X) 
 (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) : M.basis I X :=
 ⟨hI, hIX, λ J hJ hIJ hJX, hIJ.antisymm 
   (λ e heJ, by_contra (λ heI, he e ⟨hJX heJ, heI⟩ (hJ.subset (insert_subset.mpr ⟨heJ, hIJ⟩))))⟩
 
-lemma basis.union (hIX : M.basis I X) (hIY : M.basis I Y) : M.basis I (X ∪ Y) :=
-by { rw union_eq_Union, refine basis.Union _ (λ i, _), cases i; assumption }
+lemma basis.Union_basis_Union {ι : Type*} (X I : ι → set E) (hI : ∀ i, M.basis (I i) (X i)) 
+(h_ind : M.indep (⋃ i, I i)) : M.basis (⋃ i, I i) (⋃ i, X i) :=
+begin
+  refine h_ind.basis_of_forall_insert 
+    (Union_subset_iff.mpr (λ i, (hI i).subset.trans (subset_Union _ _))) (λ e he hi, _), 
+  simp only [mem_diff, mem_Union, not_exists] at he, 
+  obtain ⟨i, heXi⟩ := he.1, 
+  exact he.2 i ((hI i).mem_of_insert_indep heXi 
+    (hi.subset (insert_subset_insert (subset_Union _ _)))), 
+end 
+
+lemma basis.basis_Union {ι : Type*} [nonempty ι] (X : ι → set E) (hI : ∀ i, M.basis I (X i)) : 
+  M.basis I (⋃ i, X i) :=
+begin
+  convert basis.Union_basis_Union X (λ _, I) (λ i, hI i) _, 
+  all_goals { rw Union_const },
+  exact (hI (‹nonempty ι›.some)).indep, 
+end 
+
+lemma basis.union_basis_union (hIX : M.basis I X) (hJY : M.basis J Y) (h : M.indep (I ∪ J)) : 
+  M.basis (I ∪ J) (X ∪ Y) :=
+begin 
+  rw [union_eq_Union, union_eq_Union], 
+  refine basis.Union_basis_Union _ _ _ _,   
+  { simp only [bool.forall_bool, bool.cond_ff, bool.cond_tt], exact ⟨hJY, hIX⟩ }, 
+  rwa [←union_eq_Union], 
+end 
+
+lemma basis.basis_union (hIX : M.basis I X) (hIY : M.basis I Y) : M.basis I (X ∪ Y) :=
+by { convert hIX.union_basis_union hIY _; rw union_self, exact hIX.indep }
 
 lemma basis.basis_union_of_subset (hI : M.basis I X) (hJ : M.indep J) (hIJ : I ⊆ J) : 
   M.basis J (J ∪ X) :=
 begin
-  refine ⟨hJ, subset_union_left _ _, λ J' hJ' hJJ' hJ'X, hJJ'.antisymm (by_contra (λ hns, _))⟩, 
-  obtain ⟨e, heJ', heJ⟩ := not_subset.mp hns, 
-  have hIe := hJ'.subset (insert_subset.mpr ⟨heJ', hIJ.trans hJJ'⟩), 
-  refine insert_ne_self.mpr (not_mem_subset hIJ heJ) _, 
-  rw ←hI.eq_of_subset_indep hIe (subset_insert _ _) (insert_subset.mpr ⟨_, hI.subset⟩), 
-  exact (hJ'X heJ').elim (λ  h, (heJ h).elim) id, 
+  convert hJ.basis_self.union_basis_union hI (by rwa union_eq_left_iff_subset.mpr hIJ), 
+  rw union_eq_left_iff_subset.mpr hIJ, 
 end 
 
 lemma basis.insert_basis_insert (hI : M.basis I X) (h : M.indep (insert e I)) : 
   M.basis (insert e I) (insert e X) :=
 begin
-  obtain (he | he) := em (e ∈ I), 
-  { rwa [insert_eq_of_mem he, insert_eq_of_mem (hI.subset he)] },
-  refine ⟨h, insert_subset_insert hI.subset, λ J hJ hIJ hJX, hIJ.antisymm _⟩,   
-  rw [insert_subset] at hIJ, 
-  rw [←singleton_union, ←diff_subset_iff] at hJX, 
-  rw hI.eq_of_subset_indep (hJ.diff {e}) (subset_diff_singleton hIJ.2 he) hJX, 
-  simp only [insert_diff_singleton, subset_insert], 
+  convert hI.union_basis_union 
+    (indep.basis_self (h.subset (singleton_subset_iff.mpr (mem_insert _ _)))) _, 
+  simp, simp, simpa, 
 end 
 
 lemma basis.card_eq_card [finite_rk M] (hI : M.basis I X) (hJ : M.basis J X) : I.ncard = J.ncard :=
@@ -379,8 +388,8 @@ begin
     (insert_subset.mpr ⟨hI.subset hxI, hJ.subset⟩)).symm.subset (mem_insert _ _)), 
 end
 
-/-- This lemma is true without `finite_rk`, but proving this requires developing infinite matroids
-  properly -/
+/-- This lemma is true without `finite_rk`, but I think proving this requires developing 
+  infinite matroids properly. On the critical path to infinitizing flats, etc.  -/
 lemma basis.transfer [finite_rk M] (hIX : M.basis I X) (hJX : M.basis J X) (hXY : X ⊆ Y)
 (hJY : M.basis J Y) : 
   M.basis I Y :=
@@ -389,6 +398,28 @@ begin
   have hcon := hIe.le_card_basis (insert_subset.mpr ⟨he.1, hIX.subset.trans hXY⟩) hJY, 
   rw [←hIX.card_eq_card hJX, ncard_insert_of_not_mem he.2 hIX.finite] at hcon, 
   simpa using hcon, 
+end 
+
+lemma basis.transfer' [finite_rk M] (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) 
+(hIY : I ⊆ Y) : 
+  M.basis I Y :=
+begin
+  have hI' := hI.basis_subset (subset_inter hI.subset hIY) (inter_subset_left _ _), 
+  have hJ' := hJ.basis_subset (subset_inter hJX hJ.subset) (inter_subset_right _ _), 
+  exact hI'.transfer hJ' (inter_subset_right _ _) hJ, 
+end 
+
+lemma basis.transfer'' [finite_rk M] (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) :
+  M.basis I (I ∪ Y) :=
+begin
+  obtain ⟨J', hJJ', hJ'⟩  := hJ.indep.subset_basis_of_subset hJX, 
+  have hJ'Y := (hJ.basis_union_of_subset hJ'.indep hJJ').basis_union hJ', 
+  refine (hI.transfer' hJ'Y hJ'.subset _).basis_subset _ _,  
+  { exact subset_union_of_subset_right hI.subset _ },
+  { exact subset_union_left _ _ }, 
+  refine union_subset (subset_union_of_subset_right hI.subset _) _,
+  rw union_right_comm, 
+  exact subset_union_right _ _, 
 end 
 
 end basis

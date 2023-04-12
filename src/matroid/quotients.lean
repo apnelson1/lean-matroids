@@ -73,7 +73,7 @@ lemma weak_image.rank_zero_of_rank_zero (h : N ≤w M) (hX : M.r X = 0) : N.r X 
 nat.eq_zero_of_le_zero ((weak_image.r_le h X).trans_eq hX)
 
 lemma loop.weak_image (he : M.loop e) (h : N ≤w M) : N.loop e :=
-by_contra (λ heN, loop_iff_dep.mp he (h _ (nonloop_iff_indep.mp heN)))
+not_nonloop_iff.mp (λ hnl, h.dep he.dep hnl.indep) 
 
 lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) : ¬ M.loop e :=
 λ he', he (he'.weak_image h)
@@ -115,9 +115,9 @@ begin
       insert_subset.mpr ⟨heY,hZY⟩, lt_of_not_le (λ hle, _)⟩ (subset_insert _ _)),
 
   by_cases h₁ : e ∈ M.cl Z,
-  { rw [mem_cl.mp h₁, mem_cl.mp (h Z h₁)] at hle,  linarith},
+  { rw [mem_cl_iff_r_insert.mp h₁, mem_cl_iff_r_insert.mp (h Z h₁)] at hle,  linarith},
 
-  rw [not_mem_cl.mp h₁, nat.cast_add, nat.cast_one] at hle,
+  rw [not_mem_cl_iff_r_insert.mp h₁, nat.cast_add, nat.cast_one] at hle,
   linarith [N.r_insert_le_add_one Z e],
 end
 
@@ -125,7 +125,7 @@ lemma is_quotient_iff_r : N ≼ M ↔ ∀ X Y, X ⊆ Y → (N.r Y : ℤ)  - N.r 
 begin
   refine ⟨λ h X Y hXY, h.r_le_r_of_subset hXY, λ h Z e he, _⟩,
   have hle := h _ _ (subset_insert e Z),
-  rw [mem_cl.mp he, sub_self, sub_le_iff_le_add, zero_add, nat.cast_le] at hle,
+  rw [mem_cl_iff_r_insert.mp he, sub_self, sub_le_iff_le_add, zero_add, nat.cast_le] at hle,
   apply mem_cl_of_r_insert_le hle,
 end
 

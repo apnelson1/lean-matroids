@@ -1,4 +1,4 @@
-import .flat
+import .rank
 
 /-
   A `loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.  
@@ -104,7 +104,6 @@ by rw [←cl_union_eq_cl_of_subset_loops hY, diff_union_self, cl_union_eq_cl_of_
 
 /- ### Nonloops -/
 
-
 @[simp] lemma not_loop_iff : ¬ M.loop e ↔ M.nonloop e := iff.rfl 
 
 @[simp] lemma not_nonloop_iff : ¬ M.nonloop e ↔ M.loop e := by rw [←not_loop_iff, not_not]
@@ -166,12 +165,11 @@ end
 lemma nonloop.cl_eq_cl_iff_dep (he : M.nonloop e) (hf : M.nonloop f) : 
   M.cl {e} = M.cl {f} ↔ e = f ∨ ¬ M.indep {e,f} := 
 begin
-  refine ⟨λ hef, _, _⟩,
-  { have hf : f ∈ M.cl {e}, by {rw hef, exact M.mem_cl_self f },
-    rw [pair_comm, eq_comm, ←mem_singleton_iff], 
-    exact he.indep.mem_cl_iff.mp hf},  
-  rintro (rfl | hdep), refl, 
-  apply he.cl_eq_of_mem_cl (hf.indep.mem_cl_iff.mpr (or.inr hdep)),  
+  rw [←imp_iff_or_not], 
+  refine ⟨λ hef, _, λ h, he.cl_eq_of_mem_cl (by rwa [hf.indep.mem_cl_iff])⟩,
+  have hf : f ∈ M.cl {e}, by {rw hef, exact M.mem_cl_self f },
+  rw [pair_comm, eq_comm, ←mem_singleton_iff], 
+  exact he.indep.mem_cl_iff.mp hf,  
 end 
 
 /- ### Coloops -/ 
@@ -191,8 +189,8 @@ begin
         subset_union_of_subset_left _ _⟩,
       rw hI.eq_of_subset_indep (hB.indep.diff {e}) (subset_diff_singleton hIB heI) _,
       rw [compl_eq_univ_diff],
-      exact diff_subset_diff_left (subset_univ _)},
-    exact insert_subset.mpr ⟨he B hB, hIB⟩},
+      exact diff_subset_diff_left (subset_univ _) },
+    exact insert_subset.mpr ⟨he hB, hIB⟩},
   subst hIB',
   rw [←hI.r, hI.indep.r, ←hB.r, hB.indep.r, ncard_insert_of_not_mem heI],
 end
@@ -223,7 +221,7 @@ lemma coloop.not_mem_circuit (he : M.coloop e) (hC : M.circuit C) : e ∉ C :=
 begin
   intro heC,
   obtain ⟨B,hB, hCB⟩ := (hC.diff_singleton_indep heC).exists_base_supset,
-  have h := insert_subset.mpr ⟨he _ hB, hCB⟩,
+  have h := insert_subset.mpr ⟨he hB, hCB⟩,
   rw [insert_diff_singleton, insert_eq_of_mem heC] at h,
   exact hC.dep (hB.indep.subset h),
 end
