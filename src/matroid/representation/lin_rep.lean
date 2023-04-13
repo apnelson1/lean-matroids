@@ -211,41 +211,20 @@ begin
   have h1 := φ.of_rank,
   have h2 : finite_dimensional.finrank 𝔽 (fin M.rk → 𝔽) = M.rk, 
   simp,
-  rw ← h2 at h1,
-  rw ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq at h1,
+  rw [← h2, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1,
   cases h1 with l,
   have h3 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
   use λ x, (l ⟨φ x, h3 x⟩),
   intros I,
   rw ← φ.valid,
-  --rw linear_independent_equiv l.to_equiv,
-  --refine ⟨λ h, _, λ h, _⟩,
   have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
   have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))),
   simp,
   rw h8,
   
-  refine ⟨λ h, _, λ h, _⟩,
-  /-have h5 := linear_independent_span h,
-  simp at h5,
-  simp_rw ← subtype_apply (span 𝔽 (range ⇑φ)) at h,
-  have h7 := @linear_map.linear_independent_iff _ _ _ _ (λ (x : ↥I), (⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))) _ _ _ _ _ (submodule.subtype (span 𝔽 (range ⇑φ))) sorry,
-  simp at h7,-/
   sorry,
-  
-  
-  
-  --apply h5,  
-  -- i think this is what i want but it gives me a deterministic timeout...
- -- have h5 := (linear_map.linear_independent_iff ((span 𝔽 (range φ)).subtype) _).2 h,
-  --simp,
-  --have h2 := linear_map.mem_submodule_image,
-  --rw linear_map.linear_independent_iff l.to_linear_map,
-  --convert linear_map.linear_independent_iff l.to_linear_map sorry using 1,
-  --have h2 := gram_schmidt_linear_independent,
-  sorry,
-  sorry,
-  --have h2 := @mem_range_self (ι → 𝔽) E φ x,
+  rw [h4, ← linear_map.linear_independent_iff l.to_linear_map (linear_equiv.ker l)],
+  simp only [linear_equiv.coe_to_linear_map], 
 end
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
