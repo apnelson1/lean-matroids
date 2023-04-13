@@ -212,8 +212,14 @@ begin
   use λ x, (l ⟨φ x, h3 x⟩),
   intros I,
   rw ← φ.valid,
+  --refine ⟨λ h, _, λ h, _⟩,
+  have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
   refine ⟨λ h, _, λ h, _⟩,
-  
+  -- apply linear_independent_span,  
+  -- i think this is what i want but it gives me a deterministic timeout...
+ -- have h5 := (linear_map.linear_independent_iff ((span 𝔽 (range φ)).subtype) _).2 h,
+  simp,
+  --have h2 := linear_map.mem_submodule_image,
   --rw linear_map.linear_independent_iff l.to_linear_map,
   --convert linear_map.linear_independent_iff l.to_linear_map sorry using 1,
   --have h2 := gram_schmidt_linear_independent,
