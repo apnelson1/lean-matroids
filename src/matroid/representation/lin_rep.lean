@@ -236,7 +236,10 @@ end
 
 lemma U24_simple : (canonical_unif 2 4).simple :=
 begin
-  sorry,
+  rw [canonical_unif, unif_simple_iff],
+  simp only [nat.one_lt_bit0_iff],
+  simp only [nat.card_eq_fintype_card, fintype.card_fin, nat.one_lt_bit0_iff, 
+             nat.one_le_bit0_iff, nat.lt_one_iff],
 end
 
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
