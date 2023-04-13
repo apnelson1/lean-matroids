@@ -1,10 +1,11 @@
 import .flat
+import mathlib.data.set.basic
 
 noncomputable theory
 open_locale classical
 
 variables {E : Type*} {M M₁ M₂ : matroid E} 
-  {I C C' C₁ C₂ X : set E} {e : E}
+  {I C C' C₁ C₂ X : set E} {e f : E}
 
 open set
 
@@ -70,73 +71,51 @@ begin
   exact ⟨λ h, (hC.dep h).elim, λ I hIC, ⟨hC.ssubset_indep hIC, hIC.subset.trans hCX⟩⟩, 
 end 
 
+/-- Every dependent set contains a circuit. This could likely be a shorter proof -/
 lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) : ∃ C ⊆ X, M.circuit C :=
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   obtain (rfl | hss) := (ssubset_or_eq_of_subset hI.subset).symm,
   { exact (hX hI.indep).elim },
   obtain ⟨z,hzX, hzI⟩ := exists_of_ssubset hss, 
-  set C := {e ∈ insert z I| M.indep ((insert z I) \ {e})} with hC_def, 
-  have hCX : C ⊆ X := (sep_subset _ _).trans (insert_subset.mpr ⟨hzX, hI.subset⟩), 
-  have hzC : z ∈ C, 
-  { refine ⟨mem_insert _ _, _⟩,
-    simp only [insert_diff_of_mem, mem_singleton],  
-    exact hI.indep.diff _ },
-  refine ⟨C, hCX, λ hC, _, _⟩, 
-  -- { exact subset_trans (sep_subset _ _) (insert_subset.mpr ⟨hzX, hI.subset⟩) },
-  { obtain ⟨I', hI'X, hCI', hI'CI⟩ := hC.exists_basis_subset_union_basis hCX hI, 
-    have h' : I' \ I = {z},
-    { refine subset_antisymm _ (singleton_subset_iff.mpr ⟨hCI' hzC, hzI⟩), 
-      rw [diff_subset_iff, union_singleton],
-      exact subset_trans hI'CI (union_subset (sep_subset _ _) (subset_insert _ _)) },
-    have hcard := hI'X.card_diff_eq_card_diff hI, 
-    rw [h', ncard_singleton, eq_comm, ncard_eq_one] at hcard, 
-    obtain ⟨y, hy⟩ := hcard, 
-    have : I' = (insert z I) \ {y}, 
-    { refine subset_antisymm 
-        (subset_diff_singleton (hI'CI.trans (union_subset (sep_subset _ _) (subset_insert _ _))) _) 
-        (diff_subset_iff.mpr (insert_subset.mpr ⟨or.inr _,_⟩)), 
-
-      
-
-      
-      },
-
-    have hy' : y ∈ C,
-    { rw [hC_def, mem_sep_iff], }, 
-    },
-
+  set Is : set (set E) := {J | J ⊆ I ∧ z ∈ M.cl J} with hIs, 
+  have hui : ⋃₀ Is ⊆ I := (sUnion_subset (λ J, and.left)), 
+  have hu : M.indep (⋃₀ Is) := hI.indep.subset hui,
+  have hIz : I ∈ Is, from ⟨subset.rfl, hI.subset_cl hzX⟩, 
+  have hiI := sInter_subset_of_mem hIz, 
+  have hcl := bInter_cl_eq_cl_bInter_of_sUnion_indep _ hu,
+  refine ⟨insert z (⋂₀ Is), insert_subset.mpr ⟨hzX, (hiI).trans hI.subset⟩, 
+    λ hind, hzI (hiI _), λ J hJ, _⟩,  
+  { suffices : z ∈ M.cl (⋂₀ Is), 
+    { rw indep.mem_cl_iff (hI.indep.subset (hiI)) at this, 
+      exact this hind },
+      simp_rw [sInter_eq_bInter, ←hcl, mem_Inter], 
+      exact λ i, and.right },
   
-  -- obtain (hss | rfl) := ssubset_or_eq_of_subset hI.subset, 
-  -- { obtain ⟨e,heX,eI⟩ := exists_of_ssubset hss, 
-  --   have heI : e ∈ M.cl I, by { rw hI.cl, exact (M.subset_cl X) heX },
-  --   set I₀ := ⋂₀ {J | J ⊆ I ∧ e ∈ M.cl J} with hI₀, 
-    
-  --   refine ⟨insert e I₀, insert_subset.mpr 
-  --     ⟨heX, (sInter_subset_of_mem _).trans hss.subset⟩, _⟩, 
-  --   { exact ⟨subset.rfl, heI⟩ },
-  --   have : e ∈ M.cl I₀, 
-  --   { rw (hI.indep.subset _).mem_cl_iff, },
-  --   -- refine ⟨λ hi, _, λ K hIK, _⟩, 
-  --   -- { }, 
-  --   sorry,
-  -- },
-  -- exact (hX hI.indep).elim, 
+  have hJ' : J \ (⋂₀ Is) ⊆ {z},  
+  { have hJ' := hJ.subset, rwa [←union_singleton, ←diff_subset_iff ] at hJ' },
+  by_contra h_dep_J, apply h_dep_J, 
+  rw [←inter_union_diff J (⋂₀ Is)], 
+  have hiJ : M.indep (J ∩ ⋂₀ Is), from hI.indep.subset ((inter_subset_right _ _).trans (hiI)), 
+  have hzJ : z ∉ (J ∩ ⋂₀ Is), from not_mem_subset ((inter_subset_right _ _).trans (hiI)) hzI,
+  obtain (h0 | h1) := subset_singleton_iff_eq.mp hJ', 
+  { rw [h0, union_empty], exact hiJ },
+  rw [h1, union_singleton, hiJ.insert_indep_iff_of_not_mem hzJ], 
+     
+  intro hcl', 
+  have hJIs : J ∩ ⋂₀ Is ∈ Is, from ⟨(inter_subset_right _ _).trans (hiI), hcl'⟩, 
 
-  -- have hIX : I ⊂ X := hI.subset.ssubset_of_ne (by { rintro rfl, exact hX hI.indep }),
-  -- obtain ⟨e,heX, heI⟩ := exists_of_ssubset hIX, 
-  -- obtain ⟨C, hCeI, hC, hmin⟩ := @set.finite.exists_minimal_subset _ _ 
-  --   (λ D, ¬ M.indep D) (hI.finite.insert e) 
-  --   (hI.dep_of_ssubset (ssubset_insert heI) (insert_subset.mpr ⟨heX, hIX.subset⟩)), 
-  -- simp only [not_not] at hmin, 
-  -- exact ⟨C,hCeI.trans (insert_subset.mpr ⟨heX, hIX.subset⟩), hC, hmin⟩, 
+  obtain ⟨y,(rfl | hy), hyJ⟩ := exists_of_ssubset hJ,  
+  { exact hyJ (h1.symm.subset (mem_singleton y)).1 },
+  exact hyJ (sInter_subset_of_mem hJIs hy).1, 
 end
 
--- lemma dep_iff_supset_circuit : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
--- ⟨exists_circuit_subset_of_dep, λ ⟨C, hCX, hC⟩ hX, hC.dep (hX.subset hCX)⟩
+lemma dep_iff_supset_circuit : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
+⟨exists_circuit_subset_of_dep, λ ⟨C, hCX, hC⟩ hX, hC.dep (hX.subset hCX)⟩
 
--- lemma indep_iff_forall_subset_not_circuit : M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C :=
--- by {rw ← not_iff_not, simp_rw [dep_iff_supset_circuit, not_forall, not_not]}
+lemma indep_iff_forall_subset_not_circuit : M.indep I ↔ ∀ C ⊆ I, ¬ M.circuit C :=
+by {rw ← not_iff_not, simp_rw [dep_iff_supset_circuit, not_forall, not_not]}
+
 
 lemma circuit.subset_cl_diff_singleton (hC : M.circuit C) (e : E) :
   C ⊆ M.cl (C \ {e}) :=
@@ -146,43 +125,35 @@ begin
   rw [diff_singleton_eq_self he], exact subset_cl _ _, 
 end
 
-lemma circuit.foo {ι : Type*} (hC : M.circuit C)
-(x : ι → E) (Cs : ι → set E) (hCs : ∀ i, M.circuit (Cs i))
-(h_mem : ∀ i, (x i) ∈ C ∩ (Cs i)) (h_unique : ∀ i i', x i ∈ Cs i' → i = i')
-{z : E} (hz : z ∈ C \ ⋃ i, Cs i) :
 
---(hXC : X ⊆ C) (Cs : X → {C' // M.circuit C'}) 
--- (hCs_x : ∀ (x : X), (x : E) ∈ (Cs x : set E)) 
--- (hCs : ∀ (x x' : X), (x : E) ∈ (Cs x' : set E) → x = x') {z : E} 
--- (hz : z ∈ C \ ⋃ x, (Cs x : set E)) : 
-  ∃ C', M.circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, (Cs i)) \ range x :=
+lemma indep.unique_circuit_of_insert (hI : M.indep I) (a : E) (hXa : ¬ M.indep (insert a I) ):
+  ∃! C, C ⊆ insert a I ∧ M.circuit C ∧ a ∈ C :=
 begin
-  set Y := (C ∪ ⋃ x, Cs x) \ (insert z (range x)) with hY, 
-  have h₁ : range x ⊆ M.cl (⋃ i, ((Cs i) \ {x i} \ (insert z (range x)))), 
-  { rintro e ⟨i, rfl⟩,  
-    have h' := (hCs i).subset_cl_diff_singleton (x i) (h_mem i).2, 
-    refine mem_of_mem_of_subset h' (M.cl_subset_cl_of_subset _), 
-    refine subset_Union_of_subset i (subset_diff.mpr ⟨rfl.subset,_⟩), 
-    rw disjoint_iff_forall_ne, 
-    rintro y hy z (rfl | ⟨j, rfl⟩) rfl, 
-    { exact hz.2 (mem_Union_of_mem i hy.1) },
-    refine hy.2 (mem_singleton_iff.mpr _), 
-    rw h_unique _ _ hy.1 },
-  have h₂ : range x ⊆ M.cl Y, 
-  { refine h₁.trans (M.cl_subset_cl_of_subset (Union_subset (λ x, _))),  
-    refine diff_subset_diff_left (subset_union_of_subset_right _ _),
-    exact subset_Union_of_subset x (diff_subset _ _) },
-  have h₃ : C \ {z} ⊆ M.cl Y, 
-  { suffices : C \ {z} ⊆ (C \ insert z X) ∪ X, 
-    { rw [union_diff_distrib] at hY, 
-      convert this.trans (union_subset_union ((subset_union_left _ _).trans_eq hY.symm) h₂), 
-      rw union_eq_right_iff_subset.mpr (M.subset_cl _) },
-    rw [←union_singleton, ←diff_diff, diff_subset_iff, singleton_union, ←insert_union, 
-      insert_diff_singleton, ←singleton_union, union_assoc, diff_union_self], 
-    exact subset_union_of_subset_right (subset_union_left _ _) _ },
+  apply exists_unique_of_exists_of_unique,
+  { refine (dep_iff_supset_circuit.mp hXa).imp (λ C, _),
+    rintro ⟨hCX,hC⟩,
+    refine ⟨hCX ,hC, by_contra (λ haC, _)⟩,
+    exact hC.dep (hI.subset ((subset_insert_iff_of_not_mem haC).mp hCX))},
   
-end 
+  simp only [exists_unique_iff_exists, exists_prop, and_imp],
+  refine λ  C₁ C₂ hC₁I hC₁ haC₁ hC₂I hC₂ haC₂, _,
+  rw [←singleton_union, ←diff_subset_iff] at hC₁I hC₂I, 
+  have hcl : a ∈ M.cl (C₁ \ {a}) ∩ M.cl (C₂ \ {a}), 
+    from ⟨ hC₁.subset_cl_diff_singleton a haC₁, hC₂.subset_cl_diff_singleton a haC₂⟩, 
+  have hi := (hI.subset (union_subset hC₁I hC₂I)), 
+  have hii : M.indep ((C₁ \ {a}) ∩ (C₂ \ {a})), sorry, 
+  rw [inter_cl_eq_cl_inter_of_union_indep hi, hii.mem_cl_iff] at hcl,  
+  simp only [mem_inter_iff, not_mem_diff_singleton, and_self] at hcl, 
+  rw [insert_inter_distrib] at hcl, simp only [insert_diff_singleton] at hcl, 
 
+  
+
+
+  -- obtain ⟨C,hCss,hC⟩ := hC₁.elimination hC₂ hne a,
+  -- have h := hCss.trans (@diff_subset_diff_left _ _ _ {a} (union_subset hC₁X hC₂X)),
+  -- simp only [insert_diff_of_mem, mem_singleton] at h,
+  -- refine hC.dep (hX.subset (h.trans (diff_subset _ _))),
+end
 
 lemma mem_cl_iff_exists_circuit :
   e ∈ M.cl X ↔ e ∈ X ∨ ∃ C, M.circuit C ∧ e ∈ C ∧ C \ {e} ⊆ X :=
@@ -204,24 +175,78 @@ begin
   exact (M.cl_mono hCX) (hC.subset_cl_diff_singleton e heC),
 end
 
--- lemma flat_iff_forall_circuit :
---   M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
--- begin
---   rw [flat_iff_cl_self],
---   refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩,
---   { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
---   exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF),
--- end
+lemma flat_iff_forall_circuit {F : set E} :
+  M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
+begin
+  rw [flat_iff_cl_self],
+  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩,
+  { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
+  exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF),
+end
 
+/-- A generalization of the strong circuit elimination axiom. For finite matroids, this is 
+  equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version. 
+  The stronger version is required for axiomatizing infinite matroids via circuits. -/
+lemma circuit.strong_multi_elimination {ι : Type*} (hC : M.circuit C) (x : ι → E) (Cs : ι → set E) 
+(hCs : ∀ i, M.circuit (Cs i)) (h_mem : ∀ i, (x i) ∈ C ∩ (Cs i)) 
+(h_unique : ∀ i i', x i ∈ Cs i' → i = i') {z : E} (hz : z ∈ C \ ⋃ i, Cs i) :
+  ∃ C', M.circuit C' ∧ z ∈ C' ∧ C' ⊆ (C ∪ ⋃ i, (Cs i)) \ range x :=
+begin
+  set Y := (C ∪ ⋃ x, Cs x) \ (insert z (range x)) with hY, 
+  have h₁ : range x ⊆ M.cl (⋃ i, ((Cs i) \ {x i} \ (insert z (range x)))), 
+  { rintro e ⟨i, rfl⟩,  
+    have h' := (hCs i).subset_cl_diff_singleton (x i) (h_mem i).2, 
+    refine mem_of_mem_of_subset h' (M.cl_subset_cl_of_subset _), 
+    refine subset_Union_of_subset i (subset_diff.mpr ⟨rfl.subset,_⟩), 
+    rw disjoint_iff_forall_ne, 
+    rintro y hy z (rfl | ⟨j, rfl⟩) rfl, 
+    { exact hz.2 (mem_Union_of_mem i hy.1) },
+    refine hy.2 (mem_singleton_iff.mpr _), 
+    rw h_unique _ _ hy.1 },
+  have h₂ : range x ⊆ M.cl Y, 
+  { refine h₁.trans (M.cl_subset_cl_of_subset (Union_subset (λ x, _))),  
+    refine diff_subset_diff_left (subset_union_of_subset_right _ _),
+    exact subset_Union_of_subset x (diff_subset _ _) },
+  have h₃ : C \ {z} ⊆ M.cl Y, 
+  { suffices : C \ {z} ⊆ (C \ insert z (range x)) ∪ (range x), 
+    { rw [union_diff_distrib] at hY, 
+      convert this.trans (union_subset_union ((subset_union_left _ _).trans_eq hY.symm) h₂), 
+      rw union_eq_right_iff_subset.mpr (M.subset_cl _) },
+    rw [←union_singleton, ←diff_diff, diff_subset_iff, singleton_union, ←insert_union, 
+      insert_diff_singleton, ←singleton_union, union_assoc, diff_union_self], 
+    exact subset_union_of_subset_right (subset_union_left _ _) _ },
+  rw [←cl_subset_cl_iff_subset_cl] at h₃, 
+  have h₄ := h₃ (hC.subset_cl_diff_singleton z hz.1), 
+  obtain (hzY | ⟨C', hC', hzC', hCzY⟩) := mem_cl_iff_exists_circuit.mp h₄, 
+  { exact ((hY.subset hzY).2 (mem_insert z _)).elim },
+  
+  refine ⟨C', hC', hzC', subset_diff.mpr ⟨_,_⟩⟩, 
+  { exact (diff_singleton_subset_iff.mp hCzY).trans 
+    (insert_subset.mpr ⟨or.inl hz.1,diff_subset _ _⟩) },
+  rw [←insert_eq_of_mem hzC', ←@insert_diff_singleton _ z C', ←singleton_union, 
+    disjoint_union_left, disjoint_singleton_left],
+  refine ⟨not_mem_subset _ hz.2, disjoint_of_subset_left hCzY _⟩,   
+  { rintro x' ⟨i,rfl⟩, exact mem_Union_of_mem i ((h_mem i).2) },
+  exact disjoint_of_subset_right (subset_insert z _) disjoint_sdiff_left,  
+end 
 
-
+/-- The strong circuit elimination axiom. For any two circuits `C₁,C₂` and all `e ∈ C₁ ∩ C₂` and 
+  `f ∈ C₁ \ C₂`, there is a circuit `C` with `f ∈ C ⊆ (C₁ ∪ C₂) \ {e}`. -/
+lemma circuit.strong_elimination (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (he : e ∈ C₁ ∩ C₂) 
+(hf : f ∈ C₁ \ C₂) : ∃ C ⊆ (C₁ ∪ C₂) \ {e}, M.circuit C ∧ f ∈ C :=
+begin
+  obtain ⟨C, hC, hfC, hCss⟩  := 
+    @circuit.strong_multi_elimination E M C₁ unit hC₁ (λ _, e) (λ _, C₂) (by simpa) 
+    (by simpa) (by simp) f (by simpa),   
+  simp only [range_const, Union_const] at hCss, 
+  exact ⟨C, hCss, hC, hfC⟩, 
+end      
 
 /-- The circuit eliminiation axiom : for any pair of distinct circuits `C₁,C₂` and any `e`, some
   circuit is contained in `C₁ ∪ C₂ \ {e}`. Traditionally this is stated with the assumption that 
   `e ∈ C₁ ∩ C₂`, but it is also true without it. -/
-lemma circuit.elimination [finite_rk M]
-(hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ≠ C₂) (e : E) :
-  ∃ C ⊆ (C₁ ∪ C₂) \ {e}, M.circuit C  :=
+lemma circuit.elimination (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ≠ C₂) (e : E) : 
+  ∃ C ⊆ (C₁ ∪ C₂) \ {e}, M.circuit C :=
 begin
   by_contra' h',
   have he : e ∈ C₁ ∩ C₂, 
@@ -230,55 +255,16 @@ begin
     refine h' C₂ (by_contra (λ h₂, he _)) hC₂, 
     rw [subset_diff, not_and, disjoint_singleton_right, not_not_mem] at h₁ h₂, 
     exact ⟨h₁ (subset_union_left _ _), h₂ (subset_union_right _ _)⟩ },   
-  have hf : (C₂ \ C₁).nonempty,
+  have hf : (C₁ \ C₂).nonempty,
   { rw [nonempty_iff_ne_empty, ne.def, diff_eq_empty], 
     refine λ hss, h _, 
-    exact (hC₂.eq_of_subset_circuit hC₁ hss).symm }, 
+    exact (hC₁.eq_of_subset_circuit hC₂ hss)}, 
   obtain ⟨f, hf⟩ := hf, 
-  
-  rw ←indep_iff_forall_subset_not_circuit at h', 
-  have h₁ := hC₁.diff_singleton_basis he.1, 
-  have h₂ := ((hC₂.diff_singleton_indep hf.1).diff {e}).basis_self.union_basis_union h₁ 
-    (h'.subset (union_subset (diff_subset_diff_left _) (diff_subset_diff_left _))), 
-  { have h₃ := hC₂.diff_singleton_basis hf.1, 
-    obtain (hf' | hf') := (h₂.transfer'' h₃ _).mem_of_insert_indep  (or.inr hf.1) (h'.subset _),
-    { exact hf'.1.2 (mem_singleton f) },
-    { exact hf.2 hf'.1 },
-    { rintro x ⟨hxC₂, (hxf : x ≠f )⟩, 
-      obtain (rfl | hxe) := eq_or_ne e x, exact or.inr he.1, exact or.inl ⟨⟨hxC₂, hxf⟩, hxe.symm⟩ }, 
-    rw [insert_subset, mem_diff_singleton], 
-    exact ⟨⟨or.inr hf.1, by { rintro rfl, exact hf.2 he.1 } ⟩, 
-      union_subset (diff_subset_diff_left ((diff_subset _ _).trans (subset_union_right _ _)))
-        (diff_subset_diff_left (subset_union_left _ _))⟩ },
-  { exact (diff_subset _ _).trans (subset_union_right _ _) },
-  exact (subset_union_left _ _),
-end
+  obtain ⟨C, hCss, hC,-⟩ := hC₁.strong_elimination hC₂ he hf, 
+  exact h' C hCss hC, 
+end  
 
 
-
-lemma set.mem_of_nsubset_insert_iff {s t : set E} {a : E} (h : s ⊆ insert a t ∧ ¬ s ⊆ t) : a ∈ s :=
-begin
-  contrapose h,
-  push_neg,
-  intros h2,
-  exact (subset_insert_iff_of_not_mem h).1 h2,
-end
-
-lemma indep.unique_circuit_of_insert (hX : M.indep X) (a : E) (hXa : ¬ M.indep (insert a X) ):
-  ∃! C, C ⊆ insert a X ∧ M.circuit C ∧ a ∈ C :=
-begin
-  apply exists_unique_of_exists_of_unique,
-  { refine (dep_iff_supset_circuit.mp hXa).imp (λ C, _),
-    rintro ⟨hCX,hC⟩,
-    refine ⟨hCX ,hC, by_contra (λ haC, _)⟩,
-    exact hC.dep (hX.subset ((subset_insert_iff_of_not_mem haC).mp hCX))},
-  simp only [exists_unique_iff_exists, exists_prop, and_imp],
-  refine λ  C₁ C₂ hC₁X hC₁ haC₁ hC₂X hC₂ haC₂, by_contra (λ hne, _),
-  obtain ⟨C,hCss,hC⟩ := hC₁.elimination hC₂ hne a,
-  have h := hCss.trans (@diff_subset_diff_left _ _ _ {a} (union_subset hC₁X hC₂X)),
-  simp only [insert_diff_of_mem, mem_singleton] at h,
-  refine hC.dep (hX.subset (h.trans (diff_subset _ _))),
-end
 
 end matroid
 

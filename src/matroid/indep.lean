@@ -517,6 +517,28 @@ lemma basis.card_diff_eq_card_diff (hIX : M.basis I X) (hJX : M.basis J X) :
   (I \ J).ncard = (J \ I).ncard :=
 by { rw [←lrestrict_base_iff] at hIX hJX, rw hJX.card_diff_eq_card_diff hIX }
 
+lemma basis.exchange (hIX : M.basis I X) (hJX : M.basis J X) (he : e ∈ I \ J) : 
+  ∃ f ∈ J \ I, M.basis (insert f (I \ {e})) X :=
+by { simp_rw ←lrestrict_base_iff at *, exact hIX.exchange hJX he }
+
+lemma basis.eq_exchange_of_diff_eq_singleton (hI : M.basis I X) (hJ : M.basis J X) 
+(hIJ : I \ J = {e}) : 
+  ∃ f ∈ J \ I, J = (insert f I) \ {e} :=
+begin
+  have hcard := hJ.card_diff_eq_card_diff hI, 
+  rw [hIJ, ncard_singleton, ncard_eq_one] at hcard, 
+  obtain ⟨f, hf⟩ := hcard, 
+  refine ⟨f, _, _⟩, 
+  { rw [←singleton_subset_iff], exact hf.symm.subset },
+  rw [←inter_union_diff J I, hf, union_singleton],  
+  nth_rewrite 1 [←inter_union_diff I J], 
+  rw [hIJ, union_singleton, insert_comm], 
+  simp only [insert_diff_of_mem, mem_singleton],
+  rw [inter_comm, diff_singleton_eq_self], 
+  rintro (rfl | ⟨-,heJ⟩),
+  { exact (hf.symm.subset (mem_singleton e)).2 (hIJ.symm.subset (mem_singleton e)).1 },
+  exact (hIJ.symm.subset (mem_singleton e)).2 heJ, 
+end  
 
 end finite 
 

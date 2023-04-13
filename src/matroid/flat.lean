@@ -1,4 +1,5 @@
 import .indep
+import mathlib.data.set.basic 
 
 noncomputable theory
 open_locale classical
@@ -46,6 +47,8 @@ by { rw [cl_def, sInter_eq_Inter], refine flat.Inter _ _, rintro ⟨F,hF⟩, exa
  
 lemma subset_cl (M : matroid E) (X : set E) : X ⊆ M.cl X :=
 by simp only [cl_def, subset_sInter_iff, mem_set_of_eq, and_imp, imp_self, implies_true_iff]
+
+@[simp] lemma cl_univ (M : matroid E) : M.cl univ = univ := (subset_univ _).antisymm (M.subset_cl _)
 
 @[simp] lemma cl_cl (M : matroid E) (X : set E) : M.cl (M.cl X) = M.cl X :=
 begin
@@ -110,12 +113,6 @@ lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) 
 
 
 
-section finite_rk
-
-
-
-/-- This lemma doesn't need `finite_rk` to be true, and is on the critical path for definitizing 
-  quite a bit more (TODO)-/
 lemma indep.cl_eq_set_of_basis (hI : M.indep I) : M.cl I = {x | M.basis I (insert x I)} :=
 begin
   set F := {x | M.basis I (insert x I)} with hF, 
@@ -156,6 +153,67 @@ end
 lemma indep.not_mem_cl_iff (hI : M.indep I) : x ∉ M.cl I ↔ x ∉ I ∧ M.indep (insert x I) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
 
+
+lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set E) (h : M.indep (⋃ i, I i)) :
+  (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
+begin  
+  have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
+  refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset_cl_of_subset (Inter_subset _ _))), 
+  rintro e he, rw mem_Inter at he, 
+  by_contra h', 
+  obtain (hι | ⟨⟨i₀⟩⟩) := (is_empty_or_nonempty ι),
+  { haveI := hι, apply h', rw [Inter_of_empty, cl_univ], exact mem_univ _ },
+  have hiu : (⋂ i , I i) ⊆ ⋃ i, I i, from 
+    ((Inter_subset _ i₀).trans (subset_Union _ i₀)), 
+  have hi_inter : M.indep (⋂ i, I i), from (hi i₀).subset (Inter_subset _ _), 
+  rw [hi_inter.not_mem_cl_iff, mem_Inter, not_forall] at h', 
+  obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
+
+  have hdi₁ : ¬M.indep (insert e (I i₁)), from λ h_ind, hei₁ ((hi i₁).mem_cl_iff.mp (he i₁) h_ind),   
+  have heu : e ∉ ⋃ i, I i, from λ he, hdi₁ (h.subset (insert_subset.mpr ⟨he, subset_Union _ _⟩)), 
+  
+  have hd_all : ∀ i, ¬M.indep (insert e (I i)), 
+    from λ i hind, heu (mem_Union_of_mem _ ((hi i).mem_cl_iff.mp (he i) hind)), 
+  
+  have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
+  { have h' := (M.cl_subset_cl_of_subset) (subset_Union _ _) (he i₀),
+    rwa [h.cl_eq_set_of_basis] at h' },
+  
+  obtain ⟨I', hI', hssI', hI'ss⟩ := 
+    hei.exists_basis_subset_union_basis (insert_subset_insert hiu) hb, 
+  
+  rw [insert_union, union_eq_right_iff_subset.mpr hiu] at hI'ss, 
+  
+  have hI'I : I' \ (⋃ i, I i) = {e}, 
+  { refine subset.antisymm _ (singleton_subset_iff.mpr ⟨hssI' (mem_insert _ _),heu⟩),
+    rwa [diff_subset_iff, union_singleton] }, 
+  
+  obtain ⟨f, hfI, hf⟩ := hI'.eq_exchange_of_diff_eq_singleton hb hI'I, 
+
+  have hf' : ∀ i, f ∈ I i, 
+  { refine λ i, by_contra (λ hfi, (hd_all i (hI'.indep.subset (insert_subset.mpr ⟨_,_⟩)))), 
+    { exact hssI' (mem_insert _ _) },
+    rw [←diff_singleton_eq_self hfi, diff_subset_iff, singleton_union], 
+    exact ((subset_Union _ i).trans_eq hf).trans (diff_subset _ _) },   
+
+  exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))), 
+end 
+
+lemma bInter_cl_eq_cl_bInter_of_sUnion_indep (Is : set (set E)) (h : M.indep (⋃₀ Is)) :
+  (⋂ I ∈ Is, M.cl I) = M.cl (⋂ I ∈ Is, I) :=
+begin
+  rw [sUnion_eq_Union] at h, 
+  rw [bInter_eq_Inter, bInter_eq_Inter], 
+  exact Inter_cl_eq_cl_Inter_of_Union_indep (λ (x : Is), coe x) h, 
+end 
+
+lemma inter_cl_eq_cl_inter_of_union_indep (h : M.indep (I ∪ J)) : M.cl I ∩ M.cl J = M.cl (I ∩ J) :=
+begin
+  rw [inter_eq_Inter, inter_eq_Inter], rw [union_eq_Union] at h, 
+  convert Inter_cl_eq_cl_Inter_of_Union_indep (λ b, cond b I J) (by simpa), 
+  ext, cases x; simp, 
+end
+
 lemma basis.cl (hIX : M.basis I X) : M.cl I = M.cl X := 
 (M.cl_subset_cl_of_subset hIX.subset).antisymm (cl_subset_cl_of_subset_cl 
   (λ x hx, hIX.indep.mem_cl_iff.mpr (λ h, hIX.mem_of_insert_indep hx h)))
@@ -192,7 +250,6 @@ begin
   rw [base_iff_basis_univ, ←h, ←hBX.cl] , 
   exact hBX.indep.basis_cl, 
 end
-
 
 lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) :=
 begin
@@ -303,8 +360,7 @@ lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) :
   M.cl X ⊆ F :=
 by {have h' := M.cl_mono h, rwa hF.cl at h'}
 
-lemma basis_iff_cl :
-  M.basis I X ↔ I ⊆ X ∧ X ⊆ M.cl I ∧ ∀ J ⊆ I, X ⊆ M.cl J → J = I :=
+lemma basis_iff_cl : M.basis I X ↔ I ⊆ X ∧ X ⊆ M.cl I ∧ ∀ J ⊆ I, X ⊆ M.cl J → J = I :=
 begin
   split, 
   { refine λ h, ⟨h.subset, h.subset_cl, λ J hJI hXJ, hJI.antisymm (λ e heI, _)⟩, 
@@ -322,8 +378,7 @@ begin
     (((hi.subset (subset_insert _ _)).basis_cl).mem_of_insert_indep (hXI (he.1)) hi)
 end
 
-lemma basis_union_iff_indep_cl :
-  M.basis I (I ∪ X) ↔ M.indep I ∧ X ⊆ M.cl I :=
+lemma basis_union_iff_indep_cl : M.basis I (I ∪ X) ↔ M.indep I ∧ X ⊆ M.cl I :=
 begin
   refine ⟨λ h, ⟨h.indep, (subset_union_right _ _).trans h.subset_cl⟩, _⟩,
   rw basis_iff_cl,
@@ -336,8 +391,7 @@ begin
   exact M.cl_subset_cl_of_subset (subset_diff_singleton hJI heJ),
 end
 
-lemma basis_iff_indep_cl :
-  M.basis I X ↔ M.indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
+lemma basis_iff_indep_cl : M.basis I X ↔ M.indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=
 ⟨λ h, ⟨h.indep, h.subset_cl, h.subset⟩,
   λ h, (basis_union_iff_indep_cl.mpr ⟨h.1,h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩
 
@@ -345,19 +399,16 @@ lemma basis_iff_indep_cl :
 lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I :=
 (basis_iff_cl.mp hI).2.2 J hJI hJ
 
-lemma empty_basis_iff :
-  M.basis ∅ X ↔ X ⊆ M.cl ∅ :=
+lemma empty_basis_iff : M.basis ∅ X ↔ X ⊆ M.cl ∅ :=
 begin
   simp only [basis_iff_cl, empty_subset, true_and, and_iff_left_iff_imp],
   exact λ h J hJ hXJ, subset_empty_iff.mp hJ,
 end
 
-lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} [finite_rk M₁] [finite_rk M₂] 
-(h : ∀ X, M₁.cl X = M₂.cl X) :
+lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂.cl X) :
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
 
-end finite_rk
 
 
 
