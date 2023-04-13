@@ -93,12 +93,30 @@ begin
   exact (linear_independent_insert' h).2 ⟨φ.valid.2 hB.indep, h2⟩,
 end
 
+lemma of_basis (φ : rep 𝔽 M ι) {X I : set E} (hI : M.basis I X) {e : E} (he : e ∈ X): φ e ∈ span 𝔽 (φ '' I) :=
+begin
+  by_cases e ∈ I, 
+  { apply subset_span (mem_image_of_mem _ h) },
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := φ.valid.not.2 (hI.insert_dep (mem_diff_of_mem he h)),
+  contrapose! h2,
+  apply (linear_independent_insert' h).2 ⟨φ.valid.2 hI.indep, h2⟩,
+end
+
 lemma span_base (φ : rep 𝔽 M ι) (hB : M.base B) :
   span 𝔽 (φ '' B) = span 𝔽 (range φ) :=
 begin
   refine (span_mono $ image_subset_range _ _).antisymm (span_le.2 _),
   rintro _ ⟨x, rfl⟩,
   exact of_base _ hB _,
+end
+
+lemma span_basis (φ : rep 𝔽 M ι) {X I : set E} (hI : M.basis I X) : 
+  span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
+begin
+  refine (span_mono $ image_subset _ (basis.subset hI)).antisymm (span_le.2 _),
+  rintros x ⟨y, ⟨hy1, hy2⟩⟩,
+  rw ← hy2, 
+  apply of_basis φ hI hy1,
 end
 
 lemma basis_of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) :
@@ -127,26 +145,14 @@ lemma of_rank_set (φ : rep 𝔽 M ι) [fintype 𝔽] (X : set E) [fintype (span
   finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
 begin
   cases M.exists_basis X with I hI,
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (φ '' X)),
+  
   sorry,
 end
 
--- actually this might not even be true i gotta think about it
-lemma cl_eq_span_rep (φ : rep 𝔽 M ι) (X : set E): φ '' M.cl X = span 𝔽 (φ '' X) :=
+lemma cl_subset_span_rep (φ : rep 𝔽 M ι) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
 begin
-  ext;
-  split,
-  intros h,
-  rcases h with ⟨y, ⟨hy1, hy2⟩⟩,
-  by_cases y ∈ X,
-  rw ← hy2,
-  apply mem_of_subset_of_mem (subset_span),
-  apply (set.mem_image φ X (φ y)).2,
-  use y,
-  refine ⟨h, rfl⟩,
-  rw cl_def at hy1,
-  --rw mem_span,
-  sorry,
+  cases M.exists_basis X with I hI,
+  rw ← span_basis _ hI, 
   sorry,
 end
 
@@ -212,10 +218,14 @@ begin
   use λ x, (l ⟨φ x, h3 x⟩),
   intros I,
   rw ← φ.valid,
+  rw linear_independent_equiv l.to_equiv,
   --refine ⟨λ h, _, λ h, _⟩,
   have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
   refine ⟨λ h, _, λ h, _⟩,
-  -- apply linear_independent_span,  
+  have h5 := linear_independent_span h,
+  simp at h5,
+  
+  --apply h5,  
   -- i think this is what i want but it gives me a deterministic timeout...
  -- have h5 := (linear_map.linear_independent_iff ((span 𝔽 (range φ)).subtype) _).2 h,
   simp,
