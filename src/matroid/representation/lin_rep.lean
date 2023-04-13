@@ -123,7 +123,13 @@ lemma basis_of_base (φ : rep 𝔽 M ι) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (range φ)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span (φ.valid.2 hB.indep) }
 
-lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (span 𝔽 (set.range φ))] :
+instance fin_dim_rep (φ : rep 𝔽 M ι) [finite E] [fintype 𝔽] : finite_dimensional 𝔽 (span 𝔽 (set.range φ)) :=
+begin
+  cases M.exists_base with B hB,
+  apply finite_dimensional.of_finite_basis (φ.basis_of_base hB) (base.finite hB),
+end
+
+lemma of_rank (φ : rep 𝔽 M ι) [fintype 𝔽] :
   finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
 begin
   cases M.exists_base with B hB,
@@ -204,27 +210,23 @@ end other_rep
 -- lemma rep_equiv (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι ι' : Type*) (φ : rep 𝔽 M ι)
 -- (e : (ι → 𝔽))
 
--- i think we're doing something wrong, it can't be this complicated
-lemma foo (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (span 𝔽 (set.range φ))] :
+-- want some kind of finite_dimensional instance for span (range φ)
+lemma foo (φ : rep 𝔽 M ι) [fintype 𝔽] :
   nonempty (rep 𝔽 M (fin M.rk))  :=
 begin
   have h1 := φ.of_rank,
-  have h2 : finite_dimensional.finrank 𝔽 (fin M.rk → 𝔽) = M.rk, 
-  simp,
-  rw [← h2, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1,
+  rw [← @finite_dimensional.finrank_fin_fun 𝔽 _ (M.rk),
+      ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1,
   cases h1 with l,
   have h3 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
   use λ x, (l ⟨φ x, h3 x⟩),
   intros I,
   rw ← φ.valid,
-  have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
   have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))),
-  simp,
-  rw h8,
-  simp_rw ← submodule.coe_subtype, 
-  have h9 := linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype),
-  apply h9,
-  simp,
+  { simp only [subtype.coe_mk] },
+  have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
+  { simp_rw [h8, ← submodule.coe_subtype], 
+    apply linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
   rw [h4, ← linear_map.linear_independent_iff l.to_linear_map (linear_equiv.ker l)],
   simp only [linear_equiv.coe_to_linear_map], 
 end
@@ -300,7 +302,8 @@ begin
   rw [matroid.is_binary, is_representable] at h2,
   rcases h2 with ⟨ι, n⟩,
   cases n with φ,
-  cases foo φ sorry sorry with φ,
+  haveI := zmod.fintype 2,
+  cases foo φ with φ,
   rw [canonical_unif, unif_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
