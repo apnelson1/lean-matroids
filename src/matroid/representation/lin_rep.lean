@@ -41,7 +41,7 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ �
 
 namespace rep
 
-def rep.mk (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
+def rep.mk (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type*) (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
   rep 𝔽 M ι := 
 { to_fun := f,
   valid' := valid }
@@ -218,7 +218,7 @@ begin
   use λ x, (l ⟨φ x, h3 x⟩),
   intros I,
   rw ← φ.valid,
-  rw linear_independent_equiv l.to_equiv,
+  --rw linear_independent_equiv l.to_equiv,
   --refine ⟨λ h, _, λ h, _⟩,
   have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
   refine ⟨λ h, _, λ h, _⟩,
@@ -228,7 +228,7 @@ begin
   --apply h5,  
   -- i think this is what i want but it gives me a deterministic timeout...
  -- have h5 := (linear_map.linear_independent_iff ((span 𝔽 (range φ)).subtype) _).2 h,
-  simp,
+  --simp,
   --have h2 := linear_map.mem_submodule_image,
   --rw linear_map.linear_independent_iff l.to_linear_map,
   --convert linear_map.linear_independent_iff l.to_linear_map sorry using 1,
@@ -248,23 +248,55 @@ end
 
 lemma U23_binary : (canonical_unif 2 3).is_binary :=
 begin
-  -- want rep (zmod 2) M (fin M.rk)
-  have h := finite_dimensional.fin_basis (zmod 2) (fin 3 → zmod 2),
-  rw matroid.is_binary,
-  rw matroid.is_representable,
-  cases (canonical_unif 2 3).exists_base with B h2,
-  have h3 : 2 ≤ nat.card (fin 3), 
-  sorry,
-  rw canonical_unif at h2,
-  rw unif_base_iff h3 at h2,
-  have h4 : B ⊆ set.univ,
+  -- wait maybe i don't even need basis, maybe i could just map directly
+  -- cardinality of U23 is 3
+  -- cardinality of (fin 2 → zmod 2) \ {0} is 3
+  -- just use any bijection between the two, show that it works
+  have h1 := @fintype.card_fun (fin 2) (zmod 2) _ _ _,
+  rw [zmod.card 2, fintype.card_fin] at h1,
+  have h2 : fintype.card ((set.univ \ {0}) : set (fin 2 → zmod 2)) = 3, 
+  --simp only [fintype.card_of_finset, mem_compl_iff, mem_singleton_iff, to_finset_univ],
+  rw [← to_finset_card, to_finset_diff, finset.card_sdiff, to_finset_card univ],
+  
   simp,
-  have h5 : nat.card (@set.univ (fin 3)) = 3,
   sorry,
+  simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff],
+  --rw ← fintype.card_fin 3 at h2,
+  have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
+  have φ := @rep.mk _ _ (zmod 2) _ (canonical_unif 2 3) (fin 2) (λ x, ↑(f.to_fun x)) _,
+  rw [matroid.is_binary, is_representable],
+  --use (fin 2) φ,
+  sorry,
+  intros I,
+  refine ⟨λ h, _, λ h, _⟩,  
+  -- now the possible sizes of vector families for h are 0, 1, 2.
+  sorry,
+  rw [canonical_unif, unif_indep_iff, le_iff_lt_or_eq] at h,
+  cases h with h1 h2,
+  have h4 := nat.le_of_lt_succ h1,
+  rw le_iff_lt_or_eq at h4,
+  cases h4 with h0 h1,
+  have h5 := nat.lt_one_iff.1 h0,
+  simp at h5,
+  rw h5,
+  simp,
+  have h6 := (linear_independent_image sorry).2,
+  --apply linear_independent_empty,
+  sorry,
+  -- want rep (zmod 2) M (fin M.rk)
+  /-have B' := finite_dimensional.fin_basis (zmod 2) (fin 2 → zmod 2),
+  cases (canonical_unif 2 3).exists_base with B h2,
+  have h3 : 2 ≤ nat.card (fin 3) := by { simp only [nat.card_eq_fintype_card, fintype.card_fin, nat.bit0_le_bit1_iff] },
+  rw [canonical_unif, unif_base_iff h3] at h2,
+  have h4 := subset_univ B,
+  have h5 := (fintype.card_fin 2),
+  rw ← nat.card_eq_fintype_card at h5,
   -- plan is to map base elements to basis vectors and then third element
   -- to their linear combination
   have h6 : ∃ (a : fin 3), set.univ = B ∪ {a},
   sorry,
+  have h7 : (finite_dimensional.finrank (zmod 2) (fin 2 → zmod 2)) = 2,
+  simp,-/
   --have h2 := rep.mk,
   sorry,
 end
@@ -273,7 +305,10 @@ end
 lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
 begin
   by_contra h2,
-  cases foo h2 with φ,
+  rw [matroid.is_binary, is_representable] at h2,
+  rcases h2 with ⟨ι, n⟩,
+  cases n with φ,
+  cases foo φ sorry sorry with φ,
   rw [canonical_unif, unif_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
