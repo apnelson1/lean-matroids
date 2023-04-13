@@ -221,9 +221,19 @@ begin
   --rw linear_independent_equiv l.to_equiv,
   --refine ⟨λ h, _, λ h, _⟩,
   have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
+  have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))),
+  simp,
+  rw h8,
+  
   refine ⟨λ h, _, λ h, _⟩,
-  have h5 := linear_independent_span h,
+  /-have h5 := linear_independent_span h,
   simp at h5,
+  simp_rw ← subtype_apply (span 𝔽 (range ⇑φ)) at h,
+  have h7 := @linear_map.linear_independent_iff _ _ _ _ (λ (x : ↥I), (⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))) _ _ _ _ _ (submodule.subtype (span 𝔽 (range ⇑φ))) sorry,
+  simp at h7,-/
+  sorry,
+  
+  
   
   --apply h5,  
   -- i think this is what i want but it gives me a deterministic timeout...
@@ -265,6 +275,7 @@ begin
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
   have φ := @rep.mk _ _ (zmod 2) _ (canonical_unif 2 3) (fin 2) (λ x, ↑(f.to_fun x)) _,
   rw [matroid.is_binary, is_representable],
+  
   --use (fin 2) φ,
   sorry,
   intros I,
