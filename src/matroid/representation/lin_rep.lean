@@ -221,8 +221,10 @@ begin
   have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))),
   simp,
   rw h8,
-  
-  sorry,
+  simp_rw ← submodule.coe_subtype, 
+  have h9 := linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype),
+  apply h9,
+  simp,
   rw [h4, ← linear_map.linear_independent_iff l.to_linear_map (linear_equiv.ker l)],
   simp only [linear_equiv.coe_to_linear_map], 
 end
