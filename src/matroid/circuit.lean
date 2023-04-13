@@ -76,7 +76,7 @@ begin
   obtain (rfl | hss) := (ssubset_or_eq_of_subset hI.subset).symm,
   { exact (hX hI.indep).elim },
   obtain ⟨z,hzX, hzI⟩ := exists_of_ssubset hss, 
-  set C := {e ∈ insert z I| M.indep ((insert z I) \ {e})} with hC, 
+  set C := {e ∈ insert z I| M.indep ((insert z I) \ {e})} with hC_def, 
   have hCX : C ⊆ X := (sep_subset _ _).trans (insert_subset.mpr ⟨hzX, hI.subset⟩), 
   have hzC : z ∈ C, 
   { refine ⟨mem_insert _ _, _⟩,
@@ -92,6 +92,18 @@ begin
     have hcard := hI'X.card_diff_eq_card_diff hI, 
     rw [h', ncard_singleton, eq_comm, ncard_eq_one] at hcard, 
     obtain ⟨y, hy⟩ := hcard, 
+    have : I' = (insert z I) \ {y}, 
+    { refine subset_antisymm 
+        (subset_diff_singleton (hI'CI.trans (union_subset (sep_subset _ _) (subset_insert _ _))) _) 
+        (diff_subset_iff.mpr (insert_subset.mpr ⟨or.inr _,_⟩)), 
+
+      
+
+      
+      },
+
+    have hy' : y ∈ C,
+    { rw [hC_def, mem_sep_iff], }, 
     },
 
   
