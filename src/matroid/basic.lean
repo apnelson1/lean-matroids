@@ -2,13 +2,16 @@ import mathlib.ncard
 import mathlib.data.set.finite
 import order.minimal 
 
--- noncomputable theory
 open_locale classical
 open_locale big_operators
 
 open set
 
-variables {E : Type*}
+variables {E : Type*} 
+
+section prelim 
+
+variables {B B' B₁ B₂ : set E}
 
 /-- A predicate `P` on sets satisfies the exchange property if, for all `X` and `Y` satisfying `P`
   and all `a ∈ X \ Y`, there exists `b ∈ Y \ X` so that swapping `a` for `b` in `X` maintains `P`.-/
@@ -18,7 +21,7 @@ def exchange_property (P : set E → Prop) : Prop :=
 def exists_maximal_subset_property (P : set E → Prop) : Prop := 
   ∀ I X, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
 
-lemma antichain_of_exch {base : set E → Prop} (exch : exchange_property base) {B B' : set E} 
+private lemma antichain_of_exch {base : set E → Prop} (exch : exchange_property base) 
 (hB : base B) (hB' : base B') (h : B ⊆ B') : B = B' :=
 begin
   refine h.antisymm (diff_eq_empty.mp (eq_empty_iff_forall_not_mem.mpr (λ x hx, _))), 
@@ -26,66 +29,60 @@ begin
   exact he.2 (h he.1), 
 end 
 
-lemma finite_of_finite_of_exch {B B' : set E} {base : set E → Prop} (exch : exchange_property base) 
-(hB : base B) (h : B.finite) (hB' : base B') : 
+private lemma diff_aux_of_exch {base : set E → Prop} (exch : exchange_property base) 
+(hB₁ : base B₁) (hB₂ : base B₂) (hfin : (B₁ \ B₂).finite) :
+(B₂ \ B₁).finite ∧ (B₂ \ B₁).ncard = (B₁ \ B₂).ncard :=
+begin
+  suffices : ∀ {k B B'}, base B → base B' → (B \ B').finite → ncard (B \ B') = k → 
+    (B' \ B).finite ∧ (B' \ B).ncard = k, from this hB₁ hB₂ hfin rfl,  
+  intro k, induction k with k IH, 
+  { intros B B' hB hB' hfin h0, 
+    rw [ncard_eq_zero hfin, diff_eq_empty] at h0, 
+    rw [antichain_of_exch exch hB hB' h0, diff_self], 
+    simp },
+  intros B B' hB hB' hfin hcard, 
+  obtain ⟨e,he⟩ := nonempty_of_ncard_ne_zero (by { rw hcard, simp } : (B \ B').ncard ≠ 0), 
+  obtain ⟨f,hf,hB0⟩ := exch _ _ hB hB' _ he, 
+  have hef : f ≠ e, by { rintro rfl, exact hf.2 he.1 }, 
+  
+  obtain ⟨hfin',hcard'⟩ := IH hB0 hB' _ _,
+  { rw [insert_diff_singleton_comm hef, diff_diff_right, 
+      inter_singleton_eq_empty.mpr he.2, union_empty, ←union_singleton, ←diff_diff] at hfin' hcard',
+    have hfin'' := hfin'.insert f, 
+    rw [insert_diff_singleton, insert_eq_of_mem hf] at hfin'', 
+    apply_fun (λ x, x+1) at hcard', 
+    rw [ncard_diff_singleton_add_one hf hfin'', ←nat.succ_eq_add_one] at hcard', 
+    refine ⟨hfin'', hcard'⟩},
+  { rw [insert_diff_of_mem _ hf.1, diff_diff_comm], exact hfin.diff _,  },
+  rw [insert_diff_of_mem _ hf.1, diff_diff_comm, ncard_diff_singleton_of_mem he hfin, hcard, 
+    nat.succ_sub_one], 
+end  
+
+private lemma finite_of_finite_of_exch {base : set E → Prop} (exch : exchange_property base) 
+(hB : base B) (hB' : base B') (h : B.finite) : 
   B'.finite :=
 begin
-  suffices h_win : ∀ (X ⊆ B) (B' : set E), B \ B' ⊆ X → base B' → B'.finite,   
-    from h_win _ (diff_subset _ _) _ subset.rfl hB', 
-  clear hB' B', 
-  
-  refine λ X hX, (h.subset hX).strong_induction_on (λ Y hYX hY B' hBB' hB', _),
-  obtain (rfl | hne) := Y.eq_empty_or_nonempty, 
-  { rw [diff_subset_iff, union_empty] at hBB', 
-    rwa ←antichain_of_exch exch hB hB' hBB' },
-  by_contra' h_inf, 
-  rw [←not_infinite, not_not] at h_inf, 
-  obtain ⟨f,hf⟩ := (h_inf.diff h).nonempty, 
-  obtain ⟨e,heBB', hB₀⟩ := exch _ _ hB' hB _ hf, 
-
-  refine ((hY _ _ _ subset.rfl hB₀).subset (subset_insert _ _)).not_infinite  
-    (h_inf.diff (set.to_finite {f})), 
-  refine ssubset_of_subset_of_ne (subset_trans _ hBB') _, 
-  { nth_rewrite 0 ←inter_union_diff B B',  
-    rw [diff_subset_iff],
-    refine union_subset_union_left _ (subset_trans _ (subset_insert _ _)), 
-    exact subset_diff_singleton (inter_subset_right _ _) 
-      (not_mem_subset (inter_subset_left _ _) hf.2) },
-  rintro rfl, 
-  exact (hBB' heBB').2 (mem_insert _ _), 
+  rw [←inter_union_diff B' B], 
+  exact finite.union (h.subset (inter_subset_right _ _)) 
+    (diff_aux_of_exch exch hB hB' (h.diff _)).1, 
 end 
 
-lemma card_eq_card_of_exchange {B₁ B₂ : set E} {base : set E → Prop} (exch : exchange_property base)
+private lemma card_eq_card_of_exchange {base : set E → Prop} (exch : exchange_property base)
 (hB₁ : base B₁) (hB₂ : base B₂) :
   B₁.ncard = B₂.ncard :=
 begin 
-  obtain (h_fin | h_inf) := B₁.finite_or_infinite, 
-  
-  { suffices h_win : ∀ (X ⊆ B₁) (B' : set E), B₁ \ B' ⊆ X → base B' → B₁.ncard = B'.ncard,   
-    from h_win _ (diff_subset _ _) _ subset.rfl hB₂, 
-    refine λ X hX, (h_fin.subset hX).strong_induction_on (λ Y hYX hY B' hBB' hB', _),
-    
-    obtain (h_empt | ⟨f, hf⟩) := (B' \ B₁).eq_empty_or_nonempty, 
-    { rw antichain_of_exch exch hB' hB₁ (diff_eq_empty.mp h_empt) }, 
-      
-    obtain ⟨e,he,hB₀⟩ := exch _ _ hB' hB₁ _ hf, 
-
-    rw [hY _ (ssubset_of_ne_of_subset _ (subset_trans _ hBB')) _ subset.rfl hB₀, 
-      ncard_exchange he.2 hf.1], 
-    { rintro rfl, exact (hBB' he).2 (mem_insert _ _) },
-    nth_rewrite 0 ←inter_union_diff B₁ B', 
-    rw [diff_subset_iff], 
-    refine union_subset_union_left _ (subset_trans _ (subset_insert _ _)), 
-    exact subset_diff_singleton (inter_subset_right _ _) 
-        (not_mem_subset (inter_subset_left _ _) hf.2) },
-    rw [h_inf.ncard, set.infinite.ncard], 
-    by_contra h_fin', 
-    exact (finite_of_finite_of_exch exch hB₂ (not_infinite.mp h_fin') hB₁).not_infinite h_inf, 
+  obtain (hB₁' | hB₁') := B₁.finite_or_infinite.symm,
+  { rw [hB₁'.ncard, infinite.ncard (λ h, hB₁' (finite_of_finite_of_exch exch hB₂ hB₁ h))] },
+  have hdcard := (diff_aux_of_exch exch hB₁ hB₂ (hB₁'.diff _)).2,
+  have hB₂' := finite_of_finite_of_exch exch hB₁ hB₂ hB₁', 
+  rw [←ncard_inter_add_ncard_diff_eq_ncard B₁ B₂ hB₁', ←hdcard, inter_comm, 
+    ncard_inter_add_ncard_diff_eq_ncard B₂ B₁ hB₂'],
 end
 
+end prelim
 
-/-- A `matroid` is a nonempty collection of sets satisfying the exchange property. Each such set
-  is called a `base` of the matroid. -/
+/-- A `matroid` is a nonempty collection of sets satisfying the exchange property and the maximal
+  subset property. Each such set is called a `base` of the matroid. -/
 
 @[ext] structure matroid (E : Type*) :=
   (base : set E → Prop)
@@ -93,8 +90,7 @@ end
   (base_exchange' : exchange_property base)
   (maximality : exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B))
 
-instance {E : Type*} [finite E] :
-  finite (matroid E) :=
+instance {E : Type*} [finite E] : finite (matroid E) :=
 finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by {ext, dsimp only at h, rw h}))
 
 instance {E : Type*} : nonempty (matroid E) :=
@@ -108,7 +104,6 @@ instance {E : Type*} : nonempty (matroid E) :=
       exact ⟨hIB, λ b hb _ _, hb⟩ }⟩⟩
 
 namespace matroid
-/- None of these definitions require finiteness -/
 
 section defs
 
@@ -119,9 +114,9 @@ def indep (M : matroid E) (I : set E) : Prop :=
   ∃ B, M.base B ∧ I ⊆ B
 
 /-- A basis for a set `X` is a maximal independent subset of `X`
-  (Often in the literature, the word 'basis' is used to refer to what we call a 'base')-/
+  (Often in the literature, the word 'basis' is used to refer to what we call a 'base'). -/
 def basis (M : matroid E) (I X : set E) : Prop :=
-  M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J
+  I ∈ maximals (⊆) {A | M.indep A ∧ A ⊆ X}
 
 /-- A circuit is a minimal dependent set -/
 def circuit (M : matroid E) (C : set E) : Prop :=
@@ -143,9 +138,9 @@ def hyperplane (M : matroid E) (H : set E) : Prop :=
 def cocircuit (M : matroid E) (K : set E) : Prop :=
   M.hyperplane Kᶜ
 
-/-- A coindependent set is one that contains no cocircuit -/
+/-- A coindependent set is one that is disjoint from some base -/
 def coindep (M : matroid E) (I : set E) : Prop :=
-  ∀ ⦃K⦄, K ⊆ I → ¬ M.cocircuit K
+  ∃ B, M.base B ∧ disjoint I B
 
 /-- A loop is a member of the closure of the empty set -/
 def loop (M : matroid E) (e : E) : Prop :=
@@ -183,7 +178,7 @@ lemma base.eq_of_subset_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hB₁B
 antichain_of_exch M.base_exchange' hB₁ hB₂ hB₁B₂
 
 lemma base.finite_of_finite (hB : M.base B) (h : B.finite) (hB' : M.base B') : B'.finite :=
-finite_of_finite_of_exch M.base_exchange' hB h hB' 
+finite_of_finite_of_exch M.base_exchange' hB hB' h
 
 lemma base.infinite_of_infinite (hB : M.base B) (h : B.infinite) (hB₁ : M.base B₁) :
   B₁.infinite :=
@@ -200,6 +195,23 @@ lemma finite_rk_of_finite_base (hB : M.base B) (h : B.finite) : finite_rk M := �
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
+lemma base.diff_finite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
+  (B₁ \ B₂).finite ↔ (B₂ \ B₁).finite := 
+⟨λ h, (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).1, 
+  λ h, (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h).1⟩
+
+lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+  (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
+not_iff_not.mpr (hB₁.diff_finite_comm hB₂)
+
+lemma base.card_diff_eq_card_diff (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+  (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
+begin
+  obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
+  { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
+  rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
+end 
+  
 end base
 
 section of_finite_rk 
@@ -217,7 +229,7 @@ matroid E :=
     rintro I X ⟨B, hB, hIB⟩ hIX, 
     have hfin : ∀ {B'}, base B' → B'.finite, 
     { obtain ⟨Bfin, hBfin, hfin⟩ := exists_finite_base, 
-      exact λ B' hB', finite_of_finite_of_exch base_exchange' hBfin hfin hB' },
+      exact λ B' hB', finite_of_finite_of_exch base_exchange' hBfin hB' hfin },
     set W := {Y : set E | (λ (I : set E), ∃ (B : set E), base B ∧ I ⊆ B) Y ∧ I ⊆ Y ∧ Y ⊆ X}, 
     
     have hW : ∀ {S : set E}, S ∈ W → S.finite ∧ S.ncard ≤ B.ncard, 
@@ -311,56 +323,4 @@ end
 
 end of_finite_rk 
 
-variables {I B B' X B₁ B₂ : set E} {M : matroid E}
-
-lemma indep.exists_insert_of_not_base (hI : M.indep I) (hI' : ¬M.base I) (hB : M.base B) : 
-  ∃ e ∈ B \ I, M.indep (insert e I) :=
-begin
-  obtain ⟨B', hB', hIB'⟩ := hI, 
-  obtain ⟨x, hxB', hx⟩ := exists_of_ssubset (hIB'.ssubset_of_ne (by { rintro rfl, exact hI' hB' })), 
-  obtain (hxB | hxB) := em (x ∈ B), 
-  { exact ⟨x, ⟨hxB, hx⟩ , ⟨B', hB', insert_subset.mpr ⟨hxB',hIB'⟩⟩⟩ },
-  obtain ⟨e,he, hbase⟩ := hB'.exchange hB ⟨hxB',hxB⟩,    
-  exact ⟨e, ⟨he.1, not_mem_subset hIB' he.2⟩, 
-    ⟨_, hbase, insert_subset_insert (subset_diff_singleton hIB' hx)⟩⟩,  
-end  
-
--- lemma indep 
-
-def dual (M : matroid E) : matroid E := 
-matroid_of_indep (λ I, ∃ B, M.base B ∧ disjoint I B) 
-(M.exists_base.imp (λ B hB, ⟨hB, empty_disjoint B⟩))
-(λ I J ⟨B, hB, hJB⟩ hIJ, ⟨B, hB, disjoint_of_subset_left hIJ hJB⟩) 
-(begin
-  rintro I B' ⟨B, hB, hIB⟩ hI hB',   
-  -- have := M.maximality (B' \ I) (B' \ I ∪ B) ⟨B', hB', _⟩, 
-end) 
- sorry 
-
-
-
 end matroid
-
--- lemma ind_aug {I B : set E} ()
-
--- TODO : prove strong basis exchange (and hence define duality) in this file.
-
--- lemma base.indep (hB : M.base B) :
---   M.indep B :=
--- sorry
-
--- lemma base.insert_dep (hB : M.base B) (h : e ∉ B) :
---   ¬M.indep (insert e B) := sorry
-
--- lemma base_iff_maximal_indep :
---   M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → B = I :=
--- sorry
-
--- lemma indep.unique_circuit_of_insert {e : E} (hI : M.indep I) (hI' : ¬M.indep (insert e I)) :
---   ∃! C, C ⊆ insert e I ∧ M.circuit C ∧ e ∈ C := sorry
-
--- lemma subset_cl (M : matroid E) (X : set E) :
---   X ⊆ M.cl X := sorry
-
--- -- lemma base_iff_indep_card :
--- --   M.base B ↔ M.indep B ∧ B.ncard =
