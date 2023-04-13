@@ -160,7 +160,11 @@ structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_monoid W] [module 𝔽 W]
 (to_fun : E → W)
 (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun (e : E)) ↔ M.indep I)
 
-instance : has_coe_to_fun (rep' 𝔽 W M) (λ _, E → W) := ⟨λ φ, φ.to_fun⟩
+instance fun_like : fun_like (rep' 𝔽 W M) E (λ _, W) :=
+{ coe := rep'.to_fun,
+  coe_injective' := λ f g h, by cases f; cases g; congr' }
+
+instance : has_coe_to_fun (rep' 𝔽 W M) (λ _, E → W) := fun_like.has_coe_to_fun
 
 def rep'.to_submodule (φ : rep' 𝔽 W M) : submodule 𝔽 W := span 𝔽 (set.range φ)
 
@@ -175,10 +179,15 @@ def rep'.compose (φ : rep' 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : re
   begin
     intros I,
     rw [←φ.valid],
+    rw linear_independent_image sorry,
     convert linear_map.linear_independent_iff e.to_linear_map sorry using 1,
 
     -- have := ((linear_equiv.refl 𝔽 W).to_linear_map.dom_restrict (φ.to_submodule)).linear_independent_iff sorry,
     rw ← iff_iff_eq,
+    simp,
+    
+    
+    --rw rep.valid φ,                      
     sorry,
 
     --rw linear_independent_equiv,
@@ -189,15 +198,34 @@ end other_rep
 -- lemma rep_equiv (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι ι' : Type*) (φ : rep 𝔽 M ι)
 -- (e : (ι → 𝔽))
 
-lemma foo (h : M.is_representable 𝔽) :
+-- i think we're doing something wrong, it can't be this complicated
+lemma foo (φ : rep 𝔽 M ι) [fintype 𝔽] [fintype (span 𝔽 (set.range φ))] :
   nonempty (rep 𝔽 M (fin M.rk))  :=
 begin
-  obtain ⟨ι, ⟨φ⟩⟩ := h,
-  obtain ⟨B, hB⟩ := M.exists_base,
-  have h1 := φ.of_base hB,
-  have h2 := basis.mk (linear_independent_span $ φ.valid.2 hB.indep),
+  have h1 := φ.of_rank,
+  have h2 : finite_dimensional.finrank 𝔽 (fin M.rk → 𝔽) = M.rk, 
+  simp,
+  rw ← h2 at h1,
+  rw ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq at h1,
+  cases h1 with l,
+  have h3 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
+  use λ x, (l ⟨φ x, h3 x⟩),
+  intros I,
+  rw ← φ.valid,
+  --refine ⟨λ h, _, λ h, _⟩,
+  have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
+  refine ⟨λ h, _, λ h, _⟩,
+  -- apply linear_independent_span,  
+  -- i think this is what i want but it gives me a deterministic timeout...
+ -- have h5 := (linear_map.linear_independent_iff ((span 𝔽 (range φ)).subtype) _).2 h,
+  simp,
+  --have h2 := linear_map.mem_submodule_image,
+  --rw linear_map.linear_independent_iff l.to_linear_map,
+  --convert linear_map.linear_independent_iff l.to_linear_map sorry using 1,
   --have h2 := gram_schmidt_linear_independent,
   sorry,
+  sorry,
+  --have h2 := @mem_range_self (ι → 𝔽) E φ x,
 end
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
