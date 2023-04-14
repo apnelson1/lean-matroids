@@ -12,7 +12,8 @@ open set
 
 namespace matroid
 
-/-- The rank `r X` of a set `X` is the cardinality of one of its bases. -/
+/-- The rank `r X` of a set `X` is the cardinality of one of its bases, or zero if its bases are 
+  infinite -/
 def r {E : Type*} (M : matroid E) (X : set E) : ℕ := ⨅ (I : {I | M.basis I X}), ncard (I : set E)
 
 /-- The rank `M.rk` of a matroid is the rank of its ground set -/
@@ -20,13 +21,16 @@ def rk {E : Type*} (M : matroid E) : ℕ := M.r univ
 
 lemma rk_def {E : Type*} (M : matroid E) : M.rk = M.r univ := rfl 
 
-variables {E : Type*} {M : matroid E} [finite_rk M] {B X Y X' Y' Z I J : set E} {e f x y z : E}
+variables {E : Type*} {M : matroid E}  {B X Y X' Y' Z I J : set E} {e f x y z : E}
 
-/-- The rank of a set is the size of a basis. TODO : this should hold without `finite_rk`. -/
+/-- A set with no finite basis has the junk rank value of zero -/
+lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X)
+
+/-- The rank of a set is the size of a basis -/
 lemma basis.card (hI : M.basis I X) : I.ncard = M.r X :=
 begin
   have hrw : ∀ J : {J : set E | M.basis J X}, (J : set E).ncard = I.ncard,
-  { rintro ⟨J, (hJ : M.basis J X)⟩, rw [subtype.coe_mk, hI.card_eq_card hJ] },
+  { rintro ⟨J, (hJ : M.basis J X)⟩, rw [subtype.coe_mk, hI.card_eq_card_of_basis hJ] },
   haveI : nonempty {J : set E | M.basis J X}, from let ⟨I,hI⟩ := M.exists_basis X in ⟨⟨I,hI⟩⟩,
   simp_rw [r, hrw, cinfi_const],
 end
