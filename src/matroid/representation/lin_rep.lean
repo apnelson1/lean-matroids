@@ -54,7 +54,7 @@ instance : has_coe_to_fun (rep 𝔽 M ι) (λ _, E → ι → 𝔽) := fun_like.
 
 lemma valid (φ : rep 𝔽 M ι) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
 
-protected lemma is_representable {ι : Type u} (φ : rep 𝔽 M ι) : is_representable.{_ _ u} 𝔽 M :=
+protected lemma is_representable' {ι : Type u} (φ : rep 𝔽 M ι) : is_representable.{_ _ u} 𝔽 M :=
 ⟨ι, ⟨φ⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 M ι) (hI : M.indep I) : inj_on φ I :=
@@ -254,15 +254,17 @@ begin
   --simp only [fintype.card_of_finset, mem_compl_iff, mem_singleton_iff, to_finset_univ],
   rw [← to_finset_card, to_finset_diff, finset.card_sdiff, to_finset_card univ],
   
-  simp,
+  simp only [to_finset_card, card_singleton],
   sorry,
   simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff],
   --rw ← fintype.card_fin 3 at h2,
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
   have φ := @rep.mk _ _ (zmod 2) _ (canonical_unif 2 3) (fin 2) (λ x, ↑(f.to_fun x)) _,
-  rw [matroid.is_binary, is_representable],
+  rw [matroid.is_binary],
+  have h2 := φ.is_representable',
   
   --use (fin 2) φ,
+  -- why doesn't use (fin 2) work?
   sorry,
   intros I,
   refine ⟨λ h, _, λ h, _⟩,  
@@ -274,9 +276,9 @@ begin
   rw le_iff_lt_or_eq at h4,
   cases h4 with h0 h1,
   have h5 := nat.lt_one_iff.1 h0,
-  simp at h5,
+  simp only [ncard_eq_zero] at h5,
   rw h5,
-  simp,
+  simp only [equiv.to_fun_as_coe],
   have h6 := (linear_independent_image sorry).2,
   --apply linear_independent_empty,
   sorry,
