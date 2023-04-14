@@ -150,9 +150,12 @@ begin
   exact h heI, 
 end 
 
+lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
+  e ∈ M.cl I ↔ ¬M.indep (insert e I) :=
+by rw [hI.mem_cl_iff, (iff_false _).mpr heI, imp_false]
+
 lemma indep.not_mem_cl_iff (hI : M.indep I) : x ∉ M.cl I ↔ x ∉ I ∧ M.indep (insert x I) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
-
 
 lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set E) (h : M.indep (⋃ i, I i)) :
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
@@ -410,6 +413,30 @@ lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
 
 
+/- ### Exchange -/
+
+-- TODO. This is currently in the rank folder (for `finite_rk`), but it shouldn't need it
+
+-- theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (he : e ∈ B₁ \ B₂) :
+--   ∃ f ∈ B₂ \ B₁, M.base (insert e (B₂ \ {f})) ∧ M.base (insert f (B₁ \ {e})) :=
+-- begin
+--   suffices : ∃ f ∈ B₂ \ B₁, M.indep (insert e (B₂ \ {f})) ∧ M.indep (insert f (B₁ \ {e})),
+--   { obtain ⟨f,hf,h₁,h₂⟩:= this, 
+--     exact ⟨f,hf,hB₂.exchange_base_of_indep hf.1 he.2 h₁, hB₁.exchange_base_of_indep he.1 hf.2 h₂⟩ },
+--   by_contra' h', 
+  
+--   have h₁ : ∀ f ∈ (B₂ \ B₁), M.indep (insert e (B₂ \ {f})) → f ∈  M.cl (B₁ \ {e}) ,  
+--   { rintro f hf hi, 
+--     rw [(hB₁.indep.diff _).mem_cl_iff_of_not_mem (λ h, hf.2 h.1)],
+--     exact (h' f hf) hi }, 
+  
+--   -- have := λ (f : E) (hf : f ∈ B₂ \ B₁), M.indep (insert f (B₁ \ {e})) → ¬M.indep (insert )  
+--   -- have : ∀ f ∈  (B₂ \ B₁) ∩ M.cl (insert e (B₂ \ {f})), false, 
+--   -- { },
+--   -- by_contra' h', 
+
+-- end 
+
 
 
 /- ### Covering  -/
@@ -446,7 +473,7 @@ lemma covby.eq_of_ssubset_of_subset (h : M.covby F₀ F₁) (hF : M.flat F) (hF�
   F = F₁ :=
 (h.2.2.2 F hF hF₀.subset hF₁).elim (λ h', (hF₀.ne.symm h').elim) id
 
-lemma covby.cl_insert_eq [finite_rk M] (h : M.covby F₀ F₁) (he : e ∈ F₁ \ F₀) :
+lemma covby.cl_insert_eq  (h : M.covby F₀ F₁) (he : e ∈ F₁ \ F₀) :
   M.cl (insert e F₀) = F₁ :=
 h.eq_of_ssubset_of_subset (M.flat_of_cl _)
   ((ssubset_insert he.2).trans_subset (M.subset_cl _))
@@ -474,8 +501,6 @@ end
 /- ### Hyperplanes -/
 
 section hyperplane
-
-variables [finite_rk M]
 
 lemma hyperplane_def : M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
 iff.rfl

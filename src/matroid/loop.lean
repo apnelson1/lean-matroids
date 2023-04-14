@@ -9,8 +9,7 @@ import .rank
 
 open_locale classical
 
-variables {E : Type*} [finite E] {M M₁ M₂ : matroid E}
-  {I C X Y Z F F₁ F₂ : set E} {e f x y z : E}
+variables {E : Type*} {M M₁ M₂ : matroid E} {I C X Y Z F F₁ F₂ : set E} {e f x y z : E}
     
 open set
 
@@ -34,11 +33,12 @@ end
 
 lemma loop_iff_r : M.loop e ↔ M.r {e} = 0 :=
 begin
-  rw [loop_iff_dep, indep_iff_r_eq_card, ncard_singleton],
+  rw [loop_iff_dep, indep_iff_r_eq_card_of_finite (finite_singleton e), ncard_singleton],
   refine ⟨λ h, nat.eq_zero_of_le_zero (nat.lt_succ_iff.mp _), 
-    λ h h', (nat.zero_ne_one (h.symm.trans h'))⟩,
-  convert (M.r_le_card {e}).lt_of_ne (by rwa ncard_singleton),
-  rw ncard_singleton,  
+    λ h h', (nat.zero_ne_one (h.symm.trans h'))⟩, 
+  convert (M.r_le_card_of_finite (finite_singleton e)).lt_of_ne _,
+  { rw ncard_singleton }, 
+  rwa ncard_singleton,  
 end 
 
 lemma loop_iff_not_mem_base_forall : M.loop e ↔ ∀ B, M.base B → e ∉ B :=
@@ -83,7 +83,7 @@ cl_eq_loops_of_subset (singleton_subset_iff.mpr he)
 lemma loop_iff_cl_eq_cl_empty : M.loop e ↔ M.cl {e} = M.cl ∅ :=
 ⟨λ h, by rw h.cl ,λ h, by { rw [loop_iff_mem_cl_empty, ←h], exact M.mem_cl_self e }⟩
 
-lemma r_eq_zero_iff_forall_loop : M.r X = 0 ↔ ∀ e ∈ X, M.loop e :=
+lemma r_eq_zero_iff_forall_loop [finite_rk M] : M.r X = 0 ↔ ∀ e ∈ X, M.loop e :=
 begin
   refine ⟨λ h e he, loop_iff_r.mpr ((nat.zero_le _).antisymm' _), λ h, (nat.zero_le _).antisymm' _⟩,
   { rw ←h, exact M.r_mono (singleton_subset_iff.mpr he) },
@@ -91,7 +91,7 @@ begin
   rwa [r_cl, r_empty] at h', 
 end 
 
-lemma r_eq_zero_iff_subset_loops : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
+lemma r_eq_zero_iff_subset_loops [finite_rk M] : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
 
 lemma cl_union_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
   M.cl (X ∪ Y) = M.cl X := 
@@ -122,7 +122,7 @@ alias indep_singleton ↔ indep.nonloop nonloop.indep
 attribute [protected] indep.nonloop nonloop.indep
 
 lemma nonloop_iff_r : M.nonloop e ↔ M.r {e} = 1 :=
-by rw [←indep_singleton, indep_iff_r_eq_card, ncard_singleton]
+by rw [←indep_singleton, indep_iff_r_eq_card_of_finite (finite_singleton e), ncard_singleton]
 
 lemma nonloop.r (he : M.nonloop e) : M.r {e} = 1 := nonloop_iff_r.mp he 
 
@@ -176,7 +176,7 @@ end
 
 lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ B, M.base B → e ∈ B := iff.rfl
 
-lemma coloop.r_compl_add_one (he : M.coloop e) : M.r {e}ᶜ + 1 = M.rk :=
+lemma coloop.r_compl_add_one [finite_rk M] (he : M.coloop e) : M.r {e}ᶜ + 1 = M.rk :=
 begin
   obtain ⟨I,hI⟩ := M.exists_basis {e}ᶜ,
   obtain ⟨B, hIB, hB⟩ := hI.indep.subset_basis_of_subset (subset_univ I),
@@ -192,10 +192,10 @@ begin
       exact diff_subset_diff_left (subset_univ _) },
     exact insert_subset.mpr ⟨he hB, hIB⟩},
   subst hIB',
-  rw [←hI.r, hI.indep.r, ←hB.r, hB.indep.r, ncard_insert_of_not_mem heI],
+  rw [←hI.r, hI.indep.r, ←hB.r, hB.indep.r, ncard_insert_of_not_mem heI hI.finite],
 end
 
-lemma coloop_iff_r_compl_add_one_eq : M.coloop e ↔ M.r {e}ᶜ + 1 = M.rk :=
+lemma coloop_iff_r_compl_add_one_eq [finite_rk M] : M.coloop e ↔ M.r {e}ᶜ + 1 = M.rk :=
 begin
   refine ⟨coloop.r_compl_add_one, λ h B hB, by_contra (λ h', _)⟩,
   rw ←subset_compl_singleton_iff at h',
@@ -204,7 +204,7 @@ begin
   simpa only [add_le_iff_nonpos_right, le_zero_iff, nat.one_ne_zero] using hB',
 end
 
-lemma coloop_iff_r_compl_lt : M.coloop e ↔ M.r {e}ᶜ < M.rk :=
+lemma coloop_iff_r_compl_lt [finite_rk M] : M.coloop e ↔ M.r {e}ᶜ < M.rk :=
 begin
   refine ⟨λ h, _,λ h, _⟩,
   { rw ←h.r_compl_add_one, apply lt_add_one, },
@@ -214,7 +214,7 @@ begin
   rw [coloop_iff_r_compl_add_one_eq, eq_comm, rk, ←he, r_insert_eq_add_one_of_r_ne h.ne.symm],
 end
 
-lemma coloop.coe_r_compl (he : M.coloop e) : (M.r {e}ᶜ : ℤ) = M.rk - 1 :=
+lemma coloop.coe_r_compl [finite_rk M] (he : M.coloop e) : (M.r {e}ᶜ : ℤ) = M.rk - 1 :=
 by simp [←he.r_compl_add_one]
 
 lemma coloop.not_mem_circuit (he : M.coloop e) (hC : M.circuit C) : e ∉ C :=

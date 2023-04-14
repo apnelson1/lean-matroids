@@ -4,115 +4,93 @@ noncomputable theory
 
 open_locale classical
 
-variables {E : Type*} [finite E] {M M₁ M₂ : matroid E} {B B₁ B₂ X Y Z : set E} {e f x y z : E}
+variables {E : Type*} {M M₁ M₂ : matroid E} {B B₁ B₂ X Y Z : set E} {e f x y z : E}
 
 open set
 namespace matroid
 
 section dual
- 
--- /-- The dual of a matroid. Its bases are the complements of bases -/
--- def dual (M : matroid E) : matroid E := matroid_of_base_of_finite
---  (λ B, M.base Bᶜ) (exists.elim M.exists_base (λ B hb, ⟨Bᶜ, by rwa compl_compl⟩))
---   (begin
---     rintro B₁ B₂ hB₁ hB₂ x ⟨hx₁,hx₂⟩,
---     rw [←mem_compl_iff] at hx₂,
---     rw [←not_mem_compl_iff] at hx₁,
---     obtain ⟨y,hy,hB⟩ := hB₂.rev_exchange hB₁ ⟨hx₂, hx₁⟩,
---     rw [diff_eq_compl_inter, compl_compl] at hy,
---     refine ⟨y,hy, _⟩,
---     rwa [←union_singleton, compl_union, diff_eq_compl_inter, compl_inter, compl_compl,
---       singleton_union, inter_comm, ←diff_eq_compl_inter, ←insert_diff_singleton_comm],
---     rintro rfl,
---     exact hx₁ hy.2,
---   end)
 
--- @[simp] lemma dual_base_iff :
---   M.dual.base B ↔ M.base Bᶜ :=
--- iff.rfl 
+
 
 @[class] structure has_matroid_dual (α : Type*) := (dual : α → α)
 
 postfix `﹡`:(max+1) := has_matroid_dual.dual 
 
-instance {E : Type*} : 
+instance matroid_dual {E : Type*} : has_matroid_dual (matroid E) := ⟨matroid.dual⟩ 
 
-lemma base_iff_dual_base_compl : 
-  M.base B ↔ M﹡.base Bᶜ :=
+@[simp] lemma dual_base_iff : M﹡.base B ↔ M.base Bᶜ := base_dual_iff' 
+
+lemma base_iff_dual_base_compl : M.base B ↔ M﹡.base Bᶜ :=
 by rw [←compl_compl B, dual_base_iff, compl_compl, compl_compl]
 
-@[simp] lemma dual_dual (M : matroid E):
-  M.dual.dual = M :=
-by {ext, simp}
+@[simp] lemma dual_dual (M : matroid E) : M﹡﹡ = M := dual_dual' M
 
-lemma dual_inj (h : M₁.dual = M₂.dual) :
-  M₁ = M₂ :=
+@[simp] lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := dual_indep_iff_coindep'
+
+lemma base.compl_base_dual (hB : M.base B) : M﹡.base Bᶜ := hB.compl_base_dual'
+
+lemma base.compl_inter_basis_of_inter_basis (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
+  M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ := hB.compl_inter_basis_of_inter_basis' hBX
+
+lemma base.inter_basis_iff_compl_inter_basis_dual (hB : M.base B) : 
+  M.basis (B ∩ X) X ↔ M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ :=
+hB.inter_basis_iff_compl_inter_basis_dual'
+ 
+lemma dual_inj (h : M₁﹡ = M₂﹡) : M₁ = M₂ :=
 by {ext B, rw [←compl_compl B, ←dual_base_iff, h, dual_base_iff]}
 
-@[simp] lemma dual_inj_iff :
-  M₁.dual = M₂.dual ↔ M₁ = M₂ :=
-⟨dual_inj, congr_arg _⟩
+@[simp] lemma dual_inj_iff : M₁﹡ = M₂﹡ ↔ M₁ = M₂ := ⟨dual_inj, congr_arg _⟩
 
 end dual
 
-lemma dual_indep_iff :
-  M.dual.indep X ↔ ∃ B, M.base B ∧ disjoint B X :=
-begin
-  simp_rw [indep_iff_subset_base, dual_base_iff],
-  split,
-  { rintro ⟨B, hB, hXB⟩,
-    exact ⟨_,hB,by rwa [←subset_compl_iff_disjoint_left, compl_compl]⟩},
-  rintro ⟨B,hB,hBX⟩,
-  exact ⟨Bᶜ,by rwa compl_compl,subset_compl_iff_disjoint_left.mpr hBX⟩,
-end
+lemma coindep_iff_disjoint_base : M.coindep X ↔ ∃ B, M.base B ∧ disjoint X B := iff.rfl 
 
-lemma dual_indep_iff_coindep :
-  M.dual.indep X ↔ M.coindep X :=
-begin
-  rw [dual_indep_iff, ←compl_compl X],
-  set Y := Xᶜ with hY,
+
+-- @[simp] lemma dual_indep_iff_coindep :
+--   M.dual.indep X ↔ M.coindep X :=
+-- begin
+--   rw [dual_indep_iff, ←compl_compl X],
+--   set Y := Xᶜ with hY,
   
-  simp_rw [disjoint_compl_right_iff_subset, coindep, cocircuit],
-  rw [(by {split, tauto, tauto} : (∃ (B : set E), M.base B ∧ B ⊆ Y) ↔ (∃ B ⊆ Y, M.base B)),
-    base_subset_iff_cl_eq_univ],
+--   simp_rw [disjoint_compl_right_iff_subset, coindep, cocircuit],
+--   rw [(by {split, tauto, tauto} : (∃ (B : set E), M.base B ∧ B ⊆ Y) ↔ (∃ B ⊆ Y, M.base B)),
+--     base_subset_iff_cl_eq_univ],
 
-  split,
-  { intros hYcl K hKY hK,
-    rw subset_compl_comm at hKY,
-    exact ((hYcl.symm.trans_subset (M.cl_mono hKY)).trans_eq
-      (hK.flat.cl)).not_ssubset (hK.ssubset_univ)},
-  rintro h, by_contra h',
-  rw [←ne.def, subset_hyperplane_iff_cl_ne_univ] at h',
-  obtain ⟨H, hH, hYH⟩ := h',
-  exact h (compl_subset_compl.mpr hYH) (by rwa compl_compl),
-end
+--   split,
+--   { intros hYcl K hKY hK,
+--     rw subset_compl_comm at hKY,
+--     exact ((hYcl.symm.trans_subset (M.cl_mono hKY)).trans_eq
+--       (hK.flat.cl)).not_ssubset (hK.ssubset_univ)},
+--   rintro h, by_contra h',
+--   rw [←ne.def, subset_hyperplane_iff_cl_ne_univ] at h',
+--   obtain ⟨H, hH, hYH⟩ := h',
+--   exact h (compl_subset_compl.mpr hYH) (by rwa compl_compl),
+-- end
 
-lemma coindep_iff_disjoint_base : 
-  M.coindep X ↔ ∃ B, M.base B ∧ disjoint B X :=   
-by rw [←dual_indep_iff_coindep, dual_indep_iff]
 
-lemma dual_indep_iff_r :
-  M.dual.indep X ↔ M.r Xᶜ = M.rk :=
+
+lemma dual_indep_iff_r [finite E] : M﹡.indep X ↔ M.r Xᶜ = M.rk :=
 begin
-  rw [dual_indep_iff],
+  rw [dual_indep_iff_coindep, coindep_iff_disjoint_base],
   split,
   { rintros ⟨B,hB,hBX⟩,
     refine le_antisymm (M.r_le_rk _) _,
-    rw ←subset_compl_iff_disjoint_right at hBX,
+    rw ←subset_compl_iff_disjoint_left at hBX,
     rw [←hB.r],
     exact M.r_mono hBX},
   intro hr,
   obtain ⟨B, hB⟩ := M.exists_basis Xᶜ,
-  refine ⟨B, hB.indep.base_of_rk_le_card _, subset_compl_iff_disjoint_right.mp hB.subset⟩,
+  refine ⟨B, hB.indep.base_of_rk_le_card _, subset_compl_iff_disjoint_left.mp hB.subset⟩,
   rw [←hB.indep.r, hB.r, hr],
 end
 
-lemma loop.dual_coloop (he : M.loop e) :
-  M.dual.coloop e :=
+lemma loop.dual_coloop (he : M.loop e) : M﹡.coloop e :=
 begin
   intros B hB,
   rw dual_base_iff at hB,
-  simpa using he.not_mem_indep hB.indep,
+  have := he.not_mem_indep, 
+  -- simpa using he.not_mem_indep hB.indep,
 end
 
 lemma coloop.dual_loop (he : M.coloop e) :
