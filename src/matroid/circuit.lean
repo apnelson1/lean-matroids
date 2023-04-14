@@ -125,7 +125,6 @@ begin
   rw [diff_singleton_eq_self he], exact subset_cl _ _, 
 end
 
-
 lemma indep.unique_circuit_of_insert (hI : M.indep I) (a : E) (hXa : ¬ M.indep (insert a I) ):
   ∃! C, C ⊆ insert a I ∧ M.circuit C ∧ a ∈ C :=
 begin
@@ -141,18 +140,13 @@ begin
   have hcl : a ∈ M.cl (C₁ \ {a}) ∩ M.cl (C₂ \ {a}), 
     from ⟨ hC₁.subset_cl_diff_singleton a haC₁, hC₂.subset_cl_diff_singleton a haC₂⟩, 
   have hi := (hI.subset (union_subset hC₁I hC₂I)), 
-  have hii : M.indep ((C₁ \ {a}) ∩ (C₂ \ {a})), sorry, 
-  rw [inter_cl_eq_cl_inter_of_union_indep hi, hii.mem_cl_iff] at hcl,  
-  simp only [mem_inter_iff, not_mem_diff_singleton, and_self] at hcl, 
-  rw [insert_inter_distrib] at hcl, simp only [insert_diff_singleton] at hcl, 
-
+  have hii : M.indep ((C₁ \ {a}) ∩ (C₂ \ {a})), from hI.subset ((inter_subset_left _ _).trans hC₁I), 
   
-
-
-  -- obtain ⟨C,hCss,hC⟩ := hC₁.elimination hC₂ hne a,
-  -- have h := hCss.trans (@diff_subset_diff_left _ _ _ {a} (union_subset hC₁X hC₂X)),
-  -- simp only [insert_diff_of_mem, mem_singleton] at h,
-  -- refine hC.dep (hX.subset (h.trans (diff_subset _ _))),
+  simp only [inter_cl_eq_cl_inter_of_union_indep hi, hii.mem_cl_iff, 
+    mem_inter_iff, not_mem_diff_singleton, and_self, 
+    insert_inter_distrib, insert_diff_singleton, imp_false] at hcl, 
+  rw [←hC₁.eq_of_dep_subset hcl ((inter_subset_left _ _).trans (by rw insert_eq_of_mem haC₁)), 
+    hC₂.eq_of_dep_subset hcl ((inter_subset_right _ _).trans (by rw insert_eq_of_mem haC₂))], 
 end
 
 lemma mem_cl_iff_exists_circuit :
@@ -263,8 +257,6 @@ begin
   obtain ⟨C, hCss, hC,-⟩ := hC₁.strong_elimination hC₂ he hf, 
   exact h' C hCss hC, 
 end  
-
-
 
 end matroid
 

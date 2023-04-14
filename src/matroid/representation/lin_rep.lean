@@ -21,27 +21,27 @@ end set
 
 noncomputable theory
 
-open function set submodule
+open function set submodule finite_dimensional 
 open_locale classical
 
 universe u
-variables {E 𝔽 ι : Type*} [field 𝔽] [fintype E] {M : matroid E} {I B : set E} {x : E}
+variables {E 𝔽 : Type*} {ι : Type} [field 𝔽] [fintype E] {M : matroid E} {I B : set E} {x : E}
 -- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
 
 namespace matroid
 
 /-- A `𝔽`-matroid representation is a map from the base of the matroid to `ι → 𝔽` such that a set -/
-structure rep (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type*) :=
+structure rep (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type) :=
 (to_fun : E → ι → 𝔽)
 (valid' : ∀ I : set E, linear_independent 𝔽 (λ e : I, to_fun e) ↔ M.indep I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
-def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ ι, nonempty (rep 𝔽 M ι)
+def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ (ι : Type), nonempty (rep 𝔽 M ι)
 
 namespace rep
 
-def rep.mk (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type*) (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
+def rep.mk (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type) (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
   rep 𝔽 M ι := 
 { to_fun := f,
   valid' := valid }
@@ -54,8 +54,7 @@ instance : has_coe_to_fun (rep 𝔽 M ι) (λ _, E → ι → 𝔽) := fun_like.
 
 lemma valid (φ : rep 𝔽 M ι) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
 
-protected lemma is_representable {ι : Type u} (φ : rep 𝔽 M ι) : is_representable.{_ _ u} 𝔽 M :=
-⟨ι, ⟨φ⟩⟩
+protected lemma is_representable {ι : Type} (φ : rep 𝔽 M ι) : is_representable 𝔽 M := ⟨ι, ⟨φ⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 M ι) (hI : M.indep I) : inj_on φ I :=
 inj_on_iff_injective.2 (φ.valid.2 hI).injective
@@ -166,7 +165,8 @@ end rep
 
 section other_rep
 
-variables {W W' : Type*} [add_comm_monoid W] [module 𝔽 W] [add_comm_monoid W'] [module 𝔽 W']
+variables {W W' : Type*} [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
+[finite_dimensional 𝔽 W]
 
 structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_monoid W] [module 𝔽 W] (M : matroid E) :=
 (to_fun : E → W)
@@ -178,9 +178,38 @@ instance fun_like : fun_like (rep' 𝔽 W M) E (λ _, W) :=
 
 instance : has_coe_to_fun (rep' 𝔽 W M) (λ _, E → W) := fun_like.has_coe_to_fun
 
+@[simp] lemma to_fun_eq_coe (φ : rep' 𝔽 W M) : φ.to_fun = (φ : E → W)  := by { ext, refl }
+
 def rep'.to_submodule (φ : rep' 𝔽 W M) : submodule 𝔽 W := span 𝔽 (set.range φ)
 
 -- def rep'.to_submodule_fun (φ : rep' 𝔽 W M) :
+
+def rep'_of_rep (φ : rep 𝔽 M ι) : rep' 𝔽 (ι → 𝔽) M := ⟨φ, λ I, φ.valid⟩    
+
+-- #check finite_dimensional.finrank
+
+noncomputable def rep_of_rep' (φ : rep' 𝔽 W M) {n : ℕ} (h : finrank 𝔽 W = n) : 
+  rep 𝔽 M (fin n)  := 
+{ to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) (by simpa) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
+-- (begin 
+--     have := φ.to_fun,   
+--     have hr2 : finrank 𝔽 (fin n → 𝔽) = n, from finrank_fin_fun _  , 
+--     rw ←hr2 at h, 
+--     obtain e  := linear_equiv.of_finrank_eq _ _ h, 
+--     -- have := finite_dimensional.nonempty_linear_equiv_of_finrank_eq, 
+--     -- have := finite_dimensional.fin_basis_of_finrank_eq _ _ h.symm, 
+--   end),
+  valid' := 
+  begin
+    intro I,  
+    rw [←φ.valid, to_fun_eq_coe], 
+    exact
+    (linear_equiv.of_finrank_eq _ _ (by simpa) : W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
+    
+    --refine linear_map.linear_independent_iff _ _, 
+    
+
+  end }
 
 lemma rep'.mem_to_submodule (φ : rep' 𝔽 W M) (x : E) : φ x ∈ φ.to_submodule :=
 by { rw [rep'.to_submodule], refine subset_span _, simp }
@@ -261,7 +290,7 @@ begin
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
   have φ := @rep.mk _ _ (zmod 2) _ (canonical_unif 2 3) (fin 2) (λ x, ↑(f.to_fun x)) _,
   rw [matroid.is_binary, is_representable],
-  
+  { refine ⟨fin 2, ⟨φ⟩  ⟩ ,     }
   --use (fin 2) φ,
   sorry,
   intros I,

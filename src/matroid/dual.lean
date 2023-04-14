@@ -10,29 +10,35 @@ open set
 namespace matroid
 
 section dual
+ 
+-- /-- The dual of a matroid. Its bases are the complements of bases -/
+-- def dual (M : matroid E) : matroid E := matroid_of_base_of_finite
+--  (λ B, M.base Bᶜ) (exists.elim M.exists_base (λ B hb, ⟨Bᶜ, by rwa compl_compl⟩))
+--   (begin
+--     rintro B₁ B₂ hB₁ hB₂ x ⟨hx₁,hx₂⟩,
+--     rw [←mem_compl_iff] at hx₂,
+--     rw [←not_mem_compl_iff] at hx₁,
+--     obtain ⟨y,hy,hB⟩ := hB₂.rev_exchange hB₁ ⟨hx₂, hx₁⟩,
+--     rw [diff_eq_compl_inter, compl_compl] at hy,
+--     refine ⟨y,hy, _⟩,
+--     rwa [←union_singleton, compl_union, diff_eq_compl_inter, compl_inter, compl_compl,
+--       singleton_union, inter_comm, ←diff_eq_compl_inter, ←insert_diff_singleton_comm],
+--     rintro rfl,
+--     exact hx₁ hy.2,
+--   end)
 
-/-- The dual of a matroid. Its bases are the complements of bases -/
-def dual (M : matroid E) : matroid E := matroid_of_base_of_finite
- (λ B, M.base Bᶜ) (exists.elim M.exists_base (λ B hb, ⟨Bᶜ, by rwa compl_compl⟩))
-  (begin
-    rintro B₁ B₂ hB₁ hB₂ x ⟨hx₁,hx₂⟩,
-    rw [←mem_compl_iff] at hx₂,
-    rw [←not_mem_compl_iff] at hx₁,
-    obtain ⟨y,hy,hB⟩ := hB₂.rev_exchange hB₁ ⟨hx₂, hx₁⟩,
-    rw [diff_eq_compl_inter, compl_compl] at hy,
-    refine ⟨y,hy, _⟩,
-    rwa [←union_singleton, compl_union, diff_eq_compl_inter, compl_inter, compl_compl,
-      singleton_union, inter_comm, ←diff_eq_compl_inter, ←insert_diff_singleton_comm],
-    rintro rfl,
-    exact hx₁ hy.2,
-  end)
+-- @[simp] lemma dual_base_iff :
+--   M.dual.base B ↔ M.base Bᶜ :=
+-- iff.rfl 
 
-@[simp] lemma dual_base_iff :
-  M.dual.base B ↔ M.base Bᶜ :=
-iff.rfl 
+@[class] structure has_matroid_dual (α : Type*) := (dual : α → α)
+
+postfix `﹡`:(max+1) := has_matroid_dual.dual 
+
+instance {E : Type*} : 
 
 lemma base_iff_dual_base_compl : 
-  M.base B ↔ M.dual.base Bᶜ :=
+  M.base B ↔ M﹡.base Bᶜ :=
 by rw [←compl_compl B, dual_base_iff, compl_compl, compl_compl]
 
 @[simp] lemma dual_dual (M : matroid E):
