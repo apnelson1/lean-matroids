@@ -6,7 +6,7 @@ open set
 
 namespace matroid
 
-variables {E ι : Type*} [finite E] {X Y X' Y'  I C : set E} {e f : E} {M : matroid E}
+variables {E ι : Type*} {X Y X' Y'  I C : set E} {e f : E} {M : matroid E}
 
 /-- Two sets are `skew` if any pair of their independent subsets are disjoint with independent union (equivalently, the sum of their ranks is the rank of their union) -/
 def skew (M : matroid E) (X Y : set E) : Prop :=
@@ -47,13 +47,13 @@ skew_of_subset_loops (singleton_subset_iff.mpr he) X
 lemma loop.skew_singleton (he : M.loop e) (X : set E) : M.skew X {e} := 
 subset_loops_skew X (singleton_subset_iff.mpr he)
 
-lemma skew_iff_r :
+lemma skew_iff_r [finite_rk M] :
   M.skew X Y ↔ M.r X + M.r Y = M.r (X ∪ Y) :=
 begin
   refine ⟨λ h, _, λ hXY, λ I hIX J hJY hI hJ, _⟩,
   { obtain ⟨⟨I,hI⟩,⟨J,hJ⟩⟩ := ⟨M.exists_basis X, M.exists_basis Y⟩, 
     obtain ⟨hdj, hIJ⟩ := h I hI.subset J hJ.subset hI.indep hJ.indep,  
-    rw [hI.r_eq_card, hJ.r_eq_card, ←ncard_union_eq hdj, ←hIJ.r], 
+    rw [hI.r_eq_card, hJ.r_eq_card, ←ncard_union_eq hdj hI.finite hJ.finite, ←hIJ.r], 
     refine (M.r_mono (union_subset_union hI.subset hJ.subset)).antisymm _, 
     rw [←M.r_union_cl_left_eq_r_union I J, hI.cl, ←M.r_union_cl_right_eq_r_union _ J, 
       hJ.cl, r_union_cl_left_eq_r_union, r_union_cl_right_eq_r_union]},
@@ -63,32 +63,33 @@ begin
   
   rw [hI'.r_eq_card, hJ'.r_eq_card, ←r_union_cl_left_eq_r_union, ←hI'.cl, 
     r_union_cl_left_eq_r_union, ←r_union_cl_right_eq_r_union, ←hJ'.cl, 
-    r_union_cl_right_eq_r_union, ←ncard_union_add_ncard_inter  ] at hXY, 
+    r_union_cl_right_eq_r_union, ←ncard_union_add_ncard_inter _ _ hI'.finite hJ'.finite ] at hXY, 
 
-  have hle := (M.r_le_card (I' ∪ J')), 
+  have hle := (M.r_le_card_of_finite (hI'.finite.union hJ'.finite)), 
     
   refine ⟨disjoint_of_subset hII' hJJ' _, indep.subset _ (union_subset_union hII' hJJ')⟩, 
-  { rw [disjoint_iff_inter_eq_empty, ←ncard_eq_zero], linarith },
-  rw [indep_iff_r_eq_card], 
+  { rw [disjoint_iff_inter_eq_empty, ←ncard_eq_zero (hI'.finite.subset (inter_subset_left _ _))], 
+    linarith },
+  rw [indep_iff_r_eq_card_of_finite (hI'.finite.union hJ'.finite)], 
   linarith,
 end 
 
-lemma skew.r_add (h : M.skew X Y) : M.r X + M.r Y = M.r (X ∪ Y) := skew_iff_r.mp h 
+lemma skew.r_add [finite_rk M] (h : M.skew X Y) : M.r X + M.r Y = M.r (X ∪ Y) := skew_iff_r.mp h 
 
 /- these proofs doesn't need to use rank, but are much easier that way for now  -/
-lemma skew.cl_left (h : M.skew X Y) : M.skew (M.cl X) Y := 
+lemma skew.cl_left [finite_rk M] (h : M.skew X Y) : M.skew (M.cl X) Y := 
 by rwa [skew_iff_r, r_union_cl_left_eq_r_union, r_cl, ←skew_iff_r]
 
-lemma skew.cl_left_iff : M.skew X Y ↔ M.skew (M.cl X) Y := 
+lemma skew.cl_left_iff [finite_rk M] : M.skew X Y ↔ M.skew (M.cl X) Y := 
 ⟨skew.cl_left, λ h, h.subset_left (M.subset_cl X)⟩ 
 
-lemma skew.cl_right (h : M.skew X Y) : M.skew X (M.cl Y) := 
+lemma skew.cl_right [finite_rk M] (h : M.skew X Y) : M.skew X (M.cl Y) := 
 by rwa [skew_iff_r, r_union_cl_right_eq_r_union, r_cl, ←skew_iff_r]
 
-lemma skew.cl_right_iff : M.skew X Y ↔ M.skew X (M.cl Y) := 
+lemma skew.cl_right_iff [finite_rk M] : M.skew X Y ↔ M.skew X (M.cl Y) := 
 ⟨skew.cl_right, λ h, h.subset_right (M.subset_cl Y)⟩ 
 
-lemma nonloop.skew_singleton_iff (he : M.nonloop e) : M.skew X {e} ↔ e ∉ M.cl X :=
+lemma nonloop.skew_singleton_iff [finite_rk M] (he : M.nonloop e) : M.skew X {e} ↔ e ∉ M.cl X :=
 begin
   refine ⟨λ h hl, he (h.cl_left.loop_of_inter ⟨hl, mem_singleton _⟩), λ h I hIX J hJe hI hJ, _⟩, 
   obtain (rfl | rfl) := subset_singleton_iff_eq.mp hJe, 
@@ -100,7 +101,7 @@ begin
   exact M.cl_mono hIX,
 end 
 
-lemma nonloop.singleton_skew_iff (he : M.nonloop e) : M.skew {e} X ↔ e ∉ M.cl X := 
+lemma nonloop.singleton_skew_iff [finite_rk M] (he : M.nonloop e) : M.skew {e} X ↔ e ∉ M.cl X := 
 by rw [←he.skew_singleton_iff, skew.comm]
 
 end matroid

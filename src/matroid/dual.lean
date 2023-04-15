@@ -46,33 +46,9 @@ end dual
 
 lemma coindep_iff_disjoint_base : M.coindep X ↔ ∃ B, M.base B ∧ disjoint X B := iff.rfl 
 
-
--- @[simp] lemma dual_indep_iff_coindep :
---   M.dual.indep X ↔ M.coindep X :=
--- begin
---   rw [dual_indep_iff, ←compl_compl X],
---   set Y := Xᶜ with hY,
-  
---   simp_rw [disjoint_compl_right_iff_subset, coindep, cocircuit],
---   rw [(by {split, tauto, tauto} : (∃ (B : set E), M.base B ∧ B ⊆ Y) ↔ (∃ B ⊆ Y, M.base B)),
---     base_subset_iff_cl_eq_univ],
-
---   split,
---   { intros hYcl K hKY hK,
---     rw subset_compl_comm at hKY,
---     exact ((hYcl.symm.trans_subset (M.cl_mono hKY)).trans_eq
---       (hK.flat.cl)).not_ssubset (hK.ssubset_univ)},
---   rintro h, by_contra h',
---   rw [←ne.def, subset_hyperplane_iff_cl_ne_univ] at h',
---   obtain ⟨H, hH, hYH⟩ := h',
---   exact h (compl_subset_compl.mpr hYH) (by rwa compl_compl),
--- end
-
-
-
-lemma dual_indep_iff_r [finite E] : M﹡.indep X ↔ M.r Xᶜ = M.rk :=
+lemma coindep_iff_r [finite E] : M.coindep X ↔ M.r Xᶜ = M.rk :=
 begin
-  rw [dual_indep_iff_coindep, coindep_iff_disjoint_base],
+  rw [coindep_iff_disjoint_base],
   split,
   { rintros ⟨B,hB,hBX⟩,
     refine le_antisymm (M.r_le_rk _) _,
@@ -86,31 +62,25 @@ begin
 end
 
 lemma loop.dual_coloop (he : M.loop e) : M﹡.coloop e :=
-begin
-  intros B hB,
-  rw dual_base_iff at hB,
-  have := he.not_mem_indep, 
-  -- simpa using he.not_mem_indep hB.indep,
-end
+by { intros B hB, rw dual_base_iff at hB, simpa using he.not_mem_indep hB.indep }
 
-lemma coloop.dual_loop (he : M.coloop e) :
-  M.dual.loop e :=
+lemma coloop.dual_loop (he : M.coloop e) : M﹡.loop e :=
 begin
-  simp_rw [loop_iff_dep, dual_indep_iff, not_exists, not_and, disjoint_singleton_right, 
-    not_not_mem],  
+  simp_rw [loop_iff_dep, dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, 
+    not_and, disjoint_singleton_left, not_not], 
   exact he, 
 end 
 
 @[simp] lemma dual_coloop_iff_loop :
-  M.dual.coloop e ↔ M.loop e :=
+  M﹡.coloop e ↔ M.loop e :=
 ⟨λ h, by {rw ← dual_dual M, exact h.dual_loop}, loop.dual_coloop⟩
 
 @[simp] lemma dual_loop_iff_coloop :
-  M.dual.loop e ↔ M.coloop e :=
+  M﹡.loop e ↔ M.coloop e :=
 ⟨λ h, by {rw ←dual_dual M, exact h.dual_coloop}, coloop.dual_loop⟩
 
-lemma dual_r_add_rk_eq (M : matroid E) (X : set E) :
-  M.dual.r X + M.rk = ncard X + M.r Xᶜ  :=
+lemma dual_r_add_rk_eq [finite E] (M : matroid E) (X : set E) :
+  M﹡.r X + M.rk = ncard X + M.r Xᶜ  :=
 begin
   set r' : set E → ℤ := λ X, X.ncard + M.r Xᶜ - M.rk with hr',
 
@@ -128,26 +98,19 @@ begin
 
   set M' := matroid_of_int_r r' hr'_nonneg hr'_le_card hr'_mono hr'_submod with hM',
 
-  have hM'M : M' = M.dual,
+  have hM'M : M' = M﹡,
   { refine eq_of_indep_iff_indep_forall (λ I, _),
-    rw [indep_iff_r_eq_card, dual_indep_iff_r], zify,
+    rw [indep_iff_r_eq_card, dual_indep_iff_coindep, coindep_iff_r], zify,
     simp_rw [hM', matroid_of_int_r_apply, hr'],
     refine ⟨λ h, _, λ h, _⟩,
-    all_goals { simp only at h, linarith}},
+    all_goals { simp only at h, linarith} },
 
   rw [←hM'M], zify, simp_rw [hM', matroid_of_int_r_apply, hr'],
   ring,
 end
 
-lemma dual_rank_cast_eq (M : matroid E) (X : set E) :
-  (M.dual.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
+lemma dual_rank_cast_eq [finite E] (M : matroid E) (X : set E) :
+  (M﹡.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
 by linarith [M.dual_r_add_rk_eq X]
-
-
-section rank
-
-
-
-end rank
 
 end matroid 
