@@ -76,7 +76,7 @@ end
 lemma r_mono (M : matroid E) [finite_rk M] {X Y : set E} (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
 r_mono_of_r_fin (M.to_r_fin _) hXY 
 
-variables [finite_rk M]
+
 
 lemma indep.r (hI : M.indep I) : M.r I = I.ncard := eq_r_iff.mpr ⟨I, hI.basis_self, rfl⟩
 
@@ -87,6 +87,8 @@ lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard := by rw [←hIX.r, 
 lemma base.r (hB : M.base B) : M.r B = M.rk := by { rw base_iff_basis_univ at hB, rw hB.r, refl }
 
 lemma base.card (hB : M.base B) : B.ncard = M.rk := by { rw (base_iff_basis_univ.mp hB).card, refl }
+
+variables [finite_rk M]
 
 lemma r_le_card [finite E] (M : matroid E) (X : set E) : M.r X ≤ X.ncard :=
 r_le_iff.mpr (λ I hIX hI, ncard_le_of_subset hIX)
@@ -118,8 +120,8 @@ begin
   rwa [eq_of_subset_of_ncard_le hII' h.le hI'X.finite],
 end
 
-@[simp] lemma r_empty (M : matroid E) [finite_rk M] : 
-M.r ∅ = 0 := by rw [M.empty_indep.r, ncard_empty]
+@[simp] lemma r_empty (M : matroid E) : M.r ∅ = 0 := 
+by rw [←M.empty_indep.basis_self.card, ncard_empty]
 
 lemma rk_le_card [finite E] (M : matroid E) : M.rk ≤ nat.card E :=
 (M.r_le_card univ).trans (ncard_univ _).le

@@ -6,7 +6,7 @@ open set
 
 namespace matroid
 
-variables {E ι : Type*} {X Y X' Y'  I C : set E} {e f : E} {M : matroid E}
+variables {E ι : Type*} {X Y X' Y'  I J C : set E} {e f : E} {M : matroid E}
 
 /-- Two sets are `skew` if any pair of their independent subsets are disjoint with independent union (equivalently, the sum of their ranks is the rank of their union) -/
 def skew (M : matroid E) (X Y : set E) : Prop :=
@@ -47,6 +47,33 @@ skew_of_subset_loops (singleton_subset_iff.mpr he) X
 lemma loop.skew_singleton (he : M.loop e) (X : set E) : M.skew X {e} := 
 subset_loops_skew X (singleton_subset_iff.mpr he)
 
+lemma basis.skew (hI : M.basis I X) (hJ : M.basis J Y) (hdj : disjoint I J) (hi : M.indep (I ∪ J)) :
+  M.skew X Y :=
+begin
+  refine λ I' hI'X J' hJ'Y hI' hJ', _,
+  obtain ⟨I₁, hII₁, hI₁⟩ := hI'.subset_basis_of_subset (subset_union_left I' I), 
+  obtain ⟨J₁, hJJ₁, hJ₁⟩ := hJ'.subset_basis_of_subset (subset_union_left J' J),  
+  
+  have hdj' : disjoint I₁ J₁, 
+  { rw disjoint_iff_forall_ne, 
+    rintro e heI₁ f hfJ₁ rfl,
+    
+    -- have hb : M.basis (I₁ ∪ J₁)
+      },
+  -- ⟨disjoint_iff_forall_ne.mpr _,_⟩, 
+  { 
+     },
+
+   
+end 
+
+
+lemma indep.skew_of_exists (hI : M.indep I) (hIXY : I ⊆ X ∪ Y) (hdj : disjoint (I ∩ X) (I ∩ Y))
+(hIX : M.basis (I ∩ X) X) (hIY : M.basis (I ∩ Y) Y) : M.skew X Y :=
+begin
+  intros I' hI' J' hJ' hI' hJ', 
+end 
+
 lemma skew_iff_r [finite_rk M] :
   M.skew X Y ↔ M.r X + M.r Y = M.r (X ∪ Y) :=
 begin
@@ -79,6 +106,12 @@ lemma skew.r_add [finite_rk M] (h : M.skew X Y) : M.r X + M.r Y = M.r (X ∪ Y) 
 /- these proofs doesn't need to use rank, but are much easier that way for now  -/
 lemma skew.cl_left [finite_rk M] (h : M.skew X Y) : M.skew (M.cl X) Y := 
 by rwa [skew_iff_r, r_union_cl_left_eq_r_union, r_cl, ←skew_iff_r]
+
+lemma skew.cl_left' (h : M.skew X Y) : M.skew (M.cl X) Y :=
+begin
+  intros I hIX J hJY hI hJ, 
+  
+end 
 
 lemma skew.cl_left_iff [finite_rk M] : M.skew X Y ↔ M.skew (M.cl X) Y := 
 ⟨skew.cl_left, λ h, h.subset_left (M.subset_cl X)⟩ 

@@ -112,10 +112,13 @@ hIJ.antisymm (hI.2 ⟨hJ, hJX⟩ hIJ)
 
 lemma basis.finite (hI : M.basis I X) [finite_rk M] : I.finite := hI.indep.finite 
 
-lemma basis_iff :
-  M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J :=
+lemma basis_iff : M.basis I X ↔ M.indep I ∧ I ⊆ X ∧ ∀ J, M.indep J → I ⊆ J → J ⊆ X → I = J :=
 ⟨λ h, ⟨h.indep, h.subset, λ _, h.eq_of_subset_indep⟩, 
   λ h, ⟨⟨h.1,h.2.1⟩, λ J hJ hIJ, (h.2.2 _ hJ.1 hIJ hJ.2).symm.subset⟩⟩ 
+
+lemma indep.basis_of_maximal_subset (hI : M.indep I) (hIX : I ⊆ X) 
+(hmax : ∀ ⦃J⦄, M.indep J → I ⊆ J → J ⊆ X → J ⊆ I) : M.basis I X :=
+⟨⟨hI, hIX⟩, λ J hJ hIJ, hmax hJ.1 hIJ hJ.2⟩
 
 @[simp] lemma basis_empty_iff (M : matroid E) :
   M.basis I ∅ ↔ I = ∅ :=
@@ -277,6 +280,9 @@ begin
   obtain ⟨e,heBI,he⟩ := hIX.indep.exists_insert_of_not_base h hB, 
   exact heBI.2 (hIX.mem_of_insert_indep (hBX heBI.1) he), 
 end 
+
+lemma base.basis_of_subset (hB : M.base B) (hBX : B ⊆ X) : M.basis B X :=
+⟨⟨hB.indep, hBX⟩, λ J hJ hBJ, by rw hB.eq_of_subset_indep hJ.1 hBJ⟩
 
 lemma indep.exists_base_subset_union_base (hI : M.indep I) (hB : M.base B) : 
   ∃ B', M.base B' ∧ I ⊆ B' ∧ B' ⊆ I ∪ B :=
@@ -464,10 +470,6 @@ lemma basis.base_lrestrict (h : M.basis I X) : (M.lrestrict X).base I := lrestri
 lemma basis.basis_lrestrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) :
   (M.lrestrict Y).basis I X :=
 by rwa [←lrestrict_base_iff, lrestrict_lrestrict_subset hXY, lrestrict_base_iff]
-
-/-- The matroid obtained from `M` by contracting all elements outside `X` and replacing them 
-  with loops -/
-def lcorestrict (M : matroid E) (X : set E) : matroid E := (M.dual.lrestrict X).dual.lrestrict X 
 
 end minor 
 

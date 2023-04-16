@@ -1,7 +1,7 @@
 import mathlib.data.set.basic
 import mathlib.order.boolean_algebra
 import .quotients
-import .connectivity
+--import .connectivity
 
 /-!
 # Projections, Loopifications and Pseudominors
@@ -23,33 +23,256 @@ Kung's theorem and the matroid intersection theorem are currently both proved in
 noncomputable theory
 open set
 
-section symbols 
-
-@[class] structure has_con (α β : Type*) :=
-(con : α → β → α)
-
-@[class] structure has_restr (α β : Type*) :=
-(restr : α → β → α)
-
-infix ` ⟋ ` :75 :=  has_con.con
-
--- infix ` ⟍ ` :75 :=  has_del.del 
-
-infix ` ‖ ` :75 :=  has_restr.restr 
-
-end symbols 
-
 variables {E : Type*}  {e f : E} {M N : matroid E} {X Y D C F B I I₀ R : set E}
 
 namespace matroid
 
 section restrict
 
+@[class] structure has_restr (α β : Type*) := (restr : α → β → α)
+
+infix ` ‖ ` :75 :=  has_restr.restr 
+
 instance {E : Type*} : has_restr (matroid E) (set E) := ⟨λ M E, M.lrestrict E⟩  
 
-@[simp] lemma restr_indep_iff : (M ‖ X).indep I ↔ M.indep I ∧ I ⊆ X := lrestrict_indep_iff
+@[simp] lemma lrestr_indep_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R := lrestrict_indep_iff
 
-/-- Restriction is deletion of the complement -/
+lemma indep.lrestr_indep_of_subset (hI : M.indep I) (hIR : I ⊆ R) : (M ‖ R).indep I := 
+lrestr_indep_iff.mpr ⟨hI, hIR⟩ 
+
+lemma indep.lrestr_to_indep (h : (M ‖ R).indep I) : M.indep I := (lrestr_indep_iff.mp h).1 
+
+lemma indep.lrestr_to_subset (h : (M ‖ R).indep I) : I ⊆ R := (lrestr_indep_iff.mp h).2 
+
+@[simp] lemma lrestr_basis_iff : (M ‖ R).basis I X ↔ M.basis I (X ∩ R) :=
+begin
+  refine ⟨λ h, indep.basis_of_maximal_subset _ _ _, λ h, indep.basis_of_maximal_subset _ _ _⟩,
+  { exact (lrestr_indep_iff.mp h.indep).1 },
+  { exact subset_inter h.subset (lrestr_indep_iff.mp h.indep).2 },
+  { intros J hJ hIJ hJXR,
+     rw h.eq_of_subset_indep (hJ.lrestr_indep_of_subset (hJXR.trans (inter_subset_right _ _))) 
+      hIJ (hJXR.trans (inter_subset_left _ _)) },
+  { exact h.indep.lrestr_indep_of_subset (h.subset.trans (inter_subset_right _ _)) },
+  { exact h.subset.trans (inter_subset_left _ _) },
+  intros J hJ hIJ hJX, 
+  rw h.eq_of_subset_indep (lrestr_indep_iff.mp hJ).1 hIJ (subset_inter hJX _), 
+  exact (lrestr_indep_iff.mp hJ).2, 
+end 
+
+@[simp] lemma lrestr_base_iff : (M ‖ R).base B ↔ M.basis B R := iff.rfl 
+
+@[simp] lemma lrestr_r (M : matroid E) (R X : set E) : (M ‖ R).r X = M.r (X ∩ R) :=
+by { obtain ⟨I, hI⟩ := (M ‖ R).exists_basis X, rw [←hI.card, ←(lrestr_basis_iff.mp hI).card] }
+
+@[simp] lemma lrestr_nonloop_iff : (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
+by rw [←indep_singleton, ←indep_singleton, lrestr_indep_iff, singleton_subset_iff]
+
+@[simp] lemma lrestr_loop_iff : (M ‖ R).loop e ↔ M.loop e ∨ e ∉ R :=
+by rw [←not_iff_not, not_loop_iff, lrestr_nonloop_iff, not_or_distrib, not_loop_iff, not_not]
+
+@[simp] lemma lrestr_cl (M : matroid E) (R X : set E) : (M ‖ R).cl X = M.cl (X ∩ R) ∪ Rᶜ :=
+begin
+  obtain ⟨I, hI⟩ := (M ‖ R).exists_basis X, 
+  simp_rw [←hI.cl, ←(lrestr_basis_iff.mp hI).cl] ,
+  ext e, 
+  rw [hI.indep.mem_cl_iff, lrestr_indep_iff, mem_union, (lrestr_basis_iff.mp hI).indep.mem_cl_iff, 
+    insert_subset, mem_compl_iff, and_imp, and_imp, ←imp_iff_or_not], 
+  exact ⟨λ h he hi, h hi he (hI.indep.lrestr_to_subset), λ h hi heR hIR, h heR hi⟩,
+end 
+
+@[simp] lemma lrestr.loops (M : matroid E) (R : set E) : ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
+by rw [lrestr_cl, empty_inter, compl_union, compl_compl]
+
+@[simp] lemma lrestr.nonloops (M : matroid E) (R : set E) : ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
+by rw [lrestr_cl, empty_inter, compl_union, compl_compl]
+
+lemma lrestr.weak_image (M : matroid E) (R : set E) : M ‖ R ≤w M := λ I, indep.lrestr_to_indep 
+
+lemma lrestr_eq_lrestr_iff {M N : matroid E} : M ‖ X = N ‖ Y ↔ 
+  (∀ e ∈ (X ∪ Y)ᶜ, M.loop e ∧ M.loop e) ∧ ∀ I ⊆ X ∩ Y, M.indep I ↔ N.indep I :=
+begin
+  sorry, 
+end
+
+end restrict
+
+section delete
+
+@[class] structure has_del (α β : Type*) := (del : α → β → α)
+
+infix ` ⟍ ` :75 :=  has_del.del 
+
+/-- Matroid deletion is restriction to the complement -/
+instance matroid_del_loopify {E : Type*} : has_del (matroid E) (set E) := ⟨λ M X, M ‖ Xᶜ⟩    
+
+/-- Matroid deletion of an element is deletion of the corresponding singleton set -/
+instance del_singleton {E : Type*} : has_del (matroid E) E := ⟨λ M e, M ⟍ ({e} : set E)⟩  
+
+lemma loopify_eq_lrestr_compl (M : matroid E) (D : set E) : M ⟍ D = M ‖ Dᶜ := rfl 
+
+@[simp] lemma loopify.elem (M : matroid E) (e : E) : M ⟍ e = M ⟍ ({e} : set E) := rfl 
+
+@[simp] lemma loopify.base_iff : (M ⟍ D).base B ↔ M.basis B Dᶜ := iff.rfl
+
+@[simp] lemma loopify.indep_iff :
+  (M ⟍ D).indep I ↔ disjoint I D ∧ M.indep I :=
+by rw [loopify_eq_lrestr_compl, lrestr_indep_iff, subset_compl_iff_disjoint_right, and_comm]
+
+lemma indep.loopify_to_indep (h : (M ⟍ D).indep I) : M.indep I := (loopify.indep_iff.mp h).2
+
+lemma loopify_weak_image (M : matroid E) (D : set E) : M ⟍ D ≤w M := lrestr.weak_image _ _ 
+
+lemma foo (h : ∀ I, M.basis I X → e ∈ I) : e ∉ M.cl (X \ {e}) := sorry 
+
+lemma dual_cl_eq'  : e ∈ M﹡.cl X ↔ e ∈ X ∨ (M ⟍ X).coloop e := 
+begin
+  by_cases heX : e ∈ X, { exact iff_of_true (subset_cl _ _ heX) (or.inl heX) },
+  rw [←(false_iff _).mpr heX, false_or, ←dual_dual M], 
+  set N := M﹡ with hN, 
+  rw [dual_dual], 
+  obtain ⟨I, hI⟩ := N.exists_basis X, 
+  
+  simp_rw [coloop_iff_forall_mem_base, loopify.base_iff, ←hI.cl, hI.indep.mem_cl_iff_of_not_mem sorry], 
+  refine ⟨sorry, _⟩, 
+  intros h hi, 
+  refine foo h _, 
+
+   
+  -- obtain ⟨I, hI⟩ := M﹡.exists_basis X, 
+  -- simp_rw [←hI.cl, hI.indep.mem_cl_iff_of_not_mem (not_mem_subset hI.subset heX), 
+  --   dual_indep_iff_coindep, coindep_iff_disjoint_base, coloop_iff_forall_mem_base, loopify.base_iff, 
+  --   not_exists, not_and],  
+  
+  -- refine ⟨λ h B hB, _, λ h B hB, _⟩,
+  -- { obtain ⟨B', hB'⟩ := hB.indep.subset_basis_of_subset (_ : B ⊆ Iᶜ), 
+  --   have hB'_b : M.base B', from (dual_indep_iff_coindep.mp hI.indep).base_of_basis_compl hB'.2, 
+      
+  --   obtain ⟨f,⟨(rfl | hfI), hfB'⟩⟩ := not_disjoint_iff.mp (h B' hB'_b), 
+  --   { exact hB.mem_of_insert_indep heX (hB'_b.indep.subset (insert_subset.mpr ⟨hfB',hB'.1⟩)) },
+  --   { exact (hB'.2.subset hfB' hfI).elim },
+  --   rw subset_compl_iff_disjoint_right,
+  --   refine disjoint_of_subset_left hB.subset _,  
+  --   rw [←subset_compl_iff_disjoint_left, compl_compl], 
+  --   exact hI.subset },
+  
+  -- rw not_disjoint_iff, 
+  -- -- refine h.elim heX.elim (λ h, _),  
+  -- by_contra' hI', 
+  
+  
+end 
+
+lemma dual_cl_eq  : e ∈ M﹡.cl X ↔ e ∈ X ∨ (M ⟍ X).coloop e := 
+begin
+  by_cases heX : e ∈ X, { exact iff_of_true (subset_cl _ _ heX) (or.inl heX) },
+  
+  
+  
+  obtain ⟨I, hI⟩ := M﹡.exists_basis X, 
+  simp_rw [←hI.cl, hI.indep.mem_cl_iff_of_not_mem (not_mem_subset hI.subset heX), 
+    dual_indep_iff_coindep, coindep_iff_disjoint_base, coloop_iff_forall_mem_base, loopify.base_iff, 
+    not_exists, not_and],  
+  
+  refine ⟨λ h, or.inr (λ B hB, _), λ h B hB, _⟩,
+  { obtain ⟨B', hB'⟩ := hB.indep.subset_basis_of_subset (_ : B ⊆ Iᶜ), 
+    have hB'_b : M.base B', from (dual_indep_iff_coindep.mp hI.indep).base_of_basis_compl hB'.2, 
+      
+    obtain ⟨f,⟨(rfl | hfI), hfB'⟩⟩ := not_disjoint_iff.mp (h B' hB'_b), 
+    { exact hB.mem_of_insert_indep heX (hB'_b.indep.subset (insert_subset.mpr ⟨hfB',hB'.1⟩)) },
+    { exact (hB'.2.subset hfB' hfI).elim },
+    rw subset_compl_iff_disjoint_right,
+    refine disjoint_of_subset_left hB.subset _,  
+    rw [←subset_compl_iff_disjoint_left, compl_compl], 
+    exact hI.subset },
+
+  
+
+  rw not_disjoint_iff, 
+  refine h.elim heX.elim (λ h, _),  
+  
+  by_contra' hI', 
+
+  
+end 
+
+end delete
+
+section project
+
+@[class] structure has_con (α β : Type*) := (con : α → β → α)
+
+infix ` ⟋ ` :75 :=  has_con.con
+
+instance proj {E : Type*} : has_con (matroid E) (set E) := ⟨λ M C, (M﹡ ‖ Cᶜ)﹡ ‖ Cᶜ⟩ 
+
+instance proj_elem {E : Type*} : has_con (matroid E) E := ⟨λ M e, M ⟋ ({e} : set E)⟩  
+
+-- /-- The matroid obtained from `M` by contracting all elements in `C` and replacing them with loops-/
+-- def project (M : matroid E) (C : set E) : matroid E := (M﹡.lrestrict Cᶜ)﹡.lrestrict Cᶜ 
+
+
+
+lemma basis.project_eq_project_cl (hIX : M.basis I X) : M ⟋ I = M ⟋ X :=
+begin
+  unfold has_con.con,
+  have hKR := compl_subset_compl.mpr (hIX.subset),  
+  set N := M﹡ with hN, 
+  set K := Iᶜ with hK, 
+  set R := Xᶜ with hX,  
+  simp_rw [lrestr_eq_lrestr_iff, union_eq_left_iff_subset.mpr hKR, 
+    inter_eq_right_iff_subset.mpr hKR], 
+  refine ⟨_,λ J hJ, ⟨_,_⟩⟩, 
+  { sorry }, 
+  { simp_rw [dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, lrestr_cl], 
+     
+    
+    rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
+      eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
+    intro hK, 
+    rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
+      eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
+      }
+    -- intro h, },
+
+  -- apply eq_of_indep_iff_indep_forall (λ J, _), 
+  -- simp_rw [lrestr_indep_iff, dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, lrestr_cl, 
+  --   compl_compl], 
+  
+  -- apply eq_of_indep_iff_indep_forall (λ J, _), 
+  -- unfold has_con.con, 
+  -- simp only [lrestr_indep_iff, dual_indep_iff_coindep], 
+  -- simp_rw [coindep_iff_disjoint_base, lrestr_base_iff, basis_iff, dual_indep_iff_coindep, 
+  --   coindep_iff_disjoint_base, subset_compl_iff_disjoint_right], 
+  -- split,
+  -- { rintro ⟨⟨Y,⟨⟨B',hB',hYB'⟩,hIB', hB'⟩,hB''⟩, hB'⟩,
+    
+  --    },
+end 
+
+lemma project_cl (M : matroid E) (C X : set E) : (M ⟋ C).cl X = M.cl (X ∪ C) :=
+begin
+  unfold has_con.con, 
+  rw [lrestr_cl, compl_compl, ←diff_eq, ←loopify_eq_lrestr_compl], 
+  ext x, 
+  { split, 
+    { rintro (hx | hxC), swap, sorry, 
+      simp_rw [mem_cl_iff_exists_circuit] at hx,  },},
+  -- obtain ⟨I, hI⟩ := M.exists_basis C, 
+  -- change ((M﹡ ‖ Cᶜ)﹡ ‖  Cᶜ).cl X = M.cl (X ∪ C), 
+  -- rw [←cl_union_cl_right_eq_cl_union, ←hI.cl, cl_union_cl_right_eq_cl_union, lrestr_cl, 
+  --   compl_compl], 
+  
+
+end 
+
+
+
+
+
+
+end project 
+
+/- Restriction is deletion of the complement -/
 -- def has_del.restr {α β : Type*} [has_del α β] [has_compl β] (M : α) (R : β) : α := M ⟍ Rᶜ
 
 -- infix ` ‖ ` :75 :=  has_del.restr
@@ -57,42 +280,35 @@ instance {E : Type*} : has_restr (matroid E) (set E) := ⟨λ M E, M.lrestrict E
 -- lemma restr_eq_del {α β : Type*} [has_del α β] [has_compl β] (M : α) (R : β) : M ‖ R = M ⟍ Rᶜ := 
 -- rfl 
 
-@[simp] lemma lrestrict_r (M : matroid E) (R X : set E) : (M ‖ R).r X = M.r (X ∩ R) :=
-by simp [restr_eq_del]
 
-lemma loopify_eq_lrestrict_compl (M : matroid E) (D : set E) : (M ⟍ D) = (M ‖ Dᶜ) :=
-by rw [restr_eq_del, compl_compl]
+-- lemma loopify_eq_lrestrict_compl (M : matroid E) (D : set E) : (M ⟍ D) = (M ‖ Dᶜ) :=
+-- by rw [restr_eq_del, compl_compl]
 
-lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) : M ⟍ Dᶜ = M ‖ D := rfl
+-- lemma loopify_compl_eq_lrestrict (M : matroid E) (D : set E) : M ⟍ Dᶜ = M ‖ D := rfl
 
-lemma lrestrict_nonloop_iff : (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
-by rw [restr_eq_del, nonloop_loopify_iff, not_mem_compl_iff]   
+-- lemma lrestrict_nonloop_iff : (M ‖ R).nonloop e ↔ M.nonloop e ∧ e ∈ R :=
+-- by rw [restr_eq_del, nonloop_loopify_iff, not_mem_compl_iff]   
 
-@[simp] lemma lrestrict.nonloops (M : matroid E) (R : set E) : ((M ‖ R).cl ∅)ᶜ = (M.cl ∅)ᶜ ∩ R :=
-by { ext, simp_rw [mem_inter_iff, mem_compl_iff, ←loop_iff_mem_cl_empty, not_loop_iff, 
-  lrestrict_nonloop_iff] }
 
-@[simp] lemma indep_lrestrict_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
-by simp [restr_eq_del, disjoint_compl_right_iff_subset, and_comm]
 
-lemma skew_iff_project_lrestrict_eq_lrestrict :
-  M.skew C R ↔ (M ⟋ C) ‖ R = M ‖ R :=
-begin
-  refine ⟨λ h, _,λ h, _⟩, 
-  { refine eq_of_r_eq_r_forall (λ X, _), 
-    zify, 
-    simp_rw [lrestrict_r, coe_r_project, ←(h.symm.subset_left (inter_subset_right X _)).r_add], 
-    simp only [nat.cast_add, add_tsub_cancel_right] },
-  rw skew_iff_r, 
-  apply_fun (λ M, M.r univ) at h, 
-  zify at *, 
-  rw [lrestrict_r, lrestrict_r, univ_inter, coe_r_project, union_comm] at h, 
-  simp [←h],
-end 
+-- lemma skew_iff_project_lrestrict_eq_lrestrict :
+--   M.skew C R ↔ (M ⟋ C) ‖ R = M ‖ R :=
+-- begin
+--   refine ⟨λ h, _,λ h, _⟩, 
+--   { refine eq_of_r_eq_r_forall (λ X, _), 
+--     zify, 
+--     simp_rw [lrestrict_r, coe_r_project, ←(h.symm.subset_left (inter_subset_right X _)).r_add], 
+--     simp only [nat.cast_add, add_tsub_cancel_right] },
+--   rw skew_iff_r, 
+--   apply_fun (λ M, M.r univ) at h, 
+--   zify at *, 
+--   rw [lrestrict_r, lrestrict_r, univ_inter, coe_r_project, union_comm] at h, 
+--   simp [←h],
+-- end 
 
-end restrict
 
-section project
+
+
 
 /-- contract `C` and replace it with a set of loops to get a matroid on the same ground set.
 Often more convenient than just contracting `C` because the underlying type is preserved. -/

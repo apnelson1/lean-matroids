@@ -120,7 +120,7 @@ def basis (M : matroid E) (I X : set E) : Prop :=
 
 /-- A circuit is a minimal dependent set -/
 def circuit (M : matroid E) (C : set E) : Prop :=
-  ¬M.indep C ∧ ∀ I ⊂ C, M.indep I
+  C ∈ minimals (⊆) {X | ¬M.indep X}
 
 /-- A flat is a maximal set having a given basis  -/
 def flat (M : matroid E) (F : set E) : Prop :=

@@ -230,6 +230,12 @@ begin
   exact he.1 heI, 
 end 
 
+lemma indep.basis_of_subset_cl (hI : M.indep I) (hIX : I ⊆ X) (h : X ⊆ M.cl I) : M.basis I X :=
+hI.basis_cl.basis_subset hIX h
+ 
+lemma indep.base_of_cl_eq_univ (hI : M.indep I) (h : M.cl I = univ) : M.base I :=
+by { rw base_iff_basis_univ, refine hI.basis_of_subset_cl (subset_univ _) (by rw h) }
+
 lemma basis.basis_cl (hI : M.basis I X) : M.basis I (M.cl X) :=
 by { rw [←hI.cl], exact hI.indep.basis_cl }
 
@@ -545,6 +551,12 @@ end
 lemma hyperplane_iff_maximal_not_supset_base :
   M.hyperplane H ↔ (¬∃ B ⊆ H, M.base B) ∧ ∀ X, H ⊂ X → ∃ B ⊆ X, M.base B :=
 by simp_rw [hyperplane_iff_maximal_cl_ne_univ, ne.def, ←base_subset_iff_cl_eq_univ]
+
+lemma hyperplane_iff_mem_maximals : 
+  M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
+begin
+  sorry 
+end 
 
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
