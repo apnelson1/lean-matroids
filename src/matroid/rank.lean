@@ -871,7 +871,7 @@ end
 def matroid_of_r (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard)
 (r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) :
   matroid E :=
-matroid_of_indep (λ I, r I = I.ncard)
+matroid_of_indep_of_finite (λ I, r I = I.ncard)
 ⟨∅, (r_le_card _).antisymm (by simp)⟩
 (λ _ _, r_eq_card_of_subset_of_r_le_card_submod r r_le_card r_submod)
 (begin
@@ -895,7 +895,8 @@ end)
   (matroid_of_r r r_le_card r_mono r_submod).r = r :=
 begin
   ext X,
-  simp_rw [matroid_of_r, matroid.eq_r_iff, matroid.basis_iff, matroid_of_indep_apply],
+  simp_rw [matroid_of_r, matroid.eq_r_iff, matroid.basis_iff,   
+    matroid_of_indep_of_finite_apply],
   obtain ⟨I,-,hIX,hI,hIX'⟩ :=
    extend_to_basis_of_r r r_le_card r_mono r_submod ∅ X (by simpa using r_le_card ∅)
     (empty_subset _),

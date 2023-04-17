@@ -275,12 +275,12 @@ end matroid
 section from_axioms
 
 /-- A collection of sets satisfying the circuit axioms determines a matroid -/
-def matroid_of_circuit [finite E] (circuit : set E → Prop) (empty_not_circuit : ¬ circuit ∅)
+def matroid_of_circuit_of_finite [finite E] (circuit : set E → Prop) (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
   matroid E :=
-matroid_of_indep (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
+matroid_of_indep_of_finite (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
 (λ I J hIJ hJ C hCI, hJ C (hCI.trans hIJ))
 begin
   by_contra' h,
@@ -346,16 +346,16 @@ begin
   exact union_subset hCgss hCg'ss,
 end
 
-@[simp] lemma matroid_of_circuit_apply [finite E] (circuit : set E → Prop)
+@[simp] lemma matroid_of_circuit_of_finite_apply [finite E] (circuit : set E → Prop)
   (empty_not_circuit : ¬ circuit ∅)
   (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
   (elimination : ∀ C₁ C₂ e,
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
-  (matroid_of_circuit circuit empty_not_circuit antichain elimination).circuit = circuit :=
+  (matroid_of_circuit_of_finite circuit empty_not_circuit antichain elimination).circuit = circuit :=
 begin
   ext C,
-  simp_rw [matroid_of_circuit, matroid.circuit_iff, matroid_of_indep_apply, not_forall, not_not,
-    exists_prop],
+  simp_rw [matroid_of_circuit_of_finite, matroid.circuit_iff, matroid_of_indep_of_finite_apply, 
+    not_forall, not_not, exists_prop],
   refine ⟨λ h, _,λ h, ⟨⟨_,rfl.subset, h⟩,λ I hIC C' hC'I hC',
     hIC.not_subset ((antichain C' C hC' h (hC'I.trans hIC.subset)) ▸ hC'I )⟩⟩,
   obtain ⟨⟨C₀,hC₀C, hC₀⟩,hI⟩ := h,

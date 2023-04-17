@@ -187,6 +187,8 @@ by_contra (λ hB_inf, (hB₁.finite_of_finite (not_infinite.mp hB_inf) hB).not_i
 lemma base.finite [finite_rk M] (hB : M.base B) : B.finite := 
 let ⟨B₀,hB₀⟩ := ‹finite_rk M›.exists_finite_base in hB₀.1.finite_of_finite hB₀.2 hB
 
+lemma base.finite_rk_of_finite (hB : M.base B) (hfin : B.finite) : finite_rk M := ⟨⟨B, hB, hfin⟩⟩   
+
 instance finite_rk_of_finite [finite E] {M : matroid E} : finite_rk M := 
 let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
 
@@ -214,7 +216,9 @@ end
   
 end base
 
-section of_finite_rk 
+end matroid 
+
+section from_axioms
 
 /-- A collection of bases with the exchange property and at least one finite member is a matroid -/
 def matroid_of_exists_finite_base {E : Type*} (base : set E → Prop) 
@@ -256,7 +260,7 @@ matroid E :=
 /-- A matroid constructed with a finite base is `finite_rk` -/
 instance {E : Type*} {base : set E → Prop} {exists_finite_base : ∃ B, base B ∧ B.finite} 
 {base_exchange' : exchange_property base} : 
-  finite_rk (matroid_of_exists_finite_base base exists_finite_base base_exchange') := 
+  matroid.finite_rk (matroid_of_exists_finite_base base exists_finite_base base_exchange') := 
 ⟨exists_finite_base⟩  
 
 def matroid_of_base_of_finite {E : Type*} [finite E] (base : set E → Prop)
@@ -321,6 +325,5 @@ begin
   exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', subset_univ _⟩ hBB'⟩, hIB⟩, 
 end 
 
-end of_finite_rk 
+end from_axioms 
 
-end matroid

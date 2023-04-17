@@ -624,12 +624,12 @@ end matroid
 section from_axioms
 
 /-- A collection of sets satisfying the independence axioms determines a matroid -/
-def matroid_of_indep [finite E] (indep : set E → Prop)
+def matroid_of_indep_of_finite [finite E] (indep : set E → Prop)
 (exists_ind : ∃ I, indep I)
 (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
 (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
   ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
-  matroid E := matroid.matroid_of_base_of_finite
+  matroid E := matroid_of_base_of_finite
   (λ B, indep B ∧ ∀ X, indep X → B ⊆ X → X = B)
   ( by exact
       (@set.finite.exists_maximal_wrt (set E) (set E) _ id indep (to_finite _) exists_ind).imp
@@ -667,24 +667,24 @@ def matroid_of_indep [finite E] (indep : set E → Prop)
     rwa [ncard_insert_of_not_mem heB₁x, ncard_diff_singleton_add_one],
   end )
 
-@[simp] lemma matroid_of_indep_base_iff [finite E] {indep : set E → Prop}
+@[simp] lemma matroid_of_indep_of_finite_base_iff [finite E] {indep : set E → Prop}
   (exists_ind : ∃ I, indep I)
   (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
   (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
     ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) {B : set E }:
-(matroid_of_indep indep exists_ind ind_mono ind_aug).base B ↔
+(matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).base B ↔
   indep B ∧ ∀ X, indep X → B ⊆ X → X = B :=
 iff.rfl
 
-@[simp] lemma matroid_of_indep_apply [finite E] {indep : set E → Prop}
+@[simp] lemma matroid_of_indep_of_finite_apply [finite E] {indep : set E → Prop}
   (exists_ind : ∃ I, indep I)
   (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
   (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
     ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
-  (matroid_of_indep indep exists_ind ind_mono ind_aug).indep = indep :=
+  (matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).indep = indep :=
 begin
   ext I,
-  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep],
+  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep_of_finite],
   split,
   { rintro ⟨B, ⟨hBi,hB⟩, hIB⟩,
     exact ind_mono _ _ hIB hBi},

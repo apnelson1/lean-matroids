@@ -1,11 +1,10 @@
 import .indep
 import mathlib.data.set.basic 
+import data.finset.locally_finite
 
 noncomputable theory
 open_locale classical
 open_locale big_operators
-
-
 /-
   Flats and closure.
   
@@ -110,8 +109,6 @@ by rw [cl_union_cl_left_eq_cl_union, cl_union_cl_right_eq_cl_union]
 by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 
 lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
-
-
 
 lemma indep.cl_eq_set_of_basis (hI : M.indep I) : M.cl I = {x | M.basis I (insert x I)} :=
 begin
@@ -229,6 +226,21 @@ begin
   rw [mem_diff, hI.mem_cl_iff] at he, 
   exact he.1 heI, 
 end 
+
+lemma cl_eq_set_of_indep_not_indep (M : matroid E) (X : set E) : 
+  M.cl X = X ∪ {e | ∃ I ⊆ X, M.indep I ∧ ¬M.indep (insert e I)} := 
+begin
+  refine subset_antisymm (λ e he, ((em (e ∈ X)).elim or.inl (λ heX, or.inr _ ))) 
+    (union_subset (M.subset_cl X) _), 
+  { obtain ⟨I, hI⟩ := M.exists_basis X, 
+    refine ⟨I, hI.subset, hI.indep, _⟩,
+    refine hI.indep.basis_cl.dep_of_ssubset (ssubset_insert (not_mem_subset hI.subset heX)) 
+      (insert_subset.mpr ⟨by rwa hI.cl,M.subset_cl I⟩) },  
+  rintro e ⟨I, hIX, hI, hIe⟩, 
+  refine (M.cl_subset_cl_of_subset hIX) _, 
+  rw [hI.mem_cl_iff], 
+  exact λ h, (hIe h).elim,  
+end     
 
 lemma indep.basis_of_subset_cl (hI : M.indep I) (hIX : I ⊆ X) (h : X ⊆ M.cl I) : M.basis I X :=
 hI.basis_cl.basis_subset hIX h
@@ -552,11 +564,11 @@ lemma hyperplane_iff_maximal_not_supset_base :
   M.hyperplane H ↔ (¬∃ B ⊆ H, M.base B) ∧ ∀ X, H ⊂ X → ∃ B ⊆ X, M.base B :=
 by simp_rw [hyperplane_iff_maximal_cl_ne_univ, ne.def, ←base_subset_iff_cl_eq_univ]
 
-lemma hyperplane_iff_mem_maximals : 
-  M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
-begin
-  sorry 
-end 
+-- lemma hyperplane_iff_mem_maximals : 
+--   M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
+-- begin
+--   sorry 
+-- end 
 
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
@@ -684,7 +696,7 @@ end matroid
 
 section from_axioms
 
-variables {E : Type*} [finite E]
+variables {E : Type*} 
 
 lemma cl_diff_singleton_eq_cl (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X)
 (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )
@@ -697,200 +709,203 @@ begin
   exact (cl_mono _ _ (subset_insert _ _)).trans h',
 end
 
-/- ### closure and flat axioms -/
-/-- A function satisfying the closure axioms determines a matroid -/
-def matroid_of_cl (cl : set E → set E)
-  (subset_cl : ∀ X, X ⊆ cl X )
-  (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
-  (cl_idem : ∀ X, cl (cl X) = cl X )
-  (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) :
-matroid E := matroid.matroid_of_base_of_finite
-  (λ B, cl B = univ ∧ ∀ X ⊂ B, cl X ≠ univ)
+/-- A set is independent relative to a closure function if none of its elements are contained in 
+  the closure of their removal -/
+def cl_indep (cl : set E → set E) (I : set E) : Prop := ∀ e ∈ I, e ∉ cl (I \ {e})   
 
-  (let ⟨B,hB,hBmin⟩ := finite.exists_minimal (λ B, cl B = univ)
-      ⟨univ, eq_univ_of_univ_subset (subset_cl _)⟩ in
-    ⟨B, hB, λ X hXB hX, hXB.ne.symm (hBmin _ hX hXB.subset)⟩)
+lemma cl_indep_mono {cl : set E → set E} (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) {I J : set E} 
+(hJ : cl_indep cl J) (hIJ : I ⊆ J) :
+  cl_indep cl I :=
+(λ e heI hecl, hJ e (hIJ heI) (cl_mono (diff_subset_diff_left hIJ) hecl))
 
-  (begin
-    intros B₁ B₂ hB₁ hB₂ x hx,
-    by_contra' h,
-    have h₁ : ∀ y ∈ B₂, y ∉ cl (B₁ \ {x}) → cl (insert y (B₁ \ {x})) = univ,
-    { refine λ y hyB₂ hynotin, _,
-      have hex := cl_exchange (B₁ \ {x}) x y,
-      rw [insert_diff_singleton, insert_eq_of_mem hx.1, hB₁.1, ←compl_eq_univ_diff,
-        mem_compl_iff] at hex,
-      have h' := insert_subset.mpr ⟨(hex hynotin).1, (subset_insert _ _).trans (subset_cl _)⟩,
-      rw [insert_diff_singleton, insert_eq_of_mem hx.1] at h',
-      have h'' := cl_mono _ _ h',
-      rwa [cl_idem, hB₁.1, univ_subset_iff] at h''},
-
-    have hss : B₂ \ B₁ ⊆ cl (B₁ \ {x}),
-    { refine λ y hy, by_contra (λ h', _),
-      have hxy : x ≠ y,
-      { rintro rfl, exact hx.2 hy.1},
-      obtain ⟨A,⟨hAs,hA⟩,hAmin⟩ := finite.exists_minimal _ (h y hy (h₁ y hy.1 h')),
-      have hxA : x ∉ A,
-      { refine λ hxA, hxy _,  have := hAs.subset, simpa using this hxA},
-      have hyA : y ∈ A,
-      { by_contra hyA,
-        exact hB₁.2 _ (((subset_insert_iff_of_not_mem hyA).mp hAs.subset).trans_ssubset
-          $ diff_singleton_ssubset.2 hx.1) hA },
-      have hy' : B₁ ⊆ cl (A \ {y}),
-      { refine λ z hz, by_contra (λ hz', _ ),
-        have hzA : z ∈ cl (insert y (A \ {y})),
-        { rw [insert_diff_singleton, insert_eq_of_mem hyA, hA], exact mem_univ _,},
-        have h' := (cl_exchange _ _ _ ⟨hzA,hz'⟩).1,
-        have h'' := insert_subset.mpr ⟨h', (subset_insert _ _).trans (subset_cl _)⟩,
-        rw [insert_diff_singleton, insert_eq_of_mem hyA] at h'',
-        have h''' := cl_mono _ _ h'',
-        rw [hA, univ_subset_iff, cl_idem] at h''',
-        refine hB₁.2 _ _ h''',
-        refine ssubset_of_ne_of_subset _ (insert_subset.mpr ⟨hz,_⟩),
-        { obtain (rfl | hxz) := eq_or_ne x z,
-          { intro h_eq,
-            rw [←h_eq, insert_diff_singleton_comm hxy.symm] at hAs,
-            refine hAs.not_subset _,
-            rw [diff_subset_iff, insert_comm, singleton_union, insert_diff_singleton,
-              insert_eq_of_mem hyA], },
-          simp_rw [ne.def, ext_iff, not_forall, mem_insert_iff, mem_diff, mem_singleton_iff],
-          use x,
-          have := hx.1, tauto},
-        rw [diff_subset_iff, singleton_union],
-        exact hAs.subset.trans (insert_subset_insert (diff_subset _ _))},
-      have hA' := cl_mono _ _ hy',
-      rw [hB₁.1, univ_subset_iff, cl_idem] at hA',
-      refine (diff_singleton_ssubset.2 hyA).ne.symm (hAmin _ ⟨_,hA'⟩ (diff_subset _ _)),
-      exact (diff_subset _ _).trans_ssubset hAs},
-
-  have ht : B₂ ⊆ _ := subset_trans _ (union_subset hss (subset_cl (B₁ \ {x}))),
-  { have ht' := cl_mono _ _ ht,
-    rw [hB₂.1, cl_idem, univ_subset_iff] at ht',
-    exact hB₁.2 _ (diff_singleton_ssubset.2 hx.1) ht'},
-  nth_rewrite 0 [←diff_union_inter B₂ B₁],
-  apply union_subset_union rfl.subset,
-  rintros y ⟨hy2,hy1⟩,
-  rw mem_diff_singleton,
-  use hy1,
-  rintro rfl,
-  exact hx.2 hy2,
-  end )
-
-lemma matroid_of_cl_aux (cl : set E → set E)
-  (subset_cl : ∀ X, X ⊆ cl X )
-  (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
-  (cl_idem : ∀ X, cl (cl X) = cl X )
-  (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X )
-  {I : set E} :
-(∀ x ∈ I, cl (I \ {x}) ≠ cl I) ↔ ∃ B, cl B = univ ∧ (∀ X ⊂ B, cl X ≠ univ) ∧ I ⊆ B :=
+lemma cl_indep_aux {e : E} {I : set E} {cl : set E → set E} 
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) 
+(h : cl_indep cl I) (heI : ¬cl_indep cl (insert e I)) : 
+e ∈ cl I :=
 begin
-  refine ⟨λ h, _, λ h x hI hcl, _⟩,
-  { obtain ⟨B, ⟨hB, hIB⟩, hBmax⟩ :=
-      finite.exists_maximal (λ X, (∀ e ∈ X, cl (X \ {e}) ≠ cl X) ∧ I ⊆ X)
-         ⟨I, h, rfl.subset⟩,
-    refine ⟨B, by_contra (λ hBu, _), λ X hXB hX, _, hIB⟩,
-    { rw [←ne.def, ne_univ_iff_exists_not_mem] at hBu,
-      obtain ⟨a,haB⟩ := hBu,
-      have haB' : a ∉ B := λ haB', haB (subset_cl B haB'),
-      rw hBmax (insert a B) _ (subset_insert _ _) at haB',
-      { exact haB' (mem_insert _ _)},
-      refine ⟨λ e heaB hcl, _,  hIB.trans (subset_insert _ _)⟩,
-      have hea : e ≠ a,
-      { rintro rfl,
-        rw [insert_diff_self_of_not_mem haB'] at hcl,
-        rw hcl at haB,
-        exact haB ((subset_cl (insert e B)) (mem_insert e B))},
-      have heB : e ∈ B := mem_of_mem_insert_of_ne heaB hea,
-      have hecl : e ∉ cl ((insert a B) \ {e}),
-      { refine λ h_in, hB e heB (cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem _),
-        by_contra hecl, apply haB,
-        rw ←insert_diff_singleton_comm hea.symm  at h_in,
-        have := (cl_exchange _ _ _ ⟨h_in,hecl⟩).1,
-        rwa [insert_diff_singleton, insert_eq_of_mem heB] at this},
-      rw hcl at hecl,
-      exact hecl ((subset_cl _) heaB)},
-    obtain ⟨e,heB, heX⟩ := exists_of_ssubset hXB,
-    have hcon := hX.symm.trans_subset (cl_mono _ _ (subset_diff_singleton hXB.subset heX)),
-    rw [univ_subset_iff] at hcon,
-    refine hB e heB ((cl_mono _ _ (diff_subset _ _)).antisymm _),
-    rw [hcon],
-    apply subset_univ},
-  obtain ⟨B, hBu, hBmax, hIB⟩ := h,
-  refine hBmax _ (diff_singleton_ssubset.2 $ hIB hI) _,
-  rwa cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem,
-  have hdiff := cl_mono _ _  (@diff_subset_diff_left _ _ _ {x} hIB),
-  rw [hcl] at hdiff,
-  apply hdiff,
-  apply subset_cl,
-  exact hI,
-end
+  have he : e ∉ I, by { intro he, rw [insert_eq_of_mem he] at heI, exact heI h },
+  rw [cl_indep] at heI, push_neg at heI, 
+  obtain ⟨f, ⟨(rfl | hfI), hfcl⟩⟩ := heI, 
+  { rwa [insert_diff_self_of_not_mem he] at hfcl },
+  have hne : e ≠ f, by { rintro rfl, exact he hfI }, 
+  rw [←insert_diff_singleton_comm hne] at hfcl, 
+  convert (cl_exchange (I \ {f}) e f ⟨hfcl,h f hfI⟩).1, 
+  rw [insert_diff_singleton, insert_eq_of_mem hfI],  
+end   
 
-@[simp] lemma matroid_of_cl_apply (cl : set E → set E)
+/-- If the closure axioms hold, then `cl`-independence gives rise to a matroid -/
+def matroid_of_cl (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X)
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) 
+(cl_indep_maximal : ∀ ⦃I X⦄, cl_indep cl I → I ⊆ X  → 
+    (maximals (⊆) {J | cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) :
+matroid E := 
+matroid_of_indep (cl_indep cl) 
+(λ e he _, not_mem_empty _ he) (λ I J hJ hIJ, cl_indep_mono cl_mono hJ hIJ)
+(begin
+  refine λ I I' hI hIn hI'm, _, 
+  obtain ⟨B, hB⟩ := cl_indep_maximal hI (subset_union_left I I'), 
+  have hB' : B ∈ maximals (⊆) {J | cl_indep cl J},  
+  { refine ⟨hB.1.1,(λ B' hB' hBB' e heB', by_contra (λ heB, _) )⟩,
+    have he' : e ∈ cl I', 
+    { refine (em (e ∈ I')).elim (λ heI', (subset_cl I') heI') 
+        (λ heI', cl_indep_aux cl_exchange hI'm.1 (λ hi, _)), 
+      exact heI' (hI'm.2 hi (subset_insert e _) (mem_insert e _)) },
+      have hI'B : I' ⊆ cl B, 
+    { refine λ f hf, (em (f ∈ B)).elim (λ h', subset_cl B h') 
+        (λ hfB', cl_indep_aux cl_exchange hB.1.1 (λ hi, hfB' _)),  
+      
+      refine hB.2 ⟨hi,hB.1.2.1.trans (subset_insert _ _),_⟩ (subset_insert _ _) (mem_insert _ _), 
+      exact insert_subset.mpr ⟨or.inr hf,hB.1.2.2⟩ }, 
+    have heBcl := (cl_idem B).subset ((cl_mono hI'B) he'), 
+    refine cl_indep_mono cl_mono hB' (insert_subset.mpr ⟨heB', hBB'⟩) e (mem_insert _ _) _,
+    rwa [insert_diff_of_mem _ (mem_singleton e), diff_singleton_eq_self heB] },
+  obtain ⟨f,hfB,hfI⟩ := exists_of_ssubset 
+    (hB.1.2.1.ssubset_of_ne (by { rintro rfl, exact hIn hB' })), 
+  refine ⟨f, ⟨_, hfI⟩, cl_indep_mono cl_mono hB.1.1 (insert_subset.mpr ⟨hfB,hB.1.2.1⟩)⟩,    
+  exact or.elim (hB.1.2.2 hfB) (false.elim ∘ hfI) id, 
+end)
+(λ I X hI hIX, cl_indep_maximal hI hIX)
+ 
+lemma cl_indep_cl_eq {cl : set E → set E }
   (subset_cl : ∀ X, X ⊆ cl X )
-  (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y )
+  (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y )
   (cl_idem : ∀ X, cl (cl X) = cl X )
-  (cl_exchange : ∀ X e f, f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) :
-(matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
+  (cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) 
+  (cl_indep_maximal : ∀ ⦃I X⦄, cl_indep cl I → I ⊆ X →  
+    (maximals (⊆) {J | cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X }).nonempty ) (X : set E) :
+cl X = X ∪ {e | ∃ I ⊆ X, cl_indep cl I ∧ ¬cl_indep cl (insert e I) }  :=
 begin
-  set M := matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange with hM,
-  apply funext,
-  by_contra' h,
-  obtain ⟨I,hI,hImin⟩ := finite.exists_minimal _ h,
+  ext f, 
+  refine ⟨λ h, (em (f ∈ X)).elim or.inl (λ hf, or.inr _), 
+    λ h, or.elim h (λ g, subset_cl X g) _⟩, 
+  { have hd : ¬ (cl_indep cl (insert f X)), 
+    { refine λ hi, hi f (mem_insert _ _) _, convert h, 
+      rw [insert_diff_of_mem _ (mem_singleton f), diff_singleton_eq_self hf] },
+    obtain ⟨I, hI⟩ := cl_indep_maximal (λ e he h', not_mem_empty _ he) (empty_subset X), 
+    have hXI : X ⊆ cl I,  
+    { refine λ x hx, (em (x ∈ I)).elim (λ h', subset_cl _ h') (λ hxI, _),
+      refine cl_indep_aux cl_exchange hI.1.1 (λ hi, hxI _),  
+      refine hI.2 ⟨hi, empty_subset (insert x I), _⟩ (subset_insert x _) (mem_insert _ _), 
+      exact insert_subset.mpr ⟨hx, hI.1.2.2⟩ },
+    have hfI : f ∈ cl I, from (cl_mono (hXI)).trans_eq (cl_idem I) h,
+    refine ⟨I, hI.1.2.2, hI.1.1, λ hi, hf (hi f (mem_insert f _) _).elim⟩,
+    rwa [insert_diff_of_mem _ (mem_singleton f), diff_singleton_eq_self],  
+    exact not_mem_subset hI.1.2.2 hf },
+  rintro ⟨I, hIX, hI, hfI⟩, 
+  exact (cl_mono hIX) (cl_indep_aux cl_exchange hI hfI), 
+end 
 
-  have hImin' : ∀ x ∈ I, M.cl (I \ {x}) = cl (I \ {x}),
-  { by_contra' h,
-    obtain ⟨x,hxI,hne⟩ := h,
-    exact (diff_singleton_ssubset.2 hxI).ne' (hImin _ hne  $diff_subset _ _) },
+@[simp] lemma matroid_of_cl_apply {cl : set E → set E} (subset_cl : ∀ X, X ⊆ cl X)
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X)
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X) 
+(cl_indep_maximal : ∀ ⦃I X⦄, cl_indep cl I → I ⊆ X →   
+    (maximals (⊆) {J | cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) :
+(matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange cl_indep_maximal).cl = cl :=
+begin
+  ext1 X,
+  rw [(cl_indep_cl_eq subset_cl cl_mono cl_idem cl_exchange cl_indep_maximal X : cl X = _), 
+    matroid_of_cl, matroid.cl_eq_set_of_indep_not_indep], 
+  simp, 
+end 
 
-  set indep : set E → Prop := λ I, ∀ x ∈ I, cl (I \ {x}) ≠ cl I with h_indep,
 
-  have hIi : (M.indep I) ∧ (indep I),
-  { rw [matroid.indep_iff_cl_diff_ne_forall],
-    by_contra h', apply hI,
-    simp_rw [not_and_distrib, h_indep, not_forall, not_ne_iff] at h',
-    obtain (⟨x,hxI,hne⟩ | ⟨x,hxI,hne⟩) := h',
-    { rw [←hne, hImin' _ hxI, cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem],
-      rw [←hImin' x hxI, hne],
-      exact (M.subset_cl I) hxI},
-    rw [←hne, ←hImin' _ hxI, cl_diff_singleton_eq_cl M.cl M.subset_cl M.cl_mono M.cl_cl],
-    rw [hImin' _ hxI, hne],
-    exact (subset_cl I) hxI},
+-- lemma cl_indep_finite  (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
+-- (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y ) (cl_idem : ∀ X, cl (cl X) = cl X )
+-- (cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X ) 
+-- {I X : set E} (hX : X.finite) (hIX : I ⊆ cl X) (hI : cl_indep cl I) : 
+-- I.finite ∧ I.ncard ≤ X.ncard :=  
+-- begin
+--   revert I, 
+--   refine hX.induction_on _ _, 
+--   { intros I hIcl hI,
+--     suffices : I = ∅, { subst this, simp },
+--     rw [eq_empty_iff_forall_not_mem], 
+--     exact λ e heI, hI e heI ((cl_mono (empty_subset (I \{e} ))) (hIcl heI)) },
+--   intros e Y heY hY IH I hIeY hI,
+  
 
-  simp_rw [set.ext_iff, not_forall, not_iff, hIi.1.not_mem_cl_iff,
-    matroid.indep_iff_subset_base, hM, matroid_of_cl] at hI,
 
-  obtain ⟨x,hx⟩:= hI,
-  obtain (hxI | hxI) := em (x ∈ cl I),
-  { obtain ⟨hxI', B, ⟨hB, hBmin⟩, hxIB⟩ := hx.mpr hxI,
-    refine hBmin (B \ {x}) (diff_singleton_ssubset.2 $ hxIB $ mem_insert _ _) _,
-    rwa [cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem],
-    have hIBx : I ⊆ B \ {x}, from ((subset_diff_singleton ((subset_insert _ _).trans hxIB)) hxI'),
-    exact cl_mono I (B \ {x}) hIBx hxI},
+--   suffices hIeY : I \ {e} ⊆ cl Y,   
+--   { have h' := IH hIeY (cl_indep_mono cl_mono hI (diff_subset I {e})), 
+--     have hIfin : I.finite := (h'.1.insert e).subset (by simp), 
+--     refine ⟨hIfin, _⟩, 
+--     rw [ncard_insert_of_not_mem heY hY], 
+--     exact (ncard_le_ncard_diff_add_ncard I {e} (finite_singleton _)).trans
+--       (add_le_add h'.2 (by rw ncard_singleton)) },
+--   rintro f ⟨hfI, hfe : f ≠ e⟩, 
+  
+  
+--   -- refine cl_indep_aux cl_exchange _ _, 
+--   -- have := cl_exchange (I \ {f}) f e, 
+-- end 
 
-  have hxI' : x ∉ I, from λ hxI', hxI ((subset_cl _) hxI'),
-  simp_rw [iff_false_right hxI, not_and, not_exists, not_and] at hx,
+/-- The maximality axiom isn't needed if all independent sets are at most some fixed size. -/
+def matroid_of_cl_of_indep_bounded (cl : set E → set E)
+  (subset_cl : ∀ X, X ⊆ cl X )
+  (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y )
+  (cl_idem : ∀ X, cl (cl X) = cl X )
+  (cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X )  
+  (n : ℕ) (hn : ∀ I, cl_indep cl I → I.finite ∧ I.ncard ≤ n) :
+matroid E := matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange
+(begin
+  by_contra' h, simp_rw [not_nonempty_iff_eq_empty, eq_empty_iff_forall_not_mem] at h, 
+  obtain ⟨I, X, hI, hIX, he⟩ := h,
+  set S := {k | ∃ J, cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X ∧ J.finite ∧ J.ncard = k}, 
+  have hS : S.finite, 
+  { refine (finset.range (n+1)).finite_to_set.subset _, 
+    rintro s ⟨K, ⟨hK,-,-,-,rfl⟩⟩,   
+    simp only [finset.coe_range, mem_Iio, nat.lt_add_one_iff],
+    exact (hn K hK).2 },
+  have hIS : ncard I ∈ S, from ⟨I, hI, subset.rfl, hIX, (hn I hI).1, rfl⟩,  
+  obtain ⟨k, ⟨K,hK⟩, hmax⟩ :=  finite.exists_maximal_wrt id S hS ⟨_,hIS⟩, 
+  refine he K ⟨⟨hK.1,hK.2.1,hK.2.2.1⟩, λ K' hK' hKK', _⟩,  
+  have hK'fin := (hn _ hK'.1).1, 
+  rw eq_of_subset_of_ncard_le hKK' _ hK'fin, 
+  convert (hmax K'.ncard ⟨K', _ ⟩ 
+    (hK.2.2.2.2.symm.le.trans (ncard_le_of_subset hKK' hK'fin))).symm.le, 
+  { exact hK.2.2.2.2 },
+  exact ⟨hK'.1, hK'.2.1,hK'.2.2, hK'fin, rfl⟩, 
+end)
 
-  have hxI : indep (insert x I),
-   { rintro y (rfl | hy) h_eq,
+@[simp] lemma matroid_of_cl_of_indep_bounded_apply (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X )  
+(n : ℕ) (hn : ∀ I, cl_indep cl I → I.finite ∧ I.ncard ≤ n) : 
+(matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange n hn).cl = cl := 
+by simp [matroid_of_cl_of_indep_bounded]
 
-    { simp only [insert_diff_of_mem, mem_singleton] at h_eq,
-      refine hxI (cl_mono _ _ (diff_subset _ {y}) _),
-      rw h_eq,
-      refine subset_cl _ (mem_insert _ _)},
+instance (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X )  
+(n : ℕ) (hn : ∀ I, cl_indep cl I → I.finite ∧ I.ncard ≤ n) :
+matroid.finite_rk (matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange n hn) 
+:= 
+begin
+  obtain ⟨B, h⟩ := 
+    (matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange n hn).exists_base, 
+  refine h.finite_rk_of_finite (hn _ _).1, 
+  simp_rw [matroid_of_cl_of_indep_bounded, matroid_of_cl, matroid.base_iff_maximal_indep, 
+    matroid_of_indep_apply] at h, 
+  exact h.1, 
+end 
 
-    have hxy : x ≠ y, {rintro rfl, exact hxI' hy},
-    have hycl : y ∈ cl (insert x (I \ {y})),
-    { rw [insert_diff_singleton_comm hxy, h_eq], apply subset_cl, exact subset_insert _ _ hy},
-    have hy' : y ∉ cl (I \ {y}), from
-      λ hy', hIi.2 y hy (cl_diff_singleton_eq_cl cl subset_cl cl_mono cl_idem  hy'),
-    have h' := (cl_exchange _ _ _ ⟨hycl,hy'⟩).1,
-    rw [insert_diff_singleton, insert_eq_of_mem hy] at h',
-    exact hxI h' },
-  rw [h_indep, matroid_of_cl_aux cl subset_cl cl_mono cl_idem cl_exchange] at hxI,
-  obtain ⟨B, hB, hIB⟩ := hxI,
-  exact hx hxI' B ⟨hB, hIB.1⟩ hIB.2,
-end
+/-- A finite matroid as defined by the closure axioms. -/
+def matroid_of_cl_of_finite [finite E] (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X)
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X) : 
+matroid E   :=
+matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange (nat.card E)
+(λ I hI, ⟨to_finite _, by { rw [←ncard_univ], exact ncard_le_of_subset (subset_univ _) }⟩) 
+ 
+@[simp] lemma matroid_of_cl_of_finite_apply [finite E] (cl : set E → set E) 
+(subset_cl : ∀ X, X ⊆ cl X )
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X)
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X) :
+(matroid_of_cl_of_finite cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
+by simp [matroid_of_cl_of_finite] 
 
-lemma matroid_of_flat_aux (flat : set E → Prop) (univ_flat : flat univ)
+lemma matroid_of_flat_aux [finite E] (flat : set E → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set E) :
   flat (⋂₀ {F | flat F ∧ X ⊆ F}) ∧ ∀ F₀, flat F₀ → ((⋂₀ {F | flat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
 begin
@@ -910,11 +925,11 @@ begin
 end
 
 /-- A collection of sets satisfying the flat axioms determines a matroid -/
-def matroid_of_flat (flat : set E → Prop) (univ_flat : flat univ)
+def matroid_of_flat [finite E] (flat : set E → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
   ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :=
-matroid_of_cl (λ X, ⋂₀ {F | flat F ∧ X ⊆ F})
+matroid_of_cl_of_finite (λ X, ⋂₀ {F | flat F ∧ X ⊆ F})
 (λ X, subset_sInter (λ F, and.right))
 (λ X Y hXY, subset_sInter (λ F hF, by {apply sInter_subset_of_mem, exact ⟨hF.1, hXY.trans hF.2⟩}))
 (begin
@@ -970,14 +985,14 @@ end )
   rwa ← (hmin _ hFXf hFXFXf hssu) at hfFXf,
 end)
 
-@[simp] lemma matroid_of_flat_apply (flat : set E → Prop) (univ_flat : flat univ)
+@[simp] lemma matroid_of_flat_apply [finite E] (flat : set E → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
 ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :
   (matroid_of_flat flat univ_flat flat_inter flat_partition).flat = flat :=
 begin
   ext F,
-  simp_rw [matroid_of_flat, matroid.flat_iff_cl_self, matroid_of_cl_apply],
+  simp_rw [matroid_of_flat, matroid.flat_iff_cl_self, matroid_of_cl_of_finite_apply],
   refine ⟨λ hF, _, λ hF, _⟩,
   { rw ←hF, exact (matroid_of_flat_aux flat univ_flat flat_inter _).1},
   exact (subset_sInter (λ F', and.right)).antisymm' (sInter_subset_of_mem ⟨hF,rfl.subset⟩),
