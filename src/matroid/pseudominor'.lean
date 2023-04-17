@@ -23,9 +23,31 @@ Kung's theorem and the matroid intersection theorem are currently both proved in
 noncomputable theory
 open set
 
-variables {E : Type*}  {e f : E} {M N : matroid E} {X Y D C F B I I₀ R : set E}
+variables {E : Type*}  {e f : E} {M N : matroid E} {X Y D C F H B I I₀ R : set E}
 
 namespace matroid
+
+section subtype
+
+def restrict_to (M : matroid E) (X : set E) : matroid X := 
+matroid_of_indep (λ (I : set X), (M.lrestrict X).indep (coe '' I : set E)) 
+(by simpa using M.empty_indep )
+(λ I J hJ hIJ, (hJ.subset (image_subset _ hIJ))) 
+(begin
+  intros I B hI hI' hB, 
+  have hIn : ¬ (M.lrestrict X).base (coe '' I), sorry,  
+  have hBb : (M.lrestrict X).base (coe '' B), sorry, 
+  obtain ⟨e, he, hie⟩ := hI.exists_insert_of_not_base hIn hBb, 
+  obtain ⟨x, hx, rfl⟩ := he.1, 
+  refine ⟨x, _, _⟩, 
+  { rw [←image_diff (subtype.coe_injective)] at he, 
+    simpa only [subtype.coe_prop, mem_image, subtype.exists, subtype.coe_mk, 
+      exists_and_distrib_right, exists_eq_right, subtype.coe_eta, exists_true_left] using he }, 
+  rwa [image_insert_eq], 
+end)
+sorry 
+
+end subtype
 
 section restrict
 
@@ -43,6 +65,13 @@ lrestr_indep_iff.mpr ⟨hI, hIR⟩
 lemma indep.lrestr_to_indep (h : (M ‖ R).indep I) : M.indep I := (lrestr_indep_iff.mp h).1 
 
 lemma indep.lrestr_to_subset (h : (M ‖ R).indep I) : I ⊆ R := (lrestr_indep_iff.mp h).2 
+
+lemma lrestr_lrestr (M : matroid E) (R₁ R₂ : set E) : (M ‖ R₁) ‖ R₂ = M ‖ (R₁ ∩ R₂) :=
+eq_of_indep_iff_indep_forall (λ I, by simp [and_assoc])
+
+lemma lrestr_lrestr_eq_lrestr_of_subset (M : matroid E) {R₁ R₂ : set E} (h : R₂ ⊆ R₁) :
+  (M ‖ R₁) ‖ R₂ = M ‖ R₂ := 
+by rw [lrestr_lrestr, inter_eq_right_iff_subset.mpr h]
 
 @[simp] lemma lrestr_basis_iff : (M ‖ R).basis I X ↔ M.basis I (X ∩ R) :=
 begin
@@ -87,6 +116,16 @@ by rw [lrestr_cl, empty_inter, compl_union, compl_compl]
 by rw [lrestr_cl, empty_inter, compl_union, compl_compl]
 
 lemma lrestr.weak_image (M : matroid E) (R : set E) : M ‖ R ≤w M := λ I, indep.lrestr_to_indep 
+
+lemma lrestr.circuit_iff : (M ‖ R).circuit C ↔ M.circuit C ∧ C ⊆ R := sorry  
+
+lemma lrestr.hyperplane_iff : (M ‖ R).hyperplane H ↔ 
+  H ∈ maximals (⊆) {X : set E | ¬∃ I ⊆ X, M.basis I R } := sorry 
+
+lemma lrestr.cocircuit_iff : (M ‖ R).cocircuit X ↔ 
+  X ∈ minimals (⊆) {X : set E | ∀ I, M.basis I R → (I ∩ X).nonempty  } := sorry 
+
+lemma lrestr_eq_lrestr_iff' {M N : matroid E} : M ‖ X = N ‖ X ↔ ∀ I ⊆ X, M.indep I ↔ N.indep I := sorry 
 
 lemma lrestr_eq_lrestr_iff {M N : matroid E} : M ‖ X = N ‖ Y ↔ 
   (∀ e ∈ (X ∪ Y)ᶜ, M.loop e ∧ M.loop e) ∧ ∀ I ⊆ X ∩ Y, M.indep I ↔ N.indep I :=
@@ -136,7 +175,7 @@ begin
   refine ⟨sorry, _⟩, 
   intros h hi, 
   refine foo h _, 
-
+  sorry, 
    
   -- obtain ⟨I, hI⟩ := M﹡.exists_basis X, 
   -- simp_rw [←hI.cl, hI.indep.mem_cl_iff_of_not_mem (not_mem_subset hI.subset heX), 
@@ -191,9 +230,11 @@ begin
   refine h.elim heX.elim (λ h, _),  
   
   by_contra' hI', 
-
+  sorry, 
   
 end 
+
+lemma dual_cl_eq_of_not_mem (heX : e ∉ X) : M﹡.cl X = {e | (M ⟍ X).coloop e} := sorry 
 
 end delete
 
@@ -215,23 +256,36 @@ instance proj_elem {E : Type*} : has_con (matroid E) E := ⟨λ M e, M ⟋ ({e} 
 lemma basis.project_eq_project_cl (hIX : M.basis I X) : M ⟋ I = M ⟋ X :=
 begin
   unfold has_con.con,
-  have hKR := compl_subset_compl.mpr (hIX.subset),  
-  set N := M﹡ with hN, 
-  set K := Iᶜ with hK, 
-  set R := Xᶜ with hX,  
-  simp_rw [lrestr_eq_lrestr_iff, union_eq_left_iff_subset.mpr hKR, 
-    inter_eq_right_iff_subset.mpr hKR], 
-  refine ⟨_,λ J hJ, ⟨_,_⟩⟩, 
-  { sorry }, 
-  { simp_rw [dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, lrestr_cl], 
+   
+  apply eq_of_indep_iff_indep_forall (λ J, _), 
+  simp_rw [lrestr_indep_iff, dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, 
+    lrestr_cl, compl_compl], 
+  sorry, 
+
+  -- apply eq_of_circuit_iff_circuit_forall (λ C, _), 
+  -- simp_rw [lrestr.circuit_iff, dual_circuit_iff_cocircuit, lrestr.cocircuit_iff,  
+  --   subset_compl_iff_disjoint_right], 
+  -- have hKR := compl_subset_compl.mpr (hIX.subset),  
+  -- set N := M﹡ with hN, 
+  -- set K := Iᶜ with hK, 
+  -- set R := Xᶜ with hX,  
+
+  
+
+
+  -- simp_rw [lrestr_eq_lrestr_iff, union_eq_left_iff_subset.mpr hKR, 
+  --   inter_eq_right_iff_subset.mpr hKR], 
+  -- refine ⟨_,λ J hJ, ⟨_,_⟩⟩, 
+  -- { sorry }, 
+  -- { simp_rw [dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, lrestr_cl], 
      
     
-    rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
-      eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
-    intro hK, 
-    rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
-      eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
-      }
+  --   rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
+  --     eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
+  --   intro hK, 
+  --   rw [←compl_compl (N.cl _), ←compl_inter, compl_eq_comm, compl_univ, ←diff_eq_compl_inter, 
+  --     eq_comm, diff_eq_empty, ←diff_eq_compl_inter], 
+  --     }
     -- intro h, },
 
   -- apply eq_of_indep_iff_indep_forall (λ J, _), 
@@ -252,11 +306,12 @@ end
 lemma project_cl (M : matroid E) (C X : set E) : (M ⟋ C).cl X = M.cl (X ∪ C) :=
 begin
   unfold has_con.con, 
-  rw [lrestr_cl, compl_compl, ←diff_eq, ←loopify_eq_lrestr_compl], 
+  rw [lrestr_cl, compl_compl, ←diff_eq, ←loopify_eq_lrestr_compl, dual_cl_eq_of_not_mem], 
   ext x, 
   { split, 
     { rintro (hx | hxC), swap, sorry, 
       simp_rw [mem_cl_iff_exists_circuit] at hx,  },},
+  sorry, 
   -- obtain ⟨I, hI⟩ := M.exists_basis C, 
   -- change ((M﹡ ‖ Cᶜ)﹡ ‖  Cᶜ).cl X = M.cl (X ∪ C), 
   -- rw [←cl_union_cl_right_eq_cl_union, ←hI.cl, cl_union_cl_right_eq_cl_union, lrestr_cl, 
@@ -266,6 +321,67 @@ begin
 end 
 
 
+lemma indep.project_indep_iff {J : set E} (hI : M.indep I) : 
+  (M ⟋ I).indep J ↔ M.indep (J ∪ I) ∧ disjoint I J :=
+begin
+  rw [←dual_dual M],
+  unfold has_con.con, 
+  simp_rw [lrestr_indep_iff, dual_indep_iff_coindep, coindep_iff_disjoint_base, lrestr_base_iff, 
+    dual_dual, subset_compl_iff_disjoint_left, disjoint_union_left],
+  rw [←dual_dual M,  dual_indep_iff_coindep] at hI, 
+  split, 
+  { rintro ⟨⟨B,hBI,hBJ⟩,h⟩, 
+    exact ⟨⟨B, hI.base_of_basis_compl hBI, hBJ, subset_compl_iff_disjoint_left.mp hBI.subset⟩,h⟩ },
+  rintro ⟨⟨B, hB, hJB, hIB⟩,hIJ⟩, 
+  exact ⟨⟨B, hB.basis_of_subset (subset_compl_iff_disjoint_left.mpr hIB), hJB⟩, hIJ⟩, 
+end  
+
+lemma project_loops : M ⟋ (M.cl ∅) = M :=
+begin
+  apply eq_of_indep_iff_indep_forall (λ I, _ ), 
+  unfold has_con.con, 
+  simp_rw [lrestr_indep_iff, dual_indep_iff_coindep, coindep_iff_cl_compl_eq_univ, 
+    lrestr_cl, compl_compl, ←compl_union, subset_compl_iff_disjoint_right], 
+  refine ⟨λ h, _, λ h, ⟨_, h.disjoint_loops⟩⟩,
+  { rw [←dual_dual M, dual_indep_iff_coindep, coindep_iff_disjoint_base],
+    obtain ⟨B,hB⟩ := 
+      M.dual_loops_indep.subset_basis_of_subset (subset_compl_iff_disjoint_left.mpr h.2), 
+    refine ⟨B, hB.2.indep.base_of_cl_eq_univ _, subset_compl_iff_disjoint_left.mp hB.2.subset⟩, 
+    rw [←univ_subset_iff, ←h.1, union_subset_iff],
+    refine ⟨cl_subset_cl_of_subset_cl _, hB.1.trans (subset_cl _ _)⟩, 
+    rw [compl_union, hB.2.cl], 
+    exact (inter_subset_left _ _).trans (subset_cl _ _) },
+  sorry
+
+end 
+
+lemma foo' (M : matroid E) (X : set E) : M﹡ ‖ X = (M ‖ X)﹡ ‖ X := 
+begin
+  simp_rw [lrestr_eq_lrestr_iff', dual_indep_iff_coindep, coindep_iff_disjoint_base, 
+    lrestr_base_iff], 
+  refine λ I hIX, ⟨_,_⟩, 
+  { 
+    rintro ⟨B, hB, hIB⟩, 
+    obtain ⟨J, hJ⟩ := M.exists_basis (X \ I), 
+    
+    refine ⟨B, hB.basis_of_subset _, hIB⟩, },
+
+
+  sorry 
+end  
+
+lemma project_project (M : matroid E) (C₁ C₂ : set E)  : (M ⟋ C₁) ⟋ C₂ = M ⟋ (C₁ ∪ C₂) :=
+begin
+  unfold has_con.con,
+  rw [compl_union, ←lrestr_lrestr, ←lrestr_lrestr, foo', lrestr_lrestr_eq_lrestr_of_subset _ subset.rfl], 
+  
+  -- congr', 
+  -- rw [inter_comm, ←lrestr_lrestr, ← foo', ←foo', dual_dual, 
+  --   lrestr_lrestr_eq_lrestr_of_subset _ subset.rfl] , 
+   
+  -- refine eq_of_indep_iff_indep_forall (λ I, _), 
+  -- simp [coindep_iff_disjoint_base], 
+end 
 
 
 

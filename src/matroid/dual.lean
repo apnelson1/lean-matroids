@@ -117,6 +117,16 @@ begin
   ring,
 end
 
+lemma dual_loops_indep (M : matroid E) : M﹡.indep (M.cl ∅) := 
+begin
+  obtain ⟨B, hB⟩ := M.exists_base,  
+  rw [dual_indep_iff_coindep, coindep_iff_disjoint_base], 
+  exact ⟨B, hB, hB.indep.disjoint_loops.symm⟩, 
+end
+
+lemma coloops_eq_dual_cl_empty : {e | M.coloop e} = M﹡.cl ∅ :=
+by { rw [←dual_dual M], simp_rw [dual_coloop_iff_loop, dual_dual], refl }
+
 lemma dual_rank_cast_eq [finite E] (M : matroid E) (X : set E) :
   (M﹡.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
 by linarith [M.dual_r_add_rk_eq X]

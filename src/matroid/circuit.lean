@@ -265,6 +265,11 @@ begin
   exact h' C hCss hC, 
 end  
 
+lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : matroid E} (h : ∀ C, M₁.circuit C ↔ M₂.circuit C) :
+  M₁ = M₂ :=
+eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_forall_subset_not_circuit, h])
+
+
 end matroid
 
 section from_axioms
