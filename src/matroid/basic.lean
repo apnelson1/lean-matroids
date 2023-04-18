@@ -157,6 +157,8 @@ def nonloops (M : matroid E) : set E :=
 def coloop (M : matroid E) (e : E) : Prop :=
   ∀ ⦃B⦄, M.base B → e ∈ B
 
+class finitary (M : matroid E) : Prop := (cct_finite : ∀ (C : set E), M.circuit C → C.finite) 
+
 end defs
 
 section base
@@ -192,7 +194,17 @@ lemma base.finite_rk_of_finite (hB : M.base B) (hfin : B.finite) : finite_rk M :
 instance finite_rk_of_finite [finite E] {M : matroid E} : finite_rk M := 
 let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
 
-lemma finite_rk_of_finite_base (hB : M.base B) (h : B.finite) : finite_rk M := ⟨⟨B, hB, h⟩⟩   
+lemma finite_rk_of_finite_base (hB : M.base B) (h : B.finite) : finite_rk M := ⟨⟨B, hB, h⟩⟩ 
+
+instance finitary_of_finite_rk {M : matroid E} [finite_rk M] : finitary M := 
+⟨λ C hC, 
+begin
+  obtain (rfl | ⟨e,heC⟩) := C.eq_empty_or_nonempty, exact finite_empty, 
+  have hi : M.indep (C \ {e}), from by_contra (λ h', (hC.2 h' (diff_subset _ _) heC).2 rfl), 
+  obtain ⟨B, hB, hCB⟩ := hi, 
+  convert (hB.finite.subset hCB).insert e, 
+  rw [insert_diff_singleton, insert_eq_of_mem heC],
+end ⟩  
 
 lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 

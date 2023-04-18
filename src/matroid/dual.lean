@@ -11,8 +11,6 @@ namespace matroid
 
 section dual
 
-
-
 @[class] structure has_matroid_dual (α : Type*) := (dual : α → α)
 
 postfix `﹡`:(max+1) := has_matroid_dual.dual 
@@ -131,25 +129,21 @@ lemma dual_rank_cast_eq [finite E] (M : matroid E) (X : set E) :
   (M﹡.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
 by linarith [M.dual_r_add_rk_eq X]
 
-
-
-lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K :=
+@[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K :=
 begin
-  simp_rw [circuit, dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, not_and, 
-    cocircuit, hyperplane_iff_maximal_not_supset_base, not_exists],  
-  -- simp_rw [circuit_iff_dep_forall_diff_singleton_indep, dual_indep_iff_coindep, 
-  --   coindep_iff_disjoint_base, not_exists, not_and, cocircuit, 
-  --   hyperplane_iff_maximal_not_supset_base, not_exists, subset_compl_iff_disjoint_left, 
-  --   imp_not_comm],
-  refine ⟨λ h, ⟨h.1, λ X hKX, _⟩, λ h, ⟨h.1, _⟩⟩,
-  { obtain ⟨f, hfX, hfK⟩ := exists_of_ssubset hKX, 
-    obtain ⟨B, hB, hdj⟩ := h.2 _ (not_mem_compl_iff.mp hfK), 
-    refine ⟨B, _, hB⟩, 
-    rw [←compl_compl X, subset_compl_iff_disjoint_left], 
-    refine disjoint_of_subset_left _ hdj, 
-    rw [subset_diff, disjoint_singleton_right, not_mem_compl_iff, compl_subset_comm], 
-    exact ⟨hKX.subset, hfX⟩ },
-  
+  rw [circuit, cocircuit, hyperplane_iff_mem_maximals], 
+  simp_rw [dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, not_and, 
+    ←subset_compl_iff_disjoint_right], 
+  exact ⟨λ h,⟨λ B hB hBX,h.1 B hB (subset_compl_comm.mp hBX),
+    λ B' hB' hKB', subset_compl_comm.mp (h.2 (λ X hX hss, hB' X hX (compl_subset_compl.mp hss)) 
+      (compl_subset_comm.mp hKB'))⟩,
+    λ h,⟨λ B hB hss, h.1 _ hB (subset_compl_comm.mp hss),
+    λ B' hB' hB'K, compl_subset_compl.mp (h.2 (λ X hX hss, hB' _ hX (subset_compl_comm.mp hss))   
+      (compl_subset_compl.mpr hB'K))⟩⟩,
 end 
+
+lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
+(dual_circuit_iff_cocircuit.mpr hK).finite 
+
 
 end matroid 

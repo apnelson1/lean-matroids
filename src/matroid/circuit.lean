@@ -46,12 +46,7 @@ by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
 lemma empty_not_circuit (M : matroid E) [finite_rk M] : ¬M.circuit ∅ :=
 λ h, by simpa using h.nonempty
 
-lemma circuit.finite [finite_rk M] (hC : M.circuit C) : C.finite := 
-begin
-  obtain ⟨e, he⟩ := hC.nonempty, 
-  have hfin := (hC.diff_singleton_indep he).finite.union (to_finite {e}), 
-  rwa [diff_union_self, union_singleton, insert_eq_of_mem he] at hfin, 
-end 
+lemma circuit.finite [finitary M] (hC : M.circuit C) : C.finite := let ⟨h⟩ := ‹M.finitary› in h C hC  
 
 lemma circuit_iff_dep_forall_diff_singleton_indep :
   M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
@@ -269,7 +264,11 @@ lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : matroid E} (h : ∀ C, M₁.
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_forall_subset_not_circuit, h])
 
-
+lemma indep_iff_forall_finite_subset_indep [finitary M] : 
+  M.indep I ↔ ∀ J ⊆ I, J.finite → M.indep J :=   
+⟨λ h J hJI hJ, h.subset hJI, λ h, 
+  indep_iff_forall_subset_not_circuit.mpr (λ C hCI hC, hC.dep (h C hCI hC.finite))⟩
+  
 end matroid
 
 section from_axioms

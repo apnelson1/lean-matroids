@@ -27,7 +27,7 @@ by rw [loop_iff_mem_cl_empty, iff_not_comm, M.empty_indep.not_mem_cl_iff,
 
 lemma loop_iff_circuit : M.loop e ↔ M.circuit {e} := 
 begin
-  simp_rw [circuit, loop_iff_dep, iff_self_and, ssubset_singleton_iff, forall_eq], 
+  simp_rw [circuit_iff, loop_iff_dep, iff_self_and, ssubset_singleton_iff, forall_eq], 
   exact λ _, M.empty_indep, 
 end 
 

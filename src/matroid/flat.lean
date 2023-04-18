@@ -218,7 +218,7 @@ lemma basis.cl (hIX : M.basis I X) : M.cl I = M.cl X :=
 (M.cl_subset_cl_of_subset hIX.subset).antisymm (cl_subset_cl_of_subset_cl 
   (λ x hx, hIX.indep.mem_cl_iff.mpr (λ h, hIX.mem_of_insert_indep hx h)))
 
-lemma basis.subset_cl (hI : M.basis I X) : X ⊆ M.cl I := by { rw hI.cl, exact M.subset_cl X }
+lemma basis.subset_cl (hI : M.basis I X) : X ⊆ M.cl I := by { rw hI.cl, exact M.subset_cl X }  
 
 lemma indep.basis_cl (hI : M.indep I) : M.basis I (M.cl I) :=
 begin
@@ -564,11 +564,19 @@ lemma hyperplane_iff_maximal_not_supset_base :
   M.hyperplane H ↔ (¬∃ B ⊆ H, M.base B) ∧ ∀ X, H ⊂ X → ∃ B ⊆ X, M.base B :=
 by simp_rw [hyperplane_iff_maximal_cl_ne_univ, ne.def, ←base_subset_iff_cl_eq_univ]
 
--- lemma hyperplane_iff_mem_maximals : 
---   M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
--- begin
---   sorry 
--- end 
+lemma hyperplane_iff_mem_maximals : 
+  M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
+begin
+  rw hyperplane_iff_maximal_not_supset_base, 
+  simp only [exists_prop, not_exists, not_and], 
+  refine ⟨λ h, ⟨λ B hB hBX, h.1 _ hBX hB, λ X hX hHX, _ ⟩,
+    λ h, ⟨λ B hBH hB, h.1 _ hB hBH, λ X hHX, _⟩⟩, 
+  { refine hHX.ssubset_or_eq.elim (λ hss, false.elim _) (λ h', h'.symm.subset), 
+    obtain ⟨B, hB⟩ := h.2 _ hss, 
+    exact hX _ hB.2 hB.1 },
+  by_contra' h', simp_rw [imp_not_comm] at h', 
+  exact hHX.not_subset (h.2 h' hHX.subset), 
+end 
 
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
@@ -809,6 +817,13 @@ begin
   simp, 
 end 
 
+@[simp] lemma matroid_of_cl_indep_iff {cl : set E → set E} (subset_cl : ∀ X, X ⊆ cl X)
+(cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X)
+(cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X) 
+(cl_indep_maximal : ∀ ⦃I X⦄, cl_indep cl I → I ⊆ X →   
+    (maximals (⊆) {J | cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X }).nonempty) {I : set E}:
+(matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange cl_indep_maximal).indep I ↔ cl_indep cl I :=
+by rw [matroid_of_cl, matroid_of_indep_apply]
 
 -- lemma cl_indep_finite  (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
 -- (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y ) (cl_idem : ∀ X, cl (cl X) = cl X )

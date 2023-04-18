@@ -1,4 +1,4 @@
-import ..submatroids.pseudominor
+import ..pseudominor
 import ..constructions.direct_sum
 
 /- Here we prove Edmonds' matroid intersection theorem: given two matroids `M₁` and `M₂` on `α`, the
