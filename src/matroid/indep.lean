@@ -47,13 +47,12 @@ begin
   rwa h _ hB'.indep hBB',
 end
 
-/-- The RHS of this lemma is definitionally `B ∈ maximals (⊆) M.indep`, which can be convenient -/
-lemma base_iff_maximal_indep' : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → I ⊆ B  :=
-begin
-  rw [base_iff_maximal_indep], 
-  exact ⟨λ h, ⟨h.1,λ I hI hBI, (h.2 I hI hBI).symm.subset⟩, 
-    λ h, ⟨h.1, λ I hI hBI, (h.2 I hI hBI).antisymm' hBI⟩⟩,
-end 
+-- lemma base_iff_maximal_indep' : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → I ⊆ B  :=
+-- begin
+--   rw [base_iff_maximal_indep], 
+--   exact ⟨λ h, ⟨h.1,λ I hI hBI, (h.2 I hI hBI).symm.subset⟩, 
+--     λ h, ⟨h.1, λ I hI hBI, (h.2 I hI hBI).antisymm' hBI⟩⟩,
+-- end 
 
 lemma base.dep_of_ssubset (hB : M.base B) (h : B ⊂ X) : ¬M.indep X :=
 λ hX, h.ne (hB.eq_of_subset_indep hX h.subset)
@@ -82,6 +81,16 @@ begin
       (λ h', (hf (diff_subset _ _ h')).elim)},
   rwa this,
 end
+
+lemma base.exchange_base_of_indep' (hB : M.base B) (he : e ∈ B) (hf : f ∉ B) 
+(hI : M.indep (insert f B \ {e})) : 
+  M.base (insert f B \ {e}) := 
+begin
+  have hfe : f ≠ e, { rintro rfl, exact hf he }, 
+  rw [←insert_diff_singleton_comm hfe] at *, 
+  exact hB.exchange_base_of_indep he hf hI, 
+end 
+
 
 /-- If the difference of two bases is a singleton, then they differ by an insertion/removal -/
 lemma base.eq_exchange_of_diff_eq_singleton (hI : M.base B) (hJ : M.base B') (h : B \ B' = {e}) : 
@@ -462,8 +471,7 @@ by rw [lrestrict_lrestrict, inter_eq_right_iff_subset.mpr hXY]
 lemma indep.indep_lrestrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M.lrestrict X).indep I :=
 lrestrict_indep_iff.mpr ⟨hI, hIX⟩ 
 
-@[simp] lemma lrestrict_base_iff : (M.lrestrict X).base I ↔ M.basis I X :=
-by { simp_rw [base_iff_maximal_indep', lrestrict_indep_iff], refl }
+@[simp] lemma lrestrict_base_iff : (M.lrestrict X).base I ↔ M.basis I X := iff.rfl 
 
 lemma basis.base_lrestrict (h : M.basis I X) : (M.lrestrict X).base I := lrestrict_base_iff.mpr h
 

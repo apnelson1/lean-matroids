@@ -1,4 +1,4 @@
-import .dual
+import ..dual
 
 noncomputable theory
 open_locale classical
@@ -11,8 +11,6 @@ variables {E E₀ E₁ E₂ : Type*} [finite E] [finite E₁] [finite E₂]
 {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
 section iso
-
-
 
 /-- Two matroids are isomorphic if there is a map between ground sets that preserves bases -/
 def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) :=

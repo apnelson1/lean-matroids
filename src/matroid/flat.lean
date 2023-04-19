@@ -199,11 +199,11 @@ begin
   exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))), 
 end 
 
-lemma bInter_cl_eq_cl_bInter_of_sUnion_indep (Is : set (set E)) (h : M.indep (⋃₀ Is)) :
-  (⋂ I ∈ Is, M.cl I) = M.cl (⋂ I ∈ Is, I) :=
+lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set E)) (h : M.indep (⋃₀ Is)) :
+  (⋂ I ∈ Is, M.cl I) = M.cl (⋂₀ Is) :=
 begin
   rw [sUnion_eq_Union] at h, 
-  rw [bInter_eq_Inter, bInter_eq_Inter], 
+  rw [bInter_eq_Inter, sInter_eq_Inter], 
   exact Inter_cl_eq_cl_Inter_of_Union_indep (λ (x : Is), coe x) h, 
 end 
 

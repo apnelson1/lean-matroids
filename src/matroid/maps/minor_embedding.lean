@@ -1,4 +1,4 @@
-import .pseudominor
+import ..pseudominor
 
 noncomputable theory 
 open set 

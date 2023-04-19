@@ -1,6 +1,13 @@
 import .circuit
 import tactic.linarith
 
+/- The rank of a set in a matroid `M` is the size of one of its bases. When `M` is infinite, 
+  this quantity is not defined in general, so rank is not very useful when building API for 
+  general matroids, even though it is often the easiest way to do things for finite matroids. 
+  Most of what is here is written with the assumption `finite_rk M`, which guarantees that 
+  rank is well-defined for all sets. For general infinite matroids, it's well-defined for 
+  some sets, so much of what is here could be expanded. -/
+
 noncomputable theory
 open_locale classical
 
@@ -75,8 +82,6 @@ end
 
 lemma r_mono (M : matroid E) [finite_rk M] {X Y : set E} (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
 r_mono_of_r_fin (M.to_r_fin _) hXY 
-
-
 
 lemma indep.r (hI : M.indep I) : M.r I = I.ncard := eq_r_iff.mpr ⟨I, hI.basis_self, rfl⟩
 
@@ -257,8 +262,7 @@ by {rw nonempty_iff_ne_empty, rintro rfl, exact hX M.r_empty}
 lemma r_single_ub (M : matroid E) [finite_rk M] (e : E) : M.r {e} ≤ 1 :=
 by { convert M.r_le_card_of_finite _; simp [ncard_singleton] }
 
-lemma r_le_univ (M : matroid E) [finite_rk M] (X : set E) : 
-  M.r X ≤ M.r univ := 
+lemma r_le_univ (M : matroid E) [finite_rk M] (X : set E) : M.r X ≤ M.r univ := 
 M.r_mono (subset_univ X)
 
 lemma r_eq_r_of_subset_le (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : M.r X = M.r Y :=
@@ -269,14 +273,6 @@ lemma r_eq_of_r_union_le (hle : M.r (X ∪ Y) ≤ M.r X) : M.r (X ∪ Y) = M.r X
 
 lemma r_eq_of_r_le_inter (hle : M.r X ≤ M.r (X ∩ Y)) : M.r (X ∩ Y) = M.r X :=
 (r_eq_r_of_subset_le (inter_subset_left _ _) hle)
-
--- lemma r_eq_of_not_lt_supset :
---   X ⊆ Y → ¬(M.r X < M.r Y) → M.r X = M.r Y :=
--- λ h h', r_eq_of_le_supset h (int.le_of_not_gt' h')
-
--- lemma r_eq_of_not_lt_union :
---   ¬ (M.r X < M.r (X ∪ Y)) → M.r (X ∪ Y) = M.r X :=
--- λ h', r_eq_of_le_union (int.le_of_not_gt' h')
 
 lemma r_eq_r_union_r_zero (X : set E) (hY : M.r Y = 0) : M.r (X ∪ Y) = M.r X :=
 r_eq_of_r_union_le (by linarith [M.r_submod X Y])
@@ -444,7 +440,7 @@ begin
   exact hlt'.not_le (hY _ he),
 end
 
-lemma r_union_eq_of_r_all_insert_le (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) :
+lemma r_union_eq_of_r_all_insert_le (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) : 
   M.r (X ∪ Y) = M.r X :=
 begin
   refine (r_eq_of_r_all_insert_le (subset_union_left X Y) _).symm,
@@ -478,7 +474,6 @@ begin
     λ h, base_iff_maximal_indep.mpr ⟨h.1, λ I hI hBI, eq_of_subset_of_ncard_le hBI _ hI.finite⟩⟩,
   rw [h.2], exact hI.card_le_rk,
 end
-
 
 section circuit 
 
@@ -607,7 +602,6 @@ by rw [←r_cl, cl_union_cl_right_eq_cl_union, r_cl]
   M.r (M.cl X ∪ Y) = M.r (X ∪ Y) :=
 by rw [←r_cl, cl_union_cl_left_eq_cl_union, r_cl]
 
-
 /- ### Flats and rank -/
 
 lemma flat.r_strict_mono (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) (h : F₁ ⊂ F₂) :
@@ -651,8 +645,7 @@ begin
   tauto, 
 end
 
-lemma hyperplane_iff_maximal_r :
-  M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → M.r X = M.rk :=
+lemma hyperplane_iff_maximal_r : M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → M.r X = M.rk :=
 begin
   rw hyperplane_def,
   refine ⟨_,λ hH, ⟨flat_iff_r_lt_r_insert.mpr (λ e heH, _),
@@ -669,8 +662,7 @@ begin
   refl,
 end
 
-lemma hyperplane.r_add_one (hH : M.hyperplane H) :
-  M.r H + 1 = M.rk :=
+lemma hyperplane.r_add_one (hH : M.hyperplane H) : M.r H + 1 = M.rk :=
 begin
   rw [hyperplane_iff_maximal_r] at hH,
   cases hH with h₁ h₂,
@@ -684,12 +676,9 @@ begin
   apply nat.le_succ,
 end
 
-lemma hyperplane.coe_r (hH : M.hyperplane H) :
-  (M.r H : ℤ) = M.rk - 1 :=
-by simp [←hH.r_add_one]
+lemma hyperplane.coe_r (hH : M.hyperplane H) : (M.r H : ℤ) = M.rk - 1 := by simp [←hH.r_add_one]
 
-lemma hyperplane_iff_flat_r_eq :
-  M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
+lemma hyperplane_iff_flat_r_eq : M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
 begin
   refine ⟨λ h, ⟨h.1,h.r_add_one⟩,λ h,
     ⟨h.1,ssubset_univ_iff.mpr (λ hH, by {subst hH, simpa [rk] using h.2}), λ F hHF hF,
@@ -699,116 +688,6 @@ begin
 end
 
 end cl_flat 
-
-section basis_exchange 
-
-variables {I₁ I₂ B₁ B₂ : set E}
-
-/- ### Basis exchange -/
-/- These lemmas doesn't actually use closure in their statements, but we prove them using closure.
-  TODO : Avoid cardinality in the proofs. -/
-
-/- Given two bases `I₁,I₂` of `X` and an element `e` of `I₁ \ I₂`, we can find an `f ∈ I₂ \ I₁`
-  so that swapping `e` for `f` in yields bases in both `I₁` and `I₂`.  -/
-theorem basis.strong_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) :
-  ∃ f ∈ I₂ \ I₁, M.basis (insert e (I₂ \ {f})) X ∧ M.basis (insert f (I₁ \ {e})) X :=
-begin
-  by_contra,
-  simp_rw [not_exists, not_and] at h,
-
-  have heX : e ∈ X := hI₁.subset he.1,
-  obtain ⟨C, ⟨hCB₂,hC⟩, hCunique⟩ :=
-    hI₂.indep.unique_circuit_of_insert e (hI₂.insert_dep ⟨heX, he.2⟩),
-
-  have hCss := diff_singleton_subset_iff.mpr hCB₂,
-
-  simp only [exists_unique_iff_exists, exists_prop, and_imp] at hCunique,
-  have hC_exchange : ∀ f ∈ C \ {e}, M.basis (insert e (I₂ \ {f})) X,
-  { rintros y ⟨hyC, hyx⟩,
-
-    rw [basis_iff_indep_card, ncard_exchange he.2 (hCss ⟨hyC,hyx⟩), hI₂.card, eq_self_iff_true,
-      and_true],
-    refine ⟨by_contra (λ hdep, _), insert_subset.mpr ⟨heX, ((diff_subset _ _).trans hI₂.subset)⟩⟩,
-
-    rw [dep_iff_supset_circuit] at hdep,
-    obtain ⟨C', hC'ss, hC'⟩ := hdep,
-    have  hC'e : e ∈ C',
-    { by_contra he',
-      exact hC'.dep (hI₂.indep.subset (((subset_insert_iff_of_not_mem he').mp hC'ss).trans
-          (diff_subset _ _)))},
-    have := hCunique C' (hC'ss.trans (insert_subset_insert (diff_subset _ _))) hC' hC'e,
-    subst this,
-    simpa using hC'ss hyC},
-
-  have hcl : ∀ f ∈ I₂ \ M.cl (I₁ \ {e}), M.basis (insert f (I₁ \ {e})) X,
-  { rintro f ⟨hf₂, hf₁⟩,
-    obtain rfl | hfe := em (f = e),
-    { rwa [insert_diff_singleton, insert_eq_self.mpr he.1]},
-    have hfI₁ : f ∉ I₁, from
-      λ hfI₁, hf₁ (M.subset_cl (I₁ \ {e}) (mem_diff_singleton.mpr ⟨hfI₁, hfe⟩)),
-    -- rw [basis_iff_indep_card], 
-    rw [basis_iff_indep_card, 
-    @indep_iff_r_eq_card_of_finite _ _ M ((hI₁.finite.diff _).insert _), 
-      ncard_exchange hfI₁ he.1, hI₁.card, eq_self_iff_true, and_true, ←hI₁.card, 
-      not_mem_cl_iff_r_insert.mp hf₁, insert_subset, (hI₁.indep.diff {e}).r, 
-      ncard_diff_singleton_add_one he.1 hI₁.finite, eq_self_iff_true, true_and], 
-    exact ⟨hI₂.subset hf₂, (diff_subset _ _).trans hI₁.subset⟩ },
-
-  have hss : C \ {e} ⊆ M.cl (I₁ \ {e}),
-  from λ f hf, by_contra (λ hf', h _ ⟨hCss hf, λ hf₁, hf' (M.subset_cl _ ⟨hf₁,hf.2⟩)⟩
-      (hC_exchange f hf) (hcl _ ⟨hCss hf,hf'⟩)),
-
-  have he' := (hC.1.subset_cl_diff_singleton _).trans (cl_subset_cl_of_subset_cl hss) hC.2,
-  rw [mem_cl_iff_r_insert, insert_diff_singleton, insert_eq_of_mem he.1, hI₁.indep.r, 
-    (hI₁.indep.diff _).r, ←ncard_diff_singleton_add_one he.1 hI₁.finite] at he',
-  simpa only [nat.succ_ne_self] using he',
-end
-
-lemma basis.rev_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) :
-  ∃ f ∈ I₂ \ I₁, M.basis (insert e (I₂ \ {f})) X :=
-(hI₁.strong_exchange hI₂ he).imp (λ h, Exists.imp (λ h', and.left))
-
-theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
-  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) ∧ M.base (insert y (B₁ \ {x})) :=
-by {simp_rw base_iff_basis_univ at *, exact hB₁.strong_exchange hB₂ hx}
-
-lemma base.rev_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hx : x ∈ B₁ \ B₂) :
-  ∃ y ∈ B₂ \ B₁, M.base (insert x (B₂ \ {y})) :=
-(hB₁.strong_exchange hB₂ hx).imp (by {rintro y ⟨hy,h,-⟩, use [hy,h]})
-
-end basis_exchange
-
-/- Nullity -/
-
-/- The nullity of a set is its cardinality minus its rank. Maybe not needed... 
-def nullity (M : matroid E) (X : set E) : ℕ :=
-  X.ncard - M.r X
-
-lemma nullity_add_rank_eq (M : matroid E) (X : set E) :
-  M.nullity X + M.r X = X.ncard :=
-by rw [nullity, tsub_add_cancel_of_le (M.r_le_card X)]
-
-lemma cast_nullity (M : matroid E) (X : set E) :
-  (M.nullity X : ℤ) = X.ncard - M.r X :=
-by rw [←M.nullity_add_rank_eq, nat.cast_add, add_tsub_cancel_right]
-
-lemma nullity_supermod (X Y : set E) :
-  M.nullity X + M.nullity Y ≤ M.nullity (X ∩ Y) + M.nullity (X ∪ Y) :=
-begin
-  zify,
-  simp_rw [cast_nullity],
-  linarith [M.r_submod X Y, ncard_inter_add_ncard_union X Y],
-end
-
-lemma nullity_le_card (M : matroid E) (X : set E) :
-  M.nullity X ≤ X.ncard :=
-nat.sub_le _ _
-
-lemma nullity_mono (hXY : X ⊆ Y) :
-  M.nullity X ≤ M.nullity Y :=
-by {zify, simp_rw [cast_nullity], linarith [M.r_add_card_le_r_add_card_of_subset hXY]}
-
- -/
 
 end matroid
 

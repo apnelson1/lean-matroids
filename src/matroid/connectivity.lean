@@ -187,13 +187,21 @@ end
 lemma nonloop.skew_singleton_iff (he : M.nonloop e) : M.skew X {e} ↔ e ∉ M.cl X :=
 by rw [skew.comm, he.singleton_skew_iff]
  
-section indexing
+section Skew
 
 variables {ι : Type*} {Xs : ι → set E} 
 
-/-- A collection of sets is `Skew` if each is `skew` to the union of the rest -/
-def Skew (Xs : ι → set E) := ∀ i, M.skew (Xs i) (⋃ j ∈ ({i}ᶜ : set ι), Xs j)  
+/-- A collection of sets is `Skew` if each of its partitions gives a skew pair  -/
+def Skew (M : matroid E) (Xs : ι → set E) := ∀ (I : set ι), M.skew (⋃ i ∈ I, Xs i) (⋃ i ∈ Iᶜ, Xs i)   
 
-end indexing
+-- lemma Skew_iff_forall : M.Skew Xs ↔ ∀ i, M.skew (Xs i) (⋃ j ∈ ({i} : set ι)ᶜ, Xs j)  :=
+-- begin
+--   refine ⟨λ h i, by { convert h {i}, simp, }, λ h I, _⟩,
+--   rw skew_iff_project_lrestr_eq_lrestr, 
+
+  
+-- end 
+
+end Skew
 
 end matroid
