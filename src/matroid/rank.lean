@@ -563,9 +563,8 @@ begin
     by simp only [h, ne.def, nat.succ_ne_self, not_false_iff]⟩,
 end
 
-@[simp] lemma r_cl (M : matroid E) [finite_rk M] (X : set E) :
-  M.r (M.cl X) = M.r X :=
-(r_eq_of_r_all_insert_eq (M.subset_cl X) (λ e h, (mem_cl_iff_r_insert.mp h).symm)).symm
+@[simp] lemma r_cl (M : matroid E) (X : set E) : M.r (M.cl X) = M.r X :=
+let ⟨I, hI⟩ := M.exists_basis X in by rw [←hI.r, ←hI.cl, hI.indep.basis_cl.r]
 
 lemma r_insert_eq_add_one_of_not_mem_cl (h : e ∉ M.cl X) :
   M.r (insert e X) = M.r X + 1 :=

@@ -142,6 +142,9 @@ begin
       (compl_subset_compl.mpr hB'K))⟩⟩,
 end 
 
+lemma coindep_iff_forall_subset_not_cocircuit : M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) := 
+by { rw [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit, forall_congr], simp }
+  
 lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
 (dual_circuit_iff_cocircuit.mpr hK).finite 
 

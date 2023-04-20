@@ -56,8 +56,8 @@ begin
   obtain ⟨M₁,M₂,hcon⟩ := ⟨M,hM⟩,
 
   -- There is a common nonloop of `M₁` and `M₂`, otherwise the result is easy
-  have hne : ∃ e, ¬M₁.loop e ∧ ¬M₂.loop e,
-  { by_contra' he,
+  have hne : ∃ e, M₁.nonloop e ∧ M₂.nonloop e,
+  { simp_rw [←not_loop_iff], by_contra' he,
     simp_rw [loop_iff_mem_cl_empty, ←mem_compl_iff, ←subset_def] at he,
     specialize hcon ∅ (M₁.cl ∅) M₁.empty_indep M₂.empty_indep,
     rw [ncard_empty, r_cl, r_empty, zero_add] at hcon,
@@ -78,19 +78,18 @@ begin
   obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
 
   -- Use these pairs to get rank lower bounds ...
-  have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e})
-    (indep_of_loopify_indep hId₁) (indep_of_loopify_indep hId₂))),
+  have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e}) hId₁.loopify_to_indep hId₂.loopify_to_indep)),
 
   have hic : (Xc ∩ Xd \ {e})ᶜ = (insert e (Xcᶜ ∪ Xdᶜ)),
   { apply compl_injective,
     simp_rw [←union_singleton, compl_union, compl_compl, diff_eq_compl_inter, inter_comm {e}ᶜ]},
   
-  simp_rw [loopify_elem, r_loopify, hic] at hi,
+  simp_rw [loopify.elem, loopify.r_eq, hic] at hi,
   zify at hIc hId hcon,
 
   have hu := hcon (insert e Ic) (insert e (Xc ∪ Xd))
-    (by rwa ← indep_project_singleton_iff he₁ (not_mem_of_indep_project_singleton hIc₁))
-    (by rwa ← indep_project_singleton_iff he₂ (not_mem_of_indep_project_singleton hIc₁)),
+    (by rwa ← he₁.indep_project_iff (not_mem_of_indep_project_singleton hIc₁))
+    (by rwa ← he₂.indep_project_iff (not_mem_of_indep_project_singleton hIc₁)),
 
   have huc : (insert e (Xc ∪ Xd))ᶜ = Xcᶜ ∩ Xdᶜ \ {e},
   { apply compl_injective,
@@ -99,7 +98,7 @@ begin
   simp_rw [ncard_insert_of_not_mem (not_mem_of_indep_project_singleton hIc₁),
     nat.cast_add, nat.cast_one, huc] at hu,
 
-  rw [coe_r_project_singleton he₁, coe_r_project_singleton he₂] at hIc,
+  rw [he₁.cast_r_project_eq, he₂.cast_r_project_eq] at hIc,
 
   -- ... and contradict them with submodularity bounds.
   have sm1 := M₁.r_submod (insert e Xc) (Xd \ {e}),
@@ -117,7 +116,7 @@ lemma exists_common_ind_with_flat_left (M₁ M₂ : matroid E) :
 begin
   obtain ⟨I,X₀, h₀⟩ := exists_common_ind M₁ M₂,
   rw [←M₁.r_cl X₀] at h₀,
-  refine ⟨I,M₁.cl X₀,h₀.1, h₀.2.1, le_antisymm _ _, M₁.cl_flat _⟩,
+  refine ⟨I,M₁.cl X₀,h₀.1, h₀.2.1, le_antisymm _ _, M₁.flat_of_cl _⟩,
   { apply common_ind_le_r_add_r_compl h₀.1 h₀.2.1 },
   rw h₀.2.2,
   simp only [add_le_add_iff_left],
@@ -182,7 +181,7 @@ end intersection
 
 section rado
 
-variables {ι : Type*} [finite ι]
+variables {ι : Type} [finite ι]
 
 lemma rado_necessary {f : E → ι} {x : ι → E} (hx : ∀ i, f (x i) = i) (h_ind : M.indep (range x))
 (S : set ι) :

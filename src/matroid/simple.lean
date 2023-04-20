@@ -6,7 +6,7 @@ open_locale classical
 open set
 namespace matroid
 
-variables {E E' : Type*} [finite E] [finite E'] {N M : matroid E} {e f : E} {X Y Z S T : set E}
+variables {E E' : Type*} {N M : matroid E} {e f : E} {X Y Z S T : set E}
 
 section simple
 
@@ -49,7 +49,8 @@ end
 protected lemma simple.loopless (h : M.simple) : M.loopless :=
 loopless_on_univ.1 h.simple_on.loopless_on
 
-lemma simple_on.indep_of_card_le_two (h : M.simple_on X) (hX : X.ncard ≤ 2) :
+lemma simple_on.indep_of_card_le_two_of_finite (h : M.simple_on X) 
+(hX : X.ncard ≤ 2) (hXfin : X.finite) :
   M.indep X :=
 begin
   obtain (h2 | hlt2) := eq_or_lt_of_le hX,
@@ -60,8 +61,12 @@ begin
     rw indep_singleton,
     exact h.loopless_on (mem_singleton _) },
   convert M.empty_indep,
-  simpa using hlt1,
+  rwa [nat.lt_add_one_iff, le_zero_iff, ncard_eq_zero hXfin] at hlt1, 
 end
+
+lemma simple_on.indep_of_card_le_two [finite E] (h : M.simple_on X) (hX : X.ncard ≤ 2) : 
+  M.indep X := 
+h.indep_of_card_le_two_of_finite hX (to_finite _) 
 
 lemma simple_on.eq_of_r_pair_eq_one (h : M.simple_on X) (he : e ∈ X) (hf : f ∈ X)
   (hef : M.r {e, f} = 1) :

@@ -430,33 +430,6 @@ lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
 
-
-/- ### Exchange -/
-
--- TODO. This is currently in the rank folder (for `finite_rk`), but it shouldn't need it
-
--- theorem base.strong_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (he : e ∈ B₁ \ B₂) :
---   ∃ f ∈ B₂ \ B₁, M.base (insert e (B₂ \ {f})) ∧ M.base (insert f (B₁ \ {e})) :=
--- begin
---   suffices : ∃ f ∈ B₂ \ B₁, M.indep (insert e (B₂ \ {f})) ∧ M.indep (insert f (B₁ \ {e})),
---   { obtain ⟨f,hf,h₁,h₂⟩:= this, 
---     exact ⟨f,hf,hB₂.exchange_base_of_indep hf.1 he.2 h₁, hB₁.exchange_base_of_indep he.1 hf.2 h₂⟩ },
---   by_contra' h', 
-  
---   have h₁ : ∀ f ∈ (B₂ \ B₁), M.indep (insert e (B₂ \ {f})) → f ∈  M.cl (B₁ \ {e}) ,  
---   { rintro f hf hi, 
---     rw [(hB₁.indep.diff _).mem_cl_iff_of_not_mem (λ h, hf.2 h.1)],
---     exact (h' f hf) hi }, 
-  
---   -- have := λ (f : E) (hf : f ∈ B₂ \ B₁), M.indep (insert f (B₁ \ {e})) → ¬M.indep (insert )  
---   -- have : ∀ f ∈  (B₂ \ B₁) ∩ M.cl (insert e (B₂ \ {f})), false, 
---   -- { },
---   -- by_contra' h', 
-
--- end 
-
-
-
 /- ### Covering  -/
 
 /-- A set is covered by another in a matroid if they are strictly nested flats, with no flat
@@ -863,25 +836,7 @@ def matroid_of_cl_of_indep_bounded (cl : set E → set E)
   (cl_exchange : ∀ (X e f), f ∈ cl (insert e X) \ cl X → e ∈ cl (insert f X) \ cl X )  
   (n : ℕ) (hn : ∀ I, cl_indep cl I → I.finite ∧ I.ncard ≤ n) :
 matroid E := matroid_of_cl cl subset_cl cl_mono cl_idem cl_exchange
-(begin
-  by_contra' h, simp_rw [not_nonempty_iff_eq_empty, eq_empty_iff_forall_not_mem] at h, 
-  obtain ⟨I, X, hI, hIX, he⟩ := h,
-  set S := {k | ∃ J, cl_indep cl J ∧ I ⊆ J ∧ J ⊆ X ∧ J.finite ∧ J.ncard = k}, 
-  have hS : S.finite, 
-  { refine (finset.range (n+1)).finite_to_set.subset _, 
-    rintro s ⟨K, ⟨hK,-,-,-,rfl⟩⟩,   
-    simp only [finset.coe_range, mem_Iio, nat.lt_add_one_iff],
-    exact (hn K hK).2 },
-  have hIS : ncard I ∈ S, from ⟨I, hI, subset.rfl, hIX, (hn I hI).1, rfl⟩,  
-  obtain ⟨k, ⟨K,hK⟩, hmax⟩ :=  finite.exists_maximal_wrt id S hS ⟨_,hIS⟩, 
-  refine he K ⟨⟨hK.1,hK.2.1,hK.2.2.1⟩, λ K' hK' hKK', _⟩,  
-  have hK'fin := (hn _ hK'.1).1, 
-  rw eq_of_subset_of_ncard_le hKK' _ hK'fin, 
-  convert (hmax K'.ncard ⟨K', _ ⟩ 
-    (hK.2.2.2.2.symm.le.trans (ncard_le_of_subset hKK' hK'fin))).symm.le, 
-  { exact hK.2.2.2.2 },
-  exact ⟨hK'.1, hK'.2.1,hK'.2.2, hK'fin, rfl⟩, 
-end)
+(exists_maximal_subset_property_of_bounded n hn)
 
 @[simp] lemma matroid_of_cl_of_indep_bounded_apply (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X )
 (cl_mono : ∀ ⦃X Y⦄, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )

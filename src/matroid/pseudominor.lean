@@ -35,7 +35,7 @@ infix ` ‖ ` :75 :=  has_restr.restr
 
 instance {E : Type*} : has_restr (matroid E) (set E) := ⟨λ M E, M.lrestrict E⟩  
 
-@[simp] lemma lrestr.indep_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R := lrestrict_indep_iff
+@[simp] lemma lrestr.indep_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R := lrestrict_indep_iff 
 
 lemma indep.lrestr_indep_of_subset (hI : M.indep I) (hIR : I ⊆ R) : (M ‖ R).indep I := 
 lrestr.indep_iff.mpr ⟨hI, hIR⟩ 
@@ -675,15 +675,13 @@ begin
   exact (union_subset_union_left D (M.subset_cl C)).trans h_loops,
 end
 
-lemma strict_pminor_of_project_nonloop (he : ¬M.loop e) :
-  M ⟋ e <p M :=
+lemma strict_pminor_of_project_nonloop (he : ¬M.loop e) : M ⟋ e <p M :=
 begin
   refine (project_pminor M {e}).strict_pminor_of_ne (λ h, he _),
   rwa [project_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
 end
 
-lemma strict_pminor_of_loopify_nonloop (he : ¬M.loop e) :
-  M ⟍ e <p M :=
+lemma strict_pminor_of_loopify_nonloop (he : ¬M.loop e) : M ⟍ e <p M :=
 begin
   refine (loopify_pminor M {e}).strict_pminor_of_ne (λ h, he _),
   rwa [loopify_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
@@ -697,8 +695,7 @@ begin
   rwa [project_loopify_eq_self_iff_subset_loops] at hC,
 end
 
-lemma strict_pminor_of_project_r_ne_zero [finite_rk M] (h : M.r (C) ≠ 0) :
-  M ⟋ C <p M :=
+lemma strict_pminor_of_project_r_ne_zero [finite_rk M] (h : M.r (C) ≠ 0) : M ⟋ C <p M :=
 begin
   refine (project_pminor _ _).strict_pminor_of_ne (λ hC, h (r_eq_zero_iff_subset_loops.mpr _)),
   rwa [project_eq_self_iff_subset_loops] at hC,

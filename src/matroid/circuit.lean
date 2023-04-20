@@ -300,30 +300,23 @@ begin
   by_contra' h', 
   
   have hecl : e ∈ M.cl B₂ \ B₂ := ⟨by { rw [hB₂.cl], exact mem_univ _ }, he.2⟩,  
-
-  have h₁ : ∀ f ∈ (B₂ \ B₁), M.indep (insert e B₂ \ {f}) → f ∈ M.cl (B₁ \ {e}) ,  
-  { rintro f hf hi, 
-    have hfe : f ≠ e, { rintro rfl, exact hf.2 he.1 },  
-    rw [(hB₁.indep.diff _).mem_cl_iff_of_not_mem (λ h, hf.2 h.1), insert_diff_singleton_comm hfe],
-    exact (h' f hf) hi }, 
-
   set C := M.fund_circuit e B₂, 
   have hC : M.circuit C, from indep.fund_circuit_circuit hB₂.indep hecl, 
 
-  have h₂ : C \ B₁ ⊆ M.cl (B₁ \ {e}),   
+  have h : C \ B₁ ⊆ M.cl (B₁ \ {e}),   
   { intros f hf,
-    have hfB₂ : f ∈ B₂, 
-    { obtain (rfl | h') := (fund_circuit_subset_insert hecl.1) hf.1, 
-    { exact (hf.2 he.1).elim }, 
-    exact h' },
+    have hne : f ≠ e, {rintro rfl, exact hf.2 he.1 },
+    have hfB₂ : f ∈ B₂, from ((fund_circuit_subset_insert hecl.1) hf.1).elim (false.elim ∘ hne) id, 
     rw [mem_diff, ←hB₂.indep.rev_exchange_indep_iff hecl hfB₂] at hf,
-    exact h₁ f ⟨hfB₂, hf.2⟩ hf.1 },
+    rw [(hB₁.indep.diff _).mem_cl_iff_of_not_mem (not_mem_subset (diff_subset _ _) hf.2), 
+      insert_diff_singleton_comm hne], 
+    exact h' f ⟨hfB₂,hf.2⟩ hf.1, },
 
-  nth_rewrite 0 ←union_diff_cancel (singleton_subset_iff.mpr he.1) at h₂, 
+  nth_rewrite 0 ←union_diff_cancel (singleton_subset_iff.mpr he.1) at h, 
   rw [diff_subset_iff, union_assoc, union_eq_right_iff_subset.mpr (M.subset_cl _), 
-    ←diff_subset_iff, ←cl_subset_cl_iff_subset_cl] at h₂, 
+    ←diff_subset_iff, ←cl_subset_cl_iff_subset_cl] at h, 
   
-  have heB₁ := (hC.subset_cl_diff_singleton e).trans h₂ (mem_fund_circuit _ _ _), 
+  have heB₁ := (hC.subset_cl_diff_singleton e).trans h (mem_fund_circuit _ _ _), 
   exact indep_iff_not_mem_cl_diff_forall.mp hB₁.indep e he.1 heB₁, 
 end 
 

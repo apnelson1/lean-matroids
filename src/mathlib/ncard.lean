@@ -468,8 +468,6 @@ begin
   rw h.ncard,
 end
 
-
-
 lemma ncard_union_eq (h : disjoint s t) (hs : s.finite . to_finite_tac)
 (ht : t.finite . to_finite_tac) :
   (s ∪ t).ncard = s.ncard + t.ncard :=
@@ -597,6 +595,16 @@ begin
   refine ⟨coe '' (t' : set s), by simp, finite.image _ (by simp), _⟩,  
   rw [ncard_image_of_injective _ subtype.coe_injective], 
   simp,
+end   
+
+lemma infinite.exists_supset_ncard_eq {s t : set α} (ht : t.infinite) (hst : s ⊆ t) (hs : s.finite)
+{k : ℕ} (hsk : s.ncard ≤ k) : 
+  ∃ s', s ⊆ s' ∧ s' ⊆ t ∧ s'.ncard = k :=
+begin
+  obtain ⟨s₁, hs₁, hs₁fin, hs₁card⟩ := (ht.diff hs).exists_subset_ncard_eq (k - s.ncard), 
+  refine ⟨s ∪ s₁, subset_union_left _ _, union_subset hst (hs₁.trans (diff_subset _ _)), _⟩,  
+  rwa [ncard_union_eq (disjoint_of_subset_right hs₁ disjoint_sdiff_right) hs hs₁fin, hs₁card, 
+    add_tsub_cancel_of_le], 
 end   
 
 lemma exists_subset_or_subset_of_two_mul_lt_ncard {n : ℕ} (hst : 2 * n < (s ∪ t).ncard) :

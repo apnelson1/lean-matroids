@@ -93,6 +93,9 @@ end
 
 lemma r_eq_zero_iff_subset_loops [finite_rk M] : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
 
+lemma r_eq_zero_of_subset_loops (h : X ⊆ M.cl ∅) : M.r X = 0 := 
+by rw [←r_cl, cl_eq_loops_of_subset h, r_cl, r_empty]
+
 lemma cl_union_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
   M.cl (X ∪ Y) = M.cl X := 
 by rw [←cl_union_cl_right_eq_cl_union, cl_eq_loops_of_subset hY, cl_union_cl_right_eq_cl_union, 
