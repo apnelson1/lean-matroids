@@ -47,6 +47,16 @@ begin
   rwa h _ hB'.indep hBB',
 end
 
+lemma base_iff_mem_maximals : M.base B ↔ B ∈ maximals (⊆) {I | M.indep I} := 
+begin
+  rw [base_iff_maximal_indep, maximals], 
+  exact ⟨λ h, ⟨h.1,λ I hI hBI, (h.2 I hI hBI).symm.subset⟩,
+    λ h, ⟨h.1, λ I hI hBI, hBI.antisymm (h.2 hI hBI)⟩⟩,  
+end  
+
+lemma indep.base_of_maximal (hI : M.indep I) (h : ∀ J, M.indep J → I ⊆ J → I = J) : M.base I := 
+base_iff_maximal_indep.mpr ⟨hI,h⟩
+
 -- lemma base_iff_maximal_indep' : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → I ⊆ B  :=
 -- begin
 --   rw [base_iff_maximal_indep], 
@@ -494,6 +504,15 @@ begin
     (indep.indep_lrestrict_of_subset hI hIX).exists_base_subset_union_base 
       (basis.base_lrestrict hJ), 
   exact ⟨I', lrestrict_base_iff.mp hI', hII', hI'IJ⟩, 
+end 
+
+lemma indep.exists_insert_of_not_basis (hI : M.indep I) (hIX : I ⊆ X) (hI' : ¬M.basis I X) 
+(hJ : M.basis J X) : 
+  ∃ e ∈ J \ I, M.indep (insert e I) :=
+begin
+  rw [←lrestrict_base_iff] at hI' hJ, 
+  obtain ⟨e, he, hi⟩ := (indep.indep_lrestrict_of_subset hI hIX).exists_insert_of_not_base hI' hJ, 
+  exact ⟨e, he, (lrestrict_indep_iff.mp hi).1⟩,
 end 
 
 lemma basis.exchange (hIX : M.basis I X) (hJX : M.basis J X) (he : e ∈ I \ J) : 

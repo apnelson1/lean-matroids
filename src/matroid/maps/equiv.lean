@@ -8,10 +8,10 @@ open set
 namespace matroid
 
 universe u
-variables {E E₀ E₁ E₂ : Type u} 
-{M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
 section iso
+
+variables {E E₀ E₁ E₂ : Type u} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
 /-- Two matroids are isomorphic if there is a map between ground sets that preserves bases -/
 def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) :=
@@ -156,6 +156,71 @@ by simp [←image_equiv_eq_preimage_symm]
 
 end iso
 
+section embed
 
+variables {E E' : Type*} {f : E ↪ E'} 
+
+/-- Embed a matroid as a restriction in a larger type. All elements outside the image are loops. -/
+def image (M : matroid E) (f : E ↪ E') : matroid E' :=
+matroid_of_indep (λ I', ∃ I, M.indep I ∧ I' = f '' I) ⟨_, M.empty_indep, by simp⟩
+( begin 
+  rintro _ _ ⟨J, hJ, rfl⟩ hIJ, refine ⟨J ∩ f ⁻¹' I, hJ.subset (inter_subset_left _ _), _⟩,
+  rw [image_inter f.injective, image_preimage_eq_inter_range, ←inter_assoc, 
+    inter_eq_right_iff_subset.mpr hIJ, eq_comm, 
+    inter_eq_left_iff_subset.mpr (hIJ.trans (image_subset_range _ _))], 
+  end)
+( begin
+    rintro _ _ ⟨I, hI, rfl⟩ hIn ⟨⟨B,hB,rfl⟩,hBmax⟩, 
+    obtain ⟨e, he, heI⟩ := hI.exists_insert_of_not_base _ (hB.base_of_maximal (λ J hJ hBJ, _)), 
+    { exact ⟨f e, by rwa [←image_diff f.injective, f.injective.mem_set_image], 
+      ⟨_, heI, image_insert_eq.symm⟩⟩ },
+    { refine λ hI', hIn ⟨⟨_,hI,rfl⟩,_⟩, 
+      rintro _ ⟨J, hJ, rfl⟩ hIJ,  
+      rw hI'.eq_of_subset_indep hJ, 
+      rwa image_subset_image_iff f.injective at hIJ },
+    exact hBJ.antisymm 
+      ((image_subset_image_iff f.injective).mp (hBmax ⟨_,hJ,rfl⟩ (image_subset _ hBJ))),   
+  end)
+(begin
+  rintro _ X ⟨I,hI,rfl⟩ hIX, 
+  obtain ⟨J, hIJ, hJ⟩ := hI.subset_basis_of_subset (image_subset_iff.mp hIX), 
+  refine ⟨f '' J, ⟨⟨_,hJ.indep,rfl⟩,image_subset _ hIJ, image_subset_iff.mpr hJ.subset⟩, _⟩,
+  rintro _ ⟨⟨K,hK,rfl⟩,hIK,hKX⟩ hJK,   
+  rw hJ.eq_of_subset_indep hK ((image_subset_image_iff f.injective).mp hJK) 
+    (image_subset_iff.mp hKX), 
+end)
+
+@[simp] lemma image_indep_iff {I' : set E'} {M : matroid E} : 
+  (M.image f).indep I' ↔ ∃ I, M.indep I ∧ I' = f '' I := 
+by simp [image]
+
+/-- A matroid on `E'` and an injection from `E` into `E'` gives rise to a matroid on `E` -/
+def preimage {E E' : Type*} (M' : matroid E') (f : E ↪ E') : matroid E := 
+matroid_of_indep (λ I, M'.indep (f '' I)) (by simp) (λ I J hJ hIJ, hJ.subset (image_subset _ hIJ))
+(begin
+  intros I B hI hIn hB,
+  obtain ⟨e, ⟨⟨e,he,rfl⟩,he'⟩ , hi⟩ := 
+    @indep.exists_insert_of_not_basis _ _ _ (f '' B) (range f) hI (image_subset_range _ _) _ _, 
+  { rw [f.injective.mem_set_image] at he', 
+    rw [←image_insert_eq] at hi, 
+    exact ⟨e, ⟨he,he'⟩, hi⟩ },
+  { refine λ hI', hIn ⟨hI,λ J hJ hIJ, ((image_eq_image f.injective).mp _).subset⟩,
+    exact (hI'.eq_of_subset_indep hJ (image_subset _ hIJ) (image_subset_range _ _)).symm },
+  refine hB.1.basis_of_maximal_subset (image_subset_range _ _) (λ J hJ hBJ hJr, _), 
+  obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.mp hJr, 
+  exact image_subset _ (hB.2 hJ ((image_subset_image_iff f.injective).mp hBJ))
+end)
+(begin
+  intros I X hI hIX, 
+  obtain ⟨J, hIJ, hJ⟩ := hI.subset_basis_of_subset (image_subset _ hIX), 
+  obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.mp (hJ.subset.trans (image_subset_range _ _)), 
+  
+  refine ⟨J, ⟨hJ.indep, (image_subset_image_iff f.injective).mp hIJ, 
+    (image_subset_image_iff f.injective).mp hJ.subset⟩, λ K hK hJK, 
+    (image_subset_image_iff f.injective).mp 
+      (hJ.2 ⟨hK.1,image_subset _ hK.2.2⟩ (image_subset _ hJK))⟩,
+end)
+
+end embed
 
 end matroid 

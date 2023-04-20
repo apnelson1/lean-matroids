@@ -14,7 +14,7 @@ noncomputable theory
 
 section free_loopy
 
-variables {E : Type*} {X I B : set E} {r s t : ℕ} {M : matroid E}
+variables {E : Type*} {X I B : set E} {e f : E} {r s t : ℕ} {M : matroid E}
 
 /-- The matroid whose only basis is empty -/
 def loopy_on (E : Type*) : matroid E := 
@@ -67,7 +67,9 @@ by rw [←compl_compl (∅ : set E), ←dual_base_iff, compl_empty, univ_base_if
 
 @[simp] lemma free_on.cl (X : set E) : (free_on E).cl X = X :=
 (subset_cl _ _).antisymm' (λ e he, (free_on.indep _).mem_cl_iff.mp he (free_on.indep _))
-  
+
+@[simp] lemma free_on.nonloop (e : E) : (free_on E).nonloop e := indep.nonloop (free_on.indep _) 
+
 @[simp] lemma loopy_on.loop (e : E) : (loopy_on E).loop e := 
 by simp_rw [loop_iff_dep, loopy_on.indep_iff_empty, singleton_ne_empty, not_false_iff]
 
@@ -100,7 +102,7 @@ end free_loopy
 
 section truncation
 
-variables {E : Type*} {s t : ℕ} {I X : set E} {M : matroid E}
+variables {E : Type*} {s t : ℕ} {e : E} {I X : set E} {M : matroid E}
 
 /-- Truncate a matroid to rank `t`. Every rank above `t` drops to `t`. -/
 def tr {E : Type*} (M : matroid E) (t : ℕ) : matroid E := 
@@ -130,8 +132,21 @@ instance {E : Type*} {M : matroid E} {t : ℕ} : finite_rk (M.tr t) := by { rw t
 
 lemma tr.indep_iff' : (M.tr t).indep I ↔ M.indep I ∧ I.finite ∧ I.ncard ≤ t := by simp [tr]
 
+lemma indep.indep_of_tr_indep (hI : (M.tr t).indep I) : M.indep I := 
+by { rw tr.indep_iff' at hI, exact hI.1 }
+
 @[simp] lemma tr.indep_iff [finite_rk M] : (M.tr t).indep I ↔ M.indep I ∧ I.ncard ≤ t :=
 by { rw [tr.indep_iff'], exact ⟨λ h, ⟨h.1, h.2.2⟩ , λ h, ⟨h.1, h.1.finite, h.2⟩⟩ }
+
+lemma nonloop.nonloop_tr_of_ne_zero (he : M.nonloop e) (ht : t ≠ 0) : (M.tr t).nonloop e :=  
+begin
+  rw [←indep_singleton, tr.indep_iff', indep_singleton, ncard_singleton, nat.succ_le_iff, 
+    pos_iff_ne_zero], 
+  exact ⟨he, finite_singleton e, ht⟩, 
+end 
+
+lemma tr.nonloop_iff (ht : t ≠ 0) : (M.tr t).nonloop e ↔ M.nonloop e :=
+⟨λ h, indep_singleton.mp (indep_singleton.mpr h).indep_of_tr_indep, λ h, h.nonloop_tr_of_ne_zero ht⟩  
 
 @[simp] lemma tr.r_eq (M : matroid E) [finite_rk M] (t : ℕ) (X : set E) : 
   (M.tr t).r X = min t (M.r X) :=
@@ -177,6 +192,13 @@ end
 lemma tr.base_iff [finite_rk M] (h_rk : t ≤ M.rk) {B : set E} : 
    (M.tr t).base B ↔ M.indep B ∧ B.ncard = t :=
 by { rw tr.base_iff' (or.inl h_rk), exact ⟨λ h, ⟨h.1, h.2.2⟩, λ h, ⟨h.1, h.1.finite, h.2⟩⟩ }
+
+@[simp] lemma tr_zero_eq_loopy (M : matroid E) : M.tr 0 = loopy_on E :=
+begin
+  refine eq_of_indep_iff_indep_forall (λ I, _ ), 
+  rw [loopy_on.indep_iff_empty, tr.indep_iff', le_zero_iff], 
+  exact ⟨λ h, (ncard_eq_zero h.2.1).mp h.2.2, by { rintro rfl, simp }⟩, 
+end 
 
 lemma tr.cl_eq_univ_of_le_r {X : set E} (h : t ≤ M.r X) : (M.tr t).cl X = univ :=
 begin
@@ -301,8 +323,19 @@ begin
   { intro h, linarith [ncard_add_ncard_compl X]},
 end
 
-lemma unif_loopless_iff (E : Type*) (hE : nonempty E) : (unif E r).loopless ↔ 0 < r :=
-by simp [loopless, loopless_on, ←indep_singleton, ←nat.add_one_le_iff]
+@[simp] lemma unif_zero_eq_loopy (E : Type*) : unif E 0 = loopy_on E :=
+by rw [unif, tr_zero_eq_loopy]
+
+@[simp] lemma unif_loopless (E : Type*) (ht : t ≠ 0) : (unif E t).loopless := 
+by simp_rw [loopless, unif, tr.nonloop_iff ht, free_on.nonloop, implies_true_iff]
+
+lemma unif_loopless_iff (E : Type*) [nonempty E] : (unif E r).loopless ↔ r ≠ 0 :=
+begin
+  refine ⟨_, unif_loopless E⟩,
+  rintro h rfl, 
+  rw [unif_zero_eq_loopy] at h, 
+  exact h (classical.arbitrary _) (loopy_on.loop _), 
+end 
 
 lemma unif_simple_iff (E : Type*) (hE : 1 < nat.card E) {r : ℕ} :
   (unif E r).simple ↔ 1 < r :=
