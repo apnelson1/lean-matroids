@@ -27,7 +27,7 @@ by rw [loop_iff_mem_cl_empty, iff_not_comm, M.empty_indep.not_mem_cl_iff,
 
 lemma loop_iff_circuit : M.loop e ↔ M.circuit {e} := 
 begin
-  simp_rw [circuit, loop_iff_dep, iff_self_and, ssubset_singleton_iff, forall_eq], 
+  simp_rw [circuit_iff, loop_iff_dep, iff_self_and, ssubset_singleton_iff, forall_eq], 
   exact λ _, M.empty_indep, 
 end 
 
@@ -92,6 +92,9 @@ begin
 end 
 
 lemma r_eq_zero_iff_subset_loops [finite_rk M] : M.r X = 0 ↔ X ⊆ M.cl ∅ := r_eq_zero_iff_forall_loop
+
+lemma r_eq_zero_of_subset_loops (h : X ⊆ M.cl ∅) : M.r X = 0 := 
+by rw [←r_cl, cl_eq_loops_of_subset h, r_cl, r_empty]
 
 lemma cl_union_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
   M.cl (X ∪ Y) = M.cl X := 

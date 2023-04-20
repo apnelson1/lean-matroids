@@ -1,4 +1,4 @@
-import .dual
+import ..dual
 
 noncomputable theory
 open_locale classical
@@ -7,12 +7,11 @@ open set
 
 namespace matroid
 
-variables {E E₀ E₁ E₂ : Type*} [finite E] [finite E₁] [finite E₂]
+universe u
+variables {E E₀ E₁ E₂ : Type u} 
 {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
 section iso
-
-
 
 /-- Two matroids are isomorphic if there is a map between ground sets that preserves bases -/
 def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) :=
@@ -32,8 +31,7 @@ def iso.refl (M : matroid E) : M ≃i M := ⟨equiv.refl E, λ B, by simp⟩
 def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := ⟨e.to_fun.symm, λ B, by {rw e.on_base, simp, }⟩
 
 /-- An equivalence between types induces a map from a matroid on one type to one on another -/
-def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂)  :
-  matroid E₂ :=
+def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂) : matroid E₂ :=
 { base := λ B, M₁.base (e ⁻¹' B),
   exists_base' := by
     {obtain ⟨B₁,hB₁⟩ := M₁.exists_base, exact ⟨e '' B₁, by simpa using hB₁⟩} ,
@@ -48,7 +46,21 @@ def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂)  :
     convert hBy;
     simp [preimage_equiv_eq_image_symm],
   end,
-  maximality := sorry }
+  maximality := 
+  begin
+    rintro I X ⟨B, hB, hIB⟩ hIX, 
+    obtain ⟨J, ⟨⟨BJ,hBJ,hBJB⟩,⟨hIJ, hJX⟩⟩, hJmax⟩
+      := M₁.maximality (e ⁻¹' I) (e ⁻¹' X) ⟨e ⁻¹' B, _⟩ (preimage_mono hIX), 
+    { refine ⟨e '' J, ⟨⟨e '' BJ, by simpa, image_subset _ hBJB⟩,_,_⟩, _⟩,  
+      { convert image_subset e hIJ, rw e.image_preimage },
+      { convert image_subset e hJX, rw e.image_preimage },
+      rintro K ⟨⟨BK, hBK, hKBK⟩, hIK, hKX⟩ hJK, 
+      rw [←e.preimage_subset, e.preimage_image], 
+      refine hJmax ⟨⟨_,hBK,preimage_mono hKBK⟩,preimage_mono hIK,preimage_mono hKX⟩ _, 
+      convert preimage_mono hJK, 
+      rw e.preimage_image },
+    exact ⟨hB, preimage_mono hIB⟩,  
+  end }
 
 @[simp] lemma congr_equiv_apply_base {e : E₁ ≃ E₂} {M₁ : matroid E₁} {B : set E₂} :
   (M₁.congr_equiv e).base B ↔ M₁.base (e ⁻¹' B) :=
@@ -61,7 +73,7 @@ begin
   split,
   { rintro ⟨B₂, hB₂, hIB₂⟩, exact ⟨_, hB₂, preimage_mono hIB₂⟩},
   rintro ⟨B₁, hB₁, hIB₁⟩,
-  refine ⟨e '' B₁, by {convert hB₁, simp}, _⟩,
+  refine ⟨e '' B₁, by rwa e.preimage_image, _⟩,
   rwa [←equiv.subset_image, ←preimage_equiv_eq_image_symm],
 end
 
@@ -76,14 +88,22 @@ by simp [←image_equiv_eq_preimage_symm]
 @[simp] lemma congr_equiv_apply_basis {e : E₁ ≃ E₂} {M₁ : matroid E₁} {I X : set E₂} :
   (M₁.congr_equiv e).basis I X ↔ M₁.basis (e ⁻¹' I) (e ⁻¹' X) :=
 begin
-  simp only [basis, congr_equiv_apply_indep, equiv.preimage_subset, and.congr_right_iff],
-  refine λ hI hIX, ⟨λ h J hJ hIJ hJX, _,λ h J hJ hIJ hJX, _⟩,
-  { rw h (e '' J) (by simpa) _ (by simpa),
-    { simp, },
-    rw ←e.image_preimage I,
-    exact image_subset e hIJ},
-  have h' := h (e ⁻¹' J) hJ (preimage_mono hIJ) (preimage_mono hJX),
-  rwa preimage_eq_preimage e.surjective at h',
+  suffices : ∀ {F₁ F₂ : Type*} {f : F₁ ≃ F₂} {N₁ : matroid F₁} {J Y : set F₂}, 
+    (N₁.congr_equiv f).basis J Y → N₁.basis (f ⁻¹' J) (f ⁻¹' Y), 
+  { refine ⟨this, λ hb', _⟩,
+    convert @this E₂ E₁ e.symm (M₁.congr_equiv e) (e ⁻¹' I) (e ⁻¹' X) _,
+    { rw [equiv.symm_preimage_preimage] }, 
+    { rw [equiv.symm_preimage_preimage] },
+    convert hb', ext B, simp  },
+
+  simp only [basis, congr_equiv_apply_indep, equiv.preimage_subset, and.congr_right_iff], 
+  
+  rintro F₁ F₂ f N₁ J Y ⟨⟨hA, hAX⟩,h'⟩,
+  refine ⟨⟨hA, preimage_mono hAX⟩, _⟩, 
+  rintro K ⟨hK, hKX⟩ hIK, 
+  rw [←f.image_subset, f.image_preimage], 
+  refine h' ⟨by rwa f.preimage_image, _⟩ _; 
+  rwa [←f.preimage_subset, f.preimage_image], 
 end
 
 @[simp] lemma congr_equiv_apply_symm_basis {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I X : set E₁} :

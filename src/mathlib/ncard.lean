@@ -142,7 +142,7 @@ lemma ncard_insert_of_mem (h : a ∈ s) :
   ncard (insert a s) = s.ncard :=
 by rw insert_eq_of_mem h
 
-lemma card_insert_le (a : α) (s : set α) : (insert a s).ncard ≤ s.ncard + 1 :=
+lemma ncard_insert_le (a : α) (s : set α) : (insert a s).ncard ≤ s.ncard + 1 :=
 begin
   obtain (hs | hs) := s.finite_or_infinite,
   { exact (em (a ∈ s)).elim (λ h, (ncard_insert_of_mem h).trans_le (nat.le_succ _))
@@ -158,6 +158,12 @@ begin
   { rw [ncard_insert_of_mem h, if_pos h] },
   { rw [ncard_insert_of_not_mem h hs, if_neg h] }
 end
+
+lemma ncard_le_ncard_insert (a : α) (s : set α) : s.ncard ≤ (insert a s).ncard :=
+begin
+  refine s.finite_or_infinite.elim (λ h, _) (λ h, by { rw h.ncard, exact nat.zero_le _ }), 
+  rw ncard_insert_eq_ite h, split_ifs; simp, 
+end    
 
 @[simp] lemma card_doubleton (h : a ≠ b) : ({a, b} : set α).ncard = 2 :=
 by {rw [ncard_insert_of_not_mem, ncard_singleton], simpa}
@@ -462,8 +468,6 @@ begin
   rw h.ncard,
 end
 
-
-
 lemma ncard_union_eq (h : disjoint s t) (hs : s.finite . to_finite_tac)
 (ht : t.finite . to_finite_tac) :
   (s ∪ t).ncard = s.ncard + t.ncard :=
@@ -582,6 +586,26 @@ lemma exists_smaller_set (s : set α) (i : ℕ) (h₁ : i ≤ s.ncard) :
   ∃ (t : set α), t ⊆ s ∧ t.ncard = i :=
 (exists_intermediate_set i (by simpa) (empty_subset s)).imp
   (λ t ht, ⟨ht.2.1,by simpa using ht.2.2⟩)
+
+lemma infinite.exists_subset_ncard_eq {s : set α} (hs : s.infinite) (k : ℕ) : 
+  ∃ t, t ⊆ s ∧ t.finite ∧ t.ncard = k :=
+begin
+  haveI := hs.to_subtype, 
+  obtain ⟨t', -, rfl⟩ := @infinite.exists_subset_card_eq s univ infinite_univ k,  
+  refine ⟨coe '' (t' : set s), by simp, finite.image _ (by simp), _⟩,  
+  rw [ncard_image_of_injective _ subtype.coe_injective], 
+  simp,
+end   
+
+lemma infinite.exists_supset_ncard_eq {s t : set α} (ht : t.infinite) (hst : s ⊆ t) (hs : s.finite)
+{k : ℕ} (hsk : s.ncard ≤ k) : 
+  ∃ s', s ⊆ s' ∧ s' ⊆ t ∧ s'.ncard = k :=
+begin
+  obtain ⟨s₁, hs₁, hs₁fin, hs₁card⟩ := (ht.diff hs).exists_subset_ncard_eq (k - s.ncard), 
+  refine ⟨s ∪ s₁, subset_union_left _ _, union_subset hst (hs₁.trans (diff_subset _ _)), _⟩,  
+  rwa [ncard_union_eq (disjoint_of_subset_right hs₁ disjoint_sdiff_right) hs hs₁fin, hs₁card, 
+    add_tsub_cancel_of_le], 
+end   
 
 lemma exists_subset_or_subset_of_two_mul_lt_ncard {n : ℕ} (hst : 2 * n < (s ∪ t).ncard) :
   ∃ (r : set α), n < r.ncard ∧ (r ⊆ s ∨ r ⊆ t) :=

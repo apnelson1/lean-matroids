@@ -13,15 +13,15 @@ section weak_image
 /- `M` is a weak image of `N` if independence in `N` implies independence in `M` -/
 def weak_image (N M : matroid E) := ∀ I, N.indep I → M.indep I
 
--- instance weak_image_le : has_le (matroid E) :=
--- ⟨λ N M, is_weak_image N M⟩
-
 reserve infixl ` ≤w `:75
 infix ` ≤w ` := weak_image
 
 lemma weak_image_def : N ≤w M ↔ ∀ I, N.indep I → M.indep I := iff.rfl
 
 lemma indep.weak_image (hI : N.indep I) (h : N ≤w M) : M.indep I := h _ hI
+
+lemma weak_image.finite_rk [finite_rk M] (h : N ≤w M) : finite_rk N := 
+by { obtain ⟨B, hB⟩ := N.exists_base, exact hB.finite_rk_of_finite (h B hB.indep).finite }
 
 lemma weak_image_iff_r [finite_rk N] [finite_rk M] : N ≤w M ↔ ∀ X, N.r X ≤ M.r X :=
 begin 
@@ -31,7 +31,8 @@ begin
   rwa [←eq_of_subset_of_ncard_le hJI hJ'.symm.le hI.finite],
 end
 
-lemma weak_image.r_le [finite_rk N] [finite_rk M] (h : N ≤w M) (X : set E) : N.r X ≤ M.r X := weak_image_iff_r.mp h X
+lemma weak_image.r_le [finite_rk N] [finite_rk M] (h : N ≤w M) (X : set E) : N.r X ≤ M.r X := 
+weak_image_iff_r.mp h X
 
 lemma weak_image_iff_dep : N ≤w M ↔ ∀ X, ¬M.indep X → ¬N.indep X :=
 by simp_rw [weak_image_def, not_imp_not]
@@ -82,12 +83,6 @@ lemma weak_image.trans {M₀ M₁ M₂ : matroid E} (h₀₁ : M₀ ≤w M₁) (
 
 lemma weak_image.antisymm (h : M ≤w N) (h' : N ≤w M) : M = N :=
 eq_of_indep_iff_indep_forall (λ I, ⟨λ hI, h I hI, λ hI, h' I hI⟩)
-
-lemma weak_image.finite_rk [finite_rk N] (h : M ≤w N) : finite_rk M := 
-begin
-  obtain ⟨B, hB⟩ := M.exists_base, 
-  exact finite_rk_of_finite_base hB ((hB.indep.weak_image h).finite),
-end 
 
 end weak_image
 

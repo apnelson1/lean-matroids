@@ -18,7 +18,7 @@ lemma indep.exists_base_supset (hI : M.indep I) : ∃ B, M.base B ∧ I ⊆ B :=
 lemma indep.subset (hJ : M.indep J) (hIJ : I ⊆ J) : M.indep I :=
 by {obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
 
-lemma empty_indep (M : matroid E) : M.indep ∅ :=
+@[simp] lemma empty_indep (M : matroid E) : M.indep ∅ :=
 exists.elim M.exists_base (λ B hB, ⟨_, hB, B.empty_subset⟩)
 
 lemma indep.finite [finite_rk M] (hI : M.indep I) : I.finite := 
@@ -47,13 +47,12 @@ begin
   rwa h _ hB'.indep hBB',
 end
 
-/-- The RHS of this lemma is definitionally `B ∈ maximals (⊆) M.indep`, which can be convenient -/
-lemma base_iff_maximal_indep' : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → I ⊆ B  :=
-begin
-  rw [base_iff_maximal_indep], 
-  exact ⟨λ h, ⟨h.1,λ I hI hBI, (h.2 I hI hBI).symm.subset⟩, 
-    λ h, ⟨h.1, λ I hI hBI, (h.2 I hI hBI).antisymm' hBI⟩⟩,
-end 
+-- lemma base_iff_maximal_indep' : M.base B ↔ M.indep B ∧ ∀ I, M.indep I → B ⊆ I → I ⊆ B  :=
+-- begin
+--   rw [base_iff_maximal_indep], 
+--   exact ⟨λ h, ⟨h.1,λ I hI hBI, (h.2 I hI hBI).symm.subset⟩, 
+--     λ h, ⟨h.1, λ I hI hBI, (h.2 I hI hBI).antisymm' hBI⟩⟩,
+-- end 
 
 lemma base.dep_of_ssubset (hB : M.base B) (h : B ⊂ X) : ¬M.indep X :=
 λ hX, h.ne (hB.eq_of_subset_indep hX h.subset)
@@ -82,6 +81,16 @@ begin
       (λ h', (hf (diff_subset _ _ h')).elim)},
   rwa this,
 end
+
+lemma base.exchange_base_of_indep' (hB : M.base B) (he : e ∈ B) (hf : f ∉ B) 
+(hI : M.indep (insert f B \ {e})) : 
+  M.base (insert f B \ {e}) := 
+begin
+  have hfe : f ≠ e, { rintro rfl, exact hf he }, 
+  rw [←insert_diff_singleton_comm hfe] at *, 
+  exact hB.exchange_base_of_indep he hf hI, 
+end 
+
 
 /-- If the difference of two bases is a singleton, then they differ by an insertion/removal -/
 lemma base.eq_exchange_of_diff_eq_singleton (hI : M.base B) (hJ : M.base B') (h : B \ B' = {e}) : 
@@ -128,10 +137,6 @@ begin
   exact ⟨⟨M.empty_indep, empty_subset _⟩, λ J h h', h.2⟩, 
 end
 
-lemma empty_basis_empty (M : matroid E) :
-  M.basis ∅ ∅ :=
-M.basis_empty_iff.mpr rfl
-
 lemma basis.basis_subset (hI : M.basis I X) (hIY : I ⊆ Y) (hYX : Y ⊆ X) : M.basis I Y :=
 ⟨⟨hI.indep, hIY⟩, λ J hJ hIJ, hI.2 ⟨hJ.1, hJ.2.trans hYX⟩ hIJ⟩
 
@@ -139,8 +144,7 @@ lemma basis.dep_of_ssubset (hI : M.basis I X) {Y : set E} (hIY : I ⊂ Y) (hYX :
   ¬ M.indep Y :=
 λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX)
 
-lemma basis.insert_dep (hI : M.basis I X) (he : e ∈ X \ I) :
-  ¬M.indep (insert e I) :=
+lemma basis.insert_dep (hI : M.basis I X) (he : e ∈ X \ I) : ¬M.indep (insert e I) :=
 hI.dep_of_ssubset (ssubset_insert he.2) (insert_subset.mpr ⟨he.1,hI.subset⟩)
 
 lemma basis.mem_of_insert_indep (hI : M.basis I X) (he : e ∈ X) (hIe : M.indep (insert e I)) : 
@@ -150,8 +154,7 @@ by_contra (λ heI, hI.insert_dep ⟨he, heI⟩ hIe)
 lemma basis.not_basis_of_ssubset (hI : M.basis I X) (hJI : J ⊂ I) : ¬ M.basis J X :=
 λ h, hJI.ne (h.eq_of_subset_indep hI.indep hJI.subset hI.subset)
 
-lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) :
-  ∃ J, I ⊆ J ∧ M.basis J X :=
+lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) : ∃ J, I ⊆ J ∧ M.basis J X :=
 begin
   obtain ⟨J, ⟨(hJ : M.indep J),hIJ,hJX⟩, hJmax⟩ := M.maximality I X hI hIX, 
   exact ⟨J, hIJ, ⟨⟨hJ, hJX⟩,λ K hK hJK, hJmax ⟨hK.1,hIJ.trans hJK,hK.2⟩ hJK⟩⟩,
@@ -162,8 +165,7 @@ hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 
 lemma indep.basis_self (hI : M.indep I) : M.basis I I := ⟨⟨hI, rfl.subset⟩, λ J hJ _, hJ.2⟩
 
-@[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I :=
-⟨basis.indep, indep.basis_self⟩
+@[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I := ⟨basis.indep, indep.basis_self⟩
 
 lemma exists_basis (M : matroid E) (X : set E) : ∃ I, M.basis I X :=
 by {obtain ⟨I, -, hI⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X), exact ⟨_,hI⟩, }
@@ -176,29 +178,10 @@ begin
     (inter_subset_right _ _),
 end
 
--- lemma basis_iff_base_inter :
---   M.basis I X ↔ ∃ B, M.base B ∧ I = B ∩ X ∧
---     ∀ B', M.base B' → B ∩ X ⊆ B' ∩ X → B ∩ X = B' ∩ X :=
--- begin
---   refine ⟨λ h, _,_⟩,
---   { obtain ⟨B,hB,rfl⟩ := h.exists_base,
---     refine ⟨B,hB,rfl,λ B' hB' hss,
---       h.eq_of_subset_indep (hB'.indep.inter_right X) hss (inter_subset_right _ _)⟩},
---   rintros ⟨B,hB,rfl,hBmax⟩,
---   refine ⟨hB.indep.inter_right X, inter_subset_right _ _, _⟩,
---   rintros J ⟨B',hB',hB'J⟩ hBXJ hJX ,
---   refine hBXJ.antisymm _,
---   rw hBmax B' hB' (subset_inter (hBXJ.trans hB'J) (inter_subset_right _ _)),
---   exact subset_inter hB'J hJX,
--- end
-
-lemma base_iff_basis_univ :
-  M.base B ↔ M.basis B univ :=
+lemma base_iff_basis_univ : M.base B ↔ M.basis B univ :=
 by {rw [base_iff_maximal_indep, basis_iff], simp}
 
-lemma base.basis_univ (hB : M.base B) :
-  M.basis B univ :=
-base_iff_basis_univ.mp hB
+lemma base.basis_univ (hB : M.base B) : M.basis B univ := base_iff_basis_univ.mp hB
 
 lemma indep.basis_of_forall_insert (hI : M.indep I) (hIX : I ⊆ X) 
 (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) : M.basis I X :=
@@ -449,36 +432,39 @@ end)
   rw hJ.eq_of_subset_indep hK.1.1 hJK (subset_inter hK.1.2 hK.2.2), 
 end)
 
+/- The API below is private because it is developed with the appropriate notation in 
+  `pseudominor.lean` -/
 
-@[simp] lemma lrestrict_indep_iff : (M.lrestrict X).indep I ↔ (M.indep I ∧ I ⊆ X) := 
+lemma lrestrict_indep_iff : (M.lrestrict X).indep I ↔ (M.indep I ∧ I ⊆ X) := 
 by simp [lrestrict]
 
-@[simp] lemma lrestrict_lrestrict : (M.lrestrict X).lrestrict Y = M.lrestrict (X ∩ Y) :=
+private lemma lrestrict_lrestrict : (M.lrestrict X).lrestrict Y = M.lrestrict (X ∩ Y) :=
 eq_of_indep_iff_indep_forall (λ I, by simp only [and_assoc, lrestrict_indep_iff, subset_inter_iff]) 
 
-lemma lrestrict_lrestrict_subset (hXY : X ⊆ Y) : (M.lrestrict Y).lrestrict X = M.lrestrict X :=
+private lemma lrestrict_lrestrict_subset (hXY : X ⊆ Y) : 
+  (M.lrestrict Y).lrestrict X = M.lrestrict X :=
 by rw [lrestrict_lrestrict, inter_eq_right_iff_subset.mpr hXY]
  
-lemma indep.indep_lrestrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M.lrestrict X).indep I :=
+private lemma indep.indep_lrestrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : 
+  (M.lrestrict X).indep I :=
 lrestrict_indep_iff.mpr ⟨hI, hIX⟩ 
 
-@[simp] lemma lrestrict_base_iff : (M.lrestrict X).base I ↔ M.basis I X :=
-by { simp_rw [base_iff_maximal_indep', lrestrict_indep_iff], refl }
+private lemma lrestrict_base_iff : (M.lrestrict X).base I ↔ M.basis I X := iff.rfl 
 
-lemma basis.base_lrestrict (h : M.basis I X) : (M.lrestrict X).base I := lrestrict_base_iff.mpr h
+private lemma basis.base_lrestrict (h : M.basis I X) : (M.lrestrict X).base I := 
+lrestrict_base_iff.mpr h
 
-lemma basis.basis_lrestrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) :
+private lemma basis.basis_lrestrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) :
   (M.lrestrict Y).basis I X :=
 by rwa [←lrestrict_base_iff, lrestrict_lrestrict_subset hXY, lrestrict_base_iff]
 
 end minor 
 
-
 lemma basis.transfer (hIX : M.basis I X) (hJX : M.basis J X) (hXY : X ⊆ Y) (hJY : M.basis J Y) : 
   M.basis I Y :=
 begin
   rw [←lrestrict_base_iff] at ⊢ hJY, 
-  exact hJY.base_of_basis_supset hJX.subset (hIX.basis_lrestrict_of_subset hXY),  
+  exact hJY.base_of_basis_supset hJX.subset (basis.basis_lrestrict_of_subset hIX hXY),  
 end 
 
 lemma basis.transfer' (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) (hIY : I ⊆ Y) : 
@@ -505,7 +491,8 @@ lemma indep.exists_basis_subset_union_basis (hI : M.indep I) (hIX : I ⊆ X) (hJ
   ∃ I', M.basis I' X ∧ I ⊆ I' ∧ I' ⊆ I ∪ J :=
 begin
   obtain ⟨I', hI', hII', hI'IJ⟩ := 
-    (hI.indep_lrestrict_of_subset hIX).exists_base_subset_union_base hJ.base_lrestrict, 
+    (indep.indep_lrestrict_of_subset hI hIX).exists_base_subset_union_base 
+      (basis.base_lrestrict hJ), 
   exact ⟨I', lrestrict_base_iff.mp hI', hII', hI'IJ⟩, 
 end 
 
@@ -565,9 +552,9 @@ lemma indep.augment_of_finite (hI : M.indep I) (hJ : M.indep J) (hIfin : I.finit
   ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
 begin
   obtain ⟨K, hK, hIK⟩ :=  
-    (hI.indep_lrestrict_of_subset (subset_union_left I J)).exists_base_supset, 
+    (indep.indep_lrestrict_of_subset hI (subset_union_left I J)).exists_base_supset, 
   obtain ⟨K', hK', hJK'⟩ :=
-    (hJ.indep_lrestrict_of_subset (subset_union_right I J)).exists_base_supset, 
+    (indep.indep_lrestrict_of_subset hJ (subset_union_right I J)).exists_base_supset, 
   have hJfin := finite_of_ncard_pos ((nat.zero_le _).trans_lt hIJ), 
   rw lrestrict_base_iff at hK hK', 
   have hK'fin := (hIfin.union hJfin).subset hK'.subset, 
@@ -624,12 +611,12 @@ end matroid
 section from_axioms
 
 /-- A collection of sets satisfying the independence axioms determines a matroid -/
-def matroid_of_indep [finite E] (indep : set E → Prop)
+def matroid_of_indep_of_finite [finite E] (indep : set E → Prop)
 (exists_ind : ∃ I, indep I)
 (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
 (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
   ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
-  matroid E := matroid.matroid_of_base_of_finite
+  matroid E := matroid_of_base_of_finite
   (λ B, indep B ∧ ∀ X, indep X → B ⊆ X → X = B)
   ( by exact
       (@set.finite.exists_maximal_wrt (set E) (set E) _ id indep (to_finite _) exists_ind).imp
@@ -667,24 +654,24 @@ def matroid_of_indep [finite E] (indep : set E → Prop)
     rwa [ncard_insert_of_not_mem heB₁x, ncard_diff_singleton_add_one],
   end )
 
-@[simp] lemma matroid_of_indep_base_iff [finite E] {indep : set E → Prop}
+@[simp] lemma matroid_of_indep_of_finite_base_iff [finite E] {indep : set E → Prop}
   (exists_ind : ∃ I, indep I)
   (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
   (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
     ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) {B : set E }:
-(matroid_of_indep indep exists_ind ind_mono ind_aug).base B ↔
+(matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).base B ↔
   indep B ∧ ∀ X, indep X → B ⊆ X → X = B :=
 iff.rfl
 
-@[simp] lemma matroid_of_indep_apply [finite E] {indep : set E → Prop}
+@[simp] lemma matroid_of_indep_of_finite_apply [finite E] {indep : set E → Prop}
   (exists_ind : ∃ I, indep I)
   (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
   (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
     ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
-  (matroid_of_indep indep exists_ind ind_mono ind_aug).indep = indep :=
+  (matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).indep = indep :=
 begin
   ext I,
-  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep],
+  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep_of_finite],
   split,
   { rintro ⟨B, ⟨hBi,hB⟩, hIB⟩,
     exact ind_mono _ _ hIB hBi},
