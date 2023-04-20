@@ -54,9 +54,9 @@ structure rep'' (𝔽 W : Type*) [field 𝔽] (M : matroid E) :=
 (to_fun : E → W)
 (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun (e : E)) ↔ M.indep I)
 
-def rep'_of_rep'' (X : Type*) (φ : rep'' 𝔽 X M) : rep' 𝔽 X M := 
+/-def rep'_of_rep'' (X : Type*) (φ : rep'' 𝔽 X M) : rep' 𝔽 X M := 
 { to_fun := φ.to_fun,
-  valid := _ }
+  valid := _ }-/
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable' (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ (W : Type*), nonempty (rep'' 𝔽 W M)
@@ -158,18 +158,18 @@ lemma of_base (φ : rep' 𝔽 W M) {B : set E} (hB : M.base B) (e : E) : φ e �
 begin
   by_cases e ∈ B,
   { exact subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e B, φ x) := φ.valid.not.2 (hB.dep_of_insert h),
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e B, φ x) := (φ.valid (insert e B)).not.2 (hB.dep_of_insert h),
   contrapose! h2,
-  exact (linear_independent_insert' h).2 ⟨φ.valid.2 hB.indep, h2⟩,
+  exact (linear_independent_insert' h).2 ⟨(φ.valid B).2 hB.indep, h2⟩,
 end
 
 lemma of_basis (φ : rep' 𝔽 W M) {X I : set E} (hI : M.basis I X) {e : E} (he : e ∈ X): φ e ∈ span 𝔽 (φ '' I) :=
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := φ.valid.not.2 (hI.insert_dep (mem_diff_of_mem he h)),
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := (φ.valid (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨φ.valid.2 hI.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid I).2 hI.indep, h2⟩,
 end
 
 lemma span_base (φ : rep' 𝔽 W M) (hB : M.base B) :
