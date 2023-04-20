@@ -48,7 +48,8 @@ structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_monoid W] [module 𝔽 W]
 (to_fun : E → W)
 (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun (e : E)) ↔ M.indep I)
 
-structure rep'' (𝔽 W : Type*) [field 𝔽] (M : matroid E) :=
+structure rep'' (𝔽 : Type*) [field 𝔽] (M : matroid E) :=
+(W : Type*)
 (add_comm_monoid : add_comm_monoid W)
 (module : module 𝔽 W)
 (to_fun : E → W)
@@ -59,7 +60,7 @@ structure rep'' (𝔽 W : Type*) [field 𝔽] (M : matroid E) :=
   valid := _ }-/
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
-def is_representable' (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ (W : Type*), nonempty (rep'' 𝔽 W M)
+def is_representable' (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := nonempty (rep'' 𝔽 M)
 
 instance fun_like : fun_like (rep' 𝔽 W M) E (λ _, W) :=
 { coe := rep'.to_fun,
@@ -214,7 +215,8 @@ begin
   have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
   rw rep.valid,
   apply hB.indep,
-  apply linear_independent.image_of_comp B φ coe h8,
+  have h7 := linear_independent.image_of_comp B φ coe,
+  --have h7 := linear_independent.image_of_comp B φ coe h8,
 end
 
 lemma of_rank_set (φ : rep' 𝔽 W M) [fintype 𝔽] (X : set E) [fintype (span 𝔽 (φ '' X))] :
