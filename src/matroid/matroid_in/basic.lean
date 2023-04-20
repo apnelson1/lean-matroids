@@ -1,5 +1,6 @@
 import ..pseudominor
 import ..connectivity
+import ..maps.equiv
 
 open_locale classical
 noncomputable theory
@@ -360,110 +361,164 @@ variables {M₁ M₂ M : matroid_in α} {X Y I B C : set α} {e f x y : α}
 
 section equivalence
 
+
+
 /-- A `matroid_in` gives a matroid on a subtype -/
-def to_matroid_of_ground_eq (M : matroid_in α) (hX : M.E = X) :
-  matroid X :=
-matroid_of_base 
-(λ B, (M : matroid α).base (coe '' B))
-(exists.elim M.exists_base (λ B hB, ⟨coe ⁻¹' B, 
-  by rwa [subtype.image_preimage_coe, ←matroid_in.base, ←hX, 
-    inter_eq_left_iff_subset.mpr hB.subset_ground]⟩))
-(begin
-    subst hX,
-    rintro B₁ B₂ hB₁ hB₂ a ha,
-    simp only [function.comp_app] at hB₁ hB₂ ⊢,
+def to_matroid (M : matroid_in α) : matroid M.E := 
+  (M : matroid α).preimage (function.embedding.subtype M.E)
 
-    have ha' : (a : α) ∈ (coe '' B₁) \ (coe '' B₂),
-    { rw [←image_diff (subtype.coe_injective), mem_image], exact ⟨a,ha,rfl⟩},
-    obtain ⟨y,hy,hy'⟩ :=  hB₁.exchange hB₂ ha',
-    refine ⟨⟨y, mem_ground_of_nonloop_coe (hB₂.indep.nonloop_of_mem hy.1)⟩, _, _⟩,
-    { simp only [←image_diff (subtype.coe_injective), mem_image,
-        subtype.exists, subtype.coe_mk, exists_and_distrib_right, exists_eq_right] at hy,
-      obtain ⟨hy'',h_eq⟩ := hy,
-      exact h_eq},
-    rwa [image_insert_eq, image_diff subtype.coe_injective, image_singleton],
-  end)
-  (begin
-    subst hX, 
-    rintro I Y ⟨B, hB, hIB⟩ hIY, 
-    obtain ⟨J, hIJ, hJ⟩ :=
-      (hB.indep.subset (image_subset _ hIB)).subset_basis_of_subset (image_subset _ hIY), 
-    obtain ⟨BJ, hBJ, hJBJ⟩ := hJ.indep.exists_base_supset, 
-    refine ⟨coe ⁻¹' J, ⟨⟨coe ⁻¹' BJ,_,preimage_mono hJBJ⟩,_,_⟩, _⟩,  
-    { convert hBJ, rw [image_preimage_coe, inter_eq_left_iff_subset],
-      exact base.subset_ground hBJ },
-    { convert preimage_mono hIJ, rw [preimage_image_eq _ coe_injective] },
-    { convert preimage_mono hJ.subset, rw [preimage_image_eq _ coe_injective] },
-    rintro K ⟨⟨BK, hBK, hKBK⟩, hIK, hKY⟩  hJK,
-    rw @basis.eq_of_subset_indep _ _ _ (coe '' K) _ hJ,  
-    { rw [preimage_image_eq _ coe_injective] },
-    { exact hBK.indep.subset (image_subset _ hKBK) },
-    { convert image_subset _ hJK, rw [image_preimage_coe, eq_comm, inter_eq_left_iff_subset],
-      exact indep.subset_ground (hBJ.indep.subset hJBJ) },
-    exact image_subset _ hKY, 
-  end)
-
-def to_matroid (M : matroid_in α) : matroid (M.E) := M.to_matroid_of_ground_eq rfl
+def to_matroid_of_ground_eq (M : matroid_in α) (hX : M.E = X) : matroid X := 
+M.to_matroid.congr_equiv (equiv.set_congr hX)
 
 /-- A `matroid` on a subtype gives a `matroid_in` -/
-def of_matroid_in {E : set α} (M : matroid E) :
-  matroid_in α :=
-{ ground := E,
-  carrier :=
-  matroid_of_base (λ B, M.base (coe ⁻¹' B) ∧ B ⊆ E)
-    (begin
-      obtain ⟨B,hB⟩ := M.exists_base,
-      refine ⟨coe '' B, by rwa [preimage_image_eq _ subtype.coe_injective], _⟩,
-      simp only [image_subset_iff, subtype.coe_preimage_self, subset_univ],
-    end)
-
-  (begin
-      rintro B₁ B₂ ⟨hB₁, hB₁ss⟩ ⟨hB₂, hB₂ss⟩ x hx,
-      set x' : E := ⟨x, hB₁ss hx.1⟩ with hx'_def,
-      have hxx' : x = coe x', rw [hx'_def, subtype.coe_mk],
-      rw [hxx', ←mem_preimage, preimage_diff] at hx,
-      obtain ⟨y, hy, hBy⟩ := hB₁.exchange hB₂ hx,
-      rw [←preimage_diff, mem_preimage] at hy,
-      refine ⟨y, hy, _, _⟩,
-      { rw [←singleton_union, preimage_union, preimage_diff], rw [←singleton_union] at hBy,
-        convert hBy using 2,
-        { ext, simp [subtype.coe_inj]},
-        convert rfl using 2,
-        { ext, rw [hx'_def], simp only [mem_singleton_iff, subtype.coe_mk, mem_preimage],
-          simp_rw [hxx'], rw [subtype.coe_inj], refl}},
-      rw insert_subset,
-      exact ⟨y.2, (diff_subset _ _).trans hB₁ss⟩,
-    end)
-    (sorry ),
-  support := λ e he, begin
-    rw [←matroid.loop_iff_mem_cl_empty, matroid.loop_iff_not_mem_base_forall],
-    rintro B ⟨-,hB⟩ heB,
-    exact he (hB heB),
-  end }
-
-/-- A `matroid_in α` with ground set `X` is the same thing as a `matroid X`-/
+def to_matroid_in {E : set α} (M : matroid E) : matroid_in α := 
+⟨E, M.image (function.embedding.subtype E), 
+begin
+  intros e he, 
+  rw [←matroid.loop_iff_mem_cl_empty, matroid.loop_iff_dep, image_indep_iff], 
+  push_neg, 
+  simp only [function.embedding.coe_subtype, ne.def], 
+  refine λ I hI hi, he _,  
+  rw [←@subtype.range_coe _ E, ←singleton_subset_iff, hi],
+  exact image_subset_range _ _,  
+end⟩ 
+  
+/-- A `matroid_in α` with ground set `E` is the same thing as a `matroid `-/
 def matroid_in_equiv_subtype {E : set α} :
   {M : matroid_in α // M.E = E} ≃ matroid E :=
-{ to_fun := λ M, to_matroid_of_ground_eq M.1 M.2,
-  inv_fun := λ M, ⟨of_matroid_in M, rfl⟩,
-  left_inv := begin
-    rintro ⟨M, hM⟩,
-    subst hM,
-    ext, refl,
-    simp only [function.comp_app, subtype.image_preimage_coe, of_matroid_in,
-      to_matroid_of_ground_eq, subtype.coe_mk, carrier_eq_coe, ←base_iff_coe],
-    refine ⟨_, λ hB, _⟩,
-    { rintro ⟨hB, hBG⟩, convert hB, rwa [eq_comm, inter_eq_left_iff_subset] },
-    rw [inter_eq_left_iff_subset.mpr hB.subset_ground],
-    exact ⟨hB, hB.subset_ground⟩,
+{ to_fun := λ M, to_matroid_of_ground_eq (M : matroid_in α) M.2,
+  inv_fun := λ M, ⟨to_matroid_in M, rfl⟩,
+  left_inv := begin 
+    rintro ⟨M, rfl⟩, simp [to_matroid_of_ground_eq, to_matroid_in], 
+    apply matroid_in.ext, refl, 
+    apply eq_of_indep_iff_indep_forall (λ I, _),
+    simp only [image_indep_iff, congr_equiv_apply_indep, function.embedding.coe_subtype, 
+      carrier_eq_coe, to_matroid],  
+    simp only [preimage_indep_iff, function.embedding.coe_subtype] at *, 
+    split, 
+    { rintro ⟨I, hI, rfl⟩, convert hI, ext, simp },
+    refine λ h, ⟨coe ⁻¹' I, _, _⟩,  
+    { convert h, ext,
+      simp only [mem_image, mem_preimage, equiv.set_congr_apply, set_coe.exists, coe_mk, 
+        exists_prop, exists_eq_right_right, and_iff_right_iff_imp],  
+      exact λ h', indep.subset_ground h h' },
+    rw [image_preimage_coe, ground_eq_E, eq_comm, inter_eq_left_iff_subset], 
+    exact indep.subset_ground h, 
   end,
   right_inv := begin
     rintro M,
-    ext B,
+    ext B, 
+    simp [to_matroid, to_matroid_of_ground_eq, to_matroid_in], 
+    convert iff.rfl, 
     simp only [of_matroid_in, to_matroid_of_ground_eq, ←carrier_eq_coe, function.comp_app,
       image_subset_iff, subtype.coe_preimage_self, subset_univ, and_true,
       preimage_image_eq _ subtype.coe_injective],
   end }
+
+
+
+
+-- matroid_of_base 
+-- (λ B, (M : matroid α).base (coe '' B))
+-- (exists.elim M.exists_base (λ B hB, ⟨coe ⁻¹' B, 
+--   by rwa [subtype.image_preimage_coe, ←matroid_in.base, ←hX, 
+--     inter_eq_left_iff_subset.mpr hB.subset_ground]⟩))
+-- (begin
+--     subst hX,
+--     rintro B₁ B₂ hB₁ hB₂ a ha,
+--     simp only [function.comp_app] at hB₁ hB₂ ⊢,
+
+--     have ha' : (a : α) ∈ (coe '' B₁) \ (coe '' B₂),
+--     { rw [←image_diff (subtype.coe_injective), mem_image], exact ⟨a,ha,rfl⟩},
+--     obtain ⟨y,hy,hy'⟩ :=  hB₁.exchange hB₂ ha',
+--     refine ⟨⟨y, mem_ground_of_nonloop_coe (hB₂.indep.nonloop_of_mem hy.1)⟩, _, _⟩,
+--     { simp only [←image_diff (subtype.coe_injective), mem_image,
+--         subtype.exists, subtype.coe_mk, exists_and_distrib_right, exists_eq_right] at hy,
+--       obtain ⟨hy'',h_eq⟩ := hy,
+--       exact h_eq},
+--     rwa [image_insert_eq, image_diff subtype.coe_injective, image_singleton],
+--   end)
+--   (begin
+--     subst hX, 
+--     rintro I Y ⟨B, hB, hIB⟩ hIY, 
+--     obtain ⟨J, hIJ, hJ⟩ :=
+--       (hB.indep.subset (image_subset _ hIB)).subset_basis_of_subset (image_subset _ hIY), 
+--     obtain ⟨BJ, hBJ, hJBJ⟩ := hJ.indep.exists_base_supset, 
+--     refine ⟨coe ⁻¹' J, ⟨⟨coe ⁻¹' BJ,_,preimage_mono hJBJ⟩,_,_⟩, _⟩,  
+--     { convert hBJ, rw [image_preimage_coe, inter_eq_left_iff_subset],
+--       exact base.subset_ground hBJ },
+--     { convert preimage_mono hIJ, rw [preimage_image_eq _ coe_injective] },
+--     { convert preimage_mono hJ.subset, rw [preimage_image_eq _ coe_injective] },
+--     rintro K ⟨⟨BK, hBK, hKBK⟩, hIK, hKY⟩  hJK,
+--     rw @basis.eq_of_subset_indep _ _ _ (coe '' K) _ hJ,  
+--     { rw [preimage_image_eq _ coe_injective] },
+--     { exact hBK.indep.subset (image_subset _ hKBK) },
+--     { convert image_subset _ hJK, rw [image_preimage_coe, eq_comm, inter_eq_left_iff_subset],
+--       exact indep.subset_ground (hBJ.indep.subset hJBJ) },
+--     exact image_subset _ hKY, 
+--   end)
+
+-- def to_matroid (M : matroid_in α) : matroid (M.E) := M.to_matroid_of_ground_eq rfl
+
+-- /-- A `matroid` on a subtype gives a `matroid_in` -/
+-- def of_matroid_in {E : set α} (M : matroid E) :
+--   matroid_in α :=
+-- { ground := E,
+--   carrier :=
+--   matroid_of_base (λ B, M.base (coe ⁻¹' B) ∧ B ⊆ E)
+--     (begin
+--       obtain ⟨B,hB⟩ := M.exists_base,
+--       refine ⟨coe '' B, by rwa [preimage_image_eq _ subtype.coe_injective], _⟩,
+--       simp only [image_subset_iff, subtype.coe_preimage_self, subset_univ],
+--     end)
+
+--   (begin
+--       rintro B₁ B₂ ⟨hB₁, hB₁ss⟩ ⟨hB₂, hB₂ss⟩ x hx,
+--       set x' : E := ⟨x, hB₁ss hx.1⟩ with hx'_def,
+--       have hxx' : x = coe x', rw [hx'_def, subtype.coe_mk],
+--       rw [hxx', ←mem_preimage, preimage_diff] at hx,
+--       obtain ⟨y, hy, hBy⟩ := hB₁.exchange hB₂ hx,
+--       rw [←preimage_diff, mem_preimage] at hy,
+--       refine ⟨y, hy, _, _⟩,
+--       { rw [←singleton_union, preimage_union, preimage_diff], rw [←singleton_union] at hBy,
+--         convert hBy using 2,
+--         { ext, simp [subtype.coe_inj]},
+--         convert rfl using 2,
+--         { ext, rw [hx'_def], simp only [mem_singleton_iff, subtype.coe_mk, mem_preimage],
+--           simp_rw [hxx'], rw [subtype.coe_inj], refl}},
+--       rw insert_subset,
+--       exact ⟨y.2, (diff_subset _ _).trans hB₁ss⟩,
+--     end)
+--     (sorry ),
+--   support := λ e he, begin
+--     rw [←matroid.loop_iff_mem_cl_empty, matroid.loop_iff_not_mem_base_forall],
+--     rintro B ⟨-,hB⟩ heB,
+--     exact he (hB heB),
+--   end }
+
+-- /-- A `matroid_in α` with ground set `X` is the same thing as a `matroid X`-/
+-- def matroid_in_equiv_subtype {E : set α} :
+--   {M : matroid_in α // M.E = E} ≃ matroid E :=
+-- { to_fun := λ M, to_matroid_of_ground_eq M.1 M.2,
+--   inv_fun := λ M, ⟨of_matroid_in M, rfl⟩,
+--   left_inv := begin
+--     rintro ⟨M, hM⟩,
+--     subst hM,
+--     ext, refl,
+--     simp only [function.comp_app, subtype.image_preimage_coe, of_matroid_in,
+--       to_matroid_of_ground_eq, subtype.coe_mk, carrier_eq_coe, ←base_iff_coe],
+--     refine ⟨_, λ hB, _⟩,
+--     { rintro ⟨hB, hBG⟩, convert hB, rwa [eq_comm, inter_eq_left_iff_subset] },
+--     rw [inter_eq_left_iff_subset.mpr hB.subset_ground],
+--     exact ⟨hB, hB.subset_ground⟩,
+--   end,
+--   right_inv := begin
+--     rintro M,
+--     ext B,
+--     simp only [of_matroid_in, to_matroid_of_ground_eq, ←carrier_eq_coe, function.comp_app,
+--       image_subset_iff, subtype.coe_preimage_self, subset_univ, and_true,
+--       preimage_image_eq _ subtype.coe_injective],
+--   end }
 
 @[simp] lemma matroid_in_equiv_subtype_apply_base {E : set α} {B : set E}
   (M : {M : matroid_in α // M.E = E}) :
