@@ -362,7 +362,6 @@ variables {M₁ M₂ M : matroid_in α} {X Y I B C : set α} {e f x y : α}
 section equivalence
 
 
-
 /-- A `matroid_in` gives a matroid on a subtype -/
 def to_matroid (M : matroid_in α) : matroid M.E := 
   (M : matroid α).preimage (function.embedding.subtype M.E)
@@ -375,7 +374,7 @@ def to_matroid_in {E : set α} (M : matroid E) : matroid_in α :=
 ⟨E, M.image (function.embedding.subtype E), 
 begin
   intros e he, 
-  rw [←matroid.loop_iff_mem_cl_empty, matroid.loop_iff_dep, image_indep_iff], 
+  rw [←matroid.loop_iff_mem_cl_empty, matroid.loop_iff_dep, image.indep_iff], 
   push_neg, 
   simp only [function.embedding.coe_subtype, ne.def], 
   refine λ I hI hi, he _,  

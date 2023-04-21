@@ -6,7 +6,7 @@ open_locale classical
 open set
 namespace matroid
 
-variables {E E' : Type*} {N M : matroid E} {e f : E} {X Y Z S T : set E}
+variables {E E' : Type*} {N M : matroid E} {e f g : E} {X Y Z S T : set E}
 
 section simple
 
@@ -26,10 +26,10 @@ subset_trans hXY h
 lemma loopless_on.indep_of_mem (h : M.loopless_on X) (he : e ∈ X) : M.indep {e} :=
 indep_singleton.2 $ h he
 
-/-- the property of a set containing no loops or parallel pairs -/
+/-- the property of a set containing no loops or para pairs -/
 def simple_on (M : matroid E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → ∀ ⦃f⦄, f ∈ X → M.indep {e, f}
 
-/-- the property of a matroid having no loops or parallel pairs -/
+/-- the property of a matroid having no loops or para pairs -/
 def simple (M : matroid E) : Prop := ∀ e f, M.indep {e, f}
 
 protected lemma simple.simple_on (hM : M.simple) : M.simple_on X := λ e _ f _, hM e f
@@ -100,27 +100,77 @@ end
 
 end simple
 
-section parallel
+section parallel 
 
-def parallel (M : matroid E) (e f : E) : Prop := M.cl {e} = M.cl {f}
+/-- Two nonloops are parallel if they have the same closure -/
+def para (M : matroid E) (e f : E) : Prop := M.nonloop e ∧ M.cl {e} = M.cl {f}
 
--- lemma parallel_self (M : matroid E) (x : E) : M.parallel x x := by rw [parallel]
+lemma para.cl_eq_cl (h : M.para e f) : M.cl {e} = M.cl {f} := h.2 
 
--- lemma parallel_symm (M : matroid E) : M.parallel e f ↔ M.parallel f e :=
--- by { rw [parallel, eq_comm], refl }
+lemma para.nonloop_left (h : M.para e f) : M.nonloop e := h.1 
 
--- lemma parallel_trans
+lemma para.nonloop_right (h : M.para e f) : M.nonloop f := 
+h.nonloop_left.nonloop_of_mem_cl (h.cl_eq_cl.subset (mem_cl_self _ _))
 
--- infix ` ~ ` :75 :=  matroid.parallel
+lemma nonloop.para_self (he : M.nonloop e) : M.para e e := ⟨he,rfl⟩ 
+
+lemma nonloop.nonloop_para_iff_mem_cl (he : M.nonloop e) (hf : M.nonloop f) : 
+  M.para e f ↔ f ∈ M.cl {e} := 
+⟨λ h, h.cl_eq_cl.symm.subset (mem_cl_self _ _), λ h, ⟨he, (hf.cl_eq_of_mem_cl h).symm⟩⟩
+
+lemma nonloop.para_of_nonloop_mem_cl (he : M.nonloop e) (hf : M.nonloop f) (h : f ∈ M.cl {e}) : 
+  M.para e f :=
+(he.nonloop_para_iff_mem_cl hf).mpr h 
+
+lemma para.symm (h : M.para e f) : M.para f e := ⟨h.nonloop_right, h.2.symm⟩ 
+
+lemma para.comm : M.para e f ↔ M.para f e := ⟨para.symm, para.symm⟩ 
+
+lemma para.trans (hef : M.para e f) (hfg : M.para f g) : M.para e g := ⟨hef.1, hef.2.trans hfg.2⟩ 
+
+lemma loop.not_para (he : M.loop e) (f : E) : ¬ M.para e f := λ h, h.nonloop_left he 
+
+/-- The set of elements parallel to `e` -/
+def pcl (M : matroid E) (e : E) := {f | M.para e f}
+
+@[simp] lemma mem_pcl_iff : e ∈ M.pcl f ↔ M.para e f := para.comm
+
+lemma nonloop.mem_pcl_self (he : M.nonloop e) : e ∈ M.pcl e := he.para_self 
+
+lemma loop.pcl_eq_empty (he : M.loop e) : M.pcl e = ∅ :=  
+eq_empty_of_forall_not_mem (λ f, he.not_para _)
+
+lemma loop.not_mem_pcl (he : M.loop e) (f : E) : e ∉ M.pcl f := 
+λ hef, he.not_para _ (mem_pcl_iff.mpr hef) 
+
+lemma pcl_eq_cl_diff_loops (M : matroid E) (e : E) : M.pcl e = M.cl {e} \ M.cl ∅ :=
+begin
+  refine (M.loop_or_nonloop e).elim (λ he, by rw [he.pcl_eq_empty, he.cl, diff_self]) (λ he, _), 
+  refine set.ext (λ f, (M.loop_or_nonloop f).elim (λ hf, _) (λ hf, _)), 
+  { rw [mem_pcl_iff, ←hf.cl], 
+    exact iff_of_false (hf.not_para _) (λ h, h.2 (mem_cl_self _ _)) },
+  rw [pcl, mem_set_of, he.nonloop_para_iff_mem_cl hf, mem_diff, ←loop_iff_mem_cl_empty, 
+    not_loop_iff, iff_true_intro hf, and_true],   
+end 
 
 
--- lemma parallel.loops_or_nonloops (h : M.parallel e f) :
+lemma para.pcl_eq_pcl (h : M.para e f) : M.pcl e = M.pcl f :=
+begin
+  simp_rw [set.ext_iff, mem_pcl_iff], 
+  exact λ x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩, 
+end 
 
 
+lemma nonloop.pcl_eq_pcl_iff (he : M.nonloop e) : M.pcl e = M.pcl f ↔ M.para e f := 
+begin
+  refine ⟨λ h, he.para_of_nonloop_mem_cl _ _, para.pcl_eq_pcl⟩, 
+  -- simp_rw [set.ext_iff, mem_pcl_iff], 
+  -- exact ⟨λ h, by { rw ←h, exact he.para_self }, 
+  --   λ h x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩⟩,  
+end 
 
-
--- lemma parallel_iff :
---   M.parallel
+-- lemma para_iff :
+--   M.para
 
 
 end parallel

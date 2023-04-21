@@ -442,7 +442,7 @@ end)
   rw hJ.eq_of_subset_indep hK.1.1 hJK (subset_inter hK.1.2 hK.2.2), 
 end)
 
-/- The API below is private because it is developed with the appropriate notation in 
+/- The API below is private because it is later developed with appropriate notation in 
   `pseudominor.lean` -/
 
 lemma lrestrict_indep_iff : (M.lrestrict X).indep I ↔ (M.indep I ∧ I ⊆ X) := 
@@ -584,7 +584,6 @@ begin
     he.2, hK.indep.subset (insert_subset.mpr ⟨he.1,hIK⟩)⟩, 
 end 
 
-
 /-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`,
   there is an element `e` of `J \ I` whose insertion into `e` is an independent set.  -/
 lemma indep.augment [finite_rk M] (hI : M.indep I) (hJ : M.indep J) (hIJ : I.ncard < J.ncard) :
@@ -629,104 +628,36 @@ end matroid
 
 section from_axioms
 
-/-- A collection of sets satisfying the independence axioms determines a matroid -/
+/-- A collection of sets in a finite type satisfying the usual independence axioms determines a 
+  matroid -/
 def matroid_of_indep_of_finite [finite E] (indep : set E → Prop)
 (exists_ind : ∃ I, indep I)
-(ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
-(ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
-  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
-  matroid E := matroid_of_base_of_finite
-  (λ B, indep B ∧ ∀ X, indep X → B ⊆ X → X = B)
-  ( by exact
-      (@set.finite.exists_maximal_wrt (set E) (set E) _ id indep (to_finite _) exists_ind).imp
-      (λ B hB, exists.elim hB (λ hB h, ⟨hB, λ X hX hBX, (h X hX hBX).symm⟩)))
+(ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
+  matroid E := 
+  matroid_of_indep indep (exists.elim exists_ind (λ I hI, ind_mono hI (empty_subset _))) ind_mono 
   (begin
-    set is_base := λ (B : set E), indep B ∧ ∀ X, indep X → B ⊆ X → X = B with hbase,
-    rintro B₁ B₂ hB₁ hB₂ x ⟨hxB₁,hxB₂⟩,
-
-    have h_base_iff : ∀ B B' (hB' : is_base B'),
-      is_base B ↔ indep B ∧ B'.ncard ≤ B.ncard,
-    { intros B B' hB', split,
-      { refine λ hB, ⟨hB.1, le_of_not_lt (λ hlt, _)⟩,
-        obtain ⟨e,heB,heB',he⟩ := ind_aug B B' hB.1 hB'.1 hlt,
-        exact heB' (by simpa using hB.2 _ he (subset_insert _ _))},
-      rintros ⟨hBI, hB'B⟩ ,
-      refine ⟨hBI, λ J hJ hBJ, (hBJ.antisymm (by_contra (λhJB, _))).symm⟩,
-      have hss := ssubset_of_subset_not_subset hBJ hJB,
-      obtain ⟨e,heJ,heB',he⟩ :=
-        ind_aug B' J hB'.1 hJ (hB'B.trans_lt (ncard_lt_ncard hss)),
-      exact heB' (by simpa using hB'.2 _ he (subset_insert _ _))},
-
-    simp_rw [h_base_iff _ _ hB₁, mem_diff],
-    have hcard : (B₁ \ {x}).ncard < B₂.ncard,
-    { rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one hxB₁],
-      exact ((h_base_iff _ _ hB₁).mp hB₂).2},
-
-    obtain ⟨e,heB₂,heB₁x,he⟩ :=
-      ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁.1) hB₂.1 hcard,
-    have hex : e ≠ x := by {rintro rfl, exact hxB₂ heB₂},
-    have heB₁ : e ∉ B₁,
-    { simp only [mem_diff, mem_singleton_iff, not_and, not_not] at heB₁x,
-      exact λ h', hex (heB₁x h')},
-
-    refine ⟨e,⟨heB₂,heB₁⟩,he,_⟩,
-    rwa [ncard_insert_of_not_mem heB₁x, ncard_diff_singleton_add_one],
-  end )
-
-@[simp] lemma matroid_of_indep_of_finite_base_iff [finite E] {indep : set E → Prop}
-  (exists_ind : ∃ I, indep I)
-  (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
-  (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
-    ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) {B : set E }:
-(matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).base B ↔
-  indep B ∧ ∀ X, indep X → B ⊆ X → X = B :=
-iff.rfl
+    intros I J hI hIn hJ, 
+    by_contra' h', 
+    obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
+    { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
+      exact h' e ⟨heJ,heI⟩ hi },
+    obtain (h_eq | hlt) := hle.eq_or_lt, 
+    { refine hIn ⟨hI, λ K (hK : indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
+        (λ h, h.symm.subset)⟩,
+      obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss)), 
+      exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
+    obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
+      exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
+  end) 
+  ( exists_maximal_subset_property_of_bounded ⟨(univ : set E).ncard ,
+    (λ I hI, ⟨to_finite I, ncard_le_of_subset (subset_univ _)⟩)⟩ )
 
 @[simp] lemma matroid_of_indep_of_finite_apply [finite E] {indep : set E → Prop}
-  (exists_ind : ∃ I, indep I)
-  (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
-  (ind_aug : ∀ I J, indep I → indep J → I.ncard < J.ncard →
-    ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
+(exists_ind : ∃ I, indep I) (ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) :
   (matroid_of_indep_of_finite indep exists_ind ind_mono ind_aug).indep = indep :=
-begin
-  ext I,
-  simp_rw [matroid.indep_iff_subset_base, matroid_of_indep_of_finite],
-  split,
-  { rintro ⟨B, ⟨hBi,hB⟩, hIB⟩,
-    exact ind_mono _ _ hIB hBi},
-  intro hI,
-  obtain ⟨B,hBi, hB⟩ :=
-    @set.finite.exists_maximal_wrt (set E) (set E) _ id {J | I ⊆ J ∧ indep J} (to_finite _)
-    ⟨I, subset_refl I, hI⟩,
-  simp only [mem_set_of_eq, id.def, le_eq_subset, and_imp] at hB hBi,
-  exact ⟨B, ⟨hBi.2, λ X hX hBX, (hB _ (hBi.1.trans hBX) hX hBX).symm⟩, hBi.1⟩,
-end
+by simp [matroid_of_indep_of_finite]
 
 end from_axioms
 
-
-
-
-/- Another version of the independence axioms that doesn't mention cardinality. TODO -/
--- def matroid_of_indep' (indep : set E → Prop) (exists_ind : ∃ I, indep I)
--- (ind_mono : ∀ I J, I ⊆ J → indep J → indep I)
--- (ind_aug : ∀ I J, indep I → indep J → (∃ I', I ⊂ I' ∧ indep I') → (∀ J', J ⊂ J' → ¬indep J')
---   → (∃ x ∈ J \ I, indep (insert x I))) :
---   matroid E :=
--- { base := λ B, indep B ∧ ∀ I, B ⊆ I → indep I → I = B,
---   exists_base' :=
---   begin
---     obtain ⟨B,hB,hBmax⟩ := finite.exists_maximal indep exists_ind,
---     exact ⟨B, hB, λ I hBI hI, (hBmax _ hI hBI).symm⟩,
---   end,
---   base_exchange' :=
---   begin
---     rintro B₁ B₂ ⟨hB₁,hB₁max⟩ ⟨hB₂,hB₂max⟩ x hx,
---     obtain ⟨y,hy,hyI⟩ := ind_aug (B₁ \ {x}) B₂ (ind_mono _ _ (diff_subset _ _) hB₁) hB₂
---       ⟨B₁, diff_singleton_ssubset.2 hx.1, hB₁⟩
---       (λ J hB₂J hJ, hB₂J.ne ((hB₂max _ hB₂J.subset hJ).symm)),
---     refine ⟨y, mem_of_mem_of_subset hy _, hyI, λ I hyI hI, _⟩  ,
---     { rw [diff_diff_right, inter_singleton_eq_empty.mpr hx.2, union_empty]},
-
-
---     -- rintro I J hI hJ hImax ⟨J',hJJ',hJ'⟩,

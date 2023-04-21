@@ -340,6 +340,38 @@ end exchange
 end matroid 
 section from_axioms
 
+-- def circuit_cl (circuit : set E → Prop) (X : set E) : set E := 
+--   X ∪ ⋃ (C : {C // circuit C ∧ ∃ e ∈ C, C \ {e} ⊆ X}), C 
+
+-- lemma circuit_cl_mono (circuit : set E → Prop) {X Y : set E} (hXY : X ⊆ Y) : 
+--   circuit_cl circuit X ⊆ circuit_cl circuit Y :=  
+-- begin
+--   refine union_subset_union hXY (Union_subset _), 
+--   rintro ⟨C, hC, ⟨e, heC, hCX⟩⟩, 
+--   exact subset_Union_of_subset ⟨C, ⟨hC, ⟨e, heC, hCX.trans hXY⟩⟩⟩  (by simp), 
+-- end 
+
+-- lemma circuit_cl_idem (circuit : set E → Prop) (X : set E) : 
+--   circuit_cl circuit (circuit_cl circuit X) = circuit_cl circuit X := 
+-- begin
+--   refine (subset_union_left _ _).antisymm' (union_subset subset.rfl (Union_subset _)), 
+--   rintro ⟨C, ⟨hC, e, heC, hCe⟩⟩, 
+  
+--   refine subset_union_of_subset_right (λ f (hf : f ∈ C), _) _, 
+--   { obtain (rfl | hef) := eq_or_ne e f, 
+--     { },},
+-- end 
+
+-- def matroid_of_circuit_of_finite' [finite E] (circuit : set E → Prop) 
+-- (empty_not_circuit : ¬ circuit ∅) (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
+-- (elimination : ∀ C₁ C₂ e, 
+--   circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) : matroid E :=
+-- matroid_of_cl_of_finite (circuit_cl circuit) 
+-- (λ _, subset_union_left _ _) (λ X Y hXY, circuit_cl_mono _ hXY) 
+-- (begin
+--   refine λ X, subset_antisymm _ _, 
+-- end) _
+
 /-- A collection of sets satisfying the circuit axioms determines a matroid -/
 def matroid_of_circuit_of_finite [finite E] (circuit : set E → Prop) 
 (empty_not_circuit : ¬ circuit ∅) (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
@@ -347,7 +379,7 @@ def matroid_of_circuit_of_finite [finite E] (circuit : set E → Prop)
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
 matroid E :=
 matroid_of_indep_of_finite (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
-(λ I J hIJ hJ C hCI, hJ C (hCI.trans hIJ))
+(λ I J hIJ hJ C hCI, hIJ C (hCI.trans hJ))
 begin
   by_contra' h,
   obtain ⟨I,J,hI,hJ,hIJ,Hbad⟩ := h,
