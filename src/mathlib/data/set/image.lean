@@ -4,15 +4,23 @@ open set
 
 variables {α β : Type*} {f : α → β}
 
-lemma function.injective.compl_image (hf : f.injective) (s : set α) :
-  (f '' s)ᶜ = f '' sᶜ ∪ (range f)ᶜ :=
+
+-- lemma function.injective.image_compl_eq (hf : f.injective) {A : set α} : f '' Aᶜ 
+--  ∀ (B₀ : set M.E),  M.E \ coe '' B₀ = coe '' B₀ᶜ
+
+lemma function.injective.preimage_subset_of_subset_image (hf : f.injective) {A : set α} {B : set β} 
+(h : B ⊆ f '' A) : 
+  f ⁻¹' B ⊆ A := 
+by { convert preimage_mono h, rw preimage_image_eq _ hf }
+
+lemma function.injective.image_eq_singleton_iff (hf : f.injective) {A : set α} {b : β} : 
+  f '' A = {b} ↔ ∃ a, f a = b ∧ A = {a} :=
 begin
-  apply compl_injective,
-  simp_rw [compl_union, compl_compl],
-  refine (subset_inter _ (image_subset_range _ _)).antisymm _,
-  { rintro x ⟨y, hy, rfl⟩ ⟨z,hz, hzy⟩,
-    rw [hf hzy] at hz,
-    exact hz hy},
-  { rintro x ⟨hx, ⟨y, rfl⟩⟩,
-    exact ⟨y, by_contra (λ hy, hx $ mem_image_of_mem _ hy), rfl⟩ }
-end
+  refine ⟨λ h, _,_⟩, 
+  { obtain (rfl | ⟨a, rfl⟩) :=  (subsingleton_of_image hf A 
+      (by { rw h, exact subsingleton_singleton })).eq_empty_or_singleton,
+    { rw [image_empty] at h, exact (singleton_ne_empty _ h.symm).elim },
+    exact ⟨_, by simpa using h, rfl⟩ },
+  rintro ⟨a, rfl, rfl⟩, 
+  rw image_singleton,  
+end  

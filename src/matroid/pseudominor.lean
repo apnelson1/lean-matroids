@@ -1,7 +1,7 @@
 import mathlib.data.set.basic
 import mathlib.order.boolean_algebra
 import .quotients
---import .connectivity
+
 
 /-!
 # Projections, Loopifications and Pseudominors
@@ -154,18 +154,18 @@ begin
     obtain (h | ⟨e,heC,heD⟩) := (C ∩ D).eq_empty_or_nonempty,
     { left,
       rw ←disjoint_iff_inter_eq_empty at h,
-      exact ⟨⟨h₁ h, λ I hIC, (h₂ I hIC).2⟩,h⟩},
+      exact ⟨⟨h₁ h, λ I hIC, (h₂ _ (λ _, hIC))⟩,h⟩},
       refine or.inr ⟨e,heD, _⟩,
       obtain (hss | rfl) := (singleton_subset_iff.mpr heC).ssubset_or_eq, swap, refl,
-      have hcon := (h₂ _ hss).1,
-      rw [disjoint_singleton_left] at hcon,
-      exact (hcon heD).elim},
+      rw h₂ {e} (λ hdj, false.elim _) hss.subset, 
+      rw [disjoint_singleton_left] at hdj,
+      exact hdj heD },
   rintro (⟨⟨hdep, h⟩,hdj⟩  | ⟨e,heD,rfl⟩),
-  { exact ⟨λ _, hdep, λ I hIC, ⟨disjoint_of_subset_left hIC.subset hdj, h I hIC⟩⟩},
-  refine ⟨λ h, (disjoint_singleton_left.mp h heD).elim, λ I hI, _⟩,
-  rw ssubset_singleton_iff at hI,
-  subst hI,
-  exact ⟨empty_disjoint _, M.empty_indep⟩,
+  { exact ⟨λ _, hdep, λ I hdj' hIC, h _ (hdj' (disjoint_of_subset_left hIC hdj)) hIC⟩, },
+  refine ⟨λ h, (disjoint_singleton_left.mp h heD).elim, λ I hI hIe, 
+    (subset_singleton_iff_eq.mp hIe).elim _ id⟩,
+  rintro rfl, 
+  exact (hI (empty_disjoint _) M.empty_indep).elim, 
 end
 
 lemma loopify.circuit_iff_of_disjoint (hC : disjoint C D) : (M ⟍ D).circuit C ↔ M.circuit C :=

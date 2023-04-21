@@ -1,4 +1,5 @@
 import ..dual
+import mathlib.data.set.image 
 
 noncomputable theory
 open_locale classical
@@ -37,11 +38,11 @@ end iso
 
 section embed
 
-variables {E E' : Type u} {f : E ↪ E'} 
+variables {E E' : Type u} {M : matroid E} {M' : matroid E'} {f : E ↪ E'} 
 
 /-- Embed a matroid as a restriction in a larger type. All elements outside the image are loops. -/
 def image (M : matroid E) (f : E ↪ E') : matroid E' :=
-matroid_of_indep (λ I', ∃ I, M.indep I ∧ I' = f '' I) ⟨_, M.empty_indep, by simp⟩
+matroid_of_indep (λ I', ∃ I, M.indep I ∧ f '' I = I') ⟨_, M.empty_indep, by simp⟩
 ( begin 
   rintro _ _ ⟨J, hJ, rfl⟩ hIJ, refine ⟨J ∩ f ⁻¹' I, hJ.subset (inter_subset_left _ _), _⟩,
   rw [image_inter f.injective, image_preimage_eq_inter_range, ←inter_assoc, 
@@ -52,7 +53,7 @@ matroid_of_indep (λ I', ∃ I, M.indep I ∧ I' = f '' I) ⟨_, M.empty_indep, 
     rintro _ _ ⟨I, hI, rfl⟩ hIn ⟨⟨B,hB,rfl⟩,hBmax⟩, 
     obtain ⟨e, he, heI⟩ := hI.exists_insert_of_not_base _ (hB.base_of_maximal (λ J hJ hBJ, _)), 
     { exact ⟨f e, by rwa [←image_diff f.injective, f.injective.mem_set_image], 
-      ⟨_, heI, image_insert_eq.symm⟩⟩ },
+      ⟨_, heI, image_insert_eq⟩⟩ },
     { refine λ hI', hIn ⟨⟨_,hI,rfl⟩,_⟩, 
       rintro _ ⟨J, hJ, rfl⟩ hIJ,  
       rw hI'.eq_of_subset_indep hJ, 
@@ -69,12 +70,14 @@ matroid_of_indep (λ I', ∃ I, M.indep I ∧ I' = f '' I) ⟨_, M.empty_indep, 
     (image_subset_iff.mp hKX), 
 end)
 
-@[simp] lemma image.indep_iff {I' : set E'} {M : matroid E} : 
-  (M.image f).indep I' ↔ ∃ I, M.indep I ∧ I' = f '' I := 
+lemma image.set_of_indep_eq (M : matroid E) : 
+  {I | (M.image f).indep I} = (set.image f) '' {I | M.indep I} :=
+by { ext, simp_rw [image, matroid_of_indep_apply], refl }
+
+@[simp] lemma image.indep_iff {I' : set E'} : (M.image f).indep I' ↔ ∃ I, M.indep I ∧ f '' I = I' := 
 by simp [image]
  
-@[simp] lemma image.base_iff {B' : set E'} {M : matroid E} :  
-  (M.image f).base B' ↔ ∃ B, M.base B ∧ B' = f '' B :=
+@[simp] lemma image.base_iff {B' : set E'} : (M.image f).base B' ↔ ∃ B, M.base B ∧ B' = f '' B :=
 begin
   simp_rw [base_iff_maximal_indep, image.indep_iff], 
   split, 
@@ -87,7 +90,7 @@ begin
   rw [hB _ hI $ (image_subset_image_iff f.injective).mp hBI], 
 end 
 
-@[simp] lemma image.basis_iff {I' X' : set E'} {M : matroid E} :
+@[simp] lemma image.basis_iff {I' X' : set E'} :
   (M.image f).basis I' X' ↔ ∃ I, M.basis I (f ⁻¹' X') ∧ I' = f '' I :=
 begin
   simp_rw [basis_iff, image.indep_iff], 
@@ -102,17 +105,30 @@ begin
   rw hmax _ hJ ((image_subset_image_iff f.injective).mp hIJ) (image_subset_iff.mp hJX), 
 end 
 
--- @[simp] lemma image.circuit_iff {C' : set E'} {M : matroid E} :
---   (M.image f).circuit C' ↔ (∃ C, M.circuit C ∧ C' = f '' C) ∨ (∃ e ∈ (range f)ᶜ, C' = {e}) :=
--- begin
---   simp_rw [circuit_iff, image.indep_iff, not_exists, not_and],  
---   refine ⟨_, λ h, _⟩,
---   { rintro ⟨h,h'⟩, 
---     obtain (⟨)
---     have : C' ⊆ range f, 
---     { },
---     refine ⟨f ⁻¹' C', ⟨λ hi, h _ hi _,_⟩, _⟩, },
--- end
+@[simp] lemma image.circuit_iff {C' : set E'} :
+  (M.image f).circuit C' ↔ (∃ C, M.circuit C ∧ C' = f '' C) ∨ (∃ e ∈ (range f)ᶜ, C' = {e}) :=
+begin
+  simp_rw [circuit_iff, image.indep_iff, not_exists, not_and],  
+  split,
+  { rintro ⟨h,h'⟩, 
+    obtain (hC' | hC') := em (C' ⊆ range f), 
+    { obtain ⟨C,rfl⟩ := subset_range_iff_exists_image_eq.mp hC', 
+      refine or.inl ⟨C, ⟨λ hi, h _ hi rfl, λ I hd hIC, (image_eq_image f.injective).mp _⟩, rfl⟩,
+      refine h' _ (λ I' hI' hf, hd _) (image_subset _ hIC), 
+      rwa ←(image_eq_image f.injective).mp hf },
+    obtain ⟨e, heC, her⟩ := not_subset.mp hC',  
+    refine or.inr ⟨e, her, (h' {e} (λ I hI heI, her _) (singleton_subset_iff.mpr heC)).symm⟩,
+    exact (image_subset_range _ _) (heI.symm.subset (mem_singleton e)) },
+  rintro (⟨C, ⟨hC,hmin⟩, rfl⟩ | ⟨e, he, rfl⟩),    
+  { refine ⟨λ I hI h_eq, hC (by rwa [←(image_eq_image f.injective).mp h_eq]), λ C' hC' hC'C, _⟩,
+    obtain ⟨C₀, rfl⟩ := subset_range_iff_exists_image_eq.mp (hC'C.trans (image_subset_range _ _)), 
+    refine hC'C.antisymm (image_subset_iff.mpr _), 
+    rw [preimage_image_eq _ f.injective, ←hmin _ (λ hi, (hC' _ hi rfl))
+      ((image_subset_image_iff f.injective).mp hC'C)] },
+  exact ⟨λ I hI h', he (singleton_subset_iff.mp (h'.symm.subset.trans (image_subset_range _ _))), 
+    λ I h h', (subset_singleton_iff_eq.mp h').elim 
+      (λ h', (h ∅ M.empty_indep (by rwa [eq_comm, image_empty])).elim ) id⟩, 
+end
 
 @[simp] lemma image.cl_eq (M : matroid E) (f : E ↪ E') (X' : set E') : 
   (M.image f).cl X' = f '' (M.cl (f ⁻¹' X')) ∪ (range f)ᶜ :=
@@ -128,13 +144,67 @@ begin
     obtain (he | he) := em (f e ∈ X'),
     { exact iff_of_true (mem_cl_of_mem _ he) (mem_cl_of_mem _ he) },
     simp_rw [hI.mem_cl_iff_of_not_mem he, hI'.mem_cl_iff_of_not_mem he, image.indep_iff, 
-      ←image_insert_eq, image_eq_image f.injective, not_iff_not, exists_eq_right'] },
+      ←image_insert_eq, image_eq_image f.injective, exists_eq_right], },
+      
   refine iff_of_true (loop.mem_cl _ _) (or.inr _), 
   { simp_rw [loop_iff_dep, image.indep_iff, not_exists, not_and], 
-    exact λ x hx hex, he ((image_subset_range f x) (hex.subset (mem_singleton e))) },
+    exact λ x hx hex, he ((image_subset_range f x) (hex.symm.subset (mem_singleton e))) },
   rintro x rfl, 
   exact he (mem_range_self _), 
 end  
+
+@[simp] lemma image.flat_iff {F' : set E'} :
+  (M.image f).flat F' ↔ ∃ F, M.flat F ∧ F' = (f '' F) ∪ (range f)ᶜ :=
+begin
+  rw [flat_iff_cl_self, image.cl_eq], 
+  refine ⟨λ h, _, _⟩, 
+  { refine ⟨f ⁻¹' F', _⟩,
+    suffices hflat : M.flat (f ⁻¹' F'), by { convert and.intro hflat h.symm, rw [hflat.cl] },
+    rw [←h, preimage_union, preimage_compl, preimage_range, compl_univ, union_empty, 
+        preimage_image_eq _ f.injective],
+    exact M.flat_of_cl _ },
+  rintro ⟨F, hF, rfl⟩, 
+  rw [preimage_union, preimage_compl, preimage_range, compl_univ, union_empty, 
+    preimage_image_eq _ f.injective, hF.cl], 
+end   
+
+@[simp] lemma image.r_eq (M : matroid E) (X' : set E') : (M.image f).r X' = M.r (f ⁻¹' X') :=
+begin
+  obtain ⟨I, hI⟩ := (M.image f).exists_basis (X'),   
+  obtain ⟨I₀, hI₀, rfl⟩ := image.basis_iff.mp hI, 
+  rw [←hI.card, ncard_image_of_injective _ f.injective, ←hI₀.card], 
+end 
+
+
+
+@[simp] lemma image.loop_iff {e' : E'} : 
+  (M.image f).loop e' ↔ (∃ e, M.loop e ∧ e' = f e) ∨ e' ∈ (range f)ᶜ :=
+begin
+  simp_rw [loop_iff_circuit, image.circuit_iff, @eq_comm _ {e'}, 
+    f.injective.image_eq_singleton_iff, mem_compl_iff, mem_range, not_exists, 
+    singleton_eq_singleton_iff, exists_prop, exists_eq_right], 
+  split, 
+  { rintro (⟨C, hC, a, rfl, rfl⟩ | h), exact or.inl ⟨_, hC, rfl⟩, exact or.inr h },
+  rintro (⟨e, he, rfl⟩ | h), exact or.inl ⟨_, he, ⟨_,rfl,rfl⟩⟩, exact or.inr h, 
+end 
+
+@[simp] lemma image.nonloop_iff {e' : E'} : (M.image f).nonloop e' ↔ ∃ e, M.nonloop e ∧ e' = f e :=
+begin
+  simp_rw [←not_loop_iff, image.loop_iff, not_or_distrib, not_exists, not_and, not_mem_compl_iff],
+  split, 
+  { rintro ⟨h, ⟨e, rfl⟩⟩, exact ⟨_,λ h',h _ h' rfl,rfl⟩ }, 
+  rintro ⟨e, he, rfl⟩, exact ⟨λ h h' h_eq, he (by rwa f.injective h_eq), mem_range_self _⟩,     
+end 
+
+@[simp] lemma image.trans {E₀ E₁ E₂ : Type*} {M₀ : matroid E₀} {f₀ : E₀ ↪ E₁} {f₁ : E₁ ↪ E₂} : 
+  (M₀.image f₀).image f₁ = M₀.image (f₀.trans f₁) :=
+begin
+  refine eq_of_indep_iff_indep_forall (λ I₂, _), 
+  simp only [image.indep_iff, function.embedding.trans_apply], 
+  split, 
+  { rintro ⟨I₁, ⟨⟨I₀, hI₀,rfl⟩, rfl⟩⟩, exact ⟨I₀, hI₀, by { ext, simp }⟩ },
+  rintro ⟨I₀, hI₀, rfl⟩, exact ⟨f₀ '' I₀, ⟨I₀, hI₀, rfl⟩, by { ext, simp }⟩,   
+end 
 
 /-- A matroid on `E'` and an injection from `E` into `E'` gives rise to a matroid on `E` -/
 def preimage {E E' : Type u} (M' : matroid E') (f : E ↪ E') : matroid E := 
@@ -163,139 +233,157 @@ end)
       (hJ.2 ⟨hK.1,image_subset _ hK.2.2⟩ (image_subset _ hJK))⟩,
 end)
 
-@[simp] lemma preimage_indep_iff {M' : matroid E'} {I : set E} :
-  (M'.preimage f).indep I ↔ M'.indep (f '' I) := 
+@[simp] lemma preimage.indep_iff {I : set E} : (M'.preimage f).indep I ↔ M'.indep (f '' I) := 
 by simp [preimage]
   
-@[simp] lemma preimage_image_eq (M : matroid E) (f : E ↪ E') : (M.image f).preimage f = M :=
+@[simp] lemma preimage.set_of_indep_eq (M' : matroid E') : 
+  {I | (M'.preimage f).indep I} = {I | M'.indep (set.image f I)} := 
+by { ext, simp }
+
+@[simp] lemma preimage.basis_iff {I X : set E} : 
+  (M'.preimage f).basis I X ↔ M'.basis (f '' I) (f '' X) := 
 begin
-  refine eq_of_indep_iff_indep_forall (λ I, _), 
-  rw [preimage_indep_iff, image_indep_iff], 
-  refine ⟨_,λ h, ⟨_,h,rfl⟩⟩, 
-  rintro ⟨I₀,hI₀, hf⟩, rwa (image_eq_image f.injective).mp hf,
+  simp_rw [basis_iff, preimage.indep_iff, and.congr_right_iff, image_subset_image_iff f.injective, 
+    and.congr_right_iff], 
+  refine λ hI hIX, ⟨λ h J hJ hIJ hJX, _,λ h J hJ hIJ hJX, _⟩, 
+  { obtain ⟨J,rfl⟩ := subset_range_iff_exists_image_eq.mp (hJX.trans (image_subset_range _ _)), 
+    rw h _ hJ ((image_subset_image_iff f.injective).mp hIJ) 
+      ((image_subset_image_iff f.injective).mp hJX) },
+  rw [←(image_eq_image f.injective), h _ hJ (image_subset _ hIJ) (image_subset _ hJX)], 
 end 
 
-@[simp] lemma preimage_cl_eq (M : matroid E') (f : E ↪ E') (X : set E) : 
-  (M.preimage f).cl X = f ⁻¹' (M.cl (f '' X)) :=
+@[simp] lemma preimage.base_iff {B : set E} : 
+  (M'.preimage f).base B ↔ M'.basis (f '' B) (range f) :=
+by rw [base_iff_basis_univ, preimage.basis_iff, image_univ]
+
+@[simp] lemma preimage.cl_eq (M' : matroid E') (f : E ↪ E') (X : set E) : 
+  (M'.preimage f).cl X = f ⁻¹' (M'.cl (f '' X)) :=
 begin
   rw set.ext_iff, 
   refine λ e, (em (e ∈ X)).elim 
-    (λ heX, iff_of_true (mem_cl_of_mem _ heX) (mem_cl_of_mem M ⟨_, heX, rfl⟩)) 
+    (λ heX, iff_of_true (mem_cl_of_mem _ heX) (M'.mem_cl_of_mem ⟨_, heX, rfl⟩)) 
     (λ heX, _),  
-  obtain ⟨I, hI⟩ := (M.preimage f).exists_basis X, 
-  
-  have hb : M.basis (f '' I) (f '' X), 
-  { simp_rw [basis_iff, preimage_indep_iff] at hI,  
-    refine indep.basis_of_maximal_subset hI.1 (image_subset _ hI.2.1) (λ J hJ hIJ hJX, _),
-    obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.mp (hJX.trans (image_subset_range _ _)),   
-    rw hI.2.2 J hJ ((image_subset_image_iff f.injective).mp hIJ) 
-      ((image_subset_image_iff f.injective).mp hJX) },
-  rw [←hI.cl, hI.indep.mem_cl_iff_of_not_mem (not_mem_subset hI.subset heX), preimage_indep_iff, 
-    ←hb.cl, mem_preimage, hb.indep.mem_cl_iff_of_not_mem _, image_insert_eq],
+  obtain ⟨I, hI⟩ := (M'.preimage f).exists_basis X, 
+  have hb := preimage.basis_iff.mp hI, 
+  rw [←hI.cl, hI.indep.mem_cl_iff_of_not_mem (not_mem_subset hI.subset heX), 
+    preimage.indep_iff, ←hb.cl, mem_preimage, 
+    hb.indep.mem_cl_iff_of_not_mem _, image_insert_eq],
   rw f.injective.mem_set_image, 
   exact not_mem_subset hI.subset heX,  
 end 
+
+@[simp] lemma preimage.flat_iff {F : set E} : 
+  (M'.preimage f).flat F ↔ M'.cl (f '' F) ∩ range f = f '' F :=
+by rw [flat_iff_cl_self, preimage.cl_eq, ←image_eq_image f.injective, image_preimage_eq_inter_range]
+
+@[simp] lemma preimage.circuit_iff {C : set E} : (M'.preimage f).circuit C ↔ M'.circuit (f '' C) :=
+begin
+  simp_rw [circuit_iff, preimage.indep_iff, and.congr_right_iff], 
+  refine λ hd, ⟨λ h I hI hIC, _,λ h I hI hIC, _⟩, 
+  { obtain ⟨I, rfl⟩ := subset_range_iff_exists_image_eq.mp (hIC.trans (image_subset_range _ _)), 
+    rw h _ hI ((image_subset_image_iff f.injective).mp hIC) },
+  exact (image_eq_image f.injective).mp (h _ hI ((image_subset_image_iff f.injective).mpr hIC)), 
+end 
+
+@[simp] lemma preimage.r_eq (M' : matroid E') (X : set E) : (M'.preimage f).r X = M'.r (f '' X) :=
+begin
+  obtain ⟨I, hI⟩ := (M'.preimage f).exists_basis X,   
+  rw [←hI.card, ←(preimage.basis_iff.mp hI).card, ncard_image_of_injective _ f.injective], 
+end 
+
+@[simp] lemma preimage.nonloop_iff {e : E} : (M'.preimage f).nonloop e ↔ M'.nonloop (f e) :=
+by rw [←indep_singleton, ←indep_singleton, preimage.indep_iff, image_singleton]
+
+@[simp] lemma preimage.loop_iff {e : E} : (M'.preimage f).loop e ↔ M'.loop (f e) :=
+by rw [←not_iff_not, not_loop_iff, not_loop_iff, preimage.nonloop_iff] 
+
+@[simp] lemma preimage_image (M : matroid E) (f : E ↪ E') : (M.image f).preimage f = M :=
+begin
+  simp_rw [eq_iff_indep_iff_indep_forall, preimage.indep_iff, image.indep_iff], 
+  refine λ I, ⟨_,λ h, ⟨_,h,rfl⟩⟩, 
+  rintro ⟨I₀,hI₀, hf⟩, rwa ←(image_eq_image f.injective).mp hf,
+end 
+
+lemma image_preimage_eq_of_forall_subset_range (M' : matroid E') (f : E ↪ E') 
+(h : ∀ I', M'.indep I' → I' ⊆ range f) : 
+  (M'.preimage f).image f = M' := 
+begin
+  simp_rw [eq_iff_indep_iff_indep_forall, image.indep_iff, preimage.indep_iff], 
+  refine λ I', ⟨_,λ h', _⟩, 
+  { rintro ⟨I, hI, rfl⟩, exact hI },
+  obtain ⟨I,rfl⟩ := subset_range_iff_exists_image_eq.mp (h I' h'),  
+  exact ⟨_, h', rfl⟩, 
+end 
+
+@[simp] lemma preimage.trans {E₀ E₁ E₂ : Type*} {M₂ : matroid E₂} {f₀ : E₀ ↪ E₁} {f₁ : E₁ ↪ E₂} : 
+  (M₂.preimage f₁).preimage f₀ = M₂.preimage (f₀.trans f₁) :=
+by simp_rw [eq_iff_indep_iff_indep_forall, preimage.indep_iff, image_image, 
+    function.embedding.trans_apply, iff_self, forall_const]
 
 end embed
 
 section congr 
 
-variables {E E₀ E₁ E₂ : Type u} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
+variables {E E₀ E₁ E₂ : Type u} {e : E₁ ≃ E₂} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
 
 /-- An equivalence between types induces a map from a matroid on one type to one on another -/
-def congr_equiv (M₁ : matroid E₁) (e : E₁ ≃ E₂) : matroid E₂ := M₁.preimage (e.symm.to_embedding)
+def congr (M₁ : matroid E₁) (e : E₁ ≃ E₂) : matroid E₂ := M₁.preimage (e.symm.to_embedding)
 
-@[simp] lemma congr_equiv_apply_indep {e : E₁ ≃ E₂} {M₁ : matroid E₁} {I : set E₂} :
-  (M₁.congr_equiv e).indep I ↔ M₁.indep (e ⁻¹' I) :=
-by simp [congr_equiv, preimage_equiv_eq_image_symm]
+@[simp] lemma congr_eq_preimage (M₁ : matroid E₁) (e : E₁ ≃ E₂) : 
+  M₁.congr e = M₁.preimage e.symm.to_embedding := rfl 
 
-@[simp] lemma congr_equiv_apply_symm_indep {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I : set E₁} :
-  (M₂.congr_equiv e.symm).indep I ↔ M₂.indep (e '' I) :=
-by simp [←image_equiv_eq_preimage_symm]
-
-@[simp] lemma congr_equiv_apply_base {e : E₁ ≃ E₂} {M₁ : matroid E₁} {B : set E₂} :
-  (M₁.congr_equiv e).base B ↔ M₁.base (e ⁻¹' B) :=
+lemma congr_eq_image (M₁ : matroid E₁) (e : E₁ ≃ E₂) : M₁.congr e = M₁.image e.to_embedding :=
 begin
-  simp only [base_iff_maximal_indep, congr_equiv, preimage_indep_iff, equiv.coe_to_embedding], 
-  simp only [preimage_equiv_eq_image_symm, and.congr_right_iff], 
-  exact λ h, ⟨λ h' I hI hBI, (e.eq_image_iff_symm_image_eq _ _).mp 
-    (h' _ (by rwa [e.symm_image_image]) ((e.subset_image _ _).mp hBI)), 
-    λ h' I hI hBI, (e.symm.image_eq_iff_eq _ _).mp (h' _ hI (image_subset _ hBI))⟩,   
+  simp_rw [eq_iff_indep_iff_indep_forall, congr_eq_preimage, image.indep_iff, preimage.indep_iff], 
+  exact λ I, ⟨λ h, ⟨e.symm '' I,h,by { ext, simp, } ⟩, 
+    by { rintro ⟨I,hI,rfl⟩, convert hI, ext, simp }⟩, 
 end 
 
+lemma congr.indep_iff {I : set E₂} : (M₁.congr e).indep I ↔ M₁.indep (e.symm '' I) := by simp 
 
-@[simp] lemma congr_equiv_apply_symm_base {e : E₁ ≃ E₂} {M₂ : matroid E₂} {B : set E₁} :
-  (M₂.congr_equiv e.symm).base B ↔ M₂.base (e '' B) :=
-by simp [←image_equiv_eq_preimage_symm]
+lemma congr.symm_indep_iff {I : set E₁} : (M₂.congr e.symm).indep I ↔ M₂.indep (e '' I) := by simp 
 
-@[simp] lemma congr_equiv_apply_basis {e : E₁ ≃ E₂} {M₁ : matroid E₁} {I X : set E₂} :
-  (M₁.congr_equiv e).basis I X ↔ M₁.basis (e ⁻¹' I) (e ⁻¹' X) :=
-begin
-  suffices : ∀ {F₁ F₂ : Type*} {f : F₁ ≃ F₂} {N₁ : matroid F₁} {J Y : set F₂}, 
-    (N₁.congr_equiv f).basis J Y → N₁.basis (f ⁻¹' J) (f ⁻¹' Y), 
-  { refine ⟨this, λ hb', _⟩,
-    convert @this E₂ E₁ e.symm (M₁.congr_equiv e) (e ⁻¹' I) (e ⁻¹' X) _,
-    { rw [equiv.symm_preimage_preimage] }, 
-    { rw [equiv.symm_preimage_preimage] },
-    convert hb', ext B, simp  },
-
-  simp only [basis, congr_equiv_apply_indep, equiv.preimage_subset, and.congr_right_iff], 
+@[simp] lemma congr.base_iff {B : set E₂} : (M₁.congr e).base B ↔ M₁.base (e.symm '' B) :=
+by simp [←base_iff_basis_univ]
   
-  rintro F₁ F₂ f N₁ J Y ⟨⟨hA, hAX⟩,h'⟩,
-  refine ⟨⟨hA, preimage_mono hAX⟩, _⟩, 
-  rintro K ⟨hK, hKX⟩ hIK, 
-  rw [←f.image_subset, f.image_preimage], 
-  refine h' ⟨by rwa f.preimage_image, _⟩ _; 
-  rwa [←f.preimage_subset, f.preimage_image], 
-end
+@[simp] lemma congr.symm_base_iff {B : set E₁} : (M₂.congr e.symm).base B ↔ M₂.base (e '' B) :=
+by simp [base_iff_basis_univ]
 
-@[simp] lemma congr_equiv_apply_symm_basis {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I X : set E₁} :
-  (M₂.congr_equiv e.symm).basis I X ↔ M₂.basis (e '' I) (e '' X) :=
-by simp [←image_equiv_eq_preimage_symm]
+lemma congr.basis_iff {I X : set E₂} : 
+  (M₁.congr e).basis I X ↔ M₁.basis (e.symm '' I) (e.symm '' X) :=
+by simp 
 
-@[simp] lemma congr_equiv_apply_r {e : E₁ ≃ E₂} {M₁ : matroid E₁} (X : set E₂) :
-  (M₁.congr_equiv e).r X = M₁.r (e ⁻¹' X) :=
-begin
-  obtain ⟨I, hI⟩ := (M₁.congr_equiv e).exists_basis X,
-  rw [←hI.r, hI.indep.r],
-  rw [congr_equiv_apply_basis] at hI,
-  rw [←hI.r, hI.indep.r, preimage_equiv_eq_image_symm, ncard_image_of_injective _ e.symm.injective],
-end
+lemma congr.symm_basis_iff {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I X : set E₁} :
+  (M₂.congr e.symm).basis I X ↔ M₂.basis (e '' I) (e '' X) :=
+by simp 
 
-@[simp] lemma congr_equiv_apply_symm_r {e : E₁ ≃ E₂} {M₂ : matroid E₂} (X : set E₁) :
-  (M₂.congr_equiv e.symm).r X = M₂.r (e '' X) :=
-by simp [←image_equiv_eq_preimage_symm]
+lemma congr.r_eq (e : E₁ ≃ E₂) (M₁ : matroid E₁) (X : set E₂) :
+  (M₁.congr e).r X = M₁.r (e.symm '' X) :=
+by simp
 
-@[simp] lemma congr_equiv_apply_circuit {e : E₁ ≃ E₂} {M₁ : matroid E₁} {C : set E₂} :
-  (M₁.congr_equiv e).circuit C ↔ M₁.circuit (e ⁻¹' C) :=
-begin
-  simp_rw [circuit_iff_dep_forall_diff_singleton_indep, congr_equiv_apply_indep, preimage_diff],
-  convert iff.rfl,
-  rw eq_iff_iff,
-  refine ⟨λ h x hxC, _,λ h x (hx : e x ∈ C), _⟩,
-  { convert h (e.symm x) (by simpa),
-    rw [←image_singleton, preimage_equiv_eq_image_symm]},
-  convert h _ hx,
-  rw [←image_singleton, set.preimage_image_eq _ e.injective],
-end
+lemma congr.symm_r_eq (e : E₁ ≃ E₂) (M₂ : matroid E₂) (X : set E₁) :
+  (M₂.congr e.symm).r X = M₂.r (e '' X) :=
+by simp
 
-@[simp] lemma congr_equiv_apply_symm_circuit {e : E₁ ≃ E₂} {M₂ : matroid E₂} {C : set E₁} :
-  (M₂.congr_equiv e.symm).circuit C = M₂.circuit (e '' C) :=
-by simp [←image_equiv_eq_preimage_symm]
+lemma congr.circuit_iff {C : set E₂} : (M₁.congr e).circuit C ↔ M₁.circuit (e.symm '' C) := by simp 
 
-@[simp] lemma congr_equiv_apply_flat {e : E₁ ≃ E₂} {M₁ : matroid E₁} {F : set E₂} :
-  (M₁.congr_equiv e).flat F ↔ M₁.flat (e ⁻¹' F) :=
-begin
-  simp_rw [flat_def, congr_equiv_apply_basis],
-  refine ⟨λ h I X hIF hFX, _,λ h I X hIF hFX, _⟩,
-  { rw [←image_subset_iff],
-    exact h (e '' I) (e '' X) (by simpa) (by simpa)},
-  exact (equiv.preimage_subset e X F).mp (h (⇑e ⁻¹' I) (⇑e ⁻¹' X) hIF hFX),
-end
+lemma congr.symm_circuit_iff {C : set E₁} : (M₂.congr e.symm).circuit C = M₂.circuit (e '' C) :=
+by simp
 
-@[simp] lemma congr_equiv_apply_symm_flat {e : E₁ ≃ E₂} {M₂ : matroid E₂} {F : set E₁} :
-  (M₂.congr_equiv e.symm).flat F = M₂.flat (e '' F) :=
-by simp [←image_equiv_eq_preimage_symm]
+@[simp] lemma congr.flat_iff {F : set E₂} : (M₁.congr e).flat F ↔ M₁.flat (e.symm '' F) :=
+by rw [congr_eq_preimage, preimage.flat_iff, equiv.coe_to_embedding, equiv.range_eq_univ, 
+    inter_univ, ←flat_iff_cl_self]
+
+@[simp] lemma congr.symm_flat_iff {F : set E₁} : (M₂.congr e.symm).flat F = M₂.flat (e '' F) :=
+by simp [←flat_iff_cl_self]
+
+lemma congr.loop_iff {x : E₂} : (M₁.congr e).loop x ↔ M₁.loop (e.symm x) := by simp 
+
+lemma congr.symm_loop_iff {x : E₁} : (M₂.congr e.symm).loop x ↔ M₂.loop (e x) := by simp 
+
+lemma congr.nonloop_iff {x : E₂} : (M₁.congr e).nonloop x ↔ M₁.nonloop (e.symm x) := by simp 
+
+lemma congr.symm_nonloop_iff {x : E₁} : (M₂.congr e.symm).nonloop x ↔ M₂.nonloop (e x) := by simp 
 
 end congr 
 

@@ -292,6 +292,13 @@ begin
   simp_rw [base_iff_maximal_indep, hI],
 end
 
+lemma eq_iff_indep_iff_indep_forall {M₁ M₂ : matroid E} : M₁ = M₂ ↔ ∀ I, M₁.indep I ↔ M₂.indep I :=  
+⟨λ h I, by rw h,  eq_of_indep_iff_indep_forall⟩  
+
+lemma eq_iff_set_of_indep_eq_set_of_indep {M₁ M₂ : matroid E} : 
+  M₁ = M₂ ↔ {I | M₁.indep I} = {I | M₂.indep I} :=
+by { rw [eq_iff_indep_iff_indep_forall, set.ext_iff], refl }
+
 end general
 
 section dual

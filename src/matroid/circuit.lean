@@ -16,7 +16,10 @@ lemma circuit.dep (hC : M.circuit C) : ¬M.indep C := hC.1
 lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) : M.indep X := 
 by_contra (λ h, hXC.ne (hXC.subset.antisymm (hC.2 h hXC.subset)))
 
-lemma circuit_iff : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := 
+lemma circuit_iff : M.circuit C ↔ ¬M.indep C ∧ ∀ I, ¬M.indep I → I ⊆ C → I = C :=
+⟨λ h, ⟨h.1, λ I hI h', h'.antisymm (h.2 hI h')⟩,λ h, ⟨h.1, λ I hI hIC, (h.2 I hI hIC).symm.subset⟩⟩
+
+lemma circuit_iff_forall_ssubset : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := 
 ⟨λ hC, ⟨hC.dep, λ I hIC, hC.ssubset_indep hIC⟩,λ h, ⟨h.1,λ X hX hXC, 
   hXC.ssubset_or_eq.elim (λ h', (hX (h.2 _ h')).elim) (by { rintro rfl, refl })⟩⟩ 
 
@@ -51,8 +54,7 @@ lemma circuit.finite [finitary M] (hC : M.circuit C) : C.finite := let ⟨h⟩ :
 lemma circuit_iff_dep_forall_diff_singleton_indep :
   M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
 begin
-  
-  rw [circuit_iff, and.congr_right_iff],
+  rw [circuit_iff_forall_ssubset, and.congr_right_iff],
   refine λ hdep, ⟨λ h e heC, (h _ $ diff_singleton_ssubset.2 heC), λ h I hIC, _⟩,
   obtain ⟨e, heC,heI⟩ := exists_of_ssubset hIC,
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
@@ -68,7 +70,7 @@ lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C
 lemma circuit.circuit_lrestrict_of_subset (hC : M.circuit C) (hCX : C ⊆ X) :
   (M.lrestrict X).circuit C :=
 begin
-  simp_rw [circuit_iff, lrestrict_indep_iff, not_and],  
+  simp_rw [circuit_iff_forall_ssubset, lrestrict_indep_iff, not_and],  
   exact ⟨λ h, (hC.dep h).elim, λ I hIC, ⟨hC.ssubset_indep hIC, hIC.subset.trans hCX⟩⟩, 
 end 
 
@@ -452,8 +454,9 @@ end
   (matroid_of_circuit_of_finite circuit empty_not_circuit antichain elimination).circuit = circuit :=
 begin
   ext C,
-  simp_rw [matroid_of_circuit_of_finite, matroid.circuit_iff, matroid_of_indep_of_finite_apply, 
-    not_forall, not_not, exists_prop],
+  simp_rw [matroid_of_circuit_of_finite, matroid.circuit_iff_forall_ssubset,
+   matroid_of_indep_of_finite_apply, 
+not_forall, not_not, exists_prop],
   refine ⟨λ h, _,λ h, ⟨⟨_,rfl.subset, h⟩,λ I hIC C' hC'I hC',
     hIC.not_subset ((antichain C' C hC' h (hC'I.trans hIC.subset)) ▸ hC'I )⟩⟩,
   obtain ⟨⟨C₀,hC₀C, hC₀⟩,hI⟩ := h,
