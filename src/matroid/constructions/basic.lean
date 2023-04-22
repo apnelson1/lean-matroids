@@ -48,11 +48,11 @@ loopy_on.base_iff_empty.mpr rfl
 @[simp] lemma free_on.indep (I : set E) : (free_on E).indep I := 
 (free_on.univ_base E).indep.subset (subset_univ _)
 
-lemma univ_indep_iff_eq_free_on : M.indep univ ↔ M = free_on E :=
+@[simp] lemma univ_indep_iff_eq_free_on : M.indep univ ↔ M = free_on E :=
 ⟨λ h, eq_of_indep_iff_indep_forall (λ I, by simp [h.subset (subset_univ _)]), 
   by { rintro rfl, exact free_on.indep _} ⟩
 
-lemma univ_base_iff_free_on : M.base univ ↔ M = free_on E :=
+@[simp] lemma univ_base_iff_free_on : M.base univ ↔ M = free_on E :=
 ⟨λ h, univ_indep_iff_eq_free_on.mp h.indep, by { rintro rfl, simp }⟩ 
 
 @[simp] lemma free_on.r_eq (X : set E) : (free_on E).r X = X.ncard :=
@@ -80,8 +80,7 @@ begin
   exact loopy_on.loop, 
 end 
 
-lemma univ_loops_iff_loopy_on :
-  M.cl ∅ = univ ↔ M = loopy_on E :=
+lemma univ_loops_iff_loopy_on : M.cl ∅ = univ ↔ M = loopy_on E :=
 begin
   refine ⟨λ h, eq_of_indep_iff_indep_forall (λ I, _), by { rintro rfl, simp }⟩,
   simp only [loopy_on.indep_iff_empty], 
@@ -90,8 +89,7 @@ begin
   rwa [h, disjoint_univ] at hdj, 
 end
 
-lemma loopy_iff_univ_r_zero [finite E] :
-  M = loopy_on E ↔ M.r univ = 0 :=
+lemma loopy_iff_univ_r_zero [finite E] : M = loopy_on E ↔ M.r univ = 0 :=
 begin
   rw ←univ_loops_iff_loopy_on,
   refine ⟨λ h, by {rw ← h, simp}, λ h, _⟩,
@@ -126,7 +124,7 @@ matroid_of_indep_of_bdd
   rw nat.add_one_le_iff, 
   exact hlt.trans_le hB.1.2.2, 
 end) 
-t (λ I, and.right)
+⟨t, λ I, and.right⟩ 
 
 instance {E : Type*} {M : matroid E} {t : ℕ} : finite_rk (M.tr t) := by { rw tr, apply_instance }
 
@@ -233,7 +231,8 @@ begin
   exact λ _, h, 
 end 
 
-/-- This doesn't need `finite_rk M` to be true, but it's a bit of a pain to prove all the previous stuff at the right generality. TODO. -/
+/-- This doesn't need `finite_rk M` to be true, but it's a bit of a pain to prove all the previous 
+stuff at the right generality. TODO. -/
 lemma tr.is_quotient (M : matroid E) [finite_rk M] (t : ℕ) : M.tr t ≼ M := 
 λ X, (lt_or_le (M.r X) t).elim (λ h, (tr.cl_eq_cl_of_r_lt h).symm.subset) 
     (λ h, (subset_univ _).trans_eq (tr.cl_eq_univ_of_le_r h).symm)
@@ -257,7 +256,7 @@ begin
   exact hi.2.1, 
 end 
 
-/-- the rank-`a` uniform matroid on b elements with ground set `fin b`. Free if `b ≤ a`. -/
+/-- the rank-`a` uniform matroid on `b` elements with ground set `fin b`. Free if `b ≤ a`. -/
 @[reducible] def canonical_unif (a b : ℕ) : matroid (fin b) := unif (fin b) a
 
 lemma unif_eq_tr (E : Type*) (r : ℕ) : unif E r = tr (free_on E) r := rfl 
@@ -276,6 +275,9 @@ by rw [indep_iff_r_eq_card, unif_r, min_eq_right_iff]
 
 lemma unif_free_iff_card_le_r [finite E] : nat.card E ≤ r ↔ unif E r = free_on E :=
 by rw [←univ_indep_iff_eq_free_on, unif.indep_iff, ncard_univ]
+
+@[simp] lemma unif_zero_eq_loopy (E : Type*) : unif E 0 = loopy_on E :=
+by rw [unif, tr_zero_eq_loopy]
 
 lemma unif_base_iff [finite E] (hr : r ≤ nat.card E) : (unif E r).base B ↔ B.ncard = r :=
 begin
@@ -323,8 +325,14 @@ begin
   { intro h, linarith [ncard_add_ncard_compl X]},
 end
 
-@[simp] lemma unif_zero_eq_loopy (E : Type*) : unif E 0 = loopy_on E :=
-by rw [unif, tr_zero_eq_loopy]
+/-- This uses `nat` subtraction, but could be a `simp` lemma, unlike the previous one. -/
+lemma unif_dual' (E : Type*) [finite E] {r : ℕ} : (unif E r)﹡ = unif E (nat.card E - r) :=
+begin
+  obtain (hr | hr) := le_or_lt r (nat.card E),
+  { rw [unif_dual _ (add_tsub_cancel_of_le hr)] },
+  rw [unif_free_iff_card_le_r.mp hr.le, tsub_eq_zero_of_le hr.le, unif_zero_eq_loopy, 
+    free_on.dual],  
+end 
 
 @[simp] lemma unif_loopless (E : Type*) (ht : t ≠ 0) : (unif E t).loopless := 
 by simp_rw [loopless, unif, tr.nonloop_iff ht, free_on.nonloop, implies_true_iff]

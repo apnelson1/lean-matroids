@@ -368,7 +368,6 @@ lemma basis_iff_indep_cl : M.basis I X ↔ M.indep I ∧ X ⊆ M.cl I ∧ I ⊆ 
 ⟨λ h, ⟨h.indep, h.subset_cl, h.subset⟩,
   λ h, (basis_union_iff_indep_cl.mpr ⟨h.1,h.2.1⟩).basis_subset h.2.2 (subset_union_right _ _)⟩
 
-
 lemma basis.eq_of_cl_subset (hI : M.basis I X) (hJI : J ⊆ I) (hJ : X ⊆ M.cl J) : J = I :=
 (basis_iff_cl.mp hI).2.2 J hJI hJ
 
@@ -380,7 +379,6 @@ end
 
 lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂.cl X) : M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
-
 
 end matroid
 

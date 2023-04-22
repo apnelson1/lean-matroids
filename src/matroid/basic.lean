@@ -254,7 +254,8 @@ def matroid_of_base {E : Type*} (base : set E → Prop)
 (maximality : exists_maximal_subset_property {I | ∃ B, base B ∧ I ⊆ B}) : matroid E := 
 ⟨base, exists_base, base_exchange, maximality⟩
 
-@[simp] lemma matroid_of_base_apply {E : Type*} (base : set E → Prop) (exists_base : ∃ B, base B) (base_exchange : exchange_property base) 
+@[simp] lemma matroid_of_base_apply {E : Type*} (base : set E → Prop) (exists_base : ∃ B, base B) 
+(base_exchange : exchange_property base) 
 (maximality : exists_maximal_subset_property {I | ∃ B, base B ∧ I ⊆ B}) :
 (matroid_of_base base exists_base base_exchange maximality).base = base := rfl 
 

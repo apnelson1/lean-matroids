@@ -131,7 +131,7 @@ instance del_singleton {E : Type*} : has_del (matroid E) E := ⟨λ M e, M ⟍ (
 
 lemma loopify_eq_lrestr_compl (M : matroid E) (D : set E) : M ⟍ D = M ‖ Dᶜ := rfl 
 
-@[simp] lemma loopify.elem (M : matroid E) (e : E) : M ⟍ e = M ⟍ ({e} : set E) := rfl 
+@[simp] lemma loopify_elem (M : matroid E) (e : E) : M ⟍ e = M ⟍ ({e} : set E) := rfl 
 
 @[simp] lemma loopify.base_iff : (M ⟍ D).base B ↔ M.basis B Dᶜ := iff.rfl
 
@@ -538,6 +538,27 @@ by {rw ←nonloop.r_project_add_one_eq he X, simp}
 
 lemma not_mem_of_indep_project_singleton (h : (M ⟋ e).indep I) : e ∉ I :=
 (project.loop_of_mem (mem_singleton e)).not_mem_indep h
+
+lemma loop.project_eq_loopify (he : M.loop e) : M ⟋ e = M ⟍ e := 
+begin
+  rw [project_elem, loopify_elem, loopify_eq_self_iff_subset_loops.mpr _, 
+    project_eq_self_iff_subset_loops.mpr _];
+  rwa [singleton_subset_iff], 
+end  
+
+lemma coloop.project_eq_loopify (he : M.coloop e) : M ⟋ e = M ⟍ e := 
+begin
+  simp_rw [eq_iff_indep_iff_indep_forall, project_elem, he.nonloop.indep.project_indep_iff, 
+    disjoint_singleton_right, loopify_elem, loopify.indep_iff, union_singleton, 
+    disjoint_singleton_right, and.congr_right_iff],
+  exact λ I heI, ⟨λ h, h.subset (subset_insert e I), he.insert_indep_of_indep⟩, 
+end  
+
+lemma project_eq_loopify_of_subset_coloops (hX : X ⊆ M﹡.cl ∅) : M ⟋ X = M ⟍ X :=
+begin
+  
+end 
+
 
 end project
 

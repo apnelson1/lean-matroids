@@ -175,8 +175,6 @@ begin
   rw [←hI.card, ncard_image_of_injective _ f.injective, ←hI₀.card], 
 end 
 
-
-
 @[simp] lemma image.loop_iff {e' : E'} : 
   (M.image f).loop e' ↔ (∃ e, M.loop e ∧ e' = f e) ∨ e' ∈ (range f)ᶜ :=
 begin
@@ -350,20 +348,16 @@ by simp [←base_iff_basis_univ]
 by simp [base_iff_basis_univ]
 
 lemma congr.basis_iff {I X : set E₂} : 
-  (M₁.congr e).basis I X ↔ M₁.basis (e.symm '' I) (e.symm '' X) :=
-by simp 
+  (M₁.congr e).basis I X ↔ M₁.basis (e.symm '' I) (e.symm '' X) := by simp 
 
 lemma congr.symm_basis_iff {e : E₁ ≃ E₂} {M₂ : matroid E₂} {I X : set E₁} :
-  (M₂.congr e.symm).basis I X ↔ M₂.basis (e '' I) (e '' X) :=
-by simp 
+  (M₂.congr e.symm).basis I X ↔ M₂.basis (e '' I) (e '' X) := by simp 
 
 lemma congr.r_eq (e : E₁ ≃ E₂) (M₁ : matroid E₁) (X : set E₂) :
-  (M₁.congr e).r X = M₁.r (e.symm '' X) :=
-by simp
+  (M₁.congr e).r X = M₁.r (e.symm '' X) := by simp
 
 lemma congr.symm_r_eq (e : E₁ ≃ E₂) (M₂ : matroid E₂) (X : set E₁) :
-  (M₂.congr e.symm).r X = M₂.r (e '' X) :=
-by simp
+  (M₂.congr e.symm).r X = M₂.r (e '' X) := by simp 
 
 lemma congr.circuit_iff {C : set E₂} : (M₁.congr e).circuit C ↔ M₁.circuit (e.symm '' C) := by simp 
 

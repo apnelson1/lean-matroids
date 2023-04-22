@@ -1,4 +1,5 @@
 import .flat
+import .dual 
 import mathlib.data.set.basic
 
 noncomputable theory
@@ -273,7 +274,30 @@ lemma indep_iff_forall_finite_subset_indep [finitary M] :
   M.indep I ↔ ∀ J ⊆ I, J.finite → M.indep J :=   
 ⟨λ h J hJI hJ, h.subset hJI, λ h, 
   indep_iff_forall_subset_not_circuit.mpr (λ C hCI hC, hC.dep (h C hCI hC.finite))⟩
+
+section dual 
+
+@[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K :=
+begin
+  rw [circuit, cocircuit, hyperplane_iff_mem_maximals], 
+  simp_rw [dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, not_and, 
+    ←subset_compl_iff_disjoint_right], 
+  exact ⟨λ h,⟨λ B hB hBX,h.1 B hB (subset_compl_comm.mp hBX),
+    λ B' hB' hKB', subset_compl_comm.mp (h.2 (λ X hX hss, hB' X hX (compl_subset_compl.mp hss)) 
+      (compl_subset_comm.mp hKB'))⟩,
+    λ h,⟨λ B hB hss, h.1 _ hB (subset_compl_comm.mp hss),
+    λ B' hB' hB'K, compl_subset_compl.mp (h.2 (λ X hX hss, hB' _ hX (subset_compl_comm.mp hss))   
+      (compl_subset_compl.mpr hB'K))⟩⟩,
+end 
+
+lemma coindep_iff_forall_subset_not_cocircuit : M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) := 
+by { rw [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit, forall_congr], simp }
   
+lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
+(dual_circuit_iff_cocircuit.mpr hK).finite 
+
+end dual 
+
 section exchange
 
 variables {B₁ B₂ I₁ I₂ : set E}
@@ -335,7 +359,6 @@ lemma base.rev_exchange (hB₁ : M.base B₁) (hB₂ : M.base B₂) (he : e ∈ 
 theorem basis.rev_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he : e ∈ I₁ \ I₂) :
   ∃ f ∈ I₂ \ I₁, M.basis (insert e I₂ \ {f}) X :=
 @base.rev_exchange _ (M.lrestrict X) _ _ _ hI₁ hI₂ he
-
 
 end exchange
 

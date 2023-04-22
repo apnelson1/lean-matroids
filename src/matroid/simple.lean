@@ -161,13 +161,13 @@ begin
 end 
 
 
-lemma nonloop.pcl_eq_pcl_iff (he : M.nonloop e) : M.pcl e = M.pcl f ↔ M.para e f := 
-begin
-  refine ⟨λ h, he.para_of_nonloop_mem_cl _ _, para.pcl_eq_pcl⟩, 
-  -- simp_rw [set.ext_iff, mem_pcl_iff], 
-  -- exact ⟨λ h, by { rw ←h, exact he.para_self }, 
-  --   λ h x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩⟩,  
-end 
+-- lemma nonloop.pcl_eq_pcl_iff (he : M.nonloop e) : M.pcl e = M.pcl f ↔ M.para e f := 
+-- begin
+--   refine ⟨λ h, he.para_of_nonloop_mem_cl _ _, para.pcl_eq_pcl⟩, 
+--   -- simp_rw [set.ext_iff, mem_pcl_iff], 
+--   -- exact ⟨λ h, by { rw ←h, exact he.para_self }, 
+--   --   λ h x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩⟩,  
+-- end 
 
 -- lemma para_iff :
 --   M.para

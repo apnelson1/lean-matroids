@@ -1,4 +1,5 @@
-import .rank
+import .circuit
+import .rank 
 
 /-
   A `loop` of a matroid is a one-element circuit, or, definitionally, a member of `M.cl ∅`.  
@@ -178,7 +179,10 @@ end
 
 /- ### Coloops -/ 
 
-lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ B, M.base B → e ∈ B := iff.rfl
+lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ ⦃B⦄, M.base B → e ∈ B := iff.rfl
+
+lemma coloop.nonloop (h : M.coloop e) : M.nonloop e := 
+let ⟨B, hB⟩ := M.exists_base in hB.indep.nonloop_of_mem (h hB)
 
 lemma coloop.r_compl_add_one [finite_rk M] (he : M.coloop e) : M.r {e}ᶜ + 1 = M.rk :=
 begin
@@ -232,5 +236,57 @@ end
 
 lemma circuit.not_coloop_of_mem (hC : M.circuit C) (heC : e ∈ C) : ¬M.coloop e :=  
 λ h, h.not_mem_circuit hC heC 
+
+lemma coloop_iff_forall_mem_cl_iff_mem : M.coloop e ↔ ∀ X, e ∈ M.cl X ↔ e ∈ X :=
+begin
+  refine ⟨λ h, λ X, ⟨λ heX, by_contra (λ heX', _), λ h', M.subset_cl X h'⟩, 
+    λ h B hB, (h B).mp (hB.cl.symm.subset (mem_univ e))⟩,
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset, 
+  exact (hI.mem_cl_iff_of_not_mem heX').mp heX (hB.indep.subset (insert_subset.mpr ⟨h hB, hIB⟩)), 
+end 
+
+lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
+coloop_iff_forall_mem_cl_iff_mem.mp he X
+
+lemma coloop.mem_of_mem_cl (he : M.coloop e) (hX : e ∈ M.cl X) : e ∈ X := he.mem_cl_iff_mem.mp hX
+
+lemma coloop.not_mem_of_not_mem_cl (he : M.coloop e) (hX : e ∉ M.cl X) : e ∉ X := 
+mt he.mem_cl_iff_mem.mpr hX 
+
+lemma coloop.insert_indep_of_indep (he : M.coloop e) (hI : M.indep I) : M.indep (insert e I) :=
+(em (e ∈ I)).elim (λ h, by rwa insert_eq_of_mem h) 
+  (λ h, by rwa [hI.insert_indep_iff_of_not_mem h, he.mem_cl_iff_mem])  
+
+
+lemma loop.dual_coloop (he : M.loop e) : M﹡.coloop e :=
+by { intros B hB, rw dual_base_iff at hB, simpa using he.not_mem_indep hB.indep }
+
+lemma coloop.dual_loop (he : M.coloop e) : M﹡.loop e :=
+begin
+  simp_rw [loop_iff_dep, dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, 
+    not_and, disjoint_singleton_left, not_not], 
+  exact he, 
+end 
+
+@[simp] lemma dual_coloop_iff_loop :
+  M﹡.coloop e ↔ M.loop e :=
+⟨λ h, by {rw ← dual_dual M, exact h.dual_loop}, loop.dual_coloop⟩
+
+@[simp] lemma dual_loop_iff_coloop :
+  M﹡.loop e ↔ M.coloop e :=
+⟨λ h, by {rw ←dual_dual M, exact h.dual_coloop}, coloop.dual_loop⟩
+
+
+lemma dual_loops_indep (M : matroid E) : M﹡.indep (M.cl ∅) := 
+begin
+  obtain ⟨B, hB⟩ := M.exists_base,  
+  rw [dual_indep_iff_coindep, coindep_iff_disjoint_base], 
+  exact ⟨B, hB, hB.indep.disjoint_loops.symm⟩, 
+end
+
+lemma coloops_eq_dual_cl_empty : {e | M.coloop e} = M﹡.cl ∅ :=
+by { rw [←dual_dual M], simp_rw [dual_coloop_iff_loop, dual_dual], refl }
+
 
 end matroid

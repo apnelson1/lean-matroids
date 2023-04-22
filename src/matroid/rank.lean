@@ -1,4 +1,4 @@
-import .circuit
+import .circuit 
 import tactic.linarith
 
 /- The rank of a set in a matroid `M` is the size of one of its bases. When `M` is infinite, 
@@ -686,13 +686,11 @@ begin
   exact h.1.r_strict_mono hF hHF,
 end
 
-end cl_flat 
-
-end matroid
+end cl_flat
 
 section from_axioms
-variables {E : Type*} [finite E]
 
+variables [finite E]
 lemma r_eq_card_of_subset_of_r_le_card_submod
 (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard)
 (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y)
@@ -769,7 +767,8 @@ matroid_of_indep_of_finite (λ I, r I = I.ncard)
   exact (hIJ.not_le (r_mono _ _ (subset_union_right _ _))).elim,
 end)
 
-@[simp] lemma matroid_of_r_apply (r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard)
+@[simp] lemma matroid_of_r_apply 
+(r : set E → ℕ) (r_le_card : ∀ X, r X ≤ X.ncard)
 (r_mono : ∀ X Y, X ⊆ Y → r X ≤ r Y) (r_submod : ∀ X Y, r (X ∩ Y) + r (X ∪ Y) ≤ r X + r Y) :
   (matroid_of_r r r_le_card r_mono r_submod).r = r :=
 begin
@@ -808,4 +807,57 @@ by simpa [matroid_of_int_r] using r_nonneg _
 
 end from_axioms
 
+section dual
 
+variables [finite E]
+
+lemma coindep_iff_r : M.coindep X ↔ M.r Xᶜ = M.rk :=
+begin
+  rw [coindep_iff_disjoint_base],
+  split,
+  { rintros ⟨B,hB,hBX⟩,
+    refine le_antisymm (M.r_le_rk _) _,
+    rw ←subset_compl_iff_disjoint_left at hBX,
+    rw [←hB.r],
+    exact M.r_mono hBX},
+  intro hr,
+  obtain ⟨B, hB⟩ := M.exists_basis Xᶜ,
+  refine ⟨B, hB.indep.base_of_rk_le_card _, subset_compl_iff_disjoint_left.mp hB.subset⟩,
+  rw [←hB.indep.r, hB.r, hr],
+end
+
+lemma dual_r_add_rk_eq (M : matroid E) (X : set E) : M﹡.r X + M.rk = ncard X + M.r Xᶜ  :=
+begin
+  set r' : set E → ℤ := λ X, X.ncard + M.r Xᶜ - M.rk with hr',
+
+  have hr'_nonneg : ∀ X, 0 ≤ r' X,
+  { intro X, simp_rw hr', linarith [M.rk_le_card_add_r_compl X]},
+  have hr'_mono : ∀ X Y, X ⊆ Y → r' X ≤ r' Y,
+  { intros X Y hXY, simp_rw hr',
+    linarith [M.r_add_card_le_r_add_card_of_subset (compl_subset_compl.mpr hXY),
+       ncard_add_ncard_compl X, ncard_add_ncard_compl Y]},
+  have hr'_le_card : ∀ X, r' X ≤ X.ncard,
+  { intros X, simp_rw hr', linarith [M.r_le_rk Xᶜ] },
+  have hr'_submod : ∀ X Y, r' (X ∩ Y) + r' (X ∪ Y) ≤ r' X + r' Y,
+  { intros X Y, simp_rw [hr', compl_inter, compl_union],
+    linarith [ncard_inter_add_ncard_union X Y, M.r_submod Xᶜ Yᶜ]},
+
+  set M' := matroid_of_int_r r' hr'_nonneg hr'_le_card hr'_mono hr'_submod with hM',
+
+  have hM'M : M' = M﹡,
+  { refine eq_of_indep_iff_indep_forall (λ I, _),
+    rw [indep_iff_r_eq_card, dual_indep_iff_coindep, coindep_iff_r], zify,
+    simp_rw [hM', matroid_of_int_r_apply, hr'],
+    refine ⟨λ h, _, λ h, _⟩,
+    all_goals { simp only at h, linarith} },
+
+  rw [←hM'M], zify, simp_rw [hM', matroid_of_int_r_apply, hr'],
+  ring,
+end
+
+lemma dual_rank_cast_eq (M : matroid E) (X : set E) : (M﹡.r X : ℤ) = ncard X + M.r Xᶜ - M.rk :=
+by linarith [M.dual_r_add_rk_eq X]
+
+end dual 
+
+end matroid 

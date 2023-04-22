@@ -5,8 +5,9 @@ open set
 variables {α β : Type*} {f : α → β}
 
 
--- lemma function.injective.image_compl_eq (hf : f.injective) {A : set α} : f '' Aᶜ 
---  ∀ (B₀ : set M.E),  M.E \ coe '' B₀ = coe '' B₀ᶜ
+lemma function.injective.image_compl_eq (hf : f.injective) {A : set α} : 
+  f '' Aᶜ  = (range f) \ f '' A := 
+by rw [←image_univ, ←image_diff hf, compl_eq_univ_diff]
 
 lemma function.injective.preimage_subset_of_subset_image (hf : f.injective) {A : set α} {B : set β} 
 (h : B ⊆ f '' A) : 
