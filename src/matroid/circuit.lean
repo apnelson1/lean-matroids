@@ -272,11 +272,14 @@ def cocircuit (M : matroid E) (K : set E) : Prop := M﹡.circuit K
 
 @[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K := iff.rfl 
 
-
-
 lemma coindep_iff_forall_subset_not_cocircuit : M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) := 
 by { rw [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit, forall_congr], simp }
   
+lemma cocircuit_iff_mem_minimals {K : set E} : 
+  M.cocircuit K ↔ K ∈ minimals (⊆) {X | ∀ B, M.base B → (B ∩ X).nonempty} :=  
+by simp_rw [cocircuit, circuit, dual_indep_iff_coindep, coindep, not_exists, not_and, 
+    not_disjoint_iff_nonempty_inter, inter_comm]
+
 lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
 (dual_circuit_iff_cocircuit.mpr hK).finite 
 

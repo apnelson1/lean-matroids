@@ -1,4 +1,4 @@
-import .dual
+import .rank
 import tactic.tfae
 
 open_locale classical

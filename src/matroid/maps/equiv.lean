@@ -1,4 +1,4 @@
-import ..dual
+import ..rank
 import mathlib.data.set.image 
 
 noncomputable theory
@@ -12,10 +12,7 @@ universe u
 
 section iso
 
-
-
 variables {E E₀ E₁ E₂ : Type u} {M₀ : matroid E₀} {M₁ : matroid E₁} {M₂ : matroid E₂}
-
 
 /-- Two matroids are isomorphic if there is a map between ground sets that preserves bases -/
 def is_iso (M₁ : matroid E₁) (M₂ : matroid E₂) (e : E₁ ≃ E₂) :=
@@ -77,6 +74,15 @@ by { ext, simp_rw [image, matroid_of_indep_apply], refl }
 @[simp] lemma image.indep_iff {I' : set E'} : (M.image f).indep I' ↔ ∃ I, M.indep I ∧ f '' I = I' := 
 by simp [image]
  
+lemma image.compl_range_subset_loops (M : matroid E) (f : E ↪ E') : (range f)ᶜ ⊆ (M.image f).cl ∅ :=   
+begin
+  refine λ e he, (loop_iff_mem_cl_empty.mp _),   
+  simp_rw [loop_iff_dep, image.indep_iff, not_exists, not_and, 
+    f.injective.image_eq_singleton_iff, not_exists, not_and], 
+  rintro I hI e rfl rfl, 
+  simpa using he, 
+end 
+
 @[simp] lemma image.base_iff {B' : set E'} : (M.image f).base B' ↔ ∃ B, M.base B ∧ B' = f '' B :=
 begin
   simp_rw [base_iff_maximal_indep, image.indep_iff], 
@@ -168,6 +174,51 @@ begin
     preimage_image_eq _ f.injective, hF.cl], 
 end   
 
+lemma image.hyperplane_iff {H' : set E'} : 
+  (M.image f).hyperplane H' ↔ ∃ H, M.hyperplane H ∧ H' = (f '' H) ∪ (range f)ᶜ :=
+begin
+  
+  simp_rw [hyperplane_iff_maximal_proper_flat, image.flat_iff], 
+  split, 
+  { rintro ⟨⟨H, hfH, rfl⟩,hss, h⟩, 
+    refine ⟨_,⟨hfH,ssubset_univ_iff.mpr _,λ F hHF hF, eq_univ_of_forall (λ e, _),⟩,rfl⟩, 
+    { rintro rfl, 
+      rw [image_univ, union_compl_self] at hss,
+      exact hss.ne rfl },
+       
+    simpa using (h (f '' F ∪ (range f)ᶜ) _ ⟨F, hF, rfl⟩).symm.subset (mem_univ (f e)), 
+    rw ssubset_iff_of_subset (union_subset_union_left _ (image_subset _ hHF.subset)), 
+    obtain ⟨x, hxH, hxF⟩ := exists_of_ssubset hHF, 
+    
+    refine ⟨f x, or.inl (mem_image_of_mem _ hxH), _⟩, 
+    rwa [mem_union, f.injective.mem_set_image, not_or_distrib, not_mem_compl_iff, 
+      iff_true_intro (mem_range_self _), and_true] },
+  rintro ⟨H,⟨⟨hfH,hHss,hH⟩ ,rfl⟩⟩, 
+  refine ⟨⟨H,hfH,rfl⟩,ssubset_univ_iff.mpr (λ hu, hHss.ne (eq_univ_of_forall (λ e, _))), _⟩,  
+  { simpa using hu.symm.subset (mem_univ (f e)) },
+  rintro X hHX ⟨F, hF, rfl⟩, 
+  rw [hH F _ hF, image_univ, union_compl_self],  
+  
+  refine ssubset_of_ne_of_subset (by { rintro rfl, exact hHX.ne rfl }) (λ e heH, _), 
+  have hss := hHX.subset, 
+  simpa using hss (or.inl (mem_image_of_mem f heH)), 
+end 
+
+lemma image.cocircuit_iff {K' : set E'} :   
+  (M.image f).cocircuit K' ↔ ∃ K, M.cocircuit K ∧ K' = f '' K :=
+begin
+  simp_rw [←compl_hyperplane_iff_cocircuit, image.hyperplane_iff],
+  refine ⟨exists_imp_exists' compl _, exists_imp_exists' compl _⟩,
+  { simp_rw [@compl_eq_comm _ K', compl_union, compl_compl, f.injective.compl_image_eq, 
+      inter_distrib_right, compl_inter_self, union_empty, 
+      inter_eq_self_of_subset_left (image_subset_range _ _), eq_comm, 
+      iff_true_intro id, imp_true_iff]  },
+  simp_rw [@compl_eq_comm _ K', compl_union, f.injective.compl_image_eq, compl_compl, 
+    inter_distrib_right, compl_inter_self, union_empty, 
+    inter_eq_self_of_subset_left (image_subset_range _ _), eq_comm, 
+    iff_true_intro id, imp_true_iff], 
+end   
+
 @[simp] lemma image.r_eq (M : matroid E) (X' : set E') : (M.image f).r X' = M.r (f ⁻¹' X') :=
 begin
   obtain ⟨I, hI⟩ := (M.image f).exists_basis (X'),   
@@ -210,7 +261,7 @@ matroid_of_indep (λ I, M'.indep (f '' I)) (by simp) (λ I J hJ hIJ, hJ.subset (
 (begin
   intros I B hI hIn hB,
   obtain ⟨e, ⟨⟨e,he,rfl⟩,he'⟩ , hi⟩ := 
-    @indep.exists_insert_of_not_basis _ _ _ (f '' B) (range f) hI (image_subset_range _ _) _ _, 
+    @indep.exists_insert_of_not_basis _ _ (f '' B) (range f) _ hI (image_subset_range _ _) _ _, 
   { rw [f.injective.mem_set_image] at he', 
     rw [←image_insert_eq] at hi, 
     exact ⟨e, ⟨he,he'⟩, hi⟩ },

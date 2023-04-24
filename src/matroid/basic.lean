@@ -747,18 +747,19 @@ instance matroid_dual {E : Type*} : has_matroid_dual (matroid E) := ⟨matroid.d
 
 lemma dual.base_iff : M﹡.base B ↔ M.base Bᶜ := base_compl_iff_mem_maximals_disjoint_base.symm
 
-lemma dual_dual (M : matroid E) : M﹡﹡ = M := by { ext, simp_rw [dual.base_iff, compl_compl] }
+@[simp] lemma dual_dual (M : matroid E) : M﹡﹡ = M := 
+by { ext, simp_rw [dual.base_iff, compl_compl] }
 
 lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := 
 by { simp [has_matroid_dual.dual, dual, coindep] }
 
-lemma base.compl_base_dual' (hB : M.base B) : M﹡.base Bᶜ := by rwa [dual.base_iff, compl_compl]  
+lemma base.compl_base_dual (hB : M.base B) : M﹡.base Bᶜ := by rwa [dual.base_iff, compl_compl]  
 
-lemma base.compl_inter_basis_of_inter_basis' (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
-  M.dual.basis (Bᶜ ∩ Xᶜ) Xᶜ := 
+lemma base.compl_inter_basis_of_inter_basis (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
+  M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ := 
 begin
   rw basis_iff, 
-  refine ⟨(hB.compl_base_dual'.indep.subset (inter_subset_left _ _)), inter_subset_right _ _, 
+  refine ⟨(hB.compl_base_dual.indep.subset (inter_subset_left _ _)), inter_subset_right _ _, 
     λ J hJ hBCJ hJX, hBCJ.antisymm (subset_inter (λ e heJ heB, _) hJX)⟩, 
   obtain ⟨B', hB', hJB'⟩ := dual_indep_iff_coindep.mp hJ,  
   obtain ⟨B'', hB'', hsB'', hB''s⟩  := hBX.indep.exists_base_subset_union_base hB', 
@@ -774,17 +775,9 @@ end
 
 lemma base.inter_basis_iff_compl_inter_basis_dual (hB : M.base B) : 
   M.basis (B ∩ X) X ↔ M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ :=
-begin
-  refine ⟨hB.compl_inter_basis_of_inter_basis', λ h, _⟩, 
-  rw [←dual_dual M], 
-  simpa using hB.compl_base_dual'.compl_inter_basis_of_inter_basis' h, 
-end  
-
-lemma base.compl_base_dual (hB : M.base B) : M﹡.base Bᶜ := hB.compl_base_dual'
-
-lemma base.compl_inter_basis_of_inter_basis (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
-  M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ := hB.compl_inter_basis_of_inter_basis' hBX
- 
+⟨hB.compl_inter_basis_of_inter_basis, λ h, 
+  by simpa using hB.compl_base_dual.compl_inter_basis_of_inter_basis h⟩ 
+  
 lemma dual_inj {M₁ M₂ : matroid E} (h : M₁﹡ = M₂﹡) : M₁ = M₂ :=
 by { ext B, rw [←compl_compl B, ←dual.base_iff, h, dual.base_iff] }
 

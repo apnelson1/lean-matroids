@@ -34,18 +34,6 @@ end⟩
 
 def delete (M : matroid_in α) (D : set α) : matroid_in α := M.restrict Dᶜ 
 
--- def delete (M : matroid_in α) (D : set α) : matroid_in α := 
--- { ground := M.E \ D,
---   carrier := (M : matroid α) ⟍ D,
---   support := 
---   begin
---     rw [loopify.cl_eq, empty_diff, compl_subset_comm, compl_union, diff_eq_compl_inter, 
---       subset_inter_iff], 
---     simp only [inter_subset_right, true_and],
---     rw [←compl_union, compl_subset_comm], 
---     exact subset_union_of_subset_left M.compl_ground_subset_loops_coe _, 
---   end }
-
 instance {α : Type*} : has_con (matroid_in α) (set α) := ⟨matroid_in.contract⟩  
 instance {α : Type*} : has_del (matroid_in α) (set α) := ⟨matroid_in.delete⟩
 instance {α : Type*} : has_restr (matroid_in α) (set α) := ⟨matroid_in.restrict⟩  
@@ -184,13 +172,18 @@ delete_indep_iff.mpr ⟨hI,hID⟩
 lemma contract_eq_delete_of_subset_loops (M : matroid_in α) {X : set α} (hX : X ⊆ M.cl ∅) :
   M ⟋ X = M ⟍ X :=
 begin
-  
-  
   refine eq_of_indep_iff_indep rfl (λ I (hI : I ⊆ M.E \ X), _), 
   rw subset_diff at hI, 
   rw [delete_indep_iff, indep_iff_coe, contract_coe, ←(true_iff _).mpr hI.2, and_true,
     project.eq_of_subset_loops (hX.trans (cl_subset_coe_cl _ _)), indep_iff_coe], 
 end  
+
+lemma contract_eq_delete_of_subset_coloops (M : matroid_in α) {X : set α} (hX : X ⊆ M﹡.cl ∅) :
+  M ⟋ X = M ⟍ X :=
+begin
+  refine eq_of_coe_eq_coe rfl _,
+  rw [contract_coe, delete_coe, project_eq_loopify_of_subset_coloops], 
+end 
 
 @[simp] lemma contract_cl (M : matroid_in α) (C X : set α) : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
 by rw [cl_eq_coe_cl_inter, contract_coe, project.cl_eq, contract_ground, cl_eq_coe_cl_inter, 

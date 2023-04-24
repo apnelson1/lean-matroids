@@ -1,5 +1,5 @@
-import ..pseudominor
 import ..connectivity
+import ..pseudominor
 import ..maps.equiv
 
 open_locale classical
@@ -14,8 +14,8 @@ variables {α : Type*}
 
   The main motivation for this is to have a way of talking about minors that avoids type equality.
   Pseudominors give one way of doing this, while staying in `matroid E`, but they are a bit ugly
-  with duality. The advantage of `matroid_in` is that, if `M : matroid_in α`, then `M.dual` and
-  `M / C \ D` are both `matroid_in α`, and we can say things like `M / C \ D = M \ D / C`
+  with duality. The advantage of `matroid_in` is that, if `M : matroid_in α`, then `M﹡` and
+  `M / C \ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ \ C / D`
   meaningfully and without type equality.
 
   The disadvantage is that one has to constantly keep track of a ground set, and API duplication
@@ -39,9 +39,9 @@ def E (M : matroid_in α) := M.ground
 
 @[simp] lemma ground_eq_E (M : matroid_in α) : M.ground = M.E := rfl
 
-class finite_ground (M : matroid_in α) : Prop := (ground_finite : M.ground.finite) 
+-- class finite_ground (M : matroid_in α) : Prop := (ground_finite : M.ground.finite) 
 
-instance {M : matroid_in α} [finite_ground M] : finite M.E := ‹finite_ground M›.1.to_subtype
+-- instance {M : matroid_in α} [finite_ground M] : finite M.E := ‹finite_ground M›.1.to_subtype
 
 section defs
 /- Definitions -/
@@ -112,12 +112,10 @@ hX.subset_compl_right.trans (compl_subset_comm.mp M.support)
 lemma subset_loops_coe_of_disjoint_ground (hX : disjoint X M.E) : X ⊆ (M : matroid α).cl ∅ :=
 hX.subset_compl_right.trans (compl_ground_subset_loops_coe _)
 
-lemma ground_finite (M : matroid_in α) [finite_ground M] : M.E.finite := ‹M.finite_ground›.1 
-
-instance coe_finite_rk_of_finite {M : matroid_in α} [M.finite_ground] : 
+instance coe_finite_rk_of_finite {M : matroid_in α} [finite M.E] : 
   (M : matroid α).finite_rk := 
 ⟨by { obtain ⟨B, hB⟩ := (M : matroid α).exists_base, 
-  exact ⟨B, hB, M.ground_finite.subset 
+  exact ⟨B, hB, (to_finite M.E).subset 
     (subset_ground_of_disjoint_loops_coe (hB.indep.disjoint_loops))⟩}⟩
 
 -- ### Independence
@@ -160,6 +158,20 @@ lemma circuit.subset_ground (hC : M.circuit C) : C ⊆ M.E := hC.2
 
 lemma circuit_iff : M.circuit C ↔ (¬ M.indep C ∧ (∀ I ⊂ C, M.indep I)) ∧ C ⊆ M.E :=
 by { rw [circuit, matroid.circuit_iff_forall_ssubset], refl }
+
+lemma circuit_iff_mem_minimals : M.circuit C ↔ C ∈ minimals (⊆) {X | ¬M.indep X ∧ X ⊆ M.E} :=
+⟨λ h, ⟨⟨h.1.1,h.2⟩,λ D hD hDC, h.1.2 hD.1 hDC⟩,
+  λ h, ⟨⟨h.1.1,λ D hD hDC, h.2 ⟨hD, hDC.trans h.1.2⟩ hDC⟩,h.1.2⟩⟩
+
+lemma indep_iff_forall_subset_not_circuit : M.indep I ↔ (∀ C ⊆ I, ¬M.circuit C) ∧ I ⊆ M.E :=
+begin
+  simp_rw [indep_iff_coe, matroid.indep_iff_forall_subset_not_circuit, matroid_in.circuit, 
+    not_and], 
+  refine ⟨λ h, ⟨λ C hCI hC, (h C hCI hC).elim, λ e heI, by_contra (λ heE, _)⟩,λ h C hCI hC, _⟩, 
+  { have hl := matroid.loop.circuit (loop_coe_of_not_mem_ground heE),
+    exact h {e} (singleton_subset_iff.mpr heI) hl },
+  exact h.1 C hCI hC (hCI.trans h.2),
+end     
 
 lemma basis.to_coe (h : M.basis I X) : (M : matroid α).basis I X := h.1
 
@@ -253,6 +265,16 @@ lemma loop.to_coe (he : M.loop e) : (M : matroid α).loop e := he.1
 lemma loop_iff_dep (he : e ∈ M.E) : M.loop e ↔ ¬ M.indep {e} :=
 ⟨loop.dep, λ h, ⟨matroid.loop_iff_dep.mpr h, he⟩⟩
 
+lemma loop_iff_circuit : M.loop e ↔ M.circuit {e} := 
+begin
+  refine (em (e ∈ M.E)).symm.elim (λ he, iff_of_false (λ hl, he hl.mem_ground) 
+    (λ hC, he (hC.subset_ground (mem_singleton e)))) (λ he, _), 
+  rw [loop_iff_dep he, circuit, indep_iff_coe, circuit_iff_dep_forall_diff_singleton_indep, 
+    and_assoc], 
+  simp only [indep_singleton, not_nonloop_iff, mem_singleton_iff, forall_eq, diff_self, empty_indep, 
+    singleton_subset_iff, true_and, iff_self_and, iff_true_intro he, imp_true_iff], 
+end
+
 lemma loop_iff_mem_cl_empty : M.loop e ↔ e ∈ M.cl ∅ := iff.rfl
 
 lemma nonloop_iff_coe (e : α) : M.nonloop e ↔ (M : matroid α).nonloop e := iff.rfl
@@ -279,8 +301,8 @@ lemma r_le_iff {n : ℕ} [finite α] : M.r X ≤ n ↔ ∀ I ⊆ X, M.indep I �
 
 lemma r_eq_coe_r (X : set α) : M.r X = (M : matroid α).r X := rfl
 
-lemma r_compl_ground : M.r M.Eᶜ = 0 :=
-r_eq_zero_of_subset_loops (compl_ground_subset_loops_coe _)
+@[simp] lemma r_compl_ground : M.r M.Eᶜ = 0 := 
+  r_eq_zero_of_subset_loops (compl_ground_subset_loops_coe _)
 
 lemma coe_r_compl_ground (M : matroid_in α) : (M : matroid α).r M.Eᶜ = 0 := r_compl_ground
 
@@ -301,6 +323,10 @@ lemma cocircuit_iff_coe (K : set α) : M.cocircuit K ↔ (M : matroid α).cocirc
 
 lemma cocircuit.subset_ground (hK : M.cocircuit K) : K ⊆ M.E :=
 λ x hx, matroid_in.nonloop.mem_ground (hK.nonloop_of_mem hx)
+
+lemma cocircuit_iff_mem_minimals : 
+  M.cocircuit K ↔ K ∈ minimals (⊆) {X | ∀ B, M.base B → (B ∩ X).nonempty } :=
+by simp_rw [cocircuit, matroid.cocircuit_iff_mem_minimals, base_iff_coe]
 
 lemma hyperplane.subset_ground (hF : M.hyperplane F) : F ⊆ M.E := hF.2
 
@@ -469,6 +495,30 @@ begin
   convert iff.rfl, 
 end 
 
+@[simp] lemma equiv_subtype.circuit_iff {C : set E} (M : {M : matroid_in α // M.E = E}) :
+  (equiv_subtype M).circuit C ↔ (M : matroid_in α).circuit (coe '' C) :=
+begin
+  obtain ⟨M,rfl⟩ := M,   
+  simp_rw [circuit, equiv_subtype_apply, preimage.circuit_iff, coe_coe, 
+    function.embedding.coe_subtype, iff_self_and, coe_mk, ←@range_coe _ M.E, 
+    iff_true_intro (image_subset_range _ _), imp_true_iff], 
+end 
+
+@[simp] lemma equiv_subtype.symm_circuit_iff {C : set α} (M : matroid E) : 
+  (equiv_subtype.symm M : matroid_in α).circuit C ↔ ∃ C₀, M.circuit C₀ ∧ C = coe '' C₀ :=
+begin
+  simp_rw [circuit, equiv_subtype_apply_symm_coe_coe, image.circuit_iff, 
+    function.embedding.coe_subtype, mem_compl_iff, mem_range, set_coe.exists, coe_mk, exists_prop, 
+    exists_eq_right, equiv_subtype.symm_ground_eq, ←@range_coe _ E, 
+    subset_range_iff_exists_image_eq], 
+  split, 
+  rintro ⟨(⟨C, hC, hC₀C⟩ | ⟨e, he, hCe⟩), ⟨C₀, rfl⟩⟩, 
+  { exact ⟨C, hC, hC₀C⟩, },
+  { exact (he ((image_subset_range coe C₀) (hCe.symm.subset (mem_singleton e)))).elim },
+  rintro ⟨C₀, hC₀, rfl⟩, 
+  exact ⟨or.inl ⟨_,hC₀,rfl⟩, ⟨_,rfl⟩⟩,   
+end 
+
 @[simp] lemma equiv_subtype.r_eq (M : {M : matroid_in α // M.E = E}) (X : set E) :
   (equiv_subtype M).r X = (M : matroid_in α).r (coe '' X) :=
 by simp [equiv_subtype_apply, r]
@@ -518,9 +568,9 @@ instance {α : Type*} : has_matroid_dual (matroid_in α) := ⟨dual⟩
 
 lemma dual_eq (M : matroid_in α) : M﹡ = equiv_subtype.symm (equiv_subtype ⟨M, rfl⟩)﹡ := rfl  
 
-lemma dual_base_iff : M﹡.base B ↔ M.base (M.E \ B) ∧ B ⊆ M.E :=
+@[simp] lemma dual_base_iff : M﹡.base B ↔ M.base (M.E \ B) ∧ B ⊆ M.E :=
 begin
-  simp_rw [dual_eq, equiv_subtype.symm_base_iff, matroid.dual_base_iff, equiv_subtype.base_iff, 
+  simp_rw [dual_eq, equiv_subtype.symm_base_iff, matroid.dual.base_iff, equiv_subtype.base_iff, 
     subtype.coe_mk], 
   split, 
   { rintro ⟨B₀, hB₀, rfl⟩, refine ⟨_, (image_subset_range _ _).trans_eq range_coe⟩,
@@ -533,9 +583,9 @@ end
 
 @[simp] lemma dual_ground (M : matroid_in α) : M﹡.E = M.E := rfl
 
-@[simp] lemma dual_dual (M : matroid_in α) : M﹡﹡ = M := by simp [dual_eq]
+@[simp] lemma dual_dual (M : matroid_in α) : M﹡﹡ = M := by simp [dual_eq] 
 
-lemma dual_r_cast_eq (M : matroid_in α) [finite_ground M] {X : set α} (hX : X ⊆ M.E) :
+lemma dual_r_cast_eq (M : matroid_in α) [finite M.E] {X : set α} (hX : X ⊆ M.E) :
   (M﹡.r X : ℤ) = X.ncard + M.r (M.E \ X) - M.rk :=
 begin
   rw [←@range_coe _ M.E, subset_range_iff_exists_image_eq] at hX, 
@@ -545,7 +595,7 @@ begin
     coe_injective.image_compl_eq, range_coe], 
 end
 
-lemma dual_r_add_rk_eq (M : matroid_in α) [finite_ground M] {X : set α} (hX : X ⊆ M.E) :
+lemma dual_r_add_rk_eq (M : matroid_in α) [finite M.E] {X : set α} (hX : X ⊆ M.E) :
   M﹡.r X + M.rk = X.ncard + M.r (M.E \ X) :=
 by linarith [M.dual_r_cast_eq hX]
 
@@ -566,6 +616,58 @@ end
 
 @[simp] lemma dual_coindep_iff_indep : M﹡.coindep X ↔ M.indep X :=
 by rw [←dual_dual M, dual_indep_iff_coindep, dual_dual]
+
+@[simp] lemma dual_circuit_iff_cocircuit : M﹡.circuit C ↔ M.cocircuit C :=
+begin
+  refine (em (C ⊆ M.E)).symm.elim 
+    (λ hn, iff_of_false (λ hC, hn (hC.subset_ground)) ((λ hC, hn (hC.subset_ground)))) (λ hCE, _), 
+  simp_rw [circuit_iff_mem_minimals, dual_indep_iff_coindep, cocircuit_iff_coe, 
+    matroid.cocircuit_iff_mem_minimals, coindep_iff_disjoint_base, not_exists, not_and, 
+    ←base_iff_coe, dual_ground, subset_diff, not_and, not_disjoint_iff_nonempty_inter, inter_comm],
+  exact ⟨λ h, ⟨λ B hB, h.1.1 B hB h.1.2, λ D hD h', h.2 ⟨λ B hB hDE, hD B hB, h'.trans hCE⟩ h'⟩,
+    λ h, ⟨⟨λ B hB hCE', h.1 B hB, hCE⟩, λ D hD hDC, h.2 (λ B hB, hD.1 B hB (hDC.trans hCE)) hDC⟩⟩, 
+end  
+
+@[simp] lemma dual_cocircuit_iff_circuit : M﹡.cocircuit C ↔ M.circuit C :=
+by rw [←dual_dual M, dual_circuit_iff_cocircuit, dual_dual]
+
+@[simp] lemma dual_loop_iff_coloop : M﹡.loop e ↔ M.coloop e := 
+by rw [coloop, matroid.coloop_iff_cocircuit, ←cocircuit_iff_coe, ←dual_circuit_iff_cocircuit, 
+    loop_iff_circuit]
+
+@[simp] lemma dual_coloop_iff_loop : M﹡.coloop e ↔ M.loop e := 
+by rw [←dual_dual M, dual_loop_iff_coloop, dual_dual]
+    
+lemma coloop_iff_mem_dual_cl_empty : M.coloop e ↔ e ∈ M﹡.cl ∅ :=
+by rw [←dual_dual M, ←dual_loop_iff_coloop, dual_dual, loop_iff_mem_cl_empty]
+
+lemma dual_cl_empty_eq_coloops (M : matroid_in α) : M﹡.cl ∅ = {e | M.coloop e} := 
+by { ext, rw ←coloop_iff_mem_dual_cl_empty, refl } 
+
+ 
+
+-- lemma dual_cl_to_coe (M : matroid_in α) {X : set α} (hX : X ⊆ M.E) : 
+--   M﹡.cl X = (M : matroid α)﹡.cl X := 
+-- begin
+--   refine set.ext (λ e, (em (e ∈ M.E)).symm.elim (λ he, iff_of_false 
+--     (not_mem_subset (cl_subset_ground _ _) he) _) (λ he, _)), 
+--   { refine matroid.coloop.not_mem_cl_of_not_mem _ (not_mem_subset hX he), 
+--     rw matroid.dual_coloop_iff_loop, 
+--     exact M.compl_ground_subset_loops_coe he },
+--   refine (em (e ∈ X)).elim (λ heX, iff_of_true (subset_cl hX heX) (matroid.subset_cl _ _ heX)) 
+--     (λ heX, _),
+   
+  
+
+--   -- set N := M﹡ with hN, 
+--   -- rw [←dual_dual M, ←hN], 
+
+
+--   -- rw [cl_eq_coe_cl_inter, dual_ground, ←compl_compl M.E, ←diff_eq, 
+--   --   ←matroid.cl_diff_eq_of_subset_coloops X], 
+   
+--   -- have := M.compl_ground_subset_loops_coe, 
+-- end 
 
 end dual
 

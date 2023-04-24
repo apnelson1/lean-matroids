@@ -510,55 +510,36 @@ begin
 end
 
 lemma project.r_add_r_eq_r_union (M : matroid E) [finite_rk M] (C X : set E) : 
-  (M ⟋ C).r X + M.r C = M.r (X ∪ C) :=
-by { zify, rw project.cast_r, simp }
+  (M ⟋ C).r X + M.r C = M.r (X ∪ C) := by { zify, simp }
 
 lemma nonloop.indep_project_iff (he : M.nonloop e) (heI : e ∉ I) :
   (M ⟋ e).indep I ↔ M.indep (insert e I) :=
-begin
-  rw [project_elem], 
-  rw [←indep_singleton] at he, 
-  split, 
-  { intro h, 
-    have := he.project_indep_iff, 
-    rw [this, union_singleton] at h, 
-    exact h.2},
-  intro h, 
-  rw [he.project_indep_iff, union_singleton, disjoint_singleton_right], 
-  exact ⟨heI, h⟩,    
-end 
+by rw [project_elem, he.indep.project_indep_iff, union_singleton, disjoint_singleton_right, 
+    iff_true_intro heI, true_and]
 
 lemma nonloop.r_project_add_one_eq [finite_rk M] (he : M.nonloop e) (X : set E) :
   (M ⟋ e).r X  + 1 = M.r (insert e X) :=
-by {zify, rw [project_elem, project.cast_r, nonloop_iff_r.mp he], simp}
+by { zify, rw [project_elem, project.cast_r, nonloop_iff_r.mp he], simp }
 
 lemma nonloop.cast_r_project_eq [finite_rk M] (he : M.nonloop e) (X : set E) :
   ((M ⟋ e).r X : ℤ) = M.r (insert e X) - 1 :=
-by {rw ←nonloop.r_project_add_one_eq he X, simp}
+by { rw ←nonloop.r_project_add_one_eq he X, simp }
 
 lemma not_mem_of_indep_project_singleton (h : (M ⟋ e).indep I) : e ∉ I :=
 (project.loop_of_mem (mem_singleton e)).not_mem_indep h
 
+lemma project_eq_loopify_of_subset_coloops (hX : X ⊆ M﹡.cl ∅) : M ⟋ X = M ⟍ X :=
+eq_of_cl_eq_cl_forall (λ S, by rw [project.cl_eq, loopify.cl_eq, cl_union_eq_of_subset_coloops _ hX, 
+    cl_diff_eq_of_subset_coloops _ hX, diff_union_self])
+
+lemma project_eq_loopify_of_subset_loops (hX : X ⊆ M.cl ∅) : M ⟋ X = M ⟍ X :=
+by rw [project_eq_self_iff_subset_loops.mpr hX, loopify_eq_self_iff_subset_loops.mpr hX]
+
 lemma loop.project_eq_loopify (he : M.loop e) : M ⟋ e = M ⟍ e := 
-begin
-  rw [project_elem, loopify_elem, loopify_eq_self_iff_subset_loops.mpr _, 
-    project_eq_self_iff_subset_loops.mpr _];
-  rwa [singleton_subset_iff], 
-end  
+project_eq_loopify_of_subset_loops (singleton_subset_iff.mpr he)
 
 lemma coloop.project_eq_loopify (he : M.coloop e) : M ⟋ e = M ⟍ e := 
-begin
-  simp_rw [eq_iff_indep_iff_indep_forall, project_elem, he.nonloop.indep.project_indep_iff, 
-    disjoint_singleton_right, loopify_elem, loopify.indep_iff, union_singleton, 
-    disjoint_singleton_right, and.congr_right_iff],
-  exact λ I heI, ⟨λ h, h.subset (subset_insert e I), he.insert_indep_of_indep⟩, 
-end  
-
-lemma project_eq_loopify_of_subset_coloops (hX : X ⊆ M﹡.cl ∅) : M ⟋ X = M ⟍ X :=
-begin
-  
-end 
-
+project_eq_loopify_of_subset_coloops (singleton_subset_iff.mpr he)
 
 end project
 
