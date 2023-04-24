@@ -1,11 +1,11 @@
-import .closure
+import .circuit 
 import mathlib.data.set.basic 
 
 noncomputable theory
 open_locale classical
 open_locale big_operators
 
-variables {E : Type*} {M M₁ M₂ : matroid E} {I B C X Y Z F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
+variables {E : Type*} {M M₁ M₂ : matroid E} {I B C X Y Z K F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
 
 open set 
 
@@ -50,6 +50,15 @@ begin
   exact h''.ne rfl,
 end
 
+lemma flat_iff_forall_circuit {F : set E} :
+  M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
+begin
+  rw [flat_iff_cl_self],
+  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩,
+  { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
+  exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF),
+end
+
 lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=
 by {nth_rewrite 1 ←hF.cl, apply cl_exchange, rwa hF.cl}
@@ -58,7 +67,7 @@ lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
 
 /- ### Covering  -/
-/-- A set is covered by another in a matroid if they are strictly nested flats, with no flat
+/-- A flat is covered by another in a matroid if they are strictly nested, with no flat
   between them . -/
 def covby (M : matroid E) (F₀ F₁ : set E) : Prop :=
   M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁
@@ -77,8 +86,7 @@ lemma covby.ssubset (h : M.covby F₀ F₁) : F₀ ⊂ F₁ := h.2.2.1
 lemma covby.subset (h : M.covby F₀ F₁) : F₀ ⊆ F₁ := h.2.2.1.subset
 
 lemma covby.eq_or_eq (h : M.covby F₀ F₁) (hF : M.flat F) (h₀ : F₀ ⊆ F) (h₁ : F ⊆ F₁) :
-  F = F₀ ∨ F = F₁ :=
-h.2.2.2 F hF h₀ h₁
+  F = F₀ ∨ F = F₁ := h.2.2.2 F hF h₀ h₁
 
 lemma covby.eq_of_subset_of_ssubset (h : M.covby F₀ F₁) (hF : M.flat F) (hF₀ : F₀ ⊆ F) 
 (hF₁ : F ⊂ F₁) :
@@ -119,20 +127,67 @@ end
 
 section hyperplane
 
-lemma hyperplane_def : M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
-iff.rfl
+/-- A hyperplane is a maximal set containing no base  -/
+def hyperplane (M : matroid E) (H : set E) : Prop := H ∈ maximals (⊆) {X | ¬∃ B ⊆ X, M.base B }
 
-lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := hK
+lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X) : M.cl X = univ :=
+base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 h hX.subset)))   
 
-lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H := hH.1
+lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H :=
+begin
+  refine λ I X hIH hIX e heX, hH.2 (λ h', hH.1 ⟨I, hIH.subset, _⟩) 
+    (subset_insert e H) (mem_insert e H), 
+  obtain ⟨B, hBeH, hB⟩ := h', 
+  exact (hIH.basis_union hIX).base_of_base_subset hB 
+    (hBeH.trans (insert_subset.mpr ⟨or.inr heX,subset_union_left _ _⟩)),  
+end 
 
-lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ := hH.2.1
+lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ := 
+ssubset_univ_iff.mpr 
+  (by { rintro rfl, exact hH.1 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
 
-lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.2.1.ne rfl
+lemma hyperplane.flat_supset_eq_univ (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
+  F = univ := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+
+lemma hyperplane_iff_maximal_proper_flat : 
+  M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
+begin
+  refine ⟨λ h, ⟨h.flat, h.ssubset_univ, λ F hHF hF, h.flat_supset_eq_univ hF hHF⟩, 
+    λ h, ⟨_,λ X hX hHX, hHX.eq_or_ssubset.elim (λ h', h'.symm.subset) (λ hss, (hX _).elim)⟩⟩,
+  { rintro ⟨B,hBH,hB⟩,  
+    have hcl := M.cl_subset_cl_of_subset hBH, 
+    rw [hB.cl, univ_subset_iff, h.1.cl] at hcl,
+    exact h.2.1.ne hcl },
+  have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X)) (M.flat_of_cl _), 
+  rwa [←base_subset_iff_cl_eq_univ] at hX_univ, 
+end 
+
+@[simp] lemma compl_cocircuit_iff_hyperplane : M.cocircuit Hᶜ ↔ M.hyperplane H  :=
+begin
+  simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
+    refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
+    λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
+  { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
+  { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
+    exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
+  { rwa [exists_prop, and_comm, compl_subset_comm] },
+  refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
+  exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
+end 
+
+@[simp] lemma compl_hyperplane_iff_cocircuit : M.hyperplane Kᶜ ↔ M.cocircuit K := 
+by rw [←compl_cocircuit_iff_hyperplane, compl_compl]
+
+lemma hyperplane.compl_cocircuit (hH : M.hyperplane H) : M.cocircuit Hᶜ := 
+  compl_cocircuit_iff_hyperplane.mpr hH
+
+lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
+  compl_hyperplane_iff_cocircuit.mpr hK 
+
+lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.ssubset_univ.ne rfl 
 
 lemma hyperplane.eq_of_subset (h₁ : M.hyperplane H₁) (h₂ : M.hyperplane H₂) (h : H₁ ⊆ H₂) :
-  H₁ = H₂ :=
-by_contra (λ he, h₂.ssubset_univ.ne (h₁.2.2 (h.ssubset_of_ne he) h₂.flat))
+  H₁ = H₂ := h.antisymm (h₁.2 h₂.1 h)
 
 lemma hyperplane.not_ssubset (h₁ : M.hyperplane H₁) (h₂ : M.hyperplane H₂) : ¬ H₁ ⊂ H₂ :=
 λ hss, hss.ne (h₁.eq_of_subset h₂ hss.subset)
@@ -143,37 +198,11 @@ by {by_contra' h, apply M.univ_not_hyperplane, convert hH, rwa [eq_comm, eq_univ
 lemma hyperplane_iff_maximal_cl_ne_univ :
   M.hyperplane H ↔ M.cl H ≠ univ ∧ ∀ X, H ⊂ X → M.cl X = univ :=
 begin
-  rw [hyperplane_def, cl_def],
-  simp only [ne.def, sInter_eq_univ, mem_set_of_eq, and_imp, not_forall, exists_prop],
-  refine ⟨λ h, ⟨⟨H, h.1, rfl.subset, h.2.1.ne⟩, λ X hHX, h.2.2 _
-    (hHX.trans_subset (M.subset_cl _)) (M.flat_of_cl _)⟩, λ h, _⟩,
-  obtain ⟨⟨F,hF,hHF,hFne⟩,hmax⟩ := h,
-  suffices h_eq : H = F,
-  { subst h_eq,
-    refine ⟨hF, ssubset_univ_iff.mpr hFne, λ F hHF hF, _⟩,
-    rw ←hF.cl,
-    exact hmax _ hHF, },
-  refine by_contra (λ hne, hFne _),
-  rw [←hmax F (ssubset_of_ne_of_subset hne hHF), hF.cl],
+  simp_rw [ne.def, ←base_subset_iff_cl_eq_univ, hyperplane, maximals, mem_set_of], 
+  exact ⟨λ h, ⟨h.1, λ X h', (by_contra (λ hex, h'.not_subset (h.2 hex h'.subset)))⟩, 
+    λ h, ⟨h.1, λ X hex h', h'.eq_or_ssubset.elim (eq.subset ∘ eq.symm) 
+      (λ hss, (hex (h.2 _ hss)).elim)⟩⟩,
 end
-
-lemma hyperplane_iff_maximal_not_supset_base :
-  M.hyperplane H ↔ (¬∃ B ⊆ H, M.base B) ∧ ∀ X, H ⊂ X → ∃ B ⊆ X, M.base B :=
-by simp_rw [hyperplane_iff_maximal_cl_ne_univ, ne.def, ←base_subset_iff_cl_eq_univ]
-
-lemma hyperplane_iff_mem_maximals : 
-  M.hyperplane H ↔ H ∈ maximals (⊆) {X | ∀ B, M.base B → ¬(B ⊆ X)} := 
-begin
-  rw hyperplane_iff_maximal_not_supset_base, 
-  simp only [exists_prop, not_exists, not_and], 
-  refine ⟨λ h, ⟨λ B hB hBX, h.1 _ hBX hB, λ X hX hHX, _ ⟩,
-    λ h, ⟨λ B hBH hB, h.1 _ hB hBH, λ X hHX, _⟩⟩, 
-  { refine hHX.ssubset_or_eq.elim (λ hss, false.elim _) (λ h', h'.symm.subset), 
-    obtain ⟨B, hB⟩ := h.2 _ hss, 
-    exact hX _ hB.2 hB.1 },
-  by_contra' h', simp_rw [imp_not_comm] at h', 
-  exact hHX.not_subset (h.2 h' hHX.subset), 
-end 
 
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
@@ -215,7 +244,7 @@ begin
   exact indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl),
 end
 
-lemma cl_eq_sInter_hyperplanes (M : matroid E) [finite_rk M] (X : set E) :
+lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set E) :
   M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
 begin
   apply subset_antisymm,
@@ -293,8 +322,6 @@ lemma hyperplane.inter_covby_comm (hH₁ : M.hyperplane H₁) (hH₂ : M.hyperpl
   by {rw inter_comm, intro h, exact hH₂.inter_right_covby_of_inter_left_covby hH₁ h}⟩
 
 end hyperplane
-
-end matroid 
 
 section from_axioms
 
@@ -392,3 +419,5 @@ begin
 end
 
 end from_axioms 
+
+end matroid 

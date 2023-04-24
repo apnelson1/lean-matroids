@@ -1,5 +1,4 @@
-import .flat
-import .dual 
+import .closure
 import mathlib.data.set.basic
 
 noncomputable theory
@@ -257,15 +256,6 @@ begin
   exact union_subset hCI (fund_circuit_subset_insert heI.1), 
 end 
 
-lemma flat_iff_forall_circuit {F : set E} :
-  M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
-begin
-  rw [flat_iff_cl_self],
-  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩,
-  { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
-  exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF),
-end
-
 lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : matroid E} (h : ∀ C, M₁.circuit C ↔ M₂.circuit C) :
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_forall_subset_not_circuit, h])
@@ -277,18 +267,12 @@ lemma indep_iff_forall_finite_subset_indep [finitary M] :
 
 section dual 
 
-@[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K :=
-begin
-  rw [circuit, cocircuit, hyperplane_iff_mem_maximals], 
-  simp_rw [dual_indep_iff_coindep, coindep_iff_disjoint_base, not_exists, not_and, 
-    ←subset_compl_iff_disjoint_right], 
-  exact ⟨λ h,⟨λ B hB hBX,h.1 B hB (subset_compl_comm.mp hBX),
-    λ B' hB' hKB', subset_compl_comm.mp (h.2 (λ X hX hss, hB' X hX (compl_subset_compl.mp hss)) 
-      (compl_subset_comm.mp hKB'))⟩,
-    λ h,⟨λ B hB hss, h.1 _ hB (subset_compl_comm.mp hss),
-    λ B' hB' hB'K, compl_subset_compl.mp (h.2 (λ X hX hss, hB' _ hX (subset_compl_comm.mp hss))   
-      (compl_subset_compl.mpr hB'K))⟩⟩,
-end 
+/-- A cocircuit is the complement of a hyperplane -/
+def cocircuit (M : matroid E) (K : set E) : Prop := M﹡.circuit K
+
+@[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K := iff.rfl 
+
+
 
 lemma coindep_iff_forall_subset_not_cocircuit : M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) := 
 by { rw [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit, forall_congr], simp }
@@ -298,7 +282,7 @@ lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.fini
 
 end dual 
 
-section exchange
+section basis_exchange
 
 variables {B₁ B₂ I₁ I₂ : set E}
 
@@ -360,42 +344,9 @@ theorem basis.rev_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he
   ∃ f ∈ I₂ \ I₁, M.basis (insert e I₂ \ {f}) X :=
 @base.rev_exchange _ (M.lrestrict X) _ _ _ hI₁ hI₂ he
 
-end exchange
+end basis_exchange
 
-end matroid 
 section from_axioms
-
--- def circuit_cl (circuit : set E → Prop) (X : set E) : set E := 
---   X ∪ ⋃ (C : {C // circuit C ∧ ∃ e ∈ C, C \ {e} ⊆ X}), C 
-
--- lemma circuit_cl_mono (circuit : set E → Prop) {X Y : set E} (hXY : X ⊆ Y) : 
---   circuit_cl circuit X ⊆ circuit_cl circuit Y :=  
--- begin
---   refine union_subset_union hXY (Union_subset _), 
---   rintro ⟨C, hC, ⟨e, heC, hCX⟩⟩, 
---   exact subset_Union_of_subset ⟨C, ⟨hC, ⟨e, heC, hCX.trans hXY⟩⟩⟩  (by simp), 
--- end 
-
--- lemma circuit_cl_idem (circuit : set E → Prop) (X : set E) : 
---   circuit_cl circuit (circuit_cl circuit X) = circuit_cl circuit X := 
--- begin
---   refine (subset_union_left _ _).antisymm' (union_subset subset.rfl (Union_subset _)), 
---   rintro ⟨C, ⟨hC, e, heC, hCe⟩⟩, 
-  
---   refine subset_union_of_subset_right (λ f (hf : f ∈ C), _) _, 
---   { obtain (rfl | hef) := eq_or_ne e f, 
---     { },},
--- end 
-
--- def matroid_of_circuit_of_finite' [finite E] (circuit : set E → Prop) 
--- (empty_not_circuit : ¬ circuit ∅) (antichain : ∀ C₁ C₂, circuit C₁ → circuit C₂ → C₁ ⊆ C₂ → C₁ = C₂)
--- (elimination : ∀ C₁ C₂ e, 
---   circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) : matroid E :=
--- matroid_of_cl_of_finite (circuit_cl circuit) 
--- (λ _, subset_union_left _ _) (λ X Y hXY, circuit_cl_mono _ hXY) 
--- (begin
---   refine λ X, subset_antisymm _ _, 
--- end) _
 
 /-- A collection of sets satisfying the circuit axioms determines a matroid -/
 def matroid_of_circuit_of_finite [finite E] (circuit : set E → Prop) 
@@ -490,3 +441,4 @@ end
 
 end from_axioms
 
+end matroid 

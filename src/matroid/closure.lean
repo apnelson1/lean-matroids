@@ -1,16 +1,21 @@
-import .indep
+import .basic
 import mathlib.data.set.basic 
 
 noncomputable theory
 open_locale classical
 open_locale big_operators
 
-
 open set
 
 namespace matroid
 
 variables {E : Type*} {M : matroid E} {I J B C X Y : set E} {e f x y : E}
+
+/-- A flat is a maximal set having a given basis  -/
+def flat (M : matroid E) (F : set E) : Prop := ∀ ⦃I X⦄, M.basis I F → M.basis I X → X ⊆ F
+
+/-- The closure of a set is the intersection of the flats containing it -/
+def cl (M : matroid E) (X : set E) : set E := ⋂₀ {F | M.flat F ∧ X ⊆ F}
 
 lemma cl_def (M : matroid E) : M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} := rfl
 
@@ -380,13 +385,9 @@ end
 lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid E} (h : ∀ X, M₁.cl X = M₂.cl X) : M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
 
-end matroid
-
 section from_axioms
 
-variables {E : Type*} 
-
-lemma cl_diff_singleton_eq_cl (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X)
+lemma cl_diff_singleton_eq_cl' (cl : set E → set E) (subset_cl : ∀ X, X ⊆ cl X)
 (cl_mono : ∀ X Y, X ⊆ Y → cl X ⊆ cl Y) (cl_idem : ∀ X, cl (cl X) = cl X )
 {x : E} {I : set E} (h : x ∈ cl (I \ {x})) :
   cl (I \ {x}) = cl I :=
@@ -552,6 +553,6 @@ matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange (nat.car
 (matroid_of_cl_of_finite cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
 by simp [matroid_of_cl_of_finite] 
 
-
-
 end from_axioms
+
+end matroid 

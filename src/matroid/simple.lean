@@ -153,12 +153,13 @@ begin
     not_loop_iff, iff_true_intro hf, and_true],   
 end 
 
-
 lemma para.pcl_eq_pcl (h : M.para e f) : M.pcl e = M.pcl f :=
 begin
   simp_rw [set.ext_iff, mem_pcl_iff], 
   exact λ x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩, 
 end 
+
+-- lemma pcl_pairwise_disjoint (M : matroid E) : pairwise_disjoint (range pcl) id := 
 
 
 -- lemma nonloop.pcl_eq_pcl_iff (he : M.nonloop e) : M.pcl e = M.pcl f ↔ M.para e f := 

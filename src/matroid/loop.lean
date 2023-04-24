@@ -1,4 +1,4 @@
-import .circuit
+import .closure
 import .rank 
 
 /-
@@ -17,6 +17,9 @@ open set
 namespace matroid
 
 /- ### Loops -/
+
+/-- A loop is a member of the closure of the empty set -/
+def loop (M : matroid E) (e : E) : Prop := e ∈ M.cl ∅
 
 lemma loop_iff_mem_cl_empty : M.loop e ↔ e ∈ M.cl ∅ := iff.rfl 
 
@@ -67,9 +70,6 @@ lemma loop.not_mem_indep (he : M.loop e) (hI : M.indep I) : e ∉ I :=
 lemma loop.eq_of_circuit_mem (he : M.loop e) (hC : M.circuit C) (h : e ∈ C) : C = {e} :=
 by rw he.circuit.eq_of_subset_circuit hC (singleton_subset_iff.mpr h)
 
-lemma cocircuit.nonloop_of_mem {K : set E} (hK : M.cocircuit K) (he : e ∈ K) : M.nonloop e := 
-λ h, (h.mem_flat hK.compl_hyperplane.flat) he
-
 lemma indep.disjoint_loops (hI : M.indep I) : disjoint I (M.cl ∅) :=
 by_contra (λ h, let ⟨e,⟨heI,he⟩⟩ := not_disjoint_iff.mp h in loop.not_mem_indep he hI heI)
 
@@ -109,6 +109,11 @@ by rw [←cl_union_eq_cl_of_subset_loops hY, diff_union_self, cl_union_eq_cl_of_
 
 /- ### Nonloops -/
 
+/-- A `nonloop` is an element that is not a loop -/
+def nonloop (M : matroid E) (e : E) : Prop := ¬ M.loop e 
+
+def nonloops (M : matroid E) : set E := {e | M.nonloop e}
+
 @[simp] lemma not_loop_iff : ¬ M.loop e ↔ M.nonloop e := iff.rfl 
 
 @[simp] lemma not_nonloop_iff : ¬ M.nonloop e ↔ M.loop e := by rw [←not_loop_iff, not_not]
@@ -133,6 +138,9 @@ lemma nonloop.r (he : M.nonloop e) : M.r {e} = 1 := nonloop_iff_r.mp he
 
 lemma indep.nonloop_of_mem (hI : M.indep I) (h : e ∈ I) : ¬ M.loop e := 
 λ he, (he.not_mem_indep hI) h
+
+lemma cocircuit.nonloop_of_mem {K : set E} (hK : M.cocircuit K) (he : e ∈ K) : M.nonloop e := 
+λ h, (h.mem_flat hK.compl_hyperplane.flat) he
 
 lemma circuit.nonloop_of_mem_of_one_lt_card (hC : M.circuit C) (h : 1 < C.ncard) (he : e ∈ C) :
   M.nonloop e :=
@@ -178,6 +186,9 @@ begin
 end 
 
 /- ### Coloops -/ 
+
+/-- A coloop is an element contained in every basis -/
+def coloop (M : matroid E) (e : E) : Prop := ∀ ⦃B⦄, M.base B → e ∈ B
 
 lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ ⦃B⦄, M.base B → e ∈ B := iff.rfl
 
@@ -258,9 +269,8 @@ lemma coloop.insert_indep_of_indep (he : M.coloop e) (hI : M.indep I) : M.indep 
 (em (e ∈ I)).elim (λ h, by rwa insert_eq_of_mem h) 
   (λ h, by rwa [hI.insert_indep_iff_of_not_mem h, he.mem_cl_iff_mem])  
 
-
 lemma loop.dual_coloop (he : M.loop e) : M﹡.coloop e :=
-by { intros B hB, rw dual_base_iff at hB, simpa using he.not_mem_indep hB.indep }
+by { intros B hB, rw dual.base_iff at hB, simpa using he.not_mem_indep hB.indep }
 
 lemma coloop.dual_loop (he : M.coloop e) : M﹡.loop e :=
 begin
