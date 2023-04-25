@@ -36,16 +36,16 @@ begin
   exact hf _ hF hXF, 
 end
 
-lemma cl_subset_cl_of_subset (M : matroid E) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
+lemma cl_subset (M : matroid E) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
 sInter_subset_sInter (λ F hF, ⟨hF.1, h.trans hF.2⟩)
 
-lemma cl_mono (M : matroid E) : monotone M.cl := λ _ _, M.cl_subset_cl_of_subset
+lemma cl_mono (M : matroid E) : monotone M.cl := λ _ _, M.cl_subset
 
-lemma cl_subset_cl_of_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
-by simpa only [cl_cl] using M.cl_subset_cl_of_subset hXY
+lemma cl_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
+by simpa only [cl_cl] using M.cl_subset hXY
 
 lemma cl_subset_cl_iff_subset_cl : M.cl X ⊆ M.cl Y ↔ X ⊆ M.cl Y :=
-⟨λ h, (M.subset_cl _).trans h, cl_subset_cl_of_subset_cl⟩
+⟨λ h, (M.subset_cl _).trans h, cl_subset_cl⟩
 
 lemma subset_cl_of_subset (M : matroid E) (hXY : X ⊆ Y) : X ⊆ M.cl Y := hXY.trans (M.subset_cl Y)
 
@@ -55,7 +55,7 @@ lemma cl_insert_eq_of_mem_cl (he : e ∈ M.cl X) : M.cl (insert e X) = M.cl X :=
 begin
   refine (M.cl_mono (subset_insert _ _)).antisymm' _,
   rw [←M.cl_cl X],
-  exact M.cl_subset_cl_of_subset (insert_subset.mpr ⟨he, M.subset_cl _⟩),
+  exact M.cl_subset (insert_subset.mpr ⟨he, M.subset_cl _⟩),
 end
 
 @[simp] lemma cl_union_cl_right_eq_cl_union (M : matroid E) (X Y : set E) :
@@ -78,6 +78,10 @@ by rw [cl_union_cl_left_eq_cl_union, cl_union_cl_right_eq_cl_union]
 @[simp] lemma cl_insert_cl_eq_cl_insert (M : matroid E) (e : E) (X : set E) :
   M.cl (insert e (M.cl X)) = M.cl (insert e X) :=
 by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
+
+@[simp] lemma cl_diff_loops_eq_cl (M : matroid E) (X : set E) : M.cl (X \ M.cl ∅) = M.cl X :=
+by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq_cl_union, diff_union_self, 
+    cl_union_cl_right_eq_cl_union, union_empty]
 
 lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
 
@@ -129,7 +133,7 @@ lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set E) (h : M
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 begin  
   have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
-  refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset_cl_of_subset (Inter_subset _ _))), 
+  refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset (Inter_subset _ _))), 
   rintro e he, rw mem_Inter at he, 
   by_contra h', 
   obtain (hι | ⟨⟨i₀⟩⟩) := (is_empty_or_nonempty ι),
@@ -147,7 +151,7 @@ begin
     from λ i hind, heu (mem_Union_of_mem _ ((hi i).mem_cl_iff.mp (he i) hind)), 
   
   have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
-  { have h' := (M.cl_subset_cl_of_subset) (subset_Union _ _) (he i₀),
+  { have h' := (M.cl_subset) (subset_Union _ _) (he i₀),
     rwa [h.cl_eq_set_of_basis] at h' },
   
   obtain ⟨I', hI', hssI', hI'ss⟩ := 
@@ -186,7 +190,7 @@ begin
 end
 
 lemma basis.cl (hIX : M.basis I X) : M.cl I = M.cl X := 
-(M.cl_subset_cl_of_subset hIX.subset).antisymm (cl_subset_cl_of_subset_cl 
+(M.cl_subset hIX.subset).antisymm (cl_subset_cl 
   (λ x hx, hIX.indep.mem_cl_iff.mpr (λ h, hIX.mem_of_insert_indep hx h)))
 
 lemma basis.mem_cl_iff (hIX : M.basis I X) : 
@@ -216,7 +220,7 @@ begin
     refine hI.indep.basis_cl.dep_of_ssubset (ssubset_insert (not_mem_subset hI.subset heX)) 
       (insert_subset.mpr ⟨by rwa hI.cl,M.subset_cl I⟩) },  
   rintro e ⟨I, hIX, hI, hIe⟩, 
-  refine (M.cl_subset_cl_of_subset hIX) _, 
+  refine (M.cl_subset hIX) _, 
   rw [hI.mem_cl_iff], 
   exact λ h, (hIe h).elim,  
 end     
@@ -323,8 +327,8 @@ begin
   refine ⟨λ hI J hJI, _,
     λ h, indep_iff_cl_diff_ne_forall.mpr (λ x hx, (h _ $ diff_singleton_ssubset.2 hx).ne)⟩,
   obtain ⟨e,heI,heJ⟩ := exists_of_ssubset hJI,
-  exact (M.cl_subset_cl_of_subset (subset_diff_singleton hJI.subset heJ)).trans_ssubset
-    ((M.cl_subset_cl_of_subset (diff_subset I {e})).ssubset_of_ne
+  exact (M.cl_subset (subset_diff_singleton hJI.subset heJ)).trans_ssubset
+    ((M.cl_subset (diff_subset I {e})).ssubset_of_ne
     (indep_iff_cl_diff_ne_forall.mp hI e heI)),
 end
 
@@ -366,7 +370,7 @@ begin
   have heJ' : e ∈ M.cl J,
     from hJ (or.inl heI),
   refine indep_iff_not_mem_cl_diff_forall.mp hI e heI (mem_of_mem_of_subset heJ' _),
-  exact M.cl_subset_cl_of_subset (subset_diff_singleton hJI heJ),
+  exact M.cl_subset (subset_diff_singleton hJI heJ),
 end
 
 lemma basis_iff_indep_cl : M.basis I X ↔ M.indep I ∧ X ⊆ M.cl I ∧ I ⊆ X :=

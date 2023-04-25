@@ -216,8 +216,20 @@ begin
     (ncard_le_of_subset (subset_inter hIX hIY) (hIX'.finite.subset (inter_subset_left _ _))),
 end
 
-lemma eq_of_r_eq_r_forall [finite E] {M₁ M₂ : matroid E} (h : ∀ X, M₁.r X = M₂.r X) : M₁ = M₂ :=
-eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_r_eq_card, h])
+lemma eq_of_r_eq_r_forall {M₁ M₂ : matroid E} [finite_rk M₁] (h : ∀ X, M₁.r X = M₂.r X) : M₁ = M₂ :=
+begin
+  have h2 : ∀ I, M₂.indep I → I.finite, 
+  { refine λ I hI, by_contra (λ (hinf : I.infinite), _),  
+    obtain ⟨B₁,hB₁⟩ := M₁.exists_base, 
+    obtain ⟨I₁,hI₁I, hI₁fin, hI₁card⟩ := hinf.exists_subset_ncard_eq (M₁.rk + 1), 
+    rw [←(hI.subset hI₁I).r, ←h ] at hI₁card, 
+    linarith [M₁.r_le_rk I₁] },
+    
+  refine eq_of_indep_iff_indep_forall (λ I, (I.finite_or_infinite.symm.elim 
+    (λ hI, iff_of_false (λ h', hI h'.finite) (λ h', hI (h2 _ h') ) ) (λ hI, _))),  
+  
+  rw [indep_iff_r_eq_card_of_finite hI, h, indep_iff_r_eq_card_of_finite hI], 
+end 
 
 lemma r_le_r_of_subset (M : matroid E) [finite_rk M] (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
 M.r_mono hXY

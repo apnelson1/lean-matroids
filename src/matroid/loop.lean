@@ -65,14 +65,13 @@ lemma indep.eq_empty_of_subset_loops (hI : M.indep I) (h : I ⊆ M.cl ∅) : I =
 eq_empty_iff_forall_not_mem.mpr (λ e he, loop.not_mem_indep (h he) hI he) 
 
 lemma cl_eq_loops_of_subset (h : X ⊆ M.cl ∅) : M.cl X = M.cl ∅ :=
-(cl_subset_cl_of_subset_cl h).antisymm (M.cl_mono (empty_subset _))
+(cl_subset_cl h).antisymm (M.cl_mono (empty_subset _))
 
 lemma loop.cl (he : M.loop e) : M.cl {e} = M.cl ∅ :=
 cl_eq_loops_of_subset (singleton_subset_iff.mpr he)
 
 lemma loop_iff_cl_eq_cl_empty : M.loop e ↔ M.cl {e} = M.cl ∅ :=
 ⟨λ h, by rw h.cl ,λ h, by { rw [loop_iff_mem_cl_empty, ←h], exact M.mem_cl_self e }⟩
-
 
 lemma cl_union_eq_cl_of_subset_loops {Y : set E} (hY : Y ⊆ M.cl ∅) (X : set E) :
   M.cl (X ∪ Y) = M.cl X := 
@@ -236,11 +235,16 @@ lemma cl_union_eq_of_subset_coloops (X : set E) {K : set E} (hK : K ⊆ M﹡.cl 
 begin
   rw [←cl_union_cl_left_eq_cl_union], 
   refine (M.subset_cl _).antisymm' (λ e he, _), 
-  obtain (he' | ⟨C, hC, heC, hCss⟩) := mem_cl_iff_exists_circuit.mp he, assumption, 
-  have hCX : C \ {e} ⊆ M.cl X, from λ f hfC, (hCss hfC).elim id 
-      (λ hfK, (hC.not_coloop_of_mem ((diff_subset C {e}) hfC)).elim (hK hfK)), 
-  exact or.inl (cl_subset_cl_of_subset_cl hCX (hC.subset_cl_diff_singleton e heC)), 
+  obtain (he' | ⟨C, hC, heC, hCss⟩) := mem_cl_iff_exists_circuit.mp he, assumption,
+  have hCX : C \ {e} ⊆ M.cl X, 
+  { rw [diff_subset_iff, singleton_union],
+    exact λ f hfC, (hCss hfC).elim or.inl (λ h', h'.elim or.inr 
+      (λ hfK, (hC.not_coloop_of_mem hfC).elim (hK hfK))) },
+  exact or.inl (cl_subset_cl hCX (hC.subset_cl_diff_singleton e heC)), 
 end 
+
+lemma cl_eq_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.cl K = K ∪ M.cl ∅ := 
+by rw [←empty_union K, cl_union_eq_of_subset_coloops _ hK, empty_union, union_comm]
 
 lemma cl_diff_eq_of_subset_coloops (X : set E) {K : set E} (hK : K ⊆ M﹡.cl ∅) : 
   M.cl (X \ K) = M.cl X \ K :=

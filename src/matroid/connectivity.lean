@@ -8,6 +8,7 @@ namespace matroid
 
 variables {E : Type*} {X Y X' Y'  I J C : set E} {e f : E} {M : matroid E}
 
+/-! Skewness -/
 /-- Two sets `X,Y` are `skew` if restricting to `Y` is the same as projecting `X` and restricting 
   to `Y`. For finite rank, this is the same as `r X + r Y = r (X ∪ Y)`.-/
 def skew (M : matroid E) (X Y : set E) : Prop := (M ⟋ X) ‖ Y = M ‖ Y 
@@ -52,10 +53,22 @@ begin
   exact heY he.2, 
 end 
 
+lemma skew.inter_subset_loops (h : M.skew X Y) : X ∩ Y ⊆ M.cl ∅ := λ e, h.loop_of_mem_inter
+
 lemma skew_of_subset_loops (h : X ⊆ M.cl ∅) (Y : set E) : M.skew X Y := 
 by rw [skew_iff_project_lrestr_eq_lrestr, project_eq_self_iff_subset_loops.mpr h]
 
 lemma subset_loops_skew (X : set E) (h : Y ⊆ M.cl ∅) : M.skew X Y := (skew_of_subset_loops h X).symm 
+
+lemma skew.diff_loops_disjoint_left (h : M.skew X Y) : disjoint (X \ M.cl ∅) Y := 
+begin
+  refine disjoint_of_subset_left _ (@disjoint_sdiff_left _ Y X),
+  rw [←@diff_inter_self_eq_diff _ X Y, inter_comm], 
+  exact diff_subset_diff_right h.inter_subset_loops, 
+end 
+
+lemma skew.diff_loops_disjoint_right (h : M.skew X Y) : disjoint X (Y \ M.cl ∅) := 
+h.symm.diff_loops_disjoint_left.symm 
 
 lemma loop.singleton_skew (he : M.loop e) (X : set E) : M.skew {e} X := 
 skew_of_subset_loops (singleton_subset_iff.mpr he) X 
@@ -87,7 +100,7 @@ begin
       cl_union_cl_left_eq_cl_union] at heK₂', 
     have he : e ∈ M.cl ((I ∪ J) \ {e}), 
     { rw [union_comm, union_diff_distrib, diff_singleton_eq_self], 
-      { refine M.cl_subset_cl_of_subset (union_subset_union_right _ _) heK₂',
+      { refine M.cl_subset (union_subset_union_right _ _) heK₂',
         refine subset_diff_singleton _ (not_mem_subset (diff_subset _ _) heK₂),
         exact diff_subset_iff.mpr hK₂.2.subset }, 
       exact λ heJ, hdj.ne_of_mem heI heJ rfl }, 
@@ -187,6 +200,13 @@ end
 lemma nonloop.skew_singleton_iff (he : M.nonloop e) : M.skew X {e} ↔ e ∉ M.cl X :=
 by rw [skew.comm, he.singleton_skew_iff]
  
+/-- Useful for adding a disjointness assumption when proving skewness -/
+lemma skew_iff_diff_loops_skew_left : M.skew X Y ↔ M.skew (X \ M.cl ∅) Y := 
+by rw [iff.comm, skew.cl_left_iff, cl_diff_loops_eq_cl, ←skew.cl_left_iff]
+
+lemma skew_iff_diff_loops_skew_right : M.skew X Y ↔ M.skew X (Y \ M.cl ∅) := 
+by rw [iff.comm, skew.cl_right_iff, cl_diff_loops_eq_cl, ←skew.cl_right_iff]
+
 section Skew
 
 variables {ι : Type*} {Xs : ι → set E} 
@@ -203,5 +223,12 @@ def Skew (M : matroid E) (Xs : ι → set E) := ∀ (I : set ι), M.skew (⋃ i 
 -- end 
 
 end Skew
+
+section separation 
+
+/-- A set is a `separator` in `M` if it is skew to its complement -/
+def is_separator (M : matroid E) (X : set E) := M.skew X Xᶜ  
+
+end separation
 
 end matroid

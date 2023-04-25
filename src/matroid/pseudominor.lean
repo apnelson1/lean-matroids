@@ -103,6 +103,23 @@ lemma lrestr.weak_image (M : matroid E) (R : set E) : M ‖ R ≤w M := λ I, in
 instance lrestr.finite_rk {M : matroid E} [finite_rk M] {R : set E} : finite_rk (M ‖ R) := 
 (lrestr.weak_image M R).finite_rk 
 
+lemma lrestr_eq_lrestr_iff_symm_diff_loops : M ‖ X = M ‖ Y ↔ X ∆ Y ⊆ M.cl ∅ := 
+begin
+  simp_rw [eq_iff_indep_iff_indep_forall, lrestr.indep_iff, and.congr_right_iff], 
+  refine ⟨λ h e,_,λ h I hI, _⟩, 
+  { specialize h {e},
+    simp only [indep_singleton, singleton_subset_iff] at h,  
+    rintro (⟨heX,heY⟩ | ⟨heY,heX⟩),  
+    { rwa [iff_true_intro heX, iff_false_intro heY, true_iff, imp_false, not_nonloop_iff] at h },
+    rwa [iff_true_intro heY, iff_false_intro heX, iff_true, imp_false, not_nonloop_iff] at h },
+  exact ⟨λ hIX e heI, (by_contra (λ heY, hI.nonloop_of_mem heI (h (or.inl ⟨hIX heI,heY⟩)))),
+     λ hIY e heI, (by_contra (λ heX, hI.nonloop_of_mem heI (h (or.inr ⟨hIY heI, heX⟩))))⟩, 
+end    
+
+lemma lrestr_eq_lrestr_of_subset_of_diff_loops (hXY : X ⊆ Y) (h : Y \ X ⊆ M.cl ∅) : M ‖ X = M ‖ Y :=
+by rwa [lrestr_eq_lrestr_iff_symm_diff_loops, set.symm_diff_def, union_subset_iff, 
+  diff_eq_empty.mpr hXY, and_iff_right (empty_subset _)]
+  
 lemma lrestr_eq_lrestr_iff {M₁ M₂ : matroid E} : 
   M₁ ‖ X = M₂ ‖ X ↔ ∀ I ⊆ X, M₁.indep I ↔ M₂.indep I :=
 begin
@@ -187,9 +204,9 @@ begin
     { exact (em (e ∈ D)).elim or.inr (λ heD,
         or.inl (mem_of_mem_of_subset (⟨heX, heD⟩ : e ∈ X \ D) (M.subset_cl _) ))},
     { refine or.inl (mem_of_mem_of_subset (hC.subset_cl_diff_singleton e hC'.1)
-        (M.cl_subset_cl_of_subset _)),
-      rw [subset_diff],
-      exact ⟨hC'.2, disjoint_of_subset_left (diff_subset _ _) hCD⟩},
+        (M.cl_subset _)),
+      rw [subset_diff, diff_subset_iff, singleton_union],
+      exact ⟨hC'.2, disjoint_of_subset_left (diff_subset _ _) hCD⟩, },
     rw ←mem_singleton_iff.mp hC'.1 at hfD,
     exact or.inr hfD},
 
@@ -201,12 +218,12 @@ begin
   obtain ( heXD | ⟨C, hC, heC, hCX⟩) := heX,
   { exact or.inl ((diff_subset _ _) heXD)},
   refine (em (e ∈ X)).elim or.inl (λ heX, or.inr _),
-  refine ⟨C, or.inl ⟨hC, _⟩, heC, hCX.trans (diff_subset _ _)⟩,
+  refine ⟨C, or.inl ⟨hC, _⟩, heC, (hCX.trans (insert_subset_insert (diff_subset _ _)))⟩,
 
   rw [←inter_union_diff C {e}, disjoint_union_left, inter_singleton_eq_of_mem heC,
     disjoint_singleton_left],
-  rw subset_diff at hCX,
-  exact ⟨heD, hCX.2⟩,
+  rw [←singleton_union, ←diff_subset_iff  ] at hCX,
+  exact ⟨heD, disjoint_of_subset_left hCX disjoint_sdiff_left⟩,
 end
 
 @[simp] lemma loopify.loop_iff : (M ⟍ D).loop e ↔ M.loop e ∨ e ∈ D :=
@@ -377,7 +394,7 @@ begin
     λ h e heI hecl, _⟩,
   { rintro e heI _ heJ rfl, 
     exact h e heI (M.mem_cl_of_mem (or.inr heJ)) },
-  { refine h e heI (M.cl_subset_cl_of_subset _ (hC.subset_cl_diff_singleton e heC)),
+  { refine h e heI (M.cl_subset _ (hC.subset_cl_diff_singleton e heC)),
     rw [diff_subset_iff, ←union_assoc, union_diff_self, union_assoc],
     exact subset_union_of_subset_right hCIJ _ },
   rw [←indep_iff_forall_subset_not_circuit, indep_iff_not_mem_cl_diff_forall] at h, 
@@ -581,13 +598,27 @@ end
 lemma project_loopify_comm (M : matroid E) {C D : set E} (hCD : disjoint C D) :
   M ⟋ C ⟍ D = M ⟍ D ⟋ C :=
 by {convert project_loopify_swap _ _ _, rwa [eq_comm, sdiff_eq_left, disjoint.comm]}
+ 
+lemma project_lrestr_eq_project_lrestr_diff (M : matroid E) (C R : set E) :
+  M ⟋ C ‖ R = M ⟋ C ‖ (R \ C) :=
+begin
+  rw [eq_comm, lrestr_eq_lrestr_of_subset_of_diff_loops (diff_subset _ _)], 
+  simp only [sdiff_sdiff_right_self, inf_eq_inter, project_loops_eq], 
+  exact ((inter_subset_right _ _).trans (subset_cl _ _)), 
+end 
 
-@[simp] lemma lrestr_project_eq : (M ‖ R) ⟋ C = (M ⟋ (R ∩ C)) ‖ R :=   
+@[simp] lemma lrestr_project_eq (M : matroid E) (C R : set E) : (M ‖ R) ⟋ C = (M ⟋ (R ∩ C)) ‖ R :=   
 begin
   refine eq_of_cl_eq_cl_forall (λ X, _), 
   simp only [project.cl_eq, lrestr.cl_eq], 
   rw [inter_distrib_right, inter_comm C R], 
 end 
+
+lemma project_lrestr_eq_lrestr_union_project (M : matroid E) (C R : set E) : 
+  M ⟋ C ‖ R = (M ‖ (R ∪ C)) ⟋ C :=
+by rw [lrestr_project_eq, union_inter_cancel_right, 
+    project_lrestr_eq_project_lrestr_diff _ _ (R ∪ C), project_lrestr_eq_project_lrestr_diff, 
+    union_diff_right]
 
 lemma project_loopify_eq_self_iff_subset_loops : M ⟋ C ⟍ D = M ↔ C ∪ D ⊆ M.cl ∅ :=
 begin

@@ -74,7 +74,7 @@ by simp_rw [loop_iff_dep, loopy_on.indep_iff_empty, singleton_ne_empty, not_fals
 
 @[simp] lemma loopy_on.cl (X : set E) : (loopy_on E).cl X = univ := 
 begin
-  refine eq_univ_of_subset (cl_subset_cl_of_subset _ (empty_subset X)) (eq_univ_of_forall _), 
+  refine eq_univ_of_subset (cl_subset _ (empty_subset X)) (eq_univ_of_forall _), 
   simp_rw [←loop_iff_mem_cl_empty], 
   exact loopy_on.loop, 
 end 

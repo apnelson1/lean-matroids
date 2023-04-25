@@ -105,7 +105,7 @@ begin
   obtain ⟨C,hCX,hC⟩ := dep_iff_supset_circuit.mp h',
   obtain ⟨e,heC⟩ := hC.nonempty,
   have he := (hC.subset_cl_diff_singleton e).trans (h (C \ {e})),
-  exact (cl_subset_cl_of_subset_cl he).not_ssubset ((hX.subset hCX).cl_diff_singleton_ssubset heC),
+  exact (cl_subset_cl he).not_ssubset ((hX.subset hCX).cl_diff_singleton_ssubset heC),
 end
 
 lemma is_quotient.r_le_r_of_subset [finite_rk M] (h : N ≼ M) (hXY : X ⊆ Y) : 
