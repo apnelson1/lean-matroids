@@ -256,6 +256,23 @@ begin
   exact hxH (h H ⟨hH, hXH⟩),
 end
 
+lemma mem_cl_iff_forall_hyperplane : e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
+by simp [cl_eq_sInter_hyperplanes]
+
+lemma mem_dual_cl_iff_forall_circuit : 
+  e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (X ∩ C).nonempty :=
+begin
+   rw [←dual_dual M], 
+   simp_rw [dual_circuit_iff_cocircuit, ←compl_hyperplane_iff_cocircuit, dual_dual, 
+    mem_cl_iff_forall_hyperplane], 
+  refine ⟨λ h K hH heK, _, λ h H hH hXH, (by_contra (λ heH, _))⟩,
+  { have h' := h _ hH,  
+    rwa [mem_compl_iff, iff_false_intro (not_not.mpr heK), imp_false, 
+      subset_compl_iff_disjoint_right, not_disjoint_iff_nonempty_inter] at h' },
+  obtain ⟨e, heX, heH⟩ := h Hᶜ (by rwa compl_compl) heH, 
+  exact heH (hXH heX), 
+end 
+
 lemma flat.subset_hyperplane_of_ne_univ (hF : M.flat F) (h : F ≠ univ) : 
   ∃ H, M.hyperplane H ∧ F ⊆ H :=
 begin

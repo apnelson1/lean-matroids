@@ -1,4 +1,3 @@
-import ..dual
 import ..quotients
 import ..simple
 
@@ -38,7 +37,7 @@ by rw [←free_on.dual, dual_dual]
 by simp_rw [indep_iff_subset_base, loopy_on.base_iff_empty, exists_eq_left, subset_empty_iff]
 
 @[simp] lemma free_on.base_iff_univ : (free_on E).base B ↔ B = univ :=
-by rw [free_on, dual_base_iff, loopy_on.base_iff_empty, compl_empty_iff]
+by rw [free_on, dual.base_iff, loopy_on.base_iff_empty, compl_empty_iff]
 
 @[simp] lemma free_on.univ_base (E : Type*) : (free_on E).base univ := free_on.base_iff_univ.mpr rfl 
 
@@ -62,7 +61,7 @@ by rw ←(free_on.indep X).basis_self.card
 by rw [rk_def, free_on.r_eq, ncard_univ]
 
 @[simp] lemma empty_base_iff_loopy_on : M.base ∅ ↔ M = loopy_on E :=
-by rw [←compl_compl (∅ : set E), ←dual_base_iff, compl_empty, univ_base_iff_free_on, 
+by rw [←compl_compl (∅ : set E), ←dual.base_iff, compl_empty, univ_base_iff_free_on, 
   ←loopy_on.dual, dual_inj_iff]
 
 @[simp] lemma free_on.cl (X : set E) : (free_on E).cl X = X :=
@@ -319,7 +318,7 @@ lemma unif_dual (E : Type*) [finite E] {r₁ r₂ : ℕ} (h : r₁ + r₂ = nat.
   (unif E r₁)﹡ = unif E r₂ :=
 begin
   ext X,
-  rw [unif_base_iff (le_of_add_le_right h.le), dual_base_iff,
+  rw [unif_base_iff (le_of_add_le_right h.le), dual.base_iff,
     unif_base_iff (le_of_add_le_left h.le)],
   zify at *, split;
   { intro h, linarith [ncard_add_ncard_compl X]},

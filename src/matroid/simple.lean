@@ -1,4 +1,4 @@
-import .loop
+import .rank
 
 noncomputable theory
 open_locale classical

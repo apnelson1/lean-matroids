@@ -283,6 +283,12 @@ by simp_rw [cocircuit, circuit, dual_indep_iff_coindep, coindep, not_exists, not
 lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
 (dual_circuit_iff_cocircuit.mpr hK).finite 
 
+-- lemma mem_dual_cl_iff_forall_circuit : 
+--   e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (C ∩ X).nonempty :=
+-- begin
+--   obtain ⟨ 
+-- end 
+
 end dual 
 
 section basis_exchange
