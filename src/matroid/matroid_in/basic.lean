@@ -97,7 +97,7 @@ end defs
 
 section basic
 
-variables {M : matroid_in α} {X Y I C B F H K : set α} {e f : α}
+variables {M : matroid_in α} {X Y I J C B F H K : set α} {e f : α}
 
 lemma loop_coe_of_not_mem_ground (h : e ∉ M.E) : (M : matroid α).loop e := M.support (mem_compl h)
 
@@ -131,15 +131,22 @@ lemma exists_base (M : matroid_in α) : ∃ B, M.base B := matroid.exists_base M
 
 lemma base.indep (hB : M.base B) : M.indep B := matroid.base.indep hB
 
+lemma base.cl (hB : M.base B) : M.cl B = M.E := by rw [cl, matroid.base.cl hB, univ_inter]
+
 lemma base.subset_ground (hB : M.base B) : B ⊆ M.E := hB.indep.subset_ground
 
 lemma base.finite [finite_rk M] (hB : M.base B) : B.finite := hB.to_coe.finite 
+
+lemma base.insert_dep (hB : M.base B) (he : e ∉ B) : ¬M.indep (insert e B) := 
+matroid.base.insert_dep hB he 
 
 lemma indep_iff_coe : M.indep I ↔ (M : matroid α).indep I := iff.rfl
 
 lemma indep.to_coe (hI : M.indep I) : (M : matroid α).indep I := hI
 
 lemma indep_iff_subset_base : M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B := iff.rfl
+
+lemma indep.exists_base_supset (hI : M.indep I) : ∃ B, M.base B ∧ I ⊆ B := hI    
 
 lemma indep.finite [finite_rk M] (hI : M.indep I) : I.finite := 
 exists.elim (indep_iff_subset_base.mp hI) (λ B hB, hB.1.finite.subset hB.2)
@@ -260,10 +267,12 @@ begin
   exact matroid.cl_mono _ (M.cl_subset_coe_cl X),
 end
 
+lemma subset_cl_of_subset (hX : X ⊆ M.E) (h : X ⊆ Y) : X ⊆ M.cl Y :=
+(subset_cl hX).trans (M.cl_subset h)
+
 lemma subset_cl_iff_cl_subset_cl (hX : X ⊆ M.E) : X ⊆ M.cl Y ↔ M.cl X ⊆ M.cl Y :=
 ⟨λ h, inter_subset_inter (matroid.cl_subset_cl (h.trans (M.cl_subset_coe_cl _)))
   subset.rfl, λ h, subset_trans (subset_cl hX) h⟩
-
 
 lemma cl_union_cl_right_eq_cl (M : matroid_in α) (X Y : set α) : M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) :=
 by rw [eq_comm, cl, ←cl_union_cl_right_eq_cl_union, ←cl, eq_comm, cl_eq_cl_inter_ground, 
@@ -486,6 +495,20 @@ lemma skew.inter_subset_loops (h : M.skew X Y) : X ∩ Y ⊆ M.cl ∅ :=
 subset_inter (matroid.skew.inter_subset_loops h.1) 
   ((inter_subset_right _ _).trans h.right_subset_ground) 
 
+lemma skew.disjoint_of_indep_left (h : M.skew I X) (hI : M.indep I) : disjoint I X := 
+h.to_coe.disjoint_of_indep_left hI
+
+lemma skew.disjoint_of_indep_right (h : M.skew X I) (hI : M.indep I) : disjoint X I :=
+(h.symm.disjoint_of_indep_left hI).symm
+
+lemma skew_iff_disjoint_of_union_indep (h : M.indep (I ∪ J)) : M.skew I J ↔ disjoint I J :=
+by rw [←matroid.skew_iff_disjoint_of_union_indep h, skew, ←union_subset_iff, 
+  and_iff_left h.subset_ground]
+
+lemma indep.skew_diff_of_subset (hI : M.indep I) (hJ : J ⊆ I) : M.skew J (I \ J) :=
+⟨matroid.indep.skew_diff_of_subset hI hJ, (hJ.trans hI.subset_ground), 
+  (diff_subset _ _).trans hI.subset_ground⟩ 
+
 lemma skew.diff_loops_disjoint_left (h : M.skew X Y) : disjoint (X \ M.cl ∅) Y :=
 begin
   convert matroid.skew.diff_loops_disjoint_left h.1 using 1,
@@ -505,6 +528,9 @@ begin
   rw [iff.comm, skew_iff_cl_left ((diff_subset _ _).trans hX), cl_diff_loops_eq_cl,   
     ←skew_iff_cl_left hX], 
 end 
+
+lemma skew.union_indep (h : M.skew I J) (hI : M.indep I) (hJ : M.indep J) : M.indep (I ∪ J) :=
+h.to_coe.union_indep hI hJ
 
 lemma nonloop.singleton_skew_iff (he : M.nonloop e) (hX : X ⊆ M.E) : M.skew {e} X ↔ e ∉ M.cl X :=
 by rw [skew, he.to_coe.singleton_skew_iff, singleton_subset_iff, cl_eq_coe_cl_inter, mem_inter_iff,

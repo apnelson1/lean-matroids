@@ -6,7 +6,7 @@ open set
 
 namespace matroid
 
-variables {E : Type*} {X Y X' Y'  I J C : set E} {e f : E} {M : matroid E}
+variables {E : Type*} {X Y X' Y' Z  I J C : set E} {e f : E} {M : matroid E}
 
 /-! Skewness -/
 /-- Two sets `X,Y` are `skew` if restricting to `Y` is the same as projecting `X` and restricting 
@@ -20,7 +20,7 @@ lemma skew.project_lrestr_eq (h : M.skew X Y) : (M ⟋ X) ‖ Y = M ‖ Y := h
 lemma skew.symm (h : M.skew X Y) : M.skew Y X :=
 begin
   rw [skew, lrestr_eq_lrestr_iff] at *, 
-  refine λ I hIX, ⟨λ hI, hI.indep_project, λ hI, _⟩,  
+  refine λ I hIX, ⟨λ hI, hI.of_project, λ hI, _⟩,  
   obtain ⟨J, hJ⟩ := M.exists_basis Y, 
   rw [hJ.project_indep_iff], 
   have hi := (h J hJ.subset).mpr hJ.indep, 
@@ -110,27 +110,46 @@ begin
   exact hK₂.2.indep.subset (union_subset_union_left _ hK₁.1), 
 end 
 
-lemma skew.disjoint_of_indep_left (h : M.skew X Y) (hI : M.indep I) (hIX : I ⊆ X) : disjoint I Y := 
+lemma skew.disjoint_of_indep_left (h : M.skew I X) (hI : M.indep I) : disjoint I X := 
 begin
   rw disjoint_iff_forall_ne, 
   rintro e heI _ heY rfl, 
-  exact hI.nonloop_of_mem heI (h.loop_of_mem_inter ⟨hIX heI, heY⟩), 
+  exact hI.nonloop_of_mem heI (h.loop_of_mem_inter ⟨heI, heY⟩), 
 end 
 
-lemma skew.disjoint_of_indep_right (h : M.skew X Y) (hJ : M.indep J) (hJY : J ⊆ Y) : disjoint X J :=
-(h.symm.disjoint_of_indep_left hJ hJY).symm
+lemma skew.disjoint_of_indep_right (h : M.skew X I) (hI : M.indep I) : disjoint X I :=
+(h.symm.disjoint_of_indep_left hI).symm
+
+lemma skew.union_indep (h : M.skew I J) (hI : M.indep I) (hJ : M.indep J) : M.indep (I ∪ J) :=
+begin
+  rw [skew_iff_project_lrestr_eq_lrestr, lrestr_eq_lrestr_iff] at h, 
+  specialize h J subset.rfl, 
+  rw [hI.project_indep_iff, iff_true_right hJ, union_comm] at h, 
+  exact h.2,
+end 
+
+lemma indep.skew_diff_of_subset (hI : M.indep I) (hJ : J ⊆ I) : M.skew J (I \ J) :=
+begin
+  rw [skew.comm, skew_iff_project_lrestr_eq_lrestr, lrestr_eq_lrestr_iff], 
+  intros K hKJ,
+  rw [(hI.diff J).project_indep_iff, 
+    and_iff_right (disjoint_of_subset_left hKJ disjoint_sdiff_right), 
+    iff_true_intro (hI.subset (hKJ.trans hJ)), iff_true], 
+  exact hI.subset (union_subset (hKJ.trans hJ) (diff_subset _ _)), 
+end 
+
+lemma skew_iff_disjoint_of_union_indep (h : M.indep (I ∪ J)) : M.skew I J ↔ disjoint I J :=
+begin
+  refine ⟨λ h', disjoint_iff_inter_eq_empty.mpr ((h.subset _).eq_empty_of_subset_loops _),λ h', _⟩, 
+  { exact inter_subset_union _ _ }, 
+  { exact h'.inter_subset_loops },
+  convert h.skew_diff_of_subset (subset_union_left _ _), 
+  rwa [union_diff_left, eq_comm, sdiff_eq_left, disjoint.comm], 
+end 
 
 lemma skew.union_indep_of_subset_of_subset (h : M.skew X Y) (hI : M.indep I) (hIX : I ⊆ X)
 (hJ : M.indep J) (hJY : J ⊆ Y) : M.indep (I ∪ J) :=
-begin
-  rw [skew_iff_project_lrestr_eq_lrestr] at h, 
-  obtain ⟨I', hI'⟩ := hI.subset_basis_of_subset hIX, 
-  apply_fun (λ M, M.indep J) at h, 
-  rw [←hI'.2.project_eq_project, lrestr.indep_iff, hI'.2.indep.project_indep_iff, eq_iff_iff, 
-    lrestr.indep_iff, ←(true_iff _).mpr hJY, and_true, ←(true_iff _).mpr hJ, and_true, iff_true, 
-    union_comm] at h, 
-  exact h.2.subset (union_subset_union_left _ hI'.1), 
-end 
+((h.subset_left hIX).subset_right hJY).union_indep hI hJ
 
 lemma skew.inter_basis_left_of_basis_union (h : M.skew X Y) (hI : M.basis I (X ∪ Y)) : 
   M.basis (I ∩ X) X :=
@@ -206,6 +225,12 @@ by rw [iff.comm, skew.cl_left_iff, cl_diff_loops_eq_cl, ←skew.cl_left_iff]
 
 lemma skew_iff_diff_loops_skew_right : M.skew X Y ↔ M.skew X (Y \ M.cl ∅) := 
 by rw [iff.comm, skew.cl_right_iff, cl_diff_loops_eq_cl, ←skew.cl_right_iff]
+
+lemma project_skew_of_union_skew (h : M.skew (C ∪ X) Y) : (M ⟋ C).skew X Y :=
+begin
+  rw [skew, project_project, skew_iff_project_lrestr_eq_lrestr.mp h, eq_comm, ←skew],
+  exact h.subset_left (subset_union_left _ _), 
+end  
 
 section Skew
 
