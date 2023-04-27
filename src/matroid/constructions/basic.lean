@@ -244,47 +244,47 @@ variables {E : Type*} {s t r : ℕ} {I B X : set E} {M : matroid E}
 
 /-- The matroid whose bases are the `r`-sets. If `E` is smaller than `r`, then this is the free
   matroid. -/
-def unif (E : Type*) (r : ℕ) : matroid E := tr (free_on E) r
+def unif_on (E : Type*) (r : ℕ) : matroid E := tr (free_on E) r
 
-instance {E : Type*} {r : ℕ} : finite_rk (unif E r) := 
+instance {E : Type*} {r : ℕ} : finite_rk (unif_on E r) := 
 begin
-  obtain ⟨B, hB⟩ := (unif E r).exists_base,
+  obtain ⟨B, hB⟩ := (unif_on E r).exists_base,
   refine hB.finite_rk_of_finite _, 
   have hi := hB.indep, 
-  rw [unif, tr.indep_iff'] at hi, 
+  rw [unif_on, tr.indep_iff'] at hi, 
   exact hi.2.1, 
 end 
 
 /-- the rank-`a` uniform matroid on `b` elements with ground set `fin b`. Free if `b ≤ a`. -/
-@[reducible] def canonical_unif (a b : ℕ) : matroid (fin b) := unif (fin b) a
+@[reducible] def unif (a b : ℕ) : matroid (fin b) := unif_on (fin b) a
 
-lemma unif_eq_tr (E : Type*) (r : ℕ) : unif E r = tr (free_on E) r := rfl 
+lemma unif_on_eq_tr (E : Type*) (r : ℕ) : unif_on E r = tr (free_on E) r := rfl 
 
-@[simp] lemma unif_r [finite E] (X : set E) : (unif E r).r X = min r (X.ncard) :=
-by { rw [unif, tr.r_eq _ r, free_on.r_eq], apply_instance  }
+@[simp] lemma unif_on_r [finite E] (X : set E) : (unif_on E r).r X = min r (X.ncard) :=
+by { rw [unif_on, tr.r_eq _ r, free_on.r_eq], apply_instance  }
 
-lemma unif_rk [finite E] (hr : r ≤ nat.card E) : (unif E r).rk = r :=
-by { rw [rk, unif_r univ, ncard_univ, min_eq_left hr], apply_instance,  }
+lemma unif_on_rk [finite E] (hr : r ≤ nat.card E) : (unif_on E r).rk = r :=
+by { rw [rk, unif_on_r univ, ncard_univ, min_eq_left hr], apply_instance,  }
 
-lemma unif.indep_iff' : (unif E r).indep I ↔ I.finite ∧ I.ncard ≤ r :=
-by rw [unif, tr.indep_iff', iff_true_intro (free_on.indep _), true_and]
+lemma unif.indep_iff' : (unif_on E r).indep I ↔ I.finite ∧ I.ncard ≤ r :=
+by rw [unif_on, tr.indep_iff', iff_true_intro (free_on.indep _), true_and]
 
-@[simp] lemma unif.indep_iff [finite E] {I : set E}: (unif E r).indep I ↔ I.ncard ≤ r :=
-by rw [indep_iff_r_eq_card, unif_r, min_eq_right_iff]
+@[simp] lemma unif.indep_iff [finite E] {I : set E}: (unif_on E r).indep I ↔ I.ncard ≤ r :=
+by rw [indep_iff_r_eq_card, unif_on_r, min_eq_right_iff]
 
-lemma unif_free_iff_card_le_r [finite E] : nat.card E ≤ r ↔ unif E r = free_on E :=
+lemma unif_on_free_iff_card_le_r [finite E] : nat.card E ≤ r ↔ unif_on E r = free_on E :=
 by rw [←univ_indep_iff_eq_free_on, unif.indep_iff, ncard_univ]
 
-@[simp] lemma unif_zero_eq_loopy (E : Type*) : unif E 0 = loopy_on E :=
-by rw [unif, tr_zero_eq_loopy]
+@[simp] lemma unif_on_zero_eq_loopy (E : Type*) : unif_on E 0 = loopy_on E :=
+by rw [unif_on, tr_zero_eq_loopy]
 
-lemma unif_base_iff [finite E] (hr : r ≤ nat.card E) : (unif E r).base B ↔ B.ncard = r :=
+lemma unif_on_base_iff [finite E] (hr : r ≤ nat.card E) : (unif_on E r).base B ↔ B.ncard = r :=
 begin
-  rw [unif_eq_tr, tr.base_iff, iff_true_intro (free_on.indep _), true_and], 
+  rw [unif_on_eq_tr, tr.base_iff, iff_true_intro (free_on.indep _), true_and], 
   rwa free_on.rk_eq, 
 end
 
-@[simp] lemma unif_circuit_iff {C : set E} : (unif E r).circuit C ↔ C.ncard = r + 1 :=
+@[simp] lemma unif_on_circuit_iff {C : set E} : (unif_on E r).circuit C ↔ C.ncard = r + 1 :=
 begin
   obtain (rfl | ⟨e, heC⟩) := C.eq_empty_or_nonempty, 
   { exact iff_of_false (empty_not_circuit _) (by { rw ncard_empty, apply ne_zero.ne' }) },
@@ -297,55 +297,56 @@ begin
   rw [ncard_diff_singleton_of_mem hf hfin, h, add_tsub_cancel_right], 
 end
 
-@[simp] lemma unif_flat_iff [finite E] {F : set E} : (unif E r).flat F ↔ F = univ ∨ F.ncard < r :=
+@[simp] lemma unif_on_flat_iff [finite E] {F : set E} : (unif_on E r).flat F ↔ F = univ ∨ F.ncard < r :=
 begin
-  simp_rw [flat_iff_forall_circuit, unif_circuit_iff],
+  simp_rw [flat_iff_forall_circuit, unif_on_circuit_iff],
   refine ⟨λ h, (lt_or_le F.ncard r).elim or.inr (λ hle, or.inl _),_⟩,
   { obtain ⟨X,hXF,rfl⟩ := exists_smaller_set F r hle,
     refine eq_univ_of_forall (λ x, (em (x ∈ X)).elim (λ h', hXF h') (λ hxF, _)),
     refine h (insert x X) x (by rw [ncard_insert_of_not_mem hxF]) (mem_insert _ _) _,
-    simp only [insert_diff_of_mem, mem_singleton, diff_singleton_subset_iff],
-    exact hXF.trans (subset_insert _ _)},
+    exact insert_subset_insert hXF },
   rintro (rfl | hlt),
   { exact λ _ _ _ _ _, mem_univ _},
-  refine λ C e hcard heC hCF, _,
-  have hlt' := (ncard_le_of_subset hCF).trans_lt hlt,
-  rw [nat.lt_iff_add_one_le, ncard_diff_singleton_add_one heC, hcard] at hlt',
-  simpa using hlt',
+  refine λ C e hcard heC hCF, by_contra (λ heF', _),
+  
+  rw [nat.lt_iff_add_one_le] at hlt, 
+  have hle := ncard_le_of_subset hCF, 
+  rw [hcard, ncard_insert_of_not_mem heF'] at hle, 
+  linarith,
 end
 
-lemma unif_dual (E : Type*) [finite E] {r₁ r₂ : ℕ} (h : r₁ + r₂ = nat.card E) :
-  (unif E r₁)﹡ = unif E r₂ :=
+lemma unif_on_dual (E : Type*) [finite E] {r₁ r₂ : ℕ} (h : r₁ + r₂ = nat.card E) :
+  (unif_on E r₁)﹡ = unif_on E r₂ :=
 begin
   ext X,
-  rw [unif_base_iff (le_of_add_le_right h.le), dual.base_iff,
-    unif_base_iff (le_of_add_le_left h.le)],
+  rw [unif_on_base_iff (le_of_add_le_right h.le), dual.base_iff,
+    unif_on_base_iff (le_of_add_le_left h.le)],
   zify at *, split;
   { intro h, linarith [ncard_add_ncard_compl X]},
 end
 
 /-- This uses `nat` subtraction, but could be a `simp` lemma, unlike the previous one. -/
-lemma unif_dual' (E : Type*) [finite E] {r : ℕ} : (unif E r)﹡ = unif E (nat.card E - r) :=
+lemma unif_on_dual' (E : Type*) [finite E] {r : ℕ} : (unif_on E r)﹡ = unif_on E (nat.card E - r) :=
 begin
   obtain (hr | hr) := le_or_lt r (nat.card E),
-  { rw [unif_dual _ (add_tsub_cancel_of_le hr)] },
-  rw [unif_free_iff_card_le_r.mp hr.le, tsub_eq_zero_of_le hr.le, unif_zero_eq_loopy, 
+  { rw [unif_on_dual _ (add_tsub_cancel_of_le hr)] },
+  rw [unif_on_free_iff_card_le_r.mp hr.le, tsub_eq_zero_of_le hr.le, unif_on_zero_eq_loopy, 
     free_on.dual],  
 end 
 
-@[simp] lemma unif_loopless (E : Type*) (ht : t ≠ 0) : (unif E t).loopless := 
-by simp_rw [loopless, unif, tr.nonloop_iff ht, free_on.nonloop, implies_true_iff]
+@[simp] lemma unif_on_loopless (E : Type*) (ht : t ≠ 0) : (unif_on E t).loopless := 
+by simp_rw [loopless, unif_on, tr.nonloop_iff ht, free_on.nonloop, implies_true_iff]
 
-lemma unif_loopless_iff (E : Type*) [nonempty E] : (unif E r).loopless ↔ r ≠ 0 :=
+lemma unif_on_loopless_iff (E : Type*) [nonempty E] : (unif_on E r).loopless ↔ r ≠ 0 :=
 begin
-  refine ⟨_, unif_loopless E⟩,
+  refine ⟨_, unif_on_loopless E⟩,
   rintro h rfl, 
-  rw [unif_zero_eq_loopy] at h, 
+  rw [unif_on_zero_eq_loopy] at h, 
   exact h (classical.arbitrary _) (loopy_on.loop _), 
 end 
 
-lemma unif_simple_iff (E : Type*) (hE : 1 < nat.card E) {r : ℕ} :
-  (unif E r).simple ↔ 1 < r :=
+lemma unif_on_simple_iff (E : Type*) (hE : 1 < nat.card E) {r : ℕ} :
+  (unif_on E r).simple ↔ 1 < r :=
 begin
   haveI : finite E, 
   { rw [←finite_univ_iff], refine finite_of_ncard_pos _, rw ncard_univ, linarith  },

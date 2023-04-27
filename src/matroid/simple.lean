@@ -1,7 +1,9 @@
 import .rank
+import ..mathlib.finsum_ncard
 
 noncomputable theory
 open_locale classical
+open_locale big_operators
 
 open set
 namespace matroid
@@ -26,6 +28,10 @@ subset_trans hXY h
 lemma loopless_on.indep_of_mem (h : M.loopless_on X) (he : e ∈ X) : M.indep {e} :=
 indep_singleton.2 $ h he
 
+def loopless.nonloop (hM : M.loopless) (e : E) : M.nonloop e := hM e
+
+lemma loopless.loops (hM : M.loopless) : M.cl ∅ = ∅ := eq_empty_iff_forall_not_mem.mpr hM
+
 /-- the property of a set containing no loops or para pairs -/
 def simple_on (M : matroid E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → ∀ ⦃f⦄, f ∈ X → M.indep {e, f}
 
@@ -48,6 +54,8 @@ end
 
 protected lemma simple.loopless (h : M.simple) : M.loopless :=
 loopless_on_univ.1 h.simple_on.loopless_on
+
+lemma simple.nonloop (h : M.simple) (e : E) : M.nonloop e := h.loopless e 
 
 lemma simple_on.indep_of_card_le_two_of_finite (h : M.simple_on X) 
 (hX : X.ncard ≤ 2) (hXfin : X.finite) :
@@ -75,28 +83,6 @@ begin
   rw [(h he hf).r] at hef,
   exact ncard_le_one_iff.mp hef.le (by simp) (by simp),
 end
-
--- lemma simple_on_iff_cl_inj_on :
---   M.simple_on X ↔ M.loopless_on X ∧ inj_on (λ e, M.cl {e}) X :=
--- begin
---   refine ⟨λ h, ⟨h.loopless_on, λ e he f hf (hef : M.cl {e} = M.cl {f}), _⟩, λ h, _⟩,
---   { have he' := singleton_subset_iff.mp ((M.subset_cl {e}).trans hef.subset),
---     rw (h.loopless_on.indep_of_mem hf).mem_cl_iff at he',
---     exact he'.elim id (λ hi, (hi (h e he f hf)).elim) },
-
---   intros e he f hf,
---   have hcl : f ∉ M.cl {e},
---   { intro hfe, },
---   rw [pair_comm],
---   exact ((h.1.nonloop_of_mem he).indep.not_mem_cl_iff.mp hcl).2,
-
---   -- have := h.1.indep_of_mem he,
---   -- have := this.not_mem_cl_iff,
---   -- rw h.2 he hf,
---   -- { rw [pair_eq_singleton, ←nonloop_iff_indep],
---   --   exact h.1.nonloop_of_mem hf },
-
--- end
 
 end simple
 
@@ -130,6 +116,30 @@ lemma para.trans (hef : M.para e f) (hfg : M.para f g) : M.para e g := ⟨hef.1,
 
 lemma loop.not_para (he : M.loop e) (f : E) : ¬ M.para e f := λ h, h.nonloop_left he 
 
+lemma para_self_iff_nonloop : M.para e e ↔ M.nonloop e := ⟨para.nonloop_left, nonloop.para_self⟩  
+
+lemma para.indep_iff_eq (hef : M.para e f) : M.indep {e,f} ↔ e = f :=
+begin
+  refine ⟨λ h, by_contra (λ hne, _), λ h, _⟩,
+  { have h' := hef.nonloop_left.indep.mem_cl_iff_of_not_mem (ne.symm hne), 
+    rw [iff_not_comm, pair_comm] at h', 
+    rw [h', hef.cl_eq_cl] at h, 
+    exact h (mem_cl_self _ _) },
+  subst h, 
+  rw [pair_eq_singleton], 
+  exact hef.nonloop_left.indep, 
+end 
+
+lemma simple.eq_of_para (h : M.simple) (hef : M.para e f) : e = f := hef.indep_iff_eq.mp (h e f)
+
+lemma simple.para_iff_eq (h : M.simple) : M.para e f ↔ e = f := 
+⟨h.eq_of_para, by { rintro rfl, exact (h.nonloop e).para_self }⟩ 
+
+/-- Being parallel is a partial equivalence relation (irreflexive on precisely the loops) -/
+instance (M : matroid E) : is_per E M.para := 
+{ symm  := λ _ _, para.symm,
+  trans :=  λ _ _ _, para.trans }
+
 /-- The set of elements parallel to `e` -/
 def pcl (M : matroid E) (e : E) := {f | M.para e f}
 
@@ -153,28 +163,78 @@ begin
     not_loop_iff, iff_true_intro hf, and_true],   
 end 
 
+lemma loopless.pcl_eq_cl (h : M.loopless) (e : E) : M.pcl e = M.cl {e} := 
+by rw [pcl_eq_cl_diff_loops, h.loops, diff_empty]
+
+lemma point_of_pcl_union_loops (he : M.nonloop e) : M.point (M.pcl e ∪ M.cl ∅) :=
+begin
+  rw [pcl_eq_cl_diff_loops, diff_union_self, point, 
+    union_eq_self_of_subset_right (M.cl_subset (empty_subset _))], 
+  refine ⟨M.flat_of_cl _, _⟩, 
+  rw [r_cl, ←ncard_singleton e, ←indep_iff_r_eq_card_of_finite (finite_singleton e)], 
+  exact he.indep, 
+end 
+
+-- lemma rank_one_flat_iff {F : set E} (hF : M.flat F) (hr : M.r F = 1) : 
+
 lemma para.pcl_eq_pcl (h : M.para e f) : M.pcl e = M.pcl f :=
 begin
   simp_rw [set.ext_iff, mem_pcl_iff], 
   exact λ x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩, 
 end 
 
--- lemma pcl_pairwise_disjoint (M : matroid E) : pairwise_disjoint (range pcl) id := 
+lemma nonloop.para_iff_pcl_eq_pcl (he : M.nonloop e) : M.para e f ↔ M.pcl e = M.pcl f :=
+⟨para.pcl_eq_pcl, λ h, para.symm (h.subset (he.mem_pcl_self))⟩
 
+lemma simple.pcl_eq_singleton (h : M.simple) (e : E) : M.pcl e = {e} :=
+eq_singleton_iff_unique_mem.mpr 
+  ⟨(h.nonloop e).mem_pcl_self, λ f hf, h.eq_of_para (mem_pcl_iff.mpr hf)⟩
 
--- lemma nonloop.pcl_eq_pcl_iff (he : M.nonloop e) : M.pcl e = M.pcl f ↔ M.para e f := 
--- begin
---   refine ⟨λ h, he.para_of_nonloop_mem_cl _ _, para.pcl_eq_pcl⟩, 
---   -- simp_rw [set.ext_iff, mem_pcl_iff], 
---   -- exact ⟨λ h, by { rw ←h, exact he.para_self }, 
---   --   λ h x, ⟨λ hxe, hxe.trans h, λ hxf, hxf.trans h.symm⟩⟩,  
--- end 
+lemma pcl_pairwise_disjoint (M : matroid E) : pairwise_disjoint (range M.pcl) id := 
+begin
+  rw [pairwise_disjoint, set.pairwise], 
+  simp only [mem_range, ne.def, function.on_fun_apply, id.def, 
+    forall_exists_index, forall_apply_eq_imp_iff', disjoint_iff_forall_ne, mem_pcl_iff], 
+  rintro e f hef x hex _ hey rfl, 
+  rw ←hex.nonloop_right.para_iff_pcl_eq_pcl at hef, 
+  exact hef (hex.symm.trans hey), 
+end 
 
--- lemma para_iff :
---   M.para
+lemma sum_ncard_point_diff_loops [finite E] (M : matroid E) : 
+  ∑ᶠ (P ∈ {P | M.point P}), (P \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
+begin
+  convert (@ncard_eq_finsum_fiber _ _ {e | M.nonloop e} (to_finite _) (λ e, M.cl {e})).symm, 
+  ext P,
+  rw [finsum_eq_if], 
+  split_ifs, 
+  { rw mem_set_of at h, 
+    congr, ext e,
+    simp only [mem_inter_iff, mem_set_of_eq, mem_preimage, mem_singleton_iff, 
+      h.cl_singleton_preimage_eq, mem_diff, iff_and_self, and_imp], 
+    exact λ h, id },
+  rw [eq_comm, ncard_eq_zero], 
+  ext e, 
+  simp only [mem_inter_iff, mem_set_of_eq, mem_preimage, mem_singleton_iff, mem_empty_iff_false, 
+    iff_false, not_and], 
+  rintro he rfl, 
+  exact h he.cl_point,  
+end 
+
+lemma loopless.sum_ncard_point [finite E] (h : M.loopless) : 
+  ∑ᶠ (P ∈ {P | M.point P}), P.ncard = (univ : set E).ncard :=
+begin
+  convert sum_ncard_point_diff_loops M,
+  ext, 
+  { rw [finsum_congr], 
+    simp_rw [h.loops, diff_empty],
+    exact λ h, rfl }, 
+  rw [h.loops, compl_empty], 
+end 
 
 
 end parallel
+
+
 
 end matroid
 

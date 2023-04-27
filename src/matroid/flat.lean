@@ -1,4 +1,4 @@
-import .circuit 
+import .circuit
 import mathlib.data.set.basic 
 
 noncomputable theory
@@ -125,6 +125,10 @@ begin
   { exact (((ssubset_insert he).trans_subset (M.subset_cl _)).ne.symm h').elim},
   refl,
 end
+
+lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = F ↔ M.basis I F := 
+⟨by { rintro rfl, exact hI.basis_cl }, λ h, by rw [h.cl, hF.cl]⟩
+
 
 /- ### Hyperplanes -/
 
