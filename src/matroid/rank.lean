@@ -16,7 +16,7 @@ open set
 
 namespace matroid
 
-variables {E : Type*} {M : matroid E}  {B X Y X' Y' Z I J : set E} {e f x y z : E}
+variables {E : Type*} {M : matroid E}  {B X Y X' Y' Z I J : set E} {e f x y z : E} {k : ℕ}
 
 section basic 
 /-- The rank `r X` of a set `X` is the cardinality of one of its bases, or zero if its bases are 
@@ -44,6 +44,13 @@ begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   rw [←hI.card, infinite.ncard (h _ hI)], 
 end
+
+lemma r_fin_of_r_ne_zero (h : M.r X ≠ 0) : M.r_fin X := 
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  rw [←hI.card] at h, 
+  exact hI.r_fin_of_finite (finite_of_ncard_ne_zero h),  
+end 
 
 lemma eq_r_iff {n : ℕ} : M.r X = n ↔ ∃ I, M.basis I X ∧ I.ncard = n :=
 begin
@@ -669,24 +676,35 @@ end
 lemma hyperplane_iff_flat_r_add_one_eq_r [finite_rk M]: M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
 ⟨λ h, ⟨h.flat, h.r_add_one⟩, λ h, h.1.hyperplane_of_r_add_one_eq_rk h.2⟩
 
+def flat_of_r (M : matroid E) (k : ℕ) (F : set E) := M.flat F ∧ M.r F = k ∧ M.r_fin F  
+
+lemma flat_of_r.flat (h : M.flat_of_r k F) : M.flat F := h.1 
+
+lemma flat_of_r.r (h : M.flat_of_r k F) : M.r F = k := h.2.1 
+
+lemma flat_of_r.r_fin (h : M.flat_of_r k F) : M.r_fin F := h.2.2 
+
+lemma flat.flat_of_r_of_ne_zero (hF : M.flat F) (hk : M.r F ≠ 0) : M.flat_of_r (M.r F) F :=
+⟨hF, rfl, r_fin_of_r_ne_zero hk⟩  
+
+lemma flat.flat_of_r_of_ne_zero' (hF : M.flat F) (hr : M.r F = k) (hk : k ≠ 0) : 
+  M.flat_of_r (M.r F) F :=
+hF.flat_of_r_of_ne_zero (by { subst hr, assumption } )   
+
 /-- A `point` is a rank-one flat -/
-@[reducible] def point (M : matroid E) (P : set E) := M.flat P ∧ M.r P = 1 
+def point (M : matroid E) (P : set E) := M.flat_of_r 1 P 
 
 /-- A `line` is a rank-two flat -/
-@[reducible] def line (M : matroid E) (L : set E) := M.flat L ∧ M.r L = 2 
+def line (M : matroid E) (L : set E) := M.flat_of_r 2 L
 
 /-- A `plane` is a rank-three flat -/
-@[reducible] def plane (M : matroid E) (P : set E) := M.flat P ∧ M.r P = 3 
-
-lemma point.flat (h : M.point P) : M.flat P := h.1
-lemma point.r (h : M.point P) : M.r P = 1 := h.2 
-lemma line.flat (h : M.line L) : M.flat L := h.1 
-lemma line.r (h : M.line L) : M.r L = 2 := h.2 
-lemma plane.flat (h : M.plane P) : M.flat P := h.1
-lemma plane.r (h : M.plane P) : M.r P = 3 := h.2 
+def plane (M : matroid E) (P : set E) := M.flat_of_r 3 P
 
 lemma nonloop.cl_point (he : M.nonloop e) : M.point (M.cl {e}) := 
-⟨M.flat_of_cl _, by rw [r_cl, he.indep.r, ncard_singleton]⟩
+begin
+  rw [point, ←ncard_singleton e, ←he.indep.r, ←r_cl ],
+  exact (M.flat_of_cl _).flat_of_r_of_ne_zero (by { rw [r_cl, he.indep.r], simp }), 
+end
 
 /-- The set of elements that span a point are precisely its nonloop members -/
 lemma point.cl_singleton_preimage_eq (h : M.point P) : (λ e, M.cl {e}) ⁻¹' {P} = P \ M.cl ∅ :=  

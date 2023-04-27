@@ -210,6 +210,15 @@ begin
   exact he.1 heI, 
 end 
 
+lemma r_fin.to_cl (h : M.r_fin X) : M.r_fin (M.cl X) := 
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  rwa [←hI.cl, hI.indep.basis_cl.r_fin_iff_finite, ←hI.r_fin_iff_finite],     
+end 
+
+@[simp] lemma r_fin_cl_iff : M.r_fin (M.cl X) ↔ M.r_fin X := 
+⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩   
+
 lemma cl_eq_set_of_indep_not_indep (M : matroid E) (X : set E) : 
   M.cl X = X ∪ {e | ∃ I ⊆ X, M.indep I ∧ ¬M.indep (insert e I)} := 
 begin

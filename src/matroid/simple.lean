@@ -168,14 +168,10 @@ by rw [pcl_eq_cl_diff_loops, h.loops, diff_empty]
 
 lemma point_of_pcl_union_loops (he : M.nonloop e) : M.point (M.pcl e ∪ M.cl ∅) :=
 begin
-  rw [pcl_eq_cl_diff_loops, diff_union_self, point, 
+  rw [pcl_eq_cl_diff_loops, diff_union_self, 
     union_eq_self_of_subset_right (M.cl_subset (empty_subset _))], 
-  refine ⟨M.flat_of_cl _, _⟩, 
-  rw [r_cl, ←ncard_singleton e, ←indep_iff_r_eq_card_of_finite (finite_singleton e)], 
-  exact he.indep, 
+  exact he.cl_point, 
 end 
-
--- lemma rank_one_flat_iff {F : set E} (hF : M.flat F) (hr : M.r F = 1) : 
 
 lemma para.pcl_eq_pcl (h : M.para e f) : M.pcl e = M.pcl f :=
 begin
@@ -219,6 +215,15 @@ begin
   rintro he rfl, 
   exact h he.cl_point,  
 end 
+
+lemma sum_ncard_point_diff_loops' [finite E] (M : matroid E) : 
+  ∑ᶠ (P : {P | M.point P}), ((P : set E) \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
+begin
+  rw ←sum_ncard_point_diff_loops, 
+  simp only [mem_set_of_eq],  
+  exact @finsum_set_coe_eq_finsum_mem _ _ _ (λ P, (P \ M.cl ∅).ncard) {P | M.point P}, 
+end 
+
 
 lemma loopless.sum_ncard_point [finite E] (h : M.loopless) : 
   ∑ᶠ (P ∈ {P | M.point P}), P.ncard = (univ : set E).ncard :=

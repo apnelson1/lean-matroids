@@ -958,6 +958,14 @@ by { obtain ⟨J, hJ, hJfin⟩ := hX, exact hJ.finite_of_finite hJfin h }
 
 lemma basis.r_fin_of_finite (hIX : M.basis I X) (h : I.finite) : M.r_fin X := ⟨I, hIX, h⟩ 
 
+lemma basis.r_fin_iff_finite (hIX : M.basis I X) : M.r_fin X ↔ I.finite := 
+⟨hIX.finite_of_r_fin, hIX.r_fin_of_finite⟩
+
+lemma r_fin_of_finite (M : matroid E) (hX : X.finite) : M.r_fin X := 
+exists.elim (M.exists_basis X) (λ I hI, hI.r_fin_of_finite (hX.subset hI.subset))
+
+@[simp] lemma r_fin.empty (M : matroid E) : M.r_fin ∅ := M.r_fin_of_finite finite_empty
+
 lemma r_fin.subset (h : M.r_fin Y) (hXY : X ⊆ Y) : M.r_fin X := 
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
