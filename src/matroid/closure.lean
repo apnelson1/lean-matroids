@@ -217,7 +217,17 @@ begin
 end 
 
 @[simp] lemma r_fin_cl_iff : M.r_fin (M.cl X) ↔ M.r_fin X := 
-⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩   
+⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩
+
+
+lemma r_fin.union (hX : M.r_fin X) (hY : M.r_fin Y) : M.r_fin (X ∪ Y) :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
+  rw [←r_fin_cl_iff, ←cl_union_cl_left_eq_cl_union, ←hI.cl, cl_union_cl_left_eq_cl_union, 
+    ←cl_union_cl_right_eq_cl_union, ←hJ.cl, cl_union_cl_right_eq_cl_union, r_fin_cl_iff], 
+  exact M.r_fin_of_finite ((hI.finite_of_r_fin hX).union (hJ.finite_of_r_fin hY)), 
+end 
 
 lemma cl_eq_set_of_indep_not_indep (M : matroid E) (X : set E) : 
   M.cl X = X ∪ {e | ∃ I ⊆ X, M.indep I ∧ ¬M.indep (insert e I)} := 

@@ -244,9 +244,41 @@ by rw [contract_cl, empty_union]
 @[simp] lemma delete_r_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).r X = M.r (X \ D) :=
 by rw [r_eq_coe_r, r_eq_coe_r, delete_coe, loopify.r_eq]
 
-@[simp] lemma contract_r_cast_eq (M : matroid_in α) [M.finite_rk] (C X : set α) : 
+lemma r_fin.contract (h : M.r_fin X) (C : set α) : (M ⟋ C).r_fin (X \ C) := 
+begin
+  refine ⟨(h.to_coe.project C).subset (diff_subset _ _), _⟩,  
+  rw [diff_subset_iff, contract_ground, union_diff_self], 
+  exact subset_union_of_subset_right h.subset_ground _, 
+end 
+
+lemma r_fin.of_contract (h : (M ⟋ C).r_fin X) (hC : M.r_fin C) : M.r_fin X :=
+⟨r_fin.of_project (by simpa using h.to_coe) hC.to_coe, h.subset_ground.trans (diff_subset _ _)⟩
+
+lemma r_fin.r_fin_contract_iff (hC : M.r_fin C) :
+  (M ⟋ C).r_fin X ↔ M.r_fin X ∧ disjoint X C := 
+begin
+  split, 
+  exact λ h, ⟨h.of_contract hC,disjoint_of_subset_left h.subset_ground disjoint_sdiff_left⟩,
+  rintro ⟨hX, hXC⟩,  
+  convert hX.contract C, 
+  rwa [eq_comm, sdiff_eq_left],
+end 
+
+lemma r_fin.contract_r_cast_eq (h : M.r_fin X) (hC : M.r_fin C) : 
+  ((M ⟋ C).r X : ℤ) = M.r (X ∪ C) - M.r C :=
+h.to_coe.project_cast_r_eq hC.to_coe
+
+lemma r_fin.contract_r_add_r_eq (h : M.r_fin X) (hC : M.r_fin C) : 
+  (M ⟋ C).r X + M.r C = M.r (X ∪ C) :=
+by { zify, simp [h.contract_r_cast_eq hC] }
+
+@[simp] lemma contract_r_cast_eq (M : matroid_in α) [M.finite_rk] (X C : set α) : 
   ((M ⟋ C).r X : ℤ)  = M.r (X ∪ C) - M.r C := 
-by rw [r_eq_coe_r, contract_coe, project.cast_r, r_eq_coe_r, r_eq_coe_r]
+by rw [r_eq_coe_r, contract_coe, project_cast_r_eq, r_eq_coe_r, r_eq_coe_r]
+
+@[simp] lemma contract_r_add_r_eq (M : matroid_in α) [M.finite_rk] (X C : set α) : 
+  (M ⟋ C).r X + M.r C = M.r (X ∪ C) :=
+by { zify, simp [contract_r_cast_eq] }
 
 @[simp] lemma contract_dual (M : matroid_in α) (X : set α) : (M ⟋ X)﹡ = M﹡ ⟍ X :=
 begin
@@ -603,5 +635,45 @@ begin
 end
 
 end minor
+
+section flat
+
+variables {M : matroid_in α} {X Y F C : set α} {e : α} {k : ℕ}
+
+lemma flat_contract_iff (hC : C ⊆ M.E) : (M ⟋ C).flat F ↔ M.flat (F ∪ C) ∧ disjoint F C :=
+begin
+  rw [flat_iff_cl_self, contract_cl, flat_iff_cl_self], 
+  refine ⟨λ h, ⟨_,_⟩, λ h, _⟩,
+  { nth_rewrite 1 ← h, 
+    rw [diff_union_self, @union_eq_self_of_subset_right _ (M.cl _)],
+    exact (subset_cl hC).trans (M.cl_subset (subset_union_right _ _)) },
+  { rw ←h, exact disjoint_sdiff_left },
+  rw [h.1, union_diff_right, sdiff_eq_left],
+  exact h.2,  
+end 
+
+lemma r_fin.flat_of_r_contract_iff (hC : M.r_fin C) : 
+  (M ⟋ C).flat_of_r k F ↔ M.flat_of_r (k + M.r C) (F ∪ C) ∧ disjoint F C :=
+begin
+  simp_rw [flat_of_r_iff, flat_contract_iff hC.subset_ground, and_assoc, and.congr_right_iff, 
+    and_comm (disjoint _ _), ←and_assoc, and.congr_left_iff, hC.r_fin_contract_iff, 
+    r_fin_union_iff, and_iff_left hC, and_comm (M.r_fin F), ←and_assoc, and.congr_left_iff],  
+  refine λ hFC hdj hFC, _,
+  zify, 
+  rw [and_iff_left hdj, hFC.contract_r_cast_eq hC], 
+  exact ⟨λ h, by rw [←h, sub_add_cancel], λ h, by rw [h, add_sub_cancel]⟩,
+end 
+
+lemma flat_of_r_contract_iff [finite_rk M] (hC : C ⊆ M.E): 
+  (M ⟋ C).flat_of_r k F ↔ M.flat_of_r (k + M.r C) (F ∪ C) ∧ disjoint F C :=
+r_fin.flat_of_r_contract_iff (to_r_fin hC)
+
+lemma nonloop.point_of_contract_iff {P : set α} (he : M.nonloop e) : 
+  (M ⟋ e).point P ↔ M.line (insert e P) ∧ e ∉ P :=
+by rw [contract_elem, point, (r_fin_singleton he.mem_ground).flat_of_r_contract_iff, 
+    union_singleton, he.r, one_add_one_eq_two, ←line, disjoint_singleton_right]
+
+
+end flat
 
 end matroid_in 

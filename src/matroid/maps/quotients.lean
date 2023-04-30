@@ -1,4 +1,4 @@
-import .rank
+import ..rank
 import tactic.tfae
 
 open_locale classical
@@ -53,6 +53,13 @@ lemma circuit.supset_circuit_of_weak_image (hC : M.circuit C) (h : N ≤w M) :
   ∃ C' ⊆ C, N.circuit C' :=
 weak_image_iff_circuit.mp h _ hC 
 
+lemma r_fin.weak_image (hX : M.r_fin X) (h : N ≤w M) : N.r_fin X := 
+begin
+  obtain ⟨I, hI⟩ := N.exists_basis X, 
+  obtain ⟨J, hIJ, hJ⟩ := (hI.indep.weak_image h).subset_basis_of_subset hI.subset, 
+  exact hI.r_fin_of_finite ((hJ.finite_of_r_fin hX).subset hIJ),  
+end 
+
 lemma weak_image_tfae [finite_rk N] [finite_rk M] :
   tfae
 [ N ≤w M,
@@ -78,11 +85,10 @@ not_nonloop_iff.mp (λ hnl, h.dep he.dep hnl.indep)
 lemma nonloop_of_weak_image_nonloop (h : N ≤w M) {e : E} (he : ¬ N.loop e) : ¬ M.loop e :=
 λ he', he (he'.weak_image h)
 
-lemma weak_image.trans {M₀ M₁ M₂ : matroid E} (h₀₁ : M₀ ≤w M₁) (h₁₂ : M₁ ≤w M₂) : M₀ ≤w M₂ :=
-λ I hI, h₁₂ I (h₀₁ I hI)
-
-lemma weak_image.antisymm (h : M ≤w N) (h' : N ≤w M) : M = N :=
-eq_of_indep_iff_indep_forall (λ I, ⟨λ hI, h I hI, λ hI, h' I hI⟩)
+instance (E : Type*) : is_partial_order (matroid E) (≤w) := 
+{ refl := λ I hI, id,
+  trans := λ M₀ M₁ M₂ h h' I hI, h' I (h I hI),
+  antisymm := λ M M' h h', eq_of_indep_iff_indep_forall (λ I, ⟨λ hI, h I hI, λ hI, h' I hI⟩)}
 
 end weak_image
 

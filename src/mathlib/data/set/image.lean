@@ -25,3 +25,6 @@ begin
   rintro ⟨a, rfl, rfl⟩, 
   rw image_singleton,  
 end  
+
+@[simp] lemma subtype.preimage_image_coe (s : set α) (t : set s) : 
+  (coe ⁻¹' (coe '' t : set α) : set s) = t := preimage_image_eq t subtype.coe_injective

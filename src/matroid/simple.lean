@@ -130,10 +130,28 @@ begin
   exact hef.nonloop_left.indep, 
 end 
 
+lemma nonloop.para_iff_dep_of_ne (he : M.nonloop e) (hf : M.nonloop f) (hef : e ≠ f) :
+  M.para e f ↔ ¬M.indep {e,f} :=
+begin
+  refine ⟨λ h h', hef (h.indep_iff_eq.mp h'), λ h, he.para_of_nonloop_mem_cl hf _⟩,
+  rw [he.indep.mem_cl_iff, pair_comm], 
+  exact false.elim ∘ h,   
+end  
+
 lemma simple.eq_of_para (h : M.simple) (hef : M.para e f) : e = f := hef.indep_iff_eq.mp (h e f)
 
 lemma simple.para_iff_eq (h : M.simple) : M.para e f ↔ e = f := 
 ⟨h.eq_of_para, by { rintro rfl, exact (h.nonloop e).para_self }⟩ 
+
+lemma simple_iff_para_iff_eq_forall : M.simple ↔ ∀ e f, (M.para e f ↔ e = f) :=
+begin
+  refine ⟨λ h e f, h.para_iff_eq, λ h e f, _⟩,
+  have he : M.nonloop e, from λ hl, mt (h e e).mpr (hl.not_para _) rfl , 
+  have hf : M.nonloop f, from λ hl, mt (h f f).mpr (hl.not_para _) rfl , 
+  obtain (rfl | hef) :=  eq_or_ne e f, 
+  { rwa [pair_eq_singleton, indep_singleton] },
+  exact not_not.mp (by rwa [←he.para_iff_dep_of_ne hf hef, h]),  
+end 
 
 /-- Being parallel is a partial equivalence relation (irreflexive on precisely the loops) -/
 instance (M : matroid E) : is_per E M.para := 
@@ -186,6 +204,26 @@ lemma simple.pcl_eq_singleton (h : M.simple) (e : E) : M.pcl e = {e} :=
 eq_singleton_iff_unique_mem.mpr 
   ⟨(h.nonloop e).mem_pcl_self, λ f hf, h.eq_of_para (mem_pcl_iff.mpr hf)⟩
 
+lemma simple.cl_eq_singleton (h : M.simple) (e : E) : M.cl {e} = {e} :=
+by rw [←h.pcl_eq_singleton, pcl_eq_cl_diff_loops, h.loopless.loops, diff_empty, cl_cl]
+
+lemma simple_iff_forall_pcl_eq_self : M.simple ↔ ∀ e, M.pcl e = {e} :=
+begin
+  refine ⟨simple.pcl_eq_singleton, λ h, simple_iff_para_iff_eq_forall.mpr (λ e f, _)⟩,   
+  rw [nonloop.para_iff_pcl_eq_pcl, h, h, singleton_eq_singleton_iff], 
+  refine λ hl, _, 
+  have h' := hl.pcl_eq_empty, 
+  rw h e at h', 
+  exact singleton_ne_empty _ h', 
+end 
+
+noncomputable def simple.elem_point_equiv (h : M.simple) : E ≃ {P // M.point P} := 
+{ to_fun := λ e, 
+    ⟨M.pcl e, by { rw [h.pcl_eq_singleton, ←h.cl_eq_singleton], exact (h.nonloop e).cl_point }⟩,
+  inv_fun := λ P, let ⟨P, h⟩ := P in (by {   }),
+  left_inv := _,
+  right_inv := _ }
+
 lemma pcl_pairwise_disjoint (M : matroid E) : pairwise_disjoint (range M.pcl) id := 
 begin
   rw [pairwise_disjoint, set.pairwise], 
@@ -197,9 +235,11 @@ begin
 end 
 
 lemma sum_ncard_point_diff_loops [finite E] (M : matroid E) : 
-  ∑ᶠ (P ∈ {P | M.point P}), (P \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
+  ∑ᶠ (P : {P | M.point P}), ((P : set E) \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
 begin
-  convert (@ncard_eq_finsum_fiber _ _ {e | M.nonloop e} (to_finite _) (λ e, M.cl {e})).symm, 
+  convert @finsum_set_coe_eq_finsum_mem _ _ _ (λ P, (P \ M.cl ∅).ncard) _, 
+  convert (@ncard_eq_finsum_fiber _ _ {e | M.nonloop e} (to_finite _) (λ e, M.cl {e})),
+
   ext P,
   rw [finsum_eq_if], 
   split_ifs, 
@@ -216,29 +256,27 @@ begin
   exact h he.cl_point,  
 end 
 
-lemma sum_ncard_point_diff_loops' [finite E] (M : matroid E) : 
-  ∑ᶠ (P : {P | M.point P}), ((P : set E) \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
-begin
-  rw ←sum_ncard_point_diff_loops, 
-  simp only [mem_set_of_eq],  
-  exact @finsum_set_coe_eq_finsum_mem _ _ _ (λ P, (P \ M.cl ∅).ncard) {P | M.point P}, 
-end 
-
-
 lemma loopless.sum_ncard_point [finite E] (h : M.loopless) : 
-  ∑ᶠ (P ∈ {P | M.point P}), P.ncard = (univ : set E).ncard :=
+  ∑ᶠ (P : {P // M.point P}), (P : set E).ncard = (univ : set E).ncard :=
 begin
-  convert sum_ncard_point_diff_loops M,
-  ext, 
-  { rw [finsum_congr], 
-    simp_rw [h.loops, diff_empty],
-    exact λ h, rfl }, 
-  rw [h.loops, compl_empty], 
+  rw [←@diff_empty _ univ, ←h.loops, ←compl_eq_univ_diff, ←sum_ncard_point_diff_loops], 
+  apply finsum_congr (λ P, _), 
+  rw [h.loops, diff_empty], 
 end 
-
 
 end parallel
 
+section point_count
+
+def num_points (M : matroid E) := nat.card {P // M.point P}
+
+lemma simple_iff_num_points_eq_card [finite E] : M.simple ↔ M.num_points = ncard (univ : set E) := 
+begin
+  simp_rw [simple_iff_forall_pcl_eq_self, pcl_eq_cl_diff_loops],  
+
+end 
+
+end point_count
 
 
 end matroid
