@@ -16,7 +16,7 @@ lemma flat_def : M.flat F ↔ ∀ I X, M.basis I F → M.basis I X → X ⊆ F :
 lemma flat.Inter {ι : Type*} (F : ι → set E) (hF : ∀ i, M.flat (F i)) : M.flat (⋂ i, F i) :=
 begin
   refine λ I X hI hIX, subset_Inter (λ i, _), 
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset 
+  obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset 
     (hI.subset.trans (Inter_subset _ _ ) : I ⊆ F i), 
   refine (union_subset_iff.mp (@hF i _ (F i ∪ X) hIJ _)).2, 
   rw [←union_eq_left_iff_subset.mpr hIJ.subset, union_assoc], 

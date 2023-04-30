@@ -107,7 +107,7 @@ begin
   refine ⟨sInter_subset_of_mem ⟨hF, hIF.subset⟩, _⟩, 
 
   rintro F' ⟨hF',hIF'⟩ e (he : M.basis I (insert e I)), 
-  obtain ⟨J, hIJ, hJ⟩ := hI.subset_basis_of_subset hIF', 
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF', 
   exact (hF' hJ (he.basis_union_of_subset hJ.indep hIJ)) (or.inr (mem_insert _ _)), 
 end
 
@@ -208,25 +208,6 @@ begin
   refine hI.basis_of_forall_insert (M.subset_cl _) (λ e he heI, he.2 _), 
   rw [mem_diff, hI.mem_cl_iff] at he, 
   exact he.1 heI, 
-end 
-
-lemma r_fin.to_cl (h : M.r_fin X) : M.r_fin (M.cl X) := 
-begin
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
-  rwa [←hI.cl, hI.indep.basis_cl.r_fin_iff_finite, ←hI.r_fin_iff_finite],     
-end 
-
-@[simp] lemma r_fin_cl_iff : M.r_fin (M.cl X) ↔ M.r_fin X := 
-⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩
-
-
-lemma r_fin.union (hX : M.r_fin X) (hY : M.r_fin Y) : M.r_fin (X ∪ Y) :=
-begin
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
-  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
-  rw [←r_fin_cl_iff, ←cl_union_cl_left_eq_cl_union, ←hI.cl, cl_union_cl_left_eq_cl_union, 
-    ←cl_union_cl_right_eq_cl_union, ←hJ.cl, cl_union_cl_right_eq_cl_union, r_fin_cl_iff], 
-  exact M.r_fin_of_finite ((hI.finite_of_r_fin hX).union (hJ.finite_of_r_fin hY)), 
 end 
 
 lemma cl_eq_set_of_indep_not_indep (M : matroid E) (X : set E) : 
