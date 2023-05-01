@@ -442,6 +442,7 @@ section restriction
 
 variables {M₀ M : matroid_in α}
 
+/-- M₀ is a `restriction` of `M` if `M₀ = M ‖ M₀.E`. We write `M₀ ≤r M`. -/
 def restriction (M₀ M : matroid_in α) := M₀ = M ‖ M₀.E  
 
 infix ` ≤r ` :50 := restriction
@@ -453,13 +454,19 @@ by { rw [h.left_eq, restrict_ground], apply inter_subset_left }
 
 @[simp] lemma restriction.refl (M : matroid_in α) : M ≤r M := by simp [restriction]
 
-lemma restriction.trans {M₀ M₁ M₂ : matroid_in α} (h₀ : M₀ ≤r M₁) (h₁ : M₁ ≤r M₂) : M₀ ≤r M₂ :=
+lemma restriction.trans ⦃M₀ M₁ M₂ : matroid_in α⦄ (h₀ : M₀ ≤r M₁) (h₁ : M₁ ≤r M₂) : M₀ ≤r M₂ :=
 by rw [h₀.left_eq, h₁.left_eq, restrict_restrict, restriction, restrict_ground, 
     inter_eq_self_of_subset_right ((inter_subset_left _ _).trans h₁.subset)]
     
-lemma restriction.antisymm {M₁ M₂ : matroid_in α} (h₁ : M₁ ≤r M₂) (h₂ : M₂ ≤r M₁) : M₁ = M₂ :=
+lemma restriction.antisymm ⦃M₁ M₂ : matroid_in α⦄ (h₁ : M₁ ≤r M₂) (h₂ : M₂ ≤r M₁) : M₁ = M₂ :=
 by rw [h₁.left_eq, h₂.left_eq, restrict_restrict_of_subset _ h₁.subset, 
     h₁.subset.antisymm h₂.subset]
+
+/-- `≤r` is a partial order on `matroid_in α` -/
+instance {α : Type*} : is_partial_order (matroid_in α) (≤r) := 
+{ refl := restriction.refl,
+  trans := restriction.trans,
+  antisymm := restriction.antisymm }
 
 @[simp] lemma restrict_restriction (M : matroid_in α) (R : set α) : M ‖ R ≤r M :=  
 by rw [restriction, restrict_ground, restrict_eq_restrict_inter_ground, inter_comm]

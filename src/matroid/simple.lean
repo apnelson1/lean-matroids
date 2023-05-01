@@ -41,7 +41,7 @@ def simple_on (M : matroid E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → ∀
 /-- the property of a matroid having no loops or para pairs -/
 def simple (M : matroid E) : Prop := ∀ e f, M.indep {e, f}
 
-protected lemma simple.simple_on (hM : M.simple) : M.simple_on X := λ e _ f _, hM e f
+protected lemma simple.simple_on (hM : M.simple) (X : set E) : M.simple_on X := λ e _ f _, hM e f
 
 @[simp] lemma simple_on_univ : M.simple_on univ ↔ M.simple := by simp [simple_on, simple]
 
@@ -56,7 +56,7 @@ begin
 end
 
 protected lemma simple.loopless (h : M.simple) : M.loopless :=
-loopless_on_univ.1 h.simple_on.loopless_on
+loopless_on_univ.1 (h.simple_on _).loopless_on
 
 lemma simple.nonloop (h : M.simple) (e : E) : M.nonloop e := h.loopless e 
 
@@ -86,6 +86,25 @@ begin
   rw [(h he hf).r] at hef,
   exact ncard_le_one_iff.mp hef.le (by simp) (by simp),
 end
+
+lemma loopless_iff_forall_circuit : M.loopless ↔ ∀ C, M.circuit C → C.finite → 1 < C.ncard :=
+begin
+  refine ⟨λ hM C hC hCfin, lt_of_not_le (λ hle, _), λ h e he, _⟩,
+  { obtain (rfl | ⟨a,rfl⟩) := (ncard_le_one_iff_eq hCfin).mp hle, 
+    { simpa using hC.nonempty },
+    exact hM a (loop_iff_circuit.mpr hC) },
+  exact (h _ he.circuit (finite_singleton e)).ne ((ncard_singleton e).symm), 
+end 
+
+lemma simple_iff_forall_circuit : M.simple ↔ ∀ C, M.circuit C → C.finite → 2 < C.ncard := 
+begin
+  refine ⟨λ h C hC hCfin, lt_of_not_le (λ hle, hC.dep _), λ h e f, by_contra (λ hd, _)⟩,
+  { exact (h.simple_on C).indep_of_card_le_two_of_finite hle hCfin },
+  obtain ⟨C, hCef, hC⟩ := dep_iff_supset_circuit.mp hd, 
+  have con := (h C hC ((to_finite _).subset hCef)).trans_le (ncard_le_of_subset hCef), 
+  have con' := con.trans_le (ncard_insert_le _ _), 
+  simpa [ncard_singleton] using con', 
+end 
 
 end simple
 

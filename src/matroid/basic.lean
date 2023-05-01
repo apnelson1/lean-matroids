@@ -966,7 +966,7 @@ begin
 end 
 
 /-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`,
-  there is an element `e` of `J \ I` whose insertion into `e` is an independent set.  -/
+  there is an element `e` of `J \ I` whose insertion into `e` gives an independent set.  -/
 lemma indep.augment [finite_rk M] (hI : M.indep I) (hJ : M.indep J) (hIJ : I.ncard < J.ncard) :
   ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
 hI.augment_of_finite hJ hI.finite hIJ

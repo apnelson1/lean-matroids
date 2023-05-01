@@ -47,7 +47,6 @@ variables {α β : Type*} {s t : set α} {a b x y : α} {f : α → β}
 
 namespace set
 
-
 /-- The cardinality of `s : set α` . Has the junk value `0` if `s` is infinite -/
 noncomputable def ncard (s : set α) := nat.card s
 
@@ -661,6 +660,19 @@ by simp_rw [ncard_eq_to_finset_card _ hs, finset.card_le_one, finite.mem_to_fins
 lemma ncard_le_one_iff (hs : s.finite . to_finite_tac) :
   s.ncard ≤ 1 ↔ ∀ {a b}, a ∈ s → b ∈ s → a = b :=
 by { rw ncard_le_one hs, tauto}
+
+lemma ncard_le_one_iff_eq (hs : s.finite . to_finite_tac) :
+  s.ncard ≤ 1 ↔ s = ∅ ∨ ∃ a, s = {a} :=
+begin
+  obtain (rfl | ⟨x,hx⟩) := s.eq_empty_or_nonempty, 
+  { exact iff_of_true (by simp) (or.inl rfl), },
+  rw [ncard_le_one_iff hs], 
+  refine ⟨λ h, or.inr ⟨x,(singleton_subset_iff.mpr hx).antisymm' (λ y hy, h hy hx)⟩, _⟩,
+  rintro (rfl | ⟨a,rfl⟩), 
+  { exact (not_mem_empty _ hx).elim },
+  simp_rw mem_singleton_iff at hx ⊢, subst hx, 
+  exact λ a b h h', h.trans h'.symm,   
+end 
 
 lemma ncard_le_one_iff_subset_singleton [nonempty α] (hs : s.finite . to_finite_tac) :
   s.ncard ≤ 1 ↔ ∃ (x : α), s ⊆ {x} :=

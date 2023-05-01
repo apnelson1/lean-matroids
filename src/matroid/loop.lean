@@ -40,7 +40,6 @@ by simp_rw [loop_iff_dep, indep_iff_subset_base, not_exists, not_and, singleton_
 
 lemma loop.circuit (he : M.loop e) : M.circuit {e} := loop_iff_circuit.mp he 
 
-
 lemma loop.dep (he : M.loop e) : ¬ M.indep {e} := loop_iff_dep.mp he 
 
 lemma loop.mem_cl (he : M.loop e) (X : set E) : e ∈ M.cl X :=
@@ -48,6 +47,8 @@ M.cl_mono (empty_subset _) he
 
 lemma loop.mem_flat (he : M.loop e) {F : set E} (hF : M.flat F) : e ∈ F :=
 by { have := he.mem_cl F, rwa hF.cl at this }
+
+lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
 
 lemma loop.dep_of_mem (he : M.loop e) (h : e ∈ X) : ¬M.indep X :=
 λ hX, he.circuit.dep (hX.subset (singleton_subset_iff.mpr h))
