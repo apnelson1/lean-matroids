@@ -124,6 +124,9 @@ lemma basis.r_fin_of_finite (hIX : M.basis I X) (h : I.finite) : M.r_fin X := �
 lemma basis.r_fin_iff_finite (hIX : M.basis I X) : M.r_fin X ↔ I.finite := 
 ⟨hIX.finite_of_r_fin, hIX.r_fin_of_finite⟩
 
+lemma indep.r_fin_iff_finite (hI : M.indep I) : M.r_fin I ↔ I.finite := 
+hI.basis_self.r_fin_iff_finite 
+
 lemma indep.subset_finite_basis_of_subset_of_r_fin (hI : M.indep I) (hIX : I ⊆ X) (hX : M.r_fin X) :
 ∃ J, M.basis J X ∧ I ⊆ J ∧ J.finite :=
 (hI.subset_basis_of_subset hIX).imp (λ J hJ, ⟨hJ.1, hJ.2, hJ.1.finite_of_r_fin hX⟩)
@@ -526,7 +529,7 @@ lemma submod_three (M : matroid E) [finite_rk M] (X Y Y' : set E) :
   M.r (X ∪ (Y ∪ Y')) + M.r (X ∪ (Y ∩ Y')) ≤ M.r (X ∪ Y) + M.r (X ∪ Y') :=
 begin
   have := M.r_submod (X ∪ Y) (X ∪ Y'),
-  rwa [←union_distrib_left, ←union_union_distrib_left] at this,
+  rwa [←union_distrib_left, ←union_union_distrib_left, add_comm] at this,
 end
 
 lemma submod_three_right (M : matroid E) [finite_rk M] (X Y Y' : set E) :
@@ -543,31 +546,49 @@ lemma r_union_add_r_le_r_union_add_r_of_subset (M : matroid E) [finite_rk M] (hX
 begin
   have hsm := M.r_submod (X ∪ Z) Y,
   rw [union_right_comm, union_eq_right_iff_subset.mpr hXY, inter_distrib_right,
-    inter_eq_left_iff_subset.mpr hXY] at hsm,
+    inter_eq_left_iff_subset.mpr hXY, add_comm] at hsm,
   exact le_trans (add_le_add_left (M.r_le_r_union_left _ _) _) hsm,
 end
 
-theorem r_augment (h : M.r X < M.r Z) : ∃ z ∈ Z, M.r X < M.r (insert z X) :=
+lemma r_fin.r_augment (hX : M.r_fin X) (hZ : M.r_fin Z) (h : M.r X < M.r Z) : 
+  ∃ z ∈ Z \ X, M.r (insert z X) = M.r X + 1 :=
 begin
-  obtain ⟨I, hI⟩ := M.exists_basis X,
-  obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (subset_union_left X Z)),
-  have hXZ := h.trans_le (M.r_mono (subset_union_right X Z)),
+  obtain ⟨I, hI, hIfin⟩ := hX.exists_finite_basis, 
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans (subset_union_left X Z)),
+  have hXZ := h.trans_le ((hX.union hZ).r_mono (subset_union_right X Z)),
 
   rw [←hI.card, ←hJ.card] at hXZ,
-  obtain ⟨e,heJ,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hXZ hI.finite,
+  obtain ⟨e,heJ,heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard hXZ hIfin,
 
   have hlt : M.r X < M.r (insert e X),
-  { refine lt_of_lt_of_le _ (M.r_mono (@insert_subset_insert _ e _ _ hI.subset)),
+  { refine lt_of_lt_of_le _ ((hX.insert e).r_mono (@insert_subset_insert _ e _ _ hI.subset)),
     rw [←hI.card, (hJ.indep.subset (insert_subset.mpr ⟨heJ,hIJ⟩)).r, 
-      ncard_insert_of_not_mem heI hI.finite, nat.lt_iff_add_one_le]},
+      ncard_insert_of_not_mem heI hIfin, nat.lt_iff_add_one_le]},
   have heX : e ∉ X,
   { refine λ heX, hlt.ne _, rw [insert_eq_of_mem heX], },
   have heZ : e ∈ Z,
     from or.resolve_left (hJ.subset heJ) heX,
-  exact ⟨e,heZ,hlt⟩,
-end
+  exact ⟨e,⟨heZ, heX⟩, r_insert_eq_add_one_of_r_ne hlt.ne.symm⟩,
+end 
 
-lemma r_union_eq_of_r_union_subset_le (hXY : X ⊆ Y) (h : M.r (X ∪ Z) ≤ M.r X) :
+lemma r_fin.r_augment_of_not_r_fin (hX : M.r_fin X) (hZ : ¬M.r_fin Z) : 
+  ∃ z ∈ Z \ X, M.r (insert z X) = M.r X + 1 := 
+begin
+  obtain ⟨J, hJ⟩ := M.exists_basis Z, 
+  have hJinf : J.infinite, by rwa [set.infinite, ←hJ.r_fin_iff_finite], 
+  obtain ⟨J', hJ'J, hJfin, hJcard⟩ := hJinf.exists_subset_ncard_eq (M.r X + 1), 
+  rw [←(hJ.indep.subset hJ'J).r] at hJcard, 
+  obtain ⟨z, ⟨hzJ',hzX⟩, h⟩ := hX.r_augment _ ((lt_add_one _).trans_eq hJcard.symm) , 
+  { },
+
+
+  
+end 
+
+theorem r_augment [finite_rk M] (h : M.r X < M.r Z) : ∃ z ∈ Z \ X, M.r (insert z X) = M.r X + 1 :=
+(M.to_r_fin X).r_augment (M.to_r_fin Z) h 
+
+lemma r_union_eq_of_r_union_subset_le [finite_rk M] (hXY : X ⊆ Y) (h : M.r (X ∪ Z) ≤ M.r X) :
   M.r (Y ∪ Z) = M.r Y :=
 begin
   have hsm := M.r_submod Y (X ∪ Z),
@@ -576,13 +597,19 @@ begin
   linarith [M.r_le_r_union_left X (Y ∩ Z), M.r_le_r_union_left Y Z],
 end
 
-lemma r_insert_eq_of_r_insert_subset_le (hXY : X ⊆ Y) (h : M.r (insert e X) ≤ M.r X) :
+lemma r_insert_eq_of_r_insert_subset_le [finite_rk M] (hXY : X ⊆ Y) (h : M.r (insert e X) ≤ M.r X) :
   M.r (insert e Y) = M.r Y :=
 by {rw [←union_singleton] at *, rw [r_union_eq_of_r_union_subset_le hXY h],}
 
 lemma r_eq_of_r_all_insert_le (hXY : X ⊆ Y) (hY : ∀ e ∈ Y, M.r (insert e X) ≤ M.r X) :
    M.r X = M.r Y :=
 begin
+  refine (em (M.r_fin Y)).symm.elim (λ hY, _) (λ hY, _),
+  { refine (em (M.r_fin X)).symm.elim (λ hX, _) (λ hX, _), 
+    { rw [r_eq_zero_of_not_r_fin hX, r_eq_zero_of_not_r_fin hY] },
+    
+    },
+
   refine (M.r_mono hXY).antisymm (le_of_not_lt (λ hlt, _)),
   obtain ⟨e,he,hlt'⟩ := r_augment hlt,
   exact hlt'.not_le (hY _ he),
