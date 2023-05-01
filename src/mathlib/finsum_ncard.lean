@@ -217,4 +217,14 @@ begin
   exact λ x hx, ⟨x, hx, rfl⟩,
 end
 
+
+lemma card_eq_finsum_fiber {α ι :Type*} [finite α] (f : α → ι) : 
+  nat.card α = ∑ᶠ (i : ι), (f ⁻¹' {i}).ncard := 
+begin
+  rw [←ncard_univ], 
+  convert ncard_eq_finsum_fiber (to_finite univ) f using 1,  
+  exact finsum_congr (λ _, by rw univ_inter), 
+end 
+
+
 end finsum

@@ -13,11 +13,9 @@ open_locale big_operators
 
 namespace matroid
 
-
 universes u v
 
 section direct_sum
-
 
 variables {ι : Type u} {E : ι → Type v} {M : ∀ i, matroid (E i)}
 /-- The direct sum of an `ι`-indexed collection of matroids `(M i : matroid E i)`. A set is a base
@@ -197,14 +195,14 @@ variables {ι : Type u} {E₁ E₂ : Type v} {M₁ : matroid E₁} {M₂ : matro
 
 def sum (M₁ : matroid E₁) (M₂ : matroid E₂) : matroid (E₁ ⊕ E₂) := 
 (direct_sum (λ i, bool.cases_on i M₂ M₁) : 
-  matroid (Σ (b : bool), cond b E₁ E₂)).congr_equiv (equiv.sum_equiv_sigma_bool E₁ E₂).symm
+  matroid (Σ (b : bool), cond b E₁ E₂)).congr (equiv.sum_equiv_sigma_bool E₁ E₂).symm
 
 @[simp] lemma sum.indep_iff {I : set (E₁ ⊕ E₂)} : 
   (sum M₁ M₂).indep I ↔ M₁.indep (sum.inl ⁻¹' I) ∧ M₂.indep (sum.inr ⁻¹' I) :=
 begin
   nth_rewrite 0 ←image_preimage_inl_union_image_preimage_inr I, 
   rw [sum, and_comm],
-  simp only [congr_equiv_apply_symm_indep, direct_sum.indep_iff, bool.forall_bool], 
+  simp only [congr.symm_indep_iff, direct_sum.indep_iff, bool.forall_bool], 
   convert iff.rfl using 3; 
   { ext, simp, },
 end 
@@ -213,7 +211,7 @@ end
   (sum M₁ M₂).base B ↔ M₁.base (sum.inl ⁻¹' B) ∧ M₂.base (sum.inr ⁻¹' B) :=
 begin
   rw [sum, and_comm], 
-  simp only [congr_equiv_apply_symm_base, equiv.sum_equiv_sigma_bool_apply, 
+  simp only [congr.symm_base_iff, equiv.sum_equiv_sigma_bool_apply, 
     direct_sum.base_iff, bool.forall_bool], 
   convert iff.rfl using 3; 
   { ext, simp },  
@@ -224,7 +222,7 @@ end
     (∃ C₁, M₁.circuit C₁ ∧ C = sum.inl '' C₁) ∨ (∃ C₂, M₂.circuit C₂ ∧ C = sum.inr '' C₂) :=
 begin
   rw [sum, or_comm], 
-  simp only [congr_equiv_apply_symm_circuit, equiv.sum_equiv_sigma_bool_apply, 
+  simp only [congr.symm_circuit_iff, equiv.sum_equiv_sigma_bool_apply, 
     direct_sum.circuit_iff, bool.exists_bool], 
   convert iff.rfl;
   -- squeeze_simp misbehaves in the line below. 
@@ -242,12 +240,12 @@ end
 
 -- @[simp] lemma copy_sum_base_iff {E : Type*} {M : ι → matroid E} {B : set (ι × E)}:
 --   (copy_sum M).base B ↔ ∀ i, (M i).base (prod.mk i ⁻¹' B) :=
--- by {simp only [copy_sum, congr_equiv_apply_base, direct_sum_base_iff], congr'}
+-- by {simp only [copy_sum, congr.apply_base, direct_sum_base_iff], congr'}
 
 -- @[simp] lemma copy_sum_indep_iff {E : Type*} [finite ι] [finite E] {M : ι → matroid E}
 -- {I : set (ι × E)}:
 --   (copy_sum M).indep I ↔ ∀ i, (M i).indep (prod.mk i ⁻¹' I) :=
--- by {simp only [copy_sum, congr_equiv_apply_indep, direct_sum_indep_iff], congr'}
+-- by {simp only [copy_sum, congr.apply_indep, direct_sum_indep_iff], congr'}
 
 end sum
 
@@ -308,26 +306,31 @@ variables {ι : Type} {E : Type v} [finite E] [finite ι] {f : E → ι} {rks : 
 /-- The partition matroid on ground set `E` induced by a partition `f : E → ι` of the ground set
   and ranks `rks : ι → ℕ`. -/
 def partition_matroid_on (f : E → ι) (rks : ι → ℕ) : matroid E :=
-(partition_matroid (λ i, {x // f x = i}) rks).congr_equiv (equiv.sigma_fiber_equiv f)
+(partition_matroid (λ i, {x // f x = i}) rks).congr (equiv.sigma_fiber_equiv f)
 
 @[simp] lemma partition_matroid_on_indep_iff {I : set E}:
   (partition_matroid_on f rks).indep I ↔ ∀ i, (I ∩ f ⁻¹' {i}).ncard ≤ rks i :=
 begin
   -- rw [partition_matroid_on], 
-  simp only [partition_matroid_on, congr_equiv_apply_indep, partition_matroid_indep_iff],
+  simp only [partition_matroid_on, congr.indep_iff, partition_matroid_indep_iff],
   apply forall_congr (λ i, _),
-  rw [←ncard_image_of_injective _ (equiv.sigma_fiber_equiv f).symm.injective,
-    ←preimage_equiv_eq_image_symm, preimage_inter],
-  convert iff.rfl,
+  rw [←ncard_image_of_injective _ (equiv.sigma_fiber_equiv f).symm.injective, 
+    image_inter ((equiv.sigma_fiber_equiv f).symm.injective)], 
+  convert iff.rfl, 
   ext x,
   obtain ⟨j, x, rfl⟩ := x,
-  simp
+  simp only [mem_image, mem_preimage, mem_singleton_iff, equiv.sigma_fiber_equiv, 
+    equiv.coe_fn_symm_mk], 
+  split, 
+  { rintro ⟨x', rfl, h⟩, exact h.1.symm },
+  rintro rfl, 
+  exact ⟨x, by simp⟩,  
 end
 
 @[simp] lemma partition_matroid_on_r_eq (X : set E) :
   (partition_matroid_on f rks).r X = ∑ᶠ i, min (rks i) (X ∩ f ⁻¹' {i}).ncard :=
 begin
-  simp only [partition_matroid_on, congr_equiv_apply_r, partition_matroid_r_eq],
+  simp only [partition_matroid_on, congr.r_eq, partition_matroid_r_eq],
   refine finsum_congr (λ i, _ ),
   rw [←ncard_image_of_injective _ (equiv.sigma_fiber_equiv f).symm.injective,
     ←preimage_equiv_eq_image_symm, preimage_inter],

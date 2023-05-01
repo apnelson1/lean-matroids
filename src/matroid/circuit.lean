@@ -1,4 +1,4 @@
-import .flat
+import .closure
 import mathlib.data.set.basic
 
 noncomputable theory
@@ -16,7 +16,10 @@ lemma circuit.dep (hC : M.circuit C) : ¬M.indep C := hC.1
 lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) : M.indep X := 
 by_contra (λ h, hXC.ne (hXC.subset.antisymm (hC.2 h hXC.subset)))
 
-lemma circuit_iff : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := 
+lemma circuit_iff : M.circuit C ↔ ¬M.indep C ∧ ∀ I, ¬M.indep I → I ⊆ C → I = C :=
+⟨λ h, ⟨h.1, λ I hI h', h'.antisymm (h.2 hI h')⟩,λ h, ⟨h.1, λ I hI hIC, (h.2 I hI hIC).symm.subset⟩⟩
+
+lemma circuit_iff_forall_ssubset : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := 
 ⟨λ hC, ⟨hC.dep, λ I hIC, hC.ssubset_indep hIC⟩,λ h, ⟨h.1,λ X hX hXC, 
   hXC.ssubset_or_eq.elim (λ h', (hX (h.2 _ h')).elim) (by { rintro rfl, refl })⟩⟩ 
 
@@ -51,8 +54,7 @@ lemma circuit.finite [finitary M] (hC : M.circuit C) : C.finite := let ⟨h⟩ :
 lemma circuit_iff_dep_forall_diff_singleton_indep :
   M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
 begin
-  
-  rw [circuit_iff, and.congr_right_iff],
+  rw [circuit_iff_forall_ssubset, and.congr_right_iff],
   refine λ hdep, ⟨λ h e heC, (h _ $ diff_singleton_ssubset.2 heC), λ h I hIC, _⟩,
   obtain ⟨e, heC,heI⟩ := exists_of_ssubset hIC,
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
@@ -68,7 +70,7 @@ lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C
 lemma circuit.circuit_lrestrict_of_subset (hC : M.circuit C) (hCX : C ⊆ X) :
   (M.lrestrict X).circuit C :=
 begin
-  simp_rw [circuit_iff, lrestrict_indep_iff, not_and],  
+  simp_rw [circuit_iff_forall_ssubset, lrestrict_indep_iff, not_and],  
   exact ⟨λ h, (hC.dep h).elim, λ I hIC, ⟨hC.ssubset_indep hIC, hIC.subset.trans hCX⟩⟩, 
 end 
 
@@ -80,7 +82,7 @@ lemma fund_circuit_subset_insert (he : e ∈ M.cl I) :
   M.fund_circuit e I ⊆ insert e I :=
 insert_subset_insert (sInter_subset_of_mem ⟨rfl.subset, he⟩)
 
-lemma mem_fund_circuit (M : matroid E) (I : set E) (e : E) : e ∈ fund_circuit M e I := 
+lemma mem_fund_circuit (M : matroid E) (e : E) (I : set E) : e ∈ fund_circuit M e I := 
   mem_insert _ _
 
 lemma indep.fund_circuit_eq_of_mem (hI : M.indep I) (he : e ∈ I) : M.fund_circuit e I = {e} :=
@@ -139,7 +141,7 @@ begin
 end
 
 lemma mem_cl_iff_exists_circuit :
-  e ∈ M.cl X ↔ e ∈ X ∨ ∃ C, M.circuit C ∧ e ∈ C ∧ C \ {e} ⊆ X :=
+  e ∈ M.cl X ↔ e ∈ X ∨ ∃ C, M.circuit C ∧ e ∈ C ∧ C ⊆ insert e X :=
 begin
   refine ⟨λ h, _,_⟩,
   { by_contra' h',
@@ -151,13 +153,17 @@ begin
         diff_singleton_eq_self (not_mem_subset hI.subset h'.1), hI.cl]},
     have heI : e ∈ M.cl I \ I, by { rw [hI.cl], exact ⟨h, not_mem_subset hI.subset h'.1⟩ }, 
     have hC := hI.indep.fund_circuit_circuit heI, 
-    refine h'.2 _ hC (mem_fund_circuit _ _ _) _,
-    rw [diff_subset_iff, singleton_union],  
-    exact (fund_circuit_subset_insert heI.1).trans (insert_subset_insert hI.subset) },
+    exact h'.2 _ hC (mem_fund_circuit _ _ _) 
+      ((fund_circuit_subset_insert heI.1).trans (insert_subset_insert hI.subset)) },
   rintro (heX | ⟨C,hC, heC, hCX⟩),
   { exact (M.subset_cl X) heX},
-  exact (M.cl_mono hCX) (hC.subset_cl_diff_singleton e heC),
+  refine (M.cl_subset _) (hC.subset_cl_diff_singleton e heC), 
+  rwa [diff_subset_iff],  
 end
+
+lemma mem_cl_iff_exists_circuit_of_not_mem (he : e ∉ X) : 
+  e ∈ M.cl X ↔ ∃ C, M.circuit C ∧ e ∈ C ∧ C ⊆ insert e X := 
+by rw [mem_cl_iff_exists_circuit, iff_false_intro he, false_or]
 
 /-- A generalization of the strong circuit elimination axiom. For finite matroids, this is 
   equivalent to the case where `ι` is a singleton type, which is the usual two-circuit version. 
@@ -171,7 +177,7 @@ begin
   have h₁ : range x ⊆ M.cl (⋃ i, ((Cs i) \ {x i} \ (insert z (range x)))), 
   { rintro e ⟨i, rfl⟩,  
     have h' := (hCs i).subset_cl_diff_singleton (x i) (h_mem i).2, 
-    refine mem_of_mem_of_subset h' (M.cl_subset_cl_of_subset _), 
+    refine mem_of_mem_of_subset h' (M.cl_subset _), 
     refine subset_Union_of_subset i (subset_diff.mpr ⟨rfl.subset,_⟩), 
     rw disjoint_iff_forall_ne, 
     rintro y hy z (rfl | ⟨j, rfl⟩) rfl, 
@@ -179,7 +185,7 @@ begin
     refine hy.2 (mem_singleton_iff.mpr _), 
     rw h_unique _ _ hy.1 },
   have h₂ : range x ⊆ M.cl Y, 
-  { refine h₁.trans (M.cl_subset_cl_of_subset (Union_subset (λ x, _))),  
+  { refine h₁.trans (M.cl_subset (Union_subset (λ x, _))),  
     refine diff_subset_diff_left (subset_union_of_subset_right _ _),
     exact subset_Union_of_subset x (diff_subset _ _) },
   have h₃ : C \ {z} ⊆ M.cl Y, 
@@ -196,11 +202,10 @@ begin
   { exact ((hY.subset hzY).2 (mem_insert z _)).elim },
   
   refine ⟨C', hC', hzC', subset_diff.mpr ⟨_,_⟩⟩, 
-  { exact (diff_singleton_subset_iff.mp hCzY).trans 
-    (insert_subset.mpr ⟨or.inl hz.1,diff_subset _ _⟩) },
-  rw [←insert_eq_of_mem hzC', ←@insert_diff_singleton _ z C', ←singleton_union, 
-    disjoint_union_left, disjoint_singleton_left],
-  refine ⟨not_mem_subset _ hz.2, disjoint_of_subset_left hCzY _⟩,   
+  { exact hCzY.trans (insert_subset.mpr ⟨or.inl hz.1,diff_subset _ _⟩) },
+  refine disjoint_of_subset_left hCzY _, 
+  rw [←singleton_union, disjoint_union_left, disjoint_singleton_left], 
+  refine ⟨not_mem_subset _ hz.2, _⟩,   
   { rintro x' ⟨i,rfl⟩, exact mem_Union_of_mem i ((h_mem i).2) },
   exact disjoint_of_subset_right (subset_insert z _) disjoint_sdiff_left,  
 end 
@@ -254,15 +259,6 @@ begin
   exact union_subset hCI (fund_circuit_subset_insert heI.1), 
 end 
 
-lemma flat_iff_forall_circuit {F : set E} :
-  M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C \ {e} ⊆ F → e ∈ F :=
-begin
-  rw [flat_iff_cl_self],
-  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, _) ⟩,
-  { rw ←h, exact (hC.subset_cl_diff_singleton e).trans (M.cl_mono hCF) heC},
-  exact (mem_cl_iff_exists_circuit.mp heF).elim id (λ ⟨C, hC, heC, hCF⟩, h _ _ hC heC hCF),
-end
-
 lemma eq_of_circuit_iff_circuit_forall {M₁ M₂ : matroid E} (h : ∀ C, M₁.circuit C ↔ M₂.circuit C) :
   M₁ = M₂ :=
 eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_forall_subset_not_circuit, h])
@@ -271,8 +267,34 @@ lemma indep_iff_forall_finite_subset_indep [finitary M] :
   M.indep I ↔ ∀ J ⊆ I, J.finite → M.indep J :=   
 ⟨λ h J hJI hJ, h.subset hJI, λ h, 
   indep_iff_forall_subset_not_circuit.mpr (λ C hCI hC, hC.dep (h C hCI hC.finite))⟩
+
+section dual 
+
+/-- A cocircuit is the complement of a hyperplane -/
+def cocircuit (M : matroid E) (K : set E) : Prop := M﹡.circuit K
+
+@[simp] lemma dual_circuit_iff_cocircuit {K : set E} : M﹡.circuit K ↔ M.cocircuit K := iff.rfl 
+
+lemma coindep_iff_forall_subset_not_cocircuit : M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) := 
+by { rw [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit, forall_congr], simp }
   
-section exchange
+lemma cocircuit_iff_mem_minimals {K : set E} : 
+  M.cocircuit K ↔ K ∈ minimals (⊆) {X | ∀ B, M.base B → (B ∩ X).nonempty} :=  
+by simp_rw [cocircuit, circuit, dual_indep_iff_coindep, coindep, not_exists, not_and, 
+    not_disjoint_iff_nonempty_inter, inter_comm]
+
+lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.finite :=
+(dual_circuit_iff_cocircuit.mpr hK).finite 
+
+-- lemma mem_dual_cl_iff_forall_circuit : 
+--   e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (C ∩ X).nonempty :=
+-- begin
+--   obtain ⟨ 
+-- end 
+
+end dual 
+
+section basis_exchange
 
 variables {B₁ B₂ I₁ I₂ : set E}
 
@@ -334,10 +356,8 @@ theorem basis.rev_exchange (hI₁ : M.basis I₁ X) (hI₂ : M.basis I₂ X) (he
   ∃ f ∈ I₂ \ I₁, M.basis (insert e I₂ \ {f}) X :=
 @base.rev_exchange _ (M.lrestrict X) _ _ _ hI₁ hI₂ he
 
+end basis_exchange
 
-end exchange
-
-end matroid 
 section from_axioms
 
 /-- A collection of sets satisfying the circuit axioms determines a matroid -/
@@ -347,7 +367,7 @@ def matroid_of_circuit_of_finite [finite E] (circuit : set E → Prop)
     circuit C₁ → circuit C₂ → C₁ ≠ C₂ → e ∈ C₁ ∩ C₂ → ∃ C ⊆ (C₁ ∪ C₂) \ {e}, circuit C) :
 matroid E :=
 matroid_of_indep_of_finite (λ I, ∀ C ⊆ I, ¬circuit C) ⟨∅, λ C hC, (by rwa subset_empty_iff.mp hC)⟩
-(λ I J hIJ hJ C hCI, hJ C (hCI.trans hIJ))
+(λ I J hIJ hJ C hCI, hIJ C (hCI.trans hJ))
 begin
   by_contra' h,
   obtain ⟨I,J,hI,hJ,hIJ,Hbad⟩ := h,
@@ -420,8 +440,9 @@ end
   (matroid_of_circuit_of_finite circuit empty_not_circuit antichain elimination).circuit = circuit :=
 begin
   ext C,
-  simp_rw [matroid_of_circuit_of_finite, matroid.circuit_iff, matroid_of_indep_of_finite_apply, 
-    not_forall, not_not, exists_prop],
+  simp_rw [matroid_of_circuit_of_finite, matroid.circuit_iff_forall_ssubset,
+   matroid_of_indep_of_finite_apply, 
+not_forall, not_not, exists_prop],
   refine ⟨λ h, _,λ h, ⟨⟨_,rfl.subset, h⟩,λ I hIC C' hC'I hC',
     hIC.not_subset ((antichain C' C hC' h (hC'I.trans hIC.subset)) ▸ hC'I )⟩⟩,
   obtain ⟨⟨C₀,hC₀C, hC₀⟩,hI⟩ := h,
@@ -432,3 +453,4 @@ end
 
 end from_axioms
 
+end matroid 

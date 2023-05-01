@@ -1,4 +1,6 @@
-import data.set.finite
+import data.finset.locally_finite
+import data.nat.interval 
+import order.minimal
 
 variables {α β : Type*}
 
@@ -32,6 +34,44 @@ begin
   convert @preimage_mono _ _ (coe : s → α)   _ _ ht'.subset,
   rw preimage_image_eq _ subtype.coe_injective,
 end
+
+lemma finite.maximals_nonempty_of_exists {s : set α} (hs : s.finite) (P : set α → Prop)
+{s₀ : set α} (hs₀s : s₀ ⊆ s) (hs₀ : P s₀) : 
+  (maximals (⊆) {t | t ⊆ s ∧ P t}).nonempty := 
+begin
+  haveI := hs.to_subtype, 
+  obtain ⟨t, ht⟩ := finite.exists_maximal (P ∘ set.image (coe : s → α)) 
+    ⟨coe ⁻¹' s₀, by rwa [function.comp_app, subtype.image_preimage_coe, 
+      inter_eq_self_of_subset_left hs₀s] ⟩, 
+  
+  simp only [function.comp_app, le_eq_subset] at ht, 
+  refine ⟨coe '' t, ⟨(image_subset_range _ _).trans_eq subtype.range_coe,ht.1⟩, 
+    λ t' ht' htt', _⟩,
+  obtain ⟨t',rfl⟩ := subset_range_iff_exists_image_eq.mp (ht'.1.trans_eq subtype.range_coe.symm), 
+  rw ht.2 t' ht'.2 ((image_subset_image_iff subtype.coe_injective).mp htt'),
+end 
+
+/-- This seems a strict improvement over the nonprimed version in mathlib - only the image 
+needs to be finite, not the set itself.  -/
+lemma finite.exists_maximal_wrt' {α β : Type*} [partial_order β] (f : α → β) (s : set α) 
+(h : (f '' s).finite) (h₀ : s.nonempty) : 
+  (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') :=
+begin
+  obtain  ⟨_ ,⟨a,ha,rfl⟩, hmax⟩ := finite.exists_maximal_wrt id (f '' s) h (h₀.image f), 
+  exact ⟨a, ha, λ a' ha' hf, hmax _ (mem_image_of_mem f ha') hf⟩, 
+end 
+
+
+/-- Is this somewhere in mathlib? Can't find it-/
+lemma nat.finite_iff_exists_ub {s : set ℕ} : s.finite ↔ ∃ m, ∀ x ∈ s, x ≤ m := 
+begin
+  refine ⟨λ h, (eq_empty_or_nonempty s).elim (λ he, ⟨0, by simp [he]⟩) (λ hs, _), 
+    λ ⟨m,hm⟩, {x | x ≤ m}.to_finite.subset hm⟩,
+
+  refine (finite.exists_maximal_wrt id s h hs).imp (λ m hm x hxs, le_of_not_lt (λ hlt, _)), 
+  obtain ⟨-, h⟩:= hm,  
+  exact hlt.ne (h x hxs hlt.le), 
+end  
 
 lemma finite.strong_induction_on {s : set α} {P : set α → Prop} (hs : s.finite) 
 (IH : ∀ t ⊆ s, (∀ t₀ ⊂ t, P t₀) → P t) : P s :=

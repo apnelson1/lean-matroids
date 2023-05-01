@@ -29,5 +29,9 @@ end
 lemma inter_subset_union (s t : set α) : s ∩ t ⊆ s ∪ t := 
 (inter_subset_left _ _).trans (subset_union_left _ _)  
 
+lemma union_diff_cancel_of_subset {s s' : set α} (t : set α) (h : s' ⊆ s) : s ∪ (t \ s') = s ∪ t := 
+by rw [←union_eq_self_of_subset_right h, union_assoc, union_diff_self, union_assoc]
 
+@[simp] lemma symm_diff_univ (s : set α) : s ∆ univ = sᶜ := symm_diff_top s
+  
 end set
