@@ -260,7 +260,7 @@ lemma indep.subset (hI : M.indep I) (hX : X ⊆ I) : M.indep X := matroid.indep.
 lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) (hX : X ⊆ M.E) :
   ∃ J, I ⊆ J ∧ M.basis J X :=
 begin
-  obtain ⟨J, hIJ, hJ⟩ := matroid.indep.subset_basis_of_subset hI hIX,
+  obtain ⟨J, hJ, hIJ⟩ := matroid.indep.subset_basis_of_subset hI hIX,
   exact ⟨J, hIJ, ⟨hJ, hX⟩⟩,
 end
 
@@ -1097,7 +1097,7 @@ lemma dual_r_cast_eq (M : matroid_in α) [finite M.E] {X : set α} (hX : X ⊆ M
 begin
   rw [←@range_coe _ M.E, subset_range_iff_exists_image_eq] at hX, 
   obtain ⟨X₀, rfl⟩ := hX, 
-  simp_rw [dual_eq, equiv_subtype.symm_r_eq, dual_rank_cast_eq, preimage_image_eq _ coe_injective, 
+  simp_rw [dual_eq, equiv_subtype.symm_r_eq, dual_r_cast_eq, preimage_image_eq _ coe_injective, 
     ncard_image_of_injective _ coe_injective, rk_eq_r_ground, rk_def, equiv_subtype.r_eq, coe_mk, 
     image_univ, range_coe_subtype, set_of_mem_eq, sub_left_inj, add_right_inj, nat.cast_inj, 
     coe_injective.image_compl_eq, range_coe], 

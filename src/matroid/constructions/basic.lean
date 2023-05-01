@@ -1,4 +1,4 @@
-import ..quotients
+import ..maps.quotients
 import ..simple
 
 /-

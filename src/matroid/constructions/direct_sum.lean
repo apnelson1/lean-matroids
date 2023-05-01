@@ -183,8 +183,10 @@ begin
     simp},
   rintro ⟨i,C₀,hC₀,rfl⟩ ⟨f,hf,rfl⟩ h',
   refine h i C₀ f hC₀ hf _,
-  rintro x ⟨hxC₀,(hne : x ≠ f)⟩,
-  exact h' ⟨⟨_,hxC₀,rfl⟩,by simpa⟩,
+  convert preimage_mono h', 
+  { rw preimage_image_eq _ sigma_mk_injective },
+  rw [← image_eq_image (sigma_mk_injective ), image_insert_eq, image_preimage_eq_inter_range, 
+    image_preimage_eq_inter_range, insert_inter_distrib, insert_eq_of_mem (mem_range_self _)], 
 end
 
 end direct_sum
@@ -257,7 +259,7 @@ variables {ι : Type*} {E : ι → Type*} {rk : ι → ℕ} [finite ι] [∀ i, 
 /-- The direct sum of uniform matroids with prescribed ranks -/
 def partition_matroid (E : ι → Type*) [∀ i, finite (E i)] (rk : ι → ℕ) :
   matroid (Σ i, E i) :=
-direct_sum (λ i, unif (E i) (rk i))
+direct_sum (λ i, unif_on (E i) (rk i))
 
 lemma partition_matroid_base_iff (h_le : ∀ i, rk i ≤ nat.card (E i)) {B : set (Σ i, E i)} :
   (partition_matroid E rk).base B ↔ ∀ i, (sigma.mk i ⁻¹' B).ncard = rk i :=
@@ -265,8 +267,8 @@ begin
   simp [partition_matroid],
   refine ⟨λ h i, _, λ h i, _⟩,
   { specialize h i,
-    rwa [unif_base_iff (h_le i), sigma.ncard_preimage_mk] at h},
-  rw [unif_base_iff (h_le i), sigma.ncard_preimage_mk],
+    rwa [unif_on_base_iff (h_le i), sigma.ncard_preimage_mk] at h},
+  rw [unif_on_base_iff (h_le i), sigma.ncard_preimage_mk],
   exact h i,
 end
 
@@ -281,7 +283,7 @@ end
 @[simp] lemma partition_matroid_r_eq (X : set (Σ i, E i)) :
   (partition_matroid E rk).r X = ∑ᶠ i, min (rk i) (X ∩ fst ⁻¹' {i}).ncard :=
 begin
-  simp only [partition_matroid, direct_sum.r_eq, unif_r],
+  simp only [partition_matroid, direct_sum.r_eq, unif_on_r],
   apply finsum_congr (λ i, _),
   rw sigma.ncard_preimage_mk,
 end
@@ -289,8 +291,8 @@ end
 lemma partition_one_flat_iff {F : set (Σ i, E i)} :
   (partition_matroid E 1).flat F ↔ ∀ i, (fst ⁻¹' {i} ⊆ F) ∨ (disjoint F (fst ⁻¹' {i})) :=
 begin
-  simp only [partition_matroid, pi.one_apply, direct_sum.flat_iff, unif_flat_iff, ncard_preimage_mk,
-    nat.lt_one_iff, ncard_eq_zero],
+  simp only [partition_matroid, pi.one_apply, direct_sum.flat_iff, unif_on_flat_iff, 
+    ncard_preimage_mk, nat.lt_one_iff, ncard_eq_zero],
   refine forall_congr (λ i, _ ),
   convert iff.rfl,
   { simp_rw [eq_univ_iff_forall, eq_iff_iff],
@@ -333,7 +335,7 @@ begin
   simp only [partition_matroid_on, congr.r_eq, partition_matroid_r_eq],
   refine finsum_congr (λ i, _ ),
   rw [←ncard_image_of_injective _ (equiv.sigma_fiber_equiv f).symm.injective,
-    ←preimage_equiv_eq_image_symm, preimage_inter],
+    ←preimage_equiv_eq_image_symm, ←preimage_equiv_eq_image_symm, preimage_inter],
   convert rfl,
   ext x,
   obtain ⟨j, x, rfl⟩ := x,

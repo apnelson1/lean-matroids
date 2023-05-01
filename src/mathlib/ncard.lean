@@ -291,6 +291,13 @@ begin
   ext, rw inter_comm, simp,
 end
 
+@[simp] lemma nat.card_coe_set_eq (s : set α) : nat.card s = s.ncard :=
+begin
+  convert (ncard_image_of_injective univ subtype.coe_injective).symm using 1, 
+  { rw ncard_univ, refl },
+  simp, 
+end 
+
 lemma ncard_inter_le_ncard_left (s t : set α) (hs : s.finite . to_finite_tac) :
   (s ∩ t).ncard ≤ s.ncard :=
 ncard_le_of_subset (inter_subset_left _ _) hs

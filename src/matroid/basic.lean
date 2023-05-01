@@ -210,7 +210,7 @@ lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
 not_iff_not.mpr (hB₁.diff_finite_comm hB₂)
 
-lemma base.card_diff_eq_card_diff (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
   (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
 begin
   obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
@@ -312,7 +312,7 @@ end
 lemma base.eq_exchange_of_diff_eq_singleton (hI : M.base B) (hJ : M.base B') (h : B \ B' = {e}) : 
   ∃ f ∈ B' \ B, B' = (insert f B) \ {e} :=
 begin
-  have hcard := hJ.card_diff_eq_card_diff hI, 
+  have hcard := hJ.card_diff_comm hI, 
   rw [h, ncard_singleton, ncard_eq_one] at hcard, 
   obtain ⟨f, hf⟩ := hcard, 
   refine ⟨f, _, _⟩, 
@@ -739,6 +739,7 @@ end)
   exact heX (hJX heJ), 
 end)
 
+/-- A notation typeclass for matroid duality, denoted by the `﹡` symbol. -/
 @[class] structure has_matroid_dual (α : Type*) := (dual : α → α)
 
 postfix `﹡`:(max+1) := has_matroid_dual.dual 
@@ -834,7 +835,7 @@ end)
   rw hJ.eq_of_subset_indep hK.1.1 hJK (subset_inter hK.1.2 hK.2.2), 
 end)
 
-/- The API below is private because it is later developed with appropriate notation in 
+/- The minimal API below is private because it is later developed with appropriate notation in 
   `pseudominor.lean` -/
 
 lemma lrestrict_indep_iff : (M.lrestrict X).indep I ↔ (M.indep I ∧ I ⊆ X) := 
@@ -928,16 +929,15 @@ section finite
 lemma basis.card_eq_card_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : I.ncard = J.ncard :=
 by { rw [←lrestrict_base_iff] at hIX hJX, exact hIX.card_eq_card_of_base hJX }
 
-lemma basis.finite_of_finite (hIX : M.basis I X) (hI : I.finite) (hJX : M.basis J X)  : J.finite := 
+lemma basis.finite_of_finite (hIX : M.basis I X) (hI : I.finite) (hJX : M.basis J X) : J.finite := 
 by { rw [←lrestrict_base_iff] at hIX hJX, exact hIX.finite_of_finite hI hJX }
 
 lemma basis.infinite_of_infinite (hIX : M.basis I X) (hI : I.infinite) (hJX : M.basis J X) : 
   J.infinite := 
 by { rw [←lrestrict_base_iff] at hIX hJX, exact hIX.infinite_of_infinite hI hJX }
 
-lemma basis.card_diff_eq_card_diff (hIX : M.basis I X) (hJX : M.basis J X) : 
-  (I \ J).ncard = (J \ I).ncard :=
-by { rw [←lrestrict_base_iff] at hIX hJX, rw hJX.card_diff_eq_card_diff hIX }
+lemma basis.card_diff_comm (hI : M.basis I X) (hJ : M.basis J X) : (I \ J).ncard = (J \ I).ncard :=
+by { rw [←lrestrict_base_iff] at hI hJ, rw hJ.card_diff_comm hI }
 
 lemma basis.diff_finite_comm (hIX : M.basis I X) (hJX : M.basis J X) :
   (I \ J).finite ↔ (J \ I).finite := 

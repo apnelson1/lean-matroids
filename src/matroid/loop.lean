@@ -119,6 +119,8 @@ not_loop_iff.mp (λ hlp, by simpa [hlp.eq_of_circuit_mem hC he] using h)
 lemma nonloop_of_not_mem_cl (h : e ∉ M.cl X) : M.nonloop e :=
 not_loop_iff.mp (λ he, h (he.mem_cl X))
 
+lemma nonloop_iff_not_mem_cl_empty : M.nonloop e ↔ e ∉ M.cl ∅ := iff.rfl 
+
 lemma nonloop.mem_cl_singleton (he : M.nonloop e) (hef : e ∈ M.cl {f}) : f ∈ M.cl {e} :=
 begin
   refine (M.loop_or_nonloop f).elim (λ hf, hf.mem_cl _) (λ hf, _), 
@@ -153,6 +155,14 @@ begin
   have hf : f ∈ M.cl {e}, by {rw hef, exact M.mem_cl_self f },
   rw [pair_comm, eq_comm, ←mem_singleton_iff], 
   exact he.indep.mem_cl_iff.mp hf,  
+end 
+
+lemma exists_nonloop_of_empty_not_base (h : ¬ M.base ∅) : ∃ e, M.nonloop e :=
+begin
+  obtain ⟨B, hB⟩ := M.exists_base, 
+  obtain (rfl | ⟨e,he⟩) := B.eq_empty_or_nonempty, 
+  { exact (h hB).elim },
+  exact ⟨e, hB.indep.nonloop_of_mem he⟩, 
 end 
 
 /- ### Coloops -/ 
