@@ -143,6 +143,7 @@ begin
   have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
   rw rep.valid,
   apply hB.indep,
+  have h9 := linear_independent.image_of_comp B φ coe h8,
   apply linear_independent.image_of_comp B φ coe h8,
 end
 
