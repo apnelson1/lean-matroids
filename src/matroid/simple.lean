@@ -32,13 +32,16 @@ def loopless.nonloop (hM : M.loopless) (e : E) : M.nonloop e := hM e
 
 lemma loopless.loops (hM : M.loopless) : M.cl ∅ = ∅ := eq_empty_iff_forall_not_mem.mpr hM
 
+lemma loopless_iff_loops_eq_empty : M.loopless ↔ M.cl ∅ = ∅ :=
+⟨loopless.loops, λ h e he, not_mem_empty e (by rwa ←h)⟩
+  
 /-- the property of a set containing no loops or para pairs -/
 def simple_on (M : matroid E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → ∀ ⦃f⦄, f ∈ X → M.indep {e, f}
 
 /-- the property of a matroid having no loops or para pairs -/
 def simple (M : matroid E) : Prop := ∀ e f, M.indep {e, f}
 
-protected lemma simple.simple_on (hM : M.simple) : M.simple_on X := λ e _ f _, hM e f
+protected lemma simple.simple_on (hM : M.simple) (X : set E) : M.simple_on X := λ e _ f _, hM e f
 
 @[simp] lemma simple_on_univ : M.simple_on univ ↔ M.simple := by simp [simple_on, simple]
 
@@ -53,7 +56,7 @@ begin
 end
 
 protected lemma simple.loopless (h : M.simple) : M.loopless :=
-loopless_on_univ.1 h.simple_on.loopless_on
+loopless_on_univ.1 (h.simple_on _).loopless_on
 
 lemma simple.nonloop (h : M.simple) (e : E) : M.nonloop e := h.loopless e 
 
@@ -83,6 +86,25 @@ begin
   rw [(h he hf).r] at hef,
   exact ncard_le_one_iff.mp hef.le (by simp) (by simp),
 end
+
+lemma loopless_iff_forall_circuit : M.loopless ↔ ∀ C, M.circuit C → C.finite → 1 < C.ncard :=
+begin
+  refine ⟨λ hM C hC hCfin, lt_of_not_le (λ hle, _), λ h e he, _⟩,
+  { obtain (rfl | ⟨a,rfl⟩) := (ncard_le_one_iff_eq hCfin).mp hle, 
+    { simpa using hC.nonempty },
+    exact hM a (loop_iff_circuit.mpr hC) },
+  exact (h _ he.circuit (finite_singleton e)).ne ((ncard_singleton e).symm), 
+end 
+
+lemma simple_iff_forall_circuit : M.simple ↔ ∀ C, M.circuit C → C.finite → 2 < C.ncard := 
+begin
+  refine ⟨λ h C hC hCfin, lt_of_not_le (λ hle, hC.dep _), λ h e f, by_contra (λ hd, _)⟩,
+  { exact (h.simple_on C).indep_of_card_le_two_of_finite hle hCfin },
+  obtain ⟨C, hCef, hC⟩ := dep_iff_supset_circuit.mp hd, 
+  have con := (h C hC ((to_finite _).subset hCef)).trans_le (ncard_le_of_subset hCef), 
+  have con' := con.trans_le (ncard_insert_le _ _), 
+  simpa [ncard_singleton] using con', 
+end 
 
 end simple
 
@@ -184,11 +206,17 @@ end
 lemma loopless.pcl_eq_cl (h : M.loopless) (e : E) : M.pcl e = M.cl {e} := 
 by rw [pcl_eq_cl_diff_loops, h.loops, diff_empty]
 
-lemma point_of_pcl_union_loops (he : M.nonloop e) : M.point (M.pcl e ∪ M.cl ∅) :=
+lemma nonloop.point_of_pcl_union_loops (he : M.nonloop e) : M.point (M.pcl e ∪ M.cl ∅) :=
 begin
   rw [pcl_eq_cl_diff_loops, diff_union_self, 
     union_eq_self_of_subset_right (M.cl_subset (empty_subset _))], 
   exact he.cl_point, 
+end 
+
+lemma loopless.point_of_pcl (h : M.loopless) (e : E) : M.point (M.pcl e) := 
+begin
+  convert (h.nonloop e).point_of_pcl_union_loops, 
+  rw [h.loops, union_empty], 
 end 
 
 lemma para.pcl_eq_pcl (h : M.para e f) : M.pcl e = M.pcl f :=
@@ -217,12 +245,43 @@ begin
   exact singleton_ne_empty _ h', 
 end 
 
+lemma simple.singleton_point (hM : M.simple) (e : E) : M.point {e} :=
+begin
+  convert hM.loopless.point_of_pcl e,
+  rw [hM.pcl_eq_singleton], 
+end 
+
+/-- In a `simple` matroid, points are equivalent to elements. -/
 noncomputable def simple.elem_point_equiv (h : M.simple) : E ≃ {P // M.point P} := 
 { to_fun := λ e, 
-    ⟨M.pcl e, by { rw [h.pcl_eq_singleton, ←h.cl_eq_singleton], exact (h.nonloop e).cl_point }⟩,
-  inv_fun := λ P, let ⟨P, h⟩ := P in (by {   }),
-  left_inv := _,
-  right_inv := _ }
+    ⟨{e}, by { rw [←h.cl_eq_singleton], exact (h.nonloop e).cl_point }⟩,
+  inv_fun := λ P, P.2.nonempty.some,
+  left_inv := λ e, mem_singleton_iff.mp (nonempty.some_mem _), 
+  right_inv := 
+  begin
+    rintro ⟨P, hP⟩, 
+    obtain ⟨e, he, rfl⟩ := hP.exists_eq_cl_nonloop, 
+    simp only [h.loopless.pcl_eq_cl],
+    simp_rw [h.cl_eq_singleton, singleton_eq_singleton_iff, ←mem_singleton_iff ],
+    exact nonempty.some_mem _, 
+  end }
+
+@[simp] lemma simple.elem_point_equiv_apply_coe (h : M.simple) (e : E) : 
+  (h.elem_point_equiv e : set E) = {e} := rfl 
+
+@[simp] lemma simple.elem_point_equiv_apply_symm (h : M.simple) (P : {P // M.point P}) : 
+  {h.elem_point_equiv.symm P} = (P : set E) := 
+begin
+  obtain ⟨P, hP⟩ := P, 
+  obtain ⟨e, he, rfl⟩ := hP.exists_eq_cl_nonloop, 
+  simp_rw [h.cl_eq_singleton, simple.elem_point_equiv, subtype.val_eq_coe, subtype.coe_mk, 
+    equiv.coe_fn_symm_mk, singleton_eq_singleton_iff, ←mem_singleton_iff], 
+  apply nonempty.some_mem, 
+end 
+
+lemma simple.elem_point_equiv_apply_symm_mem (h : M.simple) (P : {P // M.point P}) : 
+  h.elem_point_equiv.symm P ∈ (P : set E) := 
+by simp [←singleton_subset_iff]
 
 lemma pcl_pairwise_disjoint (M : matroid E) : pairwise_disjoint (range M.pcl) id := 
 begin
@@ -235,25 +294,22 @@ begin
 end 
 
 lemma sum_ncard_point_diff_loops [finite E] (M : matroid E) : 
-  ∑ᶠ (P : {P | M.point P}), ((P : set E) \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
+  ∑ᶠ (P : {P // M.point P}), ((P : set E) \ M.cl ∅).ncard = (M.cl ∅)ᶜ.ncard :=
 begin
-  convert @finsum_set_coe_eq_finsum_mem _ _ _ (λ P, (P \ M.cl ∅).ncard) _, 
-  convert (@ncard_eq_finsum_fiber _ _ {e | M.nonloop e} (to_finite _) (λ e, M.cl {e})),
-
+  convert @finsum_subtype_eq_finsum_cond _ _ _ (λ P, (P \ M.cl ∅).ncard) M.point, 
+  convert @ncard_eq_finsum_fiber _ _ (M.cl ∅)ᶜ (to_finite _) (λ e, M.cl {e}), 
   ext P,
   rw [finsum_eq_if], 
   split_ifs, 
-  { rw mem_set_of at h, 
-    congr, ext e,
-    simp only [mem_inter_iff, mem_set_of_eq, mem_preimage, mem_singleton_iff, 
-      h.cl_singleton_preimage_eq, mem_diff, iff_and_self, and_imp], 
-    exact λ h, id },
-  rw [eq_comm, ncard_eq_zero], 
-  ext e, 
-  simp only [mem_inter_iff, mem_set_of_eq, mem_preimage, mem_singleton_iff, mem_empty_iff_false, 
-    iff_false, not_and], 
-  rintro he rfl, 
-  exact h he.cl_point,  
+  {  congr, ext e,  
+    simp_rw [mem_diff, mem_inter_iff, mem_compl_iff, mem_preimage, mem_singleton_iff, and_comm, 
+      and.congr_left_iff], 
+    intro he, 
+    rw [h.eq_cl_singleton_iff, nonloop_iff_not_mem_cl_empty, and_iff_left he] },
+  rw [eq_comm, ncard_eq_zero, ←disjoint_iff_inter_eq_empty, disjoint_compl_left_iff_subset], 
+  rintro e (rfl : M.cl {e} = P), 
+  rw [←loop, ←not_nonloop_iff], 
+  exact mt nonloop.cl_point h, 
 end 
 
 lemma loopless.sum_ncard_point [finite E] (h : M.loopless) : 
@@ -270,10 +326,37 @@ section point_count
 
 def num_points (M : matroid E) := nat.card {P // M.point P}
 
-lemma simple_iff_num_points_eq_card [finite E] : M.simple ↔ M.num_points = ncard (univ : set E) := 
+lemma simple_iff_num_points_eq_card [finite E] (hnl : ¬M.base ∅) : 
+  M.simple ↔ M.num_points = ncard (univ : set E) := 
 begin
+  rw num_points, 
+  refine ⟨λ h, _, λ h, _⟩,
+  { rw [ncard_univ ],
+    exact nat.card_eq_of_bijective _ h.elem_point_equiv.symm.bijective },
   simp_rw [simple_iff_forall_pcl_eq_self, pcl_eq_cl_diff_loops],  
+  rw [←finsum_one, ←union_compl_self (M.cl ∅), ncard_union_eq, 
+    ←sum_ncard_point_diff_loops] at h,  swap , exact disjoint_compl_right,
 
+  have hleP : ∀ P : {P // M.point P}, 1 ≤ ((P : set E) \ M.cl ∅).ncard, 
+  { rintro ⟨P, hP⟩, 
+    rw [nat.succ_le_iff, ncard_pos, subtype.coe_mk],
+    exact hP.diff_loops_nonempty } ,
+  
+  have hnll : M.loopless, 
+  { rw [loopless_iff_loops_eq_empty, ←ncard_eq_zero], 
+    linarith [@finsum_le_finsum {P // M.point P} ℕ _ (λ P, 1) (λ P, ((P : set E) \ M.cl ∅).ncard)
+      (to_finite _) (to_finite _) hleP] },
+
+  simp_rw [loopless_iff_loops_eq_empty.mp hnll, diff_empty] at hleP h ⊢, 
+  rw [ncard_empty, zero_add] at h, 
+  
+  have hsq := eq_of_finsum_ge_finsum_of_forall_le (to_finite _) (to_finite _) hleP h.symm.le,
+  simp only [subtype.forall, subtype.coe_mk, @eq_comm _ 1, ncard_eq_one] at hsq, 
+
+  intro e, 
+  obtain ⟨f, hf⟩ := hsq _ (hnll e).cl_point,  
+  have hef : e = f := (hf.subset (M.mem_cl_self e) : e = f),
+  rwa hef at ⊢ hf, 
 end 
 
 end point_count

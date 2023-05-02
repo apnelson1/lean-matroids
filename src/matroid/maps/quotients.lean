@@ -56,7 +56,7 @@ weak_image_iff_circuit.mp h _ hC
 lemma r_fin.weak_image (hX : M.r_fin X) (h : N ≤w M) : N.r_fin X := 
 begin
   obtain ⟨I, hI⟩ := N.exists_basis X, 
-  obtain ⟨J, hIJ, hJ⟩ := (hI.indep.weak_image h).subset_basis_of_subset hI.subset, 
+  obtain ⟨J, hJ, hIJ⟩ := (hI.indep.weak_image h).subset_basis_of_subset hI.subset, 
   exact hI.r_fin_of_finite ((hJ.finite_of_r_fin hX).subset hIJ),  
 end 
 
@@ -119,9 +119,9 @@ lemma is_quotient.r_le_r_of_subset [finite_rk M] (h : N ≼ M) (hXY : X ⊆ Y) :
 begin
   haveI := h.weak_image.finite_rk, 
   obtain ⟨IM,hIM⟩ := M.exists_basis X, 
-  obtain ⟨JM,hIJM,hJM⟩ := hIM.indep.subset_basis_of_subset (hIM.subset.trans hXY),  
+  obtain ⟨JM,hJM,hIJM⟩ := hIM.indep.subset_basis_of_subset (hIM.subset.trans hXY),  
   obtain ⟨IN,hIN⟩ := N.exists_basis IM,
-  obtain ⟨JN,hIJN,hJN⟩ := hIN.indep.subset_basis_of_subset (subset_union_left IN (JM \ IM)), 
+  obtain ⟨JN,hJN,hIJN⟩ := hIN.indep.subset_basis_of_subset (subset_union_left IN (JM \ IM)), 
   have hINX : N.basis IN X, 
   { refine hIN.indep.basis_of_subset_cl (hIN.subset.trans hIM.subset) _,
     rw hIN.cl, 
@@ -157,7 +157,7 @@ lemma quotient_iff_dual_quotient [finite E] : N ≼ M ↔ M﹡ ≼ N﹡ :=
 begin
   suffices h' : ∀ (N M : matroid E), N ≼ M → M﹡ ≼ N﹡,
   exact ⟨λ h, h' _ _ h, λ h, by {convert h' _ _ h; rw dual_dual }⟩,
-  simp_rw [is_quotient_iff_r, dual_rank_cast_eq],
+  simp_rw [is_quotient_iff_r, dual_r_cast_eq],
   intros N M h X Y hXY,
   have := h _ _ (compl_subset_compl.mpr hXY),
   linarith,

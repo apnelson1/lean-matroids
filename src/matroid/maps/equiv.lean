@@ -60,7 +60,7 @@ matroid_of_indep (λ I', ∃ I, M.indep I ∧ f '' I = I') ⟨_, M.empty_indep, 
   end)
 (begin
   rintro _ X ⟨I,hI,rfl⟩ hIX, 
-  obtain ⟨J, hIJ, hJ⟩ := hI.subset_basis_of_subset (image_subset_iff.mp hIX), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset (image_subset_iff.mp hIX), 
   refine ⟨f '' J, ⟨⟨_,hJ.indep,rfl⟩,image_subset _ hIJ, image_subset_iff.mpr hJ.subset⟩, _⟩,
   rintro _ ⟨⟨K,hK,rfl⟩,hIK,hKX⟩ hJK,   
   rw hJ.eq_of_subset_indep hK ((image_subset_image_iff f.injective).mp hJK) 
@@ -273,7 +273,7 @@ matroid_of_indep (λ I, M'.indep (f '' I)) (by simp) (λ I J hJ hIJ, hJ.subset (
 end)
 (begin
   intros I X hI hIX, 
-  obtain ⟨J, hIJ, hJ⟩ := hI.subset_basis_of_subset (image_subset _ hIX), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset (image_subset _ hIX), 
   obtain ⟨J, rfl⟩ := subset_range_iff_exists_image_eq.mp (hJ.subset.trans (image_subset_range _ _)), 
   
   refine ⟨J, ⟨hJ.indep, (image_subset_image_iff f.injective).mp hIJ, 

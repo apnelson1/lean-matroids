@@ -40,7 +40,6 @@ by simp_rw [loop_iff_dep, indep_iff_subset_base, not_exists, not_and, singleton_
 
 lemma loop.circuit (he : M.loop e) : M.circuit {e} := loop_iff_circuit.mp he 
 
-
 lemma loop.dep (he : M.loop e) : ¬ M.indep {e} := loop_iff_dep.mp he 
 
 lemma loop.mem_cl (he : M.loop e) (X : set E) : e ∈ M.cl X :=
@@ -48,6 +47,8 @@ M.cl_mono (empty_subset _) he
 
 lemma loop.mem_flat (he : M.loop e) {F : set E} (hF : M.flat F) : e ∈ F :=
 by { have := he.mem_cl F, rwa hF.cl at this }
+
+lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
 
 lemma loop.dep_of_mem (he : M.loop e) (h : e ∈ X) : ¬M.indep X :=
 λ hX, he.circuit.dep (hX.subset (singleton_subset_iff.mpr h))
@@ -119,6 +120,8 @@ not_loop_iff.mp (λ hlp, by simpa [hlp.eq_of_circuit_mem hC he] using h)
 lemma nonloop_of_not_mem_cl (h : e ∉ M.cl X) : M.nonloop e :=
 not_loop_iff.mp (λ he, h (he.mem_cl X))
 
+lemma nonloop_iff_not_mem_cl_empty : M.nonloop e ↔ e ∉ M.cl ∅ := iff.rfl 
+
 lemma nonloop.mem_cl_singleton (he : M.nonloop e) (hef : e ∈ M.cl {f}) : f ∈ M.cl {e} :=
 begin
   refine (M.loop_or_nonloop f).elim (λ hf, hf.mem_cl _) (λ hf, _), 
@@ -153,6 +156,14 @@ begin
   have hf : f ∈ M.cl {e}, by {rw hef, exact M.mem_cl_self f },
   rw [pair_comm, eq_comm, ←mem_singleton_iff], 
   exact he.indep.mem_cl_iff.mp hf,  
+end 
+
+lemma exists_nonloop_of_empty_not_base (h : ¬ M.base ∅) : ∃ e, M.nonloop e :=
+begin
+  obtain ⟨B, hB⟩ := M.exists_base, 
+  obtain (rfl | ⟨e,he⟩) := B.eq_empty_or_nonempty, 
+  { exact (h hB).elim },
+  exact ⟨e, hB.indep.nonloop_of_mem he⟩, 
 end 
 
 /- ### Coloops -/ 

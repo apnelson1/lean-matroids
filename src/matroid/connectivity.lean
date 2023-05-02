@@ -24,9 +24,9 @@ begin
   obtain ⟨J, hJ⟩ := M.exists_basis Y, 
   rw [hJ.project_indep_iff], 
   have hi := (h J hJ.subset).mpr hJ.indep, 
-  obtain ⟨I', hI'⟩ := hI.subset_basis_of_subset hIX, 
-  rw [hI'.2.project_indep_iff, disjoint.comm, union_comm] at hi,  
-  exact ⟨disjoint_of_subset_left hI'.1 hi.1, hi.2.subset (union_subset_union_left _ hI'.1)⟩,   
+  obtain ⟨I', hI', hIJ⟩ := hI.subset_basis_of_subset hIX, 
+  rw [hI'.project_indep_iff, disjoint.comm, union_comm] at hi,  
+  exact ⟨disjoint_of_subset_left hIJ hi.1, hi.2.subset (union_subset_union_left _ hIJ)⟩,   
 end 
 
 lemma skew.comm : M.skew X Y ↔ M.skew Y X := ⟨skew.symm, skew.symm⟩ 
@@ -92,22 +92,22 @@ begin
     exact hdj.ne_of_mem heI heJ rfl },
 
   obtain ⟨K₁, hK₁⟩ := h.subset_basis_of_subset hKY,   
-  obtain ⟨K₂, hK₂⟩ := hK₁.2.indep.subset_basis_of_subset (subset_union_left K₁ I), 
+  obtain ⟨K₂, hK₂⟩ := hK₁.1.indep.subset_basis_of_subset (subset_union_left K₁ I), 
   have hi : K₁ ∪ I = K₂, 
-  { refine hK₂.2.subset.antisymm' (union_subset hK₂.1 (λ e heI, (by_contra (λ heK₂, _)))),
-    have heK₂' : e ∈ M.cl K₂, by { rw hK₂.2.cl, exact (M.subset_cl _) (or.inr heI) }, 
-    rw [←union_diff_cancel hK₂.1, ←cl_union_cl_left_eq_cl_union, hK₁.2.cl, ←hJ.cl, 
+  { refine hK₂.1.subset.antisymm' (union_subset hK₂.2 (λ e heI, (by_contra (λ heK₂, _)))),
+    have heK₂' : e ∈ M.cl K₂, by { rw hK₂.1.cl, exact (M.subset_cl _) (or.inr heI) }, 
+    rw [←union_diff_cancel hK₂.2, ←cl_union_cl_left_eq_cl_union, hK₁.1.cl, ←hJ.cl, 
       cl_union_cl_left_eq_cl_union] at heK₂', 
     have he : e ∈ M.cl ((I ∪ J) \ {e}), 
     { rw [union_comm, union_diff_distrib, diff_singleton_eq_self], 
       { refine M.cl_subset (union_subset_union_right _ _) heK₂',
         refine subset_diff_singleton _ (not_mem_subset (diff_subset _ _) heK₂),
-        exact diff_subset_iff.mpr hK₂.2.subset }, 
+        exact diff_subset_iff.mpr hK₂.1.subset }, 
       exact λ heJ, hdj.ne_of_mem heI heJ rfl }, 
     rw indep_iff_not_mem_cl_diff_forall at hi, 
     exact hi e (or.inl heI) he },
   subst hi, 
-  exact hK₂.2.indep.subset (union_subset_union_left _ hK₁.1), 
+  exact hK₂.1.indep.subset (union_subset_union_left _ hK₁.2), 
 end 
 
 lemma skew.disjoint_of_indep_left (h : M.skew I X) (hI : M.indep I) : disjoint I X := 

@@ -78,13 +78,13 @@ begin
   obtain ⟨Ic,Xc, hIc₁, hIc₂, hIc⟩ := hc,
 
   -- Use these pairs to get rank lower bounds ...
-  have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e}) hId₁.loopify_to_indep hId₂.loopify_to_indep)),
+  have hi := (hId.trans_lt (hcon _ ((Xc ∩ Xd) \ {e}) hId₁.of_loopify hId₂.of_loopify)),
 
   have hic : (Xc ∩ Xd \ {e})ᶜ = (insert e (Xcᶜ ∪ Xdᶜ)),
   { apply compl_injective,
     simp_rw [←union_singleton, compl_union, compl_compl, diff_eq_compl_inter, inter_comm {e}ᶜ]},
   
-  simp_rw [loopify.elem, loopify.r_eq, hic] at hi,
+  simp_rw [loopify_elem, loopify.r_eq, hic] at hi,
   zify at hIc hId hcon,
 
   have hu := hcon (insert e Ic) (insert e (Xc ∪ Xd))

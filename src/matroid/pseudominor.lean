@@ -585,7 +585,7 @@ lemma nonloop.r_project_add_one_eq [finite_rk M] (he : M.nonloop e) (X : set E) 
   (M ⟋ e).r X  + 1 = M.r (insert e X) :=
 by { zify, rw [project_elem, project_cast_r_eq, nonloop_iff_r.mp he], simp }
 
-lemma nonloop_cast_r_eq_project_eq [finite_rk M] (he : M.nonloop e) (X : set E) :
+lemma nonloop.cast_r_project_eq [finite_rk M] (he : M.nonloop e) (X : set E) :
   ((M ⟋ e).r X : ℤ) = M.r (insert e X) - 1 :=
 by { rw ←nonloop.r_project_add_one_eq he X, simp }
 
@@ -776,19 +776,22 @@ begin
   rwa [loopify_eq_self_iff_subset_loops, singleton_subset_iff, ←loop_iff_mem_cl_empty] at h,
 end
 
+
+/-
 lemma strict_pminor_of_project_loopify_r_ne_zero [finite_rk M] (h : M.r (C ∪ D) ≠ 0) :
-  M ⟋ C ⟍ D <p M :=
+  M ⟋ C ⟍ D < M :=
 begin
   refine (project_loopify_pminor _ _ _).strict_pminor_of_ne
     (λ hC, h (r_eq_zero_iff_subset_loops.mpr _)),
   rwa [project_loopify_eq_self_iff_subset_loops] at hC,
 end
 
-lemma strict_pminor_of_project_r_ne_zero [finite_rk M] (h : M.r (C) ≠ 0) : M ⟋ C <p M :=
+lemma strict_pminor_of_project_r_ne_zero [finite_rk M] (h : M.r (C) ≠ 0) : M ⟋ C < M :=
 begin
   refine (project_pminor _ _).strict_pminor_of_ne (λ hC, h (r_eq_zero_iff_subset_loops.mpr _)),
   rwa [project_eq_self_iff_subset_loops] at hC,
 end
+-/
 
 lemma pminor.loops_supset_loops (h : N ≤p M) : M.cl ∅ ⊆ N.cl ∅ :=
 begin
