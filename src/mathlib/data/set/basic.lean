@@ -26,6 +26,10 @@ begin
   exact hs.trans_ssubset (diff_singleton_ssubset.mpr hxt), 
 end 
 
+lemma has_subset.subset.ssubset_of_nonempty_diff {α : Type*} {s t : set α} 
+  (hst : s ⊆ t) (he : (t \ s).nonempty) : s ⊂ t :=
+hst.ssubset_of_ne (by { rintro rfl, simpa using he })
+
 lemma inter_subset_union (s t : set α) : s ∩ t ⊆ s ∪ t := 
 (inter_subset_left _ _).trans (subset_union_left _ _)  
 

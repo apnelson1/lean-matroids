@@ -35,7 +35,7 @@ begin
   rw mem_cl_iff_forall_mem_flat at hf, 
   exact hf _ hF hXF, 
 end
-
+   
 lemma cl_subset (M : matroid E) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
 sInter_subset_sInter (λ F hF, ⟨hF.1, h.trans hF.2⟩)
 
@@ -285,6 +285,12 @@ end
 
 lemma cl_exchange_iff : e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
 ⟨cl_exchange, cl_exchange⟩
+
+lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) : 
+  M.cl (insert e X) = M.cl (insert f X) :=
+by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
+    and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
+    iff_true_intro (cl_exchange he).1]
 
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
 begin

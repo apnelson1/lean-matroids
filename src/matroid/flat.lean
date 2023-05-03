@@ -67,6 +67,10 @@ lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=
 by {nth_rewrite 1 ←hF.cl, apply cl_exchange, rwa hF.cl}
 
+lemma flat.cl_insert_eq_cl_insert_of_mem (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) : 
+  M.cl (insert e F) = M.cl (insert f F) :=
+by { apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
+
 lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
 
@@ -108,23 +112,33 @@ h.eq_of_ssubset_of_subset (M.flat_of_cl _)
   ((ssubset_insert he.2).trans_subset (M.subset_cl _))
   (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩))
 
+lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
+  M.covby F₀ F₁ ↔ ∃ e ∉ F₀, F₁ = M.cl (insert e F₀) :=
+begin
+  refine ⟨λ h, _, _⟩,
+  { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
+    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
+    exact ⟨_, heF₀, rfl⟩ },
+  rintro ⟨e, heF₀, rfl⟩, 
+  refine ⟨hF₀, M.flat_of_cl _, 
+    (M.subset_cl_of_subset (subset_insert _ _)).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
+  { exact ⟨e, M.mem_cl_of_mem (mem_insert _ _), heF₀⟩ },
+  refine or_iff_not_imp_left.mpr 
+    (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
+  
+  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
+  obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
+  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
+end
+
 lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∉ F₀) :
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
-  refine ⟨M.cl (insert e F₀), ⟨(M.subset_cl _) (mem_insert _ _),_⟩, _⟩,
-  { refine ⟨hF₀,M.flat_of_cl _, 
-      (ssubset_insert he).trans_subset (M.subset_cl _), λ F hF hF₀F hFeF₀,_⟩,
-    by_contra' h,
-    refine h.2 (hFeF₀.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_,hF₀F⟩))),
-    obtain ⟨x,hxF,hxF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm h.1)),
-    exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFeF₀ hxF, hxF₀⟩).1
-      (hF.cl_subset_of_subset (insert_subset.mpr ⟨hxF, hF₀F⟩))},
-  rintro F ⟨heF, ⟨-,hF,hF₀F,hmin⟩⟩,
-  obtain (h' | rfl) := hmin (M.cl (insert e F₀)) (M.flat_of_cl _)
-    ((subset_insert _ _).trans (M.subset_cl _))
-    (hF.cl_subset_of_subset (insert_subset.mpr ⟨heF,hF₀F.subset⟩)),
-  { exact (((ssubset_insert he).trans_subset (M.subset_cl _)).ne.symm h').elim},
-  refl,
+  simp_rw [hF₀.covby_iff_eq_cl_insert], 
+  refine ⟨M.cl (insert e F₀), ⟨M.mem_cl_of_mem (mem_insert _ _), ⟨e, he, rfl⟩⟩,_ ⟩, 
+  simp only [exists_prop, and_imp, forall_exists_index],
+  rintro X heX f hfF₀ rfl, 
+  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he⟩,  
 end
 
 lemma flat.covby_partition (hF : M.flat F) : 

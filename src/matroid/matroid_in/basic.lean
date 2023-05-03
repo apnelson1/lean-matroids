@@ -16,7 +16,7 @@ variables {α : Type*}
   The main motivation for this is to have a way of talking about minors that avoids type equality.
   Pseudominors give one way of doing this, while staying in `matroid E`, but they are a bit ugly
   with duality. The advantage of `matroid_in` is that, if `M : matroid_in α`, then `M﹡` and
-  `M / C \ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ \ C / D`
+  `M ⟋ C ⟍ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ ⟍ C ⟋ D`
   meaningfully and without type equality.
 
   The disadvantage is that one has to constantly keep track of a ground set, and API duplication
