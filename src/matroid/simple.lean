@@ -96,6 +96,18 @@ begin
   exact (h _ he.circuit (finite_singleton e)).ne ((ncard_singleton e).symm), 
 end 
 
+lemma loopless_iff_girth_ne_one : M.loopless ↔ M.girth ≠ 1 :=
+begin
+  obtain (h0 | hpos) := nat.eq_zero_or_pos M.girth,
+  { rw [iff_true_intro (ne_of_eq_of_ne h0 nat.zero_ne_one), iff_true, loopless_iff_forall_circuit], 
+    rw girth_eq_zero_iff at h0, 
+    exact λ C hC hCfin, (h0 C hC hCfin).elim },
+  have hpos' := hpos, 
+  rw [←nat.succ_le_iff, ←ne_iff_lt_iff_le, ne_comm] at hpos, 
+  simp_rw [hpos, ←nat.succ_le_iff, le_girth_iff hpos'.ne.symm, nat.succ_le_iff, 
+    loopless_iff_forall_circuit], 
+end 
+
 lemma simple_iff_forall_circuit : M.simple ↔ ∀ C, M.circuit C → C.finite → 2 < C.ncard := 
 begin
   refine ⟨λ h C hC hCfin, lt_of_not_le (λ hle, hC.dep _), λ h e f, by_contra (λ hd, _)⟩,
@@ -105,6 +117,16 @@ begin
   have con' := con.trans_le (ncard_insert_le _ _), 
   simpa [ncard_singleton] using con', 
 end 
+
+lemma simple_iff_girth : M.simple ↔ M.girth = 0 ∨ 2 < M.girth :=
+begin
+  obtain (h0 | hpos) := nat.eq_zero_or_pos M.girth,
+  { rw [iff_true_intro h0, true_or, iff_true, simple_iff_forall_circuit],
+    rw [girth_eq_zero_iff] at h0, 
+    exact λ C hC hCfin, (h0 C hC hCfin).elim },
+  simp_rw [←nat.succ_le_iff, iff_false_intro hpos.ne.symm, false_or, le_girth_iff hpos.ne.symm, 
+    nat.succ_le_iff, simple_iff_forall_circuit], 
+end  
 
 end simple
 

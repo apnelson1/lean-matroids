@@ -1,5 +1,6 @@
 import .closure
 import mathlib.data.set.basic
+import data.nat.lattice 
 
 noncomputable theory
 open_locale classical
@@ -46,7 +47,7 @@ lemma circuit.not_ssubset (hC : M.circuit C) (hC' : M.circuit C') : ¬ (C' ⊂ C
 lemma circuit.nonempty (hC : M.circuit C) : C.nonempty :=
 by {rw set.nonempty_iff_ne_empty, rintro rfl, exact hC.1 M.empty_indep}
 
-lemma empty_not_circuit (M : matroid E) [finite_rk M] : ¬M.circuit ∅ :=
+lemma empty_not_circuit (M : matroid E) : ¬M.circuit ∅ :=
 λ h, by simpa using h.nonempty
 
 lemma circuit.finite [finitary M] (hC : M.circuit C) : C.finite := let ⟨h⟩ := ‹M.finitary› in h C hC  
@@ -293,6 +294,73 @@ lemma cocircuit.finite [finitary M﹡] {K : set E} (hK : M.cocircuit K) : K.fini
 -- end 
 
 end dual 
+
+section girth
+
+
+/- Todo : `finitary` versions without finiteness in the statements -/
+
+/-- The girth of a matroid is the size of its smallest finite circuit 
+  (or zero if there is no finite circuit)-/
+def girth (M : matroid E) : ℕ :=  Inf (ncard '' {C | M.circuit C ∧ C.finite})
+
+lemma girth_eq_zero_iff : M.girth = 0 ↔ ∀ C, M.circuit C → C.infinite :=
+begin
+  simp_rw [girth, nat.Inf_eq_zero, mem_image, mem_set_of_eq, image_eq_empty, set.infinite, 
+    ←not_nonempty_iff_eq_empty, imp_iff_or_not, ←imp_iff_or_not, nonempty_def, mem_set_of],
+  rw [imp_iff_not], 
+  { simp },
+  simp only [not_exists, not_and, and_imp], 
+  intros C hC hCfin hc, 
+  rw [ncard_eq_zero hCfin] at hc, subst hc, 
+  exact M.empty_not_circuit hC, 
+end 
+
+lemma circuit.girth_le (hC : M.circuit C) (hCfin : C.finite) : M.girth ≤ C.ncard :=
+nat.Inf_le ⟨C, ⟨hC, hCfin⟩, rfl⟩
+
+lemma exists_circuit_girth (h : M.girth ≠ 0) : ∃ C, M.circuit C ∧ C.finite ∧ C.ncard = M.girth :=
+begin
+  simp_rw [ne.def, girth_eq_zero_iff, not_forall, exists_prop, not_infinite] at h, 
+  obtain ⟨C, ⟨hC,hCfin⟩, hc⟩ := 
+    nat.Inf_mem (nonempty.image ncard (h : {C | M.circuit C ∧ C.finite}.nonempty)), 
+  exact ⟨C, hC, hCfin, hc⟩, 
+end    
+
+lemma girth_eq_iff {k : ℕ} (hk : k ≠ 0) : 
+  M.girth = k ↔ (∀ C, M.circuit C → C.finite → k ≤ C.ncard) ∧ 
+    (∃ C, M.circuit C ∧ C.finite ∧ C.ncard = k) :=
+begin
+  split,
+  { rintro rfl, 
+    refine ⟨λ C hC hCfin, hC.girth_le hCfin, (exists_circuit_girth hk).imp (λ C, id)⟩ },
+  rintro ⟨h, C, ⟨hC, hCfin, rfl⟩⟩, 
+  have hg : M.girth ≠ 0,  
+  { simp_rw [ne.def, girth_eq_zero_iff, not_forall, exists_prop, not_infinite], 
+    exact ⟨C, hC, hCfin⟩ }, 
+  obtain ⟨C', hC', hC'fin, hC'card⟩ := exists_circuit_girth hg, 
+  rw [←hC'card, le_antisymm_iff, and_iff_left (h _ hC' hC'fin)], 
+  convert hC.girth_le hCfin, 
+end 
+
+lemma girth_le_iff {k : ℕ} (h : M.girth ≠ 0) : 
+  M.girth ≤ k ↔ ∃ C, M.circuit C ∧ C.finite ∧ C.ncard ≤ k :=
+begin
+  obtain ⟨C, hC, hCfin, hCcard⟩ := exists_circuit_girth h, 
+  refine ⟨λ h, ⟨C, hC, hCfin, hCcard.trans_le h⟩, _⟩,
+  rintro ⟨C', hC', hC'fin, hC'card⟩, 
+  exact (hC'.girth_le hC'fin).trans hC'card, 
+end 
+
+lemma le_girth_iff {k : ℕ} (h : M.girth ≠ 0) :
+  k ≤ M.girth ↔ ∀ C, M.circuit C → C.finite → k ≤ C.ncard :=
+begin
+  refine ⟨λ h C hC hCfin, h.trans (hC.girth_le hCfin), λ h', _⟩,
+  obtain ⟨C, hC, hCfin, hCc⟩ := exists_circuit_girth h, 
+  exact (h' C hC hCfin).trans_eq hCc, 
+end     
+
+end girth
 
 section basis_exchange
 

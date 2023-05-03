@@ -131,12 +131,15 @@ def circuit (M : matroid E) (C : set E) : Prop := C ∈ minimals (⊆) {X | ¬M.
 /-- A coindependent set is one that is disjoint from some base -/
 def coindep (M : matroid E) (I : set E) : Prop := ∃ B, M.base B ∧ disjoint I B
 
-
 class finite_rk (M : matroid E) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
 
 class infinite_rk (M : matroid E) : Prop := (exists_infinite_base : ∃ B, M.base B ∧ B.infinite)
 
 class finitary (M : matroid E) : Prop := (cct_finite : ∀ (C : set E), M.circuit C → C.finite) 
+
+class rk_pos (M : matroid E) : Prop := (empty_not_base : ¬M.base ∅)
+
+class dual_rk_pos (M : matroid E) : Prop := (univ_not_base : ¬M.base univ)
 
 end defs
 

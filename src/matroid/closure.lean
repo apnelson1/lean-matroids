@@ -126,8 +126,12 @@ lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) :
   e ∈ M.cl I ↔ ¬M.indep (insert e I) :=
 by rw [hI.mem_cl_iff, (iff_false _).mpr heI, imp_false]
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) : x ∉ M.cl I ↔ x ∉ I ∧ M.indep (insert x I) :=
+lemma indep.not_mem_cl_iff (hI : M.indep I) : e ∉ M.cl I ↔ e ∉ I ∧ M.indep (insert e I) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
+
+lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
+  e ∉ M.cl I ↔ M.indep (insert e I) :=
+by rw [hI.mem_cl_iff_of_not_mem heI, not_not]
 
 lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set E) (h : M.indep (⋃ i, I i)) :
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
