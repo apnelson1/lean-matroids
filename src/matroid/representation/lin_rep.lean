@@ -264,7 +264,7 @@ end
 /- A matroid is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid.is_binary (M : matroid E) := M.is_representable (zmod 2)
 
-lemma U24_simple : (canonical_unif 2 4).simple :=
+lemma U24_simple : (unif 2 4).simple :=
 begin
   rw [canonical_unif, unif_simple_iff],
   simp only [nat.one_lt_bit0_iff],
@@ -327,7 +327,7 @@ begin
 end
 
 -- this doesn't have sorry's but it relies on foo and U24_simple which do
-lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
+lemma U24_nonbinary : ¬ (unif 2 4).is_binary :=
 begin
   by_contra h2,
   rw [matroid.is_binary, is_representable] at h2,
@@ -335,12 +335,12 @@ begin
   cases n with φ,
   haveI := zmod.fintype 2,
   cases foo φ with φ,
-  rw [canonical_unif, unif_rk] at φ,
+  rw [unif_on_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
     have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
       (span (zmod 2) (range φ))),
-    rw [rep.of_rank, unif_rk] at h9,
+    rw [rep.of_rank, unif_on_rk] at h9,
     { -- there's probably a cleaner way to talk about the card of diff than going
       -- between fintype and finset cards
       simp_rw [← to_finset_card, to_finset_diff] at h8,

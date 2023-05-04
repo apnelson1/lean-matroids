@@ -40,13 +40,13 @@ namespace matroid
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := ∃ (ι : Type), nonempty (rep 𝔽 M ι)-/
 
-structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_monoid W] [module 𝔽 W] (M : matroid E) :=
+structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid E) :=
 (to_fun : E → W)
 (valid' : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun e) ↔ M.indep I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid E) : Prop := 
-  ∃ (W : Type) (hW : add_comm_monoid W) (hFW : @module 𝔽 W _ hW), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
+  ∃ (W : Type) (hW : add_comm_group W) (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 
 namespace rep
 
@@ -58,7 +58,7 @@ instance : has_coe_to_fun (rep 𝔽 W M) (λ _, E → W) := fun_like.has_coe_to_
 
 lemma valid (φ : rep 𝔽 W M) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
 
-protected lemma is_representable {W : Type} [add_comm_monoid W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
+protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
@@ -341,30 +341,31 @@ begin
   rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
   cases h1 with l,
   have h3 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
-  use λ x, (l ⟨φ x, h3 x⟩),
-  intros I,
-  rw ← φ.valid,
-  have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, h3 x⟩ : (span 𝔽 (range ⇑φ)))),
-  { simp only [subtype.coe_mk] },
-  have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, h3 x⟩ : span 𝔽 (range ⇑φ))),
-  { simp_rw [h8, ← submodule.coe_subtype], 
-    apply linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
-  rw [h4, ← linear_map.linear_independent_iff l.to_linear_map (linear_equiv.ker l)],
-  simp only [linear_equiv.coe_to_linear_map], 
+  use φ,
+end
+
+lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] :
+  nonempty (rep 𝔽 (fin M.rk → 𝔽) M) :=
+begin
+  have h := foo φ,
+  cases h with φ,
+  have φ' := rep'.rep_of_rep' φ,
+  use φ',
 end
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid.is_binary (M : matroid E) := M.is_representable (zmod 2)
 
-lemma U24_simple : (canonical_unif 2 4).is_simple :=
+lemma U24_simple : (unif 2 4).simple :=
 begin
-  rw [canonical_unif, unif_simple_iff],
+  have h2 := (unif_on_simple_iff (fin 4)),
+  simp only [nat.card_eq_fintype_card, fintype.card_fin, nat.one_lt_bit0_iff, nat.one_le_bit0_iff, nat.lt_one_iff,
+  eq_self_iff_true, forall_true_left] at h2,
+  rw h2,
   simp only [nat.one_lt_bit0_iff],
-  simp only [nat.card_eq_fintype_card, fintype.card_fin, nat.one_lt_bit0_iff, 
-             nat.one_le_bit0_iff, nat.lt_one_iff],
 end
 
-lemma U23_binary : (canonical_unif 2 3).is_binary :=
+lemma U23_binary : (unif 2 3).is_binary :=
 begin
   -- wait maybe i don't even need basis, maybe i could just map directly
   -- cardinality of U23 is 3
@@ -418,21 +419,25 @@ begin
   sorry,
 end
 
+-- i think we need something that says if a matroid is finite it has 
+-- a finite dimensional representation
+
 -- this doesn't have sorry's but it relies on foo and U24_simple which do
-lemma U24_nonbinary : ¬ (canonical_unif 2 4).is_binary :=
+lemma U24_nonbinary : ¬ (unif 2 4).is_binary :=
 begin
   by_contra h2,
   rw [matroid.is_binary, is_representable] at h2,
-  rcases h2 with ⟨ι, n⟩,
-  cases n with φ,
+  rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ⟩⟩⟩⟩,
   haveI := zmod.fintype 2,
-  cases foo φ with φ,
-  rw [canonical_unif, unif_rk] at φ,
+  haveI : finite_dimensional (zmod 2) W,
+  sorry,
+  cases foo' φ with φ,
+  rw [unif_on_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
     have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
       (span (zmod 2) (range φ))),
-    rw [rep.of_rank, unif_rk] at h9,
+    rw [rep.of_rank, unif_on_rk] at h9,
     { -- there's probably a cleaner way to talk about the card of diff than going
       -- between fintype and finset cards
       simp_rw [← to_finset_card, to_finset_diff] at h8,
