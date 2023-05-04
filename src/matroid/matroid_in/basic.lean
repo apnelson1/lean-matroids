@@ -16,7 +16,7 @@ variables {α : Type*}
   The main motivation for this is to have a way of talking about minors that avoids type equality.
   Pseudominors give one way of doing this, while staying in `matroid E`, but they are a bit ugly
   with duality. The advantage of `matroid_in` is that, if `M : matroid_in α`, then `M﹡` and
-  `M / C \ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ \ C / D`
+  `M ⟋ C ⟍ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ ⟍ C ⟋ D`
   meaningfully and without type equality.
 
   The disadvantage is that one has to constantly keep track of a ground set, and API duplication
@@ -251,6 +251,8 @@ matroid.base.insert_dep hB he
 lemma indep_iff_coe : M.indep I ↔ (M : matroid α).indep I := iff.rfl
 
 lemma indep.to_coe (hI : M.indep I) : (M : matroid α).indep I := hI
+
+
 
 lemma indep_iff_subset_base : M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B := iff.rfl
 
@@ -532,6 +534,60 @@ begin
   simp_rw [preimage_image_eq _ coe_injective, ←@range_coe _ E],   
   exact ⟨hF₀, image_subset_range _ _⟩, 
 end   
+
+lemma circuit_eq_lift_set_prop (M : matroid_in α) : 
+  M.circuit = lift_set_prop (λ _, matroid.circuit) M :=
+begin
+  ext C, 
+  simp only [lift_set_prop_iff, equiv_subtype.circuit_iff, coe_mk, image_preimage_coe], 
+  refine ⟨λ h, ⟨_,h.subset_ground⟩, _⟩,
+  { rwa [inter_eq_self_of_subset_left h.subset_ground] },
+  rintro ⟨hC, hE⟩, 
+  rwa inter_eq_self_of_subset_left hE at hC, 
+end 
+
+/-- The `girth` of `M` is the length of its smallest finite circuit, or zero if none exists -/
+noncomputable def girth (M : matroid_in α) := (equiv_subtype ⟨M,rfl⟩).girth 
+
+lemma girth_eq_zero_iff : M.girth = 0 ↔ ∀ C, M.circuit C → C.infinite :=
+begin
+  simp_rw [girth, matroid.girth_eq_zero_iff, equiv_subtype.circuit_iff, coe_mk], 
+  refine ⟨λ h C hC hCfin, h (coe ⁻¹' C) _ _, λ h C hC hCfin, h _ hC (hCfin.image _)⟩,
+  { convert hC, rw [image_preimage_eq_iff, range_coe], exact hC.subset_ground },
+  exact hCfin.preimage (coe_injective.inj_on _),
+end 
+
+lemma girth_le_iff {k : ℕ} (h : M.girth ≠ 0) : 
+  M.girth ≤ k ↔ ∃ C, M.circuit C ∧ C.finite ∧ C.ncard ≤ k :=
+begin
+  simp_rw [girth, matroid.girth_le_iff h, equiv_subtype.circuit_iff, coe_mk], 
+  split, 
+  { rintro ⟨C, hC, hCfin, hCcard⟩, 
+    refine ⟨_, hC, hCfin.image coe, _⟩,
+    rwa ncard_image_of_injective _ coe_injective },
+  rintro ⟨C, hC, hCfin, hCcard⟩, 
+  refine ⟨coe ⁻¹' C, _, hCfin.preimage (coe_injective.inj_on _), _⟩, 
+  { convert hC, rw [image_preimage_eq_iff, range_coe], exact hC.subset_ground },
+  rwa ncard_preimage_of_injective_subset_range coe_injective, 
+  rw [range_coe], 
+  exact hC.subset_ground, 
+end 
+
+lemma le_girth_iff {k : ℕ} (h : M.girth ≠ 0) :
+  k ≤ M.girth ↔ ∀ C, M.circuit C → C.finite → k ≤ C.ncard :=
+begin
+  simp_rw [girth, matroid.le_girth_iff h, equiv_subtype.circuit_iff, coe_mk], 
+  refine ⟨λ h' C hC hCfin, _, λ h' C hC hCfin, _⟩,
+  { convert h' (coe ⁻¹' C) _ _ using 1,
+    { rw ncard_preimage_of_injective_subset_range coe_injective, 
+      rw [range_coe], exact hC.subset_ground },
+    { convert hC, rw [image_preimage_eq_iff, range_coe], exact hC.subset_ground },
+    exact hCfin.preimage (coe_injective.inj_on _) },
+  convert h' _ hC (hCfin.image coe) using 1, 
+  rw [ncard_image_of_injective _ coe_injective], 
+end    
+
+
 
 -- ### Closure and flats
 
@@ -867,16 +923,30 @@ def loopless (M : matroid_in α) := ∀ e ∈ M.E, M.nonloop e
   (equiv_subtype M).loopless ↔ (M : matroid_in α).loopless :=
 by { obtain ⟨M, rfl⟩ := M, simp [loopless, matroid.loopless] }
 
+lemma loopless_iff_girth_ne_one : M.loopless ↔ M.girth ≠ 1 :=
+begin
+  convert (@equiv_subtype.loopless_iff _ _ ⟨M,rfl⟩).symm, 
+  rw [loopless_iff_girth_ne_one, girth], 
+end 
+
+lemma loopless_iff_forall_circuit : M.loopless ↔ ∀ C, M.circuit C → C.finite → 1 < C.ncard :=
+begin
+  convert (@equiv_subtype.loopless_iff _ _ ⟨M,rfl⟩).symm, 
+  simp_rw [loopless_iff_forall_circuit, equiv_subtype.circuit_iff, coe_mk, eq_iff_iff], 
+  
+  refine ⟨λ h C hC hCfin, _, λ h C hC hCfin, _⟩,
+  { rw ←ncard_image_of_injective C coe_injective, 
+    exact h _ hC (hCfin.image coe) },
+  have hcoe : (coe : M.E → α) '' (coe ⁻¹' C) = C, 
+  { rw [image_preimage_eq_iff, range_coe], exact hC.subset_ground },
+  convert h (coe ⁻¹' C) _ (hCfin.preimage (coe_injective.inj_on _)) using 1,
+  { rw [←ncard_image_of_injective _ coe_injective, hcoe] },
+  rwa hcoe, 
+end 
+
 @[simp] lemma equiv_subtype.symm_loopless_iff {E : set α} (M : matroid E) : 
   (equiv_subtype.symm M : matroid_in α).loopless ↔ M.loopless :=
-begin
-  simp only [loopless, matroid.loopless, equiv_subtype.symm_ground_eq, set_coe.forall, 
-    equiv_subtype.symm_nonloop_iff],  
-  refine ⟨λ h e he, _, λ h e he, ⟨⟨e,he⟩, h e he, rfl⟩⟩,
-  obtain ⟨f,hf,rfl⟩ := h e he, 
-  convert hf, 
-  simp
-end 
+by { rw [loopless_iff_girth_ne_one, matroid.loopless_iff_girth_ne_one, girth], simp }
 
 /-- A `simple` matroid is one with no parallel pair -/
 def simple (M : matroid_in α) := ∀ e f ∈ M.E, M.indep {e,f} 
@@ -885,14 +955,15 @@ def simple (M : matroid_in α) := ∀ e f ∈ M.E, M.indep {e,f}
   (equiv_subtype M).simple ↔ (M : matroid_in α).simple :=
 by { obtain ⟨M, rfl⟩ := M, simp [simple, matroid.simple, image_pair] }
 
+lemma simple_iff_girth : M.simple ↔ M.girth = 0 ∨ 2 < M.girth :=
+begin
+  convert (@equiv_subtype.simple_iff _ _ ⟨M,rfl⟩).symm, 
+  rw [eq_iff_iff, matroid.simple_iff_girth, girth], 
+end 
+
 @[simp] lemma equiv_subtype.symm_simple_iff {E : set α} (M : matroid E) : 
   (equiv_subtype.symm M : matroid_in α).simple ↔ M.simple :=
-begin
-  simp only [simple, matroid.simple, equiv_subtype.symm_ground_eq, equiv_subtype.symm_indep_iff, 
-    set_coe.forall],  
-  refine ⟨λ h, _, λ h, _⟩,
-  { },
-end 
+by rw [simple_iff_girth, matroid.simple_iff_girth, girth, coe_eta, equiv.apply_symm_apply]
 
 /-! Rank -/
 
@@ -1401,9 +1472,9 @@ lemma simple_iff_num_points_eq_card [finite M.E] (hnl : ¬M.base ∅) :
   M.simple ↔ M.num_points = M.E.ncard := 
 begin
   nth_rewrite 0 ← eq_image_symm_image_equiv_subtype M, 
-  -- rw [matroid.simple_iff_num_points_eq_card], 
-  -- set M' := equiv_subtype ⟨M,rfl⟩ with hM',  
-  -- rw [←equiv_subtype.simple_iff], 
+  rw [equiv_subtype.symm_simple_iff, matroid.simple_iff_num_points_eq_card, 
+    ←num_points_eq_equiv_subtype, ncard_univ, nat.card_coe_set_eq], 
+  simpa, 
 end 
 
 end points 

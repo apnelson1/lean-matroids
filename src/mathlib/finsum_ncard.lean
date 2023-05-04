@@ -3,6 +3,7 @@ import algebra.big_operators.finprod
 import mathlib.data.set.basic
 import mathlib.data.set.sigma
 import mathlib.ncard
+import data.setoid.partition 
 
 noncomputable theory
 open_locale big_operators classical
@@ -217,8 +218,7 @@ begin
   exact λ x hx, ⟨x, hx, rfl⟩,
 end
 
-
-lemma card_eq_finsum_fiber {α ι :Type*} [finite α] (f : α → ι) : 
+lemma card_eq_finsum_fiber {α ι : Type*} [finite α] (f : α → ι) : 
   nat.card α = ∑ᶠ (i : ι), (f ⁻¹' {i}).ncard := 
 begin
   rw [←ncard_univ], 
@@ -226,5 +226,26 @@ begin
   exact finsum_congr (λ _, by rw univ_inter), 
 end 
 
+lemma finsum_indexed_partition_ncard_eq {α ι : Type*} [finite α] {s : ι → set α} 
+(h : indexed_partition s) : 
+  ∑ᶠ i, set.ncard (s i) = nat.card α :=
+by { simp_rw [h.eq], convert (card_eq_finsum_fiber h.index).symm }
+  
+/-- A `setoid` partition noncomputably gives rise to an indexed partition -/
+noncomputable def setoid.is_partition.indexed_partition 
+{α : Type*} {c : set (set α)} (h : setoid.is_partition c) : 
+  @indexed_partition c α coe := 
+indexed_partition.mk' coe 
+  (by { rintro ⟨a,ha⟩ ⟨b,hb⟩ hne, exact h.pairwise_disjoint ha hb (by simpa using hne) })
+  (by { rintro ⟨a,ha⟩, exact setoid.nonempty_of_mem_partition h ha } )
+  (by { intro x, have hu := mem_univ x, rw [←h.sUnion_eq_univ, mem_sUnion] at hu, 
+    obtain ⟨t, htc, htx⟩ := hu, exact ⟨⟨t, htc⟩, htx⟩ })
+
+lemma finsum_partition_eq {α : Type*} [finite α] {c : set (set α)} (h : setoid.is_partition c) : 
+  ∑ᶠ s ∈ c, set.ncard s = nat.card α :=  
+begin
+  convert finsum_indexed_partition_ncard_eq h.indexed_partition using 1,
+  rw [finsum_set_coe_eq_finsum_mem], 
+end 
 
 end finsum

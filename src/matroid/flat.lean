@@ -1,5 +1,6 @@
 import .circuit
 import mathlib.data.set.basic 
+import mathlib.finsum_ncard
 
 noncomputable theory
 open_locale classical
@@ -66,6 +67,10 @@ lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=
 by {nth_rewrite 1 ←hF.cl, apply cl_exchange, rwa hF.cl}
 
+lemma flat.cl_insert_eq_cl_insert_of_mem (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) : 
+  M.cl (insert e F) = M.cl (insert f F) :=
+by { apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
+
 lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
 
@@ -107,24 +112,94 @@ h.eq_of_ssubset_of_subset (M.flat_of_cl _)
   ((ssubset_insert he.2).trans_subset (M.subset_cl _))
   (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩))
 
-lemma flat.exists_unique_flat_of_not_mem [finite_rk M] (hF₀ : M.flat F₀) (he : e ∉ F₀) :
+lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
+  M.covby F₀ F₁ ↔ ∃ e ∉ F₀, F₁ = M.cl (insert e F₀) :=
+begin
+  refine ⟨λ h, _, _⟩,
+  { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
+    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
+    exact ⟨_, heF₀, rfl⟩ },
+  rintro ⟨e, heF₀, rfl⟩, 
+  refine ⟨hF₀, M.flat_of_cl _, 
+    (M.subset_cl_of_subset (subset_insert _ _)).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
+  { exact ⟨e, M.mem_cl_of_mem (mem_insert _ _), heF₀⟩ },
+  refine or_iff_not_imp_left.mpr 
+    (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
+  
+  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
+  obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
+  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
+end
+
+lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∉ F₀) :
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
-  refine ⟨M.cl (insert e F₀), ⟨(M.subset_cl _) (mem_insert _ _),_⟩, _⟩,
-  { refine ⟨hF₀,M.flat_of_cl _, 
-      (ssubset_insert he).trans_subset (M.subset_cl _), λ F hF hF₀F hFeF₀,_⟩,
-    by_contra' h,
-    refine h.2 (hFeF₀.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_,hF₀F⟩))),
-    obtain ⟨x,hxF,hxF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm h.1)),
-    exact mem_of_mem_of_subset (hF₀.cl_exchange ⟨hFeF₀ hxF, hxF₀⟩).1
-      (hF.cl_subset_of_subset (insert_subset.mpr ⟨hxF, hF₀F⟩))},
-  rintro F ⟨heF, ⟨-,hF,hF₀F,hmin⟩⟩,
-  obtain (h' | rfl) := hmin (M.cl (insert e F₀)) (M.flat_of_cl _)
-    ((subset_insert _ _).trans (M.subset_cl _))
-    (hF.cl_subset_of_subset (insert_subset.mpr ⟨heF,hF₀F.subset⟩)),
-  { exact (((ssubset_insert he).trans_subset (M.subset_cl _)).ne.symm h').elim},
-  refl,
+  simp_rw [hF₀.covby_iff_eq_cl_insert], 
+  refine ⟨M.cl (insert e F₀), ⟨M.mem_cl_of_mem (mem_insert _ _), ⟨e, he, rfl⟩⟩,_ ⟩, 
+  simp only [exists_prop, and_imp, forall_exists_index],
+  rintro X heX f hfF₀ rfl, 
+  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he⟩,  
 end
+
+lemma flat.covby_partition (hF : M.flat F) : 
+  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+begin
+  refine ⟨not_mem_diff_singleton _ _,
+    λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
+  { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
+    mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+    implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
+    simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+    rintro rfl, exact not_mem_empty e heF },
+  { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
+    exists_unique_iff_exists, exists_prop], 
+    obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
+    simp only [and_imp] at hF',   
+    use F' \ F, 
+    simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
+      iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
+      true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+    
+    refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+    rw [hF'.2 F₁ heF₁ hFF₁] }, 
+end 
+
+lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
+  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
+begin
+  convert hF.covby_partition, 
+  rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
+  rintro (rfl | ⟨F', hF', h⟩) , 
+  { exact not_nonempty_empty hFne },
+  refine hF'.ssubset.not_subset _, 
+  simpa [diff_eq_empty] using h, 
+end 
+
+lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
+  setoid.is_partition {F | M.covby ∅ F} := 
+begin
+  convert hF.covby_partition, 
+  simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
+  ext F,  
+  simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
+  rintro hF' rfl, 
+  exact hF'.ssubset.ne rfl, 
+end 
+
+lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :
+  F.ncard + ∑ᶠ F' ∈ {F' | M.covby F F'}, (F' \ F).ncard = nat.card E :=
+begin
+  obtain (rfl | hFne) := F.eq_empty_or_nonempty, 
+  { convert finsum_partition_eq hF.covby_partition_of_empty, simp },
+  convert finsum_partition_eq (hF.covby_partition_of_nonempty hFne), 
+  rw [finsum_mem_insert, add_left_cancel_iff, finsum_mem_image],  
+  { rintro F₁ hF₁ F₂ hF₂ (h : F₁ \ F = F₂ \ F), 
+    rw [←diff_union_of_subset hF₁.subset, h, diff_union_of_subset hF₂.subset] }, 
+  { rintro ⟨F', hF', (h : F' \ F = F)⟩, 
+    obtain ⟨e, he⟩ := hFne,
+    exact (h.symm.subset he).2 he },
+  exact (to_finite _).image _,
+end 
 
 lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = F ↔ M.basis I F := 
 ⟨by { rintro rfl, exact hI.basis_cl }, λ h, by rw [h.cl, hF.cl]⟩

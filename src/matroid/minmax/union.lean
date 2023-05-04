@@ -1,6 +1,6 @@
 import .inter
 import ..constructions.direct_sum
-import ..equiv
+import ..maps.equiv
 import algebra.big_operators.finprod
 
 open_locale classical
@@ -176,15 +176,15 @@ begin
   use I,
 
   obtain ⟨J, rfl, hJ⟩ := partitionable_iff_is_Union.mp hpart,
-  simp only [indep_lrestrict_iff] at hJ,
-  simp_rw [lrestrict_r] at hcard,
+  simp only [lrestr.indep_iff] at hJ,  
+  simp_rw [lrestr.r] at hcard,
 
   refine ⟨Union_subset (λ i, (hJ i).2 ), X ∩ S, inter_subset_right _ _, _, _⟩,
   { rw partitionable_iff_is_Union,
     exact ⟨_,rfl,λi, (hJ i).1⟩ },
 
   simp only [hcard, diff_inter_self_eq_diff, add_le_add_iff_left, compl_eq_univ_diff],
-  exact ncard_le_of_subset (diff_subset_diff_left (subset_univ _)),
+  exact ncard_le_of_subset (diff_subset_diff_left (subset_univ _)),     
 end
 
 noncomputable def max_partitionable_set (M : ι → matroid E) (X : set E) : ℕ :=

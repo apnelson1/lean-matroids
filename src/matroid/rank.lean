@@ -693,7 +693,7 @@ end circuit
 
 section cl_flat
 
-variables {F F₁ F₂ H H₁ H₂ : set E}
+variables {F F' F₁ F₂ H H₁ H₂ : set E}
 
 lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (he : e ∉ F) (hfin : M.r_fin F):
   M.r (insert e F) = M.r F + 1 :=
@@ -730,16 +730,25 @@ lemma flat.not_mem_iff_r_insert [finite_rk M] (hF : M.flat F) :
   e ∉ F ↔ M.r (insert e F) = M.r F + 1 :=
 hF.not_mem_iff_r_insert_of_r_fin (M.to_r_fin F)
 
-lemma flat.r_lt_r_of_ssubset [finite_rk M] (hF : M.flat F) (hX : F ⊂ X) : M.r F < M.r X :=
+lemma flat.r_lt_r_of_ssubset_of_r_fin (hF : M.flat F) (hFX : F ⊂ X) (hX : M.r_fin X) : 
+  M.r F < M.r X :=
 begin
-  obtain ⟨e, heX, heF⟩ := exists_of_ssubset hX, 
-  exact (flat_iff_r_lt_r_insert.mp hF e heF).trans_le 
-    (M.r_mono (insert_subset.mpr ⟨heX,hX.subset⟩)), 
+  obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX, 
+  rw [nat.lt_iff_add_one_le, ←hF.r_insert_of_not_mem_of_r_fin heF (hX.subset hFX.subset)], 
+  exact hX.r_mono (insert_subset.mpr ⟨heX, hFX.subset⟩), 
 end 
 
-lemma flat.eq_of_le_r_subset [finite_rk M] (hF : M.flat F) (h : F ⊆ X) (hr : M.r X ≤ M.r F) : 
+lemma flat.eq_of_r_le_r_subset_of_r_fin (hF : M.flat F) (hFfin : M.r_fin X) (hFX : F ⊆ X) 
+(hr : M.r X ≤ M.r F) : 
+  F = X :=
+by_contra (λ hne, (hF.r_lt_r_of_ssubset_of_r_fin (hFX.ssubset_of_ne hne) hFfin).not_le hr)
+
+lemma flat.r_lt_r_of_ssubset [finite_rk M] (hF : M.flat F) (hFX : F ⊂ X) : M.r F < M.r X :=
+hF.r_lt_r_of_ssubset_of_r_fin hFX (M.to_r_fin X)
+
+lemma flat.eq_of_le_r_subset [finite_rk M] (hF : M.flat F) (hFX : F ⊆ X) (hr : M.r X ≤ M.r F) : 
   F = X := 
-by_contra (λ h', (hF.r_lt_r_of_ssubset (ssubset_of_ne_of_subset h' h)).not_le hr)
+hF.eq_of_r_le_r_subset_of_r_fin (M.to_r_fin X) hFX hr  
 
 lemma flat.eq_univ_of_rk_le_r [finite_rk M] (hF : M.flat F) (hr : M.rk ≤ M.r F) : F = univ :=
 hF.eq_of_le_r_subset (subset_univ _) hr
@@ -810,6 +819,26 @@ begin
   rw r_le_iff_cl,
   tauto, 
 end
+
+lemma flat.covby_iff_r_of_r_fin (hF : M.flat F) (hFfin : M.r_fin F) (hF' : M.flat F') :
+  M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
+begin
+  rw hF.covby_iff_eq_cl_insert, 
+  refine ⟨_, λ h, _⟩,
+  { rintro ⟨e, he, rfl⟩, 
+    rw [and_iff_right (M.subset_cl_of_subset (subset_insert _ _)), r_cl, 
+      (hF.not_mem_iff_r_insert_of_r_fin hFfin).mp he] },
+  have hss : F ⊂ F', from h.1.ssubset_of_ne (by { rintro rfl, simpa using h.2 }), 
+  obtain ⟨e, heF', heF⟩ := exists_of_ssubset hss, 
+  refine ⟨e, heF, ((M.flat_of_cl _).eq_of_r_le_r_subset_of_r_fin _ _ _).symm⟩, 
+  { refine r_fin_of_r_ne_zero _, rw h.2, exact nat.succ_ne_zero _ },
+  { exact hF'.cl_subset_of_subset (insert_subset.mpr ⟨heF', h.1⟩) },
+  rw [h.2, r_cl, hF.r_insert_of_not_mem_of_r_fin heF hFfin], 
+end 
+
+lemma flat.covby_iff_r [finite_rk M] (hF : M.flat F) (hF' : M.flat F') : 
+  M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
+hF.covby_iff_r_of_r_fin (M.to_r_fin F) hF'  
 
 lemma hyperplane_iff_maximal_r [finite_rk M] : 
   M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → M.r X = M.rk :=
@@ -918,8 +947,9 @@ end loop
 
 section flat_of_r
 
-variables {F P L : set E}
+variables {F F' P L : set E}
 
+/-- `M.flat_of_r k F` means that `F` is a flat in `r` with finite rank `k`. -/
 def flat_of_r (M : matroid E) (k : ℕ) (F : set E) := M.flat F ∧ M.r F = k ∧ M.r_fin F  
 
 lemma flat_of_r.flat (h : M.flat_of_r k F) : M.flat F := h.1 
@@ -948,6 +978,18 @@ begin
   rintro rfl, 
   exact ⟨M.flat_of_cl _, by simp, M.r_fin_empty.to_cl⟩,   
 end
+
+lemma flat_of_r.covby_iff (hF : M.flat_of_r k F) : M.covby F F' ↔ M.flat_of_r (k+1) F' ∧ F ⊆ F' :=
+begin
+  refine (em (M.flat F')).symm.elim (λ hF', iff_of_false (mt covby.flat_right hF') _) (λ hF', _), 
+  { exact mt (λ h, h.1.flat) hF' },
+  have hr := hF.r, subst hr, 
+  simp_rw [hF.flat.covby_iff_r_of_r_fin hF.r_fin hF', flat_of_r, and_comm, and.congr_right_iff, 
+    ← and_assoc, iff_and_self, and_iff_right hF'], 
+  refine λ h hF', r_fin_of_r_ne_zero _, 
+  rw hF', 
+  simp,  
+end 
 
 /-- A `point` is a rank-one flat -/
 def point (M : matroid E) (P : set E) := M.flat_of_r 1 P 
