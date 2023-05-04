@@ -26,5 +26,13 @@ begin
   rw image_singleton,  
 end  
 
-@[simp] lemma subtype.preimage_image_coe (s : set α) (t : set s) : 
-  (coe ⁻¹' (coe '' t : set α) : set s) = t := preimage_image_eq t subtype.coe_injective
+@[simp] lemma subtype.preimage_image_coe (s : set α) (x : set s) : 
+  (coe ⁻¹' (coe '' x : set α) : set s) = x := preimage_image_eq x subtype.coe_injective
+
+@[simp] lemma subtype.image_coe_subset_image_coe_iff (s : set α) (x y : set s) : 
+  (coe '' x : set α)  ⊆ coe '' y ↔ x ⊆ y := 
+image_subset_image_iff subtype.coe_injective
+
+@[simp] lemma subtype.image_coe_eq_image_coe_iff (s : set α) (x y : set s) : 
+  (coe '' x : set α) = coe '' y ↔ x = y := 
+image_eq_image subtype.coe_injective

@@ -273,7 +273,7 @@ begin
   rw [hM.pcl_eq_singleton], 
 end 
 
-/-- In a `simple` matroid, points are equivalent to elements. -/
+/-- In a `simple` matroid, points are (noncomputably) equivalent to elements. -/
 noncomputable def simple.elem_point_equiv (h : M.simple) : E ≃ {P // M.point P} := 
 { to_fun := λ e, 
     ⟨{e}, by { rw [←h.cl_eq_singleton], exact (h.nonloop e).cl_point }⟩,

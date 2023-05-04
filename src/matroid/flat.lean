@@ -131,6 +131,9 @@ begin
   exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
 end
 
+lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∉ M.cl X, F = M.cl (insert e X) :=
+by simp_rw [(M.flat_of_cl X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
+
 lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∉ F₀) :
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
@@ -203,7 +206,6 @@ end
 
 lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = F ↔ M.basis I F := 
 ⟨by { rintro rfl, exact hI.basis_cl }, λ h, by rw [h.cl, hF.cl]⟩
-
 
 /- ### Hyperplanes -/
 
