@@ -219,6 +219,8 @@ def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : m
   ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
   λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 (matroid_in.delete_indep_iff.1 h).1⟩ }
 
+
+
 -- by representability of dual and representability of deletion, we have rep of contraction
 
 lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] :
@@ -349,6 +351,21 @@ end rep'
 lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] : 
   finite_dimensional.finrank 𝔽 (φ.to_submodule) = M.rk :=
 begin
+  cases M.exists_base with B hB,
+  -- need basis for this to work
+  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ)),
+  rw [rep.to_submodule, ←rep.span_base φ hB, finrank_span_set_eq_card (φ '' B)],
+  have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
+  { simp_rw to_finset_card,
+    rw ← card_image_of_inj_on (rep.inj_on_of_indep φ (base.indep hB)) },
+  rw h6,
+  simp only [← base.card hB, ncard_def, to_finset_card, nat.card_eq_fintype_card],
+  have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
+  rw rep.valid,
+  apply hB.indep,
+  --have h9 := linear_independent.image_of_comp B φ coe,
+  --deterministic timeout when i try to plug in h8
+  --apply linear_independent.image_of_comp B φ coe h8,
   sorry,
 end
 
