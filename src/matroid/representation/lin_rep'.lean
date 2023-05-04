@@ -4,7 +4,7 @@ import linear_algebra.basis
 import linear_algebra.linear_independent
 import mathlib.ncard
 import ..constructions.basic
-import ..dual
+import matroid.matroid_in.minor
 import ..simple
 
 namespace set
@@ -201,6 +201,25 @@ lemma dual_rep_of_rep (φ : rep 𝔽 W M) [fintype 𝔽] : rep 𝔽 (module.dual
       sorry,  
       sorry,
     end }
+
+namespace matroid_in
+
+structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in E) :=
+(to_fun : E → W)
+(valid' : ∀ (I ⊆ M.ground), linear_independent 𝔽 (λ (e : I), to_fun e) ↔ M.indep I)
+
+/-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
+def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop := 
+  ∃ (W : Type) (hW : add_comm_group W) (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
+end matroid_in
+
+def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : matroid_in.rep 𝔽 W (N ⟍ D) := 
+{ to_fun := φ.to_fun,
+  valid' := λ I hI, ⟨λ h, matroid_in.indep.delete_indep 
+  ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
+  λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 (matroid_in.delete_indep_iff.1 h).1⟩ }
+
+-- by representability of dual and representability of deletion, we have rep of contraction
 
 lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] :
   finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
