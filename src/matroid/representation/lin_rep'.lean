@@ -26,7 +26,6 @@ open_locale classical
 universe u
 variables {E 𝔽 : Type*} [fintype E] {M : matroid E} {I B : set E} {x : E}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
-[finite_dimensional 𝔽 W]
 -- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
 
@@ -107,18 +106,6 @@ def rep.compose (φ : rep 𝔽 W M) (e : rep.to_submodule φ ≃ₗ[𝔽] W') : 
 
     --rw linear_independent_equiv,
   end  }
-
-/-def rep.mk (𝔽 : Type*) [field 𝔽] (M : matroid E) (ι : Type) (f : E → ι → 𝔽 ) (valid : ∀ (I : set E), linear_independent 𝔽 (λ (e : ↥I), f ↑e) ↔ M.indep I) : 
-  rep 𝔽 M ι := 
-{ to_fun := f,
-  valid' := valid }-/
-
-/-lemma linear_independent_iff_coe (φ : rep 𝔽 W M) (hI : M.indep I) :
-  linear_independent 𝔽 (λ e : I, φ e) ↔ linear_independent 𝔽 (coe : φ '' I → 𝔽) :=
-linear_independent_image $ inj_on_of_indep _ hI-/
-
--- want lemma that says if it's a simple matroid the cardinality of E
--- is leq that of the submodule
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x}).2 hx.indep).ne_zero (⟨x, mem_singleton _⟩ : ({x} : set E))
@@ -291,14 +278,14 @@ inj_on_iff_injective.2 ((rep'.valid' φ I).2 hI).injective
 
 def rep_of_rep' (φ : rep' 𝔽 M ι) : rep 𝔽 (ι → 𝔽) M := ⟨φ, λ I, φ.valid' I⟩    
 
-noncomputable def rep'_of_rep (φ : rep 𝔽 W M) {n : ℕ} (h : finrank 𝔽 W = n) : 
+noncomputable def rep'_of_rep [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) {n : ℕ} (h : finrank 𝔽 W = n) : 
   rep' 𝔽 M (fin n)  := 
 { to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) (by simpa) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
   valid' := λ I, 
   begin
     rw [←φ.valid', rep.to_fun_eq_coe], 
-    exact
-    (linear_equiv.of_finrank_eq _ _ (by simpa) : W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
+    exact (linear_equiv.of_finrank_eq _ _ (by simpa) : 
+    W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
   end }
 
 lemma of_base' (φ : rep' 𝔽 M ι) {B : set E} (hB : M.base B) (e : E) : φ e ∈ span 𝔽 (φ '' B) :=
@@ -369,7 +356,7 @@ begin
   sorry,
 end
 
-lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] :
+lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep' 𝔽 M (fin M.rk))  :=
 begin
   have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
@@ -380,7 +367,7 @@ begin
   use φ,
 end
 
-lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] :
+lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep 𝔽 (fin M.rk → 𝔽) M) :=
 begin
   have h := foo φ,
@@ -463,10 +450,10 @@ lemma U24_nonbinary : ¬ (unif 2 4).is_binary :=
 begin
   by_contra h2,
   rw [matroid.is_binary, is_representable] at h2,
-  rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ⟩⟩⟩⟩,
+  rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
   haveI := zmod.fintype 2,
-  haveI : finite_dimensional (zmod 2) W,
-  sorry,
+  have φ := rep.rep_submodule φ',
+  rw rep.to_submodule at φ,
   cases foo' φ with φ,
   rw [unif_on_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
