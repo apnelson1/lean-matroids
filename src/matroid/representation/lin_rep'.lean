@@ -206,45 +206,23 @@ def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : m
   ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
   λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 (matroid_in.delete_indep_iff.1 h).1⟩ }
 
-
-
--- by representability of dual and representability of deletion, we have rep of contraction
-
-lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] :
-  finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
+theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
+  [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
+finite_dimensional.finrank K (submodule.span K s) = s.ncard :=
 begin
-  cases M.exists_base with B hB,
-  -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ)),
-  rw [←span_base φ hB, finrank_span_set_eq_card (φ '' B)],
-  have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  { simp_rw to_finset_card,
-    rw ← card_image_of_inj_on (inj_on_of_indep φ (base.indep hB)) },
-  rw h6,
-  simp only [← base.card hB, ncard_def, to_finset_card, nat.card_eq_fintype_card],
-  have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
-  rw rep.valid,
-  apply hB.indep,
-  /-have h10 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
-  have h9 : (λ (x : ↥B), φ x) = (λ (x : ↥B), ↑(⟨φ x, h10 x⟩ : (span 𝔽 (range ⇑φ)))),
-  { simp only [subtype.coe_mk] },
-  rw h9 at h8,-/
-  /-have h10 := linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))),
-  have h9 : linear_independent 𝔽 (λ (x : ↥B), φ ↑x) ↔ linear_independent 𝔽 (λ (x : ↥B), ↑(φ ↑x)),
-  sorry,-/
-  have h7 := @linear_independent.image_of_comp 𝔽 W _ _ _ _ _ B φ,
-  sorry,
-  --rw ← h9 at h7, 
-  --have h7 := linear_independent.image_of_comp B φ coe,
+  sorry, 
+end 
+
+lemma of_r (φ : rep 𝔽 W M) (X : set E) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  rw [←hI.card, ←φ.span_basis hI, finrank_span_set_eq_ncard, 
+    ncard_image_of_inj_on (inj_on_of_indep _ hI.indep) ], 
+  exact linear_independent.image (φ.valid.mpr hI.indep), 
 end
 
-lemma of_rank_set (φ : rep 𝔽 W M) [fintype 𝔽] (X : set E) [fintype (span 𝔽 (φ '' X))] :
-  finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
-begin
-  cases M.exists_basis X with I hI,
-  
-  sorry,
-end
+lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
+by { convert of_r φ univ; simp }
 
 lemma cl_subset_span_rep (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
 begin
@@ -313,47 +291,6 @@ instance fin_dim_rep' (φ : rep' 𝔽 M ι) [finite E] [fintype 𝔽] : finite_d
 begin
   cases M.exists_base with B hB,
   apply finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
-end
-
-lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
-  finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
-begin
-  cases M.exists_base with B hB,
-  -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ)),
-  rw [←span_base' φ hB, finrank_span_set_eq_card (φ '' B)],
-  have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  { simp_rw to_finset_card,
-    rw ← card_image_of_inj_on (inj_on_of_indep' φ (base.indep hB)) },
-  rw h6,
-  simp only [← base.card hB, ncard_def, to_finset_card, nat.card_eq_fintype_card],
-  have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
-  rw [← to_fun_eq_coe', rep'.valid φ],
-  apply hB.indep,
-  apply linear_independent.image_of_comp B φ coe h8,
-end
-
-end rep'
-
-lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] : 
-  finite_dimensional.finrank 𝔽 (φ.to_submodule) = M.rk :=
-begin
-  cases M.exists_base with B hB,
-  -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ)),
-  rw [rep.to_submodule, ←rep.span_base φ hB, finrank_span_set_eq_card (φ '' B)],
-  have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  { simp_rw to_finset_card,
-    rw ← card_image_of_inj_on (rep.inj_on_of_indep φ (base.indep hB)) },
-  rw h6,
-  simp only [← base.card hB, ncard_def, to_finset_card, nat.card_eq_fintype_card],
-  have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
-  rw rep.valid,
-  apply hB.indep,
-  --have h9 := linear_independent.image_of_comp B φ coe,
-  --deterministic timeout when i try to plug in h8
-  --apply linear_independent.image_of_comp B φ coe h8,
-  sorry,
 end
 
 lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
