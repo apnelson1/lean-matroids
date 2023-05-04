@@ -979,6 +979,9 @@ begin
   exact ⟨M.flat_of_cl _, by simp, M.r_fin_empty.to_cl⟩,   
 end
 
+lemma loops_flat_of_r_zero (M : matroid E) : M.flat_of_r 0 (M.cl ∅) :=
+by rw flat_of_r_zero_iff_loops
+
 lemma flat_of_r.covby_iff (hF : M.flat_of_r k F) : M.covby F F' ↔ M.flat_of_r (k+1) F' ∧ F ⊆ F' :=
 begin
   refine (em (M.flat F')).symm.elim (λ hF', iff_of_false (mt covby.flat_right hF') _) (λ hF', _), 
@@ -990,6 +993,10 @@ begin
   rw hF', 
   simp,  
 end 
+
+lemma flat_of_r.flat_of_r_add_one_of_covby (hF : M.flat_of_r k F) (hFF' : M.covby F F') : 
+  M.flat_of_r (k+1) F' := 
+by { rw [hF.covby_iff] at hFF', exact hFF'.1 }
 
 /-- A `point` is a rank-one flat -/
 def point (M : matroid E) (P : set E) := M.flat_of_r 1 P 
@@ -1052,6 +1059,12 @@ begin
   simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at heJ, subst heJ,   
   rw [←h.flat.cl, hJ.cl], 
 end 
+
+lemma point_iff_loops_covby : M.point P ↔ M.covby (M.cl ∅) P := 
+begin
+  rw [flat_of_r.covby_iff M.loops_flat_of_r_zero, zero_add, point, iff_self_and],  
+  exact λ h, h.flat.loops_subset,  
+end
 
 end flat_of_r
 

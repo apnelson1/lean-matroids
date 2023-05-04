@@ -52,7 +52,7 @@ instance finite_rk.to_coe {M : matroid_in α} [finite_rk M] :
 
 section equivalence
 
-variables {X E : set α}
+variables {X X₁ X₂ E : set α}
 
 /-- A `matroid_in` gives a matroid on a subtype -/
 def to_matroid (M : matroid_in α) : matroid M.E := 
@@ -111,88 +111,139 @@ def equiv.set_subtype {α : Type*} (X : set α) : { S : set α // S ⊆ X } ≃ 
   right_inv := λ S, by simp [preimage_image_eq _ coe_injective],
   left_inv := λ S, by {obtain ⟨S, h⟩ := S, simpa } }
 
-@[simp] lemma equiv.set_subtype_apply {X : set α} (S : _) : 
-  equiv.set_subtype X S = coe ⁻¹' (S : set α) := rfl 
+@[simp] lemma equiv.set_subtype_apply (S) : equiv.set_subtype X S = coe ⁻¹' (S : set α) := rfl 
 
-@[simp] lemma equiv.set_subtype_apply_symm_coe {X : set α} (S : _) : 
+@[simp] lemma equiv.set_subtype_apply_symm_coe (S) : 
   ((equiv.set_subtype X).symm S : set α) = coe '' S := rfl 
 
 lemma eq_image_symm_image_equiv_subtype (M : matroid_in α) : 
   (equiv_subtype.symm (equiv_subtype ⟨M,rfl⟩) : matroid_in α) = M :=
 by simp_rw [equiv.symm_apply_apply, coe_mk] 
 
-section lift_set_prop 
+section transfer
 
-/-- Transfer a `matroid` property of sets to a `matroid_in` property. This is perhaps unnecessary 
-  abstract nonsense -/
-def lift_set_prop (P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop) : 
+/-- Transfer a `matroid` property of sets to a `matroid_in` property. -/
+def transfer_set_prop (P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop) : 
   ∀ (M : matroid_in α), set α → Prop := 
 λ M X, ∃ (h : X ⊆ M.E), P (M.to_matroid) (equiv.set_subtype M.E ⟨X,h⟩) 
 
-@[simp] lemma lift_set_prop_iff {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} {M : matroid_in α} 
-{X : set α} : 
-  lift_set_prop P M X ↔ P (equiv_subtype ⟨M,rfl⟩) (coe ⁻¹' X) ∧ X ⊆ M.E  :=
-begin 
-  simp_rw [lift_set_prop, equiv_subtype_apply, and_comm, equiv.set_subtype_apply, coe_mk, 
-    exists_prop, coe_coe, and.congr_right_iff, coe_mk], 
-  exact λ hX, iff.rfl,  
-end 
+/-- Transfer a `matroid` property of pairs of sets to a `matroid_in` property. -/
+def transfer_set_prop₂ (P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → set γ → Prop) : 
+  ∀ (M : matroid_in α), set α → set α → Prop := 
+λ M X₁ X₂, ∃ (h₁ : X₁ ⊆ M.E) (h₂ : X₂ ⊆ M.E), 
+  P M.to_matroid (equiv.set_subtype M.E ⟨X₁,h₁⟩) (equiv.set_subtype M.E ⟨X₂,h₂⟩)
 
--- lemma lift_set_prop_iff_exists {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} {M : matroid_in α} 
--- {X : set α} : 
---   lift_set_prop P M X ↔ ∃ (X₀ : set M.E), P (equiv_subtype M : matroid_in α) X₀ ∧ X = coe '' X₀ :=
--- begin
---   simp_rw [lift_set_prop_iff, ←@range_coe _ M.E, subset_range_iff_exists_image_eq, 
---     ←exists_and_distrib_left], 
---   split, 
---   { rintro ⟨X₀, hX₀, rfl⟩,
---     refine ⟨X₀, _, rfl⟩, 
---     rwa preimage_image_coe at hX₀,  },
---   rintro ⟨X₀, hX₀, rfl⟩, 
---   refine ⟨_, _, rfl⟩, 
---   rwa preimage_image_eq _ coe_injective,  
--- end 
+lemma transfer_set_prop_iff {P} {M : matroid_in α} : 
+  transfer_set_prop P M X ↔ P (equiv_subtype ⟨M,rfl⟩) (coe ⁻¹' X) ∧ X ⊆ M.E  :=
+by simp [transfer_set_prop, equiv_subtype_apply, to_matroid, and_comm] 
+ 
+lemma transfer_set_prop₂_iff {P} {M : matroid_in α} : 
+  transfer_set_prop₂ P M X₁ X₂ ↔ P (equiv_subtype ⟨M,rfl⟩) (coe ⁻¹' X₁) (coe ⁻¹' X₂) 
+    ∧ X₁ ⊆ M.E ∧ X₂ ⊆ M.E:=
+by simp [transfer_set_prop₂, equiv_subtype_apply, to_matroid, and_comm, ←and_assoc] 
 
-@[simp] lemma lift_set_prop_iff_symm {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} {E : set α} 
-{M : matroid E} {X : set E} : 
-  (lift_set_prop P) (equiv_subtype.symm M : matroid_in α) (coe '' X) ↔ P M X  :=
+@[simp] lemma transfer_set_prop_iff_symm {P} {M : matroid E} {X : set E} : 
+  (transfer_set_prop P) (equiv_subtype.symm M : matroid_in α) (coe '' X) ↔ P M X  :=
+by { rw ←equiv_subtype.apply_symm_apply M, simpa [transfer_set_prop_iff] }
+
+@[simp] lemma transfer_set_prop_coe_iff {P} {M : matroid_in α} {X : set M.E} : 
+  (transfer_set_prop P) M (coe '' X) ↔ P (equiv_subtype ⟨M, rfl⟩) X := 
+by simp [transfer_set_prop_iff]
+
+@[simp] lemma transfer_set_prop₂_iff_symm {P} {E : set α} {M : matroid E} {X₁ X₂ : set E} : 
+  (transfer_set_prop₂ P) (equiv_subtype.symm M : matroid_in α) (coe '' X₁) (coe '' X₂) 
+    ↔ P M X₁ X₂ :=
+by { rw ←equiv_subtype.apply_symm_apply M, simpa [transfer_set_prop₂_iff] }
+
+@[simp] lemma transfer_set_prop₂_coe_iff {P} {M : matroid_in α} {X₁ X₂ : set M.E} : 
+  (transfer_set_prop₂ P) M (coe '' X₁) (coe '' X₂) ↔ P (equiv_subtype ⟨M, rfl⟩) X₁ X₂ := 
+  by simp [transfer_set_prop₂_iff]
+
+lemma transfer_set_prop.subset_ground {P} {M : matroid_in α}
+(hX : transfer_set_prop P M X) : X ⊆ M.E := exists.elim hX (λ h _, h)
+
+lemma transfer_set_prop.inter_ground {P} {M : matroid_in α}
+(hX : transfer_set_prop P M X) : X ∩ M.E = X := inter_eq_self_of_subset_left hX.subset_ground
+
+lemma transfer_set_prop.exists_eq_coe {P} {M : matroid_in α}
+(hX : transfer_set_prop P M X) : ∃ (X₀ : set M.E), P (equiv_subtype ⟨M,rfl⟩) X₀ ∧ X = coe '' X₀ := 
 begin
-  simp [lift_set_prop, preimage_image_eq _ coe_injective], 
-  convert iff.rfl, 
-  simp_rw [to_matroid, matroid.preimage, eq_iff_indep_iff_indep_forall], 
-  simp only [equiv_subtype_apply_symm_coe_coe, function.embedding.coe_subtype, image.indep_iff, 
-    matroid_of_indep_apply], 
-  refine λ I, ⟨λ hI, ⟨I, hI, rfl⟩, _⟩, 
-  rintro ⟨I', hI', h⟩, 
-  rw [image_eq_image coe_injective ] at h,
-  rwa ←h,
+  simp_rw [transfer_set_prop_iff, ←@range_coe _ M.E, subset_range_iff_exists_image_eq] at hX, 
+  obtain ⟨hX₀, X₀, rfl⟩ := hX, 
+  exact ⟨_, by simpa using hX₀, rfl⟩, 
 end 
 
-lemma lift_set_prop.subset_ground {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} 
-{M : matroid_in α} {X : set α} (hX : lift_set_prop P M X) : X ⊆ M.E := exists.elim hX (λ h _, h)
+lemma transfer_set_prop₂.exists_eq_coe {P} {M : matroid_in α} {X₁ X₂ : set α} 
+(hX : transfer_set_prop₂ P M X₁ X₂) : 
+  ∃ (X₁' X₂' : set M.E), P (equiv_subtype ⟨M,rfl⟩) X₁' X₂' ∧ X₁ = coe '' X₁' ∧ X₂ = coe '' X₂' :=
+begin
+  simp_rw [transfer_set_prop₂_iff, ←@range_coe _ M.E, subset_range_iff_exists_image_eq] at hX, 
+  obtain ⟨hX', ⟨X₁', rfl⟩, ⟨X₁',rfl⟩ ⟩  := hX, 
+  exact ⟨_, _, by simpa using hX', rfl, rfl⟩, 
+end 
 
-lemma lift_set_prop.inter_ground {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} 
-{M : matroid_in α} {X : set α} (hX : lift_set_prop P M X) : X ∩ M.E = X :=
-inter_eq_self_of_subset_left hX.subset_ground
+@[simp] lemma transfer_set_prop_forall_iff {P} {M : matroid_in α} {Q : set α → Prop} : 
+  (∀ X, transfer_set_prop P M X → Q X) ↔ 
+    ∀ (Y : set M.E), P (equiv_subtype ⟨M,rfl⟩) Y → Q (coe '' Y) := 
+begin
+  refine ⟨λ h Y hPY, h _ (transfer_set_prop_coe_iff.mpr hPY), λ h X hPX, _⟩,
+  obtain ⟨Y, hY, rfl⟩ := hPX.exists_eq_coe, 
+  exact h _ hY, 
+end 
 
-/-- The type of sets in `α` satisfying `lift_set_prop P` corresponds to the type of sets in 
+@[simp] lemma transfer_set_prop₂_forall_iff {P} {M : matroid_in α} {Q : set α → set α → Prop} : 
+  (∀ X₁ X₂, transfer_set_prop₂ P M X₁ X₂ → Q X₁ X₂) ↔ 
+    ∀ (Y₁ Y₂ : set M.E), P (equiv_subtype ⟨M,rfl⟩) Y₁ Y₂ → Q (coe '' Y₁) (coe '' Y₂) := 
+begin
+  refine ⟨λ h Y₁ Y₂ hP, h _ _ (transfer_set_prop₂_coe_iff.mpr hP), 
+    λ h X₁ X₂ hP, _⟩,
+  obtain ⟨Y₁, Y₂, hY, rfl, rfl⟩ := hP.exists_eq_coe, 
+  exact h _ _ hY,  
+end 
+
+@[simp] lemma transfer_set_prop_exists_iff {P} {M : matroid_in α} {Q : set α → Prop} : 
+  (∃ X, transfer_set_prop P M X ∧ Q X) ↔ 
+    ∃ (Y : set M.E), P (equiv_subtype ⟨M,rfl⟩) Y ∧ Q (coe '' Y) := 
+begin
+  split, 
+  { rintro ⟨X, hPX, hQX⟩, 
+    obtain ⟨Y, hY, rfl⟩ := hPX.exists_eq_coe, 
+    refine ⟨Y, hY, hQX⟩ },
+  rintro ⟨Y, hY⟩, 
+  exact ⟨coe '' Y, by rwa [transfer_set_prop_coe_iff]⟩, 
+end 
+
+lemma transfer_set_prop₂.subset_ground_left {P} {M : matroid_in α} {X₁ X₂ : set α} 
+(hX : transfer_set_prop₂ P M X₁ X₂) : X₁ ⊆ M.E := let ⟨h, _, _⟩ := hX in h
+
+lemma transfer_set_prop₂.subset_ground_right {P} {M : matroid_in α} {X₁ X₂ : set α} 
+(hX : transfer_set_prop₂ P M X₁ X₂) : X₂ ⊆ M.E := let ⟨_, h, _⟩ := hX in h
+
+lemma transfer_set_prop₂.inter_ground_left {P} {M : matroid_in α} {X₁ X₂ : set α}
+(hX : transfer_set_prop₂ P M X₁ X₂) : X₁ ∩ M.E = X₁ := 
+  inter_eq_self_of_subset_left hX.subset_ground_left
+
+lemma transfer_set_prop₂.inter_ground_right {P} {M : matroid_in α} {X₁ X₂ : set α}
+(hX : transfer_set_prop₂ P M X₁ X₂) : X₂ ∩ M.E = X₂ := 
+  inter_eq_self_of_subset_left hX.subset_ground_right
+
+/-- The type of sets in `α` satisfying `transfer_set_prop P` corresponds to the type of sets in 
   `M.E` satisfying `P` -/
-def lift_set_prop_equiv (P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop) (M : matroid_in α) : 
-{ X : set α // lift_set_prop P M X } ≃ { Y : set M.E // P (equiv_subtype ⟨M,rfl⟩) Y } :=
-{ to_fun := λ X, ⟨coe ⁻¹' (X : set α),  (lift_set_prop_iff.mp X.2).1⟩,
+def transfer_set_prop_equiv (P) (M : matroid_in α) : 
+{ X : set α // transfer_set_prop P M X } ≃ { Y : set M.E // P (equiv_subtype ⟨M,rfl⟩) Y } :=
+{ to_fun := λ X, ⟨coe ⁻¹' (X : set α),  (transfer_set_prop_iff.mp X.2).1⟩,
   inv_fun := λ Y, ⟨coe '' (Y : set M.E), by simpa using Y.2⟩,
   left_inv := by { rintro ⟨X, hX⟩, simp [hX.subset_ground], },
   right_inv := by { rintro ⟨Y, hY⟩, simp } }
 
-@[simp] lemma lift_set_prop_equiv_apply {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} 
-(M : matroid_in α) {X : set α} (hX : lift_set_prop P M X) : 
-  (lift_set_prop_equiv P M ⟨X,hX⟩ : set M.E) = coe ⁻¹' X := rfl 
+@[simp] lemma transfer_set_prop_equiv_apply {P} (M : matroid_in α) {X : set α} 
+(hX : transfer_set_prop P M X) : (transfer_set_prop_equiv P M ⟨X,hX⟩ : set M.E) = coe ⁻¹' X := rfl 
 
-@[simp] lemma lift_set_prop_equiv_apply_symm {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} 
+@[simp] lemma transfer_set_prop_equiv_apply_symm {P : ∀ ⦃γ : Type*⦄ (M : matroid γ), set γ → Prop} 
 (M : matroid_in α) {Y : set M.E} (hY : P (equiv_subtype ⟨M,rfl⟩) Y) : 
-  ((lift_set_prop_equiv P M).symm ⟨Y,hY⟩ : set α) = coe '' Y := rfl 
+  ((transfer_set_prop_equiv P M).symm ⟨Y,hY⟩ : set α) = coe '' Y := rfl 
 
-end lift_set_prop
+end transfer
 
 end equivalence 
 
@@ -344,10 +395,10 @@ begin
   rwa [inter_eq_self_of_subset_left hIE] at hi, 
 end
 
-lemma indep_eq_lift_set_prop (M : matroid_in α) : M.indep = lift_set_prop (λ _, matroid.indep) M := 
+lemma indep_eq_transfer_set_prop (M : matroid_in α) : M.indep = transfer_set_prop (λ _, matroid.indep) M := 
 begin
   ext X, 
-  simp only [lift_set_prop_iff, equiv_subtype.indep_iff, coe_mk, image_preimage_coe], 
+  simp only [transfer_set_prop_iff, equiv_subtype.indep_iff, coe_mk, image_preimage_coe], 
   refine ⟨λ h, ⟨by rwa (inter_eq_self_of_subset_left h.subset_ground), h.subset_ground⟩, λ h, _⟩,
   rw [←inter_eq_self_of_subset_left h.2], 
   exact h.1, 
@@ -394,10 +445,10 @@ begin
     iff_true_intro subset.rfl, and_true], 
 end
 
-lemma base_eq_lift_set_prop (M : matroid_in α) : M.base = lift_set_prop (λ _, matroid.base) M := 
+lemma base_eq_transfer_set_prop (M : matroid_in α) : M.base = transfer_set_prop (λ _, matroid.base) M := 
 begin
   ext X, 
-  simp only [lift_set_prop_iff, equiv_subtype.base_iff, coe_mk, image_preimage_coe], 
+  simp only [transfer_set_prop_iff, equiv_subtype.base_iff, coe_mk, image_preimage_coe], 
   refine ⟨λ h, ⟨by rwa (inter_eq_self_of_subset_left h.subset_ground), h.subset_ground⟩, λ h, _⟩,
   rw [←inter_eq_self_of_subset_left h.2], 
   exact h.1, 
@@ -451,10 +502,10 @@ begin
   exact ⟨hF₀, image_subset_range _ _⟩, 
 end
 
-lemma r_fin_eq_lift_set_prop (M : matroid_in α) : M.r_fin = lift_set_prop (λ _, matroid.r_fin) M :=
+lemma r_fin_eq_transfer_set_prop (M : matroid_in α) : M.r_fin = transfer_set_prop (λ _, matroid.r_fin) M :=
 begin
   ext X, 
-  simp_rw [lift_set_prop_iff, equiv_subtype.r_fin_iff, coe_mk, image_preimage_coe, r_fin, 
+  simp_rw [transfer_set_prop_iff, equiv_subtype.r_fin_iff, coe_mk, image_preimage_coe, r_fin, 
     and_iff_left (inter_subset_right _ _), and.congr_left_iff], 
   intro h, 
   rw [inter_eq_self_of_subset_left h],  
@@ -535,11 +586,11 @@ begin
   exact ⟨hF₀, image_subset_range _ _⟩, 
 end   
 
-lemma circuit_eq_lift_set_prop (M : matroid_in α) : 
-  M.circuit = lift_set_prop (λ _, matroid.circuit) M :=
+lemma circuit_eq_transfer_set_prop (M : matroid_in α) : 
+  M.circuit = transfer_set_prop (λ _, matroid.circuit) M :=
 begin
   ext C, 
-  simp only [lift_set_prop_iff, equiv_subtype.circuit_iff, coe_mk, image_preimage_coe], 
+  simp only [transfer_set_prop_iff, equiv_subtype.circuit_iff, coe_mk, image_preimage_coe], 
   refine ⟨λ h, ⟨_,h.subset_ground⟩, _⟩,
   { rwa [inter_eq_self_of_subset_left h.subset_ground] },
   rintro ⟨hC, hE⟩, 
@@ -590,6 +641,8 @@ end
 
 
 -- ### Closure and flats
+
+variables {F₁ F₂ : set α}
 
 /-- A flat is a maximal set having a given basis -/
 def flat (M : matroid_in α) (F : set α) := (M : matroid α).flat (F ∪ M.Eᶜ) ∧ F ⊆ M.E
@@ -839,13 +892,148 @@ begin
   exact ⟨hF₀, image_subset_range _ _⟩, 
 end   
 
-lemma flat_eq_lift_set_prop (M : matroid_in α) : M.flat = lift_set_prop (λ _, matroid.flat) M := 
+lemma flat_eq_transfer_set_prop (M : matroid_in α) : M.flat = transfer_set_prop (λ _, matroid.flat) M := 
 begin
   ext F, 
-  simp only [lift_set_prop_iff, equiv_subtype.flat_iff, coe_mk, image_preimage_coe], 
+  simp only [transfer_set_prop_iff, equiv_subtype.flat_iff, coe_mk, image_preimage_coe], 
   exact ⟨λ h, ⟨by rwa inter_eq_self_of_subset_left h.subset_ground,h.subset_ground⟩, 
     λ h, by { rw ←inter_eq_self_of_subset_left h.2, exact h.1 }⟩,
 end 
+
+lemma flat.exists_eq_coe (h : M.flat F) : 
+  ∃ F₀ : set M.E, (equiv_subtype ⟨M,rfl⟩).flat F₀ ∧ F = coe '' F₀  :=
+by { rw [flat_eq_transfer_set_prop] at h, exact h.exists_eq_coe,  }
+
+def covby (M : matroid_in α) := transfer_set_prop₂ (λ _, matroid.covby) M
+
+lemma covby_iff : M.covby F₁ F₂ ↔ M.flat F₁ ∧ M.flat F₂ ∧ F₁ ⊂ F₂ ∧ 
+  ∀ F, M.flat F → F₁ ⊆ F → F ⊆ F₂ → F = F₁ ∨ F = F₂ :=
+begin
+  
+  
+  
+  
+  
+  split, 
+  
+  { revert F₁ F₂,
+    simp_rw [covby, transfer_set_prop₂_forall_iff, matroid.covby_iff, 
+      equiv_subtype.flat_iff, coe_mk, flat_eq_transfer_set_prop, transfer_set_prop_forall_iff, 
+      ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff, 
+      ←flat_eq_transfer_set_prop, equiv_subtype.flat_iff, coe_mk],
+    exact λ _ _, id }, 
+
+  simp_rw [and_imp, flat_eq_transfer_set_prop], 
+  revert F₁,
+  simp,  
+  -- simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, 
+  --   image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff], 
+  
+  -- rw [and_imp, and_imp, flat_eq_transfer_set_prop], 
+  -- revert F₁ F₂, 
+  revert F₁, 
+  
+  
+  simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, and_imp], 
+   
+   
+  
+
+  
+  simp only [flat_eq_transfer_set_prop], simp, 
+  
+--     },
+  -- rw [covby, iff_def], 
+
+
+  refine ⟨λ h, _, λ h, _⟩,
+  { obtain ⟨F₁,F₂,hc,rfl,rfl⟩ := h.exists_eq_coe,
+    simp_rw [matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, ssubset_iff_subset_not_subset] 
+      at hc, 
+    simp_rw [ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
+    refine ⟨hc.1, hc.2.1, hc.2.2.1, λ F hF hF₁F hFF₂, _ ⟩,  
+    obtain ⟨F, hF', rfl⟩ := hF.exists_eq_coe,     
+    rw [image_subset_image_iff coe_injective] at hF₁F hFF₂, 
+    simp_rw [image_eq_image coe_injective], 
+    exact hc.2.2.2 F hF hF₁F hFF₂ },
+
+  
+  obtain ⟨F₁, hF₁, rfl⟩ := h.1.exists_eq_coe,  
+  obtain ⟨F₂, hF₂, rfl⟩ := h.2.1.exists_eq_coe,  
+  
+  simp only [covby, transfer_set_prop₂_iff, matroid.covby_iff, preimage_image_coe, 
+    equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
+    ssubset_iff_subset_not_subset],
+
+  simp_rw [ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff] at h, 
+  -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
+  -- { rw [covby, transfer_set_prop₂_iff], tauto },
+  -- { exact λ h, hnss h.1.subset_ground },
+  -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
+  -- { rw [covby, transfer_set_prop₂_iff], tauto },
+  -- { exact λ h, hnss h.2.1.subset_ground },
+  -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
+  -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
+  -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
+
+  simp only [covby, matroid.covby_iff, transfer_set_prop₂_iff, preimage_image_coe, 
+    equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
+    and.congr_right_iff, ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
+     
+  
+  
+  refine λ hF₁ hF₂ hss, ⟨λ h F hF hF₁F hFF₂, _, λ h, _⟩,
+  
+  -- have := h (coe ⁻¹' F), 
+  
+
+  -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
+  --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
+  --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
+
+  -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
+  -- { rw [covby, transfer_set_prop₂_iff], tauto },
+  -- { exact λ h, hnss h.1.subset_ground },
+  -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
+  -- { rw [covby, transfer_set_prop₂_iff], tauto },
+  -- { exact λ h, hnss h.2.1.subset_ground },
+  -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
+  -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
+  -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
+
+  -- simp_rw [covby, flat_eq_transfer_set_prop, transfer_set_prop₂_coe_iff, 
+  --   transfer_set_prop_coe_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk],
+  --   simp, 
+  
+
+  -- -- squeeze_simp [covby, matroid.covby_iff], 
+
+  -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
+  --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
+  --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
+    
+  -- -- have := matroid.covby_iff, 
+
+end 
+
+lemma covby.flat_left (h : M.covby F₁ F₂) : M.flat F₁ := 
+begin
+  rw [←h.inter_ground_left], 
+  simp only [covby, transfer_set_prop₂_iff] at h, 
+  simpa using h.1.flat_left, 
+end 
+
+lemma covby.flat_right (h : M.covby F₁ F₂) : M.flat F₂ := 
+begin
+  rw [←h.inter_ground_right], 
+  simp only [covby, transfer_set_prop₂_iff] at h, 
+  simpa using h.1.flat_right, 
+end 
+
+lemma covby.ssubset (h : M.covby F₁ F₂) : F₁ ⊂ F₂ :=
+begin
+  
+end  
 
 -- ### loops and nonloops
 
@@ -1352,15 +1540,15 @@ end
 
 end dual
 
-section points
+section flat_of_r
 
 /-- A `flat` of rank `k` in `M`. When `k = 0`, the definition excludes infinite-rank flats
   with junk rank `0`.  -/
-def flat_of_r (M : matroid_in α) (k : ℕ) := lift_set_prop (λ γ M', M'.flat_of_r k) M
+def flat_of_r (M : matroid_in α) (k : ℕ) := transfer_set_prop (λ γ M', M'.flat_of_r k) M
 
 lemma flat_of_r_zero_iff_loops : M.flat_of_r 0 F ↔ F = M.cl ∅ :=
 begin
-  simp only [flat_of_r, lift_set_prop_iff, flat_of_r_zero_iff_loops, equiv_subtype.cl_eq, coe_mk, 
+  simp only [flat_of_r, transfer_set_prop_iff, flat_of_r_zero_iff_loops, equiv_subtype.cl_eq, coe_mk, 
     image_empty, preimage_coe_eq_preimage_coe_iff], 
   split, 
   { rintro ⟨he, h⟩, 
@@ -1374,10 +1562,10 @@ end
 
 lemma flat_of_r_iff : M.flat_of_r k F ↔ M.flat F ∧ M.r F = k ∧ M.r_fin F :=
 begin
-  simp_rw [flat_of_r, lift_set_prop_iff, matroid.flat_of_r, flat_eq_lift_set_prop, 
-    r_fin_eq_lift_set_prop], 
+  simp_rw [flat_of_r, transfer_set_prop_iff, matroid.flat_of_r, flat_eq_transfer_set_prop, 
+    r_fin_eq_transfer_set_prop], 
   simp only [equiv_subtype.flat_iff, coe_mk, image_preimage_coe, equiv_subtype.r_eq, 
-    equiv_subtype.r_fin_iff, lift_set_prop_iff, ←r_eq_r_inter_ground], 
+    equiv_subtype.r_fin_iff, transfer_set_prop_iff, ←r_eq_r_inter_ground], 
   tauto, 
 end 
 
@@ -1438,22 +1626,22 @@ def point (M : matroid_in α) (P : set α) := M.flat_of_r 1 P
 /-- A `line` is a rank-two flat -/
 def line (M : matroid_in α) (L : set α) := M.flat_of_r 2 L 
 
-lemma point_eq_lift_set_prop (M : matroid_in α) : M.point = lift_set_prop (λ _, matroid.point) M := 
+lemma point_eq_transfer_set_prop (M : matroid_in α) : M.point = transfer_set_prop (λ _, matroid.point) M := 
 rfl
 
-lemma line_eq_lift_set_prop (M : matroid_in α) : M.line = lift_set_prop (λ _, matroid.line) M := rfl
+lemma line_eq_transfer_set_prop (M : matroid_in α) : M.line = transfer_set_prop (λ _, matroid.line) M := rfl
 
 lemma sum_ncard_point_diff_loops (M : matroid_in α) [finite M.E] : 
   ∑ᶠ P : {P // M.point P}, ((P : set α) \ M.cl ∅).ncard = (M.E \ M.cl ∅).ncard :=
 begin
-  set e := lift_set_prop_equiv (λ _, matroid.point) M, 
+  set e := transfer_set_prop_equiv (λ _, matroid.point) M, 
   convert (@finsum_comp_equiv _ _ _ _ e.symm _).symm, 
   convert (equiv_subtype ⟨M,rfl⟩).sum_ncard_point_diff_loops.symm using 1, 
   { simp only [equiv_subtype.cl_eq, coe_mk, image_empty],
     rw [←ncard_image_of_injective _ coe_injective, image_compl_preimage, range_coe] },
   apply finsum_congr, 
   rintro ⟨P, hP⟩, 
-  simp only [lift_set_prop_equiv_apply_symm, coe_mk, equiv_subtype.cl_eq, image_empty], 
+  simp only [transfer_set_prop_equiv_apply_symm, coe_mk, equiv_subtype.cl_eq, image_empty], 
   rw [←ncard_image_of_injective _ coe_injective, image_diff coe_injective, image_preimage_coe, 
     inter_eq_self_of_subset_left (cl_subset_ground _ _)], 
 end 
@@ -1462,7 +1650,7 @@ noncomputable def num_points (M : matroid_in α) : ℕ := nat.card { P // M.poin
 
 lemma num_points_eq_equiv_subtype (M : matroid_in α) : 
   M.num_points = (equiv_subtype ⟨M,rfl⟩).num_points :=   
-nat.card_eq_of_bijective _ ((lift_set_prop_equiv (λ _, matroid.point) M).bijective)
+nat.card_eq_of_bijective _ ((transfer_set_prop_equiv (λ _, matroid.point) M).bijective)
 
 lemma num_points_eq_coe (M : matroid_in α) : 
   M.num_points = (M : matroid α).num_points :=
@@ -1477,7 +1665,7 @@ begin
   simpa, 
 end 
 
-end points 
+end flat_of_r 
 
 
 
