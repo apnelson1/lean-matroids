@@ -335,26 +335,7 @@ end
 
 end rep'
 
-lemma of_rank (φ : rep 𝔽 W M) [fintype 𝔽] : 
-  finite_dimensional.finrank 𝔽 (φ.to_submodule) = M.rk :=
-begin
-  cases M.exists_base with B hB,
-  -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ)),
-  rw [rep.to_submodule, ←rep.span_base φ hB, finrank_span_set_eq_card (φ '' B)],
-  have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
-  { simp_rw to_finset_card,
-    rw ← card_image_of_inj_on (rep.inj_on_of_indep φ (base.indep hB)) },
-  rw h6,
-  simp only [← base.card hB, ncard_def, to_finset_card, nat.card_eq_fintype_card],
-  have h8 : linear_independent 𝔽 (λ (x : B), φ (x : E)),
-  rw rep.valid,
-  apply hB.indep,
-  --have h9 := linear_independent.image_of_comp B φ coe,
-  --deterministic timeout when i try to plug in h8
-  --apply linear_independent.image_of_comp B φ coe h8,
-  sorry,
-end
+namespace rep 
 
 lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep' 𝔽 M (fin M.rk))  :=
@@ -405,21 +386,21 @@ begin
   simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff],
   --rw ← fintype.card_fin 3 at h2,
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
-  have φ := @rep.mk _ _ (zmod 2) _ (canonical_unif 2 3) (fin 2) (λ x, ↑(f.to_fun x)) _,
+  have φ := @rep.mk _ _ (zmod 2) (fin 2 → zmod 2) _ _ _ (unif 2 3) (λ x, ↑(f.to_fun x)) _,
   rw [matroid.is_binary, is_representable],
-  { refine ⟨fin 2, ⟨φ⟩⟩ },
+  { refine ⟨(fin 2 → zmod 2), ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ },
   intros I,
   have h3 := @finrank_fin_fun (zmod 2) _ 2,
   refine ⟨λ h, _, λ h, _⟩,  
   -- now the possible sizes of vector families for h are 0, 1, 2.
   have h4 := fintype_card_le_finrank_of_linear_independent h,
   rw h3 at h4,
-  apply unif_indep_iff.2,
-  rw ncard,
-  rw nat.card_eq_fintype_card,
-  apply h4,
+  apply unif.indep_iff.2,
+  { rw [ncard, nat.card_eq_fintype_card],
+    apply h4 },
+  { sorry },
   have h5 := inj_on_of_injective (equiv.injective f),
-  rw [canonical_unif, unif_indep_iff, le_iff_lt_or_eq] at h,
+  rw [unif.indep_iff, le_iff_lt_or_eq] at h,
   cases h with h1 h2,
   have h4 := nat.le_of_lt_succ h1,
   rw le_iff_lt_or_eq at h4,
@@ -435,8 +416,8 @@ begin
   cases h1 with a ha,
   --rw ha,
   simp,
-  have h7 := linear_independent_image,
-  have h6 := linear_independent_image (inj_on_of_injective ↑(equiv.injective f) I),
+  --have h7 := linear_independent_image,
+  --have h6 := linear_independent_image (inj_on_of_injective ↑(equiv.injective f) I),
   sorry,
   --have h2 := linear_independent_singleton,
   sorry,
@@ -481,6 +462,8 @@ begin
       nat.one_le_bit0_iff, nat.lt_one_iff]},
   simp,
 end
+
+end rep
 
 -- lemma foo (e f : E) (hne : e ≠ f) (h : M.r {e,f} = 1) :
 
