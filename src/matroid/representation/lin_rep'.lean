@@ -210,7 +210,14 @@ theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_grou
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
 finite_dimensional.finrank K (submodule.span K s) = s.ncard :=
 begin
-  sorry, 
+  by_cases s.finite,
+  haveI := (finite.fintype h),
+  rw [finrank_span_set_eq_card s hs, to_finset_card, 
+    ncard_eq_to_finset_card, finite.card_to_finset],
+  rw infinite.ncard h,
+  
+
+  sorry,
 end 
 
 lemma of_r (φ : rep 𝔽 W M) (X : set E) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
