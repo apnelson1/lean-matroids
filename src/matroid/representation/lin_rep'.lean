@@ -124,45 +124,36 @@ begin
   exact ne_zero_of_loopless _ hs.loopless _,
 end
 
-lemma of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) (e : E) : φ e ∈ span 𝔽 (φ '' B) :=
-begin
-  by_cases e ∈ B,
-  { exact subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e B, φ x) := (φ.valid' (insert e B)).not.2 (hB.dep_of_insert h),
-  contrapose! h2,
-  exact (linear_independent_insert' h).2 ⟨(φ.valid' B).2 hB.indep, h2⟩,
-end
-
-lemma of_basis (φ : rep 𝔽 W M) {X I : set E} (hI : M.basis I X) {e : E} (he : e ∈ X): φ e ∈ span 𝔽 (φ '' I) :=
+lemma of_basis (φ : rep 𝔽 W M) {X I : set E} (hI : M.basis I X) {e : E} (he : e ∈ X): 
+  φ e ∈ span 𝔽 (φ '' I) :=
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := (φ.valid' (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+    (φ.valid' (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
   contrapose! h2,
   apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
 end
 
-lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) :
-  span 𝔽 (φ '' B) = span 𝔽 (range φ) :=
-begin
-  refine (span_mono $ image_subset_range _ _).antisymm (span_le.2 _),
-  rintro _ ⟨x, rfl⟩,
-  exact of_base _ hB _,
-end
+lemma of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) (e : E) : φ e ∈ span 𝔽 (φ '' B) :=
+of_basis φ (base.basis_univ hB) (mem_univ _)
 
 lemma span_basis (φ : rep 𝔽 W M) {X I : set E} (hI : M.basis I X) : 
   span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
 begin
   refine (span_mono $ image_subset _ (basis.subset hI)).antisymm (span_le.2 _),
-  rintros x ⟨y, ⟨hy1, hy2⟩⟩,
-  rw ← hy2, 
+  rintros _ ⟨y, ⟨hy1, rfl⟩⟩,
   apply of_basis φ hI hy1,
 end
+
+lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (range φ) := 
+  by { rw [span_basis φ (base.basis_univ hB), image_univ] }
 
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (range φ)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B).2 hB.indep) }
 
+-- is this necessarily true?
 lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
   M.base B :=
 begin
@@ -211,21 +202,21 @@ theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_grou
 finite_dimensional.finrank K (submodule.span K s) = s.ncard :=
 begin
   by_cases s.finite,
-  haveI := (finite.fintype h),
-  rw [finrank_span_set_eq_card s hs, to_finset_card, 
-    ncard_eq_to_finset_card, finite.card_to_finset],
-  rw infinite.ncard h,
-  apply finrank_of_infinite_dimensional,
-  -- i'm doing this in a roundabout way because the finrank lemmas that talk
-  -- about something not being finite dimensional require all bases to not be
-  -- finite, which is true but this feels easier
-  by_contra h3,
-  apply h,
-  have h8 : span K (range (coe : s → V)) = span K s,
-  simp only [subtype.range_coe_subtype, set_of_mem_eq],
-  apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
-  rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
-  apply h3,
+  { haveI := (finite.fintype h),
+    rw [finrank_span_set_eq_card s hs, to_finset_card, 
+      ncard_eq_to_finset_card, finite.card_to_finset] },
+  { -- i'm doing this in a roundabout way because the finrank lemmas that talk
+    -- about something not being finite dimensional require all bases to not be
+    -- finite, which is true but this feels easier
+    rw infinite.ncard h,
+    apply finrank_of_infinite_dimensional,
+    by_contra h3,
+    apply h,
+    have h8 : span K (range (coe : s → V)) = span K s,
+    simp only [subtype.range_coe_subtype, set_of_mem_eq],
+    apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
+    rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
+    apply h3 },
 end 
 
 
@@ -240,11 +231,10 @@ end
 lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
 by { convert of_r φ univ; simp }
 
-lemma cl_subset_span_rep (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
+lemma cl_subset_span_rep (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (range φ) :=
 begin
-  cases M.exists_basis X with I hI,
-  rw ← span_basis _ hI, 
-  sorry,
+  rintros _ ⟨x, ⟨hx, rfl⟩⟩, 
+  apply mem_span_rep,
 end
 
 end rep
