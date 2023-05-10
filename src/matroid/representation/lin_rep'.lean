@@ -215,10 +215,19 @@ begin
   rw [finrank_span_set_eq_card s hs, to_finset_card, 
     ncard_eq_to_finset_card, finite.card_to_finset],
   rw infinite.ncard h,
-  
-
-  sorry,
+  apply finrank_of_infinite_dimensional,
+  -- i'm doing this in a roundabout way because the finrank lemmas that talk
+  -- about something not being finite dimensional require all bases to not be
+  -- finite, which is true but this feels easier
+  by_contra h3,
+  apply h,
+  have h8 : span K (range (coe : s → V)) = span K s,
+  simp only [subtype.range_coe_subtype, set_of_mem_eq],
+  apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
+  rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
+  apply h3,
 end 
+
 
 lemma of_r (φ : rep 𝔽 W M) (X : set E) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
 begin
