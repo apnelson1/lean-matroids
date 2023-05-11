@@ -153,14 +153,24 @@ lemma basis_of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (range φ)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B).2 hB.indep) }
 
--- is this necessarily true?
 lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
   M.base B :=
 begin
+  have h2 := (basis.linear_independent hB),
+  have h4 : linear_independent 𝔽 (λ (e : ↥B), φ ↑e),
+  have h5 := (linear_map.linear_independent_iff (span 𝔽 (range φ )).subtype _).2 h2,
+  have h6 : ⇑hB = (λ (e : ↥B), (⟨φ ↑e, mem_to_submodule φ e⟩ : (span 𝔽 (range φ )))),
+  ext;
+  simp,
+  
+  sorry,
+  
+  --have h3 := (φ.valid' B).1 h2,
   sorry,
 end
 
-instance fin_dim_rep (φ : rep 𝔽 W M) [finite E] [fintype 𝔽] : finite_dimensional 𝔽 (span 𝔽 (set.range φ)) :=
+instance fin_dim_rep (φ : rep 𝔽 W M) [finite E] [fintype 𝔽] : 
+  finite_dimensional 𝔽 (span 𝔽 (set.range φ)) :=
 begin
   cases M.exists_base with B hB,
   apply finite_dimensional.of_finite_basis (basis_of_base φ hB) (base.finite hB),
@@ -188,7 +198,9 @@ structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop := 
-  ∃ (W : Type) (hW : add_comm_group W) (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
+  ∃ (W : Type) (hW : add_comm_group W) 
+  (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), 
+  nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 end matroid_in
 
 def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : matroid_in.rep 𝔽 W (N ⟍ D) := 
@@ -335,10 +347,8 @@ end
 lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep 𝔽 (fin M.rk → 𝔽) M) :=
 begin
-  have h := foo φ,
-  cases h with φ,
-  have φ' := rep'.rep_of_rep' φ,
-  use φ',
+  cases foo φ with φ,
+  use rep'.rep_of_rep' φ,
 end
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
