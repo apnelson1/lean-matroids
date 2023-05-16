@@ -4,6 +4,7 @@ import linear_algebra.basis
 import linear_algebra.linear_independent
 import mathlib.ncard
 import ..constructions.basic
+import matroid.matroid_in.basic
 import matroid.matroid_in.minor
 import ..simple
 
@@ -149,23 +150,28 @@ end
 lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (range φ) := 
   by { rw [span_basis φ (base.basis_univ hB), image_univ] }
 
+lemma span_base' (φ : rep 𝔽 W M) (hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
+  span 𝔽 (φ '' B) = span 𝔽 (range φ) :=
+begin
+  rw ← image_univ,
+  refine (span_mono $ image_subset _ (subset_univ B)).antisymm (span_le.2 _),
+  rintros _ ⟨y, ⟨hy1, rfl⟩⟩,
+  
+  sorry,
+end
+
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (range φ)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B).2 hB.indep) }
 
-lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
+
+lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
   M.base B :=
 begin
+  --rw ← image_eq_range at hB, 
   have h2 := (basis.linear_independent hB),
-  have h4 : linear_independent 𝔽 (λ (e : ↥B), φ ↑e),
-  have h5 := (linear_map.linear_independent_iff (span 𝔽 (range φ )).subtype _).2 h2,
-  have h6 : ⇑hB = (λ (e : ↥B), (⟨φ ↑e, mem_to_submodule φ e⟩ : (span 𝔽 (range φ )))),
-  ext;
-  simp,
-  
-  sorry,
-  
-  --have h3 := (φ.valid' B).1 h2,
+  rw ← span_base' φ hB at hB,
+
   sorry,
 end
 
@@ -248,6 +254,8 @@ begin
   rintros _ ⟨x, ⟨hx, rfl⟩⟩, 
   apply mem_span_rep,
 end
+
+--lemma rep_of_minor (φ : rep 𝔽 W M) (N : matroid_in E) (hNM : N ≤ matroid_in.to_matroid_in M) : 
 
 end rep
 
@@ -350,6 +358,44 @@ begin
   cases foo φ with φ,
   use rep'.rep_of_rep' φ,
 end
+
+def std_rep' (φ' : rep 𝔽 W M) {B : set E} (hB : M.base B) : 
+  rep 𝔽 (B → 𝔽) M := sorry
+
+@[simp]
+lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set E} (e : B) (hB : M.base B) : 
+  std_rep' φ hB e.1 e = 1 :=
+sorry
+
+lemma id_matrix_of_base' (φ : rep 𝔽 W M) {B : set E} (e f : B) (hB : M.base B) (hne : e ≠ f) : 
+  std_rep' φ hB e.1 f = 0 :=
+sorry
+
+-- ∃ (c : ι →₀ R), x = finsupp.sum c (λ i x, x • b i)
+lemma mem_sum_basis' (φ : rep 𝔽 W M) {B : set E} (e : E) (hB : M.base B) :
+  ∃ (I : B →₀ 𝔽) , finsupp.sum I (λ i x, std_rep' φ hB i) = std_rep' φ hB e :=
+begin
+
+  sorry,
+end
+
+open_locale big_operators
+
+lemma mem_sum_basis [module (zmod 2) W] (φ : rep (zmod 2) W M) {B : set E} (e : E) (hB : M.base B) :
+  ∃ I ⊆ B, (∑ i in I.to_finset, std_rep' φ hB i) = std_rep' φ hB e :=
+begin
+  by_cases e ∈ B, 
+  { use {e},
+    rw [singleton_subset_iff, to_finset_singleton, finset.sum_singleton],
+    refine ⟨h, rfl⟩ },
+  use M.fund_circuit e B \ {e},
+  sorry,
+end
+
+
+structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid E) 
+{B : set E} (hB : M.base B) extends rep 𝔽 W M :=
+(basis : true)
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid.is_binary (M : matroid E) := M.is_representable (zmod 2)
