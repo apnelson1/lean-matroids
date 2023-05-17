@@ -211,6 +211,59 @@ noncomputable def of_span [fintype V] : finpartition ({0}ᶜ : finset V) :=
       rw [← ha1, ← h2],
     end }
 
+/-- set of spans of module K V -/
+noncomputable def set_spans (K : Type u) (V : Type v) [field K] [add_comm_group V] [module K V] 
+[fintype V] : finset (submodule K V) := 
+  finset.image (λ (x : V), (K ∙ x)) (@univ V _) 
+
+noncomputable def of_span' [fintype V] : finpartition ({0}ᶜ : finset V) := 
+{ parts := finset.image subspace_rem_zero_finset (set_spans K V),
+  sup_indep := λ S hS A hA hAS, 
+    begin
+      rw [set_spans, mem_image] at *,
+      obtain ⟨H, ⟨hH1, hH2⟩⟩ := hA,
+      simp_rw [disjoint_iff_ne, mem_sup],
+      rintros x hx y ⟨Y, ⟨hY1, hY2⟩⟩,
+      have h2 := mem_of_subset hS hY1,
+      simp only [mem_image, set.mem_to_finset, set.mem_set_of_eq, exists_prop] at h2,
+      obtain ⟨P, ⟨hP1, hP2⟩⟩ := h2,
+      have hxH : x ∈ H,
+      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero, set.to_finset_diff,
+          id.def, mem_sdiff, set.mem_to_finset, set_like.mem_coe, set.mem_singleton_iff] at hx,
+        exact hx.1 },
+      have hyP : y ∈ P,
+      { simp only [id.def, ← hP2, subspace_rem_zero_finset, subspace_rem_zero,
+          set.to_finset_diff, mem_sdiff, set.mem_to_finset, set_like.mem_coe, set.mem_singleton_iff] at hY2,
+        exact hY2.1 },
+      have hx0 : x ≠ 0,
+      { simp only [← hH2, subspace_rem_zero_finset, subspace_rem_zero,
+          set.to_finset_diff, id.def, mem_sdiff, set.mem_to_finset,
+          set_like.mem_coe, set.mem_singleton_iff] at hx,
+        exact hx.2 },
+      by_contra hxy,
+      --rw ← hxy at hyP,
+      have hHP : H = P,
+      { rw [set_spans, mem_image] at *,
+        simp only [mem_image, mem_univ, exists_true_left] at hH1,
+        obtain ⟨a, ⟨ha1, ha2⟩⟩ := hP1,
+        obtain ⟨b, hb1⟩ := hH1,
+        rw [← hb1, submodule.mem_span_singleton] at hxH,
+        rw [← ha2, submodule.mem_span_singleton] at hyP,
+        rw [← hb1, ← ha2, submodule.span_singleton_eq_span_singleton],
+        obtain ⟨c, hc⟩ := hxH, 
+        obtain ⟨d, hd⟩ := hyP,
+        rw [← hc, ← hd] at hxy,
+        use d⁻¹ * c,
+        
+        sorry, },
+      have haY : A = Y,
+      { rw [← hP2, ← hHP, ← hH2] },
+      rw ← haY at hY1,
+      apply hAS hY1,
+    end,
+  sup_parts := _,
+  not_bot_mem := _ }
+
 lemma card_subspace_rem_zero [fintype V] [nontrivial V] :
   (∀ (x : finset V), x ∈ finset.image subspace_rem_zero_finset ({S : submodule K V | finite_dimensional.finrank K S = 1}.to_finset) → finset.card x = (fintype.card K) - 1) :=
 begin

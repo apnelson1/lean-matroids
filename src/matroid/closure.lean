@@ -247,6 +247,9 @@ by { rw [basis_iff_basis_cl_of_subset hY, ←h], exact hI.basis_cl }
 lemma base.cl (hB : M.base B) : M.cl B = univ :=
 by { rw [(base_iff_basis_univ.mp hB).cl], exact eq_univ_of_univ_subset (M.subset_cl _) }
 
+lemma base.mem_cl (hB : M.base B) (e : E) : e ∈ M.cl B :=
+by { rw [base.cl hB], exact mem_univ e }
+
 lemma base.cl_of_supset (hB : M.base B) (hBX : B ⊆ X) : M.cl X = univ :=
 eq_univ_of_univ_subset (subset_trans (by rw hB.cl) (M.cl_mono hBX))
   
