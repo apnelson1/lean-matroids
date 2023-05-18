@@ -258,7 +258,7 @@ end
 lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
 by { convert of_r φ univ; simp }
 
-lemma cl_subset_span_rep (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (range φ) :=
+lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (range φ) :=
 by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -393,6 +393,16 @@ open_locale big_operators
 
 --lemma mem_span_of_mem_cl 
 
+lemma mem_span_set_rep [module 𝔽 W] (φ : rep 𝔽 W M) {I : set E} (hI : M.indep I) 
+(e : E) (he : e ∈ M.cl I) (he2 : φ e ∈ submodule.span 𝔽 (φ '' I)) :
+ ∃ c : W →₀ 𝔽, (c.support : set W) = φ '' (M.fund_circuit e I \ {e}) ∧ 
+  c.sum (λ mi r, r • mi) = φ e :=
+begin
+  by_cases e ∈ I, 
+  { sorry },
+  sorry,
+end
+
 lemma mem_sum_basis [module (zmod 2) W] (φ : rep (zmod 2) W M) {B : set E} (e : E) (hB : M.base B) :
   ∃ I ⊆ B, (∑ i in I.to_finset, std_rep' φ hB i) = std_rep' φ hB e :=
 begin
@@ -403,9 +413,9 @@ begin
   { use M.fund_circuit e B \ {e},
     refine ⟨(@diff_singleton_subset_iff _ e (M.fund_circuit e B) B).2 
       (fund_circuit_subset_insert (base.mem_cl hB e)), _⟩,
-    rw ← mem_span_finset, 
-    convert ∃ id : W → (zmod 2), ∑ i in (M.fund_circuit e B \ {e}).to_finset, 
-      1 • (φ.std_rep' hB) i = (φ.std_rep' hB) e,
+    obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set.1 (of_base φ hB e),
+    
+
     --have h2 := mem_span_finset,
     sorry },
 end
