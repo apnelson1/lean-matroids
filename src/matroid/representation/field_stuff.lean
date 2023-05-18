@@ -216,6 +216,11 @@ noncomputable def set_spans (K : Type u) (V : Type v) [field K] [add_comm_group 
 [fintype V] : finset (submodule K V) := 
   finset.image (λ (x : V), (K ∙ x)) (@univ V _) 
 
+/-- set of spans of module K V -/
+noncomputable def set_spans' (K : Type u) (V : Type v) [field K] [add_comm_group V] [module K V] 
+[fintype V] : finset (submodule K V) := 
+  finset.image (λ (x : V), (K ∙ x)) (@univ V _) 
+
 noncomputable def of_span' [fintype V] : finpartition ({0}ᶜ : finset V) := 
 { parts := finset.image subspace_rem_zero_finset (set_spans K V),
   sup_indep := λ S hS A hA hAS, 

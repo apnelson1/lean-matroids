@@ -185,6 +185,15 @@ end
 @[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x : E), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
 
+lemma mem_span_cl (φ : rep 𝔽 W M) (x : E) (X : set E) (hx : x ∈ M.cl X) : φ x ∈ span 𝔽 (φ '' X) :=
+begin
+  by_cases x ∈ X, 
+  { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' X)) (mem_image_of_mem φ h) },
+  obtain ⟨I, hI⟩ := M.exists_basis X,
+  rw [← span_basis φ hI, span_basis φ (indep.basis_cl (basis.indep hI)), basis.cl hI],
+  apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.cl X)) (mem_image_of_mem φ hx),
+end
+
 lemma dual_rep_of_rep (φ : rep 𝔽 W M) [fintype 𝔽] : rep 𝔽 (module.dual 𝔽 W) M﹡ := 
 { to_fun := λ (e : E), subspace.dual_lift (span 𝔽 (range ⇑φ)) 
   (basis.to_dual (finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.range φ))) 
@@ -250,10 +259,10 @@ lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (
 by { convert of_r φ univ; simp }
 
 lemma cl_subset_span_rep (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (range φ) :=
-begin
-  rintros _ ⟨x, ⟨hx, rfl⟩⟩, 
-  apply mem_span_rep,
-end
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep }
+
+lemma cl_subset_span_set (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ _ _ hx }
 
 --lemma rep_of_minor (φ : rep 𝔽 W M) (N : matroid_in E) (hNM : N ≤ matroid_in.to_matroid_in M) : 
 
@@ -341,6 +350,7 @@ end rep'
 
 namespace rep
 
+-- we have fin_dim_vectorspace_equiv
 lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep' 𝔽 M (fin M.rk))  :=
 begin
@@ -381,6 +391,8 @@ end
 
 open_locale big_operators
 
+--lemma mem_span_of_mem_cl 
+
 lemma mem_sum_basis [module (zmod 2) W] (φ : rep (zmod 2) W M) {B : set E} (e : E) (hB : M.base B) :
   ∃ I ⊆ B, (∑ i in I.to_finset, std_rep' φ hB i) = std_rep' φ hB e :=
 begin
@@ -391,6 +403,10 @@ begin
   { use M.fund_circuit e B \ {e},
     refine ⟨(@diff_singleton_subset_iff _ e (M.fund_circuit e B) B).2 
       (fund_circuit_subset_insert (base.mem_cl hB e)), _⟩,
+    rw ← mem_span_finset, 
+    convert ∃ id : W → (zmod 2), ∑ i in (M.fund_circuit e B \ {e}).to_finset, 
+      1 • (φ.std_rep' hB) i = (φ.std_rep' hB) e,
+    --have h2 := mem_span_finset,
     sorry },
 end
 
