@@ -165,7 +165,7 @@ lemma basis_of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) :
 by { rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B).2 hB.indep) }
 
 
-lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
+/-lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (range φ))) : 
   M.base B :=
 begin
   --rw ← image_eq_range at hB, 
@@ -173,7 +173,7 @@ begin
   rw ← span_base' φ hB at hB,
 
   sorry,
-end
+end-/
 
 instance fin_dim_rep (φ : rep 𝔽 W M) [finite E] [fintype 𝔽] : 
   finite_dimensional 𝔽 (span 𝔽 (set.range φ)) :=
@@ -393,14 +393,68 @@ open_locale big_operators
 
 --lemma mem_span_of_mem_cl 
 
-lemma mem_span_set_rep [module 𝔽 W] (φ : rep 𝔽 W M) {I : set E} (hI : M.indep I) 
-(e : E) (he : e ∈ M.cl I) (he2 : φ e ∈ submodule.span 𝔽 (φ '' I)) :
+lemma mem_span_set_rep (φ : rep 𝔽 W M) {I : set E} (hI : M.indep I) 
+(e : E) (he : e ∈ M.cl I) (he2 : e ∉ I) :
  ∃ c : W →₀ 𝔽, (c.support : set W) = φ '' (M.fund_circuit e I \ {e}) ∧ 
   c.sum (λ mi r, r • mi) = φ e :=
 begin
-  by_cases e ∈ I, 
-  { sorry },
-  sorry,
+  obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set.1 (of_basis φ (circuit.diff_singleton_basis 
+    (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, he2⟩)) (M.mem_fund_circuit e I)) 
+    (M.mem_fund_circuit e I)),
+  refine ⟨c, ⟨subset.antisymm_iff.2 ⟨hc1, λ x hx, _⟩, hc2⟩⟩,
+  obtain ⟨y, ⟨⟨hy1, hy2⟩, rfl⟩⟩ := hx,
+  by_contra,
+  have h5 : ∃ (c : W →₀ 𝔽), ↑(c.support) ⊆ ⇑φ '' (M.fund_circuit e I \ {e}) \ {φ y} ∧ 
+    c.sum (λ (mi : W) (r : 𝔽), r • mi) = φ e,
+  refine ⟨c, ⟨subset_diff_singleton hc1 h, hc2⟩⟩,
+  have h8 : e ∈ ((M.fund_circuit e I) \ {y}),  
+  { simp only [mem_diff, mem_singleton_iff],
+    refine ⟨(M.mem_fund_circuit e I), ne.symm hy2⟩ },
+  have h7 := (linear_independent_iff_not_mem_span.1 ((φ.valid' (M.fund_circuit e I \ {y})).2 
+    (circuit.diff_singleton_indep 
+    (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, he2⟩)) hy1))) ⟨e, h8⟩,
+  simp only [subtype.coe_mk, to_fun_eq_coe] at h7,
+  rw [set.image_eta] at h7,
+  have h9 : ((λ (a : ↥(M.fund_circuit e I \ {y})), φ ↑a) '' (univ \ {⟨e, h8⟩})) = 
+    (⇑φ '' (M.fund_circuit e I \ {e}) \ {φ y}),
+  { ext;
+    refine ⟨λ h, _, λ h20, _⟩,  
+    { simp only [mem_image, mem_diff, mem_univ, mem_singleton_iff, true_and, set_coe.exists, 
+        subtype.mk_eq_mk, subtype.coe_mk, exists_prop] at h,
+      obtain ⟨a, ⟨⟨ha1, ha2⟩, ⟨ha3, rfl⟩⟩⟩ := h,
+      simp only [mem_diff, mem_image, mem_singleton_iff],
+      use ⟨a, ⟨⟨ha1, ha3⟩, rfl⟩⟩,
+      have h11 : (insert y {a}) ⊂ M.fund_circuit e I,
+      rw ssubset_iff_subset_diff_singleton,
+      refine ⟨e, ⟨(M.mem_fund_circuit e I), λ x hx, _⟩⟩,
+      obtain ⟨rfl, rfl⟩ := hx,
+      rw mem_diff_singleton,
+      simp only [mem_singleton_iff] at hy2,
+      refine ⟨hy1, hy2⟩,
+      rw mem_diff_singleton,
+      simp only [mem_singleton_iff] at hx,
+      rw hx, 
+      refine ⟨ha1, ha3⟩,
+      have h10 := inj_on_of_indep φ 
+        (circuit.ssubset_indep (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, he2⟩)) h11),
+      apply (inj_on.ne_iff h10 _ _).2 ha2,
+      simp only [mem_insert_iff, mem_singleton, or_true],
+      simp only [mem_insert_iff, eq_self_iff_true, true_or]},
+    { obtain ⟨⟨a, ⟨⟨ha1, ha2⟩, rfl⟩⟩, ha3⟩ := h20,
+      use a,
+      rw mem_diff_singleton,
+      refine ⟨ha1, _⟩,
+      by_contra,
+      rw h at ha3,
+      apply ha3,
+      simp only [mem_singleton],
+      refine ⟨_, _⟩,
+      simp only [mem_diff, mem_univ, mem_singleton_iff, subtype.mk_eq_mk, true_and],
+      apply ha2,
+      simp only [subtype.coe_mk]} },
+  rw h9 at h7, 
+  apply h7,
+  exact mem_span_set.2 h5,
 end
 
 lemma mem_sum_basis [module (zmod 2) W] (φ : rep (zmod 2) W M) {B : set E} (e : E) (hB : M.base B) :
@@ -416,7 +470,7 @@ begin
     obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set.1 (of_base φ hB e),
     
 
-    --have h2 := mem_span_finset,
+    have h2 := mem_span_finset,
     sorry },
 end
 
