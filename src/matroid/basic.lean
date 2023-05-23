@@ -110,7 +110,7 @@ instance {E : Type*} [finite E] : finite (matroid E) :=
 finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by { ext, dsimp only at h, rw h }))
 
 instance {E : Type*} : nonempty (matroid E) :=
-  ⟨⟨@eq (set E) ∅, ⟨_,rfl⟩, by { rintro _ _ rfl rfl a h, exfalso, exact not_mem_empty a h.1 }, 
+  ⟨⟨@eq _ ∅, ⟨_,rfl⟩, by { rintro _ _ rfl rfl a h, exfalso, exact not_mem_empty a h.1 }, 
     exists_maximal_subset_property_of_bounded 
     ⟨0, by { rintro I ⟨B, rfl, hIB⟩, rw subset_empty_iff.mp hIB, simp }⟩⟩⟩
 

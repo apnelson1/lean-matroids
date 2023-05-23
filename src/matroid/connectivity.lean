@@ -237,7 +237,7 @@ section Skew
 variables {ι : Type*} {Xs : ι → set E} 
 
 /-- A collection of sets is `Skew` if each of its partitions gives a skew pair  -/
-def Skew (M : matroid E) (Xs : ι → set E) := ∀ (I : set ι), M.skew (⋃ i ∈ I, Xs i) (⋃ i ∈ Iᶜ, Xs i)   
+def Skew (M : matroid E) (Xs : ι → set E) := ∀ (I : set ι), M.skew (⋃ i ∈ I, Xs i) (⋃ i ∈ Iᶜ, Xs i)
 
 -- lemma Skew_iff_forall : M.Skew Xs ↔ ∀ i, M.skew (Xs i) (⋃ j ∈ ({i} : set ι)ᶜ, Xs j)  :=
 -- begin

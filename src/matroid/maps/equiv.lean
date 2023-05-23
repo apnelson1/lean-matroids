@@ -58,14 +58,14 @@ matroid_of_indep (λ I', ∃ I, M.indep I ∧ f '' I = I') ⟨_, M.empty_indep, 
     exact hBJ.antisymm 
       ((image_subset_image_iff f.injective).mp (hBmax ⟨_,hJ,rfl⟩ (image_subset _ hBJ))),   
   end)
-(begin
+( begin
   rintro _ X ⟨I,hI,rfl⟩ hIX, 
   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset (image_subset_iff.mp hIX), 
   refine ⟨f '' J, ⟨⟨_,hJ.indep,rfl⟩,image_subset _ hIJ, image_subset_iff.mpr hJ.subset⟩, _⟩,
   rintro _ ⟨⟨K,hK,rfl⟩,hIK,hKX⟩ hJK,   
   rw hJ.eq_of_subset_indep hK ((image_subset_image_iff f.injective).mp hJK) 
     (image_subset_iff.mp hKX), 
-end)
+  end)
 
 lemma image.set_of_indep_eq (M : matroid E) : 
   {I | (M.image f).indep I} = (set.image f) '' {I | M.indep I} :=
@@ -431,8 +431,5 @@ lemma congr.nonloop_iff {x : E₂} : (M₁.congr e).nonloop x ↔ M₁.nonloop (
 lemma congr.symm_nonloop_iff {x : E₁} : (M₂.congr e.symm).nonloop x ↔ M₂.nonloop (e x) := by simp 
 
 end congr 
-
-
-
 
 end matroid 

@@ -206,7 +206,7 @@ begin
   rw [sum, and_comm],
   simp only [congr.symm_indep_iff, direct_sum.indep_iff, bool.forall_bool], 
   convert iff.rfl using 3; 
-  { ext, simp, },
+  { ext, simp },
 end 
 
 @[simp] lemma sum.base_iff {B : set (E₁ ⊕ E₂)} : 
