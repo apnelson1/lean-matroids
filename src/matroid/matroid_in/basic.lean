@@ -10,7 +10,7 @@ open matroid set subtype
 
 variables {α : Type*}
 
-/- a `matroid_in α` is a matroid defined on some subset `E` of `α`. Implemented as a matroid on
+/- a `matroid_in α` is a matroid defined on some subset `E` of `α`. Implemented as a `matroid` on
   which the nonelements of `E` are all loops.
 
   The main motivation for this is to have a way of talking about minors that avoids type equality.
@@ -19,8 +19,7 @@ variables {α : Type*}
   `M ⟋ C ⟍ D` are both `matroid_in α`, and we can say things like `(M / C \ D)﹡ = M﹡ ⟍ C ⟋ D`
   meaningfully and without type equality.
 
-  The disadvantage is that one has to constantly keep track of a ground set, and API duplication
-  will happen.
+  The disadvantages are having keep track of a ground set, and API duplication.
   -/
 
 /-- A matroid on some subset `E` of `α`. Implemented as a `matroid` in which the elements
@@ -906,115 +905,115 @@ by { rw [flat_eq_transfer_set_prop] at h, exact h.exists_eq_coe,  }
 
 def covby (M : matroid_in α) := transfer_set_prop₂ (λ _, matroid.covby) M
 
-lemma covby_iff : M.covby F₁ F₂ ↔ M.flat F₁ ∧ M.flat F₂ ∧ F₁ ⊂ F₂ ∧ 
-  ∀ F, M.flat F → F₁ ⊆ F → F ⊆ F₂ → F = F₁ ∨ F = F₂ :=
-begin
+-- lemma covby_iff : M.covby F₁ F₂ ↔ M.flat F₁ ∧ M.flat F₂ ∧ F₁ ⊂ F₂ ∧ 
+--   ∀ F, M.flat F → F₁ ⊆ F → F ⊆ F₂ → F = F₁ ∨ F = F₂ :=
+-- begin
   
   
   
   
   
-  split, 
+--   split, 
   
-  { revert F₁ F₂,
-    simp_rw [covby, transfer_set_prop₂_forall_iff, matroid.covby_iff, 
-      equiv_subtype.flat_iff, coe_mk, flat_eq_transfer_set_prop, transfer_set_prop_forall_iff, 
-      ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff, 
-      ←flat_eq_transfer_set_prop, equiv_subtype.flat_iff, coe_mk],
-    exact λ _ _, id }, 
+--   { revert F₁ F₂,
+--     simp_rw [covby, transfer_set_prop₂_forall_iff, matroid.covby_iff, 
+--       equiv_subtype.flat_iff, coe_mk, flat_eq_transfer_set_prop, transfer_set_prop_forall_iff, 
+--       ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff, 
+--       ←flat_eq_transfer_set_prop, equiv_subtype.flat_iff, coe_mk],
+--     exact λ _ _, id }, 
 
-  simp_rw [and_imp, flat_eq_transfer_set_prop], 
-  revert F₁,
-  simp,  
-  -- simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, 
-  --   image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff], 
+--   simp_rw [and_imp, flat_eq_transfer_set_prop, covby], 
+--   revert F₁,
+--   simp,  
+--   -- simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, 
+--   --   image_coe_subset_image_coe_iff, image_coe_eq_image_coe_iff], 
   
-  -- rw [and_imp, and_imp, flat_eq_transfer_set_prop], 
-  -- revert F₁ F₂, 
-  revert F₁, 
+--   -- rw [and_imp, and_imp, flat_eq_transfer_set_prop], 
+--   -- revert F₁ F₂, 
+--   -- revert F₁, 
   
   
-  simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, and_imp], 
+--   simp only [transfer_set_prop_forall_iff, equiv_subtype.flat_iff, coe_mk, image_subset_iff, and_imp], 
    
    
   
 
   
-  simp only [flat_eq_transfer_set_prop], simp, 
+--   simp only [flat_eq_transfer_set_prop], simp, 
   
---     },
-  -- rw [covby, iff_def], 
+-- --     },
+--   -- rw [covby, iff_def], 
 
 
-  refine ⟨λ h, _, λ h, _⟩,
-  { obtain ⟨F₁,F₂,hc,rfl,rfl⟩ := h.exists_eq_coe,
-    simp_rw [matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, ssubset_iff_subset_not_subset] 
-      at hc, 
-    simp_rw [ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
-    refine ⟨hc.1, hc.2.1, hc.2.2.1, λ F hF hF₁F hFF₂, _ ⟩,  
-    obtain ⟨F, hF', rfl⟩ := hF.exists_eq_coe,     
-    rw [image_subset_image_iff coe_injective] at hF₁F hFF₂, 
-    simp_rw [image_eq_image coe_injective], 
-    exact hc.2.2.2 F hF hF₁F hFF₂ },
+--   refine ⟨λ h, _, λ h, _⟩,
+--   { obtain ⟨F₁,F₂,hc,rfl,rfl⟩ := h.exists_eq_coe,
+--     simp_rw [matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, ssubset_iff_subset_not_subset] 
+--       at hc, 
+--     simp_rw [ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
+--     refine ⟨hc.1, hc.2.1, hc.2.2.1, λ F hF hF₁F hFF₂, _ ⟩,  
+--     obtain ⟨F, hF', rfl⟩ := hF.exists_eq_coe,     
+--     rw [image_subset_image_iff coe_injective] at hF₁F hFF₂, 
+--     simp_rw [image_eq_image coe_injective], 
+--     exact hc.2.2.2 F hF hF₁F hFF₂ },
 
   
-  obtain ⟨F₁, hF₁, rfl⟩ := h.1.exists_eq_coe,  
-  obtain ⟨F₂, hF₂, rfl⟩ := h.2.1.exists_eq_coe,  
+--   obtain ⟨F₁, hF₁, rfl⟩ := h.1.exists_eq_coe,  
+--   obtain ⟨F₂, hF₂, rfl⟩ := h.2.1.exists_eq_coe,  
   
-  simp only [covby, transfer_set_prop₂_iff, matroid.covby_iff, preimage_image_coe, 
-    equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
-    ssubset_iff_subset_not_subset],
+--   simp only [covby, transfer_set_prop₂_iff, matroid.covby_iff, preimage_image_coe, 
+--     equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
+--     ssubset_iff_subset_not_subset],
 
-  simp_rw [ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff] at h, 
-  -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
-  -- { rw [covby, transfer_set_prop₂_iff], tauto },
-  -- { exact λ h, hnss h.1.subset_ground },
-  -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
-  -- { rw [covby, transfer_set_prop₂_iff], tauto },
-  -- { exact λ h, hnss h.2.1.subset_ground },
-  -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
-  -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
-  -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
+--   simp_rw [ssubset_iff_subset_not_subset, image_coe_subset_image_coe_iff] at h, 
+--   -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
+--   -- { rw [covby, transfer_set_prop₂_iff], tauto },
+--   -- { exact λ h, hnss h.1.subset_ground },
+--   -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
+--   -- { rw [covby, transfer_set_prop₂_iff], tauto },
+--   -- { exact λ h, hnss h.2.1.subset_ground },
+--   -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
+--   -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
+--   -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
 
-  simp only [covby, matroid.covby_iff, transfer_set_prop₂_iff, preimage_image_coe, 
-    equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
-    and.congr_right_iff, ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
+--   simp only [covby, matroid.covby_iff, transfer_set_prop₂_iff, preimage_image_coe, 
+--     equiv_subtype.flat_iff, coe_mk, image_subset_iff, coe_preimage_self, subset_univ, and_true, 
+--     and.congr_right_iff, ssubset_iff_subset_not_subset, image_subset_image_iff coe_injective], 
      
   
   
-  refine λ hF₁ hF₂ hss, ⟨λ h F hF hF₁F hFF₂, _, λ h, _⟩,
+--   refine λ hF₁ hF₂ hss, ⟨λ h F hF hF₁F hFF₂, _, λ h, _⟩,
   
-  -- have := h (coe ⁻¹' F), 
-  
-
-  -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
-  --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
-  --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
-
-  -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
-  -- { rw [covby, transfer_set_prop₂_iff], tauto },
-  -- { exact λ h, hnss h.1.subset_ground },
-  -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
-  -- { rw [covby, transfer_set_prop₂_iff], tauto },
-  -- { exact λ h, hnss h.2.1.subset_ground },
-  -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
-  -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
-  -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
-
-  -- simp_rw [covby, flat_eq_transfer_set_prop, transfer_set_prop₂_coe_iff, 
-  --   transfer_set_prop_coe_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk],
-  --   simp, 
+--   -- have := h (coe ⁻¹' F), 
   
 
-  -- -- squeeze_simp [covby, matroid.covby_iff], 
+--   -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
+--   --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
+--   --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
 
-  -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
-  --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
-  --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
+--   -- refine (em (F₁ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₁E, _), 
+--   -- { rw [covby, transfer_set_prop₂_iff], tauto },
+--   -- { exact λ h, hnss h.1.subset_ground },
+--   -- refine (em (F₂ ⊆ M.E)).symm.elim (λ hnss, iff_of_false _ _) (λ hF₂E, _), 
+--   -- { rw [covby, transfer_set_prop₂_iff], tauto },
+--   -- { exact λ h, hnss h.2.1.subset_ground },
+--   -- rw [←@range_coe _ M.E] at hF₁E hF₂E, 
+--   -- obtain ⟨F₁, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₁E, 
+--   -- obtain ⟨F₂, rfl⟩ := subset_range_iff_exists_image_eq.mp hF₂E, 
+
+--   -- simp_rw [covby, flat_eq_transfer_set_prop, transfer_set_prop₂_coe_iff, 
+--   --   transfer_set_prop_coe_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk],
+--   --   simp, 
+  
+
+--   -- -- squeeze_simp [covby, matroid.covby_iff], 
+
+--   -- simp_rw [covby, transfer_set_prop₂_iff, matroid.covby_iff, equiv_subtype.flat_iff, coe_mk, 
+--   --   image_preimage_coe, inter_eq_self_of_subset_left hF₁E, inter_eq_self_of_subset_left hF₂E, 
+--   --   and_iff_right hF₁E, and_iff_left hF₂E, and.congr_right_iff], 
     
-  -- -- have := matroid.covby_iff, 
+--   -- -- have := matroid.covby_iff, 
 
-end 
+-- end 
 
 lemma covby.flat_left (h : M.covby F₁ F₂) : M.flat F₁ := 
 begin
@@ -1030,10 +1029,10 @@ begin
   simpa using h.1.flat_right, 
 end 
 
-lemma covby.ssubset (h : M.covby F₁ F₂) : F₁ ⊂ F₂ :=
-begin
+-- lemma covby.ssubset (h : M.covby F₁ F₂) : F₁ ⊂ F₂ :=
+-- begin
   
-end  
+-- end  
 
 -- ### loops and nonloops
 
@@ -1586,9 +1585,9 @@ end
   (equiv_subtype M).flat_of_r k F ↔ (M : matroid_in α).flat_of_r k (coe '' F) := 
 by { obtain ⟨M,rfl⟩ := M, simp [flat_of_r] }
   
-@[simp] lemma equiv_subtype.symm_flat_of_r_iff {E F : set α} (M : matroid E) : 
-  (equiv_subtype.symm M : matroid_in α).flat_of_r k F ↔ M.flat_of_r k (coe ⁻¹' F) ∧ F ⊆ E  :=
-by { simp [flat_of_r] }
+-- @[simp] lemma equiv_subtype.symm_flat_of_r_iff {E F : set α} (M : matroid E) : 
+--   (equiv_subtype.symm M : matroid_in α).flat_of_r k F ↔ M.flat_of_r k (coe ⁻¹' F) ∧ F ⊆ E  :=
+-- by { simp [flat_of_r] }
 
 /-- Flats of rank `k` in `M : matroid_in α` correspond to those in `↑M : matroid α`.-/
 def flat_of_r_coe_equiv (M : matroid_in α) (k : ℕ) : 
