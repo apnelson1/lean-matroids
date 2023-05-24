@@ -21,22 +21,6 @@ def exchange_property (P : set E → Prop) : Prop :=
 def exists_maximal_subset_property (P : set E → Prop) : Prop := 
   ∀ I X, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
 
-lemma exists_maximal_subset_property_of_bounded {P : set E → Prop} 
-(h : ∃ n, ∀ I, P I → (I.finite ∧ I.ncard ≤ n)) : 
-  exists_maximal_subset_property P :=
-begin
-  obtain ⟨n,h⟩ := h, 
-  intros I₀ X hI₀ hI₀X,
-  set S := {I | P I ∧ I₀ ⊆ I ∧ I ⊆ X} with hS,
-  haveI : nonempty S, from ⟨⟨I₀, hI₀, subset.rfl, hI₀X⟩⟩,  
-  set f : {I | P I ∧ I₀ ⊆ I ∧ I ⊆ X} → fin (n+1) := 
-    λ I, ⟨ncard (I : set E), nat.lt_succ_of_le (h I I.2.1).2⟩ with hf,
-  
-  obtain ⟨m, ⟨⟨J,hJ⟩,rfl⟩, hJmax⟩ :=  set.finite.exists_maximal (range f) (range_nonempty _),
-  refine ⟨J, hJ, λ K hK hJK, (eq_of_subset_of_ncard_le hJK _ (h _ hK.1).1).symm.subset⟩,
-  exact (hJmax _ ⟨⟨K,hK⟩, rfl⟩ (ncard_le_of_subset hJK (h _ hK.1).1)).symm.le,  
-end 
-
 private lemma antichain_of_exch {base : set E → Prop} (exch : exchange_property base) 
 (hB : base B) (hB' : base B') (h : B ⊆ B') : B = B' :=
 begin
@@ -45,56 +29,54 @@ begin
   exact he.2 (h he.1), 
 end 
 
-private lemma diff_aux_of_exch {base : set E → Prop} (exch : exchange_property base) 
-(hB₁ : base B₁) (hB₂ : base B₂) (hfin : (B₁ \ B₂).finite) :
-(B₂ \ B₁).finite ∧ (B₂ \ B₁).ncard = (B₁ \ B₂).ncard :=
-begin
-  suffices : ∀ {k B B'}, base B → base B' → (B \ B').finite → ncard (B \ B') = k → 
-    (B' \ B).finite ∧ (B' \ B).ncard = k, from this hB₁ hB₂ hfin rfl,  
-  intro k, induction k with k IH, 
-  { intros B B' hB hB' hfin h0, 
-    rw [ncard_eq_zero hfin, diff_eq_empty] at h0, 
-    rw [antichain_of_exch exch hB hB' h0, diff_self], 
-    simp },
-  intros B B' hB hB' hfin hcard, 
-  obtain ⟨e,he⟩ := nonempty_of_ncard_ne_zero (by { rw hcard, simp } : (B \ B').ncard ≠ 0), 
-  obtain ⟨f,hf,hB0⟩ := exch _ _ hB hB' _ he, 
-  have hef : f ≠ e, by { rintro rfl, exact hf.2 he.1 }, 
-  
-  obtain ⟨hfin',hcard'⟩ := IH hB0 hB' _ _,
-  { rw [insert_diff_singleton_comm hef, diff_diff_right, 
-      inter_singleton_eq_empty.mpr he.2, union_empty, ←union_singleton, ←diff_diff] at hfin' hcard',
-    have hfin'' := hfin'.insert f, 
-    rw [insert_diff_singleton, insert_eq_of_mem hf] at hfin'', 
-    apply_fun (λ x, x+1) at hcard', 
-    rw [ncard_diff_singleton_add_one hf hfin'', ←nat.succ_eq_add_one] at hcard', 
-    exact ⟨hfin'', hcard'⟩ },
-  { rw [insert_diff_of_mem _ hf.1, diff_diff_comm], 
-    exact hfin.diff _ },
-  rw [insert_diff_of_mem _ hf.1, diff_diff_comm, ncard_diff_singleton_of_mem he hfin, hcard, 
-    nat.succ_sub_one], 
-end  
+-- private lemma diff_aux_of_exch' {base : set E → Prop} (exch : exchange_property base)
 
-private lemma finite_of_finite_of_exch {base : set E → Prop} (exch : exchange_property base) 
-(hB : base B) (hB' : base B') (h : B.finite) : 
-  B'.finite :=
+
+private lemma diff_aux_of_exch {base : set E → Prop} (exch : exchange_property base) 
+  (hB₁ : base B₁) (hB₂ : base B₂) (hfin : (B₁ \ B₂).finite) : 
+  ∃ hfin' : (B₂ \ B₁).finite, hfin'.to_finset.card = hfin.to_finset.card :=
 begin
-  rw [←inter_union_diff B' B], 
-  exact finite.union (h.subset (inter_subset_right _ _)) 
-    (diff_aux_of_exch exch hB hB' (h.diff _)).1, 
+  suffices : ∀ {k B B'}, base B → base B' → (∃ h : (B \ B').finite, h.to_finset.card ≤ k) 
+    → (∃ h' : (B' \ B).finite, h'.to_finset.card ≤ k), 
+  sorry, 
+  intro k, 
+  induction k with k IH, 
+  { intros B B' hB hB' h, 
+    simp only [le_zero_iff, finset.card_eq_zero, finite.to_finset_eq_empty, exists_prop, 
+      diff_eq_empty] at h ⊢,
+    simp [antichain_of_exch exch hB hB' h.2] }, 
+  
+  simp only [forall_exists_index], 
+  intros B B' hB hB' hfin hcard, 
+
+  -- obtain (he | hne) := (B \ B').eq_empty_or_nonempty, 
+  -- {  },
+
+  -- have hne : (B \ B').nonempty, 
+  -- { rw nonempty_iff_ne_empty, intro he, 
+  --   suffices : hfin.to_finset = ∅, 
+  --   { rw this at hcard, simpa using hcard },
+  --   simpa only [finite.to_finset_eq_empty] },
+  -- obtain ⟨e, he⟩ := hne, 
+  
+  obtain ⟨f, hf, hB''⟩ := exch B B' hB hB' e he, 
+
+
+
+  
+  
 end 
 
-private lemma card_eq_card_of_exchange {base : set E → Prop} (exch : exchange_property base)
-(hB₁ : base B₁) (hB₂ : base B₂) :
-  B₁.ncard = B₂.ncard :=
-begin 
-  obtain (hB₁' | hB₁') := B₁.finite_or_infinite.symm,
-  { rw [hB₁'.ncard, infinite.ncard (λ h, hB₁' (finite_of_finite_of_exch exch hB₂ hB₁ h))] },
-  have hdcard := (diff_aux_of_exch exch hB₁ hB₂ (hB₁'.diff _)).2,
-  have hB₂' := finite_of_finite_of_exch exch hB₁ hB₂ hB₁', 
-  rw [←ncard_inter_add_ncard_diff_eq_ncard B₁ B₂ hB₁', ←hdcard, inter_comm, 
-    ncard_inter_add_ncard_diff_eq_ncard B₂ B₁ hB₂'],
-end
+-- private lemma finite_of_finite_of_exch {base : set E → Prop} (exch : exchange_property base) 
+-- (hB : base B) (hB' : base B') (h : B.finite) : 
+--   B'.finite :=
+-- begin
+--   sorry
+--   -- rw [←inter_union_diff B' B], 
+--   -- exact finite.union (h.subset (inter_subset_right _ _)) 
+--   --   (diff_aux_of_exch exch hB hB' (h.diff _)).1, 
+-- end 
+
 
 end prelim
 
@@ -110,10 +92,14 @@ end prelim
 instance {E : Type*} [finite E] : finite (matroid E) :=
 finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by { ext, dsimp only at h, rw h }))
 
-instance {E : Type*} : nonempty (matroid E) :=
-  ⟨⟨@eq _ ∅, ⟨_,rfl⟩, by { rintro _ _ rfl rfl a h, exfalso, exact not_mem_empty a h.1 }, 
-    exists_maximal_subset_property_of_bounded 
-    ⟨0, by { rintro I ⟨B, rfl, hIB⟩, rw subset_empty_iff.mp hIB, simp }⟩⟩⟩
+instance {E : Type*} : nonempty (matroid E) := 
+⟨⟨@eq _ ∅, ⟨_,rfl⟩, by { rintro _ _ rfl rfl a h, exfalso, exact not_mem_empty a h.1 }, 
+begin
+  rintro I X ⟨B, rfl, hB⟩ hIX, 
+  refine ⟨∅, by simpa, _⟩,
+  simp only [exists_eq_left', mem_set_of_eq, empty_subset, forall_true_left, and_imp], 
+  tauto, 
+end⟩⟩ 
 
 namespace matroid
 
@@ -162,65 +148,62 @@ lemma base.eq_of_subset_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hB₁B
   B₁ = B₂ :=
 antichain_of_exch M.base_exchange' hB₁ hB₂ hB₁B₂
 
-lemma base.finite_of_finite (hB : M.base B) (h : B.finite) (hB' : M.base B') : B'.finite :=
-finite_of_finite_of_exch M.base_exchange' hB hB' h
+-- lemma base.finite_of_finite (hB : M.base B) (h : B.finite) (hB' : M.base B') : B'.finite :=
+-- finite_of_finite_of_exch M.base_exchange' hB hB' h
 
-lemma base.infinite_of_infinite (hB : M.base B) (h : B.infinite) (hB₁ : M.base B₁) :
-  B₁.infinite :=
-by_contra (λ hB_inf, (hB₁.finite_of_finite (not_infinite.mp hB_inf) hB).not_infinite h)
+-- lemma base.infinite_of_infinite (hB : M.base B) (h : B.infinite) (hB₁ : M.base B₁) :
+--   B₁.infinite :=
+-- by_contra (λ hB_inf, (hB₁.finite_of_finite (not_infinite.mp hB_inf) hB).not_infinite h)
 
-lemma base.finite [finite_rk M] (hB : M.base B) : B.finite := 
-let ⟨B₀,hB₀⟩ := ‹finite_rk M›.exists_finite_base in hB₀.1.finite_of_finite hB₀.2 hB
+-- lemma base.finite [finite_rk M] (hB : M.base B) : B.finite := 
+-- let ⟨B₀,hB₀⟩ := ‹finite_rk M›.exists_finite_base in hB₀.1.finite_of_finite hB₀.2 hB
 
-lemma base.infinite [infinite_rk M] (hB : M.base B) : B.infinite :=
-let ⟨B₀,hB₀⟩ := ‹infinite_rk M›.exists_infinite_base in hB₀.1.infinite_of_infinite hB₀.2 hB
+-- lemma base.infinite [infinite_rk M] (hB : M.base B) : B.infinite :=
+-- let ⟨B₀,hB₀⟩ := ‹infinite_rk M›.exists_infinite_base in hB₀.1.infinite_of_infinite hB₀.2 hB
 
 lemma base.finite_rk_of_finite (hB : M.base B) (hfin : B.finite) : finite_rk M := ⟨⟨B, hB, hfin⟩⟩   
 
 lemma base.infinite_rk_of_infinite (hB : M.base B) (h : B.infinite) : infinite_rk M := ⟨⟨B, hB, h⟩⟩ 
 
-lemma not_finite_rk (M : matroid E) [infinite_rk M] : ¬ finite_rk M := 
-by { introI h, obtain ⟨B,hB⟩ := M.exists_base, exact hB.infinite hB.finite }
+-- lemma not_finite_rk (M : matroid E) [infinite_rk M] : ¬ finite_rk M := 
+-- by { introI h, obtain ⟨B,hB⟩ := M.exists_base, exact hB.infinite hB.finite }
 
-lemma not_infinite_rk (M : matroid E) [finite_rk M] : ¬ infinite_rk M := 
-by { introI h, obtain ⟨B,hB⟩ := M.exists_base, exact hB.infinite hB.finite }
+-- lemma not_infinite_rk (M : matroid E) [finite_rk M] : ¬ infinite_rk M := 
+-- by { introI h, obtain ⟨B,hB⟩ := M.exists_base, exact hB.infinite hB.finite }
 
-lemma finite_or_infinite_rk (M : matroid E) : finite_rk M ∨ infinite_rk M :=
-let ⟨B, hB⟩ := M.exists_base in B.finite_or_infinite.elim 
-  (or.inl ∘ hB.finite_rk_of_finite) (or.inr ∘ hB.infinite_rk_of_infinite)
+-- lemma finite_or_infinite_rk (M : matroid E) : finite_rk M ∨ infinite_rk M :=
+-- let ⟨B, hB⟩ := M.exists_base in B.finite_or_infinite.elim 
+--   (or.inl ∘ hB.finite_rk_of_finite) (or.inr ∘ hB.infinite_rk_of_infinite)
 
-instance finite_rk_of_finite [finite E] {M : matroid E} : finite_rk M := 
-let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
+-- instance finite_rk_of_finite [finite E] {M : matroid E} : finite_rk M := 
+-- let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, to_finite _⟩⟩ 
 
-instance finitary_of_finite_rk {M : matroid E} [finite_rk M] : finitary M := 
-⟨ begin
-  intros C hC, 
-  obtain (rfl | ⟨e,heC⟩) := C.eq_empty_or_nonempty, exact finite_empty, 
-  have hi : M.indep (C \ {e}), from by_contra (λ h', (hC.2 h' (diff_subset _ _) heC).2 rfl), 
-  obtain ⟨B, hB, hCB⟩ := hi, 
-  convert (hB.finite.subset hCB).insert e, 
-  rw [insert_diff_singleton, insert_eq_of_mem heC],
-end ⟩  
+-- instance finitary_of_finite_rk {M : matroid E} [finite_rk M] : finitary M := 
+-- ⟨ begin
+--   intros C hC, 
+--   obtain (rfl | ⟨e,heC⟩) := C.eq_empty_or_nonempty, exact finite_empty, 
+--   have hi : M.indep (C \ {e}), from by_contra (λ h', (hC.2 h' (diff_subset _ _) heC).2 rfl), 
+--   obtain ⟨B, hB, hCB⟩ := hi, 
+--   convert (hB.finite.subset hCB).insert e, 
+--   rw [insert_diff_singleton, insert_eq_of_mem heC],
+-- end ⟩  
 
-lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
-card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
+-- lemma base.diff_finite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
+--   (B₁ \ B₂).finite ↔ (B₂ \ B₁).finite := 
+-- ⟨λ h, (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).1, 
+--   λ h, (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h).1⟩
 
-lemma base.diff_finite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
-  (B₁ \ B₂).finite ↔ (B₂ \ B₁).finite := 
-⟨λ h, (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).1, 
-  λ h, (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h).1⟩
+-- lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+--   (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
+-- not_iff_not.mpr (hB₁.diff_finite_comm hB₂)
 
-lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
-  (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
-not_iff_not.mpr (hB₁.diff_finite_comm hB₂)
-
-lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
-  (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
-begin
-  obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
-  { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
-  rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
-end 
+-- lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+--   (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
+-- begin
+--   obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
+--   { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
+--   rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
+-- end 
   
 end base
 
@@ -236,11 +219,11 @@ lemma indep.exists_base_supset (hI : M.indep I) : ∃ B, M.base B ∧ I ⊆ B :=
 lemma indep.subset (hJ : M.indep J) (hIJ : I ⊆ J) : M.indep I :=
 by {obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
 
-@[simp] lemma empty_indep (M : matroid E) : M.indep ∅ :=
-exists.elim M.exists_base (λ B hB, ⟨_, hB, B.empty_subset⟩)
-
 lemma indep.finite [finite_rk M] (hI : M.indep I) : I.finite := 
 let ⟨B, hB, hIB⟩ := hI in hB.finite.subset hIB  
+
+@[simp] lemma empty_indep (M : matroid E) : M.indep ∅ :=
+exists.elim M.exists_base (λ B hB, ⟨_, hB, B.empty_subset⟩)
 
 lemma indep.inter_right (hI : M.indep I) (X : set E) : M.indep (I ∩ X) :=
 hI.subset (inter_subset_left _ _)
@@ -709,7 +692,6 @@ end)
   { refine disjoint_of_subset_right hB'IB (disjoint_union_right.mpr ⟨_,hI'B⟩), 
     rw [←subset_compl_iff_disjoint_left], 
     exact hI.subset.trans (compl_subset_compl.mpr hI'X) },
-  
   rintro J ⟨⟨B'',hB'', hJB''⟩, hI'J, hJX⟩ hXB'J, 
 
   have hI' : (B'' ∩ X) ∪ (B' \ X) ⊆ B', 
