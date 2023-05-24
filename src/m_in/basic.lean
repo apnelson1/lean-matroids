@@ -138,7 +138,7 @@ def basis (M : matroid_in α) (I X : set α) : Prop :=
 def circuit (M : matroid_in α) (C : set α) : Prop := C ∈ minimals (⊆) {X | ¬M.indep X} ∧ C ⊆ M.E
 
 /-- A coindependent set is one that is disjoint from some base -/
-def coindep (M : matroid_in α) (I : set α) : Prop := ∃ B, M.base B ∧ disjoint I B
+def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B
 
 class finite_rk (M : matroid_in α) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
 
@@ -897,8 +897,8 @@ by simp [has_matroid_dual.dual, dual]
 
 @[simp] lemma dual.ground_eq : M﹡.E = M.E := rfl  
 
-instance fact_subset_ground_of_dual [fact (X ⊆ M﹡.E)] : fact (X ⊆ M.E) := 
-⟨@set.subset_ground _ _ _ ‹_›⟩ 
+-- instance fact_subset_ground_of_dual [fact (X ⊆ M﹡.E)] : fact (X ⊆ M.E) := 
+-- ⟨@set.subset_ground _ _ _ ‹_›⟩ 
 
 lemma set.subset_ground_dual [fact (X ⊆ M.E)] : X ⊆ M﹡.E := by simp 
 
@@ -912,34 +912,52 @@ end
 @[simp] lemma dual_dual (M : matroid_in α) : M﹡﹡ = M := 
 begin
   refine eq_of_base_iff_base_forall rfl (λ B hB, _), 
-  rw [dual.base_iff], 
-  -- intros B hB, haveI : fact (B ⊆ M.E) := ⟨hB⟩,
-  -- rw [dual.base_iff], 
+  haveI : fact (B ⊆ M.E) := ⟨hB⟩, 
+  haveI : fact (B ⊆ M﹡.E) := ⟨hB⟩, 
+  haveI : fact (M﹡.E \ B ⊆ M.E) := ⟨diff_subset _ _⟩, 
+  simp [dual.base_iff],  
 end 
 
--- simp_rw [dual.base_iff, compl_compl] }
+lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := dual_indep_iff_exists
 
-lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := 
-by { simp [has_matroid_dual.dual, dual, coindep] }
-
-lemma base.compl_base_dual (hB : M.base B) : M﹡.base Bᶜ := by rwa [dual.base_iff, compl_compl]  
+lemma base.compl_base_dual (hB : M.base B) : M﹡.base (M.E \ B) := 
+by { haveI := fact.mk hB.subset_ground, simpa [dual.base_iff] }
 
 lemma base.compl_inter_basis_of_inter_basis (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
-  M﹡.basis (Bᶜ ∩ Xᶜ) Xᶜ := 
+  M﹡.basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := 
 begin
+  haveI : fact (M.E \ X ⊆ M﹡.E) := ⟨diff_subset _ _⟩,
+  haveI := fact.mk hB.subset_ground, 
+  haveI := fact.mk hBX.subset_ground, 
   rw basis_iff, 
   refine ⟨(hB.compl_base_dual.indep.subset (inter_subset_left _ _)), inter_subset_right _ _, 
-    λ J hJ hBCJ hJX, hBCJ.antisymm (subset_inter (λ e heJ heB, _) hJX)⟩, 
-  obtain ⟨B', hB', hJB'⟩ := dual_indep_iff_coindep.mp hJ,  
+    λ J hJ hBCJ hJX, hBCJ.antisymm (subset_inter _ hJX)⟩, 
+  -- haveI : fact (J  )
+  obtain ⟨-, B', hB', hJB'⟩ := dual_indep_iff_coindep.mp hJ, 
+
   obtain ⟨B'', hB'', hsB'', hB''s⟩  := hBX.indep.exists_base_subset_union_base hB', 
   have hB'ss : B' ⊆ B ∪ X, 
-  { rw [←compl_subset_compl, compl_union, subset_compl_iff_disjoint_right],
-    exact disjoint_of_subset_left hBCJ hJB' },
-  have hB''ss : B'' ⊆ B, 
-  { refine λ e he, (hB''s he).elim and.left (λ heB', (hB'ss heB').elim id (λ heX, _)),   
-    exact (hBX.mem_of_insert_indep heX (hB''.indep.subset (insert_subset.mpr ⟨he,hsB''⟩))).1 },
-  have := (hB''.eq_of_subset_indep hB.indep hB''ss).symm, subst this, 
-  exact (hB''s heB).elim (λ heBX, hJX heJ heBX.2) (λ heB', hJB'.ne_of_mem heJ heB' rfl), 
+  { haveI := fact.mk hB'.subset_ground, 
+
+    rw [←rcompl_subset_rcompl M.E, subset_diff, and_iff_right (diff_subset _ _)],
+    rw [←inter_diff_assoc] at hBCJ, 
+    -- rw [←compl_subset_compl, compl_union, subset_compl_iff_disjoint_right],
+    -- exact disjoint_of_subset_left hBCJ hJB' 
+    
+    },
+
+  -- refine ⟨(hB.compl_base_dual.indep.subset (inter_subset_left _ _)), inter_subset_right _ _, 
+  --   λ J hJ hBCJ hJX, hBCJ.antisymm (subset_inter (λ e heJ heB, _) hJX)⟩, 
+  -- obtain ⟨B', hB', hJB'⟩ := dual_indep_iff_coindep.mp hJ,  
+  -- obtain ⟨B'', hB'', hsB'', hB''s⟩  := hBX.indep.exists_base_subset_union_base hB', 
+  -- have hB'ss : B' ⊆ B ∪ X, 
+  -- { rw [←compl_subset_compl, compl_union, subset_compl_iff_disjoint_right],
+  --   exact disjoint_of_subset_left hBCJ hJB' },
+  -- have hB''ss : B'' ⊆ B, 
+  -- { refine λ e he, (hB''s he).elim and.left (λ heB', (hB'ss heB').elim id (λ heX, _)),   
+  --   exact (hBX.mem_of_insert_indep heX (hB''.indep.subset (insert_subset.mpr ⟨he,hsB''⟩))).1 },
+  -- have := (hB''.eq_of_subset_indep hB.indep hB''ss).symm, subst this, 
+  -- exact (hB''s heB).elim (λ heBX, hJX heJ heBX.2) (λ heB', hJB'.ne_of_mem heJ heB' rfl), 
 end 
 
 lemma base.inter_basis_iff_compl_inter_basis_dual (hB : M.base B) : 
