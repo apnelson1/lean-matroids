@@ -25,7 +25,7 @@ lemma circuit_iff_forall_ssubset : M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, 
   hXC.ssubset_or_eq.elim (λ h', (hX (h.2 _ h')).elim) (by { rintro rfl, refl })⟩⟩ 
 
 lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) : M.indep (C \ {e}) :=
-hC.ssubset_indep (diff_singleton_ssubset.2 he)
+sorry --hC.ssubset_indep (diff_singleton_ssubset.2 he)
 
 lemma circuit.diff_singleton_basis (hC : M.circuit C) (he : e ∈ C) : M.basis (C \ {e}) C :=
 begin

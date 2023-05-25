@@ -457,21 +457,45 @@ begin
   exact mem_span_set.2 h5,
 end
 
-lemma mem_sum_basis [module (zmod 2) W] (φ : rep (zmod 2) W M) {B : set E} (e : E) (hB : M.base B) :
-  ∃ I ⊆ B, (∑ i in I.to_finset, std_rep' φ hB i) = std_rep' φ hB e :=
+-- is this only true for std_rep? or is it true in general in zmod 2? the only scalars are 0 and
+-- 1 after all
+lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set E} (hI : M.indep I) 
+(e : E) (he : e ∈ M.cl I) (heI : e ∉ I) :
+  ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
 begin
-  by_cases e ∈ B, 
-  { use {e},
-    rw [singleton_subset_iff, to_finset_singleton, finset.sum_singleton],
-    refine ⟨h, rfl⟩ },
-  { use M.fund_circuit e B \ {e},
-    refine ⟨(@diff_singleton_subset_iff _ e (M.fund_circuit e B) B).2 
-      (fund_circuit_subset_insert (base.mem_cl hB e)), _⟩,
-    obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set.1 (of_base φ hB e),
-    
-
-    have h2 := mem_span_finset,
-    sorry },
+  have h3 := subset_insert e (M.fund_circuit e I),
+  obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set_rep φ hI e he heI,
+  rw ← hc2, 
+  have h4 : c.support = (φ '' (M.fund_circuit e I \ {e})).to_finset := 
+    by { simp_rw [← hc1, finset.to_finset_coe] },
+  have h7 : (∀ (i : W), i ∈ (⇑φ '' (M.fund_circuit e I \ {e})).to_finset → 
+    (λ (mi : W) (r : zmod 2), r • mi) i 0 = 0),
+  intros x hx,
+  simp only [zero_smul],
+  rw [finsupp.sum_of_support_subset c (finset.subset_of_eq h4) (λ mi r, r • mi) h7, 
+    to_finset_image, to_finset_diff, finset.sum_image, finset.sum_congr],
+  simp only [eq_self_iff_true],
+  { intros x hx,
+    simp only,
+    haveI := (@add_comm_group.to_add_comm_monoid W _inst_3),
+    --rw ← @one_smul W (zmod 2) (@add_comm_group.to_add_comm_monoid W _inst_3) _ (φ x),
+    -- for some reason i have to do this roundabout way of using one_smul because
+    -- i can't figure out how to make my monoid instance work for it
+    have hc : c (φ x) = 1,
+    cases le_iff_lt_or_eq.1 (nat.le_of_lt_succ (zmod.val_lt (c (φ x)))) with h0 h1,
+    { by_contra,
+      simp only [nat.lt_one_iff, zmod.val_eq_zero] at h0,
+      rw ← to_finset_diff at hx,
+      have hφ := finset.mem_image_of_mem φ hx,
+      rw [← to_finset_image, ← h4, finsupp.mem_support_iff, ne.def] at hφ,
+      apply hφ,
+      exact h0 },
+    { rw [← zmod.nat_cast_zmod_val (c (φ x)), h1, algebra_map.coe_one] },
+    rw hc,
+    simp only [one_smul] },
+  { simp_rw [←set.to_finset_diff, mem_to_finset],
+    apply inj_on_of_indep φ (circuit.diff_singleton_indep 
+      (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, heI⟩)) (M.mem_fund_circuit e I)) },
 end
 
 
