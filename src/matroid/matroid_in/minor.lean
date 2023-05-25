@@ -610,7 +610,6 @@ begin
   exact subset_union_of_subset_right hB.subset_ground _, 
 end 
 
- 
 /-- The scum theorem : every minor is obtained by contracting an independent set and deleting a 
   coindependent set -/
 theorem scum (h : M₀ ≤ M) : 
