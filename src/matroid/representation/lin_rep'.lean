@@ -457,8 +457,6 @@ begin
   exact mem_span_set.2 h5,
 end
 
--- is this only true for std_rep? or is it true in general in zmod 2? the only scalars are 0 and
--- 1 after all
 lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set E} (hI : M.indep I) 
 (e : E) (he : e ∈ M.cl I) (heI : e ∉ I) :
   ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
@@ -498,6 +496,12 @@ begin
       (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, heI⟩)) (M.mem_fund_circuit e I)) },
 end
 
+-- part (iii) in the proof of theorem 6.5.4
+lemma indep_eq_doubleton_of_nonbinary (hM : ¬ is_binary M) (hI : M.indep I) {Z : set E} 
+  {x y : M} (hxy : M.r = M.rank (E \ {x, y})) (hxy2 : {x, y} ⊆ Z) : I = {x, y} :=
+begin
+  sorry,
+end
 
 structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid E) 
 {B : set E} (hB : M.base B) extends rep 𝔽 W M :=
