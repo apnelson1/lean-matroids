@@ -1,6 +1,6 @@
 import data.set.basic
 
-variables {α : Type*} {s : set α} {a : α}
+variables {α : Type*} {s t r : set α} {a : α}
 
 namespace set
 
@@ -38,4 +38,13 @@ by rw [←union_eq_self_of_subset_right h, union_assoc, union_diff_self, union_a
 
 @[simp] lemma symm_diff_univ (s : set α) : s ∆ univ = sᶜ := symm_diff_top s
   
+/-- `r` is an explicit parameter here for ease of rewriting. -/
+lemma diff_subset_diff_iff (r : set α) (hs : s ⊆ r) (ht : t ⊆ r) : (r \ s) ⊆ (r \ t) ↔ t ⊆ s :=
+begin
+  rw [subset_diff, and_iff_right (diff_subset _ _), ←subset_compl_iff_disjoint_left, diff_eq, 
+    compl_inter, compl_compl], 
+  exact ⟨λ h x hxt, (h hxt).elim (λ h', (h' (ht hxt)).elim) id, 
+    λ h, h.trans (subset_union_right _ _)⟩,
+end   
+
 end set
