@@ -1,8 +1,5 @@
 import .basic 
 
-open_locale classical
-
-
 open set
 
 variables {α : Type*} {I J B B' B₁ B₂ X Y R : set α} {e f : α} {M : matroid_in α}
@@ -12,7 +9,7 @@ namespace matroid_in
 section restrict 
 
 /-- Restrict the matroid `M` to `X : set α`.  -/
-def restr (M : matroid_in α) (X : set α) : matroid_in α :=
+def restrict (M : matroid_in α) (X : set α) : matroid_in α :=
 matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_indep, empty_subset _⟩ 
 (λ I J hJ hIJ, ⟨hJ.1.subset hIJ, hIJ.trans hJ.2⟩)
 (begin
@@ -58,48 +55,48 @@ end)
 end)
 ( by tauto )   
 
-@[class] structure has_restr (α β : Type*) := (restr : α → β → α)
+@[class] structure has_restrict (α β : Type*) := (restrict : α → β → α)
 
-infix ` ‖ ` :75 :=  has_restr.restr 
+infix ` ‖ ` :75 :=  has_restrict.restrict 
 
-instance : has_restr (matroid_in α) (set α) := ⟨λ M E, M.restr E⟩  
+instance : has_restrict (matroid_in α) (set α) := ⟨λ M E, M.restrict E⟩  
 
-@[simp] lemma restr_indep_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
+@[simp] lemma restrict_indep_iff : (M ‖ R).indep I ↔ M.indep I ∧ I ⊆ R :=
 begin
-  unfold has_restr.restr, rw [restr], 
+  unfold has_restrict.restrict, rw [restrict], 
   simp only [subset_inter_iff, matroid_of_indep_apply, and.congr_right_iff, and_iff_left_iff_imp],  
   refine λ hI h, hI.subset_ground, 
 end 
 
-lemma restr_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl 
+lemma restrict_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl 
 
-@[simp] lemma restr_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
-by rwa [restr_ground_eq', inter_eq_left_iff_subset]
+@[simp] lemma restrict_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
+by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 
-lemma restr_restr (R₁ R₂ : set α) : (M ‖ R₁) ‖ R₂ = M ‖ (R₁ ∩ R₂) := 
+lemma restrict_restrict (R₁ R₂ : set α) : (M ‖ R₁) ‖ R₂ = M ‖ (R₁ ∩ R₂) := 
 eq_of_indep_iff_indep_forall 
-(by rw [restr_ground_eq', inter_comm, restr_ground_eq', restr_ground_eq', inter_right_comm]) 
+(by rw [restrict_ground_eq', inter_comm, restrict_ground_eq', restrict_ground_eq', inter_right_comm]) 
 (λ I hI, by simp [and_assoc])
 
-lemma restr_restr_of_subset {R₁ R₂ : set α} (hR : R₂ ⊆ R₁) : (M ‖ R₁) ‖ R₂ = M ‖ R₂ :=
-by rw [restr_restr, inter_eq_self_of_subset_right hR]
+lemma restrict_restrict_of_subset {R₁ R₂ : set α} (hR : R₂ ⊆ R₁) : (M ‖ R₁) ‖ R₂ = M ‖ R₂ :=
+by rw [restrict_restrict, inter_eq_self_of_subset_right hR]
  
-lemma indep.indep_restr_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
-restr_indep_iff.mpr ⟨hI, hIX⟩ 
+lemma indep.indep_restrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
+restrict_indep_iff.mpr ⟨hI, hIX⟩ 
 
-@[simp] lemma restr_base_iff (hX : X ⊆ M.E . ssE) : (M ‖ X).base I ↔ M.basis I X := 
+@[simp] lemma restrict_base_iff (hX : X ⊆ M.E . ssE) : (M ‖ X).base I ↔ M.basis I X := 
 begin
   rw [base_iff_mem_maximals, basis_iff_mem_maximals], 
-  conv {to_lhs, congr, skip, congr, skip, congr, funext, rw restr_indep_iff}, 
+  conv {to_lhs, congr, skip, congr, skip, congr, funext, rw restrict_indep_iff}, 
   refl, 
 end 
 
-@[simp] lemma basis.base_restr (h : M.basis I X) : (M ‖ X).base I := 
-restr_base_iff.mpr h
+@[simp] lemma basis.base_restrict (h : M.basis I X) : (M ‖ X).base I := 
+restrict_base_iff.mpr h
 
-lemma basis.basis_restr_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) : 
+lemma basis.basis_restrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) : 
   (M ‖ Y).basis I X :=
-by { rwa [←restr_base_iff, restr_restr_of_subset hXY, restr_base_iff], simpa }
+by { rwa [←restrict_base_iff, restrict_restrict_of_subset hXY, restrict_base_iff], simpa }
 
 end restrict 
 
@@ -108,8 +105,8 @@ section basis
 lemma basis.transfer (hIX : M.basis I X) (hJX : M.basis J X) (hXY : X ⊆ Y) (hJY : M.basis J Y) : 
   M.basis I Y :=
 begin
-  rw [←restr_base_iff], 
-  exact (restr_base_iff.mpr hJY).base_of_basis_supset hJX.subset (hIX.basis_restr_of_subset hXY), 
+  rw [←restrict_base_iff], 
+  exact (restrict_base_iff.mpr hJY).base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY), 
 end 
 
 lemma basis.transfer' (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) (hIY : I ⊆ Y) : 
@@ -136,17 +133,17 @@ lemma indep.exists_basis_subset_union_basis (hI : M.indep I) (hIX : I ⊆ X) (hJ
   ∃ I', M.basis I' X ∧ I ⊆ I' ∧ I' ⊆ I ∪ J :=
 begin
   obtain ⟨I', hI', hII', hI'IJ⟩ := 
-    (hI.indep_restr_of_subset hIX).exists_base_subset_union_base (basis.base_restr hJ), 
-  exact ⟨I', restr_base_iff.mp hI', hII', hI'IJ⟩, 
+    (hI.indep_restrict_of_subset hIX).exists_base_subset_union_base (basis.base_restrict hJ), 
+  exact ⟨I', restrict_base_iff.mp hI', hII', hI'IJ⟩, 
 end 
 
 lemma indep.exists_insert_of_not_basis (hI : M.indep I) (hIX : I ⊆ X) (hI' : ¬M.basis I X) 
 (hJ : M.basis J X) : 
   ∃ e ∈ J \ I, M.indep (insert e I) :=
 begin
-  rw [←restr_base_iff] at hI', rw [←restr_base_iff] at hJ, -- hJ, 
-  obtain ⟨e, he, hi⟩ := (hI.indep_restr_of_subset hIX).exists_insert_of_not_base hI' hJ, 
-  exact ⟨e, he, (restr_indep_iff.mp hi).1⟩,
+  rw [←restrict_base_iff] at hI', rw [←restrict_base_iff] at hJ, -- hJ, 
+  obtain ⟨e, he, hi⟩ := (hI.indep_restrict_of_subset hIX).exists_insert_of_not_base hI' hJ, 
+  exact ⟨e, he, (restrict_indep_iff.mp hi).1⟩,
 end 
 
 lemma basis.base_of_base_subset (hIX : M.basis I X) (hB : M.base B) (hBX : B ⊆ X) : M.base I :=
@@ -154,48 +151,48 @@ hB.base_of_basis_supset hBX hIX
 
 lemma basis.exchange (hIX : M.basis I X) (hJX : M.basis J X) (he : e ∈ I \ J) : 
   ∃ f ∈ J \ I, M.basis (insert f (I \ {e})) X :=
-by { simp_rw ←restr_base_iff at *, exact hIX.exchange hJX he }
+by { simp_rw ←restrict_base_iff at *, exact hIX.exchange hJX he }
 
 lemma basis.eq_exchange_of_diff_eq_singleton (hI : M.basis I X) (hJ : M.basis J X) 
 (hIJ : I \ J = {e}) : 
   ∃ f ∈ J \ I, J = (insert f I) \ {e} :=
-by { rw [←restr_base_iff] at hI hJ, exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ }
+by { rw [←restrict_base_iff] at hI hJ, exact hI.eq_exchange_of_diff_eq_singleton hJ hIJ }
 
 end basis
 
 section finite
 
 lemma basis.card_eq_card_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : I.ncard = J.ncard :=
-by { rw [←restr_base_iff] at hIX hJX, exact hIX.card_eq_card_of_base hJX }
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.card_eq_card_of_base hJX }
 
 lemma basis.finite_of_finite (hIX : M.basis I X) (hI : I.finite) (hJX : M.basis J X) : J.finite := 
-by { rw [←restr_base_iff] at hIX hJX, exact hIX.finite_of_finite hI hJX }
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.finite_of_finite hI hJX }
 
 lemma basis.infinite_of_infinite (hIX : M.basis I X) (hI : I.infinite) (hJX : M.basis J X) : 
   J.infinite := 
-by { rw [←restr_base_iff] at hIX hJX, exact hIX.infinite_of_infinite hI hJX }
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.infinite_of_infinite hI hJX }
 
 lemma basis.card_diff_comm (hI : M.basis I X) (hJ : M.basis J X) : (I \ J).ncard = (J \ I).ncard :=
-by { rw [←restr_base_iff] at hI hJ, rw hJ.card_diff_comm hI }
+by { rw [←restrict_base_iff] at hI hJ, rw hJ.card_diff_comm hI }
 
 lemma basis.diff_finite_comm (hIX : M.basis I X) (hJX : M.basis J X) :
   (I \ J).finite ↔ (J \ I).finite := 
-by { rw [←restr_base_iff] at hIX hJX, exact hIX.diff_finite_comm hJX }
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.diff_finite_comm hJX }
 
 lemma basis.diff_infinite_comm (hIX : M.basis I X) (hJX : M.basis J X) :
   (I \ J).infinite ↔ (J \ I).infinite := 
-by { rw [←restr_base_iff] at hIX hJX, exact hIX.diff_infinite_comm hJX }
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.diff_infinite_comm hJX }
 
 lemma indep.augment_of_finite (hI : M.indep I) (hJ : M.indep J) (hIfin : I.finite) 
 (hIJ : I.ncard < J.ncard) :
   ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
 begin
   obtain ⟨K, hK, hIK⟩ :=  
-    (hI.indep_restr_of_subset (subset_union_left I J)).exists_base_supset, 
+    (hI.indep_restrict_of_subset (subset_union_left I J)).exists_base_supset, 
   obtain ⟨K', hK', hJK'⟩ :=
-    (hJ.indep_restr_of_subset (subset_union_right I J)).exists_base_supset, 
+    (hJ.indep_restrict_of_subset (subset_union_right I J)).exists_base_supset, 
   have hJfin := finite_of_ncard_pos ((nat.zero_le _).trans_lt hIJ), 
-  rw restr_base_iff at hK hK', 
+  rw restrict_base_iff at hK hK', 
   have hK'fin := (hIfin.union hJfin).subset hK'.subset, 
   have hlt := 
     hIJ.trans_le ((ncard_le_of_subset hJK' hK'fin).trans_eq (hK'.card_eq_card_of_basis hK)), 

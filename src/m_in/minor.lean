@@ -1,7 +1,6 @@
-import .basic
+import .restriction
 
-open_locale classical 
-noncomputable theory
+open set 
 
 variables {E α : Type*} 
 
@@ -11,39 +10,85 @@ section con_del
 
 variables {I J C D B X Y Z R : set α} {M : matroid_in α}
 
-/-- Contract a set from a `matroid_in α` to give a smaller `matroid_in α`-/
-def contract (M : matroid_in α) (C : set α) : matroid_in α := 
-{ ground := M.E \ C,
-  carrier := (M : matroid α) ⟋ C,
-  support := 
-  begin
-    simp only [project.cl_eq, empty_union, diff_eq_compl_inter, compl_inter, compl_compl], 
-    exact union_subset (M.carrier.subset_cl C) 
-      (M.support.trans (M.carrier.cl_mono (empty_subset _))),
-  end }
+class has_delete (α β : Type*) := (del : α → β → α)
 
-/-- Restrict a `matroid_in α` to a smaller ground set. -/
-def restrict (M : matroid_in α) (R : set α) : matroid_in α :=
-⟨M.E ∩ R, M ‖ R, 
-begin
-  rw [lrestr.cl_eq, empty_inter, compl_inter],
-  exact union_subset_union_left _ (compl_ground_subset_loops_coe _ ),  
-end⟩  
+infix ` ⟍ ` :75 :=  has_delete.del 
 
-def delete (M : matroid_in α) (D : set α) : matroid_in α := M.restrict Dᶜ 
+def delete (M : matroid_in α) (D : set α) : matroid_in α := M ‖ Dᶜ 
 
-instance {α : Type*} : has_con (matroid_in α) (set α) := ⟨matroid_in.contract⟩  
-instance {α : Type*} : has_del (matroid_in α) (set α) := ⟨matroid_in.delete⟩
-instance {α : Type*} : has_restr (matroid_in α) (set α) := ⟨matroid_in.restrict⟩  
-instance {α : Type*} : has_con (matroid_in α) α := ⟨λ M e, M.contract {e}⟩  
-instance {α : Type*} : has_del (matroid_in α) α := ⟨λ M e, M.delete {e}⟩  
+instance del_set {α : Type*} : has_delete (matroid_in α) (set α) := ⟨matroid_in.delete⟩
+instance del_elem {α : Type*} : has_delete (matroid_in α) α := ⟨λ M e, M.delete {e}⟩  
 
-@[simp] lemma contract_coe (M : matroid_in α) (C : set α) : 
-  ((M ⟋ C : matroid_in α) : matroid α) = (M : matroid α) ⟋ C := rfl 
+lemma restrict_eq_delete (M : matroid_in α) (R : set α) : M ‖ R = M ⟍ Rᶜ := 
+by { change M ‖ R = M ‖ Rᶜᶜ, rw compl_compl } 
+
+lemma delete_eq_restrict (M : matroid_in α) (D : set α) : M ⟍ D = M ‖ Dᶜ := rfl    
+
+@[simp] lemma delete_ground (M : matroid_in α) (D : set α) : (M ⟍ D).E = M.E \ D := 
+by rw [delete_eq_restrict, restrict_ground_eq', diff_eq_compl_inter]
+
+class has_contract (α β : Type*) := (con : α → β → α)
+
+infix ` ⟋ ` :75 :=  has_contract.con
+
+def contract (M : matroid_in α) (C : set α) : matroid_in α := (M﹡ ⟍ C)﹡
+
+instance con_set {α : Type*} : has_contract (matroid_in α) (set α) := ⟨matroid_in.contract⟩
+instance con_elem {α : Type*} : has_contract (matroid_in α) α := ⟨λ M e, M.contract {e}⟩ 
+
+@[simp] lemma dual_delete_dual_eq_contract (M : matroid_in α) (X : set α) : (M﹡ ⟍ X)﹡ = M ⟋ X := 
+rfl  
+
+@[simp] lemma dual_contract_dual_eq_delete (M : matroid_in α) (X : set α) : (M﹡ ⟋  X)﹡ = M ⟍ X := 
+by rw [←dual_delete_dual_eq_contract, dual_dual, dual_dual]
+
+@[simp] lemma contract_ground (M : matroid_in α) (C : set α) : (M ⟋ C).E = M.E \ C := 
+by rw [←dual_delete_dual_eq_contract, dual_ground, delete_ground, dual_ground]
+
+-- /-- Contract a set from a `matroid_in α` to give a smaller `matroid_in α`-/
+-- def contract (M : matroid_in α) (C : set α) : matroid_in α := 
+-- { ground := M.E \ C,
+--   carrier := (M : matroid α) ⟋ C,
+--   support := 
+--   begin
+--     simp only [project.cl_eq, empty_union, diff_eq_compl_inter, compl_inter, compl_compl], 
+--     exact union_subset (M.carrier.subset_cl C) 
+--       (M.support.trans (M.carrier.cl_mono (empty_subset _))),
+--   end }
+
+-- /-- Restrict a `matroid_in α` to a smaller ground set. -/
+-- def restrict (M : matroid_in α) (R : set α) : matroid_in α :=
+-- ⟨M.E ∩ R, M ‖ R, 
+-- begin
+--   rw [lrestr.cl_eq, empty_inter, compl_inter],
+--   exact union_subset_union_left _ (compl_ground_subset_loops_coe _ ),  
+-- -- end⟩  
+
+-- def delete (M : matroid_in α) (D : set α) : matroid_in α := M.restrict Dᶜ 
+
+-- instance {α : Type*} : has_con (matroid_in α) (set α) := ⟨matroid_in.contract⟩  
+-- instance {α : Type*} : has_del (matroid_in α) (set α) := ⟨matroid_in.delete⟩
+-- instance {α : Type*} : has_restr (matroid_in α) (set α) := ⟨matroid_in.restrict⟩  
+-- instance {α : Type*} : has_con (matroid_in α) α := ⟨λ M e, M.contract {e}⟩  
+-- instance {α : Type*} : has_del (matroid_in α) α := ⟨λ M e, M.delete {e}⟩  
+
+-- @[simp] lemma contract_coe (M : matroid_in α) (C : set α) : 
+--   ((M ⟋ C : matroid_in α) : matroid α) = (M : matroid α) ⟋ C := rfl 
 
 @[simp] lemma contract_elem (M : matroid_in α) (e : α) : M ⟋ e = M ⟋ ({e} : set α) := rfl  
 
-@[simp] lemma contract_ground (M : matroid_in α) (C : set α): (M ⟋ C).E = M.E \ C := rfl 
+@[simp] lemma contract_ground (M : matroid_in α) (C : set α): (M ⟋ C).E = M.E \ C := 
+begin
+
+  -- unfold has_con.con, 
+  -- rw [contract],
+  -- unfold has_matroid_dual.dual,  
+  -- rw [dual], 
+  -- simp only [matroid_of_indep_ground], 
+  -- rw [dual], 
+  -- unfold has_del.del, 
+  -- rw [delete], rw [restr_ground_eq],   
+end 
 
 @[simp] lemma delete_coe (M : matroid_in α) (D : set α) : 
   ((M ⟍ D : matroid_in α) : matroid α) = (M : matroid α) ⟍ D := rfl 
