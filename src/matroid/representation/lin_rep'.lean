@@ -218,11 +218,17 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop :=
   nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 end matroid_in
 
-def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : matroid_in.rep 𝔽 W (N ⟍ D) := 
+def rep_of_del (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (D : set E) : 
+  matroid_in.rep 𝔽 W (N ⟍ D) := 
 { to_fun := φ.to_fun,
   valid' := λ I hI, ⟨λ h, matroid_in.indep.delete_indep 
   ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
   λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 (matroid_in.delete_indep_iff.1 h).1⟩ }
+
+def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) :
+  matroid_in.rep 𝔽 W (N ⟋ C) := 
+{ to_fun := _,
+  valid' := _, }
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
@@ -355,7 +361,7 @@ lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep' 𝔽 M (fin M.rk))  :=
 begin
   have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
-  have h1 := eq.symm (@finite_dimensional.finrank_fin_fun 𝔽 _ (M.rk)),
+  have h1 := eq.symm (@finite_dimensional.finrank_fin_fun 𝔽 _ sorry (M.rk)),
   rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
   cases h1 with l,
   have h3 := λ (x : E), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
@@ -457,8 +463,7 @@ begin
   exact mem_span_set.2 h5,
 end
 
--- is this only true for std_rep? or is it true in general in zmod 2? the only scalars are 0 and
--- 1 after all
+-- use finsum instead of finset.sum
 lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set E} (hI : M.indep I) 
 (e : E) (he : e ∈ M.cl I) (heI : e ∉ I) :
   ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
@@ -498,13 +503,20 @@ begin
       (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, heI⟩)) (M.mem_fund_circuit e I)) },
 end
 
-
 structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid E) 
 {B : set E} (hB : M.base B) extends rep 𝔽 W M :=
 (basis : true)
 
 /- A matroid is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid.is_binary (M : matroid E) := M.is_representable (zmod 2)
+
+-- part (iii) in the proof of theorem 6.5.4
+lemma indep_eq_doubleton_of_nonbinary (M : matroid E) (hM : ¬ M.is_binary) (hI : M.indep I)
+  {Z : set E} {x y : E} (hxy : M.rk = M.r (univ \ {x, y})) (hxy2 : {x, y} ⊆ Z) : I = {x, y} :=
+begin
+  sorry,
+end
+
 
 lemma U24_simple : (unif 2 4).simple :=
 begin
@@ -536,7 +548,7 @@ begin
   rw [matroid.is_binary, is_representable],
   { refine ⟨(fin 2 → zmod 2), ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ },
   intros I,
-  have h3 := @finrank_fin_fun (zmod 2) _ 2,
+  have h3 := @finrank_fin_fun (zmod 2) _ sorry 2,
   refine ⟨λ h, _, λ h, _⟩,  
   -- now the possible sizes of vector families for h are 0, 1, 2.
   have h4 := fintype_card_le_finrank_of_linear_independent h,
