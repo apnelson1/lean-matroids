@@ -1,8 +1,8 @@
-import mathlib.ncard
 import mathlib.data.set.finite
 import mathlib.data.set.basic
 import order.minimal 
 import mathlib.order.minimal
+import data.set.ncard
 -- import .ssfact 
 
 open_locale classical
