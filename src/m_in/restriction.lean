@@ -80,7 +80,19 @@ eq_of_indep_iff_indep_forall
 
 lemma restrict_restrict_of_subset {R₁ R₂ : set α} (hR : R₂ ⊆ R₁) : (M ‖ R₁) ‖ R₂ = M ‖ R₂ :=
 by rw [restrict_restrict, inter_eq_self_of_subset_right hR]
- 
+
+lemma restrict_eq_restrict_iff {R₁ R₂ : set α} : M ‖ R₁ = M ‖ R₂ ↔ R₁ ∩ M.E = R₂ ∩ M.E :=
+begin
+  simp only [eq_iff_indep_iff_indep_forall, subset_inter_iff, restrict_ground_eq', 
+    restrict_indep_iff, and.congr_right_iff, and_imp, and_iff_left_iff_imp], 
+  intros h_eq I hIR₁ hIE hI, 
+  rw [iff_true_intro hIR₁, true_iff], 
+  exact (subset_inter hIR₁ hIE).trans (h_eq.trans_subset (inter_subset_left _ _)), 
+end 
+
+lemma restrict_inter_ground (M : matroid_in α) (R : set α) : M ‖ (R ∩ M.E) = M ‖ R := 
+by rw [restrict_eq_restrict_iff, inter_assoc, inter_self]
+
 lemma indep.indep_restrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
 restrict_indep_iff.mpr ⟨hI, hIX⟩ 
 
@@ -97,6 +109,26 @@ restrict_base_iff.mpr h
 lemma basis.basis_restrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) : 
   (M ‖ Y).basis I X :=
 by { rwa [←restrict_base_iff, restrict_restrict_of_subset hXY, restrict_base_iff], simpa }
+
+
+
+@[simp] lemma restrict_ground_eq_self (M : matroid_in α) : M ‖ M.E = M :=
+begin
+  refine eq_of_indep_iff_indep_forall (restrict_ground_eq subset.rfl) (λ I hI, _), 
+  rw [restrict_ground_eq] at hI, 
+  rw [restrict_indep_iff, and_iff_left_iff_imp],
+  exact λ _, hI, 
+end 
+
+@[simp] lemma restrict_empty_eq_empty (M : matroid_in α) : M ‖ (∅ : set α) = (empty α) :=  
+by rw [←ground_eq_empty_iff_eq_empty, restrict_ground_eq]
+
+lemma restrict_eq_self_iff : M ‖ X = M ↔ M.E ⊆ X := 
+begin
+  simp only [eq_iff_indep_iff_indep_forall, restrict_indep_iff, and_iff_left_iff_imp, 
+    restrict_ground_eq', inter_eq_right_iff_subset], 
+  exact λ h I hI hI', hI.trans (inter_subset_left _ _), 
+end   
 
 end restrict 
 

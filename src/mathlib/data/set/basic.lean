@@ -47,4 +47,16 @@ begin
     λ h, h.trans (subset_union_right _ _)⟩,
 end   
 
+lemma subset_diff_iff_disjoint_left (hsr : s ⊆ r) : s ⊆ r \ t ↔ disjoint s t :=
+by rw [subset_diff, and_iff_right hsr]
+
+lemma subset_diff_iff_disjoint_right (hsr : s ⊆ r) : s ⊆ r \ t ↔ disjoint t s :=
+by rw [subset_diff_iff_disjoint_left hsr, disjoint.comm] 
+
+lemma subset_diff_comm (hsr : s ⊆ r) (htr : t ⊆ r) : s ⊆ r \ t ↔ t ⊆ r \ s :=
+by rw [subset_diff_iff_disjoint_left hsr, disjoint.comm, subset_diff_iff_disjoint_left htr]
+
+lemma diff_eq_diff_iff_inter_eq_inter : r \ s = r \ t ↔ r ∩ s = r ∩ t := 
+by simp only [set.ext_iff, mem_diff, and.congr_right_iff, mem_inter_iff, not_iff_not]
+
 end set

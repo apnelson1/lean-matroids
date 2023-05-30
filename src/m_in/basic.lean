@@ -202,7 +202,8 @@ variables {M : matroid_in α}
 
 section base
 
-@[ssE_finish_rules] lemma base.subset_ground (hB : M.base B) : B ⊆ M.E := M.subset_ground' B hB 
+@[ssE_finish_rules] lemma base.subset_ground (hB : M.base B) : B ⊆ M.E :=
+M.subset_ground' B hB 
 
 lemma exists_base (M : matroid_in α) : ∃ B, M.base B := M.exists_base'
 
@@ -569,6 +570,11 @@ begin
   exact ⟨e, ⟨he.1, not_mem_subset hIB' he.2⟩, 
     ⟨_, hbase, insert_subset_insert (subset_diff_singleton hIB' hx)⟩⟩,  
 end  
+
+lemma basis.inter_eq_of_subset_indep (hIX : M.basis I X) (hIJ : I ⊆ J) (hJ : M.indep J) : 
+  J ∩ X = I := 
+(subset_inter hIJ hIX.subset).antisymm' 
+  (λ e he, hIX.mem_of_insert_indep he.2 (hJ.subset (insert_subset.mpr ⟨he.1, hIJ⟩))) 
 
 lemma base.exists_insert_of_ssubset (hB : M.base B) (hIB : I ⊂ B) (hB' : M.base B') : 
   ∃ e ∈ B' \ I, M.indep (insert e I) :=
@@ -954,17 +960,28 @@ by simp [has_matroid_dual.dual, dual]
 
 lemma set.subset_ground_dual (hX : X ⊆ M.E) : X ⊆ M﹡.E := hX 
 
-lemma dual.base_iff (hB : B ⊆ M.E . ssE) : M﹡.base B ↔ M.base (M.E \ B) := 
+lemma dual_base_iff (hB : B ⊆ M.E . ssE) : M﹡.base B ↔ M.base (M.E \ B) := 
 begin
   rw [base_compl_iff_mem_maximals_disjoint_base', base_iff_maximal_indep, dual_indep_iff_exists, 
     mem_maximals_set_of_iff],
   simp [dual_indep_iff_exists],
 end 
 
+lemma dual_base_iff' : M﹡.base B ↔ M.base (M.E \ B) ∧ B ⊆ M.E := 
+begin
+  obtain (h | h) := em (B ⊆ M.E), 
+  { rw [dual_base_iff, and_iff_left h] },
+  rw [iff_false_intro h, and_false, iff_false], 
+  exact λ h', h h'.subset_ground,  
+end  
+
+lemma base.compl_base_of_dual (h : M﹡.base B) : M.base (M.E \ B) := 
+(dual_base_iff (by { exact h.subset_ground })).mp h
+
 @[simp] lemma dual_dual (M : matroid_in α) : M﹡﹡ = M := 
 begin
   refine eq_of_base_iff_base_forall rfl (λ B hB, _), 
-  rw [dual.base_iff, dual.base_iff], 
+  rw [dual_base_iff, dual_base_iff], 
   rw [dual_ground] at *, 
   simp only [sdiff_sdiff_right_self, inf_eq_inter, ground_inter_right], 
 end 
@@ -972,7 +989,7 @@ end
 lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := dual_indep_iff_exists
 
 lemma base.compl_base_dual (hB : M.base B) : M﹡.base (M.E \ B) := 
-by { haveI := fact.mk hB.subset_ground, simpa [dual.base_iff] }
+by { haveI := fact.mk hB.subset_ground, simpa [dual_base_iff] }
 
 lemma base.compl_inter_basis_of_inter_basis (hB : M.base B) (hBX : M.basis (B ∩ X) X) :
   M﹡.basis ((M.E \ B) ∩ (M.E \ X)) (M.E \ X) := 
@@ -1012,6 +1029,12 @@ by rw [←dual_dual M₁, h, dual_dual]
 
 @[simp] lemma dual_inj_iff {M₁ M₂ : matroid_in α} : M₁﹡ = M₂﹡ ↔ M₁ = M₂ := ⟨dual_inj, congr_arg _⟩
 
+lemma eq_dual_comm {M₁ M₂ : matroid_in α} : M₁ = M₂﹡ ↔ M₂ = M₁﹡ := 
+by rw [←dual_inj_iff, dual_dual, eq_comm]
+
+lemma dual_eq_comm {M₁ M₂ : matroid_in α} : M₁﹡ = M₂ ↔ M₂﹡ = M₁ := 
+by rw [←dual_inj_iff, dual_dual, eq_comm]
+
 lemma coindep_iff_disjoint_base (hX : X ⊆ M.E . ssE) : 
   M.coindep X ↔ ∃ B, M.base B ∧ disjoint X B := 
 by rw [coindep, and_iff_right hX]
@@ -1025,7 +1048,7 @@ begin
 end 
 
 lemma base_iff_dual_base_compl (hB : B ⊆ M.E . ssE) : M.base B ↔ M﹡.base (M.E \ B) :=
-by simp [dual.base_iff]
+by simp [dual_base_iff]
 
 end dual 
 
