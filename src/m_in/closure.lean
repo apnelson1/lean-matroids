@@ -19,6 +19,9 @@ def flat (M : matroid_in α) (F : set α) : Prop :=
   satisfy `X ⊆ M.E` has the junk value `M.cl X = M.E`. -/
 def cl (M : matroid_in α) (X : set α) : set α := ⋂₀ {F | M.flat F ∧ X ⊆ F} ∩ M.E 
 
+@[ssE_finish_rules] lemma cl.subset_ground : M.cl X ⊆ M.E := 
+by { rintros x ⟨hx1, hx2⟩, exact hx2  } 
+
 lemma cl_def (M : matroid_in α) (hX : X ⊆ M.E) : M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} := 
 begin
   sorry 

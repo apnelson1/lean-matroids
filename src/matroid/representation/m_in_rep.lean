@@ -2,9 +2,9 @@ import analysis.inner_product_space.gram_schmidt_ortho
 import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
-import mathlib.ncard
 import m_in.basic
 import m_in.minor
+import m_in.closure
 import number_theory.ramification_inertia
 
 namespace set
@@ -41,7 +41,7 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop := �
 
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in E) :=
 (to_fun : E → W)
-(valid' : ∀ (I : set E), linear_independent 𝔽 (λ (e : I), to_fun e) ↔ M.indep I)
+(valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (λ (e : I), to_fun e) ↔ M.indep I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop := 
@@ -61,7 +61,7 @@ protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
-inj_on_iff_injective.2 ((φ.valid' I).2 hI).injective
+inj_on_iff_injective.2 ((φ.valid' I (indep.subset_ground hI)).2 hI).injective
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : E → W)  := by { ext, refl }
 
@@ -71,11 +71,17 @@ linear_independent_image $ inj_on_of_indep _ hI
 
 def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (x : E) : φ x ∈ rep.to_submodule φ :=
-by { rw [rep.to_submodule], refine subset_span _, simp }
+lemma mem_to_submodule (φ : rep 𝔽 W M) (hx : x ∈ M.E) : φ x ∈ rep.to_submodule φ :=
+by { rw [rep.to_submodule], refine subset_span _, simp, sorry }
 
 def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M := 
-{ to_fun := λ x, ⟨φ x, rep.mem_to_submodule φ x⟩,
+{ to_fun := λ a, --⟨φ x, _⟩,
+    begin
+      refine ⟨φ a, _⟩,
+      have h2 := (rep.mem_to_submodule φ hx),
+      apply h2,
+      sorry,
+    end,
   valid' := λ I, 
     begin
       have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, rep.mem_to_submodule φ x⟩ : (span 𝔽 (range ⇑φ)))),
@@ -163,7 +169,8 @@ end-/
 
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
-by { rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B).2 hB.indep) }
+by { rw [←span_base _ hB, image_eq_range], exact basis.span 
+  ((φ.valid' B (base.subset_ground hB)).2 hB.indep) }
 
 
 /-lemma base_of_basis (φ : rep 𝔽 W M) {B : set E} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
@@ -183,8 +190,12 @@ begin
   apply finite_dimensional.of_finite_basis (basis_of_base φ hB) (base.finite hB),
 end
 
-@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x : E), φ x ∈ (span 𝔽 (range ⇑φ)) := 
+@[simp] lemma mem_span_rep_range (φ : rep 𝔽 W M) : ∀ (x : E), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
+
+@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x ∈ M.E), φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x hx, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) 
+  (mem_image_of_mem φ hx) }
 
 /-lemma mem_span_cl (φ : rep 𝔽 W M) (x : E) (X : set E) (hx : x ∈ M.cl X) : φ x ∈ span 𝔽 (φ '' X) :=
 begin
@@ -210,7 +221,7 @@ end-/
 def rep_of_del (N : matroid_in E) (φ : rep 𝔽 W N) (D : set E) : 
   rep 𝔽 W (N ⟍ D) := 
   { to_fun := φ.to_fun,
-    valid' := λ I, _ }
+    valid' := λ I hI, _ }
 /-{ to_fun := φ.to_fun,
   valid' := λ I hI, ⟨λ h, matroid_in.indep.delete_indep 
   ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
@@ -255,10 +266,10 @@ end
 lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
 by { convert of_r φ univ; simp }
 
-lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep }
+lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set E) : φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x hx.2 }
 
-lemma cl_subset_span_set (φ : rep 𝔽 W M) (X : set E): φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
+lemma cl_subset_span_set (φ : rep 𝔽 W M) (X : set E) : φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
 by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ _ _ hx }
 
 --lemma rep_of_minor (φ : rep 𝔽 W M) (N : matroid_in E) (hNM : N ≤ matroid_in.to_matroid_in M) : 
@@ -319,7 +330,8 @@ lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set E} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base' _ hB, image_eq_range], exact basis.span ((rep'.valid' φ B).2 hB.indep) }
 
-instance fin_dim_rep' (φ : rep' 𝔽 M ι) [finite E] [fintype 𝔽] : finite_dimensional 𝔽 (span 𝔽 (set.φ '' M.E)) :=
+instance fin_dim_rep' (φ : rep' 𝔽 M ι) [finite E] [fintype 𝔽] : 
+  finite_dimensional 𝔽 (span 𝔽 (φ '' M.E)) :=
 begin
   cases M.exists_base with B hB,
   apply finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
