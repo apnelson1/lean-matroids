@@ -197,14 +197,15 @@ end
   λ x hx, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) 
   (mem_image_of_mem φ hx) }
 
-/-lemma mem_span_cl (φ : rep 𝔽 W M) (x : E) (X : set E) (hx : x ∈ M.cl X) : φ x ∈ span 𝔽 (φ '' X) :=
+lemma mem_span_cl (φ : rep 𝔽 W M) {x : E} {X : set E} (hX : X ⊆ M.E) (hx : x ∈ M.cl X) : 
+  φ x ∈ span 𝔽 (φ '' X) :=
 begin
   by_cases x ∈ X, 
   { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' X)) (mem_image_of_mem φ h) },
   obtain ⟨I, hI⟩ := M.exists_basis X,
   rw [← span_basis φ hI, span_basis φ (indep.basis_cl (basis.indep hI)), basis.cl hI],
   apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.cl X)) (mem_image_of_mem φ hx),
-end-/
+end
 
 /-lemma dual_rep_of_rep (φ : rep 𝔽 W M) [fintype 𝔽] : rep 𝔽 (module.dual 𝔽 W) M﹡ := 
 { to_fun := λ (e : E), subspace.dual_lift (span 𝔽 (range ⇑φ)) 
@@ -269,8 +270,9 @@ by { convert of_r φ univ; simp }
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set E) : φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
 by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x hx.2 }
 
-lemma cl_subset_span_set (φ : rep 𝔽 W M) (X : set E) : φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ _ _ hx }
+lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set E} (hX : X ⊆ M.E) : 
+  φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ hX hx }
 
 --lemma rep_of_minor (φ : rep 𝔽 W M) (N : matroid_in E) (hNM : N ≤ matroid_in.to_matroid_in M) : 
 
