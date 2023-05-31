@@ -2,7 +2,7 @@
 import algebra.big_operators.finprod
 import mathlib.data.set.basic
 import mathlib.data.set.sigma
-import mathlib.ncard
+import data.set.ncard
 import data.setoid.partition 
 
 noncomputable theory

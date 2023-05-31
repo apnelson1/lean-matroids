@@ -2,7 +2,6 @@ import analysis.inner_product_space.gram_schmidt_ortho
 import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
-import mathlib.ncard
 import ..constructions.basic
 import matroid.matroid_in.basic
 import matroid.matroid_in.minor

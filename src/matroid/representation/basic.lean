@@ -2,7 +2,6 @@ import linear_algebra.finite_dimensional
 import data.matrix.rank
 import data.zmod.basic
 import ..constructions.basic
---import ..dual
 import .field_stuff
 
 noncomputable theory

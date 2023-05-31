@@ -1,6 +1,6 @@
-import mathlib.ncard
 import mathlib.data.set.finite
 import order.minimal 
+import data.set.ncard
 
 open_locale classical
 open_locale big_operators
