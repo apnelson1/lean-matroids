@@ -220,18 +220,29 @@ end
 
 
 def rep_of_del (N : matroid_in E) (φ : rep 𝔽 W N) (D : set E) : 
-  rep 𝔽 W (N ⟍ D) := 
-  { to_fun := φ.to_fun,
-    valid' := λ I hI, _ }
-/-{ to_fun := φ.to_fun,
-  valid' := λ I hI, ⟨λ h, matroid_in.indep.delete_indep 
-  ((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h) ((subset_diff.1 hI).2), 
-  λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 (matroid_in.delete_indep_iff.1 h).1⟩ }-/
+rep 𝔽 W (N ⟍ D) := 
+{ to_fun := φ.to_fun,
+  valid' := λ I hI, by { rw delete_ground at hI, 
+    refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
+    (subset_diff.1 hI).2⟩, λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 
+    (matroid_in.delete_indep_iff.1 h).1⟩, } }
 
 def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (hC : C ⊆ N.E):
   matroid_in.rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
 { to_fun := λ x, submodule.quotient.mk (φ.to_fun x),
-  valid' := sorry, }
+  valid' := λ I hI,
+    begin
+      rw contract_ground at hI,
+      refine ⟨λ h, _, λ h, _⟩,  
+      rw indep.contract_indep_iff,
+      refine ⟨(subset_diff.1 hI).2, _⟩,
+      rw ← φ.valid',
+      sorry,
+      sorry,
+      sorry,
+      rw indep.contract_indep_iff at h,
+      sorry,
+    end }
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
