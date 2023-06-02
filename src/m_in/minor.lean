@@ -1,4 +1,5 @@
 import .restriction
+import .closure 
 
 open set 
 
@@ -141,6 +142,10 @@ begin
   rw [subset_diff], 
   exact ⟨hJIB.1, hdj⟩, 
 end 
+
+lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.cl ∅) : M ⟋ X = M ⟍ X := sorry 
+
+-- lemma contract_eq_delete_iff : M ⟋ X = M ⟍ X ↔ X ⊆ M.cl ∅ ∪ 
 
 -- lemma basis.foo (hI : M.basis I C) : M ⟋ C = M ⟋ I ⟍ (C \ I) :=
 -- begin
