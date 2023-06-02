@@ -227,20 +227,76 @@ rep 𝔽 W (N ⟍ D) :=
     (subset_diff.1 hI).2⟩, λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 
     (matroid_in.delete_indep_iff.1 h).1⟩, } }
 
+lemma linear_independent.map'' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
+   (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
+begin
+  rw [disjoint_iff_inf_le, ← set.image_univ, finsupp.span_image_eq_map_total,
+    map_inf_eq_map_inf_comap,
+    map_le_iff_le_comap, comap_bot, finsupp.supported_univ, top_inf_eq],
+  unfold linear_independent at hv hfv,
+  rw [hv, le_bot_iff],
+  haveI : inhabited W := ⟨0⟩,
+  rw [finsupp.total_comp, @finsupp.lmap_domain_total _ _ 𝔽 _ _ _ _ _ _ _ _ _ _ f,
+    linear_map.ker_comp (finsupp.total ι W 𝔽 v) f] at hfv,
+  rw ← hfv, 
+  exact λ _, rfl,
+end
+
+lemma linear_independent.map''' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
+   (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
+begin
+  rw [disjoint_iff_inf_le, ← set.image_univ, finsupp.span_image_eq_map_total,
+    map_inf_eq_map_inf_comap,
+    map_le_iff_le_comap, comap_bot, finsupp.supported_univ, top_inf_eq],
+  unfold linear_independent at hv hfv,
+  rw [hv, le_bot_iff],
+  haveI : inhabited W := ⟨0⟩,
+  rw [finsupp.total_comp, @finsupp.lmap_domain_total _ _ 𝔽 _ _ _ _ _ _ _ _ _ _ f,
+    linear_map.ker_comp (finsupp.total ι W 𝔽 v) f] at hfv,
+  rw ← hfv, 
+  exact λ _, rfl,
+end
+
 def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (hC : C ⊆ N.E):
   matroid_in.rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
 { to_fun := λ x, submodule.quotient.mk (φ.to_fun x),
   valid' := λ I hI,
     begin
-      rw contract_ground at hI,
+      obtain ⟨J, hJ⟩ := exists_basis N C hC,
+      rw [basis.contract_eq hJ, delete_ground, contract_ground] at hI,
+      rw basis.contract_eq hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      rw indep.contract_indep_iff,
-      refine ⟨(subset_diff.1 hI).2, _⟩,
+      rw delete_indep_iff,
+      rw indep.contract_indep_iff (basis.indep hJ),
+      refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
+      simp at h,
+      simp_rw [← mkq_apply _] at h,
       rw ← φ.valid',
+      have h7 := linear_independent.image 
+        (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h),
+      have h8 := linear_independent.image ((φ.valid' J _).2 (basis.indep hJ)),
+      have h6 := linear_independent.union h7 h8,
+      rw linear_independent_image,
+      rw image_union,
+      apply h6,
+      --rw disjoint_def,
+      --simp_rw [to_fun_eq_coe] at h,
+      have h10 := span_basis φ hJ,
+      simp_rw [← to_fun_eq_coe] at h10,
+      rw h10,
+      simp at h10,
+      simp_rw [← to_fun_eq_coe],
+      rw ← ker_mkq (span 𝔽 (φ.to_fun '' C)),
+      --simp at h,
+      have h20 := linear_independent.map'' h7 ((span 𝔽 (φ '' C)).mkq) sorry,
+      rw image_eq_range _ (φ.to_fun '' I), 
+      --simp only [to_fun_eq_coe, mem_image] at h20,
+      /-rw disjoint_def,
+      intros x hx1 hx2,
+      rw linear_map.mem_ker at hx2,
+      rw mem_span at hx1,
+      have h14 := linear_independent.ne_zero _ h,-/
       sorry,
-      sorry,
-      sorry,
-      rw indep.contract_indep_iff at h,
       sorry,
     end }
 

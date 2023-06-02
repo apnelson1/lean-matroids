@@ -493,14 +493,15 @@ end matroid_in
 --   rw [contract_cl, empty_union], 
 -- end  
 
--- lemma basis.contract_eq (h : M.basis I X) : 
---   M ⟋ X = M ⟋ I ⟍ (X \ I) :=
--- begin
---   nth_rewrite 0 ←union_diff_cancel h.subset, 
---   rw [←contract_contract, contract_eq_delete_of_subset_loops], 
---   rw [contract_cl, empty_union], 
---   exact diff_subset_diff_left h.subset_cl, 
--- end  
+lemma basis.contract_eq (h : M.basis I X) : 
+  M ⟋ X = M ⟋ I ⟍ (X \ I) :=
+begin
+  nth_rewrite 0 ←union_diff_cancel h.subset, 
+  sorry,
+  /-rw [←contract_contract, contract_eq_delete_of_subset_loops], 
+  rw [contract_cl, empty_union], 
+  exact diff_subset_diff_left h.subset_cl, -/
+end  
 
 -- @[simp] lemma restrict_contract_eq_contract_restrict (M : matroid_in α) (R C : set α) :
 --   (M ‖ R) ⟋ C = (M ⟋ (R ∩ C)) ‖ (R \ C) :=   
