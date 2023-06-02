@@ -13,10 +13,10 @@ variables {E E' : Type*} {N M : matroid_in E} {e f g : E} {X Y Z S T : set E}
 section simple
 
 /-- A matroid_in is loopless on a set if that set doesn't contain a loop. -/
-def loopless_on (M : matroid_in E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → M.nonloop e
+--def loopless_on (M : matroid_in E) (X : set E) : Prop := ∀ ⦃e⦄, e ∈ X → M.nonloop e
 
 /-- A matroid_in is loopless if it has no loop -/
-def loopless (M : matroid_in E) : Prop := ∀ e, M.nonloop e
+/-def loopless (M : matroid_in E) : Prop := ∀ e, M.nonloop e
 
 protected lemma loopless.loopless_on (hM : M.loopless) : M.loopless_on X := λ e _, hM _
 
@@ -381,8 +381,9 @@ begin
   rwa hef at ⊢ hf, 
 end 
 
-end point_count
+end point_count-/
 
+end simple
 
 end matroid_in
 

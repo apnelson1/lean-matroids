@@ -22,15 +22,21 @@ def cl (M : matroid_in α) (X : set α) : set α := ⋂₀ {F | M.flat F ∧ X �
 @[ssE_finish_rules] lemma cl.subset_ground : M.cl X ⊆ M.E := 
 by { rintros x ⟨hx1, hx2⟩, exact hx2  } 
 
-lemma cl_def (M : matroid_in α) (hX : X ⊆ M.E) : M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} := 
+lemma cl_def (M : matroid_in α) (hX : X ⊆ M.E) : M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} ∩ M.E := rfl
+
+lemma mem_cl_iff_forall_mem_flat (hX : X ⊆ M.E) : e ∈ M.cl X ↔ ∀ F, M.flat F → X ⊆ F → e ∈ F :=
 begin
-  sorry 
-end 
+ simp_rw [cl_def M hX], --mem_sInter], --mem_set_of_eq, and_imp]
+ rw mem_inter_iff,
+ rw and_comm,
+ by_cases e ∈ M.E,
+ rw and_iff_right h, 
+ simp_rw [mem_sInter, mem_set_of_eq, and_imp],
+ by_contra,
+ sorry,
+end
 
-lemma mem_cl_iff_forall_mem_flat : e ∈ M.cl X ↔ ∀ F, M.flat F → X ⊆ F → e ∈ F :=
-by simp_rw [cl_def, mem_sInter, mem_set_of_eq, and_imp]
-
-lemma subset_cl (M : matroid_in α) (X : set α) : X ⊆ M.cl X :=
+/-lemma subset_cl (M : matroid_in α) (X : set α) : X ⊆ M.cl X :=
 by simp only [cl_def, subset_sInter_iff, mem_set_of_eq, and_imp, imp_self, implies_true_iff]
 
 @[simp] lemma cl_univ (M : matroid_in α) : M.cl univ = univ := (subset_univ _).antisymm (M.subset_cl _)
@@ -94,7 +100,7 @@ by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq_cl_union, diff_union_self, 
     cl_union_cl_right_eq_cl_union, union_empty]
 
-lemma mem_cl_self (M : matroid_in α) (e : α) : α ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
+lemma mem_cl_self (M : matroid_in α) (e : α) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
 
 lemma indep.cl_eq_set_of_basis (hI : M.indep I) : M.cl I = {x | M.basis I (insert x I)} :=
 begin
@@ -137,7 +143,7 @@ lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : α ∉ I) :
   e ∈ M.cl I ↔ ¬M.indep (insert e I) :=
 by rw [hI.mem_cl_iff, (iff_false _).mpr heI, imp_false]
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) : α ∉ M.cl I ↔ e ∉ I ∧ M.indep (insert e I) :=
+lemma indep.not_mem_cl_iff (hI : M.indep I) : e ∉ M.cl I ↔ e ∉ I ∧ M.indep (insert e I) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
 
 lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : α ∉ I) : 
@@ -581,6 +587,6 @@ matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange (nat.car
 (matroid_of_cl_of_finite cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
 by simp [matroid_of_cl_of_finite] 
 
-end from_axioms
+end from_axioms-/
 
 end matroid 
