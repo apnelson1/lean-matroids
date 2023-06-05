@@ -3,3 +3,5 @@
 /leanpkg.path
 .DS_Store
 src/matroid/.DS_Store
+.DS_Store
+src/.DS_Store

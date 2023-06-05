@@ -25,6 +25,8 @@ lemma loop_iff_mem_cl_empty : M.loop e ↔ e ∈ M.cl ∅ := iff.rfl
 
 lemma cl_empty_eq_loops (M : matroid_in E) : M.cl ∅ = {e | M.loop e} := rfl 
 
+lemma loop.mem_ground (he : M.loop e) : e ∈ M.E := cl.subset_ground M ∅ he
+
 /-lemma loop_iff_dep : M.loop e ↔ ¬ M.indep {e} :=
 by rw [loop_iff_mem_cl_empty, iff_not_comm, M.empty_indep.not_mem_cl_iff, 
   mem_empty_iff_false, not_false_iff, true_and, insert_emptyc_eq]

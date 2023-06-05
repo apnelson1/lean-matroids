@@ -15,35 +15,50 @@ variables {α : Type*} {M : matroid_in α} {I J B C X Y : set α} {e f x y : α}
 def flat (M : matroid_in α) (F : set α) : Prop := 
 (∀ ⦃I X⦄, M.basis I F → M.basis I X → X ⊆ F) ∧ F ⊆ M.E  
 
-/-- The closure of a set is the intersection of the flats containing it. A set `X` that doesn't
-  satisfy `X ⊆ M.E` has the junk value `M.cl X = M.E`. -/
-def cl (M : matroid_in α) (X : set α) : set α := ⋂₀ {F | M.flat F ∧ X ⊆ F} ∩ M.E 
+lemma ground_flat (M : matroid_in α) : M.flat M.E := 
+⟨λ _ _ _, basis.subset_ground, subset.rfl⟩
 
-@[ssE_finish_rules] lemma cl.subset_ground : M.cl X ⊆ M.E := 
-by { rintros x ⟨hx1, hx2⟩, exact hx2  } 
+/-- The closure of a subset of the ground set is the intersection of the flats containing it. 
+  A set `X` that doesn't satisfy `X ⊆ M.E` has the junk value `M.cl X := M.cl (X ∩ M.E)`. -/
+def cl (M : matroid_in α) (X : set α) : set α := ⋂₀ {F | M.flat F ∧ X ∩ M.E ⊆ F} 
 
-lemma cl_def (M : matroid_in α) (hX : X ⊆ M.E) : M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} ∩ M.E := rfl
+lemma cl_def (M : matroid_in α) (X : set α) : M.cl X = ⋂₀ {F | M.flat F ∧ X ∩ M.E ⊆ F} := rfl
 
-lemma mem_cl_iff_forall_mem_flat (hX : X ⊆ M.E) : e ∈ M.cl X ↔ ∀ F, M.flat F → X ⊆ F → e ∈ F :=
+lemma cl_eq_sInter_of_subset (X : set α) (hX : X ⊆ M.E . ssE) : 
+  M.cl X = ⋂₀ {F | M.flat F ∧ X ⊆ F} :=
+by rw [cl, inter_eq_self_of_subset_left hX]
+
+lemma cl_eq_cl_inter_ground (M : matroid_in α) (X : set α) : M.cl X = M.cl (X ∩ M.E) :=
+by rw [cl_def, cl_eq_sInter_of_subset]
+
+@[ssE_finish_rules] lemma cl_subset_ground (M : matroid_in α) (X : set α) : M.cl X ⊆ M.E := 
 begin
- simp_rw [cl_def M hX], --mem_sInter], --mem_set_of_eq, and_imp]
- rw mem_inter_iff,
- rw and_comm,
- by_cases e ∈ M.E,
- rw and_iff_right h, 
- simp_rw [mem_sInter, mem_set_of_eq, and_imp],
- by_contra,
- sorry,
-end
+  apply sInter_subset_of_mem, 
+  simp only [mem_set_of_eq, inter_subset_right, and_true], 
+  apply ground_flat, 
+end 
 
-/-lemma subset_cl (M : matroid_in α) (X : set α) : X ⊆ M.cl X :=
-by simp only [cl_def, subset_sInter_iff, mem_set_of_eq, and_imp, imp_self, implies_true_iff]
+lemma mem_cl_iff_forall_mem_flat (X : set α) (hX : X ⊆ M.E . ssE) : 
+  e ∈ M.cl X ↔ ∀ F, M.flat F → X ⊆ F → e ∈ F :=
+by simp_rw [cl_eq_sInter_of_subset, mem_sInter, mem_set_of_eq, and_imp]
 
-@[simp] lemma cl_univ (M : matroid_in α) : M.cl univ = univ := (subset_univ _).antisymm (M.subset_cl _)
+lemma subset_cl (X : set α) (hX : X ⊆ M.E . ssE) : X ⊆ M.cl X :=
+by { rw [cl_eq_sInter_of_subset, subset_sInter_iff], simp }
+
+-- lemma cl_flat {F : set α} (hF : M.flat F) : M.cl F = F :=
+-- (sInter_subset_of_mem (by simpa)).antisymm (subset_cl F hF.2)
+  
+@[simp] lemma cl_ground (M : matroid_in α) : M.cl M.E = M.E := 
+(cl_subset_ground M M.E).antisymm (subset_cl _)
+  
+@[simp] lemma cl_univ (M : matroid_in α) : M.cl univ = M.E := 
+by rw [cl_eq_cl_inter_ground, univ_inter, cl_ground]
 
 @[simp] lemma cl_cl (M : matroid_in α) (X : set α) : M.cl (M.cl X) = M.cl X :=
 begin
-  refine (subset_cl _ _).antisymm' (λ e he, _), 
+  nth_rewrite 2 cl_eq_cl_inter_ground, 
+  nth_rewrite 1 cl_eq_cl_inter_ground, 
+  refine (subset_cl _ (cl_subset_ground _ _)).antisymm' (λ e he, _), 
   rw mem_cl_iff_forall_mem_flat at *, 
   refine λ F hF hXF, he _ hF (λ f hf, _), 
   rw mem_cl_iff_forall_mem_flat at hf, 
@@ -249,7 +264,7 @@ end
 lemma indep.basis_of_subset_cl (hI : M.indep I) (hIX : I ⊆ X) (h : X ⊆ M.cl I) : M.basis I X :=
 hI.basis_cl.basis_subset hIX h
  
-lemma indep.base_of_cl_eq_univ (hI : M.indep I) (h : M.cl I = univ) : M.base I :=
+lemma indep.base_of_cl_eq_univ (hI : M.indep I) (h : M.cl I = M.E) : M.base I :=
 by { rw base_iff_basis_univ, refine hI.basis_of_subset_cl (subset_univ _) (by rw h) }
 
 lemma basis.basis_cl (hI : M.basis I X) : M.basis I (M.cl X) :=
@@ -296,7 +311,7 @@ begin
   exact (he.1 heI).elim, 
 end
 
-lemma cl_exchange (he : α ∈ M.cl (insert f X) \ M.cl X ) : f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) : f ∈ M.cl (insert e X) \ M.cl X :=
 begin
   refine ⟨mem_cl_insert he.2 he.1, λ hf, _ ⟩,
   rw [cl_insert_eq_of_mem_cl hf, diff_self] at he,
