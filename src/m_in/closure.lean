@@ -113,7 +113,9 @@ begin
   { rw [h, ← cl_eq_cl_inter_ground],
       exact he },
   { apply subset_cl, use [h, hx] }
-end
+end 
+
+#check 
 
 @[simp] lemma cl_union_cl_right_eq_cl_union (M : matroid_in α) (X Y : set α) :
   M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) :=
