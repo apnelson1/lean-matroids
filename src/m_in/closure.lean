@@ -70,8 +70,7 @@ begin
   rw [cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground Y], 
   refine sInter_subset_sInter _, 
   simp only [ground_inter_left, set_of_subset_set_of, and_imp],
-   
-
+  exact λ F hF hiF, ⟨hF, subset_trans (inter_subset_inter_left _ h) hiF⟩, 
 end
 -- sInter_subset_sInter (λ F hF, ⟨hF.1, subset_trans (inter_subset_inter_left M.E h) hF.2⟩)
 
