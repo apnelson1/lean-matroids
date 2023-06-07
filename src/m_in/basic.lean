@@ -167,6 +167,9 @@ inter_eq_self_of_subset_right hXE
 @[simp] lemma ground_inter_left {M : matroid_in α} (hXE : X ⊆ M.E . ssE) : X ∩ M.E = X :=
 inter_eq_self_of_subset_left hXE 
 
+@[ssE_rules] private lemma insert_subset_ground {e : α} {X : set α} {M : matroid_in α} 
+(he : e ∈ M.E) (hX : X ⊆ M.E) : insert e X ⊆ M.E := insert_subset.mpr ⟨he, hX⟩  
+
 attribute [ssE_rules] mem_of_mem_of_subset empty_subset subset.rfl union_subset
 
 end tac
@@ -1092,13 +1095,22 @@ by rw [loopy_on, trivial_on_indep_iff, subset_empty_iff]
 /-- The matroid on `E` whose only basis is `E` -/
 def free_on (E : set α) : matroid_in α := trivial_on (@subset.rfl _ E)
 
-@[simp] lemma free_on_ground (E : set α) : (loopy_on E).E = E := rfl 
+@[simp] lemma free_on_ground (E : set α) : (free_on E).E = E := rfl 
 
 @[simp] lemma free_on_base_iff (E : set α) : (free_on E).base B ↔ B = E := 
 by rw [free_on, trivial_on_base_iff]
 
 @[simp] lemma free_on_indep_iff (E : set α) : (free_on E).indep I ↔ I ⊆ E := 
 by rw [free_on, trivial_on_indep_iff]
+
+lemma ground_indep_iff_eq_free_on : M.indep M.E ↔ M = free_on M.E := 
+begin
+  refine ⟨λ hi, eq_of_indep_iff_indep_forall rfl (λ I hI, _), λ hM, _⟩, 
+  { rw [free_on_indep_iff, iff_true_intro hI, iff_true],
+    exact hi.subset hI }, 
+  rw hM, 
+  simp, 
+end 
 
 /-- The matroid on `X` with empty ground set -/
 def empty (α : Type*) : matroid_in α := matroid_in.loopy_on ∅ 
