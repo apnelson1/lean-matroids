@@ -31,6 +31,9 @@ by rw [cl, inter_eq_self_of_subset_left hX]
 lemma cl_eq_cl_inter_ground (M : matroid_in α) (X : set α) : M.cl X = M.cl (X ∩ M.E) :=
 by rw [cl_def, cl_eq_sInter_of_subset]
 
+lemma inter_ground_subset_cl (M : matroid_in α) (X : set α) : X ∩ M.E ⊆ M.cl X := 
+by { rw [cl_eq_cl_inter_ground], simp [cl_def] }
+
 @[ssE_finish_rules] lemma cl_subset_ground (M : matroid_in α) (X : set α) : M.cl X ⊆ M.E := 
 begin
   apply sInter_subset_of_mem, 
@@ -59,7 +62,7 @@ begin
   nth_rewrite 2 cl_eq_cl_inter_ground, 
   nth_rewrite 1 cl_eq_cl_inter_ground, 
   refine (subset_cl _ (cl_subset_ground _ _)).antisymm' (λ e he, _), 
-  rw mem_cl_iff_forall_mem_flat at *, 
+  rw mem_cl_iff_forall_mem_flat at *,
   refine λ F hF hXF, he _ hF (λ f hf, _), 
   rw mem_cl_iff_forall_mem_flat at hf, 
   exact hf _ hF hXF, 
@@ -70,12 +73,8 @@ begin
   rw [cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground Y], 
   refine sInter_subset_sInter _, 
   simp only [ground_inter_left, set_of_subset_set_of, and_imp],
-   
-
+  exact λ F hF hiF, ⟨hF, subset_trans (inter_subset_inter_left _ h) hiF⟩, 
 end
--- sInter_subset_sInter (λ F hF, ⟨hF.1, subset_trans (inter_subset_inter_left M.E h) hF.2⟩)
-
--- sInter_subset_sInter (λ F hF, ⟨hF.1, h.trans hF.2⟩)
 
 lemma cl_mono (M : matroid_in α) : monotone M.cl :=
 begin
@@ -123,66 +122,21 @@ begin
   { apply subset_cl, use [h, hx] }
 end 
 
-#check 
 
 @[simp] lemma cl_union_cl_right_eq_cl_union (M : matroid_in α) (X Y : set α) :
   M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) :=
 begin
-  -- refine subset.antisymm _ (cl_subset _ _ ), 
-  apply subset.antisymm_iff.mpr, split,
-  {
-    have h₁ : X ⊆ X ∪ Y := by simp,
-    have h₂ : X ∩ M.E ⊆ (X ∪ Y) ∩ M.E := inter_subset_inter_left M.E h₁,
-    have h₃ : X ∩ M.E ⊆ M.cl ( (X ∪ Y) ∩ M.E ),
-      { have : (X ∪ Y) ∩ M.E ⊆ M.E := by simp,
-        exact M.subset_cl_of_subset h₂ this },
-    
-    have g₁ : Y ⊆ X ∪ Y := by simp,
-    have g₂ : Y ∩ M.E ⊆ (X ∪ Y) ∩ M.E := inter_subset_inter_left M.E g₁,
-    have g₃ : M.cl (Y ∩ M.E) ⊆ M.cl ( (X ∪ Y) ∩ M.E ),
-      { have : (X ∪ Y) ∩ M.E ⊆ M.E := by simp,
-        exact M.cl_subset g₂ this },
-    
-    rw ←cl_eq_cl_inter_ground at g₃,
-    have g₄ : M.cl Y ∩ M.E ⊆ M.cl ((X ∪ Y) ∩ M.E),
-      { have : M.cl Y ∩ M.E ⊆ M.cl Y := inter_subset_left (M.cl Y) M.E,
-        exact this.trans g₃ },
-    
-    have f₁ : X ∩ M.E ∪ M.cl Y ∩ M.E ⊆ M.cl ((X ∪ Y) ∩ M.E),
-      {
-        sorry
-      },
-    have f₂ : (X ∪ M.cl Y) ∩ M.E ⊆ M.cl ((X ∪ Y) ∩ M.E),
-      {
-        sorry
-      },
-    have f₃ : M.cl ( (X ∪ M.cl Y) ∩ M.E ) ⊆ M.cl (M.cl ((X ∪ Y) ∩ M.E)),
-      {
-        sorry
-      },
-    have f₄ : M.cl (X ∪ M.cl Y) ⊆ M.cl (M.cl (X ∪ Y)),
-      {
-        sorry
-      },
-    have f₅ : M.cl (X ∪ M.cl Y) ⊆ M.cl (X ∪ Y),
-      {
-        sorry
-      },
-    exact f₅,
-  },
-  {
-    have h₁ : Y ∩ M.E ⊆ M.cl (Y ∩ M.E),
-      { apply subset_cl },
-    rw ←cl_eq_cl_inter_ground at h₁,
-    have h₂ : Y ∩ M.E ⊆ M.cl Y ∩ M.E,
-      { sorry },
-    have h₃ := union_subset_union_right (X ∩ M.E) h₂,
-    have h₄ : (X ∪ Y) ∩ M.E ⊆ (X ∪ M.cl Y) ∩ M.E,
-      { sorry },
-    have h₅ := M.cl_subset h₄,
-    repeat {rw ←cl_eq_cl_inter_ground at h₅},
-    exact h₅
-  }
+  refine subset_antisymm _ _, 
+  { rw [cl_eq_cl_inter_ground, inter_distrib_right, ←cl_cl _ (X ∪ Y) ],
+    refine M.cl_subset 
+      (union_subset ((inter_ground_subset_cl _ _).trans (cl_subset _ (subset_union_left _ _))) _), 
+      rw [ground_inter_left], 
+      exact (cl_subset _ (subset_union_right _ _)) },
+  rw [cl_eq_cl_inter_ground, inter_distrib_right], 
+  apply cl_subset, simp,
+  refine ⟨ (inter_subset_left _ _).trans _,
+    (M.inter_ground_subset_cl Y).trans (subset_union_right X (M.cl Y)) ⟩,
+  { from subset_union_left _ _ },
 end
 
 @[simp] lemma cl_union_cl_left_eq_cl_union (M : matroid_in α) (X Y : set α) :
@@ -201,53 +155,112 @@ by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq_cl_union, diff_union_self, 
     cl_union_cl_right_eq_cl_union, union_empty]
 
-lemma mem_cl_self (M : matroid_in α) (e : α) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
+lemma mem_cl_self (M : matroid_in α) (e : α) (he : e ∈ M.E) : e ∈ M.cl {e} :=
+singleton_subset_iff.mp (subset_cl {e} (singleton_subset_iff.mpr he))
+/- need the assumption `e ∈ M.E` for otherwise
+  `e ∉ M.E` but `e ∈ M.cl {e} ⊆ M.E`, a contradiction -/
 
 lemma indep.cl_eq_set_of_basis (hI : M.indep I) : M.cl I = {x | M.basis I (insert x I)} :=
 begin
   set F := {x | M.basis I (insert x I)} with hF, 
+
   have hIF : M.basis I F,
   { rw basis_iff, 
     refine ⟨hI, (λ e he, by { rw [hF, mem_set_of, insert_eq_of_mem he], exact hI.basis_self }), 
       λ J hJ hIJ hJF, hIJ.antisymm (λ e he, _)⟩,
     rw basis.eq_of_subset_indep (hJF he) (hJ.subset (insert_subset.mpr ⟨he, hIJ⟩)) 
       (subset_insert _ _) subset.rfl, 
-    exact mem_insert _ _ },
+    exact mem_insert _ _,
+    rw hF, rintros e ⟨_, he⟩,
+    rw ←singleton_union at he,
+    exact singleton_subset_iff.mp (union_subset_iff.mp he).1 },
   
   have hF : M.flat F, 
-  { refine λ J Y hJ hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he heI, _)), 
-    refine (hIF.transfer hJ (subset_union_right _ _) (hJY.basis_union hJ)).insert_dep
-      (mem_of_mem_of_subset he _) heI, 
+  {
+    refine ⟨
+      λ J Y hJ hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he, _) (insert_subset.mpr ⟨hJY.subset_ground hy, by ssE⟩)),
+      hIF.subset_ground
+    ⟩,
+    have g : M.basis I Y,
+      {
+        refine hIF.transfer _ _ _,
+      },
+    refine basis.insert_dep g (mem_of_mem_of_subset he _),
     rw [diff_subset_iff, union_diff_self, insert_subset], 
-    exact ⟨or.inr (or.inl hy), subset_union_left _ _⟩ },
-  
-  rw [subset_antisymm_iff, cl, subset_sInter_iff], 
-  refine ⟨sInter_subset_of_mem ⟨hF, hIF.subset⟩, _⟩, 
+    simp only [mem_union, subset_union_left, and_true],
+    right, exact hy
+  },
 
-  rintro F' ⟨hF',hIF'⟩ e (he : M.basis I (insert e I)), 
-  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF', 
-  exact (hF' hJ (he.basis_union_of_subset hJ.indep hIJ)) (or.inr (mem_insert _ _)), 
+
 end
 
-lemma indep.mem_cl_iff (hI : M.indep I) : x ∈ M.cl I ↔ (M.indep (insert x I) → x ∈ I) := 
+example (x : α) (S T : set α) (h : x ∈ S) (g : x ∉ T) :
+  x ∈ S \ T :=
 begin
-  rw [hI.cl_eq_set_of_basis, mem_set_of_eq], 
-  refine ⟨λ h h', _, λ h, hI.basis_of_forall_insert (subset_insert _ _) (λ e he heI, he.2 _)⟩,
-  { rw h.eq_of_subset_indep h' (subset_insert _ _) subset.rfl, 
-    exact mem_insert _ _ },
-  rw [←singleton_union, union_diff_right, mem_diff, mem_singleton_iff] at he,   
-  rw [he.1] at heI ⊢, 
-  exact h heI, 
-end 
+  exact mem_diff_of_mem h g
+end
 
-lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : α ∉ I) : 
-  e ∈ M.cl I ↔ ¬M.indep (insert e I) :=
-by rw [hI.mem_cl_iff, (iff_false _).mpr heI, imp_false]
+lemma indep.mem_cl_iff' (hI : M.indep I) : 
+  x ∈ M.cl I ↔ (x ∈ M.E ∧ (M.indep (insert x I) → x ∈ I)) :=
+begin
+  simp_rw [hI.cl_eq_set_of_basis, mem_set_of_eq],
+  refine ⟨λ h, ⟨h.subset_ground (mem_insert _ _), λ h', h.mem_of_insert_indep (mem_insert _ _) h'⟩, 
+    λ h, _⟩, 
+  refine hI.basis_of_forall_insert (subset_insert x I) (λ e he hei, he.2  _) 
+    (insert_subset.mpr ⟨h.1, hI.subset_ground⟩), 
+  rw [←singleton_union, union_diff_right, mem_diff, mem_singleton_iff] at he,
+  rw [he.1] at ⊢ hei, 
+  exact h.2 hei,
+end
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) : e ∉ M.cl I ↔ e ∉ I ∧ M.indep (insert e I) :=
-by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
+lemma indep.mem_cl_iff (hI : M.indep I) (hx : x ∈ M.E) : 
+  x ∈ M.cl I ↔ (M.indep (insert x I) → x ∈ I) := 
+by simp_rw [hI.mem_cl_iff', and_iff_right_iff_imp, iff_true_intro hx, imp_true_iff]
+ 
+/- definition of `M.indep` requires `x ∈ M.E`,
+   added assumption `hx` but it might not be necessary -/
 
-lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : α ∉ I) : 
+lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
+  e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
+begin
+  split,
+  { intros he, split,
+    { exact M.cl_subset_ground I he },
+    intro g,
+    have := ((indep.mem_cl_iff hI ((M.cl_subset_ground I) he)).mp he) g,
+    contradiction },
+  { rintro ⟨he, h⟩,
+    apply (hI.mem_cl_iff he).mpr,
+    intro this, contradiction }
+end
+/- added `e ∈ M.E`, as in the previous lemma
+   it might not be necessary but here it is
+   only added to the RHS -/
+
+lemma indep.not_mem_cl_iff (hI : M.indep I) : e ∉ M.cl I ↔ (e ∉ M.E ∨ (e ∉ I ∧ M.indep (insert e I))) :=
+begin
+  split,
+  {
+    intro h₁,
+    have h₂ : e ∉ I := sorry,
+    use h₂,
+    have h₃ := hI.mem_cl_iff_of_not_mem h₂,
+    rw ←not_iff_not at h₃,
+    have h₄ := h₃.mp h₁,
+
+  }
+
+
+  -- rw ←not_iff_not,
+  -- rw not_not_mem,
+  -- rw and_comm,
+  -- rw not_and,
+  -- rw hI.mem_cl_iff,
+  -- rw not_not_mem,
+
+end
+
+lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
   e ∉ M.cl I ↔ M.indep (insert e I) :=
 by rw [hI.mem_cl_iff_of_not_mem heI, not_not]
 

@@ -498,8 +498,8 @@ end
 
 lemma base.basis_univ (hB : M.base B) : M.basis B M.E := base_iff_basis_univ.mp hB
 
-lemma indep.basis_of_forall_insert (hX : X ⊆ M.E . ssE) (hI : M.indep I) 
-  (hIX : I ⊆ X) (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) : M.basis I X :=
+lemma indep.basis_of_forall_insert (hI : M.indep I) 
+  (hIX : I ⊆ X) (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) (hX : X ⊆ M.E . ssE) : M.basis I X :=
 begin
   rw [basis_iff, and_iff_right hI, and_iff_right hIX], 
   refine λJ hJ hIJ hJX, hIJ.antisymm (λ e heJ, by_contra (λ heI, he e ⟨hJX heJ, heI⟩ _)),  
