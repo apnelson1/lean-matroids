@@ -110,8 +110,6 @@ lemma basis.basis_restrict_of_subset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y 
   (M ‖ Y).basis I X :=
 by { rwa [←restrict_base_iff, restrict_restrict_of_subset hXY, restrict_base_iff], simpa }
 
-
-
 @[simp] lemma restrict_ground_eq_self (M : matroid_in α) : M ‖ M.E = M :=
 begin
   refine eq_of_indep_iff_indep_forall (restrict_ground_eq subset.rfl) (λ I hI, _), 
