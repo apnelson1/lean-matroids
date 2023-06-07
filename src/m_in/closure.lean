@@ -257,14 +257,14 @@ begin
   use he
 end
 
-lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) (hι : nonempty ι) (h : M.indep (⋃ i, I i)) :
+lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) [hι : nonempty ι] (h : M.indep (⋃ i, I i)) :
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 begin  
   have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
   refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset (Inter_subset _ _))), 
   rintro e he, rw mem_Inter at he, 
-  by_contra h', 
-  obtain ⟨i₀, _⟩ := classical.exists_true_of_nonempty hι,
+  by_contra h',
+  obtain i₀ := hι.some,
   have hiu : (⋂ i , I i) ⊆ ⋃ i, I i, from 
     ((Inter_subset _ i₀).trans (subset_Union _ i₀)), 
   have hi_inter : M.indep (⋂ i, I i), from (hi i₀).subset (Inter_subset _ _), 
@@ -304,18 +304,22 @@ begin
   },
   exact (M.cl_subset_ground (I i₀)) (he i₀)
 end 
+/- added the assumption `(hι : nonempty ι)`, for otherwise
+   `is_empty ι` leads to a contradiction -/
 
-lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set α)) (h : M.indep (⋃₀ Is)) :
+lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set α)) (hIs : Is.nonempty) (h : M.indep (⋃₀ Is)) :
   (⋂ I ∈ Is, M.cl I) = M.cl (⋂₀ Is) :=
 begin
   rw [sUnion_eq_Union] at h, 
-  rw [bInter_eq_Inter, sInter_eq_Inter], 
+  rw [bInter_eq_Inter, sInter_eq_Inter],
+  haveI := hIs.to_subtype,
   exact Inter_cl_eq_cl_Inter_of_Union_indep (λ (x : Is), coe x) h, 
 end 
+/- as in the previous lemma, added the assumption `(hIs : nonempty Is)` -/
 
 lemma inter_cl_eq_cl_inter_of_union_indep (h : M.indep (I ∪ J)) : M.cl I ∩ M.cl J = M.cl (I ∩ J) :=
 begin
-  rw [inter_eq_Inter, inter_eq_Inter], rw [union_eq_Union] at h, 
+  rw [inter_eq_Inter, inter_eq_Inter], rw [union_eq_Union] at h,
   convert Inter_cl_eq_cl_Inter_of_Union_indep (λ b, cond b I J) (by simpa), 
   ext, cases x; simp, 
 end
@@ -324,15 +328,44 @@ lemma basis.cl (hIX : M.basis I X) : M.cl I = M.cl X :=
 (M.cl_subset hIX.subset).antisymm (cl_subset_cl 
   (λ x hx, hIX.indep.mem_cl_iff.mpr (λ h, hIX.mem_of_insert_indep hx h)))
 
-lemma basis.mem_cl_iff (hIX : M.basis I X) : 
-  e ∈ M.cl X ↔ (M.indep (insert e I) → e ∈ I) := 
+lemma basis.mem_cl_iff (hIX : M.basis I X) (he : e ∈ M.E . ssE) : 
+  e ∈ M.cl X ↔ (M.indep (insert e I) → e ∈ I) :=
 by rw [←hIX.cl, hIX.indep.mem_cl_iff]
- 
-lemma basis.mem_cl_iff_of_not_mem (hIX : M.basis I X) (he : α ∉ X) : 
-  e ∈ M.cl X ↔ ¬M.indep (insert e I) :=
-by { rw [hIX.mem_cl_iff], exact ⟨λ h h', he (hIX.subset (h h')), λ h h', (h h').elim⟩ }
+/- added the assumption `(he : e ∈ M.E . ssE)`
+   as in indep.mem_cl_iff
+  -/
 
-lemma basis.subset_cl (hI : M.basis I X) : X ⊆ M.cl I := by { rw hI.cl, exact M.subset_cl X }  
+lemma basis.mem_cl_iff' (hIX : M.basis I X): 
+  e ∈ M.cl X ↔ (e ∈ M.E ∧ (M.indep (insert e I) → e ∈ I)) :=
+by rw [←hIX.cl, hIX.indep.mem_cl_iff']
+/- only added the assumption `(he : e ∈ M.E . ssE)`
+   to the RHS, as in indep.mem_cl_iff' -/
+
+lemma basis.mem_cl_iff_of_not_mem (hIX : M.basis I X) (heX : e ∉ X) (he : e ∈ M.E . ssE) : 
+  e ∈ M.cl X ↔ ¬M.indep (insert e I) :=
+begin
+  rw [hIX.mem_cl_iff],
+  exact ⟨λ h h', heX (hIX.subset (h h')), λ h h', (h h').elim⟩
+end
+/- added the assumption `(he : e ∈ M.E . ssE)`
+   as in indep.mem_cl_iff
+  -/
+
+lemma basis.mem_cl_iff_of_not_mem' (hIX : M.basis I X) (heX : e ∉ X) : 
+  e ∈ M.cl X ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
+begin
+  rw [hIX.mem_cl_iff'],
+  refine ⟨_, _⟩,
+  { rintros ⟨he, h⟩,
+    refine ⟨he, λ h', heX (hIX.subset (h h'))⟩, },
+  { rintros ⟨he, _⟩,
+    use he }
+end
+/- only added the assumption `(he : e ∈ M.E . ssE)`
+   to the RHS, as in indep.mem_cl_iff' -/
+
+lemma basis.subset_cl (hI : M.basis I X) : X ⊆ M.cl I :=
+by { rw hI.cl, exact subset_cl X hI.subset_ground }
 
 lemma indep.basis_cl (hI : M.indep I) : M.basis I (M.cl I) :=
 begin
