@@ -208,13 +208,15 @@ begin
 end
 
 lemma indep.mem_cl_iff (hI : M.indep I) (hx : x ∈ M.E . ssE) : 
-  x ∈ M.cl I ↔ (M.indep (insert x I) → x ∈ I) := 
-by simp_rw [hI.mem_cl_iff', and_iff_right_iff_imp, iff_true_intro hx, imp_true_iff]
- 
+  x ∈ M.cl I ↔ (M.indep (insert x I) → x ∈ I) :=
+begin
+  simp_rw [hI.mem_cl_iff', and_iff_right_iff_imp],
+  intro _, exact hx
+end
 /- definition of `M.indep` requires `x ∈ M.E`,
    added assumption `hx` but it might not be necessary -/
 
-lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
+lemma indep.mem_cl_iff_of_not_mem' (hI : M.indep I) (heI : e ∉ I) : 
   e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
 begin
   split,
@@ -231,76 +233,76 @@ end
    it might not be necessary but here it is
    only added to the RHS -/
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) : e ∉ M.cl I ↔ (e ∉ M.E ∨ (e ∉ I ∧ M.indep (insert e I))) :=
+lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
+  e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
 begin
   split,
-  {
-    intro h₁,
-    have h₂ : e ∉ I := sorry,
-    use h₂,
-    have h₃ := hI.mem_cl_iff_of_not_mem h₂,
-    rw ←not_iff_not at h₃,
-    have h₄ := h₃.mp h₁,
-
-  }
-
-
-  -- rw ←not_iff_not,
-  -- rw not_not_mem,
-  -- rw and_comm,
-  -- rw not_and,
-  -- rw hI.mem_cl_iff,
-  -- rw not_not_mem,
-
+  { intros he, split,
+    { exact M.cl_subset_ground I he },
+    intro g,
+    have := ((indep.mem_cl_iff hI ((M.cl_subset_ground I) he)).mp he) g,
+    contradiction },
+  { rintro ⟨he, h⟩,
+    apply (hI.mem_cl_iff he).mpr,
+    intro this, contradiction }
 end
 
-lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
-  e ∉ M.cl I ↔ M.indep (insert e I) :=
-by rw [hI.mem_cl_iff_of_not_mem heI, not_not]
+lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E) : e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
+by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
 
-lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) (h : M.indep (⋃ i, I i)) :
+lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E) : 
+  e ∉ M.cl I ↔ M.indep (insert e I) :=
+begin
+  rw [hI.mem_cl_iff_of_not_mem heI, not_and, not_not, imp_iff_right_iff],
+  use he
+end
+
+lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) (hι : nonempty ι) (h : M.indep (⋃ i, I i)) :
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 begin  
   have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
   refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset (Inter_subset _ _))), 
   rintro e he, rw mem_Inter at he, 
   by_contra h', 
-  obtain (hι | ⟨⟨i₀⟩⟩) := (is_empty_or_nonempty ι),
-  { haveI := hι, apply h', rw [Inter_of_empty, cl_univ], exact mem_univ _ },
+  obtain ⟨i₀, _⟩ := classical.exists_true_of_nonempty hι,
   have hiu : (⋂ i , I i) ⊆ ⋃ i, I i, from 
     ((Inter_subset _ i₀).trans (subset_Union _ i₀)), 
   have hi_inter : M.indep (⋂ i, I i), from (hi i₀).subset (Inter_subset _ _), 
   rw [hi_inter.not_mem_cl_iff, mem_Inter, not_forall] at h', 
-  obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
+  { obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
 
-  have hdi₁ : ¬M.indep (insert e (I i₁)), from λ h_ind, hei₁ ((hi i₁).mem_cl_iff.mp (he i₁) h_ind),   
-  have heu : α ∉ ⋃ i, I i, from λ he, hdi₁ (h.subset (insert_subset.mpr ⟨he, subset_Union _ _⟩)), 
-  
-  have hd_all : ∀ i, ¬M.indep (insert e (I i)), 
-    from λ i hind, heu (mem_Union_of_mem _ ((hi i).mem_cl_iff.mp (he i) hind)), 
-  
-  have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
-  { have h' := (M.cl_subset) (subset_Union _ _) (he i₀),
-    rwa [h.cl_eq_set_of_basis] at h' },
-  
-  obtain ⟨I', hI', hssI', hI'ss⟩ := 
-    hei.exists_basis_subset_union_basis (insert_subset_insert hiu) hb, 
-  
-  rw [insert_union, union_eq_right_iff_subset.mpr hiu] at hI'ss, 
-  
-  have hI'I : I' \ (⋃ i, I i) = {e}, 
-  { refine subset.antisymm _ (singleton_subset_iff.mpr ⟨hssI' (mem_insert _ _),heu⟩),
-    rwa [diff_subset_iff, union_singleton] }, 
-  
-  obtain ⟨f, hfI, hf⟩ := hI'.eq_exchange_of_diff_eq_singleton hb hI'I, 
+    have hdi₁ : ¬M.indep (insert e (I i₁)),
+      from λ h_ind, hei₁ (((hi i₁).mem_cl_iff'.mp (he i₁)).2 h_ind),
+    
+    have heu : e ∉ ⋃ i, I i, from λ he, hdi₁ (h.subset (insert_subset.mpr ⟨he, subset_Union _ _⟩)), 
+    
+    have hd_all : ∀ i, ¬M.indep (insert e (I i)), 
+      from λ i hind, heu (mem_Union_of_mem _ (((hi i).mem_cl_iff'.mp (he i)).2 hind)),
+    
+    have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
+    { have h' := (M.cl_subset) (subset_Union _ _) (he i₀),
+      rwa [h.cl_eq_set_of_basis] at h' },
+    
+    obtain ⟨I', hI', hssI', hI'ss⟩ := 
+      hei.exists_basis_subset_union_basis (insert_subset_insert hiu) hb, 
+    
+    rw [insert_union, union_eq_right_iff_subset.mpr hiu] at hI'ss, 
+    
+    have hI'I : I' \ (⋃ i, I i) = {e}, 
+    { refine subset.antisymm _ (singleton_subset_iff.mpr ⟨hssI' (mem_insert _ _),heu⟩),
+      rwa [diff_subset_iff, union_singleton] }, 
+    
+    obtain ⟨f, hfI, hf⟩ := hI'.eq_exchange_of_diff_eq_singleton hb hI'I, 
 
-  have hf' : ∀ i, f ∈ I i, 
-  { refine λ i, by_contra (λ hfi, (hd_all i (hI'.indep.subset (insert_subset.mpr ⟨_,_⟩)))), 
-    { exact hssI' (mem_insert _ _) },
-    rw [←diff_singleton_eq_self hfi, diff_subset_iff, singleton_union], 
-    exact ((subset_Union _ i).trans_eq hf).trans (diff_subset _ _) },   
+    have hf' : ∀ i, f ∈ I i, 
+    { refine λ i, by_contra (λ hfi, (hd_all i (hI'.indep.subset (insert_subset.mpr ⟨_,_⟩)))), 
+      { exact hssI' (mem_insert _ _) },
+      rw [←diff_singleton_eq_self hfi, diff_subset_iff, singleton_union], 
+      exact ((subset_Union _ i).trans_eq hf).trans (diff_subset _ _) },   
 
-  exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))), 
+    exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))),
+  },
+  exact (M.cl_subset_ground (I i₀)) (he i₀)
 end 
 
 lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set α)) (h : M.indep (⋃₀ Is)) :
