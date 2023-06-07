@@ -176,27 +176,22 @@ begin
   have hF : M.flat F, 
   {
     refine ⟨
-      λ J Y hJ hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he, _) (insert_subset.mpr ⟨hJY.subset_ground hy, by ssE⟩)),
+      λ J Y hJF hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he, _) (insert_subset.mpr ⟨hJY.subset_ground hy, by ssE⟩)),
       hIF.subset_ground
     ⟩,
-    have g : M.basis I Y,
-      {
-        -- have := hIF.transfer, 
-        refine hIF.transfer _ _ _,
-      },
-    refine basis.insert_dep g (mem_of_mem_of_subset he _),
+    refine basis.insert_dep (hIF.transfer hJF (subset_union_right _ _) (hJY.basis_union hJF)) (mem_of_mem_of_subset he _),
     rw [diff_subset_iff, union_diff_self, insert_subset], 
     simp only [mem_union, subset_union_left, and_true],
-    right, exact hy
+    right, left, exact hy
   },
 
+  rw [subset_antisymm_iff, cl, subset_sInter_iff],
+  refine ⟨sInter_subset_of_mem ⟨hF, (inter_subset_left I M.E).trans hIF.subset⟩, _⟩,
+  rintro F' ⟨hF', hIF'⟩ e (he : M.basis I (insert e I)),
+  rw (inter_eq_left_iff_subset.mpr (hIF.subset.trans hIF.subset_ground)) at hIF',
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF' hF'.2,
 
-end
-
-example (x : α) (S T : set α) (h : x ∈ S) (g : x ∉ T) :
-  x ∈ S \ T :=
-begin
-  exact mem_diff_of_mem h g
+  exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (or.inr (mem_insert _ _)),
 end
 
 lemma indep.mem_cl_iff' (hI : M.indep I) : 
