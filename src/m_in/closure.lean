@@ -1,4 +1,4 @@
-import .basic
+import .restriction
 import mathlib.data.set.basic 
 
 noncomputable theory
@@ -104,7 +104,7 @@ hXY.trans (subset_cl Y hY)
 /- need the assumption `Y ⊆ M.E` for otherwise
   `X = Y = M.E + e` where `e ∉ M.E`, is a counter-example -/
 
-lemma mem_cl_of_mem (M : matroid_in α) (h : x ∈ X) (hX : X ⊆ M.E) : x ∈ M.cl X :=
+lemma mem_cl_of_mem (M : matroid_in α) (h : x ∈ X) (hX : X ⊆ M.E . ssE) : x ∈ M.cl X :=
 (subset_cl X hX) h
 /- need the assumption `X ⊆ M.E` for otherwise
   `X = M.E + x` where `x ∉ M.E`, is a counter-example -/
@@ -133,10 +133,8 @@ begin
       rw [ground_inter_left], 
       exact (cl_subset _ (subset_union_right _ _)) },
   rw [cl_eq_cl_inter_ground, inter_distrib_right], 
-  apply cl_subset, simp,
-  refine ⟨ (inter_subset_left _ _).trans _,
-    (M.inter_ground_subset_cl Y).trans (subset_union_right X (M.cl Y)) ⟩,
-  { from subset_union_left _ _ },
+  exact cl_subset _ (union_subset ((inter_subset_left _ _).trans (subset_union_left _ _)) 
+    ((inter_ground_subset_cl _ _).trans (subset_union_right _ _))), 
 end
 
 @[simp] lemma cl_union_cl_left_eq_cl_union (M : matroid_in α) (X Y : set α) :
@@ -155,7 +153,7 @@ by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
 by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq_cl_union, diff_union_self, 
     cl_union_cl_right_eq_cl_union, union_empty]
 
-lemma mem_cl_self (M : matroid_in α) (e : α) (he : e ∈ M.E) : e ∈ M.cl {e} :=
+lemma mem_cl_self (M : matroid_in α) (e : α) (he : e ∈ M.E . ssE) : e ∈ M.cl {e} :=
 singleton_subset_iff.mp (subset_cl {e} (singleton_subset_iff.mpr he))
 /- need the assumption `e ∈ M.E` for otherwise
   `e ∉ M.E` but `e ∈ M.cl {e} ⊆ M.E`, a contradiction -/
@@ -183,6 +181,7 @@ begin
     ⟩,
     have g : M.basis I Y,
       {
+        -- have := hIF.transfer, 
         refine hIF.transfer _ _ _,
       },
     refine basis.insert_dep g (mem_of_mem_of_subset he _),
@@ -213,14 +212,14 @@ begin
   exact h.2 hei,
 end
 
-lemma indep.mem_cl_iff (hI : M.indep I) (hx : x ∈ M.E) : 
+lemma indep.mem_cl_iff (hI : M.indep I) (hx : x ∈ M.E . ssE) : 
   x ∈ M.cl I ↔ (M.indep (insert x I) → x ∈ I) := 
 by simp_rw [hI.mem_cl_iff', and_iff_right_iff_imp, iff_true_intro hx, imp_true_iff]
  
 /- definition of `M.indep` requires `x ∈ M.E`,
    added assumption `hx` but it might not be necessary -/
 
-lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
+lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
   e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
 begin
   split,
