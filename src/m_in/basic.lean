@@ -142,12 +142,12 @@ meta def ssE_finish : tactic unit := `[solve_by_elim with ssE_finish_rules {max_
 meta def ssE : tactic unit := `[solve_by_elim with ssE_rules 
   {max_depth := 3, discharger := ssE_finish}]
 
-@[ssE_rules] private lemma empty_subset_ground {M : matroid_in α} : ∅ ⊆ M.E := empty_subset _
+-- @[ssE_rules] private lemma empty_subset_ground {M : matroid_in α} : ∅ ⊆ M.E := empty_subset _
 
-@[ssE_rules] private lemma ground_subset_ground {M : matroid_in α} : M.E ⊆ M.E := subset.rfl
+-- @[ssE_rules] private lemma ground_subset_ground {M : matroid_in α} : M.E ⊆ M.E := subset.rfl
 
-@[ssE_rules] private lemma union_subset_ground {M : matroid_in α} {X Y : set α} 
-  (hX : X ⊆ M.E) (hY : Y ⊆ M.E) : X ∪ Y ⊆ M.E := union_subset hX hY 
+-- @[ssE_rules] private lemma union_subset_ground {M : matroid_in α} {X Y : set α} 
+--   (hX : X ⊆ M.E) (hY : Y ⊆ M.E) : X ∪ Y ⊆ M.E := union_subset hX hY 
 
 @[ssE_rules] private lemma inter_right_subset_ground {X Y : set α} {M : matroid_in α} 
 (hX : X ⊆ M.E) : X ∩ Y ⊆ M.E := (inter_subset_left _ _).trans hX 
@@ -167,7 +167,8 @@ inter_eq_self_of_subset_right hXE
 @[simp] lemma ground_inter_left {M : matroid_in α} (hXE : X ⊆ M.E . ssE) : X ∩ M.E = X :=
 inter_eq_self_of_subset_left hXE 
 
--- attribute [ssE_rules] union_subset 
+attribute [ssE_rules] mem_of_mem_of_subset empty_subset subset.rfl union_subset
+
 end tac
 
 section defs
@@ -498,8 +499,8 @@ end
 
 lemma base.basis_univ (hB : M.base B) : M.basis B M.E := base_iff_basis_univ.mp hB
 
-lemma indep.basis_of_forall_insert (hX : X ⊆ M.E . ssE) (hI : M.indep I) 
-  (hIX : I ⊆ X) (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) : M.basis I X :=
+lemma indep.basis_of_forall_insert (hI : M.indep I) (hIX : I ⊆ X) 
+  (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) (hX : X ⊆ M.E . ssE) : M.basis I X :=
 begin
   rw [basis_iff, and_iff_right hI, and_iff_right hIX], 
   refine λJ hJ hIJ hJX, hIJ.antisymm (λ e heJ, by_contra (λ heI, he e ⟨hJX heJ, heI⟩ _)),  
@@ -510,8 +511,9 @@ lemma basis.Union_basis_Union {ι : Type*} (X I : ι → set α) (hI : ∀ i, M.
 (h_ind : M.indep (⋃ i, I i)) : M.basis (⋃ i, I i) (⋃ i, X i) :=
 begin
    
-  refine h_ind.basis_of_forall_insert (Union_subset (λ i, (hI i).subset_ground))
-    (Union_subset_iff.mpr (λ i, (hI i).subset.trans (subset_Union _ _))) (λ e he hi, _), 
+  refine h_ind.basis_of_forall_insert 
+    (Union_subset_iff.mpr (λ i, (hI i).subset.trans (subset_Union _ _))) (λ e he hi, _)
+    (Union_subset (λ i, (hI i).subset_ground)), 
   simp only [mem_diff, mem_Union, not_exists] at he, 
   obtain ⟨i, heXi⟩ := he.1, 
   exact he.2 i ((hI i).mem_of_insert_indep heXi 
