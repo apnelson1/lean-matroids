@@ -10,7 +10,7 @@ open_locale big_operators
 
 open set
 
-variables {α : Type*} {I J B B' B₁ B₂ X Y : set α} {e f : α}
+variables {α : Type*} {I D J B B' B₁ B₂ X Y : set α} {e f : α}
 
 section prelim 
 
@@ -183,6 +183,9 @@ section defs
 /-- A set is independent if it is contained in a base.  -/
 def indep (M : matroid_in α) (I : set α) : Prop := ∃ B, M.base B ∧ I ⊆ B
 
+/-- A subset of `M.E` is dependent if it is not independent . -/
+def dep (M : matroid_in α) (D : set α) : Prop := ¬M.indep D ∧ D ⊆ M.E   
+
 /-- A basis for a set `X ⊆ M.E` is a maximal independent subset of `X`
   (Often in the literature, the word 'basis' is used to refer to what we call a 'base'). -/
 def basis (M : matroid_in α) (I X : set α) : Prop := 
@@ -289,17 +292,24 @@ end
   
 end base
 
-section indep
+section dep_indep
 
 lemma indep_iff_subset_base : M.indep I ↔ ∃ B, M.base B ∧ I ⊆ B := iff.rfl
 
 @[ssE_finish_rules] lemma indep.subset_ground (hI : M.indep I) : I ⊆ M.E := 
-by { obtain ⟨B, hB, hIB⟩:= hI, exact hIB.trans hB.subset_ground } 
+by { obtain ⟨B, hB, hIB⟩ := hI, exact hIB.trans hB.subset_ground } 
+
+@[ssE_finish_rules] lemma dep.subset_ground (hD : M.dep D) : D ⊆ M.E :=
+hD.2 
+
+lemma indep_or_dep (hX : X ⊆ M.E . ssE) : M.indep X ∨ M.dep X := 
+by { rw [dep, and_iff_left hX], apply em }
 
 lemma indep_mono {M : matroid_in α} {I J : set α} (hIJ : I ⊆ J) (hJ : M.indep J) : M.indep I :=
 by { obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
 
-lemma indep.exists_base_supset (hI : M.indep I) : ∃ B, M.base B ∧ I ⊆ B := hI
+lemma indep.exists_base_supset (hI : M.indep I) : ∃ B, M.base B ∧ I ⊆ B :=
+hI
 
 lemma indep.subset (hJ : M.indep J) (hIJ : I ⊆ J) : M.indep I :=
 by {obtain ⟨B, hB, hJB⟩ := hJ, exact ⟨B, hB, hIJ.trans hJB⟩}
@@ -653,7 +663,7 @@ lemma eq_iff_indep_iff_indep_forall {M₁ M₂ : matroid_in α} :
 --   M₁ = M₂ ↔ {I | M₁.indep I} = {I | M₂.indep I} :=
 -- by { rw [eq_iff_indep_iff_indep_forall, set.ext_iff], refl }
 
-end indep
+end dep_indep
 
 
 section from_axioms

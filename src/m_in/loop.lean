@@ -16,12 +16,6 @@ open set
 
 namespace matroid_in
 
-example {ι : Type} [nonempty ι] : false := 
-begin
-  unfreezingI {obtain e := ‹nonempty ι›},   
-  
-end 
-
 /- ### Loops -/
 
 /-- A loop is a member of the closure of the empty set -/
