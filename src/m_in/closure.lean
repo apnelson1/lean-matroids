@@ -182,7 +182,7 @@ begin
       λ J Y hJF hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he, _) (insert_subset.mpr ⟨hJY.subset_ground hy, by ssE⟩)),
       hIF.subset_ground
     ⟩,
-    refine basis.insert_dep (hIF.transfer hJF (subset_union_right _ _) (hJY.basis_union hJF)) (mem_of_mem_of_subset he _),
+    refine (basis.insert_dep (hIF.transfer hJF (subset_union_right _ _) (hJY.basis_union hJF)) (mem_of_mem_of_subset he _)).1,
     rw [diff_subset_iff, union_diff_self, insert_subset], 
     simp only [mem_union, subset_union_left, and_true],
     right, left, exact hy
