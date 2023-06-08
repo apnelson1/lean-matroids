@@ -510,6 +510,7 @@ begin
   {
     sorry
     -- rw iff_true_intro (cl_exchange he).1,
+
   }
   -- rw and_iff_left (M.subset_cl_of_subset (subset_insert _ _)),
 
