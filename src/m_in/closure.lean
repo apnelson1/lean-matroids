@@ -452,7 +452,10 @@ begin
 end
 /- same as change in the previous lemma -/
 
-lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : 
+lemma subset_of_cl_not_ground (M : matroid_in α) (X : set α) (h : e ∉ M.cl X) : X ⊆ M.E :=
+sorry
+
+lemma mem_cl_insert (he : e ∉ M.cl X) (hf : f ∈ M.E) (hef : e ∈ M.cl (insert f X)) : 
   f ∈ M.cl (insert e X) :=
 begin
   rw cl_eq_cl_inter_ground at *, 
@@ -476,6 +479,9 @@ begin
   { exact or.inl rfl },
   exact (he.1 heI).elim, 
 end
+/- added the assumption `f ∈ M.E`,
+   otherwise `e ∈ M.cl (insert f X)` just means `e ∈ M.E`.
+   Then `X ⊆ M.E` is a counter-example. -/
 
 lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) : f ∈ M.cl (insert e X) \ M.cl X :=
 begin
@@ -771,6 +777,6 @@ matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange (nat.car
 (matroid_of_cl_of_finite cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
 by simp [matroid_of_cl_of_finite] 
 
-end from_axioms-/
+end from_axioms
 
-end matroid 
+end matroid_in
