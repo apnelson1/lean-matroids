@@ -454,7 +454,7 @@ end
 lemma subset_of_cl_not_ground (M : matroid_in α) (X : set α) (h : e ∉ M.cl X) : X ⊆ M.E :=
 sorry
 
-lemma mem_cl_insert (he : e ∉ M.cl X) (hf : f ∈ M.E) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) :=
+lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) (hf : f ∈ M.E . ssE) : f ∈ M.cl (insert e X) :=
 begin
   have hf' : f ∉ M.cl X, 
   { exact λ hf, he (by rwa ←cl_insert_eq_of_mem_cl hf) }, 
@@ -479,21 +479,49 @@ end
    otherwise `e ∈ M.cl (insert f X)` just means `e ∈ M.E`.
    Then `X ⊆ M.E` is a counter-example. -/
 
-lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) : f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) (hf : f ∈ M.E . ssE) : f ∈ M.cl (insert e X) \ M.cl X :=
 begin
   refine ⟨mem_cl_insert he.2 he.1, λ hf, _ ⟩,
   rw [cl_insert_eq_of_mem_cl hf, diff_self] at he,
   exact not_mem_empty _ he,
 end
+/- added the assumption `f ∈ M.E`,
+   otherwise `f ∈ M.cl ...` cannot hold -/ 
 
-lemma cl_exchange_iff : α ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange_iff (he : e ∈ M.E . ssE) (hf : f ∈ M.E . ssE) : e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
 ⟨cl_exchange, cl_exchange⟩
+/- added `he` and `hf`. `he` is only needed for `←`,
+   and `hf` is only needed for `→` -/
 
-lemma cl_insert_eq_cl_insert_of_mem (he : α ∈ M.cl (insert f X) \ M.cl X) : 
+lemma cl_exchange_iff' : (f ∈ M.E ∧ e ∈ M.cl (insert f X) \ M.cl X) ↔ (e ∈ M.E ∧ f ∈ M.cl (insert e X) \ M.cl X) :=
+⟨λ ⟨a, b⟩, ⟨M.cl_subset_ground (insert f X) b.1, cl_exchange b a⟩,
+ λ ⟨a, b⟩, ⟨M.cl_subset_ground (insert e X) b.1, cl_exchange b a⟩⟩
+
+lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) (hf : f ∈ M.E . ssE) (hX : X ⊆ M.E . ssE) : 
   M.cl (insert e X) = M.cl (insert f X) :=
-by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
-    and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
-    iff_true_intro (cl_exchange he).1]
+begin
+  have he' := M.cl_subset_ground (insert f X) he.1,
+
+  rw subset_antisymm_iff,
+  rw cl_subset_cl_iff_subset_cl,
+  rw insert_subset,
+
+  refine ⟨ ⟨he.1, (subset_insert f X).trans (subset_cl (insert f X))⟩, _⟩,
+  {
+    sorry
+    -- rw iff_true_intro (cl_exchange he).1,
+  }
+  -- rw and_iff_left (M.subset_cl_of_subset (subset_insert _ _)),
+
+end
+/- need `f ∈ M.E`, otherwise `M.cl (insert e X)` could
+   be properly contained in `M.E` -/
+
+/- added the assumption `X ⊆ M.E` but it can be avoided -/
+
+-- by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
+--     and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
+--     iff_true_intro (cl_exchange he).1]
 
 lemma cl_diff_singleton_eq_cl (h : α ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
 begin
