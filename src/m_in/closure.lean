@@ -451,22 +451,33 @@ begin
 end
 /- same as change in the previous lemma -/
 
-lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) :=
+lemma subset_of_cl_not_ground (M : matroid_in α) (X : set α) (h : e ∉ M.cl X) : X ⊆ M.E :=
+sorry
+
+lemma mem_cl_insert (he : e ∉ M.cl X) (hf : f ∈ M.E) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) :=
 begin
-  have hf : f ∉ M.cl X, 
+  have hf' : f ∉ M.cl X, 
   { exact λ hf, he (by rwa ←cl_insert_eq_of_mem_cl hf) }, 
-  
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
-  rw [←hI.cl, hI.indep.not_mem_cl_iff] at he hf, 
-  have he' := hI.insert_basis_insert he.2, 
-  rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff] , 
-  have hf' := hI.insert_basis_insert hf.2, 
-  rw [←hf'.cl, hf'.indep.mem_cl_iff, insert_comm, mem_insert_iff] at hef, 
-  intro h', 
-  obtain (rfl | heI) := hef h', 
-  { exact or.inl rfl },
-  exact (he.1 heI).elim, 
+  have : X ⊆ M.E := M.subset_of_cl_not_ground X he,
+  obtain ⟨I, hI⟩ := M.exists_basis X,
+  rw [←hI.cl, hI.indep.not_mem_cl_iff] at he hf',
+  { have he' := hI.insert_basis_insert he.2, 
+    rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff], 
+    have hf'' := hI.insert_basis_insert hf'.2,
+    rw ←hf''.cl at hef,
+
+    rw (hf'.2).mem_cl_iff' at hef,
+    rw insert_comm at hef,
+    rw mem_insert_iff at hef,
+
+    intro h', obtain (_ | _) := hef.2 h',
+    { left, symmetry, exact h },
+    { have := he.1, contradiction } },
+  exact (M.cl_subset_ground _) hef, exact hf,
 end
+/- added the assumption `f ∈ M.E`,
+   otherwise `e ∈ M.cl (insert f X)` just means `e ∈ M.E`.
+   Then `X ⊆ M.E` is a counter-example. -/
 
 lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) : f ∈ M.cl (insert e X) \ M.cl X :=
 begin
@@ -759,6 +770,6 @@ matroid_of_cl_of_indep_bounded cl subset_cl cl_mono cl_idem cl_exchange (nat.car
 (matroid_of_cl_of_finite cl subset_cl cl_mono cl_idem cl_exchange).cl = cl :=
 by simp [matroid_of_cl_of_finite] 
 
-end from_axioms-/
+end from_axioms
 
-end matroid 
+end matroid_in
