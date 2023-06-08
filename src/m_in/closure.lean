@@ -522,30 +522,38 @@ begin
   exact (M.cl_mono (subset_insert _ _)).trans h',
 end
 
-lemma mem_cl_diff_singleton_iff_cl (he : f ∈ X) :
+lemma mem_cl_diff_singleton_iff_cl (he : e ∈ X) (hX : X ⊆ M.E . ssE) :
   e ∈ M.cl (X \ {e}) ↔ M.cl (X \ {e}) = M.cl X :=
-⟨cl_diff_singleton_eq_cl, λ h, by {rw h, exact subset_cl _ _ he}⟩
+⟨cl_diff_singleton_eq_cl, λ h, by { rw h, exact (subset_cl X hX) he }⟩
+/- added assumption `X ⊆ M.E` -/
 
-lemma indep_iff_cl_diff_ne_forall :
-  M.indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I :=
+lemma indep_iff_cl_diff_ne_forall' :
+  M.indep I ↔ (I ⊆ M.E ∧ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I) :=
 begin
-  refine ⟨λ h e heI h_eq, _,λ h, _⟩, 
-  { have h' := (h.diff {e}).basis_cl, 
-    rw [h_eq] at h', 
-    have h'' := h'.mem_of_insert_indep (M.subset_cl _ heI), 
+  refine ⟨λ h, _, λ h, _⟩, 
+  { use h.subset_ground,
+    intros e heI h_eq,
+    have h' := (h.diff {e}).basis_cl, 
+    rw [h_eq] at h',
+    have h'' := h'.mem_of_insert_indep ((subset_cl I h.subset_ground) heI), 
     simp_rw [insert_diff_singleton, mem_diff, mem_singleton, not_true, and_false, 
       insert_eq_of_mem heI] at h'', 
     exact h'' h },
-  obtain ⟨J, hJ⟩ := M.exists_basis I, 
+  obtain ⟨J, hJ⟩ := M.exists_basis I h.1,
   convert hJ.indep,
   refine hJ.subset.antisymm' (λ e he, by_contra (λ heJ, _)), 
   have hJIe : J ⊆ I \ {e}, from subset_diff_singleton hJ.subset heJ, 
-  have hcl := h e he, 
+  have hcl := h.2 e he, 
   rw [ne.def, ←mem_cl_diff_singleton_iff_cl he] at hcl, 
   have hcl' := not_mem_subset (M.cl_mono hJIe) hcl, 
   rw [hJ.cl] at hcl', 
-  exact hcl' (M.subset_cl I he), 
+  exact hcl' ((subset_cl I h.1) he), 
 end
+/- added `I ⊆ M.E` to RHS -/
+
+lemma indep_iff_cl_diff_ne_forall (hI : I ⊆ M.E) :
+  M.indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I :=
+⟨λ h, (indep_iff_cl_diff_ne_forall'.mp h).2, λ h, indep_iff_cl_diff_ne_forall'.mpr ⟨hI, h⟩⟩
 
 lemma indep_iff_not_mem_cl_diff_forall : M.indep I ↔ ∀ e ∈ I, e ∉ M.cl (I \ {e}) :=
 begin
