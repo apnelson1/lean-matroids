@@ -271,7 +271,9 @@ begin
   have hiu : (⋂ i , I i) ⊆ ⋃ i, I i, from 
     ((Inter_subset _ i₀).trans (subset_Union _ i₀)), 
   have hi_inter : M.indep (⋂ i, I i), from (hi i₀).subset (Inter_subset _ _), 
-  rw [hi_inter.not_mem_cl_iff, mem_Inter, not_forall] at h', 
+  rw hi_inter.not_mem_cl_iff ((M.cl_subset_ground (I i₀)) (he i₀)) at h',
+  rw mem_Inter at h',
+  rw not_forall at h', 
   { obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
 
     have hdi₁ : ¬M.indep (insert e (I i₁)),
@@ -305,7 +307,6 @@ begin
 
     exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))),
   },
-  exact (M.cl_subset_ground (I i₀)) (he i₀)
 end 
 /- added the assumption `(hι : nonempty ι)`, for otherwise
    `is_empty ι` leads to a contradiction -/
@@ -608,14 +609,18 @@ begin
     exact (h.subset.trans hXJ heI : M.basis _ _).mem_of_insert_indep (mem_insert _ _) 
       (h.indep.subset (insert_subset.mpr ⟨heI, hJI⟩)) },
   rintro ⟨hIX, hXI, hmin⟩,  
-  refine indep.basis_of_forall_insert _ hIX _, 
+  refine indep.basis_of_forall_insert _ hIX _ _,
+
   { rw indep_iff_cl_diff_ne_forall,
     intros e he hecl,
     rw ← hmin _ (diff_subset _ _) (hXI.trans_eq hecl.symm) at he, 
-    exact he.2 (mem_singleton e) },
+    exact he.2 (mem_singleton e),
+    exact (hIX.trans hXI).trans (M.cl_subset_ground I),
+  },
   
   exact λ e he hi, he.2 
-    (((hi.subset (subset_insert _ _)).basis_cl).mem_of_insert_indep (hXI (he.1)) hi)
+    (((hi.subset (subset_insert _ _)).basis_cl).mem_of_insert_indep (hXI (he.1)) hi),
+  exact hXI.trans (M.cl_subset_ground I),
 end
 
 lemma basis_union_iff_indep_cl : M.basis I (I ∪ X) ↔ M.indep I ∧ X ⊆ M.cl I :=
@@ -623,9 +628,9 @@ begin
   refine ⟨λ h, ⟨h.indep, (subset_union_right _ _).trans h.subset_cl⟩, _⟩,
   rw basis_iff_cl,
   rintros ⟨hI, hXI⟩,
-  refine ⟨subset_union_left _ _, union_subset (M.subset_cl _) hXI, λ J hJI hJ, by_contra (λ h', _)⟩,
+  refine ⟨subset_union_left _ _, union_subset (subset_cl I hI.subset_ground) hXI, λ J hJI hJ, by_contra (λ h', _)⟩,
   obtain ⟨e,heI,heJ⟩ := exists_of_ssubset (hJI.ssubset_of_ne h'),
-  have heJ' : α ∈ M.cl J,
+  have heJ' : e ∈ M.cl J,
     from hJ (or.inl heI),
   refine indep_iff_not_mem_cl_diff_forall.mp hI e heI (mem_of_mem_of_subset heJ' _),
   exact M.cl_subset (subset_diff_singleton hJI heJ),
@@ -645,7 +650,23 @@ begin
 end
 
 lemma eq_of_cl_eq_cl_forall {M₁ M₂ : matroid_in α} (h : ∀ X, M₁.cl X = M₂.cl X) : M₁ = M₂ :=
-eq_of_indep_iff_indep_forall (λ I, by simp_rw [indep_iff_cl_diff_ne_forall, h])
+begin
+  have h' := h univ,
+  repeat { rw cl_univ at h' },
+  refine eq_of_indep_iff_indep_forall h' (λ I hI, _),
+  have hI' := hI, rw h' at hI',
+  refine ⟨_, _⟩,
+  { intro g,
+    rw indep_iff_cl_diff_ne_forall,
+    intros e he,
+    have := ((indep_iff_cl_diff_ne_forall hI).mp g e) he,
+    rw [h (I \ {e}), h I] at this, exact this, },
+  { intro g,
+    rw indep_iff_cl_diff_ne_forall,
+    intros e he,
+    have := ((indep_iff_cl_diff_ne_forall hI').mp g e) he,
+    rw [←h (I \ {e}), ←h I] at this, exact this, }
+end
 
 -- section from_axioms
 
