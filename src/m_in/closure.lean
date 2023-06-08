@@ -386,18 +386,16 @@ begin
   refine subset_antisymm (λ e he, ((em (e ∈ X)).elim or.inl (λ heX, or.inr _ ))) 
       (union_subset (subset_cl X hX) _),
   { obtain ⟨I, hI⟩ := M.exists_basis X, 
-    refine ⟨M.cl_subset_ground X he, I, hI.subset, hI.indep, _⟩,
+    refine ⟨I, hI.subset, hI.indep, _⟩,
     refine hI.indep.basis_cl.dep_of_ssubset (ssubset_insert (not_mem_subset hI.subset heX)) 
       (insert_subset.mpr ⟨by rwa hI.cl, subset_cl I (hI.subset_ground_left)⟩) },  
-  rintro e ⟨he, I, hIX, hI, hIe⟩, 
+  rintro e ⟨I, hIX, hI, hIe⟩,
   refine (M.cl_subset hIX) _, 
   rw [hI.mem_cl_iff'], 
-  exact ⟨he, λ h, (hIe h).elim⟩
+  refine ⟨hIe.subset_ground (mem_insert e I), _⟩,
+  { intro h, rw dep at hIe,
+    have := hIe.1, contradiction }
 end     
-/- added `e ∈ M.E` to the rightmost set since
-   the argument of `M.indep`, namely `insert e I`,
-   must be a subset of `M.E`
-  -/
 
 lemma indep.basis_of_subset_cl (hI : M.indep I) (hIX : I ⊆ X) (h : X ⊆ M.cl I) : M.basis I X :=
 hI.basis_cl.basis_subset hIX h
@@ -454,34 +452,29 @@ begin
 end
 /- same as change in the previous lemma -/
 
-<<<<<<< HEAD
-lemma subset_of_cl_not_ground (M : matroid_in α) (X : set α) (h : e ∉ M.cl X) : X ⊆ M.E :=
-sorry
-
-lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) (hf : f ∈ M.E . ssE) : f ∈ M.cl (insert e X) :=
-=======
 lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : 
   f ∈ M.cl (insert e X) :=
->>>>>>> 6c04873cb209d2672ba98e911a659ce51b9119e1
 begin
-  have hf' : f ∉ M.cl X, 
+  rw cl_eq_cl_inter_ground at *, 
+  have hfE : f ∈ M.E, 
+  { by_contra' hfE, rw [insert_inter_of_not_mem hfE] at hef, exact he hef },
+  have heE : e ∈ M.E, ssE,
+  rw [insert_inter_of_mem hfE] at hef,
+  rw [insert_inter_of_mem heE], 
+  have hf : f ∉ M.cl (X ∩ M.E), 
   { exact λ hf, he (by rwa ←cl_insert_eq_of_mem_cl hf) }, 
-  have : X ⊆ M.E := M.subset_of_cl_not_ground X he,
-  obtain ⟨I, hI⟩ := M.exists_basis X,
-  rw [←hI.cl, hI.indep.not_mem_cl_iff] at he hf',
-  { have he' := hI.insert_basis_insert he.2, 
-    rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff], 
-    have hf'' := hI.insert_basis_insert hf'.2,
-    rw ←hf''.cl at hef,
-
-    rw (hf'.2).mem_cl_iff' at hef,
-    rw insert_comm at hef,
-    rw mem_insert_iff at hef,
-
-    intro h', obtain (_ | _) := hef.2 h',
-    { left, symmetry, exact h },
-    { have := he.1, contradiction } },
-  exact (M.cl_subset_ground _) hef, exact hf,
+  
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), 
+  rw [←hI.cl, hI.indep.not_mem_cl_iff heE] at he,
+  rw [←hI.cl, hI.indep.not_mem_cl_iff hfE] at hf,  
+  have he' := hI.insert_basis_insert he.2, 
+  rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff], 
+  have hf' := hI.insert_basis_insert hf.2, 
+  rw [←hf'.cl, hf'.indep.mem_cl_iff heE, insert_comm, mem_insert_iff] at hef, 
+  intro h', 
+  obtain (rfl | heI) := hef h', 
+  { exact or.inl rfl },
+  exact (he.1 heI).elim, 
 end
 
 lemma cl_exchange (he : e ∈ M.cl (insert f X) \ M.cl X ) (hf : f ∈ M.E . ssE) : f ∈ M.cl (insert e X) \ M.cl X :=
@@ -512,13 +505,19 @@ end
 --     and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
 --     iff_true_intro (cl_exchange he).1]
 
-lemma cl_diff_singleton_eq_cl (h : f ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
+lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
 begin
   rw [cl_eq_cl_inter_ground, diff_eq, inter_right_comm, ←diff_eq] at *, 
   rw [M.cl_eq_cl_inter_ground X], 
-  set X' := X ∩ M.E with hX', 
+  set X' := X ∩ M.E with hX',
   refine (M.cl_mono (diff_subset _ _)).antisymm _,
-  have h' := M.cl_mono (insert_subset.mpr ⟨h, (M.subset_cl _ )⟩),
+  
+  have : (X' \ { e } ⊆ M.cl (X' \ { e })),
+    { refine subset_cl (X' \ { e }) _,
+      have g := inter_subset_right X M.E,
+      have : X' \ {e} ⊆ X' := by simp only [diff_singleton_subset_iff, subset_insert],
+      rw ←hX' at g, exact this.trans g, },
+  have h' := M.cl_mono (insert_subset.mpr ⟨h, this⟩),
   rw [insert_diff_singleton, cl_cl] at h',
   exact (M.cl_mono (subset_insert _ _)).trans h',
 end
