@@ -250,7 +250,8 @@ begin
     intro this, contradiction }
 end
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E . ssE) : e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
+lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E . ssE) :
+  e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
 
 lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
