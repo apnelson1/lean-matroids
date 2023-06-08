@@ -486,16 +486,7 @@ begin
   exact λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX), 
 end 
 
-<<<<<<< HEAD
-lemma basis.dep_of_ssubset (hI : M.basis I X) {Y : set α} (hIY : I ⊂ Y) (hYX : Y ⊆ X) :
-  M.dep Y :=
-sorry
--- λ hY, hIY.ne (hI.eq_of_subset_indep hY hIY.subset hYX)
-
-lemma basis.insert_dep (hI : M.basis I X) (he : e ∈ X \ I) : ¬M.indep (insert e I) :=
-=======
 lemma basis.insert_dep (hI : M.basis I X) (he : e ∈ X \ I) : M.dep (insert e I) :=
->>>>>>> d54a356ae46f5211ae49fc74c50f81316b3165dc
 hI.dep_of_ssubset (ssubset_insert he.2) (insert_subset.mpr ⟨he.1,hI.subset⟩)
 
 lemma basis.mem_of_insert_indep (hI : M.basis I X) (he : e ∈ X) (hIe : M.indep (insert e I)) : 
