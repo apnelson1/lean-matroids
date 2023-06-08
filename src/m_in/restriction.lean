@@ -73,6 +73,13 @@ lemma restrict_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl
 @[simp] lemma restrict_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
 by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 
+@[simp] lemma restrict_dep_iff : (M ‖ R).dep X ↔ M.dep X ∧ X ⊆ R :=
+begin
+  rw [dep, restrict_indep_iff, dep, restrict_ground_eq', subset_inter_iff, and_comm (X ⊆ R), 
+    ←and_assoc, and.congr_left_iff, and.congr_left_iff, not_and, imp_not_comm, imp_iff_right_iff], 
+  exact λ h _, or.inl h, 
+end  
+
 lemma restrict_restrict (R₁ R₂ : set α) : (M ‖ R₁) ‖ R₂ = M ‖ (R₁ ∩ R₂) := 
 eq_of_indep_iff_indep_forall 
 (by rw [restrict_ground_eq', inter_comm, restrict_ground_eq', restrict_ground_eq', inter_right_comm]) 
