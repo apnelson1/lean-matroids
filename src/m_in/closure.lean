@@ -499,12 +499,13 @@ lemma cl_exchange_iff' : (f ∈ M.E ∧ e ∈ M.cl (insert f X) \ M.cl X) ↔ (e
 lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) (hf : f ∈ M.E . ssE) (hX : X ⊆ M.E . ssE) : 
   M.cl (insert e X) = M.cl (insert f X) :=
 begin
-  have := cl_exchange he, 
-  sorry 
+  rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset],
+  refine ⟨⟨he.1, (subset_cl X hX).trans (M.cl_subset (subset_insert f X))⟩, _⟩,
+  { rw [cl_subset_cl_iff_subset_cl, insert_subset],
+    use [(cl_exchange he).1, (subset_cl X hX).trans (M.cl_subset (subset_insert e X))] },
+  rw [insert_eq, union_subset_iff, singleton_subset_iff],
+  use [(M.cl_subset_ground (insert f X)) he.1, hX],
 end 
--- by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
---     and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
---     iff_true_intro (cl_exchange he).1]
 
 lemma cl_diff_singleton_eq_cl (h : e ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
 begin
