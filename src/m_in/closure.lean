@@ -247,17 +247,19 @@ begin
     intro this, contradiction }
 end
 
-lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E) : e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
+lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E . ssE) : 
+  e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
 by rw [←not_iff_not, not_not_mem, and_comm, not_and, hI.mem_cl_iff, not_not_mem]
 
-lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E) : 
+lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
   e ∉ M.cl I ↔ M.indep (insert e I) :=
 begin
   rw [hI.mem_cl_iff_of_not_mem heI, not_and, not_not, imp_iff_right_iff],
   use he
 end
 
-lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) [hι : nonempty ι] (h : M.indep (⋃ i, I i)) :
+lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} [hι : nonempty ι] (I : ι → set α) 
+  (h : M.indep (⋃ i, I i)) :
   (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 begin  
   have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
@@ -268,47 +270,46 @@ begin
   have hiu : (⋂ i , I i) ⊆ ⋃ i, I i, from 
     ((Inter_subset _ i₀).trans (subset_Union _ i₀)), 
   have hi_inter : M.indep (⋂ i, I i), from (hi i₀).subset (Inter_subset _ _), 
+  have heE : e ∈ M.E := (cl_subset_ground _ _) (he i₀), 
   rw [hi_inter.not_mem_cl_iff, mem_Inter, not_forall] at h', 
-  { obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
+  obtain ⟨⟨i₁, hei₁⟩, hei⟩ := h',   
 
-    have hdi₁ : ¬M.indep (insert e (I i₁)),
-      from λ h_ind, hei₁ (((hi i₁).mem_cl_iff'.mp (he i₁)).2 h_ind),
-    
-    have heu : e ∉ ⋃ i, I i, from λ he, hdi₁ (h.subset (insert_subset.mpr ⟨he, subset_Union _ _⟩)), 
-    
-    have hd_all : ∀ i, ¬M.indep (insert e (I i)), 
-      from λ i hind, heu (mem_Union_of_mem _ (((hi i).mem_cl_iff'.mp (he i)).2 hind)),
-    
-    have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
-    { have h' := (M.cl_subset) (subset_Union _ _) (he i₀),
-      rwa [h.cl_eq_set_of_basis] at h' },
-    
-    obtain ⟨I', hI', hssI', hI'ss⟩ := 
-      hei.exists_basis_subset_union_basis (insert_subset_insert hiu) hb, 
-    
-    rw [insert_union, union_eq_right_iff_subset.mpr hiu] at hI'ss, 
-    
-    have hI'I : I' \ (⋃ i, I i) = {e}, 
-    { refine subset.antisymm _ (singleton_subset_iff.mpr ⟨hssI' (mem_insert _ _),heu⟩),
-      rwa [diff_subset_iff, union_singleton] }, 
-    
-    obtain ⟨f, hfI, hf⟩ := hI'.eq_exchange_of_diff_eq_singleton hb hI'I, 
+  have hdi₁ : ¬M.indep (insert e (I i₁)),
+    from λ h_ind, hei₁ (((hi i₁).mem_cl_iff'.mp (he i₁)).2 h_ind),
+  
+  have heu : e ∉ ⋃ i, I i, from λ he, hdi₁ (h.subset (insert_subset.mpr ⟨he, subset_Union _ _⟩)), 
+  
+  have hd_all : ∀ i, ¬M.indep (insert e (I i)), 
+    from λ i hind, heu (mem_Union_of_mem _ (((hi i).mem_cl_iff'.mp (he i)).2 hind)),
+  
+  have hb : M.basis (⋃ i, I i) (insert e (⋃ i, I i)), 
+  { have h' := (M.cl_subset) (subset_Union _ _) (he i₀),
+    rwa [h.cl_eq_set_of_basis] at h' },
+  
+  obtain ⟨I', hI', hssI', hI'ss⟩ := 
+    hei.exists_basis_subset_union_basis (insert_subset_insert hiu) hb, 
+  
+  rw [insert_union, union_eq_right_iff_subset.mpr hiu] at hI'ss, 
+  
+  have hI'I : I' \ (⋃ i, I i) = {e}, 
+  { refine subset.antisymm _ (singleton_subset_iff.mpr ⟨hssI' (mem_insert _ _),heu⟩),
+    rwa [diff_subset_iff, union_singleton] }, 
+  
+  obtain ⟨f, hfI, hf⟩ := hI'.eq_exchange_of_diff_eq_singleton hb hI'I, 
 
-    have hf' : ∀ i, f ∈ I i, 
-    { refine λ i, by_contra (λ hfi, (hd_all i (hI'.indep.subset (insert_subset.mpr ⟨_,_⟩)))), 
-      { exact hssI' (mem_insert _ _) },
-      rw [←diff_singleton_eq_self hfi, diff_subset_iff, singleton_union], 
-      exact ((subset_Union _ i).trans_eq hf).trans (diff_subset _ _) },   
+  have hf' : ∀ i, f ∈ I i, 
+  { refine λ i, by_contra (λ hfi, (hd_all i (hI'.indep.subset (insert_subset.mpr ⟨_,_⟩)))), 
+    { exact hssI' (mem_insert _ _) },
+    rw [←diff_singleton_eq_self hfi, diff_subset_iff, singleton_union], 
+    exact ((subset_Union _ i).trans_eq hf).trans (diff_subset _ _) },   
 
-    exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))),
-  },
-  exact (M.cl_subset_ground (I i₀)) (he i₀)
+  exact hfI.2 (hssI' (or.inr (by rwa mem_Inter))),
 end 
 /- added the assumption `(hι : nonempty ι)`, for otherwise
    `is_empty ι` leads to a contradiction -/
 
-lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set α)) (hIs : Is.nonempty) (h : M.indep (⋃₀ Is)) :
-  (⋂ I ∈ Is, M.cl I) = M.cl (⋂₀ Is) :=
+lemma bInter_cl_eq_cl_sInter_of_sUnion_indep (Is : set (set α)) (hIs : Is.nonempty) 
+  (h : M.indep (⋃₀ Is)) : (⋂ I ∈ Is, M.cl I) = M.cl (⋂₀ Is) :=
 begin
   rw [sUnion_eq_Union] at h, 
   rw [bInter_eq_Inter, sInter_eq_Inter],
@@ -451,17 +452,25 @@ begin
 end
 /- same as change in the previous lemma -/
 
-lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : f ∈ M.cl (insert e X) :=
+lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : 
+  f ∈ M.cl (insert e X) :=
 begin
-  have hf : f ∉ M.cl X, 
+  rw cl_eq_cl_inter_ground at *, 
+  have hfE : f ∈ M.E, 
+  { by_contra' hfE, rw [insert_inter_of_not_mem hfE] at hef, exact he hef },
+  have heE : e ∈ M.E, ssE,
+  rw [insert_inter_of_mem hfE] at hef,
+  rw [insert_inter_of_mem heE], 
+  have hf : f ∉ M.cl (X ∩ M.E), 
   { exact λ hf, he (by rwa ←cl_insert_eq_of_mem_cl hf) }, 
   
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
-  rw [←hI.cl, hI.indep.not_mem_cl_iff] at he hf, 
+  obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), 
+  rw [←hI.cl, hI.indep.not_mem_cl_iff heE] at he,
+  rw [←hI.cl, hI.indep.not_mem_cl_iff hfE] at hf,  
   have he' := hI.insert_basis_insert he.2, 
-  rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff] , 
+  rw [←he'.cl, he'.indep.mem_cl_iff, mem_insert_iff], 
   have hf' := hI.insert_basis_insert hf.2, 
-  rw [←hf'.cl, hf'.indep.mem_cl_iff, insert_comm, mem_insert_iff] at hef, 
+  rw [←hf'.cl, hf'.indep.mem_cl_iff heE, insert_comm, mem_insert_iff] at hef, 
   intro h', 
   obtain (rfl | heI) := hef h', 
   { exact or.inl rfl },
@@ -475,14 +484,17 @@ begin
   exact not_mem_empty _ he,
 end
 
-lemma cl_exchange_iff : α ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
+lemma cl_exchange_iff : e ∈ M.cl (insert f X) \ M.cl X ↔ f ∈ M.cl (insert e X) \ M.cl X :=
 ⟨cl_exchange, cl_exchange⟩
 
-lemma cl_insert_eq_cl_insert_of_mem (he : α ∈ M.cl (insert f X) \ M.cl X) : 
+lemma cl_insert_eq_cl_insert_of_mem (he : e ∈ M.cl (insert f X) \ M.cl X) : 
   M.cl (insert e X) = M.cl (insert f X) :=
-by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
-    and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
-    iff_true_intro (cl_exchange he).1]
+begin
+  sorry 
+end 
+-- by simp_rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset, 
+--     and_iff_left (M.subset_cl_of_subset (subset_insert _ _)), and_iff_right he.1, 
+--     iff_true_intro (cl_exchange he).1]
 
 lemma cl_diff_singleton_eq_cl (h : α ∈ M.cl (X \ {e})) : M.cl (X \ {e}) = M.cl X :=
 begin

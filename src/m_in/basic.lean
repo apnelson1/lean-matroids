@@ -170,6 +170,10 @@ inter_eq_self_of_subset_left hXE
 @[ssE_rules] private lemma insert_subset_ground {e : α} {X : set α} {M : matroid_in α} 
 (he : e ∈ M.E) (hX : X ⊆ M.E) : insert e X ⊆ M.E := insert_subset.mpr ⟨he, hX⟩  
 
+@[ssE_rules] private lemma singleton_subset_ground {e : α} {M : matroid_in α} (he : e ∈ M.E) :
+  {e} ⊆ M.E := 
+singleton_subset_iff.mpr he
+
 attribute [ssE_rules] mem_of_mem_of_subset empty_subset subset.rfl union_subset
 
 end tac
