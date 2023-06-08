@@ -143,8 +143,40 @@ begin
   exact ⟨hJIB.1, hdj⟩, 
 end 
 
-lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.cl ∅) : M ⟋ X = M ⟍ X := sorry 
+lemma basis.contract_base_iff (hIX : M.basis I C) :
+  (M ⟋ C).base B ↔ disjoint B C ∧ M.base (B ∪ I) :=
+begin
+  rw [←dual_delete_dual_eq_contract, dual_base_iff', delete_base_iff, delete_ground, dual_ground, 
+    subset_diff, and_comm (disjoint _ _), ←and_assoc, and.congr_left_iff, ←dual_dual M, 
+    dual_base_iff', dual_dual, dual_ground, union_subset_iff, and_comm (_ ⊆ _), ←and_assoc, 
+    and.congr_left_iff, and_iff_left (hIX.subset_ground_left.trans_eq dual_ground.symm)], 
+  -- set N := M﹡ with hN, 
+  intros hBC hBE, 
+  refine ⟨λ h, _, λ h, _⟩,
+  { rw [dual_base_iff'], 
+    simp only [dual_ground, sdiff_sdiff_right_self, inf_eq_inter, ground_inter_right, 
+      and_iff_left (diff_subset _ _)], 
+    },
+  
+  
+end  
 
+-- lemma contract_cl_eq : (M ⟋ C).cl X = M.cl (X ∪ C) \ C := 
+-- begin
+
+-- end 
+
+lemma contract_eq_delete_of_subset_loops (hX : X ⊆ M.cl ∅) : M ⟋ X = M ⟍ X :=
+begin
+  rw [←dual_delete_dual_eq_contract], 
+  rw ←empty_basis_iff at hX, 
+  refine eq_of_indep_iff_indep_forall rfl (λ I hIE, _), 
+  rw [dual_ground] at hIE, 
+  simp_rw [dual_indep_iff_exists, and_iff_right hIE, delete_indep_iff, delete_base_iff, 
+    dual_ground, basis_iff, dual_indep_iff_exists],  simp, 
+  
+  
+end
 -- lemma contract_eq_delete_iff : M ⟋ X = M ⟍ X ↔ X ⊆ M.cl ∅ ∪ 
 
 -- lemma basis.foo (hI : M.basis I C) : M ⟋ C = M ⟋ I ⟍ (C \ I) :=

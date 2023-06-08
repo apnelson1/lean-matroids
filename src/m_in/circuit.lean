@@ -13,25 +13,27 @@ open set
 
 namespace matroid_in
 
-lemma circuit.dep (hC : M.circuit C) : ¬M.indep C := hC.1.1
+lemma circuit.dep (hC : M.circuit C) : M.dep C := hC.1
+
+@[ssE_finish_rules] lemma circuit.subset_ground (hC : M.circuit C) : C ⊆ M.E :=
+hC.dep.subset_ground
 
 lemma circuit.ssubset_indep (hC : M.circuit C) (hXC : X ⊂ C) : M.indep X := 
-by_contra (λ h, hXC.ne (hXC.subset.antisymm (hC.1.2 h hXC.subset)))
+begin
+  rw [← not_dep_iff (hXC.subset.trans hC.subset_ground)],
+  rw [circuit, mem_minimals_set_of_iff] at hC, 
+  exact λ h, hXC.ne.symm (hC.2 h hXC.subset),     
+end 
 
-@[ssE_finish_rules] lemma circuit.subset_ground (hC : M.circuit C) : C ⊆ M.E := hC.2
-
-lemma circuit_iff' : M.circuit C ↔ ¬M.indep C ∧ (∀ I, ¬M.indep I → I ⊆ C → I = C) ∧ C ⊆ M.E :=
-by { rw [circuit, mem_minimals_set_of_iff, and_assoc], tauto }
+lemma circuit_iff : M.circuit C ↔ M.dep C ∧ (∀ I, M.dep I → I ⊆ C → I = C) :=
+by { rw [circuit, mem_minimals_set_of_iff], tauto }
   
-lemma circuit_iff (hC : C ⊆ M.E . ssE) : 
-  M.circuit C ↔ ¬ M.indep C ∧ (∀ I, ¬M.indep I → I ⊆ C → I = C) :=
-by rw [circuit_iff', and_iff_left hC]
-
-lemma circuit_iff_forall_ssubset (hC : C ⊆ M.E . ssE) : 
-  M.circuit C ↔ ¬M.indep C ∧ ∀ I ⊂ C, M.indep I := 
+lemma circuit_iff_forall_ssubset : M.circuit C ↔ M.dep C ∧ ∀ I ⊂ C, M.indep I := 
 begin
   simp_rw [circuit_iff, ssubset_iff_subset_ne, and.congr_right_iff], 
-  exact λ I, forall_congr (by tauto), 
+  exact λ hC, ⟨λ h I hIC, indep_of_not_dep (hIC.2 ∘ (λ hD, h _ hD hIC.1)) 
+    (hIC.1.trans hC.subset_ground), 
+    λ h I hD hIC, by_contra (λ hne, hD.not_indep (h _ ⟨hIC, hne⟩))⟩,
 end
 
 lemma circuit.diff_singleton_indep (hC : M.circuit C) (he : e ∈ C) : M.indep (C \ {e}) :=
@@ -43,15 +45,13 @@ begin
   simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hf, 
   have := hf.2 (hf.1), subst this, 
   rw [insert_diff_singleton, insert_eq_of_mem he] at hI, 
-  exact hC.dep hI, 
+  exact hC.dep.not_indep hI, 
 end 
 
-lemma circuit_iff_mem_minimals (hC : C ⊆ M.E . ssE) : 
-  M.circuit C ↔ C ∈ minimals (⊆) {X | ¬M.indep X} := 
-by rw [circuit, and_iff_left hC]
+lemma circuit_iff_mem_minimals : M.circuit C ↔ C ∈ minimals (⊆) {X | M.dep X} := iff.rfl 
 
-lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : X = C :=
-eq_of_le_of_not_lt hXC (hX ∘ hC.ssubset_indep)
+lemma circuit.eq_of_dep_subset (hC : M.circuit C) (hX : M.dep X) (hXC : X ⊆ C) : X = C :=
+eq_of_le_of_not_lt hXC (hX.not_indep ∘ hC.ssubset_indep)
 
 lemma circuit.not_ssubset (hC : M.circuit C) (hC' : M.circuit C') : ¬ (C' ⊂ C) :=
 λ h', h'.ne $ hC.eq_of_dep_subset hC'.dep h'.subset
@@ -64,8 +64,8 @@ lemma empty_not_circuit (M : matroid_in α) : ¬M.circuit ∅ :=
 
 lemma circuit.finite [finitary M] (hC : M.circuit C) : C.finite := let ⟨h⟩ := ‹M.finitary› in h C hC  
 
-lemma circuit_iff_dep_forall_diff_singleton_indep (hC : C ⊆ M.E . ssE):
-  M.circuit C ↔ (¬M.indep C) ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
+lemma circuit_iff_dep_forall_diff_singleton_indep :
+  M.circuit C ↔ M.dep C ∧ ∀ e ∈ C, M.indep (C \ {e}) :=
 begin
   rw [circuit_iff_forall_ssubset, and.congr_right_iff],
   refine λ hdep, ⟨λ h e heC, (h _ $ diff_singleton_ssubset.2 heC), λ h I hIC, _⟩,
@@ -73,8 +73,8 @@ begin
   exact (h e heC).subset (subset_diff_singleton hIC.subset heI),
 end
 
-lemma circuit.eq_of_dep_subset_self (hC : M.circuit C) (hX : ¬M.indep X) (hXC : X ⊆ C) : C = X :=
-by_contra (λ h, hX (hC.ssubset_indep (ssubset_of_subset_of_ne hXC (ne.symm h))))
+lemma circuit.eq_of_dep_subset_self (hC : M.circuit C) (hX : M.dep X) (hXC : X ⊆ C) : C = X :=
+by_contra (λ h, hX.not_indep (hC.ssubset_indep (ssubset_of_subset_of_ne hXC (ne.symm h))))
 
 lemma circuit.eq_of_subset_circuit (hC₁ : M.circuit C₁) (hC₂ : M.circuit C₂) (h : C₁ ⊆ C₂) :
   C₁ = C₂ :=
@@ -85,10 +85,9 @@ begin
   rw [←restrict_inter_ground], 
   have hCX' : C ⊆ (M ‖ (X ∩ M.E)).E, 
   { rw [restrict_ground_eq], exact subset_inter hCX hC.subset_ground }, 
-  simp_rw [circuit_iff, restrict_indep_iff, not_and], 
-  rw [and_iff_right (λ h, (hC.dep h).elim)], 
-  refine λ I h hIC, (hC.eq_of_dep_subset_self (λ hI, h hI _) hIC).symm, 
-  exact subset_inter (hIC.trans hCX) (hIC.trans hC.subset_ground),   
+  simp_rw [circuit_iff, restrict_dep_iff, subset_inter_iff, and_iff_right hCX, 
+    and_iff_left hC.subset_ground, and_iff_right hC.dep], 
+  exact λ D hD hDC, hC.eq_of_dep_subset hD.1 hDC, 
 end 
 
 /-- For an independent set `I` that spans a point `e ∉ I`, the unique circuit contained in 
@@ -110,7 +109,7 @@ insert_subset_insert (sInter_subset_of_mem ⟨rfl.subset, he⟩)
 lemma mem_fund_circuit (M : matroid_in α) (e : α) (I : set α) : e ∈ fund_circuit M e I := 
   mem_insert _ _
 
-/-- The fundamental circuit of `e` and `I` is just `{e}` if `e ∈ I` -/
+/-- The fundamental circuit of `e` and `I` has the junk value `{e}` if `e ∈ I` -/
 lemma indep.fund_circuit_eq_of_mem (hI : M.indep I) (he : e ∈ I) : M.fund_circuit e I = {e} :=
 begin
   rw [fund_circuit, ←union_singleton, union_eq_right_iff_subset], 
@@ -122,12 +121,15 @@ end
 lemma indep.fund_circuit_circuit (hI : M.indep I) (he : e ∈ M.cl I \ I) : 
   M.circuit (M.fund_circuit e I) :=
 begin
-  rw [circuit_iff_dep_forall_diff_singleton_indep (fund_circuit_subset_ground he.1), fund_circuit], 
+  rw [circuit_iff_dep_forall_diff_singleton_indep, 
+    ←not_indep_iff (fund_circuit_subset_ground he.1), fund_circuit], 
+  -- rw [circuit_iff_dep_forall_diff_singleton_indep (fund_circuit_subset_ground he.1), fund_circuit], 
   have hu : M.indep (⋃₀ {J : set α | J ⊆ I ∧ e ∈ M.cl J}), 
     from hI.subset (sUnion_subset (λ J, and.left)), 
   have hI' : I ∈ {J : set α | J ⊆ I ∧ e ∈ M.cl J}, from ⟨rfl.subset, he.1⟩,  
   refine ⟨λ hi, _, λ f hf, _⟩,  
-  { rw [indep.insert_indep_iff_of_not_mem, ←bInter_cl_eq_cl_sInter_of_sUnion_indep _ hu] at hi, 
+  { rw [indep.insert_indep_iff_of_not_mem, ←bInter_cl_eq_cl_sInter_of_sUnion_indep _ ⟨I, hI'⟩ hu] 
+      at hi, 
     { simpa using hi },
     { exact hI.subset (sInter_subset_of_mem hI') },
     exact λ heIs, he.2 (sInter_subset_of_mem hI' heIs) },
@@ -147,24 +149,25 @@ begin
   -- exact λ h'e, he.2 ((diff_subset _ _).trans (sInter_subset_of_mem hI') h'e),  
 end 
 
-lemma exists_circuit_subset_of_dep (hX : ¬M.indep X) (hXE : X ⊆ M.E . ssE) : ∃ C ⊆ X, M.circuit C :=
+lemma exists_circuit_subset_of_dep (hX : M.dep X) : ∃ C ⊆ X, M.circuit C :=
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   obtain (rfl | hss) := (ssubset_or_eq_of_subset hI.subset).symm,
-  { exact (hX hI.indep).elim },
+  { exact (hX.not_indep hI.indep).elim },
   obtain ⟨e, heX, heI⟩ := exists_of_ssubset hss, 
   have he : e ∈ M.cl I \ I := ⟨hI.subset_cl heX, heI⟩,  
   exact ⟨M.fund_circuit e I, (fund_circuit_subset_insert he.1).trans 
     (insert_subset.mpr ⟨heX, hss.subset⟩), hI.indep.fund_circuit_circuit he⟩,  
 end 
 
-lemma dep_iff_supset_circuit (hXE : X ⊆ M.E . ssE) : ¬ M.indep X ↔ ∃ C ⊆ X, M.circuit C  :=
-⟨exists_circuit_subset_of_dep, λ ⟨C, hCX, hC⟩ hX, hC.dep (hX.subset hCX)⟩
+lemma dep_iff_supset_circuit (hX : X ⊆ M.E . ssE) : M.dep X ↔ ∃ C ⊆ X, M.circuit C  :=
+⟨exists_circuit_subset_of_dep, by { rintro ⟨C, hCX, hC⟩, exact hC.dep.supset hCX }⟩
 
 lemma indep_iff_forall_subset_not_circuit' : M.indep I ↔ (∀ C ⊆ I, ¬ M.circuit C) ∧ I ⊆ M.E  :=
 begin
   by_cases hI : I ⊆ M.E, 
-  { rw [←not_iff_not], simp_rw [dep_iff_supset_circuit, and_iff_left hI, not_forall, not_not] },
+  { rw [←not_iff_not, not_indep_iff], 
+    simp_rw [dep_iff_supset_circuit, and_iff_left hI, not_forall, not_not] },
   exact iff_of_false (hI ∘ indep.subset_ground) (hI ∘ and.right), 
 end 
 
@@ -331,7 +334,7 @@ lemma indep_iff_forall_finite_subset_indep [finitary M] :
 begin
   refine ⟨λ h J hJI hJ, h.subset hJI, _⟩, 
   rw indep_iff_forall_subset_not_circuit', 
-  exact λ h, ⟨λ C hCI hC, hC.dep (h _ hCI hC.finite), 
+  exact λ h, ⟨λ C hCI hC, hC.dep.not_indep (h _ hCI hC.finite), 
     λ e heI, singleton_subset_iff.mp 
       (h _ (singleton_subset_iff.mpr heI) (to_finite _)).subset_ground⟩,  
 end 
@@ -354,18 +357,18 @@ by rw [coindep_iff_forall_subset_not_cocircuit', and_iff_left hX]
 lemma cocircuit_iff_mem_minimals {K : set α} : 
   M.cocircuit K ↔ K ∈ minimals (⊆) {X | ∀ B, M.base B → (X ∩ B).nonempty} :=  
 begin
-  simp_rw [cocircuit, circuit, dual_indep_iff_coindep, coindep, 
-    not_and, not_exists, not_and, not_disjoint_iff_nonempty_inter, 
-    mem_minimals_set_of_iff, dual_ground, inter_comm K], 
+  simp_rw [cocircuit, circuit, mem_minimals_set_of_iff, dep_iff, dual_indep_iff_coindep, 
+    dual_ground, and_imp, coindep, not_and, not_exists, not_and, not_disjoint_iff_nonempty_inter, 
+    inter_comm K],  
   split, 
-  { rintro ⟨h, hKE⟩, exact ⟨h.1 hKE, λ X hX hXK, h.2 (λ hXE, hX) hXK⟩ }, 
+  { rintro ⟨⟨h, hKE⟩,h'⟩, refine ⟨h hKE, λ X hX hXK, h' (λ _, hX) (hXK.trans hKE) hXK⟩ }, 
   rintro ⟨h1, h2⟩,
   have hKE : K ⊆ M.E, 
   { rw [←inter_eq_left_iff_subset, eq_comm],
     apply h2 (λ B hB, _) (inter_subset_left _ _), 
     rw [inter_assoc, inter_eq_self_of_subset_right hB.subset_ground, inter_comm],
     exact h1 B hB }, 
-  exact ⟨⟨λ _, h1, λ X hX hXK, h2 (hX (hXK.trans hKE)) hXK ⟩,hKE⟩, 
+  exact ⟨⟨λ _, h1,hKE⟩, λ X hX hXE hXK , h2 (hX hXE) hXK ⟩, 
 end 
 
 lemma cocircuit.finite [finitary M﹡] {K : set α} (hK : M.cocircuit K) : K.finite :=
