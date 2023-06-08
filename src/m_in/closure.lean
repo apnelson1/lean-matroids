@@ -555,12 +555,20 @@ lemma indep_iff_cl_diff_ne_forall (hI : I ⊆ M.E) :
   M.indep I ↔ ∀ e ∈ I, M.cl (I \ {e}) ≠ M.cl I :=
 ⟨λ h, (indep_iff_cl_diff_ne_forall'.mp h).2, λ h, indep_iff_cl_diff_ne_forall'.mpr ⟨hI, h⟩⟩
 
-lemma indep_iff_not_mem_cl_diff_forall : M.indep I ↔ ∀ e ∈ I, e ∉ M.cl (I \ {e}) :=
+lemma indep_iff_not_mem_cl_diff_forall (hI : I ⊆ M.E) : M.indep I ↔ ∀ e ∈ I, e ∉ M.cl (I \ {e}) :=
 begin
   rw indep_iff_cl_diff_ne_forall,
-  exact ⟨λ h, λ x hxI, by {rw mem_cl_diff_singleton_iff_cl hxI, exact h x hxI },
-    λ h x hxI, by {rw [ne.def, ←mem_cl_diff_singleton_iff_cl hxI], exact h x hxI }⟩,
+  { refine ⟨λ h x hxI, by { rw mem_cl_diff_singleton_iff_cl hxI, exact h x hxI },
+            λ h x hxI, by { rw [ne.def, ←mem_cl_diff_singleton_iff_cl hxI], exact h x hxI }⟩, },
+  { exact hI }
 end
+/- added `I ⊆ M.E`-/
+
+
+lemma indep_iff_not_mem_cl_diff_forall' : M.indep I ↔ (I ⊆ M.E ∧ ∀ e ∈ I, e ∉ M.cl (I \ {e})) :=
+⟨λ h, ⟨h.subset_ground, (indep_iff_not_mem_cl_diff_forall h.subset_ground).mp h⟩,
+ λ h, (indep_iff_not_mem_cl_diff_forall h.1).mpr h.2⟩
+/- added `I ⊆ M.E` to RHS -/
 
 lemma indep_iff_cl_ssubset_ssubset_forall : M.indep I ↔ ∀ J ⊂ I, M.cl J ⊂ M.cl I :=
 begin
