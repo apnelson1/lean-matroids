@@ -48,7 +48,7 @@ by simp_rw [cl_eq_sInter_of_subset, mem_sInter, mem_set_of_eq, and_imp]
 lemma subset_cl (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : X ⊆ M.cl X :=
 by { rw [cl_eq_sInter_of_subset, subset_sInter_iff], simp }
 
-lemma cl_flat {F : set α} (hF : M.flat F) : M.cl F = F :=
+lemma flat.cl {F : set α} (hF : M.flat F) : M.cl F = F :=
 (sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F hF.2)
 /- `cl_flat` was previously commented out.
     It is now uncommented for `loop.mem_flat` -/
