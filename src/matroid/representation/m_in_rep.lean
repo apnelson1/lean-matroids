@@ -254,19 +254,36 @@ protected lemma linear_map.linear_independent_iff {ι : Type*} {v : ι → W} (f
   (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h) _ h)⟩, 
   λ h, linear_independent.map h.1 (disjoint.comm.1 h.2)⟩
 
-lemma indep.contract_indep_iff {J : set E} (hI : M.indep I) : 
- (M ⟋ I).indep J ↔ disjoint J I ∧ M.indep (J ∪ I)  := sorry
--- matroid.indep.project_indep_iff hI
-
 lemma linear_independent.union' {s t : set W}
   (hs : linear_independent 𝔽 (λ x, x : s → W)) (ht : linear_independent 𝔽 (λ x, x : t → W))
   (hst : disjoint (span 𝔽 s) (span 𝔽 t)) (hst2 : linear_independent 𝔽 (λ x, x : (s ∪ t) → W))
-    : disjoint s t := sorry
+    : disjoint s t := 
+begin
+  rw disjoint_def at hst,
+  rw [set.disjoint_iff, subset_empty_iff, eq_empty_iff_forall_not_mem],
+  intros x,
+  by_contra,
+  -- for some reason, it doesn't let me specialize directly here.
+  have h20 := mem_of_subset_of_mem (subset_span) ((mem_inter_iff _ _ _).1 h).1,
+  have h21 := mem_of_subset_of_mem (subset_span) ((mem_inter_iff _ _ _).1 h).2,
+  specialize hst x h20 h21,
+  apply @linear_independent.ne_zero _ 𝔽 W ((λ (x : (s ∪ t)), x)) _ _ _ _ 
+    ⟨x, (mem_of_subset_of_mem (inter_subset_union s t) h)⟩ hst2,
+  simp only [← hst, subtype.coe_mk],
+end
 
 lemma linear_independent.union'' {s t : set W}
   (hs : linear_independent 𝔽 (λ x, x : s → W)) (ht : linear_independent 𝔽 (λ x, x : t → W))
   (hst : disjoint s t) (hst2 : linear_independent 𝔽 (λ x, x : (s ∪ t) → W))
-    :  disjoint (span 𝔽 s) (span 𝔽 t) := sorry
+    :  disjoint (span 𝔽 s) (span 𝔽 t) := 
+begin
+  --rw disjoint_def,
+  rw [set.disjoint_iff, subset_empty_iff, eq_empty_iff_forall_not_mem] at hst,
+  have h20 := λ (x : W) (h : x ∈ s), mem_union_left t h,
+  --have h21 := (coe : s ∪ t → set W) ⁻¹' s,
+  --have h10 := @linear_independent.disjoint_span_image _ 𝔽 W ((λ (x : (s ∪ t)), x)) _ _ _ hst2,
+  sorry
+end
 
 def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (hC : C ⊆ N.E):
   matroid_in.rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
@@ -315,13 +332,11 @@ def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (
       simp_rw [← mkq_apply _],
       rw linear_map.linear_independent_iff,
       refine ⟨(φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).2
-        (indep_mono (subset_union_left I J) h.1.2), _⟩,
+        (indep.subset h.1.2 (subset_union_left I J)), _⟩,
       rw ker_mkq (span 𝔽 (φ.to_fun '' C)),
       have h60 := linear_independent.image ((φ.valid' (I ∪ J) 
         (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left)).2 h.1.2),
       rw image_union at h60,
-      --rw disjoint_def,
-      --intros x hx hx2,
       rw [← image_univ, h21],
       simp_rw [to_fun_eq_coe],
       rw [← h10],
