@@ -31,7 +31,7 @@ by rw [cl, inter_eq_self_of_subset_left hX]
 lemma cl_eq_cl_inter_ground (M : matroid_in α) (X : set α) : M.cl X = M.cl (X ∩ M.E) :=
 by rw [cl_def, cl_eq_sInter_of_subset]
 
-lemma inter_ground_M.subset_cl (M : matroid_in α) (X : set α) : X ∩ M.E ⊆ M.cl X := 
+lemma inter_ground_subset_cl (M : matroid_in α) (X : set α) : X ∩ M.E ⊆ M.cl X := 
 by { rw [cl_eq_cl_inter_ground], simp [cl_def] }
 
 @[ssE_finish_rules] lemma cl_subset_ground (M : matroid_in α) (X : set α) : M.cl X ⊆ M.E := 
@@ -48,8 +48,10 @@ by simp_rw [cl_eq_sInter_of_subset, mem_sInter, mem_set_of_eq, and_imp]
 lemma subset_cl (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : X ⊆ M.cl X :=
 by { rw [cl_eq_sInter_of_subset, subset_sInter_iff], simp }
 
--- lemma cl_flat {F : set α} (hF : M.flat F) : M.cl F = F :=
--- (sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F hF.2)
+lemma cl_flat {F : set α} (hF : M.flat F) : M.cl F = F :=
+(sInter_subset_of_mem (by simpa)).antisymm (M.subset_cl F hF.2)
+/- `cl_flat` was previously commented out.
+    It is now uncommented for `loop.mem_flat` -/
   
 @[simp] lemma cl_ground (M : matroid_in α) : M.cl M.E = M.E := 
 (cl_subset_ground M M.E).antisymm (M.subset_cl _)
@@ -85,17 +87,17 @@ begin
   exact inter_subset_inter_left M.E h
 end
 
-lemma cl_M.subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
+lemma cl_subset_cl (hXY : X ⊆ M.cl Y) : M.cl X ⊆ M.cl Y :=
 by simpa only [cl_cl] using M.cl_subset hXY
 
-lemma cl_M.subset_cl_iff_M.subset_cl' : (X ⊆ M.E ∧ M.cl X ⊆ M.cl Y) ↔ X ⊆ M.cl Y :=
-⟨λ h, (M.subset_cl _ h.1).trans h.2, λ h, ⟨h.trans (cl_subset_ground _ _), cl_M.subset_cl h⟩ ⟩
+lemma cl_subset_cl_iff_subset_cl' : (X ⊆ M.E ∧ M.cl X ⊆ M.cl Y) ↔ X ⊆ M.cl Y :=
+⟨λ h, (M.subset_cl _ h.1).trans h.2, λ h, ⟨h.trans (cl_subset_ground _ _), cl_subset_cl h⟩ ⟩
 
 /- need the assumption `X ⊆ M.E` for otherwise
   `X = univ` and `Y = M.E` is a counter-example -/
-lemma cl_M.subset_cl_iff_M.subset_cl (hX : X ⊆ M.E . ssE) : M.cl X ⊆ M.cl Y ↔ X ⊆ M.cl Y :=
+lemma cl_subset_cl_iff_subset_cl (hX : X ⊆ M.E . ssE) : M.cl X ⊆ M.cl Y ↔ X ⊆ M.cl Y :=
 begin
-  nth_rewrite 1 [←cl_M.subset_cl_iff_M.subset_cl'], 
+  nth_rewrite 1 [←cl_subset_cl_iff_subset_cl'], 
   rw [and_iff_right hX],
 end
 
@@ -132,12 +134,12 @@ begin
   refine subset_antisymm _ _, 
   { rw [cl_eq_cl_inter_ground, inter_distrib_right, ←cl_cl _ (X ∪ Y) ],
     refine M.cl_subset 
-      (union_subset ((inter_ground_M.subset_cl _ _).trans (cl_subset _ (subset_union_left _ _))) _), 
+      (union_subset ((inter_ground_subset_cl _ _).trans (cl_subset _ (subset_union_left _ _))) _), 
       rw [ground_inter_left], 
       exact (cl_subset _ (subset_union_right _ _)) },
   rw [cl_eq_cl_inter_ground, inter_distrib_right], 
   exact cl_subset _ (union_subset ((inter_subset_left _ _).trans (subset_union_left _ _)) 
-    ((inter_ground_M.subset_cl _ _).trans (subset_union_right _ _))), 
+    ((inter_ground_subset_cl _ _).trans (subset_union_right _ _))), 
 end
 
 @[simp] lemma cl_union_cl_left_eq_cl_union (M : matroid_in α) (X Y : set α) :
@@ -331,7 +333,7 @@ begin
 end
 
 lemma basis.cl (hIX : M.basis I X) : M.cl I = M.cl X := 
-(M.cl_subset hIX.subset).antisymm (cl_M.subset_cl 
+(M.cl_subset hIX.subset).antisymm (cl_subset_cl 
   (λ x hx, hIX.indep.mem_cl_iff.mpr (λ h, hIX.mem_of_insert_indep hx h)))
 
 lemma basis.mem_cl_iff (hIX : M.basis I X) (he : e ∈ M.E . ssE) : 
@@ -495,9 +497,9 @@ begin
   rw [M.cl_eq_cl_inter_ground, insert_inter_of_mem heE] at ⊢ hf,
   rw [M.cl_eq_cl_inter_ground X] at he hf,  
 
-  rw [subset_antisymm_iff, cl_M.subset_cl_iff_M.subset_cl, insert_subset],
+  rw [subset_antisymm_iff, cl_subset_cl_iff_subset_cl, insert_subset],
   { refine ⟨⟨he.1, M.subset_cl_of_subset (subset_insert _ _) (insert_subset.mpr ⟨hfE,by ssE⟩)⟩, _⟩, 
-    exact cl_M.subset_cl (insert_subset.mpr ⟨hf.1,
+    exact cl_subset_cl (insert_subset.mpr ⟨hf.1,
       M.subset_cl_of_subset (subset_insert _ _) (insert_subset.mpr ⟨heE, by ssE⟩)⟩) },
   exact insert_subset.mpr ⟨heE, by ssE⟩, 
 end 
