@@ -300,11 +300,6 @@ begin
     have := ((hI.mem_cl_iff_of_not_mem heX').mp heX).1,
     have := hB.indep.subset (insert_subset.mpr ⟨h hB, hIB⟩),
     contradiction },
-  -- refine ⟨λ h, λ X, ⟨λ heX, by_contra (λ heX', _), λ h', M.subset_cl X  _ h'⟩, 
-  --   λ h B hB, (h B).mp (hB.cl.symm.subset _)⟩,
-  -- obtain ⟨I, hI⟩ := M.exists_basis X, 
-  -- obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset, 
-  -- exact (hI.mem_cl_iff_of_not_mem heX').mp heX (hB.indep.subset (insert_subset.mpr ⟨h hB, hIB⟩)), 
 end 
 /- added assumption `e ∈ M.E`, otherwise the backwards implication does not hold -/
 
@@ -315,20 +310,20 @@ begin
 end
 /- added assumption `e ∈ M.E`, only to RHS -/
 
-lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
-sorry 
---coloop_iff_forall_mem_cl_iff_mem.mp he X
+lemma coloop.mem_cl_iff_mem (he : M.coloop e) (hX : X ⊆ M.E) : e ∈ M.cl X ↔ e ∈ X :=
+(coloop_iff_forall_mem_cl_iff_mem he.mem_ground).mp he X hX
+/- added assumption `X ⊆ M.E`, which is necessary for both directions -/
 
-lemma coloop.mem_of_mem_cl (he : M.coloop e) (hX : e ∈ M.cl X) (hX : X ⊆ M.E . ssE) : e ∈ X := 
-sorry 
---he.mem_cl_iff_mem.mp hX
+lemma coloop.mem_of_mem_cl (he : M.coloop e) (heX : e ∈ M.cl X) (hX : X ⊆ M.E . ssE) : e ∈ X := 
+(he.mem_cl_iff_mem hX).mp heX
 
 @[simp] lemma cl_inter_coloops_eq (M : matroid_in α) (X : set α) : 
   M.cl X ∩ M﹡.cl ∅ = X ∩ M﹡.cl ∅ :=
 begin
   simp_rw [set.ext_iff, mem_inter_iff, ←coloop_iff_mem_cl_empty, and.congr_left_iff], 
-  sorry, 
-  -- exact λ x, coloop.mem_cl_iff_mem _ sorry, 
+  intros x hx,
+  refine ⟨λ heX, _, λ hx', (M.inter_ground_subset_cl X) (mem_inter hx' hx.mem_ground)⟩,
+  rw cl_eq_cl_inter_ground at heX, exact (hx.mem_of_mem_cl heX).1,
 end 
 
 lemma cl_inter_eq_of_subset_coloops (X : set α) (hK : K ⊆ M﹡.cl ∅) : 
