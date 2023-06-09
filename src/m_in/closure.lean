@@ -399,24 +399,15 @@ lemma base.cl_of_supset (hB : M.base B) (hBX : B ⊆ X) : M.cl X = M.E :=
 subset_antisymm (M.cl_subset_ground _) (by { rw ← hB.cl, exact M.cl_subset hBX, })
 /- changed RHS of conclusion from `univ` to `M.E` -/
   
-lemma base_subset_iff_cl_eq_univ' : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
+lemma base_subset_iff_cl_eq_univ : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
 begin
-  sorry
-  refine ⟨ λ ⟨B, hBX, hB⟩, hB.cl_of_supset (hBX.trans (inter_subset_left _ _)), λ h, _ ⟩,
+  refine ⟨λ ⟨B, hBX, hB⟩, hB.cl_of_supset hBX, λ h, _⟩,
   obtain ⟨B, hBX⟩ :=  M.exists_basis (X ∩ M.E),
-  use [B, hBX.subset],
+  use [B,  (basis.subset hBX).trans (inter_subset_left X M.E)],
   rw [base_iff_basis_univ, ←h],
   have := hBX.cl,
   rw ←cl_eq_cl_inter_ground at this,
   rw ←this, exact hBX.indep.basis_cl
-end
-
-lemma base_subset_iff_cl_eq_univ : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
-begin
-  sorry 
-  refine ⟨λ ⟨B, hBX, hB⟩, hB.cl_of_supset hBX, λ h, _⟩,
-  obtain ⟨B, hBX, hB⟩ := base_subset_iff_cl_eq_univ'.mpr h,
-  use [B, hBX.trans (inter_subset_left _ _), hB]
 end
 
 lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : 
@@ -530,6 +521,7 @@ end
 lemma indep_iff_not_mem_cl_diff_forall' : M.indep I ↔ (I ⊆ M.E ∧ ∀ e ∈ I, e ∉ M.cl (I \ {e})) :=
 ⟨λ h, ⟨h.subset_ground, (indep_iff_not_mem_cl_diff_forall h.subset_ground).mp h⟩,
  λ h, (indep_iff_not_mem_cl_diff_forall h.1).mpr h.2⟩
+/- question: would it be better to have `e ∈ I ∩ M.E`? -/
 
 -- lemma indep_iff_cl_ssubset_ssubset_forall (hI : I ⊆ M.E . ssE) : M.indep I ↔ ∀ J ⊂ I, M.cl J ⊂ M.cl I :=
 -- begin
