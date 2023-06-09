@@ -57,7 +57,7 @@ M.cl_mono (empty_subset _) he
 -- lemma loop.mem_flat (he : M.loop e) {F : set α} (hF : M.flat F) : e ∈ F :=
 -- by { have := he.mem_cl F, rwa hF.cl at this }
 
--- lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
+lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
 
 lemma loop.dep_of_mem (he : M.loop e) (h : e ∈ X) (hXE : X ⊆ M.E . ssE) : M.dep X :=
 he.dep.supset (singleton_subset_iff.mpr h) hXE
@@ -289,20 +289,24 @@ end
 lemma circuit.not_coloop_of_mem (hC : M.circuit C) (heC : e ∈ C) : ¬M.coloop e :=  
 λ h, h.not_mem_circuit hC heC 
 
-lemma coloop_iff_forall_mem_cl_iff_mem (he : e ∈ M.E . ssE) : 
-  M.coloop e ↔ ∀ X, e ∈ M.cl X ↔ e ∈ X :=
+lemma coloop_iff_forall_mem_cl_iff_mem (he : e ∈ M.E) : M.coloop e ↔ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X :=
 begin
-  rw coloop_iff_forall_mem_base, 
-  refine ⟨λ h X, _, λ h B hB, (h B).mp (by rwa hB.cl)⟩,
-  rw [cl_eq_cl_inter_ground], 
-  refine ⟨λ hecl, _, λ heX, _⟩, 
-  { obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), 
-    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset, 
-    have heB := h hB, 
-    rw [hI.mem_cl_iff, imp_iff_right (hB.indep.subset (insert_subset.mpr ⟨heB, hIB⟩))] at hecl, 
-    exact (hI.subset hecl).1 },  
-  exact mem_cl_of_mem' _ ⟨heX, he⟩, 
+  rw coloop_iff_forall_mem_base,
+  sorry, 
+  -- refine ⟨λ h, λ X, ⟨λ heX, by_contra (λ heX', _), λ h', M.subset_cl X  _ h'⟩, 
+  --   λ h B hB, (h B).mp (hB.cl.symm.subset _)⟩,
+  -- obtain ⟨I, hI⟩ := M.exists_basis X, 
+  -- obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset, 
+  -- exact (hI.mem_cl_iff_of_not_mem heX').mp heX (hB.indep.subset (insert_subset.mpr ⟨h hB, hIB⟩)), 
 end 
+/- added assumption `e ∈ M.E`, otherwise the backwards implication does not hold -/
+
+lemma coloop_iff_forall_mem_cl_iff_mem' : M.coloop e ↔ (e ∈ M.E ∧ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X) :=
+begin
+  refine ⟨λ h, ⟨h.mem_ground, (coloop_iff_forall_mem_cl_iff_mem h.mem_ground).mp h⟩,
+          λ h, (coloop_iff_forall_mem_cl_iff_mem h.1).mpr h.2⟩,
+end
+/- added assumption `e ∈ M.E`, only to RHS -/
 
 lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
 coloop_iff_forall_mem_cl_iff_mem.mp he X
