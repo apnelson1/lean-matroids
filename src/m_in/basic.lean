@@ -428,6 +428,9 @@ lemma basis.subset (hI : M.basis I X) : I ⊆ X := hI.1.1.2
 @[ssE_finish_rules] lemma basis.subset_ground (hI : M.basis I X) : X ⊆ M.E :=
 hI.2 
 
+lemma basis.basis_inter_ground (hI : M.basis I X) : M.basis I (X ∩ M.E) := 
+by { convert hI, rw [inter_eq_self_of_subset_left hI.subset_ground] }
+
 @[ssE_finish_rules] lemma basis.subset_ground_left (hI : M.basis I X) : I ⊆ M.E := 
 hI.indep.subset_ground
 
