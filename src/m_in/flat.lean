@@ -6,23 +6,40 @@ noncomputable theory
 open_locale classical
 open_locale big_operators
 
-variables {E : Type*} {M M₁ M₂ : matroid E} {I B C X Y Z K F F₀ F₁ F₂ H H₁ H₂ : set E} {e f x y z : E}
+variables {α : Type*} {M : matroid_in α} {I B C X Y Z K F F₀ F₁ F₂ H H₁ H₂ : set α}
+          { e f x y z : α }
 
 open set 
 
 namespace matroid 
 
-lemma flat_def : M.flat F ↔ ∀ I X, M.basis I F → M.basis I X → X ⊆ F := iff.rfl
+lemma flat_def : M.flat F ↔ ((∀ I X, M.basis I F → M.basis I X → X ⊆ F) ∧ F ⊆ M.E):=
+iff.rfl
+/- added `∧ F ⊆ M.E` to RHS.
+   Here it is the last clause as in the definition, but 
+   in closure.lean I wrote similar assumptions
+   as the first clause. -/
 
-lemma flat.Inter {ι : Type*} (F : ι → set E) (hF : ∀ i, M.flat (F i)) : M.flat (⋂ i, F i) :=
+@[ssE_finish_rules] lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E :=
+hF.2
+
+lemma flat.Inter {ι : Type*} (F : ι → set α) [hι : nonempty ι] (hF : ∀ i, M.flat (F i)) :
+  M.flat (⋂ i, F i) :=
 begin
-  refine λ I X hI hIX, subset_Inter (λ i, _), 
-  obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset 
-    (hI.subset.trans (Inter_subset _ _ ) : I ⊆ F i), 
-  refine (union_subset_iff.mp (@hF i _ (F i ∪ X) hIJ _)).2, 
-  rw [←union_eq_left_iff_subset.mpr hIJ.subset, union_assoc], 
-  exact hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ),  
+  split,
+  { refine λ I X hI hIX, subset_Inter (λ i, _),
+    obtain ⟨J, hIJ, hJ⟩ := hI.indep.subset_basis_of_subset
+      ((hI.subset.trans (Inter_subset _ _ ) : I ⊆ F i)),
+
+    have hF' := hF i, rw flat_def at hF',
+    refine (union_subset_iff.mp (hF'.1 _ (F i ∪ X) hIJ _)).2, 
+    rw [←union_eq_left_iff_subset.mpr hIJ.subset, union_assoc],
+    exact hIJ.basis_union (hIX.basis_union_of_subset hIJ.indep hJ), },
+  intros e he, obtain i₀ := hι.some,
+  rw mem_Inter at he,
+  exact (flat.subset_ground (hF i₀)) (he i₀),
 end
+/- added the assumption `nonempty ι` -/
 
 lemma flat_of_cl (M : matroid E) (X : set E) : M.flat (M.cl X) :=
 by { rw [cl_def, sInter_eq_Inter], refine flat.Inter _ _, rintro ⟨F,hF⟩, exact hF.1 }
