@@ -22,6 +22,7 @@ iff.rfl
 
 @[ssE_finish_rules] lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E :=
 hF.2
+/- question: hF.subset_ground does not work -/
 
 lemma flat.Inter {ι : Type*} (F : ι → set α) [hι : nonempty ι] (hF : ∀ i, M.flat (F i)) :
   M.flat (⋂ i, F i) :=
@@ -41,12 +42,23 @@ begin
 end
 /- added the assumption `nonempty ι` -/
 
-lemma flat_of_cl (M : matroid E) (X : set E) : M.flat (M.cl X) :=
-by { rw [cl_def, sInter_eq_Inter], refine flat.Inter _ _, rintro ⟨F,hF⟩, exact hF.1 }
+lemma flat_of_cl (M : matroid_in α) (X : set α) : M.flat (M.cl X) :=
+begin
+  rw [M.cl_def X, sInter_eq_Inter],
+  apply flat.Inter _,
+  { rintro ⟨F,hF⟩, exact hF.1 },
+  { sorry,
+  /- question: need to show `X ∩ M.E` is contained in at 
+               least one flat -/
+  }
+end
  
-lemma flat_iff_cl_self : M.flat F ↔ M.cl F = F := 
-⟨λ h, subset_antisymm (sInter_subset_of_mem ⟨h, subset.rfl⟩) (M.subset_cl _),
-  λ h, by {rw ←h, exact flat_of_cl _ _ }⟩ 
+lemma flat_iff_cl_self : M.flat F ↔ M.cl F = F :=
+begin
+  refine ⟨λ h, subset_antisymm (sInter_subset_of_mem ⟨h, inter_subset_left F M.E⟩)
+            (M.subset_cl F (flat.subset_ground h)),
+          λ h, by { rw ← h, exact flat_of_cl _ _ }⟩
+end
 
 lemma flat.cl (hF : M.flat F) : M.cl F = F := flat_iff_cl_self.mp hF 
 
