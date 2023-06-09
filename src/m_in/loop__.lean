@@ -1,6 +1,9 @@
 import .basic 
 import .circuit
 
+import .closure
+/- for `cl_flat` -/
+
 /-
   A `loop` of a matroid_in is a one-element circuit, or, definitionally, a member of `M.cl ∅`.  
   Thus, the set of loops of `M` is equal to `M.cl ∅`, and we prefer this notation instead of 
@@ -31,9 +34,6 @@ lemma loop_iff_dep : M.loop e ↔ M.dep {e} :=
 by rw [loop_iff_mem_cl_empty, 
   M.empty_indep.mem_cl_iff_of_not_mem (not_mem_empty e), insert_emptyc_eq]
 
-lemma loop_iff_not_indep (he : e ∈ M.E . ssE) : M.loop e ↔ ¬ M.indep {e} := 
-by rw [loop_iff_dep, ←not_indep_iff]
-
 lemma loop.dep (he : M.loop e) : M.dep {e} :=
 loop_iff_dep.mp he
 
@@ -55,7 +55,7 @@ lemma loop.mem_cl (he : M.loop e) (X : set α) : e ∈ M.cl X :=
 M.cl_mono (empty_subset _) he 
 
 lemma loop.mem_flat (he : M.loop e) {F : set α} (hF : M.flat F) : e ∈ F :=
-by { have := he.mem_cl F, rwa hF.cl at this }
+by { have := he.mem_cl F, rw cl_flat hF at this, exact this }
 
 lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
 
@@ -289,33 +289,43 @@ end
 lemma circuit.not_coloop_of_mem (hC : M.circuit C) (heC : e ∈ C) : ¬M.coloop e :=  
 λ h, h.not_mem_circuit hC heC 
 
-lemma coloop_iff_forall_mem_cl_iff_mem (he : e ∈ M.E . ssE) : 
-  M.coloop e ↔ ∀ X, e ∈ M.cl X ↔ e ∈ X :=
+lemma coloop_iff_forall_mem_cl_iff_mem (he : e ∈ M.E) : M.coloop e ↔ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X :=
 begin
-  rw coloop_iff_forall_mem_base, 
-  refine ⟨λ h X, _, λ h B hB, (h B).mp (by rwa hB.cl)⟩,
-  rw [cl_eq_cl_inter_ground], 
-  refine ⟨λ hecl, _, λ heX, _⟩, 
-  { obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), 
-    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset, 
-    have heB := h hB, 
-    rw [hI.mem_cl_iff, imp_iff_right (hB.indep.subset (insert_subset.mpr ⟨heB, hIB⟩))] at hecl, 
-    exact (hI.subset hecl).1 },  
-  exact mem_cl_of_mem' _ ⟨heX, he⟩, 
+  rw coloop_iff_forall_mem_base,
+  refine ⟨λ h X hX, _, λ h B hB, (h B hB.subset_ground).mp (hB.cl.symm.subset he)⟩,
+  { refine ⟨λ heX, _, λ heX, (M.subset_cl X hX) heX⟩,
+    by_contra heX',
+    obtain ⟨I, hI⟩ := M.exists_basis X hX,
+    obtain ⟨B, hB, hIB⟩ := hI.indep.exists_base_supset,
+    have := ((hI.mem_cl_iff_of_not_mem heX').mp heX).1,
+    have := hB.indep.subset (insert_subset.mpr ⟨h hB, hIB⟩),
+    contradiction },
 end 
+/- added assumption `e ∈ M.E`, otherwise the backwards implication does not hold -/
 
-lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
-coloop_iff_forall_mem_cl_iff_mem.mp he X
+lemma coloop_iff_forall_mem_cl_iff_mem' : M.coloop e ↔ (e ∈ M.E ∧ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X) :=
+begin
+  refine ⟨λ h, ⟨h.mem_ground, (coloop_iff_forall_mem_cl_iff_mem h.mem_ground).mp h⟩,
+          λ h, (coloop_iff_forall_mem_cl_iff_mem h.1).mpr h.2⟩,
+end
+/- added assumption `e ∈ M.E`, only to RHS -/
 
-lemma coloop.mem_of_mem_cl (he : M.coloop e) (hX : e ∈ M.cl X) : e ∈ X := 
-by rwa ←he.mem_cl_iff_mem
+lemma coloop.mem_cl_iff_mem (he : M.coloop e) (hX : X ⊆ M.E) : e ∈ M.cl X ↔ e ∈ X :=
+(coloop_iff_forall_mem_cl_iff_mem he.mem_ground).mp he X hX
+/- added assumption `X ⊆ M.E`, which is necessary for both directions -/
+
+lemma coloop.mem_of_mem_cl (he : M.coloop e) (heX : e ∈ M.cl X) (hX : X ⊆ M.E . ssE) : e ∈ X := 
+(he.mem_cl_iff_mem hX).mp heX
 
 @[simp] lemma cl_inter_coloops_eq (M : matroid_in α) (X : set α) : 
   M.cl X ∩ M﹡.cl ∅ = X ∩ M﹡.cl ∅ :=
 begin
   simp_rw [set.ext_iff, mem_inter_iff, ←coloop_iff_mem_cl_empty, and.congr_left_iff], 
-  intros e he, 
-  rw [he.mem_cl_iff_mem], 
+  
+  intros x hx,
+  refine ⟨λ heX, _, λ hx', (M.inter_ground_subset_cl X) (mem_inter hx' hx.mem_ground)⟩,
+    rw cl_eq_cl_inter_ground at heX,
+    exact (hx.mem_of_mem_cl heX).1,
 end 
 
 lemma cl_inter_eq_of_subset_coloops (X : set α) (hK : K ⊆ M﹡.cl ∅) : 
@@ -354,9 +364,9 @@ begin
     union_diff_distrib, diff_eq_empty.mpr (inter_subset_right X K), union_empty, eq_comm, 
     sdiff_eq_self_iff_disjoint,  disjoint_iff_forall_ne], 
   rintro e heK _ heX rfl, 
-  have he : M.coloop e := hK heK, 
-  rw [he.mem_cl_iff_mem] at heX, 
-  exact heX.2 heK, 
+  sorry, 
+  -- rw coloop.mem_cl_iff_mem (hK heK) at heX,
+  -- exact heX.2 heK,   
 end 
 
 lemma cl_disjoint_of_disjoint_of_subset_coloops (hXK : disjoint X K) (hK : K ⊆ M﹡.cl ∅) :
@@ -378,18 +388,25 @@ end
   M.cl (X ∪ M﹡.cl ∅) = M.cl X ∪ M﹡.cl ∅ := cl_union_eq_of_subset_coloops _ subset.rfl 
 
 lemma coloop.not_mem_cl_of_not_mem (he : M.coloop e) (hX : e ∉ X) : e ∉ M.cl X := 
-mt he.mem_cl_iff_mem.mp  hX 
+sorry
+-- mt he.mem_cl_iff_mem.mp  hX 
 
 lemma coloop.insert_indep_of_indep (he : M.coloop e) (hI : M.indep I) : M.indep (insert e I) :=
 (em (e ∈ I)).elim (λ h, by rwa insert_eq_of_mem h) 
   (λ h, by rwa [hI.insert_indep_iff_of_not_mem h, he.mem_cl_iff_mem])  
 
-lemma union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.indep (I ∪ K) ↔ M.indep I :=
+lemma coloops_indep (M : matroid_in α) : M﹡.indep (M.cl ∅) := 
 begin
-  refine ⟨λ h, h.subset (subset_union_left I K), λ h, _⟩,
-  obtain ⟨B, hB, hIB⟩ := h.exists_base_supset, 
-  exact hB.indep.subset (union_subset hIB (hK.trans (λ e he, coloop.mem_of_base he hB))), 
-end 
+  obtain ⟨B, hB⟩ := M.exists_base,  
+  rw [dual_indep_iff_coindep, coindep_iff_disjoint_base], 
+  exact ⟨B, hB, hB.indep.disjoint_loops.symm⟩, 
+end
+
+lemma union_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.indep (I ∪ K) ↔ M.indep I :=
+sorry 
+-- ⟨λ h, h.subset (subset_union_left I K), λ h, indep_iff_forall_subset_not_circuit.mpr 
+--   (λ C hCIK hC, hC.dep (h.subset (λ e h', (hCIK h').elim id 
+--   (λ heK, (hC.not_coloop_of_mem h' (hK heK)).elim) )))⟩
    
 lemma diff_indep_iff_indep_of_subset_coloops (hK : K ⊆ M﹡.cl ∅) : M.indep (I \ K) ↔ M.indep I :=
 by rw [←union_indep_iff_indep_of_subset_coloops hK, diff_union_self, 
@@ -401,12 +418,6 @@ lemma indep_iff_union_coloops_indep : M.indep I ↔ M.indep (I ∪ M﹡.cl ∅) 
 lemma indep_iff_diff_coloops_indep : M.indep I ↔ M.indep (I \ M﹡.cl ∅) := 
   (diff_indep_iff_indep_of_subset_coloops subset.rfl).symm 
 
-lemma coloops_indep (M : matroid_in α) : M.indep (M﹡.cl ∅) := 
-by { rw [indep_iff_diff_coloops_indep, diff_self], exact M.empty_indep }
-
-lemma indep_of_subset_coloops (h : I ⊆ M﹡.cl ∅) : M.indep I := 
-M.coloops_indep.subset h
-
 lemma coloop.cocircuit (he : M.coloop e) : M.cocircuit {e} := 
 by rwa [←dual_loop_iff_coloop, loop_iff_circuit, dual_circuit_iff_cocircuit] at he
 
@@ -416,20 +427,22 @@ by rw [←dual_loop_iff_coloop, loop_iff_circuit, dual_circuit_iff_cocircuit]
 /-- If two matroid_ins agree on loops and coloops, and have the same independent sets after 
   loops/coloops are removed, they are equal. -/
 lemma eq_of_indep_iff_indep_forall_disjoint_loops_coloops 
-{M₁ M₂ : matroid_in α} (hE : M₁.E = M₂.E) (hl : M₁.cl ∅ = M₂.cl ∅) (hc : M₁﹡.cl ∅ = M₂﹡.cl ∅) 
-(h : ∀ I ⊆ M₁.E, disjoint I (M₁.cl ∅ ∪ M₁﹡.cl ∅) → (M₁.indep I ↔ M₂.indep I)) : 
+{M₁ M₂ : matroid_in α} (hl : M₁.cl ∅ = M₂.cl ∅) (hc : M₁﹡.cl ∅ = M₂﹡.cl ∅) 
+(h : ∀ I, disjoint I (M₁.cl ∅ ∪ M₁﹡.cl ∅) → (M₁.indep I ↔ M₂.indep I)) : 
   M₁ = M₂ :=
 begin
-  refine eq_of_indep_iff_indep_forall hE (λ I hI, _), 
-  rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ←hc], 
-  obtain (hdj | hndj) := em (disjoint I (M₁.cl ∅)), 
-  { rw h _ ((diff_subset _ _).trans hI),  
-    rw disjoint_union_right,
-    exact ⟨disjoint_of_subset_left (diff_subset _ _) hdj, disjoint_sdiff_left⟩ },
-  obtain ⟨e, heI, (hel : M₁.loop e)⟩ := not_disjoint_iff_nonempty_inter.mp hndj, 
-  refine iff_of_false (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩) _, 
-  rw [loop_iff_mem_cl_empty, hl, ←loop_iff_mem_cl_empty] at hel, rw [hc], 
-  exact (hel.not_indep_of_mem ⟨heI, hel.not_coloop⟩), 
+  sorry 
+  -- refine eq_of_indep_iff_indep_forall (λ I, _), 
+  -- rw [indep_iff_diff_coloops_indep, @indep_iff_diff_coloops_indep _ M₂, ←hc], 
+  -- obtain (hdj | hndj) := em (disjoint I (M₁.cl ∅)), 
+  -- { rw h, 
+  --   rw disjoint_union_right,
+  --   exact ⟨disjoint_of_subset_left (diff_subset _ _) hdj, disjoint_sdiff_left⟩ },
+  -- obtain ⟨e, heI, (hel : M₁.loop e)⟩ := not_disjoint_iff_nonempty_inter.mp hndj, 
+  -- refine iff_of_false (hel.dep_of_mem ⟨heI, hel.not_coloop⟩) _, 
+  -- rw [loop_iff_mem_cl_empty, hl, ←loop_iff_mem_cl_empty] at hel, rw [hc], 
+  -- exact hel.dep_of_mem ⟨heI, hel.not_coloop⟩, 
 end 
+
 
 end matroid_in
