@@ -248,7 +248,11 @@ end
 if and only if the family `v` is linearly independent. -/
 protected lemma linear_map.linear_independent_iff {ι : Type*} {v : ι → W} (f : W →ₗ[𝔽] W') :
   linear_independent 𝔽 (f ∘ v) ↔ linear_independent 𝔽 v ∧ disjoint (f.ker) (span 𝔽 (range v)) :=
-sorry
+⟨λ h, ⟨@linear_independent.of_comp _ _ _ W' _ _ _ 
+  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h, 
+  disjoint.comm.1 (linear_independent.map'' (@linear_independent.of_comp _ _ _ W' _ _ _ 
+  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h) _ h)⟩, 
+  λ h, linear_independent.map h.1 (disjoint.comm.1 h.2)⟩
 
 lemma indep.contract_indep_iff {J : set E} (hI : M.indep I) : 
  (M ⟋ I).indep J ↔ disjoint J I ∧ M.indep (J ∪ I)  := sorry
