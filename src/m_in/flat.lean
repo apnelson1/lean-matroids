@@ -11,7 +11,7 @@ variables {α : Type*} {M : matroid_in α} {I B C X Y Z K F F₀ F₁ F₂ H H�
 
 open set 
 
-namespace matroid 
+namespace matroid_in
 
 lemma flat_def : M.flat F ↔ ((∀ I X, M.basis I F → M.basis I X → X ⊆ F) ∧ F ⊆ M.E):=
 iff.rfl
@@ -24,7 +24,7 @@ iff.rfl
 hF.2
 /- question: hF.subset_ground does not work -/
 
-lemma flat.Inter {ι : Type*} (F : ι → set α) [hι : nonempty ι] (hF : ∀ i, M.flat (F i)) :
+lemma flat.Inter {ι : Type*} [hι : nonempty ι] (F : ι → set α) (hF : ∀ i, M.flat (F i)) :
   M.flat (⋂ i, F i) :=
 begin
   split,
@@ -47,7 +47,8 @@ begin
   rw [M.cl_def X, sInter_eq_Inter],
   apply flat.Inter _,
   { rintro ⟨F,hF⟩, exact hF.1 },
-  { sorry,
+  { simp, 
+    sorry,
   /- question: need to show `X ∩ M.E` is contained in at 
                least one flat -/
   }
@@ -60,17 +61,10 @@ begin
           λ h, by { rw ← h, exact flat_of_cl _ _ }⟩
 end
 
-lemma flat.cl (hF : M.flat F) : M.cl F = F := flat_iff_cl_self.mp hF 
-
 lemma flat.inter (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) : M.flat (F₁ ∩ F₂) :=
 by { rw inter_eq_Inter, refine flat.Inter _ (λ i, _), cases i; assumption }
 
-@[simp] lemma univ_flat (M : matroid_in α) : M.flat M.E := 
-by rw [flat_iff_cl_self, M.cl_ground]
-/- changed `univ` to `M.E` -/
-/- question: uses `closure.lean` -/
-
-lemma flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E) :
+lemma flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E . ssE) :
   M.flat F ↔ ∀ e ∈ M.E \ F, M.cl F ⊂ M.cl (insert e F) :=
 begin
   refine ⟨λ h e he, (M.cl_subset (subset_insert _ _)).ssubset_of_ne _, λ h, _⟩,
@@ -88,9 +82,8 @@ begin
   rw [←(M.cl_insert_cl_eq_cl_insert e F), insert_eq_of_mem he', M.cl_cl] at h'',
   exact h''.ne rfl
 end
-/- added `F ⊆ M.E` and `e ∈ M.E` -/
 
-lemma flat_iff_forall_circuit {F : set E} :
+lemma flat_iff_forall_circuit {F : set α} :
   M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F :=
 begin
   rw [flat_iff_cl_self],
@@ -108,7 +101,9 @@ by {nth_rewrite 1 ←hF.cl, apply cl_exchange, rwa hF.cl}
 
 lemma flat.cl_insert_eq_cl_insert_of_mem (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) : 
   M.cl (insert e F) = M.cl (insert f F) :=
-by { apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
+by { have := hF.subset_ground, 
+  
+  apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
 
 lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
@@ -116,7 +111,7 @@ by { have h' := M.cl_mono h, rwa hF.cl at h' }
 /- ### Covering  -/
 /-- A flat is covered by another in a matroid if they are strictly nested, with no flat
   between them . -/
-def covby (M : matroid E) (F₀ F₁ : set E) : Prop :=
+def covby (M : matroid E) (F₀ F₁ : set α) : Prop :=
   M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁
 
 lemma covby_iff :
@@ -251,7 +246,7 @@ lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = 
 section hyperplane
 
 /-- A hyperplane is a maximal set containing no base  -/
-def hyperplane (M : matroid E) (H : set E) : Prop := H ∈ maximals (⊆) {X | ¬∃ B ⊆ X, M.base B }
+def hyperplane (M : matroid E) (H : set α) : Prop := H ∈ maximals (⊆) {X | ¬∃ B ⊆ X, M.base B }
 
 lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X) : M.cl X = univ :=
 base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 h hX.subset)))   
@@ -304,7 +299,7 @@ by rw [←compl_cocircuit_iff_hyperplane, compl_compl]
 lemma hyperplane.compl_cocircuit (hH : M.hyperplane H) : M.cocircuit Hᶜ := 
   compl_cocircuit_iff_hyperplane.mpr hH
 
-lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
+lemma cocircuit.compl_hyperplane {K : set α} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
   compl_hyperplane_iff_cocircuit.mpr hK 
 
 lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.ssubset_univ.ne rfl 
@@ -367,7 +362,7 @@ begin
   exact indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl),
 end
 
-lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set E) :
+lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set α) :
   M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
 begin
   apply subset_antisymm,
@@ -465,8 +460,8 @@ end hyperplane
 
 section from_axioms
 
-lemma matroid_of_flat_aux [finite E] (flat : set E → Prop) (univ_flat : flat univ)
-(flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set E) :
+lemma matroid_of_flat_aux [finite E] (flat : set α → Prop) (univ_flat : flat univ)
+(flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set α) :
   flat (⋂₀ {F | flat F ∧ X ⊆ F}) ∧ ∀ F₀, flat F₀ → ((⋂₀ {F | flat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
 begin
   set F₁ := ⋂₀ {F | flat F ∧ X ⊆ F} with hF₁,
@@ -485,7 +480,7 @@ begin
 end
 
 /-- A collection of sets satisfying the flat axioms determines a matroid -/
-def matroid_of_flat [finite E] (flat : set E → Prop) (univ_flat : flat univ)
+def matroid_of_flat [finite E] (flat : set α → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
   ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :=
@@ -537,7 +532,7 @@ end )
 
   obtain ⟨FXe',⟨hFXe',heFX',hmin⟩, hunique⟩ := flat_partition FX e hFX heFX,
 
-  have hFXemin : ∀ (F : set E), flat F → FX ⊆ F → F ⊂ FXe → FX = F, from
+  have hFXemin : ∀ (F : set α), flat F → FX ⊆ F → F ⊂ FXe → FX = F, from
   λ F hF hFXF hFFXe, hmin _ hF hFXF
     (hFFXe.trans_subset ((hXe' _ hFXe').mpr ((insert_subset_insert hXFX).trans heFX'))),
 
@@ -545,7 +540,7 @@ end )
   rwa ← (hmin _ hFXf hFXFXf hssu) at hfFXf,
 end)
 
-@[simp] lemma matroid_of_flat_apply [finite E] (flat : set E → Prop) (univ_flat : flat univ)
+@[simp] lemma matroid_of_flat_apply [finite E] (flat : set α → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
 ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :
@@ -560,4 +555,4 @@ end
 
 end from_axioms 
 
-end matroid 
+end matroid_in

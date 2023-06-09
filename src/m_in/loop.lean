@@ -304,6 +304,13 @@ begin
   exact mem_cl_of_mem' _ ⟨heX, he⟩, 
 end 
 
+lemma coloop_iff_forall_mem_cl_iff_mem' : M.coloop e ↔ (e ∈ M.E ∧ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X) :=
+begin
+  sorry
+  -- refine ⟨λ h, ⟨h.mem_ground, (coloop_iff_forall_mem_cl_iff_mem h.mem_ground).mp h⟩,
+  --         λ h, (coloop_iff_forall_mem_cl_iff_mem h.1).mpr h.2⟩,
+end
+
 lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
 coloop_iff_forall_mem_cl_iff_mem.mp he X
 

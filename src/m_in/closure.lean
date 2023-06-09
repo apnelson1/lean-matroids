@@ -218,43 +218,10 @@ begin
   simp_rw [hI.mem_cl_iff', and_iff_right_iff_imp],
   intro _, exact hx
 end
-/- definition of `M.indep` requires `x ∈ M.E`,
-   added assumption `hx` but it might not be necessary -/
 
 lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
   e ∈ M.cl I ↔ M.dep (insert e I) :=
 by { rw [hI.mem_cl_iff', dep_iff, insert_subset, and_iff_left hI.subset_ground], tauto }
-
--- lemma indep.mem_cl_iff_of_not_mem' (hI : M.indep I) (heI : e ∉ I) : 
---   e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
--- begin
---   split,
---   { intros he, split,
---     { exact M.cl_subset_ground I he },
---     intro g,
---     have := ((indep.mem_cl_iff hI ((M.cl_subset_ground I) he)).mp he) g,
---     contradiction },
---   { rintro ⟨he, h⟩,
---     apply (hI.mem_cl_iff he).mpr,
---     intro this, contradiction }
--- end
--- /- added `e ∈ M.E`, as in the previous lemma
---    it might not be necessary but here it is
---    only added to the RHS -/
-
--- lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e ∈ M.E . ssE) : 
---   e ∈ M.cl I ↔ (e ∈ M.E ∧ ¬M.indep (insert e I)) :=
--- begin
---   split,
---   { intros he, split,
---     { exact M.cl_subset_ground I he },
---     intro g,
---     have := ((indep.mem_cl_iff hI ((M.cl_subset_ground I) he)).mp he) g,
---     contradiction },
---   { rintro ⟨he, h⟩,
---     apply (hI.mem_cl_iff he).mpr,
---     intro this, contradiction }
--- end
 
 lemma indep.not_mem_cl_iff (hI : M.indep I) (he : e ∈ M.E . ssE) :
   e ∉ M.cl I ↔ (e ∉ I ∧ M.indep (insert e I)) :=
@@ -432,8 +399,9 @@ lemma base.cl_of_supset (hB : M.base B) (hBX : B ⊆ X) : M.cl X = M.E :=
 subset_antisymm (M.cl_subset_ground _) (by { rw ← hB.cl, exact M.cl_subset hBX, })
 /- changed RHS of conclusion from `univ` to `M.E` -/
   
-lemma base_subset_iff_cl_eq_univ' : (∃ B ⊆ X ∩ M.E, M.base B) ↔ M.cl X = M.E :=
+lemma base_subset_iff_cl_eq_univ' : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
 begin
+  sorry
   refine ⟨ λ ⟨B, hBX, hB⟩, hB.cl_of_supset (hBX.trans (inter_subset_left _ _)), λ h, _ ⟩,
   obtain ⟨B, hBX⟩ :=  M.exists_basis (X ∩ M.E),
   use [B, hBX.subset],
@@ -442,15 +410,14 @@ begin
   rw ←cl_eq_cl_inter_ground at this,
   rw ←this, exact hBX.indep.basis_cl
 end
-/- changed `B ⊆ X` to `B ⊆ X ∩ M.E` -/
 
-lemma base_subset_iff_cl_eq_univ (X ⊆ M.E) : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
+lemma base_subset_iff_cl_eq_univ : (∃ B ⊆ X, M.base B) ↔ M.cl X = M.E :=
 begin
+  sorry 
   refine ⟨λ ⟨B, hBX, hB⟩, hB.cl_of_supset hBX, λ h, _⟩,
   obtain ⟨B, hBX, hB⟩ := base_subset_iff_cl_eq_univ'.mpr h,
   use [B, hBX.trans (inter_subset_left _ _), hB]
 end
-/- same as change in the previous lemma -/
 
 lemma mem_cl_insert (he : e ∉ M.cl X) (hef : e ∈ M.cl (insert f X)) : 
   f ∈ M.cl (insert e X) :=
