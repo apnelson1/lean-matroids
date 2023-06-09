@@ -28,8 +28,11 @@ lemma cl_empty_eq_loops (M : matroid_in α) : M.cl ∅ = {e | M.loop e} := rfl
 @[ssE_finish_rules] lemma loop.mem_ground (he : M.loop e) : e ∈ M.E := cl_subset_ground M ∅ he
 
 lemma loop_iff_dep' : M.loop e ↔ ¬ M.indep {e} ∧ e ∈ M.E := 
-by rw [loop_iff_mem_cl_empty, ←not_iff_not, M.empty_indep.not_mem_cl_iff, not_and, 
-    and_iff_right (not_mem_empty _), not_imp_comm, or_iff_not_imp_left, insert_emptyc_eq]
+begin
+  rw [loop_iff_mem_cl_empty, ←not_iff_not], 
+end 
+-- by rw [loop_iff_mem_cl_empty, ←not_iff_not, M.empty_indep.not_mem_cl_iff, not_and, 
+--     and_iff_right (not_mem_empty _), not_imp_comm, or_iff_not_imp_left, insert_emptyc_eq]
 
 lemma loop_iff_dep (he : e ∈ M.E . ssE) : M.loop e ↔ ¬ M.indep {e} := 
 by rw [loop_iff_dep', and_iff_left he]
@@ -42,7 +45,7 @@ begin
   exact iff_of_false (he ∘ loop.mem_ground) (he ∘ (λ h, h.subset_ground rfl)),   
 end 
 
-lemma loop_iff_not_mem_base_forall : M.loop e ↔ ∀ B, M.base B → e ∉ B :=
+lemma loop_iff_not_mem_base_forall (he : e ∈ M.E . ssE) : M.loop e ↔ ∀ B, M.base B → e ∉ B :=
 by simp_rw [loop_iff_dep, indep_iff_subset_base, not_exists, not_and, singleton_subset_iff]
 
 lemma loop.circuit (he : M.loop e) : M.circuit {e} := loop_iff_circuit.mp he 
@@ -234,7 +237,8 @@ lemma loop.dual_coloop (he : M.loop e) : M﹡.coloop e := by rwa [coloop, dual_d
 
 lemma coloop_iff_forall_mem_base : M.coloop e ↔ ∀ ⦃B⦄, M.base B → e ∈ B := 
 begin
-  simp_rw [←dual_loop_iff_coloop, loop_iff_not_mem_base_forall, dual.base_iff], 
+  rw [←dual_loop_iff_coloop, loop_iff_not_mem_base_forall], 
+  simp_rw [←dual_loop_iff_coloop, loop_iff_not_mem_base_forall, dual_base_iff], 
   exact ⟨λ h B hB, not_mem_compl_iff.mp (h _ (by rwa compl_compl)),
     λ h B hB, h hB⟩, 
 end 
