@@ -78,8 +78,8 @@ def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M :=
 { to_fun := λ a, --⟨φ x, _⟩,
     begin
       refine ⟨φ a, _⟩,
-      have h2 := (rep.mem_to_submodule φ hx),
-      apply h2,
+      /-have h2 := (rep.mem_to_submodule φ),
+      apply h2,-/
       sorry,
     end,
   valid' := λ I, 
@@ -94,7 +94,7 @@ def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M :=
     end } 
 
 def rep.compose (φ : rep 𝔽 W M) (e : rep.to_submodule φ ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
-{ to_fun := λ x, e ⟨φ x, rep.mem_to_submodule φ x⟩,
+{ to_fun := λ x, sorry,--e ⟨φ x, rep.mem_to_submodule φ x⟩,
   valid' :=
   begin
     intros I,
@@ -126,8 +126,9 @@ lemma subset_nonzero_of_simple (φ : rep 𝔽 W M) (hs : simple M) :
   φ '' M.E ⊆ span 𝔽 (φ '' M.E) \ {0} :=
 begin
   refine subset_diff.2 ⟨subset_span, disjoint_left.2 _⟩,
-  rintro _ ⟨x, rfl⟩,
-  exact ne_zero_of_loopless _ hs.loopless _,
+  /-rintro _ ⟨x, rfl⟩,
+  exact ne_zero_of_loopless _ hs.loopless _,-/
+  sorry
 end
 
 lemma of_basis (φ : rep 𝔽 W M) {X I : set E} (hI : M.basis I X) {e : E} (he : e ∈ X): 
@@ -135,10 +136,11 @@ lemma of_basis (φ : rep 𝔽 W M) {X I : set E} (hI : M.basis I X) {e : E} (he 
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+  /-have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
     (φ.valid' (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,-/
+  sorry,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set E} (hB : M.base B) (e : E) (he : e ∈ M.E) : 
@@ -242,62 +244,105 @@ begin
   exact λ _, rfl,
 end
 
-lemma linear_independent.map''' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
-   (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
-begin
-  rw [disjoint_iff_inf_le, ← set.image_univ, finsupp.span_image_eq_map_total,
-    map_inf_eq_map_inf_comap,
-    map_le_iff_le_comap, comap_bot, finsupp.supported_univ, top_inf_eq],
-  unfold linear_independent at hv hfv,
-  rw [hv, le_bot_iff],
-  haveI : inhabited W := ⟨0⟩,
-  rw [finsupp.total_comp, @finsupp.lmap_domain_total _ _ 𝔽 _ _ _ _ _ _ _ _ _ _ f,
-    linear_map.ker_comp (finsupp.total ι W 𝔽 v) f] at hfv,
-  rw ← hfv, 
-  exact λ _, rfl,
-end
+/-- If `f` is an injective linear map, then the family `f ∘ v` is linearly independent
+if and only if the family `v` is linearly independent. -/
+protected lemma linear_map.linear_independent_iff {ι : Type*} {v : ι → W} (f : W →ₗ[𝔽] W') :
+  linear_independent 𝔽 (f ∘ v) ↔ linear_independent 𝔽 v ∧ disjoint (f.ker) (span 𝔽 (range v)) :=
+sorry
+
+lemma indep.contract_indep_iff {J : set E} (hI : M.indep I) : 
+ (M ⟋ I).indep J ↔ disjoint J I ∧ M.indep (J ∪ I)  := sorry
+-- matroid.indep.project_indep_iff hI
+
+lemma linear_independent.union' {s t : set W}
+  (hs : linear_independent 𝔽 (λ x, x : s → W)) (ht : linear_independent 𝔽 (λ x, x : t → W))
+  (hst : disjoint (span 𝔽 s) (span 𝔽 t)) (hst2 : linear_independent 𝔽 (λ x, x : (s ∪ t) → W))
+    : disjoint s t := sorry
+
+lemma linear_independent.union'' {s t : set W}
+  (hs : linear_independent 𝔽 (λ x, x : s → W)) (ht : linear_independent 𝔽 (λ x, x : t → W))
+  (hst : disjoint s t) (hst2 : linear_independent 𝔽 (λ x, x : (s ∪ t) → W))
+    :  disjoint (span 𝔽 s) (span 𝔽 t) := sorry
 
 def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (hC : C ⊆ N.E):
   matroid_in.rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
 { to_fun := λ x, submodule.quotient.mk (φ.to_fun x),
   valid' := λ I hI,
     begin
+      have h21 : (λ (x : ↥I), φ.to_fun ↑x) '' univ = φ.to_fun '' I,
+        { simp,
+          ext;
+          simp only [mem_range, set_coe.exists, subtype.coe_mk, exists_prop, mem_image] },
       obtain ⟨J, hJ⟩ := exists_basis N C hC,
       rw [basis.contract_eq hJ, delete_ground, contract_ground] at hI,
       rw basis.contract_eq hJ,
+      have h10 := span_basis φ hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      rw delete_indep_iff,
-      rw indep.contract_indep_iff (basis.indep hJ),
+      rw [delete_indep_iff, indep.contract_indep_iff (hJ.indep)],
       refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
       simp at h,
       simp_rw [← mkq_apply _] at h,
-      rw ← φ.valid',
+      rw ← φ.valid' _ (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left),
+      have h30 : disjoint (span 𝔽 (φ.to_fun '' I)) (span 𝔽 (φ.to_fun '' J)),
+      { simp_rw [← to_fun_eq_coe] at h10,
+        rw h10,
+        simp at h10,
+        simp_rw [← to_fun_eq_coe],
+        rw ← ker_mkq (span 𝔽 (φ.to_fun '' C)),
+        rw linear_map.linear_independent_iff at h,
+        --simp at h,
+        rw ← image_univ at h, 
+        rw [h21, disjoint.comm] at h,
+        exact h.2 },
       have h7 := linear_independent.image 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h),
-      have h8 := linear_independent.image ((φ.valid' J _).2 (basis.indep hJ)),
-      have h6 := linear_independent.union h7 h8,
-      rw linear_independent_image,
-      rw image_union,
-      apply h6,
+      have h8 := linear_independent.image ((φ.valid' J hJ.subset_ground_left).2 (hJ.indep)),
+      have h6 := linear_independent.union h7 h8 h30,
+      rw [linear_independent_image, image_union],
+      exact linear_independent.union h7 h8 h30,
+      rw inj_on_union (subset_diff.1 (subset_diff.1 hI).1).2,
+      refine ⟨φ.inj_on_of_indep ((φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).1 
+        (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h)), 
+        ⟨φ.inj_on_of_indep (hJ.indep), λ x hx y hy, set.disjoint_iff_forall_ne.1 
+        (linear_independent.union' h7 h8 h30 h6) (φ x) (mem_image_of_mem φ hx) 
+        (φ y) (mem_image_of_mem φ hy)⟩⟩,
+      rw delete_indep_iff at h,
+      rw indep.contract_indep_iff hJ.indep at h,
+      simp_rw [← mkq_apply _],
+      rw linear_map.linear_independent_iff,
+      refine ⟨(φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).2
+        (indep_mono (subset_union_left I J) h.1.2), _⟩,
+      rw ker_mkq (span 𝔽 (φ.to_fun '' C)),
+      have h60 := linear_independent.image ((φ.valid' (I ∪ J) 
+        (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left)).2 h.1.2),
+      rw image_union at h60,
       --rw disjoint_def,
-      --simp_rw [to_fun_eq_coe] at h,
-      have h10 := span_basis φ hJ,
-      simp_rw [← to_fun_eq_coe] at h10,
-      rw h10,
-      simp at h10,
-      simp_rw [← to_fun_eq_coe],
-      rw ← ker_mkq (span 𝔽 (φ.to_fun '' C)),
-      --simp at h,
-      have h20 := linear_independent.map'' h7 ((span 𝔽 (φ '' C)).mkq) sorry,
-      rw image_eq_range _ (φ.to_fun '' I), 
-      --simp only [to_fun_eq_coe, mem_image] at h20,
-      /-rw disjoint_def,
-      intros x hx1 hx2,
-      rw linear_map.mem_ker at hx2,
-      rw mem_span at hx1,
-      have h14 := linear_independent.ne_zero _ h,-/
-      sorry,
-      sorry,
+      --intros x hx hx2,
+      rw [← image_univ, h21],
+      simp_rw [to_fun_eq_coe],
+      rw [← h10],
+      simp,
+      apply linear_independent.union'',
+      { apply linear_independent.image 
+          ((φ.valid' J hJ.subset_ground_left).2 (indep.subset h.1.2 (subset_union_right I J))) },
+      { apply linear_independent.image 
+          ((φ.valid' I ((subset_diff.1 (subset_diff.1 hI).1).1)).2 
+          (indep.subset h.1.2 (subset_union_left I J))) },
+      { rw disjoint.comm,
+        apply disjoint_image_image,
+        have h200 := inj_on_of_indep φ h.1.2,
+        rw inj_on at h200,
+        intros x hx y hy,
+        have h300 := mem_of_subset_of_mem (subset_union_left I J) hx,
+        specialize h200 (mem_of_subset_of_mem (subset_union_left I J) hx) 
+          (mem_of_subset_of_mem (subset_union_right I J) hy),
+        apply mt h200,
+        by_contra,
+        apply not_mem_of_mem_diff (mem_of_subset_of_mem (subset_diff.1 hI).1 hx), 
+        rw h,
+        apply hy },
+      rw [to_fun_eq_coe, union_comm _ _] at h60,
+      apply h60,
     end }
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
