@@ -22,7 +22,6 @@ iff.rfl
 
 @[ssE_finish_rules] lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E :=
 hF.2
-/- question: hF.subset_ground does not work -/
 
 lemma flat.Inter {ι : Type*} [hι : nonempty ι] (F : ι → set α) (hF : ∀ i, M.flat (F i)) :
   M.flat (⋂ i, F i) :=
