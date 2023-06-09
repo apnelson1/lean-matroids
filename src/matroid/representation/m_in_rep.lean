@@ -5,7 +5,7 @@ import linear_algebra.linear_independent
 import m_in.basic
 import m_in.minor
 import m_in.closure
-import number_theory.ramification_inertia
+import data.set.basic
 
 namespace set
 variables {α β : Type*} {f : α → β}
@@ -47,6 +47,19 @@ structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in E) : Prop := 
   ∃ (W : Type) (hW : add_comm_group W) (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 
+def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (s : set W) : 
+  matroid_in W := 
+{ ground := s,
+  base := λ v, span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
+  exists_base' := 
+    begin
+      obtain ⟨B, ⟨hB1, hB2⟩⟩ := exists_linear_independent 𝔽 s,
+      use ⟨B, hB2⟩,
+    end,
+  base_exchange' := _,
+  maximality := _,
+  subset_ground' := _ }
+
 namespace rep
 
 instance fun_like : fun_like (rep 𝔽 W M) E (λ _, W) :=
@@ -55,7 +68,7 @@ instance fun_like : fun_like (rep 𝔽 W M) E (λ _, W) :=
 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, E → W) := fun_like.has_coe_to_fun
 
-lemma valid (φ : rep 𝔽 W M) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
+lemma valid (φ : rep 𝔽 W M) {I : set M.E} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
 
 protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
@@ -280,8 +293,9 @@ begin
   --rw disjoint_def,
   rw [set.disjoint_iff, subset_empty_iff, eq_empty_iff_forall_not_mem] at hst,
   have h20 := λ (x : W) (h : x ∈ s), mem_union_left t h,
-  --have h21 := (coe : s ∪ t → set W) ⁻¹' s,
-  --have h10 := @linear_independent.disjoint_span_image _ 𝔽 W ((λ (x : (s ∪ t)), x)) _ _ _ hst2,
+  --have h21 := (subtype.val : (s ∪ t : set W) → set W) ⁻¹' s,
+  --have h5 : (λ (x : ↥(s ∪ t)), ↑x) '' (coe : (s ∪ t : set W) → set W) ⁻¹' s = s,
+  --apply @linear_independent.disjoint_span_image _ 𝔽 W ((λ (x : (s ∪ t)), x)) _ _ _ hst2,
   sorry
 end
 
@@ -364,6 +378,8 @@ def rep_of_contr (N : matroid_in E) (φ : matroid_in.rep 𝔽 W N) (C : set E) (
       apply h60,
     end }
 
+
+
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
 finite_dimensional.finrank K (submodule.span K s) = s.ncard :=
@@ -381,8 +397,8 @@ begin
     apply h,
     have h8 : span K (range (coe : s → V)) = span K s,
     simp only [subtype.range_coe_subtype, set_of_mem_eq],
-    apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
-    rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
+    apply basis.finite_index_of_rank_lt_aleph_0 (basis.span hs),
+    rw [← is_noetherian.iff_rank_lt_aleph_0, is_noetherian.iff_fg, h8],
     apply h3 },
 end 
 
@@ -399,7 +415,8 @@ lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (
 by { convert of_r φ univ; simp }
 
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set E) : φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x hx.2 }
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x
+  (mem_of_subset_of_mem (M.cl_subset_ground X) hx) }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set E} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -413,7 +430,7 @@ variables {ι : Type}
 
 structure rep' (𝔽 : Type*) [field 𝔽] (M : matroid_in E) (ι : Type) :=
 (to_fun : E → ι → 𝔽)
-(valid' : ∀ I : set E, linear_independent 𝔽 (λ e : I, to_fun e) ↔ M.indep I)
+(valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (λ (e : I), to_fun e) ↔ M.indep I)
 
 namespace rep'
 
