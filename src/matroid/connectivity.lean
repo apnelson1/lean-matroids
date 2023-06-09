@@ -256,4 +256,56 @@ def is_separator (M : matroid E) (X : set E) := M.skew X Xᶜ
 
 end separation
 
+/-- The notion of 2-connectedness for graphs can
+    be extended to matroids. For each element `e`
+    of a matroid `M`, let
+    `gamma_set(e) = { e } ∪ { f : M has a circuit containing both e and f }`.  -/
+def gamma_set (M : matroid E) (e : E) := { e } ∪ { f | ∃ C, M.circuit C ∧ e ∈ C ∧ f ∈ C }
+
+/-- Define the relation `gamma` on `E` by `e gamma f` if and only if
+    `e ∈ gamma f` -/
+def gamma (M : matroid E) (e : E) (f : E) := e ∈ M.gamma_set f
+
+/-- `gamma` is an equivalence relation on `E(M)` -/
+theorem gamma_refl (M : matroid E) (e : E) : M.gamma e e :=
+by { left, exact mem_singleton e }
+
+theorem gamma_symm (M : matroid E) (e : E) (f : E) (h : M.gamma e f) : M.gamma f e :=
+begin
+  cases h with h,
+  { rw mem_singleton_iff.mp h,
+    exact M.gamma_refl f },
+  { rcases h with ⟨C, hC, fC, eC⟩,
+    right,
+    use [C, hC, eC, fC] }
+end
+
+theorem gamma_trans (M : matroid E) (e : E) (f : E) (g : E)
+  (hef : M.gamma e f) (hfg : M.gamma f g) : M.gamma e g :=
+begin
+  have hgf := M.gamma_symm f g hfg,
+
+  -- trivial cases where not all `e, f, g` necessarily distinct
+  cases hgf with hgf,
+  { rw mem_singleton_iff.mp hgf, exact hef },
+  cases hef with hef,
+  { rw mem_singleton_iff.mp hef; assumption },
+  cases hfg with hfg,
+  { rw ←mem_singleton_iff.mp hfg,
+    right, exact hef },
+
+  -- main argument
+  rcases hef with ⟨C₁, hC₁, fC₁, eC₁⟩,
+  rcases hgf with ⟨C₂, hC₂, fC₂, gC₂⟩,
+
+  have ne : C₁ ∩ C₂ ≠ ∅,
+    { by_contra,
+    have g : f ∈ C₁ ∩ C₂,
+      use [fC₁, fC₂],
+    rw h at g,
+    exact g },
+
+  sorry
+end
+
 end matroid

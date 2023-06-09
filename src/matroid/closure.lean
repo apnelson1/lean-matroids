@@ -37,7 +37,7 @@ begin
 end
    
 lemma cl_subset (M : matroid E) (h : X ⊆ Y) : M.cl X ⊆ M.cl Y :=
-sInter_subset_sInter (λ F hF, ⟨hF.1, h.trans hF.2⟩)
+sInter_subset_sInter (λ F hF, _)-- ⟨hF.1, h.trans hF.2⟩)
 
 lemma cl_mono (M : matroid E) : monotone M.cl := λ _ _, M.cl_subset
 
