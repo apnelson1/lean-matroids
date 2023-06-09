@@ -65,20 +65,30 @@ lemma flat.cl (hF : M.flat F) : M.cl F = F := flat_iff_cl_self.mp hF
 lemma flat.inter (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) : M.flat (F₁ ∩ F₂) :=
 by { rw inter_eq_Inter, refine flat.Inter _ (λ i, _), cases i; assumption }
 
-@[simp] lemma univ_flat (M : matroid E) : M.flat univ := 
-by { convert @flat.Inter _ M empty empty.elim (λ i, empty.elim i), simp }
+@[simp] lemma univ_flat (M : matroid_in α) : M.flat M.E := 
+by rw [flat_iff_cl_self, M.cl_ground]
+/- changed `univ` to `M.E` -/
+/- question: uses `closure.lean` -/
 
-lemma flat_iff_ssubset_cl_insert_forall : M.flat F ↔ ∀ e ∉ F, M.cl F ⊂ M.cl (insert e F) :=
+lemma flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E) :
+  M.flat F ↔ ∀ e ∈ M.E \ F, M.cl F ⊂ M.cl (insert e F) :=
 begin
   refine ⟨λ h e he, (M.cl_subset (subset_insert _ _)).ssubset_of_ne _, λ h, _⟩,
-  { rw [h.cl], exact λ h', mt ((set.ext_iff.mp h') e).mpr he ((M.subset_cl _) (mem_insert _ _))},
+  { rw [h.cl],
+    refine λ h', mt ((set.ext_iff.mp h') e).mpr (not_mem_of_mem_diff he)
+                    ((M.subset_cl _ _) (mem_insert _ _)),
+    rw insert_eq,
+    refine union_subset _ hF,
+    rw singleton_subset_iff, exact he.1
+  },
   rw flat_iff_cl_self,
   by_contra h',
   obtain ⟨e,he',heF⟩ := exists_of_ssubset (ssubset_of_ne_of_subset (ne.symm h') (M.subset_cl F)),
-  have h'' := (h e heF),
-  rw [←cl_insert_cl_eq_cl_insert, insert_eq_of_mem he', cl_cl] at h'',
-  exact h''.ne rfl,
+  have h'' := h e ⟨(M.cl_subset_ground F) he', heF⟩,
+  rw [←(M.cl_insert_cl_eq_cl_insert e F), insert_eq_of_mem he', M.cl_cl] at h'',
+  exact h''.ne rfl
 end
+/- added `F ⊆ M.E` and `e ∈ M.E` -/
 
 lemma flat_iff_forall_circuit {F : set E} :
   M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F :=
