@@ -47,6 +47,27 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
     (hFW : 
       @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 
+def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (s : set W) : 
+  matroid_in W := 
+{ ground := s,
+  base := λ v, span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
+  exists_base' := 
+    begin
+      obtain ⟨B, ⟨hB1, hB2⟩⟩ := exists_linear_independent 𝔽 s,
+      use ⟨B, hB2⟩,
+    end,
+  base_exchange' := λ X Y hX hY a ha, 
+    begin
+      simp only at hX,
+      simp only at hY,
+      simp only,
+      sorry,
+    end,
+  maximality := _,
+  subset_ground' := _ }
+
+-- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
+
 namespace rep
 
 instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
@@ -345,7 +366,7 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       rw [← image_univ, h21],
       simp_rw [to_fun_eq_coe],
       rw [← h10],
-      simp,
+      simp only,
       apply linear_independent.union'',
       { apply linear_independent.image 
           ((φ.valid' J hJ.subset_ground_left).2 (indep.subset h.1.2 (subset_union_right I J))) },
