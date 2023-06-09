@@ -48,11 +48,24 @@ by rw [←restrict_compl, restrict_eq_self_iff, subset_compl_iff_disjoint_left]
 @[simp] lemma delete_indep_iff : (M ⟍ D).indep I ↔ M.indep I ∧ disjoint I D := 
 by rw [←restrict_compl, restrict_indep_iff, subset_compl_iff_disjoint_right]
 
+lemma indep.of_delete (h : (M ⟍ D).indep I) : M.indep I := 
+(delete_indep_iff.mp h).1
+
 @[simp] lemma delete_dep_iff : (M ⟍ D).dep X ↔ M.dep X ∧ disjoint X D :=
 by { rw [dep_iff, dep_iff, delete_indep_iff, delete_ground, subset_diff], tauto! } 
 
 @[simp] lemma delete_base_iff : (M ⟍ D).base B ↔ M.basis B (M.E \ D) :=
 by rw [←restrict_compl, ←restrict_inter_ground, ←diff_eq_compl_inter, restrict_base_iff]
+
+@[simp] lemma delete_basis_iff : (M ⟍ D).basis I X ↔ M.basis I X ∧ disjoint X D := 
+begin
+  simp_rw [basis_iff', delete_indep_iff, delete_ground, subset_diff, and_assoc, 
+    and.congr_right_iff, and_imp, ←and_assoc, and.congr_left_iff], 
+  refine λ hI hdj hX, ⟨λ h, ⟨h.1.2, λ J hJ hIJ hJX, h.2 J hJ _ hIJ hJX⟩, 
+    λ h, ⟨⟨_, h.1⟩,λ J hJ hJD hIJ hJX, h.2 J hJ hIJ hJX⟩⟩, 
+  { exact disjoint_of_subset_left hJX hdj },
+  exact disjoint_of_subset_left h.1 hdj
+end   
 
 @[simp] lemma delete_loop_iff : (M ⟍ D).loop e ↔ M.loop e ∧ e ∉ D :=
 by rw [loop_iff_dep, delete_dep_iff, disjoint_singleton_left, loop_iff_dep]
@@ -68,33 +81,23 @@ begin
   exact disjoint_of_subset_left hIC hdj, 
 end  
 
-@[simp] lemma delete_cl_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).cl X = M.cl X \ D :=
+@[simp] lemma delete_cl_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).cl X = M.cl (X \ D) \ D :=
 begin
-  ext e, 
-  refine ⟨λ h, _, λ h, _⟩,
-  { rw [cl_eq_cl_inter_ground] at h, 
-    obtain ⟨I, hI⟩ := (M ⟍ D).exists_basis (X ∩ M.E \ D) _, 
-    
-
-
-  },
-  -- suffices h' : ∀ D' X', D' ⊆ M.E → X' ⊆ M.E → disjoint D' X' → (M ⟍ D').cl X' = M.cl X' \ D', 
-  -- { rw [delete_eq_delete_inter_ground, cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground], 
-  --   convert h' (D ∩ M.E) ((X \ D) ∩ M.E) (inter_subset_right _ _) (inter_subset_right _ _) _ 
-  --     using 1,
-  --   { rw [delete_ground, diff_inter_self_eq_diff, diff_eq, inter_comm M.E, ←inter_assoc, diff_eq] },
-
-    
-      
-      
-  --      },     
-  -- rw [delete_eq_delete_inter_ground, cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground, 
-  --   delete_ground, diff_inter_self_eq_diff], 
+  obtain ⟨I, hI⟩ := (M ⟍ D).exists_basis ((X \ D) ∩ (M ⟍ D).E), 
+  simp_rw [delete_ground, diff_eq, inter_assoc, inter_comm Dᶜ, inter_assoc, inter_self, 
+    ←inter_assoc] at hI,  
+  rw [cl_eq_cl_inter_ground, delete_ground, diff_eq, ←inter_assoc, ←hI.cl], 
+  have hI' := (delete_basis_iff.mp hI).1, 
   
-  -- ext e, 
-  -- rw [mem_cl_iff_exists_circuit], 
-  -- { simp_rw [delete_circuit_iff], },
-  -- obtain ⟨I, hI⟩ := M.exists_basis (D ∩ M.E), 
+  rw [M.cl_eq_cl_inter_ground, diff_eq X D, inter_right_comm, ←hI'.cl, set.ext_iff], 
+  simp_rw [hI.indep.mem_cl_iff', mem_diff, hI'.indep.mem_cl_iff', delete_ground, mem_diff, 
+    delete_indep_iff, and_assoc, and.congr_right_iff, and_comm (_ ∉ D), and.congr_left_iff, 
+    and_imp, ←union_singleton, disjoint_union_left, disjoint_singleton_left, union_singleton ], 
+
+  refine λ e heE heD, _,  
+  rw [iff_true_intro (disjoint_of_subset_left hI'.subset _), iff_true_intro heD], 
+  { simp },
+  rw ←diff_eq, exact disjoint_sdiff_left,  
 end 
 
 @[simp] lemma delete_empty (M : matroid_in α) : M ⟍ (∅ : set α) = M := 
@@ -242,9 +245,20 @@ begin
     ←hI.indep.mem_cl_iff_of_not_mem heI'],    
 end 
 
-lemma contract_cl_eq : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
+@[simp] lemma contract_cl_eq (M : matroid_in α) (C X : set α) : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
 begin
-
+  ext e, 
+  by_cases heX : e ∈ X, 
+  { by_cases he : e ∈ (M ⟋ C).E, 
+    { refine iff_of_true (mem_cl_of_mem' _ heX) _,
+      rw [contract_ground] at he,  
+      exact ⟨mem_cl_of_mem' _ (or.inl heX) he.1, he.2⟩ },
+    refine iff_of_false (he ∘ (λ h, cl_subset_ground _ _ h)) (he ∘ (λ h, _)), 
+    rw [contract_ground], 
+    exact ⟨M.cl_subset_ground _ h.1, h.2⟩ },
+  suffices h' : e ∈ (M ⟋ C).cl X \ X ↔ e ∈ M.cl (X ∪ C) \ (X ∪ C), 
+  { rwa [mem_diff, and_iff_left heX, mem_diff, mem_union, or_iff_right heX, ←mem_diff ] at h' },  
+  rw [←contract_loop_iff_mem_cl, ←contract_loop_iff_mem_cl, contract_contract, union_comm], 
 end 
 
 
