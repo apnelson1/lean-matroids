@@ -116,15 +116,17 @@ lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
 
 /- ### Covering  -/
+
 /-- A flat is covered by another in a matroid if they are strictly nested, with no flat
   between them . -/
-def covby (M : matroid E) (F₀ F₁ : set α) : Prop :=
+def covby (M : matroid_in α) (F₀ F₁ : set α) : Prop :=
   M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁
 
 lemma covby_iff :
   M.covby F₀ F₁ ↔ M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧
     ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ :=
 iff.rfl
+/- question: should this lemma be renamed to `covby_def`, as in `flat_def`? -/
 
 lemma covby.flat_left (h : M.covby F₀ F₁) : M.flat F₀ := h.1
 
@@ -149,28 +151,36 @@ lemma covby.eq_of_ssubset_of_subset (h : M.covby F₀ F₁) (hF : M.flat F) (hF�
 
 lemma covby.cl_insert_eq  (h : M.covby F₀ F₁) (he : e ∈ F₁ \ F₀) :
   M.cl (insert e F₀) = F₁ :=
-h.eq_of_ssubset_of_subset (M.flat_of_cl _)
-  ((ssubset_insert he.2).trans_subset (M.subset_cl _))
-  (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩))
+begin
+refine h.eq_of_ssubset_of_subset (M.flat_of_cl _)
+  ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
+  (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩)),
+rw [insert_eq, union_subset_iff, singleton_subset_iff],
+exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
+end
 
-lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
+lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) (he : e ∈ M.E . ssE) : 
   M.covby F₀ F₁ ↔ ∃ e ∉ F₀, F₁ = M.cl (insert e F₀) :=
 begin
-  refine ⟨λ h, _, _⟩,
-  { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
-    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
-    exact ⟨_, heF₀, rfl⟩ },
-  rintro ⟨e, heF₀, rfl⟩, 
-  refine ⟨hF₀, M.flat_of_cl _, 
-    (M.subset_cl_of_subset (subset_insert _ _)).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
-  { exact ⟨e, M.mem_cl_of_mem (mem_insert _ _), heF₀⟩ },
-  refine or_iff_not_imp_left.mpr 
-    (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
+  sorry
+  -- refine ⟨λ h, _, _⟩,
+  -- { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
+  --   simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
+  --   exact ⟨_, heF₀, rfl⟩ },
+  -- rintro ⟨e, heF₀, rfl⟩, 
+  -- refine ⟨hF₀, M.flat_of_cl _, 
+  --   (M.subset_cl_of_subset (subset_insert _ _) _).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
+  -- { 
+  --   sorry
+  -- },
+  -- refine or_iff_not_imp_left.mpr 
+  --   (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
   
-  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
-  obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
-  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
+  -- obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
+  -- obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
+  -- exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
 end
+/- hypothesis: added `e ∈ M.E` -/
 
 lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∉ M.cl X, F = M.cl (insert e X) :=
 by simp_rw [(M.flat_of_cl X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
