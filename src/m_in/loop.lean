@@ -1,6 +1,9 @@
 import .basic 
 import .circuit
 
+import .closure
+/- for `cl_flat` -/
+
 /-
   A `loop` of a matroid_in is a one-element circuit, or, definitionally, a member of `M.cl ∅`.  
   Thus, the set of loops of `M` is equal to `M.cl ∅`, and we prefer this notation instead of 
@@ -51,8 +54,8 @@ lemma loop.circuit (he : M.loop e) : M.circuit {e} := loop_iff_circuit.mp he
 lemma loop.mem_cl (he : M.loop e) (X : set α) : e ∈ M.cl X :=
 M.cl_mono (empty_subset _) he 
 
--- lemma loop.mem_flat (he : M.loop e) {F : set α} (hF : M.flat F) : e ∈ F :=
--- by { have := he.mem_cl F, rwa hF.cl at this }
+lemma loop.mem_flat (he : M.loop e) {F : set α} (hF : M.flat F) : e ∈ F :=
+by { have := he.mem_cl F, rw cl_flat hF at this, exact this }
 
 -- lemma flat.loops_subset (hF : M.flat F) : M.cl ∅ ⊆ F := λ e he, loop.mem_flat he hF 
 
@@ -288,7 +291,7 @@ lemma circuit.not_coloop_of_mem (hC : M.circuit C) (heC : e ∈ C) : ¬M.coloop 
 
 lemma coloop_iff_forall_mem_cl_iff_mem : M.coloop e ↔ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X :=
 begin
-  rw coloop_iff_forall_mem_base, 
+  rw coloop_iff_forall_mem_base,
   sorry, 
   -- refine ⟨λ h, λ X, ⟨λ heX, by_contra (λ heX', _), λ h', M.subset_cl X  _ h'⟩, 
   --   λ h B hB, (h B).mp (hB.cl.symm.subset _)⟩,
