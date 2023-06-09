@@ -308,6 +308,13 @@ begin
 end 
 /- added assumption `e ∈ M.E`, otherwise the backwards implication does not hold -/
 
+lemma coloop_iff_forall_mem_cl_iff_mem' : M.coloop e ↔ (e ∈ M.E ∧ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X) :=
+begin
+  refine ⟨λ h, ⟨h.mem_ground, (coloop_iff_forall_mem_cl_iff_mem h.mem_ground).mp h⟩,
+          λ h, (coloop_iff_forall_mem_cl_iff_mem h.1).mpr h.2⟩,
+end
+/- added assumption `e ∈ M.E`, only to RHS -/
+
 lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
 sorry 
 --coloop_iff_forall_mem_cl_iff_mem.mp he X
