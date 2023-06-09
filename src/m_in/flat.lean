@@ -22,7 +22,6 @@ iff.rfl
 
 @[ssE_finish_rules] lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E :=
 hF.2
-/- question: hF.subset_ground does not work -/
 
 lemma flat.Inter {ι : Type*} [hι : nonempty ι] (F : ι → set α) (hF : ∀ i, M.flat (F i)) :
   M.flat (⋂ i, F i) :=
@@ -47,11 +46,7 @@ begin
   rw [M.cl_def X, sInter_eq_Inter],
   apply flat.Inter _,
   { rintro ⟨F,hF⟩, exact hF.1 },
-  { simp, 
-    sorry,
-  /- question: need to show `X ∩ M.E` is contained in at 
-               least one flat -/
-  }
+  use [M.E, M.ground_flat, inter_subset_right _ _],
 end
  
 lemma flat_iff_cl_self : M.flat F ↔ M.cl F = F :=
@@ -83,17 +78,29 @@ begin
   exact h''.ne rfl
 end
 
-lemma flat_iff_forall_circuit {F : set α} :
+lemma flat_iff_forall_circuit {F : set α} (hF : F ⊆ M.E . ssE) :
   M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F :=
 begin
   rw [flat_iff_cl_self],
-  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, by_contra (λ he', _ )) ⟩,
+  refine ⟨λ h C e hC heC hCF , _,
+          λ h, _⟩,
   { rw ←h, 
     refine (M.cl_subset _) (hC.subset_cl_diff_singleton e heC), 
     rwa [diff_subset_iff, singleton_union] },
-  obtain ⟨C, hC, heC, hCF⟩ :=  (mem_cl_iff_exists_circuit_of_not_mem he').mp heF, 
-  exact he' (h C e hC heC hCF), 
+
+  refine subset_antisymm (λ e heF, by_contra (λ he', _ )) (M.subset_cl F hF),
+  obtain ⟨C, hC, heC, hCF⟩ := (mem_cl_iff_exists_circuit_of_not_mem he').mp heF,
+  exact he' (h C e hC heC hCF),
 end
+/- hypothesis: added hF -/
+
+lemma flat_iff_forall_circuit' {F : set α} :
+  M.flat F ↔ (∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F) ∧ F ⊆ M.E :=
+begin
+  refine ⟨λ h, ⟨(flat_iff_forall_circuit h.subset_ground).mp h, h.subset_ground⟩,
+          λ h, (flat_iff_forall_circuit h.2).mpr h.1⟩,
+end
+/- hypothesis: only added hF to RHS -/
 
 lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=
