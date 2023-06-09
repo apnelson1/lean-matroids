@@ -35,6 +35,16 @@ by rw [←restrict_compl, ←restrict_compl, ←restrict_compl, restrict_restric
 lemma delete_comm (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₂ ⟍ D₁ := 
 by rw [delete_delete, union_comm, delete_delete]
 
+lemma delete_eq_delete_iff : M ⟍ D₁ = M ⟍ D₂ ↔ D₁ ∩ M.E = D₂ ∩ M.E := 
+by simp_rw [←restrict_compl, restrict_eq_restrict_iff,
+    ←diff_eq_compl_inter, diff_eq_diff_iff_inter_eq_inter, inter_comm M.E]
+
+lemma delete_eq_delete_inter_ground (M : matroid_in α) (D : set α) : M ⟍ D = M ⟍ (D ∩ M.E) := 
+by rw [delete_eq_delete_iff, inter_assoc, inter_self]
+
+lemma delete_eq_self_iff : M ⟍ D = M ↔ disjoint D M.E := 
+by rw [←restrict_compl, restrict_eq_self_iff, subset_compl_iff_disjoint_left]
+
 @[simp] lemma delete_indep_iff : (M ⟍ D).indep I ↔ M.indep I ∧ disjoint I D := 
 by rw [←restrict_compl, restrict_indep_iff, subset_compl_iff_disjoint_right]
 
@@ -58,12 +68,34 @@ begin
   exact disjoint_of_subset_left hIC hdj, 
 end  
 
-lemma delete_eq_delete_iff : M ⟍ D₁ = M ⟍ D₂ ↔ D₁ ∩ M.E = D₂ ∩ M.E := 
-by simp_rw [←restrict_compl, restrict_eq_restrict_iff,
-    ←diff_eq_compl_inter, diff_eq_diff_iff_inter_eq_inter, inter_comm M.E]
+@[simp] lemma delete_cl_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).cl X = M.cl X \ D :=
+begin
+  ext e, 
+  refine ⟨λ h, _, λ h, _⟩,
+  { rw [cl_eq_cl_inter_ground] at h, 
+    obtain ⟨I, hI⟩ := (M ⟍ D).exists_basis (X ∩ M.E \ D) _, 
+    
 
-lemma delete_eq_self_iff : M ⟍ D = M ↔ disjoint D M.E := 
-by rw [←restrict_compl, restrict_eq_self_iff, subset_compl_iff_disjoint_left]
+
+  },
+  -- suffices h' : ∀ D' X', D' ⊆ M.E → X' ⊆ M.E → disjoint D' X' → (M ⟍ D').cl X' = M.cl X' \ D', 
+  -- { rw [delete_eq_delete_inter_ground, cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground], 
+  --   convert h' (D ∩ M.E) ((X \ D) ∩ M.E) (inter_subset_right _ _) (inter_subset_right _ _) _ 
+  --     using 1,
+  --   { rw [delete_ground, diff_inter_self_eq_diff, diff_eq, inter_comm M.E, ←inter_assoc, diff_eq] },
+
+    
+      
+      
+  --      },     
+  -- rw [delete_eq_delete_inter_ground, cl_eq_cl_inter_ground, M.cl_eq_cl_inter_ground, 
+  --   delete_ground, diff_inter_self_eq_diff], 
+  
+  -- ext e, 
+  -- rw [mem_cl_iff_exists_circuit], 
+  -- { simp_rw [delete_circuit_iff], },
+  -- obtain ⟨I, hI⟩ := M.exists_basis (D ∩ M.E), 
+end 
 
 @[simp] lemma delete_empty (M : matroid_in α) : M ⟍ (∅ : set α) = M := 
 by { rw [delete_eq_self_iff], exact empty_disjoint _ }
@@ -74,8 +106,6 @@ by simp [←ground_eq_empty_iff_eq_empty]
 lemma delete_delete_diff (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
 by simp
 
-lemma delete_eq_delete_inter_ground (M : matroid_in α) (D : set α) : M ⟍ D = M ⟍ (D ∩ M.E) := 
-by rw [delete_eq_delete_iff, inter_assoc, inter_self]
 
 end delete
 
@@ -214,7 +244,7 @@ end
 
 lemma contract_cl_eq : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
 begin
-  
+
 end 
 
 
