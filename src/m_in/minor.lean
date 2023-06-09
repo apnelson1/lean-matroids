@@ -192,8 +192,6 @@ begin
   exact M.mem_cl_of_mem he.1,  
 end 
 
--- lemma contract_cl_eq : (M ⟋ )
-
 @[simp] lemma contract_loop_iff_mem_cl : (M ⟋ C).loop e ↔ e ∈ M.cl C \ C := 
 begin
   rw [contract_eq_contract_inter_ground, cl_eq_cl_inter_ground], 
@@ -213,6 +211,13 @@ begin
     not_indep_iff, iff_true_intro heI', and_true, true_implies_iff, 
     ←hI.indep.mem_cl_iff_of_not_mem heI'],    
 end 
+
+lemma contract_cl_eq : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
+begin
+  
+end 
+
+
 -- lemma contract_eq_delete_iff : M ⟋ X = M ⟍ X ↔ X ⊆ M.cl ∅ ∪ 
 
 -- lemma basis.foo (hI : M.basis I C) : M ⟋ C = M ⟋ I ⟍ (C \ I) :=
@@ -566,16 +571,7 @@ end matroid_in
 --   rw [contract_cl, empty_union], 
 -- end  
 
-lemma basis.contract_eq (h : M.basis I X) : 
-  M ⟋ X = M ⟋ I ⟍ (X \ I) :=
-begin
-  nth_rewrite 0 ←union_diff_cancel h.subset, 
-  sorry,
-  /-rw [←contract_contract, contract_eq_delete_of_subset_loops], 
-  rw [contract_cl, empty_union], 
-  exact diff_subset_diff_left h.subset_cl, -/
-end  
-
+-- 
 -- @[simp] lemma restrict_contract_eq_contract_restrict (M : matroid_in α) (R C : set α) :
 --   (M ‖ R) ⟋ C = (M ⟋ (R ∩ C)) ‖ (R \ C) :=   
 -- begin
