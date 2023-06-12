@@ -159,41 +159,58 @@ rw [insert_eq, union_subset_iff, singleton_subset_iff],
 exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
 end
 
-lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) (he : e ∈ M.E . ssE) : 
-  M.covby F₀ F₁ ↔ ∃ e ∉ F₀, F₁ = M.cl (insert e F₀) :=
+lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
+  M.covby F₀ F₁ ↔ ∃ e ∈ M.E \ F₀, F₁ = M.cl (insert e F₀) :=
 begin
-  sorry
-  -- refine ⟨λ h, _, _⟩,
-  -- { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
-  --   simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
-  --   exact ⟨_, heF₀, rfl⟩ },
-  -- rintro ⟨e, heF₀, rfl⟩, 
-  -- refine ⟨hF₀, M.flat_of_cl _, 
-  --   (M.subset_cl_of_subset (subset_insert _ _) _).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
-  -- { 
-  --   sorry
-  -- },
-  -- refine or_iff_not_imp_left.mpr 
-  --   (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
-  
-  -- obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
-  -- obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
-  -- exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
+  refine ⟨λ h, _, _⟩,
+  { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
+    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩,
+    have : e ∈ M.E \ F₀ := ⟨h.flat_right.subset_ground heF₁, heF₀⟩,
+    exact ⟨_, this, rfl⟩ },
+  rintro ⟨e, heF₀, rfl⟩, 
+  refine ⟨hF₀, M.flat_of_cl _, 
+    (M.subset_cl_of_subset (subset_insert _ _) _).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
+  { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+    exact ⟨heF₀.1, hF₀.subset_ground⟩ },
+  { use e,
+    refine ⟨M.mem_cl_of_mem (mem_insert _ _) _, _⟩,
+    { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+      exact ⟨heF₀.1, hF₀.subset_ground⟩ },
+    exact heF₀.2 },
+
+  refine or_iff_not_imp_left.mpr 
+    (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
+
+  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)),
+  obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
+  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)),
 end
-/- hypothesis: added `e ∈ M.E` -/
+/- hypothesis: added `e ∈ M.E` to RHS.
+   If `e ∉ M.E`, then `F₁ = M.cl F₀ = F₀`.
+   In particular, `F₀` is not a proper subset
+   of `F₁`. -/
 
-lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∉ M.cl X, F = M.cl (insert e X) :=
+lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∈ M.E \ M.cl X, F = M.cl (insert e X) :=
 by simp_rw [(M.flat_of_cl X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
+/- hypothesis: added `e ∈ M.E` to RHS, as in the previous
+   lemma. -/
 
-lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∉ F₀) :
+lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∈ M.E \ F₀) :
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
   simp_rw [hF₀.covby_iff_eq_cl_insert], 
-  refine ⟨M.cl (insert e F₀), ⟨M.mem_cl_of_mem (mem_insert _ _), ⟨e, he, rfl⟩⟩,_ ⟩, 
+  use M.cl (insert e F₀), -- only makes sense if `e ∈ M.E`
+  refine ⟨_, _⟩,
+  { split,
+    { exact (M.inter_ground_subset_cl (insert e F₀)) ⟨mem_insert _ _, he.1⟩ },
+    use [e, he],
+  },
   simp only [exists_prop, and_imp, forall_exists_index],
-  rintro X heX f hfF₀ rfl, 
-  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he⟩,  
+  rintro X heX f hfF₀ rfl,
+  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he.2⟩
 end
+/- question: is it possible to avoid the assumption `e ∈ M.E`? -/
+
 
 lemma flat.covby_partition (hF : M.flat F) : 
   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
