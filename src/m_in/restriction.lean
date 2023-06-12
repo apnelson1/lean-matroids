@@ -73,6 +73,9 @@ lemma restrict_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl
 @[simp] lemma restrict_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
 by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 
+instance restrict_finite [M.finite] : (M ‖ R).finite := 
+⟨M.ground_finite.subset (inter_subset_right _ _)⟩  
+
 @[simp] lemma restrict_dep_iff : (M ‖ R).dep X ↔ M.dep X ∧ X ⊆ R :=
 begin
   rw [dep, restrict_indep_iff, dep, restrict_ground_eq', subset_inter_iff, and_comm (X ⊆ R), 
@@ -103,12 +106,18 @@ by rw [restrict_eq_restrict_iff, inter_assoc, inter_self]
 lemma indep.indep_restrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
 restrict_indep_iff.mpr ⟨hI, hIX⟩ 
 
+lemma indep.of_restrict (hI : (M ‖ R).indep I) : M.indep I := 
+(restrict_indep_iff.mp hI).1 
+
 @[simp] lemma restrict_base_iff (hX : X ⊆ M.E . ssE) : (M ‖ X).base I ↔ M.basis I X := 
 begin
   rw [base_iff_mem_maximals, basis_iff_mem_maximals], 
   conv {to_lhs, congr, skip, congr, skip, congr, funext, rw restrict_indep_iff}, 
   refl, 
 end 
+
+instance restrict_finite_rk [M.finite_rk] : (M ‖ R).finite_rk := 
+let ⟨B, hB⟩ := (M ‖ R).exists_base in hB.finite_rk_of_finite (hB.indep.of_restrict.finite)
 
 @[simp] lemma basis.base_restrict (h : M.basis I X) : (M ‖ X).base I := 
 restrict_base_iff.mpr h
@@ -238,8 +247,8 @@ begin
     he.2, hK.indep.subset (insert_subset.mpr ⟨he.1,hIK⟩)⟩, 
 end 
 
-/-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`, there is an element `e` of `J \ I` whose insertion into `e` 
-gives an independent set.  -/
+/-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`, 
+  there is an element `e` of `J \ I` whose insertion into `e` gives an independent set.  -/
 lemma indep.augment [finite_rk M] (hI : M.indep I) (hJ : M.indep J) (hIJ : I.ncard < J.ncard) :
   ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
 hI.augment_of_finite hJ hI.finite hIJ

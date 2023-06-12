@@ -219,6 +219,24 @@ begin
   intro _, exact hx
 end
 
+lemma indep.mem_cl_iff_insert_dep_or_mem (hI : M.indep I) :
+  x ∈ M.cl I ↔ M.dep (insert x I) ∨ x ∈ I :=
+begin
+  rw [hI.mem_cl_iff', dep_iff, insert_subset, and_iff_left hI.subset_ground, imp_iff_not_or], 
+  refine (em' (x ∈ M.E)).elim (λ hxE, _) (by tauto), 
+  rw [iff_false_intro hxE, false_and, and_false, false_or, false_iff], 
+  exact not_mem_subset hI.subset_ground hxE
+end 
+
+lemma indep.insert_dep_iff (hI : M.indep I) :
+  M.dep (insert e I) ↔ e ∈ M.cl I \ I :=
+begin
+  rw [mem_diff, hI.mem_cl_iff_insert_dep_or_mem, or_and_distrib_right, and_not_self, or_false,
+    iff_self_and], 
+  refine λ hd heI, hd.not_indep _,
+  rwa [insert_eq_of_mem heI], 
+end  
+
 lemma indep.mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) : 
   e ∈ M.cl I ↔ M.dep (insert e I) :=
 by { rw [hI.mem_cl_iff', dep_iff, insert_subset, and_iff_left hI.subset_ground], tauto }

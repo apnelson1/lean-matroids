@@ -197,6 +197,13 @@ def circuit (M : matroid_in α) (C : set α) : Prop := C ∈ minimals (⊆) {X |
 /-- A coindependent set is a subset of `M.E` that is disjoint from some base -/
 def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B
 
+section properties
+
+/-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.finite]`-/
+class finite (M : matroid_in α) : Prop := (ground_finite : M.E.finite)
+
+lemma ground_finite (M : matroid_in α) [M.finite] : M.E.finite := ‹M.finite›.ground_finite   
+
 class finite_rk (M : matroid_in α) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
 
 class infinite_rk (M : matroid_in α) : Prop := (exists_infinite_base : ∃ B, M.base B ∧ B.infinite)
@@ -206,6 +213,8 @@ class finitary (M : matroid_in α) : Prop := (cct_finite : ∀ (C : set α), M.c
 class rk_pos (M : matroid_in α) : Prop := (empty_not_base : ¬M.base ∅)
 
 class dual_rk_pos (M : matroid_in α) : Prop := (univ_not_base : ¬M.base univ)
+
+end properties
 
 end defs
 
@@ -257,8 +266,8 @@ lemma finite_or_infinite_rk (M : matroid_in α) : finite_rk M ∨ infinite_rk M 
 let ⟨B, hB⟩ := M.exists_base in B.finite_or_infinite.elim 
   (or.inl ∘ hB.finite_rk_of_finite) (or.inr ∘ hB.infinite_rk_of_infinite)
 
-instance finite_rk_of_finite {M : matroid_in α} [M.E.finite] : finite_rk M := 
-let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, finite.subset (by assumption) hB.subset_ground⟩⟩ 
+instance finite_rk_of_finite {M : matroid_in α} [M.finite] : finite_rk M := 
+let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, (M.ground_finite).subset hB.subset_ground⟩⟩ 
 
 instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M := 
 ⟨ begin
@@ -999,7 +1008,10 @@ instance matroid_in_dual {α : Type*} : has_matroid_dual (matroid_in α) := ⟨m
 lemma dual_indep_iff_exists : (M﹡.indep I) ↔ I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B := 
 by simp [has_matroid_dual.dual, dual]
 
-@[simp] lemma dual_ground : M﹡.E = M.E := rfl  
+@[simp] lemma dual_ground : M﹡.E = M.E := rfl 
+
+instance dual_finite [M.finite] : M﹡.finite := 
+⟨M.ground_finite⟩  
 
 lemma set.subset_ground_dual (hX : X ⊆ M.E) : X ⊆ M﹡.E := hX 
 

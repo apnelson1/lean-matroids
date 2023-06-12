@@ -19,6 +19,12 @@ def delete (M : matroid_in α) (D : set α) : matroid_in α := M ‖ Dᶜ
 instance del_set {α : Type*} : has_delete (matroid_in α) (set α) := ⟨matroid_in.delete⟩
 instance del_elem {α : Type*} : has_delete (matroid_in α) α := ⟨λ M e, M.delete {e}⟩  
 
+instance delete_finite [finite M] : finite (M ⟍ D) := 
+matroid_in.restrict_finite
+
+instance delete_finite_rk [finite_rk M] : finite_rk (M ⟍ D) :=
+matroid_in.restrict_finite_rk
+
 @[simp] lemma delete_compl (M : matroid_in α) (R : set α) : M ⟍ Rᶜ = M ‖ R := 
 by { change M ‖ Rᶜᶜ = M ‖ R, rw compl_compl } 
 
@@ -41,6 +47,18 @@ by simp_rw [←restrict_compl, restrict_eq_restrict_iff,
 
 lemma delete_eq_delete_inter_ground (M : matroid_in α) (D : set α) : M ⟍ D = M ⟍ (D ∩ M.E) := 
 by rw [delete_eq_delete_iff, inter_assoc, inter_self]
+
+lemma restrict_eq_delete_diff (M : matroid_in α) (R : set α) : M ‖ R = M ⟍ (M.E \ R) :=
+begin
+  rw [←restrict_compl, restrict_eq_restrict_iff, inter_eq_inter_iff_right, diff_eq, 
+    compl_inter, compl_compl, inter_distrib_right, compl_inter_self, empty_union, 
+    and_iff_right (inter_subset_left _ _)], 
+  exact (inter_subset_left _ _).trans (subset_union_right _ _), 
+end 
+
+lemma delete_eq_restrict_diff (M : matroid_in α) (D : set α) : M ⟍ D = M ‖ (M.E \ D) := 
+by rw [restrict_eq_delete_diff, sdiff_sdiff_right_self, delete_eq_delete_inter_ground, 
+  inter_comm, inf_eq_inter]
 
 lemma delete_eq_self_iff : M ⟍ D = M ↔ disjoint D M.E := 
 by rw [←restrict_compl, restrict_eq_self_iff, subset_compl_iff_disjoint_left]
@@ -109,7 +127,6 @@ by simp [←ground_eq_empty_iff_eq_empty]
 lemma delete_delete_diff (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
 by simp
 
-
 end delete
 
 section contract 
@@ -127,6 +144,9 @@ instance con_elem {α : Type*} : has_contract (matroid_in α) α := ⟨λ M e, M
 
 @[simp] lemma dual_delete_dual_eq_contract (M : matroid_in α) (X : set α) : (M﹡ ⟍ X)﹡ = M ⟋ X := 
 rfl  
+
+instance contract_finite [finite M] : finite (M ⟋ C) := 
+by { rw ←dual_delete_dual_eq_contract, apply_instance }
 
 @[simp] lemma dual_contract_dual_eq_delete (M : matroid_in α) (X : set α) : (M﹡ ⟋ X)﹡ = M ⟍ X := 
 by rw [←dual_delete_dual_eq_contract, dual_dual, dual_dual]
@@ -198,6 +218,14 @@ begin
   exact ⟨hJIB.1, hdj⟩, 
 end 
 
+lemma indep.contract_dep_iff (hI : M.indep I) : 
+  (M ⟋ I).dep J ↔ disjoint J I ∧ M.dep (J ∪ I) :=
+begin
+  rw [dep_iff, hI.contract_indep_iff, dep_iff, contract_ground, subset_diff, 
+    disjoint.comm, union_subset_iff, and_iff_left hI.subset_ground], 
+  tauto!, 
+end  
+
 lemma contract_eq_delete_of_subset_coloops (hX : X ⊆ M﹡.cl ∅) : M ⟋ X = M ⟍ X :=
 begin
   refine eq_of_indep_iff_indep_forall rfl (λ I hI, _), 
@@ -225,24 +253,34 @@ begin
   exact M.mem_cl_of_mem he.1,  
 end 
 
+lemma exists_eq_contract_indep_delete (M : matroid_in α) (C : set α) : 
+  ∃ (I D : set α), M.basis I (C ∩ M.E) ∧ D ⊆ (M ⟋ I).E ∧ M ⟋ C = M ⟋ I ⟍ D := 
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E), 
+  use [I, (C \ I) ∩ M.E, hI],
+  rw [contract_ground, diff_eq, diff_eq, inter_right_comm, inter_assoc, 
+    and_iff_right (inter_subset_right _ _), contract_eq_contract_inter_ground, 
+    hI.contract_eq_contract_delete, diff_eq, inter_assoc], 
+end 
+
+lemma indep.of_contract (hI : (M ⟋ C).indep I) : M.indep I := 
+begin
+  obtain ⟨J, R, hJ, -, hM⟩ := M.exists_eq_contract_indep_delete C, 
+  rw [hM, delete_indep_iff, hJ.indep.contract_indep_iff] at hI, 
+  exact hI.1.2.subset (subset_union_left _ _), 
+end 
+
 @[simp] lemma contract_loop_iff_mem_cl : (M ⟋ C).loop e ↔ e ∈ M.cl C \ C := 
 begin
-  rw [contract_eq_contract_inter_ground, cl_eq_cl_inter_ground], 
-  obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E), 
-  rw [hI.contract_eq_contract_delete, delete_loop_iff, loop_iff_dep, dep_iff, 
-    hI.indep.contract_indep_iff, singleton_union, disjoint_singleton_left, 
-    singleton_subset_iff, contract_ground, mem_diff, not_and, mem_diff, mem_inter_iff, 
-    not_and, and_imp, ←hI.cl, not_not_mem, mem_diff], 
-  split, 
-  { rintro ⟨⟨h1,heE, heI⟩, h2⟩, 
-    rw [iff_false_intro heI, imp_false, imp_not_comm, imp_iff_right heE] at h2,
-    rw [imp_iff_right heI, not_indep_iff, ←hI.indep.mem_cl_iff_of_not_mem heI] at h1, 
-    exact ⟨h1, h2⟩ },
-  rintro ⟨heI, heC⟩,
-  have heI' : e ∉ I, from not_mem_subset (hI.subset.trans (inter_subset_left _ _)) heC,
-  rwa [iff_false_intro heC, false_implies_iff, and_true, and_iff_right (M.cl_subset_ground _ heI), 
-    not_indep_iff, iff_true_intro heI', and_true, true_implies_iff, 
-    ←hI.indep.mem_cl_iff_of_not_mem heI'],    
+  obtain ⟨I, D, hI, hD, hM⟩ := M.exists_eq_contract_indep_delete C, 
+  rw [hM, delete_loop_iff, loop_iff_dep, hI.indep.contract_dep_iff, disjoint_singleton_left, 
+    singleton_union, hI.indep.insert_dep_iff, mem_diff, M.cl_eq_cl_inter_ground C, 
+    hI.cl, and_comm (e ∉ I), and_self_right, ←mem_diff, ←mem_diff, diff_diff],  
+  apply_fun matroid_in.E at hM, 
+  rw [delete_ground, contract_ground, contract_ground, 
+    diff_diff, diff_eq_diff_iff_inter_eq_inter, inter_comm, inter_comm M.E] at hM, 
+  exact ⟨λ h, ⟨h.1, λ heC, h.2 (hM.subset ⟨heC, (M.cl_subset_ground _ h.1)⟩).1⟩, 
+    λ h, ⟨h.1, λ h', h.2 (hM.symm.subset ⟨h', M.cl_subset_ground _ h.1 ⟩).1⟩⟩,
 end 
 
 @[simp] lemma contract_cl_eq (M : matroid_in α) (C X : set α) : (M ⟋ C).cl X = M.cl (X ∪ C) \ C :=
@@ -261,6 +299,16 @@ begin
   rw [←contract_loop_iff_mem_cl, ←contract_loop_iff_mem_cl, contract_contract, union_comm], 
 end 
 
+instance contract_finite_rk [finite_rk M] : finite_rk (M ⟋ C) := 
+begin
+  obtain ⟨B, hB⟩ := (M ⟋ C).exists_base, 
+  apply hB.finite_rk_of_finite, 
+  obtain ⟨I, D, hI, hD, hM⟩ := M.exists_eq_contract_indep_delete C, 
+  rw [hM, delete_base_iff] at hB, 
+  have hB' := hB.indep, 
+  rw [hI.indep.contract_indep_iff] at hB', 
+  exact (hB'.2.subset (subset_union_left _ _)).finite, 
+end 
 
 -- lemma contract_eq_delete_iff : M ⟋ X = M ⟍ X ↔ X ⊆ M.cl ∅ ∪ 
 
