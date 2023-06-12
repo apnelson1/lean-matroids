@@ -213,7 +213,7 @@ end
 
 
 lemma flat.covby_partition (hF : M.flat F) : 
-  set.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
 begin
     sorry
     
@@ -340,22 +340,38 @@ lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ :=
 ssubset_univ_iff.mpr 
   (by { rintro rfl, exact hH.1.2 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
 
-lemma hyperplane.flat_supset_eq_univ (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
+lemma hyperplane.ssubset_ground (hH : M.hyperplane H) : H ⊂ M.E :=
+begin
+  use hH.subset_ground, intro f,
+  have hH' := subset_antisymm hH.subset_ground f,
+  obtain ⟨B, hB⟩ := M.exists_base,
+  have := hH.1.2, push_neg at this,
+  have := this B, rw hH' at this,
+  exact (this hB.subset_ground) hB
+end
+
+lemma hyperplane.flat_supset_eq_ground (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
   F = M.E := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
 /- changed `univ` to `M.E` -/
 
 lemma hyperplane_iff_maximal_proper_flat : 
-  M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
+  M.hyperplane H ↔ (M.flat H ∧ H ⊂ M.E ∧ ∀ F, H ⊂ F → M.flat F → F = M.E) :=
 begin
-  refine ⟨λ h, ⟨h.flat, h.ssubset_univ, λ F hHF hF, h.flat_supset_eq_univ hF hHF⟩, 
-    λ h, ⟨_,λ X hX hHX, hHX.eq_or_ssubset.elim (λ h', h'.symm.subset) (λ hss, (hX _).elim)⟩⟩,
-  { rintro ⟨B,hBH,hB⟩,  
-    have hcl := M.cl_subset hBH, 
-    rw [hB.cl, univ_subset_iff, h.1.cl] at hcl,
-    exact h.2.1.ne hcl },
-  have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X)) (M.flat_of_cl _), 
-  rwa [←base_subset_iff_cl_eq_univ] at hX_univ, 
-end 
+  refine ⟨λ h, ⟨h.flat, h.ssubset_ground, λ F hHF hF, h.flat_supset_eq_ground hF hHF⟩,
+          λ h, ⟨_,λ X hX hHX, hHX.eq_or_ssubset.elim (λ h', h'.symm.subset) (λ hss, _)⟩⟩,
+  { refine ⟨h.1.subset_ground, _⟩,
+    rintro ⟨B,hBH,hB⟩,
+    have hcl := M.cl_subset hBH,
+    rw hB.cl at hcl,
+    have hcl' := subset_antisymm hcl (cl_subset_ground M H),
+    rw h.1.cl at hcl',
+    apply h.2.1.ne, symmetry, exact hcl' },
+  exfalso,
+  have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X hX.1)) (M.flat_of_cl _), 
+  rwa [←base_subset_iff_cl_eq_univ] at hX_univ,
+  exact (hX.2) hX_univ,
+end
+/- changed `univ` to `M.E` -/
 
 @[simp] lemma compl_cocircuit_iff_hyperplane : M.cocircuit Hᶜ ↔ M.hyperplane H  :=
 begin

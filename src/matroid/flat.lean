@@ -241,7 +241,6 @@ begin
   { rintro ⟨B,hBH,hB⟩,  
     have hcl := M.cl_subset hBH, 
     rw [hB.cl, univ_subset_iff, h.1.cl] at hcl,
-    have := h.2,
     exact h.2.1.ne hcl },
   have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X)) (M.flat_of_cl _), 
   rwa [←base_subset_iff_cl_eq_univ] at hX_univ, 
