@@ -204,7 +204,16 @@ class finite (M : matroid_in α) : Prop := (ground_finite : M.E.finite)
 
 lemma ground_finite (M : matroid_in α) [M.finite] : M.E.finite := ‹M.finite›.ground_finite   
 
+lemma set_finite (M : matroid_in α) [M.finite] (X : set α) (hX : X ⊆ M.E . ssE) : X.finite :=
+M.ground_finite.subset hX 
+
+instance finite_of_finite [@_root_.finite α] {M : matroid_in α} : finite M := 
+⟨set.to_finite _⟩ 
+
 class finite_rk (M : matroid_in α) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
+
+-- instance finite_rk_of_finite (M : matroid_in α) [finite M] : finite_rk M := 
+-- ⟨M.exists_base'.imp (λ B hB, ⟨hB, M.set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
 
 class infinite_rk (M : matroid_in α) : Prop := (exists_infinite_base : ∃ B, M.base B ∧ B.infinite)
 
@@ -266,7 +275,7 @@ lemma finite_or_infinite_rk (M : matroid_in α) : finite_rk M ∨ infinite_rk M 
 let ⟨B, hB⟩ := M.exists_base in B.finite_or_infinite.elim 
   (or.inl ∘ hB.finite_rk_of_finite) (or.inr ∘ hB.infinite_rk_of_infinite)
 
-instance finite_rk_of_finite {M : matroid_in α} [M.finite] : finite_rk M := 
+instance finite_rk_of_finite {M : matroid_in α} [finite M] : finite_rk M := 
 let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, (M.ground_finite).subset hB.subset_ground⟩⟩ 
 
 instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M := 
@@ -470,8 +479,8 @@ begin
   exact λ hI hIX, ⟨λ h J hJ hJX hIJ, h J hJ hIJ hJX, λ h J hJ hJX hIJ, h hJ hIJ hJX⟩, 
 end 
 
-lemma indep.basis_of_maximal_subset (hX : X ⊆ M.E) (hI : M.indep I) (hIX : I ⊆ X) 
-(hmax : ∀ ⦃J⦄, M.indep J → I ⊆ J → J ⊆ X → J ⊆ I) : M.basis I X :=
+lemma indep.basis_of_maximal_subset (hI : M.indep I) (hIX : I ⊆ X)
+(hmax : ∀ ⦃J⦄, M.indep J → I ⊆ J → J ⊆ X → J ⊆ I) (hX : X ⊆ M.E . ssE) : M.basis I X :=
 begin 
   rw [basis_iff (by ssE : X ⊆ M.E), and_iff_right hI, and_iff_right hIX], 
   exact λ J hJ hIJ hJX, hIJ.antisymm (hmax hJ hIJ hJX), 

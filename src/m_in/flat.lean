@@ -152,11 +152,11 @@ lemma covby.eq_of_ssubset_of_subset (h : M.covby F₀ F₁) (hF : M.flat F) (hF�
 lemma covby.cl_insert_eq  (h : M.covby F₀ F₁) (he : e ∈ F₁ \ F₀) :
   M.cl (insert e F₀) = F₁ :=
 begin
-refine h.eq_of_ssubset_of_subset (M.flat_of_cl _)
-  ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
-  (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩)),
-rw [insert_eq, union_subset_iff, singleton_subset_iff],
-exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
+  refine h.eq_of_ssubset_of_subset (M.flat_of_cl _)
+    ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
+    (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩)),
+  rw [insert_eq, union_subset_iff, singleton_subset_iff],
+  exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
 end
 
 lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
@@ -373,17 +373,24 @@ begin
 end
 /- changed `univ` to `M.E` -/
 
-@[simp] lemma compl_cocircuit_iff_hyperplane : M.cocircuit Hᶜ ↔ M.hyperplane H  :=
+@[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E . ssE) : 
+  M.cocircuit (M.E \ H) ↔ M.hyperplane H :=
 begin
-  simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
-    refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
-    λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
-  { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
-  { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
-    exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
-  { rwa [exists_prop, and_comm, compl_subset_comm] },
-  refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
-  exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
+  
+  rw [cocircuit, circuit, mem_minimals_set_of_iff, ←not_indep_iff, dual_indep_iff_exists, 
+    not_and, imp_iff_right (diff_subset _ _), not_exists, hyperplane, mem_maximals_set_of_iff, 
+    and_iff_right hH, not_exists], 
+  simp only [not_and, exists_prop, not_exists, and_imp, not_disjoint_iff],
+
+  -- simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
+  --   refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
+  --   λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
+  -- { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
+  -- { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
+  --   exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
+  -- { rwa [exists_prop, and_comm, compl_subset_comm] },
+  -- refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
+  -- exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
 end 
 
 @[simp] lemma compl_hyperplane_iff_cocircuit : M.hyperplane Kᶜ ↔ M.cocircuit K := 
