@@ -199,7 +199,7 @@ lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∈ M.E \
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
   simp_rw [hF₀.covby_iff_eq_cl_insert], 
-  use M.cl (insert e F₀), -- only makes sense if `e ∈ M.E`
+  use M.cl (insert e F₀),
   refine ⟨_, _⟩,
   { split,
     { exact (M.inter_ground_subset_cl (insert e F₀)) ⟨mem_insert _ _, he.1⟩ },
@@ -209,30 +209,59 @@ begin
   rintro X heX f hfF₀ rfl,
   rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he.2⟩
 end
-/- question: is it possible to avoid the assumption `e ∈ M.E`? -/
+/- hypothesis: added `e ∈ M.E` -/
 
 
 lemma flat.covby_partition (hF : M.flat F) : 
-  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+  set.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
 begin
-  refine ⟨not_mem_diff_singleton _ _,
-    λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
-  { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
-    mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
-    implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
-    simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
-    rintro rfl, exact not_mem_empty e heF },
-  { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
-    exists_unique_iff_exists, exists_prop], 
-    obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
-    simp only [and_imp] at hF',   
-    use F' \ F, 
-    simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
-      iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
-      true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+    sorry
     
-    refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
-    rw [hF'.2 F₁ heF₁ hFF₁] }, 
+    -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
+    --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+    --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
+    --   simp_rw [iff_true_intro heF.1, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+    --   rintro rfl, exact not_mem_empty e heF.1
+    -- },
+    -- {
+    --   by_cases g : e ∈ M.E,
+    --   {
+    --       sorry,
+    --   -- simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
+    --   -- exists_unique_iff_exists, exists_prop], 
+    --   -- obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
+    --   -- simp only [and_imp] at hF',   
+    --   -- use F' \ F, 
+    --   -- simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
+    --   --   iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
+    --   --   true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+      
+    --   -- refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+    --   -- rw [hF'.2 F₁ heF₁ hFF₁]
+    --   },
+
+    -- },
+
+
+
+  -- refine ⟨not_mem_diff_singleton _ _,
+  --   λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
+  -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
+  --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+  --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
+  --   simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+  --   rintro rfl, exact not_mem_empty e heF },
+  -- { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
+  --   exists_unique_iff_exists, exists_prop], 
+  --   obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
+  --   simp only [and_imp] at hF',   
+  --   use F' \ F, 
+  --   simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
+  --     iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
+  --     true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+    
+  --   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+  --   rw [hF'.2 F₁ heF₁ hFF₁] }, 
 end 
 
 lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
@@ -280,26 +309,40 @@ lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = 
 section hyperplane
 
 /-- A hyperplane is a maximal set containing no base  -/
-def hyperplane (M : matroid E) (H : set α) : Prop := H ∈ maximals (⊆) {X | ¬∃ B ⊆ X, M.base B }
+def hyperplane (M : matroid_in α) (H : set α) : Prop :=
+  H ∈ maximals (⊆) {X | X ⊆ M.E ∧ ¬∃ B ⊆ X, M.base B }
+/- added `X ⊆ M.E` -/
 
-lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X) : M.cl X = univ :=
-base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 h hX.subset)))   
+@[ssE_finish_rules] lemma hyperplane.subset_ground (hH : M.hyperplane H) : H ⊆ M.E :=
+hH.1.1
+
+lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X)
+  (hX' : X ⊆ M.E . ssE) : M.cl X = M.E :=
+base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 ⟨hX', h⟩ hX.subset))) 
+/- changed univ to M.E -/
+/- hypothesis: added assumption `X ⊆ M.E` -/
 
 lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H :=
 begin
-  refine λ I X hIH hIX e heX, hH.2 (λ h', hH.1 ⟨I, hIH.subset, _⟩) 
-    (subset_insert e H) (mem_insert e H), 
-  obtain ⟨B, hBeH, hB⟩ := h', 
+  refine ⟨_, hH.subset_ground⟩, 
+  intros I X hIH hIX e heX,
+  refine hH.2 _ (subset_insert e H) (mem_insert e H),
+  refine ⟨_, λ h', _⟩,
+  { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+    use [hIX.subset_ground heX, hIH.subset_ground] },
+  refine hH.1.2 ⟨I, hIH.subset, _⟩,
+  obtain ⟨B, hBeH, hB⟩ := h',
   exact (hIH.basis_union hIX).base_of_base_subset hB 
-    (hBeH.trans (insert_subset.mpr ⟨or.inr heX,subset_union_left _ _⟩)),  
+    (hBeH.trans (insert_subset.mpr ⟨or.inr heX,subset_union_left _ _⟩)),
 end 
 
 lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ := 
 ssubset_univ_iff.mpr 
-  (by { rintro rfl, exact hH.1 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
+  (by { rintro rfl, exact hH.1.2 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
 
 lemma hyperplane.flat_supset_eq_univ (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
-  F = univ := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+  F = M.E := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+/- changed `univ` to `M.E` -/
 
 lemma hyperplane_iff_maximal_proper_flat : 
   M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
