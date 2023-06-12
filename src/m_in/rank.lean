@@ -134,25 +134,29 @@ r_le_card_of_finite _ (to_finite _)
   
 lemma r_lt_card_of_dep_of_finite (h : X.finite) (hX : M.dep X) : M.r X < X.ncard :=
 lt_of_le_of_ne (M.r_le_card_of_finite h) 
-  (by { rwa indep_iff_r_eq_card_of_finite h at hX })
-
-lemma r_lt_card_of_dep [finite α] (hX : ¬ M.indep X) : M.r X < X.ncard :=
+  (λ h', ((indep_iff_r_eq_card_of_finite h).mpr h').not_dep hX)
+  
+lemma r_lt_card_of_dep [finite α] (hX : M.dep X) : M.r X < X.ncard :=
 r_lt_card_of_dep_of_finite (to_finite _) hX 
 
-lemma r_lt_card_iff_dep_of_finite (hX : X.finite) : M.r X < X.ncard ↔ ¬M.indep X := 
-⟨λ h hI, (h.ne hI.r), r_lt_card_of_dep_of_finite hX⟩
+lemma r_lt_card_iff_dep_of_finite (hX : X.finite) (hXE : X ⊆ M.E . ssE) : 
+  M.r X < X.ncard ↔ M.dep X := 
+⟨λ hlt, not_indep_iff.mp (λ hI, hlt.ne hI.r), r_lt_card_of_dep_of_finite hX⟩
 
-lemma r_lt_card_iff_dep [finite α] : M.r X < X.ncard ↔ ¬M.indep X :=
-⟨λ h hI, (h.ne hI.r),r_lt_card_of_dep⟩
+lemma r_lt_card_iff_dep [finite α] (hXE : X ⊆ M.E . ssE) : M.r X < X.ncard ↔ M.dep X :=
+r_lt_card_iff_dep_of_finite (to_finite _)
 
 end finite
 
 section r_fin
 
-/-- `M.r_fin X` means that `X` has a finite basis in `M`-/
+/-- `M.r_fin X` means that `X ∩ M.E` has a finite basis in `M`-/
 def r_fin (M : matroid_in α) (X : set α) : Prop := ∃ I, M.basis I X ∧ I.finite  
 
 lemma r_fin.exists_finite_basis (h : M.r_fin X) : ∃ I, M.basis I X ∧ I.finite := h 
+
+@[ssE_finish_rules] lemma r_fin.subset_ground (h : M.r_fin X) : X ⊆ M.E := 
+exists.elim h (λ I hI, hI.1.subset_ground)
 
 lemma basis.finite_of_r_fin (h : M.basis I X) (hX : M.r_fin X) : I.finite :=
 by { obtain ⟨J, hJ, hJfin⟩ := hX, exact hJ.finite_of_finite hJfin h }
@@ -172,20 +176,20 @@ lemma indep.subset_finite_basis_of_subset_of_r_fin (hI : M.indep I) (hIX : I ⊆
 ∃ J, M.basis J X ∧ I ⊆ J ∧ J.finite :=
 (hI.subset_basis_of_subset hIX).imp (λ J hJ, ⟨hJ.1, hJ.2, hJ.1.finite_of_r_fin hX⟩)
 
-lemma to_r_fin (M : matroid_in α) [finite_rk M] (X : set α) : M.r_fin X :=  
+lemma to_r_fin (M : matroid_in α) [finite_rk M] (X : set α) (hX : X ⊆ M.E . ssE) : M.r_fin X :=  
 by { obtain ⟨I,hI⟩ := M.exists_basis X, exact ⟨I, hI, hI.finite⟩ }
 
-lemma r_fin_of_finite (M : matroid_in α) (hX : X.finite) : M.r_fin X := 
+lemma r_fin_of_finite (M : matroid_in α) (hX : X.finite) (hXE : X ⊆ M.E . ssE) : M.r_fin X := 
 exists.elim (M.exists_basis X) (λ I hI, hI.r_fin_of_finite (hX.subset hI.subset))
 
-lemma r_fin_singleton (M : matroid_in α) (e : α) : M.r_fin {e} := 
+lemma r_fin_singleton (M : matroid_in α) (e : α) (he : e ∈ M.E . ssE) : M.r_fin {e} := 
 M.r_fin_of_finite (finite_singleton e)
  
 @[simp] lemma r_fin_empty (M : matroid_in α) : M.r_fin ∅ := M.r_fin_of_finite finite_empty
 
-lemma r_fin.subset (h : M.r_fin Y) (hXY : X ⊆ Y) : M.r_fin X := 
+lemma r_fin.subset (h : M.r_fin Y) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) : M.r_fin X := 
 begin
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
+  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY),    
   exact hI.r_fin_of_finite ((hJ.finite_of_r_fin h).subset hIJ), 
 end 
@@ -202,18 +206,18 @@ begin
   rwa [←hI.cl, hI.indep.basis_cl.r_fin_iff_finite, ←hI.r_fin_iff_finite],     
 end 
 
-@[simp] lemma r_fin_cl_iff : M.r_fin (M.cl X) ↔ M.r_fin X := 
+@[simp] lemma r_fin_cl_iff (hX : X ⊆ M.E . ssE) : M.r_fin (M.cl X) ↔ M.r_fin X := 
 ⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩
 
 /-- A set with no finite basis has the junk rank value of zero -/
-lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X) : M.r X = 0 :=
+lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X) (hX : X ⊆ M.E) : M.r X = 0 :=
 begin
   simp_rw [r_fin, not_exists, not_and] at h, 
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   rw [←hI.card, infinite.ncard (h _ hI)], 
 end
 
-lemma r_fin_of_r_ne_zero (h : M.r X ≠ 0) : M.r_fin X := 
+lemma r_fin_of_r_ne_zero (h : M.r X ≠ 0) (hX : X ⊆ M.E . ssE) : M.r_fin X := 
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   rw [←hI.card] at h, 
