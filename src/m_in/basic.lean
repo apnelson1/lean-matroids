@@ -473,7 +473,7 @@ lemma basis_iff (hX : X ⊆ M.E . ssE) :
 by rw [basis_iff', and_iff_left hX]
 
 lemma basis_iff_mem_maximals (hX : X ⊆ M.E . ssE): 
-  M.basis I X ↔ I ∈ maximals has_subset.subset (λ (I : set α), M.indep I ∧ I ⊆ X) :=
+  M.basis I X ↔ I ∈ maximals (⊆) (λ (I : set α), M.indep I ∧ I ⊆ X) :=
 begin
   simp_rw [basis_iff, mem_maximals_prop_iff, and_assoc, and_imp, and.congr_right_iff], 
   exact λ hI hIX, ⟨λ h J hJ hJX hIJ, h J hJ hIJ hJX, λ h J hJ hJX hIJ, h hJ hIJ hJX⟩, 
