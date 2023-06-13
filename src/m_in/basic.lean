@@ -197,7 +197,23 @@ def circuit (M : matroid_in α) (C : set α) : Prop := C ∈ minimals (⊆) {X |
 /-- A coindependent set is a subset of `M.E` that is disjoint from some base -/
 def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B
 
+section properties
+
+/-- Typeclass for a matroid having finite ground set. This is just a wrapper for `[M.E.finite]`-/
+class finite (M : matroid_in α) : Prop := (ground_finite : M.E.finite)
+
+lemma ground_finite (M : matroid_in α) [M.finite] : M.E.finite := ‹M.finite›.ground_finite   
+
+lemma set_finite (M : matroid_in α) [M.finite] (X : set α) (hX : X ⊆ M.E . ssE) : X.finite :=
+M.ground_finite.subset hX 
+
+instance finite_of_finite [@_root_.finite α] {M : matroid_in α} : finite M := 
+⟨set.to_finite _⟩ 
+
 class finite_rk (M : matroid_in α) : Prop := (exists_finite_base : ∃ B, M.base B ∧ B.finite) 
+
+-- instance finite_rk_of_finite (M : matroid_in α) [finite M] : finite_rk M := 
+-- ⟨M.exists_base'.imp (λ B hB, ⟨hB, M.set_finite B (M.subset_ground' _ hB)⟩) ⟩ 
 
 class infinite_rk (M : matroid_in α) : Prop := (exists_infinite_base : ∃ B, M.base B ∧ B.infinite)
 
@@ -206,6 +222,8 @@ class finitary (M : matroid_in α) : Prop := (cct_finite : ∀ (C : set α), M.c
 class rk_pos (M : matroid_in α) : Prop := (empty_not_base : ¬M.base ∅)
 
 class dual_rk_pos (M : matroid_in α) : Prop := (univ_not_base : ¬M.base univ)
+
+end properties
 
 end defs
 
@@ -257,8 +275,8 @@ lemma finite_or_infinite_rk (M : matroid_in α) : finite_rk M ∨ infinite_rk M 
 let ⟨B, hB⟩ := M.exists_base in B.finite_or_infinite.elim 
   (or.inl ∘ hB.finite_rk_of_finite) (or.inr ∘ hB.infinite_rk_of_infinite)
 
-instance finite_rk_of_finite {M : matroid_in α} [M.E.finite] : finite_rk M := 
-let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, finite.subset (by assumption) hB.subset_ground⟩⟩ 
+instance finite_rk_of_finite {M : matroid_in α} [finite M] : finite_rk M := 
+let ⟨B, hB⟩ := M.exists_base in ⟨⟨B, hB, (M.ground_finite).subset hB.subset_ground⟩⟩ 
 
 instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M := 
 ⟨ begin
@@ -428,6 +446,9 @@ lemma basis.subset (hI : M.basis I X) : I ⊆ X := hI.1.1.2
 @[ssE_finish_rules] lemma basis.subset_ground (hI : M.basis I X) : X ⊆ M.E :=
 hI.2 
 
+lemma basis.basis_inter_ground (hI : M.basis I X) : M.basis I (X ∩ M.E) := 
+by { convert hI, rw [inter_eq_self_of_subset_left hI.subset_ground] }
+
 @[ssE_finish_rules] lemma basis.subset_ground_left (hI : M.basis I X) : I ⊆ M.E := 
 hI.indep.subset_ground
 
@@ -458,8 +479,8 @@ begin
   exact λ hI hIX, ⟨λ h J hJ hJX hIJ, h J hJ hIJ hJX, λ h J hJ hJX hIJ, h hJ hIJ hJX⟩, 
 end 
 
-lemma indep.basis_of_maximal_subset (hX : X ⊆ M.E) (hI : M.indep I) (hIX : I ⊆ X) 
-(hmax : ∀ ⦃J⦄, M.indep J → I ⊆ J → J ⊆ X → J ⊆ I) : M.basis I X :=
+lemma indep.basis_of_maximal_subset (hI : M.indep I) (hIX : I ⊆ X)
+(hmax : ∀ ⦃J⦄, M.indep J → I ⊆ J → J ⊆ X → J ⊆ I) (hX : X ⊆ M.E . ssE) : M.basis I X :=
 begin 
   rw [basis_iff (by ssE : X ⊆ M.E), and_iff_right hI, and_iff_right hIX], 
   exact λ J hJ hIJ hJX, hIJ.antisymm (hmax hJ hIJ hJX), 
@@ -996,7 +1017,10 @@ instance matroid_in_dual {α : Type*} : has_matroid_dual (matroid_in α) := ⟨m
 lemma dual_indep_iff_exists : (M﹡.indep I) ↔ I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B := 
 by simp [has_matroid_dual.dual, dual]
 
-@[simp] lemma dual_ground : M﹡.E = M.E := rfl  
+@[simp] lemma dual_ground : M﹡.E = M.E := rfl 
+
+instance dual_finite [M.finite] : M﹡.finite := 
+⟨M.ground_finite⟩  
 
 lemma set.subset_ground_dual (hX : X ⊆ M.E) : X ⊆ M﹡.E := hX 
 

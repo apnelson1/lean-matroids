@@ -304,6 +304,23 @@ begin
   exact mem_cl_of_mem' _ ⟨heX, he⟩, 
 end 
 
+lemma coloop_iff_forall_mem_cl_iff_mem' : M.coloop e ↔ (e ∈ M.E ∧ ∀ X ⊆ M.E, e ∈ M.cl X ↔ e ∈ X) :=
+begin
+  refine ⟨λ h, ⟨h.mem_ground, λ X hX, ((coloop_iff_forall_mem_cl_iff_mem h.mem_ground).mp h) X⟩,
+          _⟩,
+  { rintro ⟨he, h⟩,
+    apply (coloop_iff_forall_mem_cl_iff_mem he).mpr,
+    intro X,
+    have : (X ∩ M.E) ⊆ M.E := inter_subset_right _ _,
+    have := h (X ∩ M.E) this, rw ←cl_eq_cl_inter_ground at this,
+    rw this,
+    refine ⟨λ h, h.1, λ h, _⟩,
+    { rw mem_inter_iff,
+      exact ⟨h, he⟩,
+    }
+  }
+end
+
 lemma coloop.mem_cl_iff_mem (he : M.coloop e) : e ∈ M.cl X ↔ e ∈ X :=
 coloop_iff_forall_mem_cl_iff_mem.mp he X
 

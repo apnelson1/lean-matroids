@@ -11,7 +11,7 @@ variables {α : Type*} {M : matroid_in α} {I B C X Y Z K F F₀ F₁ F₂ H H�
 
 open set 
 
-namespace matroid 
+namespace matroid_in
 
 lemma flat_def : M.flat F ↔ ((∀ I X, M.basis I F → M.basis I X → X ⊆ F) ∧ F ⊆ M.E):=
 iff.rfl
@@ -22,9 +22,8 @@ iff.rfl
 
 @[ssE_finish_rules] lemma flat.subset_ground (hF : M.flat F) : F ⊆ M.E :=
 hF.2
-/- question: hF.subset_ground does not work -/
 
-lemma flat.Inter {ι : Type*} (F : ι → set α) [hι : nonempty ι] (hF : ∀ i, M.flat (F i)) :
+lemma flat.Inter {ι : Type*} [hι : nonempty ι] (F : ι → set α) (hF : ∀ i, M.flat (F i)) :
   M.flat (⋂ i, F i) :=
 begin
   split,
@@ -47,10 +46,7 @@ begin
   rw [M.cl_def X, sInter_eq_Inter],
   apply flat.Inter _,
   { rintro ⟨F,hF⟩, exact hF.1 },
-  { sorry,
-  /- question: need to show `X ∩ M.E` is contained in at 
-               least one flat -/
-  }
+  use [M.E, M.ground_flat, inter_subset_right _ _],
 end
  
 lemma flat_iff_cl_self : M.flat F ↔ M.cl F = F :=
@@ -60,17 +56,10 @@ begin
           λ h, by { rw ← h, exact flat_of_cl _ _ }⟩
 end
 
-lemma flat.cl (hF : M.flat F) : M.cl F = F := flat_iff_cl_self.mp hF 
-
 lemma flat.inter (hF₁ : M.flat F₁) (hF₂ : M.flat F₂) : M.flat (F₁ ∩ F₂) :=
 by { rw inter_eq_Inter, refine flat.Inter _ (λ i, _), cases i; assumption }
 
-@[simp] lemma univ_flat (M : matroid_in α) : M.flat M.E := 
-by rw [flat_iff_cl_self, M.cl_ground]
-/- changed `univ` to `M.E` -/
-/- question: uses `closure.lean` -/
-
-lemma flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E) :
+lemma flat_iff_ssubset_cl_insert_forall (hF : F ⊆ M.E . ssE) :
   M.flat F ↔ ∀ e ∈ M.E \ F, M.cl F ⊂ M.cl (insert e F) :=
 begin
   refine ⟨λ h e he, (M.cl_subset (subset_insert _ _)).ssubset_of_ne _, λ h, _⟩,
@@ -88,19 +77,30 @@ begin
   rw [←(M.cl_insert_cl_eq_cl_insert e F), insert_eq_of_mem he', M.cl_cl] at h'',
   exact h''.ne rfl
 end
-/- added `F ⊆ M.E` and `e ∈ M.E` -/
 
-lemma flat_iff_forall_circuit {F : set E} :
+lemma flat_iff_forall_circuit {F : set α} (hF : F ⊆ M.E . ssE) :
   M.flat F ↔ ∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F :=
 begin
   rw [flat_iff_cl_self],
-  refine ⟨λ h C e hC heC hCF , _, λ h, (M.subset_cl _).antisymm' (λ e heF, by_contra (λ he', _ )) ⟩,
+  refine ⟨λ h C e hC heC hCF , _,
+          λ h, _⟩,
   { rw ←h, 
     refine (M.cl_subset _) (hC.subset_cl_diff_singleton e heC), 
     rwa [diff_subset_iff, singleton_union] },
-  obtain ⟨C, hC, heC, hCF⟩ :=  (mem_cl_iff_exists_circuit_of_not_mem he').mp heF, 
-  exact he' (h C e hC heC hCF), 
+
+  refine subset_antisymm (λ e heF, by_contra (λ he', _ )) (M.subset_cl F hF),
+  obtain ⟨C, hC, heC, hCF⟩ := (mem_cl_iff_exists_circuit_of_not_mem he').mp heF,
+  exact he' (h C e hC heC hCF),
 end
+/- hypothesis: added hF -/
+
+lemma flat_iff_forall_circuit' {F : set α} :
+  M.flat F ↔ (∀ C e, M.circuit C → e ∈ C → C ⊆ insert e F → e ∈ F) ∧ F ⊆ M.E :=
+begin
+  refine ⟨λ h, ⟨(flat_iff_forall_circuit h.subset_ground).mp h, h.subset_ground⟩,
+          λ h, (flat_iff_forall_circuit h.2).mpr h.1⟩,
+end
+/- hypothesis: only added hF to RHS -/
 
 lemma flat.cl_exchange (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) :
   f ∈ M.cl (insert e F) \ F :=
@@ -108,21 +108,25 @@ by {nth_rewrite 1 ←hF.cl, apply cl_exchange, rwa hF.cl}
 
 lemma flat.cl_insert_eq_cl_insert_of_mem (hF : M.flat F) (he : e ∈ M.cl (insert f F) \ F) : 
   M.cl (insert e F) = M.cl (insert f F) :=
-by { apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
+by { have := hF.subset_ground, 
+  
+  apply cl_insert_eq_cl_insert_of_mem, rwa hF.cl }
 
 lemma flat.cl_subset_of_subset (hF : M.flat F) (h : X ⊆ F) : M.cl X ⊆ F :=
 by { have h' := M.cl_mono h, rwa hF.cl at h' }
 
 /- ### Covering  -/
+
 /-- A flat is covered by another in a matroid if they are strictly nested, with no flat
   between them . -/
-def covby (M : matroid E) (F₀ F₁ : set E) : Prop :=
+def covby (M : matroid_in α) (F₀ F₁ : set α) : Prop :=
   M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧ ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁
 
 lemma covby_iff :
   M.covby F₀ F₁ ↔ M.flat F₀ ∧ M.flat F₁ ∧ F₀ ⊂ F₁ ∧
     ∀ F, M.flat F → F₀ ⊆ F → F ⊆ F₁ → F = F₀ ∨ F = F₁ :=
 iff.rfl
+/- question: should this lemma be renamed to `covby_def`, as in `flat_def`? -/
 
 lemma covby.flat_left (h : M.covby F₀ F₁) : M.flat F₀ := h.1
 
@@ -147,63 +151,117 @@ lemma covby.eq_of_ssubset_of_subset (h : M.covby F₀ F₁) (hF : M.flat F) (hF�
 
 lemma covby.cl_insert_eq  (h : M.covby F₀ F₁) (he : e ∈ F₁ \ F₀) :
   M.cl (insert e F₀) = F₁ :=
-h.eq_of_ssubset_of_subset (M.flat_of_cl _)
-  ((ssubset_insert he.2).trans_subset (M.subset_cl _))
-  (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩))
+begin
+  refine h.eq_of_ssubset_of_subset (M.flat_of_cl _)
+    ((ssubset_insert he.2).trans_subset (M.subset_cl _ _))
+    (h.flat_right.cl_subset_of_subset (insert_subset.mpr ⟨he.1, h.ssubset.subset⟩)),
+  rw [insert_eq, union_subset_iff, singleton_subset_iff],
+  exact ⟨h.flat_right.subset_ground he.1, h.flat_left.subset_ground⟩
+end
 
 lemma flat.covby_iff_eq_cl_insert (hF₀ : M.flat F₀) : 
-  M.covby F₀ F₁ ↔ ∃ e ∉ F₀, F₁ = M.cl (insert e F₀) :=
+  M.covby F₀ F₁ ↔ ∃ e ∈ M.E \ F₀, F₁ = M.cl (insert e F₀) :=
 begin
   refine ⟨λ h, _, _⟩,
   { obtain ⟨e, heF₁, heF₀⟩ := exists_of_ssubset h.ssubset, 
-    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩, 
-    exact ⟨_, heF₀, rfl⟩ },
+    simp_rw ←h.cl_insert_eq ⟨heF₁,heF₀⟩,
+    have : e ∈ M.E \ F₀ := ⟨h.flat_right.subset_ground heF₁, heF₀⟩,
+    exact ⟨_, this, rfl⟩ },
   rintro ⟨e, heF₀, rfl⟩, 
   refine ⟨hF₀, M.flat_of_cl _, 
-    (M.subset_cl_of_subset (subset_insert _ _)).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
-  { exact ⟨e, M.mem_cl_of_mem (mem_insert _ _), heF₀⟩ },
+    (M.subset_cl_of_subset (subset_insert _ _) _).ssubset_of_nonempty_diff _, λ F hF hF₀F hFF₁, _⟩, 
+  { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+    exact ⟨heF₀.1, hF₀.subset_ground⟩ },
+  { use e,
+    refine ⟨M.mem_cl_of_mem (mem_insert _ _) _, _⟩,
+    { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+      exact ⟨heF₀.1, hF₀.subset_ground⟩ },
+    exact heF₀.2 },
+
   refine or_iff_not_imp_left.mpr 
     (λ hne, (hFF₁.antisymm (hF.cl_subset_of_subset (insert_subset.mpr ⟨_, hF₀F⟩)))),
-  
-  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)), 
+
+  obtain ⟨f, hfF, hfF₀⟩ := exists_of_ssubset (hF₀F.ssubset_of_ne (ne.symm hne)),
   obtain ⟨he', -⟩ :=  hF₀.cl_exchange ⟨hFF₁ hfF, hfF₀⟩, 
-  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)), 
+  exact mem_of_mem_of_subset he' (hF.cl_subset_of_subset (insert_subset.mpr ⟨hfF,hF₀F⟩)),
 end
+/- hypothesis: added `e ∈ M.E` to RHS.
+   If `e ∉ M.E`, then `F₁ = M.cl F₀ = F₀`.
+   In particular, `F₀` is not a proper subset
+   of `F₁`. -/
 
-lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∉ M.cl X, F = M.cl (insert e X) :=
+lemma cl_covby_iff : M.covby (M.cl X) F ↔ ∃ e ∈ M.E \ M.cl X, F = M.cl (insert e X) :=
 by simp_rw [(M.flat_of_cl X).covby_iff_eq_cl_insert, cl_insert_cl_eq_cl_insert]
+/- hypothesis: added `e ∈ M.E` to RHS, as in the previous
+   lemma. -/
 
-lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∉ F₀) :
+lemma flat.exists_unique_flat_of_not_mem (hF₀ : M.flat F₀) (he : e ∈ M.E \ F₀) :
   ∃! F₁, e ∈ F₁ ∧ M.covby F₀ F₁ :=
 begin
   simp_rw [hF₀.covby_iff_eq_cl_insert], 
-  refine ⟨M.cl (insert e F₀), ⟨M.mem_cl_of_mem (mem_insert _ _), ⟨e, he, rfl⟩⟩,_ ⟩, 
+  use M.cl (insert e F₀),
+  refine ⟨_, _⟩,
+  { split,
+    { exact (M.inter_ground_subset_cl (insert e F₀)) ⟨mem_insert _ _, he.1⟩ },
+    use [e, he],
+  },
   simp only [exists_prop, and_imp, forall_exists_index],
-  rintro X heX f hfF₀ rfl, 
-  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he⟩,  
+  rintro X heX f hfF₀ rfl,
+  rw hF₀.cl_insert_eq_cl_insert_of_mem ⟨heX, he.2⟩
 end
+/- hypothesis: added `e ∈ M.E` -/
+
 
 lemma flat.covby_partition (hF : M.flat F) : 
   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
 begin
-  refine ⟨not_mem_diff_singleton _ _,
-    λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
-  { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
-    mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
-    implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
-    simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
-    rintro rfl, exact not_mem_empty e heF },
-  { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
-    exists_unique_iff_exists, exists_prop], 
-    obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
-    simp only [and_imp] at hF',   
-    use F' \ F, 
-    simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
-      iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
-      true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+    sorry
     
-    refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
-    rw [hF'.2 F₁ heF₁ hFF₁] }, 
+    -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
+    --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+    --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
+    --   simp_rw [iff_true_intro heF.1, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+    --   rintro rfl, exact not_mem_empty e heF.1
+    -- },
+    -- {
+    --   by_cases g : e ∈ M.E,
+    --   {
+    --       sorry,
+    --   -- simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
+    --   -- exists_unique_iff_exists, exists_prop], 
+    --   -- obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
+    --   -- simp only [and_imp] at hF',   
+    --   -- use F' \ F, 
+    --   -- simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
+    --   --   iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
+    --   --   true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+      
+    --   -- refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+    --   -- rw [hF'.2 F₁ heF₁ hFF₁]
+    --   },
+
+    -- },
+
+
+
+  -- refine ⟨not_mem_diff_singleton _ _,
+  --   λ e, (em (e ∈ F)).elim (λ heF, ⟨F, _⟩) (λ heF, _)⟩,
+  -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
+  --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
+  --   implies_true_iff, forall_exists_index, forall_apply_eq_imp_iff₂],
+  --   simp_rw [iff_true_intro heF, and_true, not_true, false_implies_iff, imp_true_iff, and_true], 
+  --   rintro rfl, exact not_mem_empty e heF },
+  -- { simp only [mem_diff, mem_insert_iff, mem_image, mem_set_of_eq, mem_singleton_iff, 
+  --   exists_unique_iff_exists, exists_prop], 
+  --   obtain ⟨F' ,hF'⟩ := hF.exists_unique_flat_of_not_mem heF, 
+  --   simp only [and_imp] at hF',   
+  --   use F' \ F, 
+  --   simp only [and_imp, forall_eq_or_imp, forall_exists_index, forall_apply_eq_imp_iff₂, mem_diff, 
+  --     iff_false_intro heF, is_empty.forall_iff, implies_true_iff, not_false_iff, forall_true_left, 
+  --     true_and, ← ne.def, ←nonempty_iff_ne_empty, and_true], 
+    
+  --   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
+  --   rw [hF'.2 F₁ heF₁ hFF₁] }, 
 end 
 
 lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
@@ -251,51 +309,88 @@ lemma flat.cl_eq_iff_basis_of_indep (hF : M.flat F) (hI : M.indep I) : M.cl I = 
 section hyperplane
 
 /-- A hyperplane is a maximal set containing no base  -/
-def hyperplane (M : matroid E) (H : set E) : Prop := H ∈ maximals (⊆) {X | ¬∃ B ⊆ X, M.base B }
+def hyperplane (M : matroid_in α) (H : set α) : Prop :=
+  H ∈ maximals (⊆) {X | X ⊆ M.E ∧ ¬∃ B ⊆ X, M.base B }
+/- added `X ⊆ M.E` -/
 
-lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X) : M.cl X = univ :=
-base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 h hX.subset)))   
+@[ssE_finish_rules] lemma hyperplane.subset_ground (hH : M.hyperplane H) : H ⊆ M.E :=
+hH.1.1
+
+lemma hyperplane.cl_eq_univ_of_ssupset (hH : M.hyperplane H) (hX : H ⊂ X)
+  (hX' : X ⊆ M.E . ssE) : M.cl X = M.E :=
+base_subset_iff_cl_eq_univ.mp (by_contra (λ h, hX.not_subset (hH.2 ⟨hX', h⟩ hX.subset))) 
+/- changed univ to M.E -/
+/- hypothesis: added assumption `X ⊆ M.E` -/
 
 lemma hyperplane.flat (hH : M.hyperplane H) : M.flat H :=
 begin
-  refine λ I X hIH hIX e heX, hH.2 (λ h', hH.1 ⟨I, hIH.subset, _⟩) 
-    (subset_insert e H) (mem_insert e H), 
-  obtain ⟨B, hBeH, hB⟩ := h', 
+  refine ⟨_, hH.subset_ground⟩, 
+  intros I X hIH hIX e heX,
+  refine hH.2 _ (subset_insert e H) (mem_insert e H),
+  refine ⟨_, λ h', _⟩,
+  { rw [insert_eq, union_subset_iff, singleton_subset_iff],
+    use [hIX.subset_ground heX, hIH.subset_ground] },
+  refine hH.1.2 ⟨I, hIH.subset, _⟩,
+  obtain ⟨B, hBeH, hB⟩ := h',
   exact (hIH.basis_union hIX).base_of_base_subset hB 
-    (hBeH.trans (insert_subset.mpr ⟨or.inr heX,subset_union_left _ _⟩)),  
+    (hBeH.trans (insert_subset.mpr ⟨or.inr heX,subset_union_left _ _⟩)),
 end 
 
 lemma hyperplane.ssubset_univ (hH : M.hyperplane H) : H ⊂ univ := 
 ssubset_univ_iff.mpr 
-  (by { rintro rfl, exact hH.1 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
+  (by { rintro rfl, exact hH.1.2 (M.exists_base.imp (λ B hB, ⟨subset_univ B, hB⟩)) })
 
-lemma hyperplane.flat_supset_eq_univ (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
-  F = univ := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+lemma hyperplane.ssubset_ground (hH : M.hyperplane H) : H ⊂ M.E :=
+begin
+  use hH.subset_ground, intro f,
+  have hH' := subset_antisymm hH.subset_ground f,
+  obtain ⟨B, hB⟩ := M.exists_base,
+  have := hH.1.2, push_neg at this,
+  have := this B, rw hH' at this,
+  exact (this hB.subset_ground) hB
+end
+
+lemma hyperplane.flat_supset_eq_ground (hH : M.hyperplane H) (hF : M.flat F) (hHF : H ⊂ F) :
+  F = M.E := by rw [←hF.cl, hH.cl_eq_univ_of_ssupset hHF]
+/- changed `univ` to `M.E` -/
 
 lemma hyperplane_iff_maximal_proper_flat : 
-  M.hyperplane H ↔ (M.flat H ∧ H ⊂ univ ∧ ∀ F, H ⊂ F → M.flat F → F = univ) :=
+  M.hyperplane H ↔ (M.flat H ∧ H ⊂ M.E ∧ ∀ F, H ⊂ F → M.flat F → F = M.E) :=
 begin
-  refine ⟨λ h, ⟨h.flat, h.ssubset_univ, λ F hHF hF, h.flat_supset_eq_univ hF hHF⟩, 
-    λ h, ⟨_,λ X hX hHX, hHX.eq_or_ssubset.elim (λ h', h'.symm.subset) (λ hss, (hX _).elim)⟩⟩,
-  { rintro ⟨B,hBH,hB⟩,  
-    have hcl := M.cl_subset hBH, 
-    rw [hB.cl, univ_subset_iff, h.1.cl] at hcl,
-    exact h.2.1.ne hcl },
-  have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X)) (M.flat_of_cl _), 
-  rwa [←base_subset_iff_cl_eq_univ] at hX_univ, 
-end 
+  refine ⟨λ h, ⟨h.flat, h.ssubset_ground, λ F hHF hF, h.flat_supset_eq_ground hF hHF⟩,
+          λ h, ⟨_,λ X hX hHX, hHX.eq_or_ssubset.elim (λ h', h'.symm.subset) (λ hss, _)⟩⟩,
+  { refine ⟨h.1.subset_ground, _⟩,
+    rintro ⟨B,hBH,hB⟩,
+    have hcl := M.cl_subset hBH,
+    rw hB.cl at hcl,
+    have hcl' := subset_antisymm hcl (cl_subset_ground M H),
+    rw h.1.cl at hcl',
+    apply h.2.1.ne, symmetry, exact hcl' },
+  exfalso,
+  have hX_univ := h.2.2 _ (hss.trans_subset (M.subset_cl X hX.1)) (M.flat_of_cl _), 
+  rwa [←base_subset_iff_cl_eq_univ] at hX_univ,
+  exact (hX.2) hX_univ,
+end
+/- changed `univ` to `M.E` -/
 
-@[simp] lemma compl_cocircuit_iff_hyperplane : M.cocircuit Hᶜ ↔ M.hyperplane H  :=
+@[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E . ssE) : 
+  M.cocircuit (M.E \ H) ↔ M.hyperplane H :=
 begin
-  simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
-    refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
-    λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
-  { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
-  { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
-    exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
-  { rwa [exists_prop, and_comm, compl_subset_comm] },
-  refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
-  exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
+  
+  rw [cocircuit, circuit, mem_minimals_set_of_iff, ←not_indep_iff, dual_indep_iff_exists, 
+    not_and, imp_iff_right (diff_subset _ _), not_exists, hyperplane, mem_maximals_set_of_iff, 
+    and_iff_right hH, not_exists], 
+  simp only [not_and, exists_prop, not_exists, and_imp, not_disjoint_iff],
+
+  -- simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
+  --   refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
+  --   λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
+  -- { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
+  -- { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
+  --   exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
+  -- { rwa [exists_prop, and_comm, compl_subset_comm] },
+  -- refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
+  -- exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
 end 
 
 @[simp] lemma compl_hyperplane_iff_cocircuit : M.hyperplane Kᶜ ↔ M.cocircuit K := 
@@ -304,7 +399,7 @@ by rw [←compl_cocircuit_iff_hyperplane, compl_compl]
 lemma hyperplane.compl_cocircuit (hH : M.hyperplane H) : M.cocircuit Hᶜ := 
   compl_cocircuit_iff_hyperplane.mpr hH
 
-lemma cocircuit.compl_hyperplane {K : set E} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
+lemma cocircuit.compl_hyperplane {K : set α} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
   compl_hyperplane_iff_cocircuit.mpr hK 
 
 lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.ssubset_univ.ne rfl 
@@ -367,7 +462,7 @@ begin
   exact indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl),
 end
 
-lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set E) :
+lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set α) :
   M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
 begin
   apply subset_antisymm,
@@ -465,8 +560,8 @@ end hyperplane
 
 section from_axioms
 
-lemma matroid_of_flat_aux [finite E] (flat : set E → Prop) (univ_flat : flat univ)
-(flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set E) :
+lemma matroid_of_flat_aux [finite E] (flat : set α → Prop) (univ_flat : flat univ)
+(flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂)) (X : set α) :
   flat (⋂₀ {F | flat F ∧ X ⊆ F}) ∧ ∀ F₀, flat F₀ → ((⋂₀ {F | flat F ∧ X ⊆ F}) ⊆ F₀ ↔ X ⊆ F₀) :=
 begin
   set F₁ := ⋂₀ {F | flat F ∧ X ⊆ F} with hF₁,
@@ -485,7 +580,7 @@ begin
 end
 
 /-- A collection of sets satisfying the flat axioms determines a matroid -/
-def matroid_of_flat [finite E] (flat : set E → Prop) (univ_flat : flat univ)
+def matroid_of_flat [finite E] (flat : set α → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
   ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :=
@@ -537,7 +632,7 @@ end )
 
   obtain ⟨FXe',⟨hFXe',heFX',hmin⟩, hunique⟩ := flat_partition FX e hFX heFX,
 
-  have hFXemin : ∀ (F : set E), flat F → FX ⊆ F → F ⊂ FXe → FX = F, from
+  have hFXemin : ∀ (F : set α), flat F → FX ⊆ F → F ⊂ FXe → FX = F, from
   λ F hF hFXF hFFXe, hmin _ hF hFXF
     (hFFXe.trans_subset ((hXe' _ hFXe').mpr ((insert_subset_insert hXFX).trans heFX'))),
 
@@ -545,7 +640,7 @@ end )
   rwa ← (hmin _ hFXf hFXFXf hssu) at hfFXf,
 end)
 
-@[simp] lemma matroid_of_flat_apply [finite E] (flat : set E → Prop) (univ_flat : flat univ)
+@[simp] lemma matroid_of_flat_apply [finite E] (flat : set α → Prop) (univ_flat : flat univ)
 (flat_inter : ∀ F₁ F₂, flat F₁ → flat F₂ → flat (F₁ ∩ F₂))
 (flat_partition : ∀ F₀ e, flat F₀ → e ∉ F₀ →
 ∃! F₁, flat F₁ ∧ insert e F₀ ⊆ F₁ ∧ ∀ F, flat F → F₀ ⊆ F → F ⊂ F₁ → F₀ = F) :
@@ -560,4 +655,4 @@ end
 
 end from_axioms 
 
-end matroid 
+end matroid_in
