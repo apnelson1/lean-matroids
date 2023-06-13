@@ -199,6 +199,15 @@ begin
   exact (hF'.1 hJ (he.basis_union_of_subset hJ.indep hIJ)) (or.inr (mem_insert _ _)),
 end
 
+lemma cl_diff_self_eq_cl_inter_ground_diff (M : matroid_in α) : 
+  M.cl X \ X = M.cl (X ∩ M.E) \ (X ∩ M.E) :=
+begin
+  rw [cl_eq_cl_inter_ground, diff_eq_diff_iff_inter_eq_inter, inter_eq_inter_iff_left, 
+    inter_comm X],  
+  exact ⟨(inter_subset_right _ _).trans (inter_subset_right _ _), 
+    inter_subset_inter_left _ (M.cl_subset_ground _)⟩, 
+end 
+
 lemma indep.mem_cl_iff' (hI : M.indep I) : 
   x ∈ M.cl I ↔ (x ∈ M.E ∧ (M.indep (insert x I) → x ∈ I)) :=
 begin
