@@ -375,16 +375,31 @@ end
 
 @[simp] lemma compl_cocircuit_iff_hyperplane : M.cocircuit Hᶜ ↔ M.hyperplane H  :=
 begin
-  simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
-    refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
-    λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
-  { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
-  { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
-    exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
-  { rwa [exists_prop, and_comm, compl_subset_comm] },
-  refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
-  exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
+  simp_rw hyperplane,
+  simp_rw cocircuit,
+  simp_rw circuit,
+  simp_rw dep_iff,
+
+
+  split,
+  {
+    intro h,
+    split,
+    {
+      dsimp,
+      have := h.1,
+    }
+  }
 end 
+  -- simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
+  --   refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
+  --   λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _⟩⟩,
+  -- { rwa [compl_subset_compl, compl_compl, and_comm,  ←exists_prop] },
+  -- { refine compl_subset_compl.mp (h.2 _ (compl_subset_compl.mpr hXH)), 
+  --   exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, compl_subset_comm.mp hB, hBX⟩ }, 
+  -- { rwa [exists_prop, and_comm, compl_subset_comm] },
+  -- refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
+  -- exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
 
 @[simp] lemma compl_hyperplane_iff_cocircuit : M.hyperplane Kᶜ ↔ M.cocircuit K := 
 by rw [←compl_cocircuit_iff_hyperplane, compl_compl]
