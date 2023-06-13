@@ -376,11 +376,27 @@ end
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E . ssE) : 
   M.cocircuit (M.E \ H) ↔ M.hyperplane H :=
 begin
-  
   rw [cocircuit, circuit, mem_minimals_set_of_iff, ←not_indep_iff, dual_indep_iff_exists, 
     not_and, imp_iff_right (diff_subset _ _), not_exists, hyperplane, mem_maximals_set_of_iff, 
     and_iff_right hH, not_exists], 
   simp only [not_and, exists_prop, not_exists, and_imp, not_disjoint_iff],
+
+  dsimp at hH,
+
+  split,
+  {
+    rintro ⟨h₁, h₂⟩,
+    split,
+    { intros X hX hX',
+      obtain ⟨x, hx⟩ := h₁ X hX',
+      exact (hx.1.2) (hX hx.2), },
+    {
+      intros Y hY hY' hHY,
+      have := hY' H hHY,
+      sorry,
+    }
+  },
+  sorry
 
   -- simp_rw [hyperplane, cocircuit, circuit, indep_iff_subset_base, dual.base_iff], 
   --   refine ⟨λ h, ⟨λ h', h.1 (exists_imp_exists' compl (λ B hB, _) h'), λ X hX hXH, _ ⟩, 
@@ -402,16 +418,19 @@ end
   -- refine compl_subset_comm.mp (h.2 _ (subset_compl_comm.mp hXH)),  
   -- exact λ ⟨B, hBX, hB⟩, hX ⟨Bᶜ, by rwa compl_compl, by rwa subset_compl_comm⟩,
 
-@[simp] lemma compl_hyperplane_iff_cocircuit : M.hyperplane Kᶜ ↔ M.cocircuit K := 
-by rw [←compl_cocircuit_iff_hyperplane, compl_compl]
+@[simp] lemma compl_hyperplane_iff_cocircuit (h : K ⊆ M.E) :
+  M.hyperplane (M.E \ K) ↔ M.cocircuit K := 
+by rw [←compl_cocircuit_iff_hyperplane, diff_diff_right, diff_self, empty_union,
+  inter_comm, (inter_eq_left_iff_subset.mpr h)]
+/- added `K ⊆ M.E` -/
 
-lemma hyperplane.compl_cocircuit (hH : M.hyperplane H) : M.cocircuit Hᶜ := 
-  compl_cocircuit_iff_hyperplane.mpr hH
+lemma hyperplane.compl_cocircuit (hH : M.hyperplane H) : M.cocircuit (M.E \ H) := 
+compl_cocircuit_iff_hyperplane.mpr hH
 
-lemma cocircuit.compl_hyperplane {K : set α} (hK : M.cocircuit K) : M.hyperplane Kᶜ := 
-  compl_hyperplane_iff_cocircuit.mpr hK 
+lemma cocircuit.compl_hyperplane {K : set α} (hK : M.cocircuit K) : M.hyperplane (M.E \ K) := 
+(compl_hyperplane_iff_cocircuit hK.subset_ground).mpr hK
 
-lemma univ_not_hyperplane (M : matroid E) : ¬ M.hyperplane univ := λ h, h.ssubset_univ.ne rfl 
+lemma univ_not_hyperplane (M : matroid_in α) : ¬ M.hyperplane univ := λ h, h.ssubset_univ.ne rfl 
 
 lemma hyperplane.eq_of_subset (h₁ : M.hyperplane H₁) (h₂ : M.hyperplane H₂) (h : H₁ ⊆ H₂) :
   H₁ = H₂ := h.antisymm (h₁.2 h₂.1 h)
@@ -422,14 +441,17 @@ lemma hyperplane.not_ssubset (h₁ : M.hyperplane H₁) (h₂ : M.hyperplane H�
 lemma hyperplane.exists_not_mem (hH : M.hyperplane H) : ∃ e, e ∉ H :=
 by {by_contra' h, apply M.univ_not_hyperplane, convert hH, rwa [eq_comm, eq_univ_iff_forall] }
 
-lemma hyperplane_iff_maximal_cl_ne_univ :
-  M.hyperplane H ↔ M.cl H ≠ univ ∧ ∀ X, H ⊂ X → M.cl X = univ :=
+lemma hyperplane_iff_maximal_cl_ne_univ (hH : H ⊆ M.E . ssE) :
+  M.hyperplane H ↔ M.cl H ≠ M.E ∧ ∀ X, X ⊆ M.E ∧ H ⊂ X → M.cl X = M.E :=
 begin
-  simp_rw [ne.def, ←base_subset_iff_cl_eq_univ, hyperplane, maximals, mem_set_of], 
-  exact ⟨λ h, ⟨h.1, λ X h', (by_contra (λ hex, h'.not_subset (h.2 hex h'.subset)))⟩, 
-    λ h, ⟨h.1, λ X hex h', h'.eq_or_ssubset.elim (eq.subset ∘ eq.symm) 
-      (λ hss, (hex (h.2 _ hss)).elim)⟩⟩,
+  simp_rw [ne.def, ←base_subset_iff_cl_eq_univ, hyperplane, maximals, mem_set_of],
+  exact ⟨λ h, ⟨h.1.2, λ X h', by_contra (λ hex, h'.2.not_subset (h.2 ⟨h'.1, hex⟩ h'.2.subset))⟩,
+          λ h, ⟨⟨hH, h.1⟩,
+            λ X ⟨hX, hex⟩ h', h'.eq_or_ssubset.elim (eq.subset ∘ eq.symm)
+              (λ hss, (hex (h.2 _ ⟨hX, hss⟩)).elim)⟩ ⟩,
 end
+/- changed `univ` to `M.E` -/
+/- question: should we change `univ` to `ground` in lemma's names? -/
 
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
