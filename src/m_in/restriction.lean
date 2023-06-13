@@ -2,7 +2,7 @@ import .basic
 
 open set
 
-variables {α : Type*} {I J B B' B₁ B₂ X Y R : set α} {e f : α} {M : matroid_in α}
+variables {α : Type*} {I J B B' B₁ B₂ X Y R : set α} {e f : α} {M N : matroid_in α}
 
 namespace matroid_in 
 
@@ -143,6 +143,49 @@ begin
     restrict_ground_eq', inter_eq_right_iff_subset], 
   exact λ h I hI hI', hI.trans (inter_subset_left _ _), 
 end   
+
+def restriction (N M : matroid_in α) : Prop := M ‖ N.E = N 
+
+def strict_restriction (N M : matroid_in α) : Prop := (M ‖ N.E = N) ∧ N.E ⊂ M.E 
+
+infix ` ≤r ` :75 :=  matroid_in.restriction
+
+infix ` <r ` :75 :=  matroid_in.strict_restriction
+
+lemma restriction.eq_restrict (h : N ≤r M) : M ‖ N.E = N :=
+h 
+
+lemma strict_restriction.restriction (h : N <r M) : N ≤r M :=
+h.1
+
+lemma strict_pminor.ne (h : N <r M) : N ≠ M := 
+by { rintro rfl, exact h.2.ne rfl }
+
+lemma restriction.strict_restriction_of_ne (h : N ≤r M) (hne : N ≠ M) : N <r M :=
+begin
+  rw [strict_restriction, and_iff_right h.eq_restrict, ssubset_iff_subset_ne, ←h.eq_restrict, 
+    restrict_ground_eq', and_iff_right (inter_subset_right _ _), ne.def, inter_eq_right_iff_subset], 
+  intro h_eq, 
+  rw [←h.eq_restrict, ←restrict_inter_ground, inter_eq_self_of_subset_right h_eq, 
+    restrict_ground_eq_self] at hne, 
+  exact hne rfl, 
+end 
+
+instance restriction.trans : is_trans (matroid_in α) (≤r) := 
+⟨λ M₁ M₂ M₃ h₁ h₂, by { rw [←h₁.eq_restrict, ←h₂.eq_restrict, restriction],
+  simp_rw [restrict_ground_eq', restrict_restrict, restrict_eq_restrict_iff], 
+  rw [inter_assoc, inter_assoc, inter_self, inter_right_comm, inter_comm _ M₁.E] }⟩ 
+
+instance restriction.refl : is_refl (matroid_in α) (≤r) := 
+⟨restrict_ground_eq_self⟩   
+
+instance restriction.antisymm : is_antisymm (matroid_in α) (≤r) :=
+begin
+  refine ⟨λ M M' (h : _ = M) (h' : _ = M'), _⟩,  
+  rw [←h', ←M.restrict_ground_eq_self, restrict_restrict, restrict_eq_restrict_iff, 
+    inter_right_comm, inter_self, eq_comm, inter_eq_left_iff_subset, ←h, restrict_ground_eq'],
+  exact inter_subset_right _ _,  
+end 
 
 end restrict 
 
