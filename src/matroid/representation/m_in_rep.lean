@@ -50,21 +50,95 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (s : set W) : 
   matroid_in W := 
 { ground := s,
-  base := λ v, span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
+  base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
   exists_base' := 
     begin
       obtain ⟨B, ⟨hB1, hB2⟩⟩ := exists_linear_independent 𝔽 s,
-      use ⟨B, hB2⟩,
+      use ⟨B, ⟨hB1, hB2⟩⟩,
     end,
   base_exchange' := λ X Y hX hY a ha, 
     begin
-      simp only at hX,
-      simp only at hY,
-      simp only,
+      simp only at *,
+      have h2 := linear_independent_iff_not_mem_span.1 hX.2.2 ⟨a, mem_of_mem_diff ha⟩, 
+      simp only [subtype.coe_mk] at h2,
+      have h3 : a ∈ span 𝔽 ((X \ {a}) ∪ Y),
+      { have h7 := mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ s) 
+          (mem_of_subset_of_mem hX.1 (mem_of_mem_diff ha)),
+        have h4 := span_mono (subset_union_right (X \ {a}) Y),
+        rw ← hY.2.1 at h7,
+        apply h4 h7 },
+      have h4 : a ∉ ((X \ {a}) ∪ Y),
+        { simp only [mem_union, not_mem_diff_singleton, false_or],
+          apply not_mem_of_mem_diff ha },
+      have h5 := (subset_union_left (X \ {a}) Y),
+      have h7 := span_mono (union_subset (subset_trans (diff_subset X {a}) hX.1) hY.1),
+      have h6 : span 𝔽 s = span 𝔽 (X \ {a} ∪ Y),
+      { apply span_eq_of_le _ _ h7,
+        have h10 := @subset_span 𝔽 _ _ _ _ s,  
+        rw ← hY.2.1 at h10, 
+        apply subset_span_trans h10 
+          ((@span_le 𝔽 _ _ _ _ _ _).1 (span_mono (subset_union_right (X \ {a}) Y))) },
+      rw ← hX.2.1 at h6,
+      have h8 := linear_independent.mono (diff_subset X {a}) hX.2.2,
+      have S := h8.extend (subset_union_left (X \ {a}) Y),
+      have hS1 := h8.extend_subset (subset_union_left (X \ {a}) Y),
+      have hS2 := h8.subset_extend (subset_union_left (X \ {a}) Y),
+      have hS3 := h8.subset_span_extend (subset_union_left (X \ {a}) Y),
+      have hS4 := h8.linear_independent_extend (subset_union_left (X \ {a}) Y),
+      have h50 : ∃ b ∈ Y \ X, (X \ {a}) ∪ {b} = (h8.extend (subset_union_left (X \ {a}) Y)),
+      { have h100 : ↥(h8.extend (subset_union_left (X \ {a}) Y)) ≃ X,
+        { have h60 := basis.span hS4,
+          have h61 := basis.span hX.2.2,
+          rw [subtype.range_coe_subtype, set_of_mem_eq] at h60 h61,
+          rw h6 at h61,
+          rw ← span_eq_span hS3 ((@span_le 𝔽 _ _ _ _ _ _).1 (span_mono hS1)) at h60,
+          apply basis.index_equiv h60 h61 },
+        have h200 : ∃ b ∈ (h8.extend (subset_union_left (X \ {a}) Y)), b ∉ X,
+        { sorry },
+        obtain ⟨b, ⟨hb1, hb2⟩⟩ := h200,
+        use b,
+        have hb3 := mem_of_subset_of_mem hS1 hb1,
+        refine ⟨(mem_diff _).2 ⟨or.resolve_left hb3 (not_mem_subset (diff_subset X {a}) hb2), hb2⟩, 
+          _⟩,
+        have h200 : X ≃ ↥(X \ {a} ∪ {b}),
+        { have h61 := basis.span hX.2.2,
+          have h63 := (linear_independent.mono (union_subset hS2 (singleton_subset_iff.2 hb1)) hS4),
+          simp at h63,
+          have h64 := basis.span h63,
+          rw [subtype.range_coe_subtype, set_of_mem_eq] at h61 h64,
+           
+          apply basis.index_equiv h61,
+          -- apply basis.index_equiv,
+          sorry, },
+        have f := equiv.trans h100 h200,
+        
+        ext;
+        refine ⟨λ h, (union_subset hS2 (singleton_subset_iff.2 hb1)) h, λ hx, _⟩,
+        have y := f.to_fun ⟨x, hx⟩,
+        sorry },
+      obtain ⟨b, ⟨hb1, hb2⟩⟩ := h50,
+      use b,
+      rw [← union_singleton, hb2],
+      refine ⟨hb1, ⟨_, ⟨_, hS4⟩⟩⟩,
+      have h2 : X \ {a} ∪ Y ⊆ s,
+      { sorry }, 
+      apply subset_trans hS1 h2,
       sorry,
     end,
-  maximality := _,
-  subset_ground' := _ }
+  maximality := λ I X hI hIX, 
+    begin
+      simp only at *,
+      --obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
+      have h2 := exists_maximal_independent' 𝔽 (λ x : X, (x : W)),
+      obtain ⟨I', ⟨hI', hI'X⟩⟩ := h2,
+      
+      rw set.coe_eq_subtype at I',
+      simp only at *,
+      
+      
+      sorry,
+    end,
+  subset_ground' := by tauto }
 
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
 
