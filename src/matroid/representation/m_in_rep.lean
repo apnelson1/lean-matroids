@@ -3,6 +3,8 @@ import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
 import m_in.minor
+import m_in.rank
+import m_in.equiv
 
 
 namespace set
@@ -47,7 +49,9 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
     (hFW : 
       @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 
-def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (s : set W) : 
+-- shouldn't maximality be a consequence of exchange property?
+def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -115,6 +119,7 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
         ext;
         refine ⟨λ h, (union_subset hS2 (singleton_subset_iff.2 hb1)) h, λ hx, _⟩,
         have y := f.to_fun ⟨x, hx⟩,
+
         sorry },
       obtain ⟨b, ⟨hb1, hb2⟩⟩ := h50,
       use b,
@@ -128,19 +133,28 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
   maximality := λ I X hI hIX, 
     begin
       simp only at *,
-      --obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
-      have h2 := exists_maximal_independent' 𝔽 (λ x : X, (x : W)),
-      obtain ⟨I', ⟨hI', hI'X⟩⟩ := h2,
-      
-      rw set.coe_eq_subtype at I',
-      simp only at *,
-      
-      
+      obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
+      have h2 := linear_independent.mono hBe hBs.2.2,
+      use (h2.extend hIX), 
+      simp only [mem_maximals_iff'],
+      refine ⟨⟨_, ⟨h2.subset_extend hIX, h2.extend_subset hIX⟩⟩, λ y hy hI'y, _⟩,
+      -- i think X ⊆ s has to be stated in maximality.
+      have h10 := exists_linear_independent_extension (h2.linear_independent_extend hIX),
       sorry,
+      sorry,
+      obtain ⟨⟨By, ⟨hB1, hB2, hBy⟩, hyBy⟩, hIy, hyX⟩ := hy,
+      rw ← eq_of_linear_independent_of_span_subtype 
+        (linear_independent.mono hyBy hBy) hI'y (subset_trans hyX (h2.subset_span_extend hIX)),
     end,
   subset_ground' := by tauto }
 
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
+lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
+  ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
+begin
+  sorry,
+
+end
 
 namespace rep
 
@@ -323,11 +337,20 @@ end
 
 def rep_of_del (N : matroid_in α) (φ : rep 𝔽 W N) (D : set α) : 
 rep 𝔽 W (N ⟍ D) := 
-{ to_fun := φ.to_fun,
-  valid' := λ I hI, by { rw delete_ground at hI, 
-    refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
+{ to_fun := φ,
+  valid' := λ I,
+    begin
+      refine ⟨λ h, _, λ h, _⟩,
+      apply delete_indep_iff.2,
+      refine ⟨(φ.valid' I).1 h, _⟩,
+      have h2 := linear_independent.restrict_of_comp_subtype h,
+      rw φ.valid' at h,
+      sorry,
+    end }
+   --by { rw delete_ground at hI, 
+    /-refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
     (subset_diff.1 hI).2⟩, λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 
-    (matroid_in.delete_indep_iff.1 h).1⟩, } }
+    (matroid_in.delete_indep_iff.1 h).1⟩, } }-/
 
 lemma linear_independent.map'' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
    (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
@@ -395,11 +418,10 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
           ext;
           simp only [mem_range, set_coe.exists, subtype.coe_mk, exists_prop, mem_image] },
       obtain ⟨J, hJ⟩ := exists_basis N C hC,
-      rw [basis.contract_eq hJ, delete_ground, contract_ground] at hI,
-      rw basis.contract_eq hJ,
+      rw [basis.contract_eq_contract_delete hJ, delete_indep_iff, 
+        indep.contract_indep_iff hJ.indep],
       have h10 := span_basis φ hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      rw [delete_indep_iff, indep.contract_indep_iff (hJ.indep)],
       refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
       simp at h,
       simp_rw [← mkq_apply _] at h,
