@@ -506,6 +506,8 @@ end
 /- changed `univ` to `M.E` -/
 /- hypothesis: changed `e ∉ H` to `e ∈ M.E \ H` -/
 
+-- change e ∈ M.E \ H
+
 lemma exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E . ssE) :
   ∃ H, M.hyperplane H ∧ X ⊆ H ∧ e ∉ H :=
 begin
