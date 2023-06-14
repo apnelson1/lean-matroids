@@ -343,6 +343,9 @@ def cocircuit (M : matroid_in α) (K : set α) : Prop := M﹡.circuit K
 
 @[simp] lemma dual_circuit_iff_cocircuit {K : set α} : M﹡.circuit K ↔ M.cocircuit K := iff.rfl 
 
+@[ssE_finish_rules] lemma cocircuit.subset_ground (hC : M.cocircuit C) : C ⊆ M.E :=
+by { rw ←dual_circuit_iff_cocircuit at hC, rw ←dual_ground, exact hC.subset_ground }
+
 lemma coindep_iff_forall_subset_not_cocircuit' : 
   M.coindep X ↔ (∀ K ⊆ X, ¬ M.cocircuit K) ∧ X ⊆ M.E  := 
 by simp [←dual_indep_iff_coindep, indep_iff_forall_subset_not_circuit']
