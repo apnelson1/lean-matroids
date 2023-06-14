@@ -492,26 +492,38 @@ begin
 end
 
 lemma hyperplane.ssupset_eq_univ_of_flat (hH : M.hyperplane H) (hF : M.flat F) (h : H ⊂ F) :
-  F = univ :=
-by { rw hyperplane_iff_maximal_cl_ne_univ at hH, rw [←hH.2 F h, hF.cl] }
+  F = M.E :=
+by { rw hyperplane_iff_maximal_cl_ne_univ at hH, rw [←hH.2 F ⟨hF.subset_ground, h⟩, hF.cl] }
 
-lemma hyperplane.cl_insert_eq_univ (hH : M.hyperplane H) (he : e ∉ H) :
-  M.cl (insert e H) = univ :=
-hH.ssupset_eq_univ_of_flat (M.flat_of_cl _) ((ssubset_insert he).trans_subset (M.subset_cl _))
+lemma hyperplane.cl_insert_eq_univ (hH : M.hyperplane H) (he : e ∈ M.E \ H) :
+  M.cl (insert e H) = M.E :=
+begin
+  refine hH.ssupset_eq_univ_of_flat (M.flat_of_cl _)
+    ((ssubset_insert he.2).trans_subset (M.subset_cl _ _)),
+  rw [insert_eq, union_subset_iff, singleton_subset_iff],
+  exact ⟨he.1, hH.subset_ground⟩,
+end
+/- changed `univ` to `M.E` -/
+/- hypothesis: changed `e ∉ H` to `e ∈ M.E \ H` -/
 
-lemma exists_hyperplane_sep_of_not_mem_cl (h : e ∉ M.cl X) :
+lemma exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E . ssE) :
   ∃ H, M.hyperplane H ∧ X ⊆ H ∧ e ∉ H :=
 begin
-  obtain ⟨I,hI⟩ := M.exists_basis X,
-  rw [←hI.cl, hI.indep.not_mem_cl_iff] at h,  
-  obtain ⟨B, hB, heIB⟩ := h.2.exists_base_supset, 
+  obtain ⟨I, hI⟩ := M.exists_basis X,
+  rw ←hI.cl at h,
+  have h' := h.2,
+  rw hI.indep.not_mem_cl_iff at h',
+  obtain ⟨B, hB, heIB⟩ := h'.2.exists_base_supset,
   rw insert_subset at heIB,
-  refine ⟨M.cl (B \ {e}), hB.hyperplane_of_cl_diff_singleton heIB.1,_,λ hecl, _ ⟩,
-  { exact hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h.1)) },
-  exact indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl),
+  exact ⟨M.cl (B \ {e}), hB.hyperplane_of_cl_diff_singleton heIB.1,
+    hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h'.1)),
+    λ hecl, indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl)⟩,
 end
+/- hypothesis: changed `e ∉ M.cl X` to `e ∈ M.E \ M.cl X` -/
+/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
+   `M.hyperplane H` never holds -/
 
-lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set α) :
+lemma cl_eq_sInter_hyperplanes (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) :
   M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
 begin
   apply subset_antisymm,
@@ -519,10 +531,17 @@ begin
     exact λ H hH hXH, hH.flat.cl_subset_of_subset hXH},
   by_contra' h',
   obtain ⟨x, h, hx⟩ := not_subset.mp h',
-  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx,
+  
+  dsimp at h,
+  
+  -- question: is it possible to show `x ∈ M.E`?
+
+  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx hX,
   exact hxH (h H ⟨hH, hXH⟩),
 end
-
+/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
+   `M.hyperplane H` never holds -/
+   
 lemma mem_cl_iff_forall_hyperplane : e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
 by simp [cl_eq_sInter_hyperplanes]
 
