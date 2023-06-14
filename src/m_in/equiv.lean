@@ -24,13 +24,17 @@ infix ` ≃i `:75 := matroid_in.iso
 
 instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, M₁.E → M₂.E) := ⟨λ e, e.to_fun⟩ 
 
-def iso.refl (M : matroid_in α₁) : M ≃i M := ⟨equiv.refl M.E, by simp⟩ 
+def iso.refl (M : matroid_in α₁) : M ≃i M := 
+⟨equiv.refl M.E, by simp⟩ 
+
 def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := 
 ⟨e.to_fun.symm, λ B, by { rw e.on_base, simp }⟩ 
 
 def iso.trans (e₁ : M₁ ≃i M₂) (e₂ : M₂ ≃i M₃) : M₁ ≃i M₃ :=
 { to_fun := e₁.to_fun.trans e₂.to_fun,
   on_base := λ B, by { rw [e₂.on_base, e₁.on_base], convert iff.rfl } }
+
+-- lemma on_base {B : set α₁} (i : M₁ ≃i M₂) (hB : M₁.base B) : M₂.base (i '' B)
 
 end iso 
 

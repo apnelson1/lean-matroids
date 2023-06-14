@@ -195,7 +195,7 @@ def basis (M : matroid_in α) (I X : set α) : Prop :=
 def circuit (M : matroid_in α) (C : set α) : Prop := C ∈ minimals (⊆) {X | M.dep X}
 
 /-- A coindependent set is a subset of `M.E` that is disjoint from some base -/
-def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B
+def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ (∃ B, M.base B ∧ disjoint I B)  
 
 section properties
 
@@ -322,6 +322,9 @@ by { obtain ⟨B, hB, hIB⟩ := hI, exact hIB.trans hB.subset_ground }
 
 @[ssE_finish_rules] lemma dep.subset_ground (hD : M.dep D) : D ⊆ M.E :=
 hD.2 
+
+@[ssE_finish_rules] lemma coindep.subset_ground (hX : M.coindep X) : X ⊆ M.E :=
+hX.1
 
 lemma indep_or_dep (hX : X ⊆ M.E . ssE) : M.indep X ∨ M.dep X := 
 by { rw [dep, and_iff_left hX], apply em }
@@ -548,7 +551,7 @@ begin
     (inter_subset_right _ _),
 end
 
-lemma base_iff_basis_univ : M.base B ↔ M.basis B M.E :=
+lemma base_iff_basis_ground : M.base B ↔ M.basis B M.E :=
 begin
   rw [base_iff_maximal_indep, basis_iff, and_congr_right], 
   intro hB, 
@@ -556,7 +559,7 @@ begin
   exact ⟨λ h J hJ hBJ hJE, h _ hJ hBJ, λ h I hI hBI, h I hI hBI hI.subset_ground⟩,
 end 
 
-lemma base.basis_univ (hB : M.base B) : M.basis B M.E := base_iff_basis_univ.mp hB
+lemma base.basis_ground (hB : M.base B) : M.basis B M.E := base_iff_basis_ground.mp hB
 
 lemma indep.basis_of_forall_insert (hI : M.indep I) 
   (hIX : I ⊆ X) (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) (hX : X ⊆ M.E . ssE) : M.basis I X :=
@@ -1014,7 +1017,7 @@ postfix `﹡`:(max+1) := has_matroid_dual.dual
 
 instance matroid_in_dual {α : Type*} : has_matroid_dual (matroid_in α) := ⟨matroid_in.dual⟩ 
 
-lemma dual_indep_iff_exists : (M﹡.indep I) ↔ I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B := 
+lemma dual_indep_iff_exists : (M﹡.indep I) ↔ I ⊆ M.E ∧ (∃ B, M.base B ∧ disjoint I B) := 
 by simp [has_matroid_dual.dual, dual]
 
 @[simp] lemma dual_ground : M﹡.E = M.E := rfl 
@@ -1115,7 +1118,6 @@ lemma base_iff_dual_base_compl (hB : B ⊆ M.E . ssE) : M.base B ↔ M﹡.base (
 by simp [dual_base_iff]
 
 end dual 
-
 
 section examples 
 

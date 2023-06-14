@@ -68,6 +68,9 @@ begin
   refine λ hI h, hI.subset_ground, 
 end 
 
+lemma indep.indep_restrict_of_subset (h : M.indep I) (hIR : I ⊆ R) : (M ‖ R).indep I := 
+restrict_indep_iff.mpr ⟨h,hIR⟩
+
 lemma restrict_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl 
 
 @[simp] lemma restrict_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
@@ -157,6 +160,9 @@ h
 
 lemma strict_restriction.restriction (h : N <r M) : N ≤r M :=
 h.1
+
+@[simp] lemma restrict_restriction (M : matroid_in α) (R : set α) : M ‖ R ≤r M := 
+by rw [restriction, restrict_ground_eq', restrict_inter_ground]
 
 lemma strict_pminor.ne (h : N <r M) : N ≠ M := 
 by { rintro rfl, exact h.2.ne rfl }
