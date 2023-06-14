@@ -3,6 +3,7 @@ import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
 import m_in.minor
+import m_in.rank
 
 
 namespace set
@@ -47,7 +48,9 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
     (hFW : 
       @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
 
-def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (s : set W) : 
+-- shouldn't maximality be a consequence of exchange property?
+def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -115,6 +118,7 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
         ext;
         refine ⟨λ h, (union_subset hS2 (singleton_subset_iff.2 hb1)) h, λ hx, _⟩,
         have y := f.to_fun ⟨x, hx⟩,
+
         sorry },
       obtain ⟨b, ⟨hb1, hb2⟩⟩ := h50,
       use b,
@@ -128,15 +132,18 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
   maximality := λ I X hI hIX, 
     begin
       simp only at *,
-      --obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
-      have h2 := exists_maximal_independent' 𝔽 (λ x : X, (x : W)),
-      obtain ⟨I', ⟨hI', hI'X⟩⟩ := h2,
-      
-      rw set.coe_eq_subtype at I',
-      simp only at *,
-      
-      
+      obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
+      have h2 := linear_independent.mono hBe hBs.2.2,
+      use (h2.extend hIX), 
+      simp only [mem_maximals_iff', mem_set_of_eq],
+      refine ⟨⟨_, ⟨h2.subset_extend hIX, h2.extend_subset hIX⟩⟩, λ y hy hI'y, _⟩,
+      -- i think X ⊆ s has to be stated in maximality.
+      have h10 := exists_linear_independent_extension (h2.linear_independent_extend hIX),
       sorry,
+      sorry,
+      obtain ⟨⟨By, ⟨hB1, hB2, hBy⟩, hyBy⟩, hIy, hyX⟩ := hy,
+      rw ← eq_of_linear_independent_of_span_subtype 
+        (linear_independent.mono hyBy hBy) hI'y (subset_trans hyX (h2.subset_span_extend hIX)),
     end,
   subset_ground' := by tauto }
 
