@@ -4,6 +4,7 @@ import linear_algebra.basis
 import linear_algebra.linear_independent
 import m_in.minor
 import m_in.rank
+import m_in.equiv
 
 
 namespace set
@@ -135,7 +136,7 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
       obtain ⟨B, ⟨hBs, hBe⟩⟩ := hI,
       have h2 := linear_independent.mono hBe hBs.2.2,
       use (h2.extend hIX), 
-      simp only [mem_maximals_iff', mem_set_of_eq],
+      simp only [mem_maximals_iff'],
       refine ⟨⟨_, ⟨h2.subset_extend hIX, h2.extend_subset hIX⟩⟩, λ y hy hI'y, _⟩,
       -- i think X ⊆ s has to be stated in maximality.
       have h10 := exists_linear_independent_extension (h2.linear_independent_extend hIX),
@@ -148,6 +149,12 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
   subset_ground' := by tauto }
 
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
+lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
+  ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
+begin
+  sorry,
+
+end
 
 namespace rep
 
@@ -330,11 +337,20 @@ end
 
 def rep_of_del (N : matroid_in α) (φ : rep 𝔽 W N) (D : set α) : 
 rep 𝔽 W (N ⟍ D) := 
-{ to_fun := φ.to_fun,
-  valid' := λ I hI, by { rw delete_ground at hI, 
-    refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
+{ to_fun := φ,
+  valid' := λ I,
+    begin
+      refine ⟨λ h, _, λ h, _⟩,
+      apply delete_indep_iff.2,
+      refine ⟨(φ.valid' I).1 h, _⟩,
+      have h2 := linear_independent.restrict_of_comp_subtype h,
+      rw φ.valid' at h,
+      sorry,
+    end }
+   --by { rw delete_ground at hI, 
+    /-refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
     (subset_diff.1 hI).2⟩, λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 
-    (matroid_in.delete_indep_iff.1 h).1⟩, } }
+    (matroid_in.delete_indep_iff.1 h).1⟩, } }-/
 
 lemma linear_independent.map'' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
    (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
@@ -402,11 +418,10 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
           ext;
           simp only [mem_range, set_coe.exists, subtype.coe_mk, exists_prop, mem_image] },
       obtain ⟨J, hJ⟩ := exists_basis N C hC,
-      rw [basis.contract_eq hJ, delete_ground, contract_ground] at hI,
-      rw basis.contract_eq hJ,
+      rw [basis.contract_eq_contract_delete hJ, delete_indep_iff, 
+        indep.contract_indep_iff hJ.indep],
       have h10 := span_basis φ hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      rw [delete_indep_iff, indep.contract_indep_iff (hJ.indep)],
       refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
       simp at h,
       simp_rw [← mkq_apply _] at h,
