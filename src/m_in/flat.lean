@@ -453,24 +453,42 @@ end
 /- changed `univ` to `M.E` -/
 /- question: should we change `univ` to `ground` in lemma's names? -/
 
+lemma ne_ground_iff_exists_not_mem (h : X ⊆ M.E . ssE) :
+  X ≠ M.E ↔ ∃ e ∈ M.E, e ∉ X :=
+begin
+  refine ⟨λ h', exists_of_ssubset (ssubset_iff_subset_ne.mpr ⟨h, h'⟩),
+          λ h' h'', _⟩,
+  rw h'' at h',
+  obtain ⟨e, he, he'⟩ := h',
+  exact he' he
+end 
+
+lemma ground_subset_iff (h : X ⊆ M.E . ssE) :
+  M.E ⊆ X ↔ X = M.E :=
+⟨λ h',  subset_antisymm h h', λ h', (eq.symm h').subset⟩
+/- question: what file to move these two lemmas to?
+   or are they a good addition in the first place? -/
+
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
 begin
-  rw [hyperplane_iff_maximal_cl_ne_univ, cl_cl, ne_univ_iff_exists_not_mem],
-  refine ⟨⟨e, λ he, indep_iff_cl_diff_ne_forall.mp hB.indep _ heB (cl_diff_singleton_eq_cl he)⟩,
-    λ X hX, univ_subset_iff.mp _⟩,
-  obtain ⟨f,hfX, hfB⟩ := exists_of_ssubset hX,
+  rw [hyperplane_iff_maximal_cl_ne_univ, cl_cl, ne_ground_iff_exists_not_mem],
+  refine ⟨⟨e, hB.subset_ground heB,
+    λ he, indep_iff_cl_diff_ne_forall.mp hB.indep e heB (cl_diff_singleton_eq_cl he)⟩,
+    λ X hX, _⟩,
+  refine ground_subset_iff.mp _,
+  obtain ⟨f,hfX, hfB⟩ := exists_of_ssubset hX.2,
   obtain (rfl | hef) := eq_or_ne f e,
-  { have hu := union_subset (singleton_subset_iff.mpr hfX) ((subset_cl _ _).trans hX.subset),
+  { have hu := union_subset (singleton_subset_iff.mpr hfX) ((subset_cl _ _).trans hX.2.subset),
     rw [singleton_union, insert_diff_singleton, insert_eq_of_mem heB] at hu,
-    exact (hB.cl.symm.trans_subset (M.cl_subset hu))},
-  rw (hB.indep.diff {e}).not_mem_cl_iff at hfB,
+    exact (hB.cl.symm.trans_subset (M.cl_subset hu)) },
+  rw (hB.indep.diff {e}).not_mem_cl_iff (hX.1 hfX) at hfB,
   have  hf : f ∉ B,
   { refine λ hf, hef _,
     simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hfB,
-    exact hfB.1 hf},
+    exact hfB.1 hf },
   rw ←(hB.exchange_base_of_indep heB hf hfB.2).cl,
-  exact M.cl_subset (insert_subset.mpr ⟨hfX,subset_trans (M.subset_cl _) hX.subset⟩),
+  exact M.cl_subset (insert_subset.mpr ⟨hfX,subset_trans (M.subset_cl _) hX.2.subset⟩),
 end
 
 lemma hyperplane.ssupset_eq_univ_of_flat (hH : M.hyperplane H) (hF : M.flat F) (h : H ⊂ F) :
