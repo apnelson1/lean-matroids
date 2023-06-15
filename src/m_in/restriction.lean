@@ -1,4 +1,4 @@
-import .basic 
+import .equiv
 
 open set
 
@@ -106,9 +106,6 @@ end
 lemma restrict_inter_ground (M : matroid_in α) (R : set α) : M ‖ (R ∩ M.E) = M ‖ R := 
 by rw [restrict_eq_restrict_iff, inter_assoc, inter_self]
 
-lemma indep.indep_restrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
-restrict_indep_iff.mpr ⟨hI, hIX⟩ 
-
 lemma indep.of_restrict (hI : (M ‖ R).indep I) : M.indep I := 
 (restrict_indep_iff.mp hI).1 
 
@@ -191,6 +188,53 @@ begin
   rw [←h', ←M.restrict_ground_eq_self, restrict_restrict, restrict_eq_restrict_iff, 
     inter_right_comm, inter_self, eq_comm, inter_eq_left_iff_subset, ←h, restrict_ground_eq'],
   exact inter_subset_right _ _,  
+end 
+
+
+def foo {α β : Type*} {s : set α} {t : set β} (e : s ≃ t) (a : set s) : 
+  (coe '' a : set α) ≃ (coe '' (e '' a) : set β) :=
+begin
+  have := @equiv.subtype_equiv _ _ a (e '' a) e _, 
+  { refine (equiv.trans _ this).trans _,  
+    { symmetry, 
+      have := @equiv.subtype_subtype_equiv_subtype α s (coe '' a),   },  }, 
+  { rintro ⟨x, hx⟩, 
+    refine ⟨λ h, ⟨⟨x,hx⟩, h, rfl⟩ , _⟩,
+    rintro ⟨⟨y,hy⟩, hya, h⟩, 
+    convert hya, 
+    simpa using e.apply_eq_iff_eq.mp h.symm }, 
+  -- refine (@equiv.subtype_subtype_equiv_subtype α s (coe '' a) sorry).symm.trans _,  
+  -- apply @equiv.subtype_equiv (coe '' a : set α), 
+end 
+-- { to_fun := λ x,  
+--     let (hx : (x : α) ∈ s) := mem_of_mem_of_subset x.prop (by simp : coe '' a ⊆ s) in 
+--   ⟨e ⟨x, hx⟩, 
+--     begin
+--        refine ⟨e ⟨x, hx⟩, ⟨⟨x,hx⟩,_,rfl⟩, rfl⟩,    
+--         obtain ⟨y,hy,hy'⟩ := x.prop, 
+--         convert hy,   apply subtype.coe_injective,   
+--         rw [hy'], 
+--         refl, 
+--     end⟩,
+--   inv_fun := ,
+--   left_inv := _,
+--   right_inv := _ }
+
+def restrict_iso' (i : M ≃i N) (R : set M.E) : 
+  (M ‖ (coe '' R : set α)) ≃i (N ‖ (coe '' (i '' R) : set α)) := 
+{ to_fun := by {},
+  -- { to_fun := λ e, ⟨i ⟨e, by { apply mem_of_mem_of_subset e.2, simp } ⟩, 
+  --               by { simp,  }⟩ ,
+  -- inv_fun := _,
+  -- left_inv := _,
+  -- right_inv := _ } ,
+
+  on_base := sorry }
+
+
+def restrict_iso (i : M ≃i N) (R : set α) : 
+  M ‖ R ≃i (N ‖ (coe '' (i '' (coe ⁻¹' R : set M.E)) : set α)) := 
+begin
 end 
 
 end restrict 
