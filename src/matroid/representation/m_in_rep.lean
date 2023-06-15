@@ -337,15 +337,37 @@ end
 
 def rep_of_del (N : matroid_in α) (φ : rep 𝔽 W N) (D : set α) : 
 rep 𝔽 W (N ⟍ D) := 
-{ to_fun := φ,
+{ to_fun := λ x, if x ∈ D then (0 : W) else φ x,
   valid' := λ I,
     begin
+      rw delete_indep_iff,
       refine ⟨λ h, _, λ h, _⟩,
-      apply delete_indep_iff.2,
-      refine ⟨(φ.valid' I).1 h, _⟩,
-      have h2 := linear_independent.restrict_of_comp_subtype h,
-      rw φ.valid' at h,
-      sorry,
+      -- deterministic timeout if i plug this in directly
+      have h5 := linear_independent.restrict_of_comp_subtype h,
+      have h4 : ∀ x : I, (I.restrict (λ (x : α), ite (x ∈ D) 0 (φ x))) x ≠ 0 :=
+      by { intros x, apply linear_independent.ne_zero x h5 },
+      simp only [restrict_apply, ne.def, ite_eq_left_iff, not_forall, 
+        exists_prop, set_coe.forall, subtype.coe_mk] at h4,
+      refine ⟨_, disjoint_left.2 (λ a ha, (h4 a ha).1)⟩,
+      have h10 : (λ (x : α), ite (x ∈ D) 0 (φ x)) ∘ (coe : I → α) = φ ∘ (coe : I → α),
+      { ext;
+        simp only [ite_eq_right_iff],
+        specialize h4 x.1 x.2,
+        rw imp_iff_not_or,
+        left,
+        apply h4.1 },
+      rw h10 at h,
+      rw ← φ.valid',
+      apply h,
+      have h10 : (λ (x : α), ite (x ∈ D) 0 (φ x)) ∘ (coe : I → α) = φ ∘ (coe : I → α),
+      { ext;
+        simp only [ite_eq_right_iff],
+        rw imp_iff_not_or,
+        left,
+        rw disjoint_left at h,
+        apply h.2 x.2 },
+      rw h10,
+      apply (φ.valid' I).2 h.1,
     end }
    --by { rw delete_ground at hI, 
     /-refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
@@ -422,42 +444,35 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         indep.contract_indep_iff hJ.indep],
       have h10 := span_basis φ hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
       simp at h,
       simp_rw [← mkq_apply _] at h,
-      rw ← φ.valid' _ (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left),
+      rw ← φ.valid' _,
       have h30 : disjoint (span 𝔽 (φ.to_fun '' I)) (span 𝔽 (φ.to_fun '' J)),
       { simp_rw [← to_fun_eq_coe] at h10,
         rw h10,
         simp at h10,
         simp_rw [← to_fun_eq_coe],
         rw ← ker_mkq (span 𝔽 (φ.to_fun '' C)),
-        rw linear_map.linear_independent_iff at h,
-        --simp at h,
-        rw ← image_univ at h, 
-        rw [h21, disjoint.comm] at h,
+        rw [linear_map.linear_independent_iff, ← image_univ, h21, disjoint.comm] at h,
         exact h.2 },
       have h7 := linear_independent.image 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h),
-      have h8 := linear_independent.image ((φ.valid' J hJ.subset_ground_left).2 (hJ.indep)),
+      have h8 := linear_independent.image ((φ.valid' J).2 (hJ.indep)),
       have h6 := linear_independent.union h7 h8 h30,
       rw [linear_independent_image, image_union],
-      exact linear_independent.union h7 h8 h30,
-      rw inj_on_union (subset_diff.1 (subset_diff.1 hI).1).2,
-      refine ⟨φ.inj_on_of_indep ((φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).1 
+      refine ⟨⟨_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6), h6⟩, _⟩,
+      sorry,
+      rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
+      refine ⟨φ.inj_on_of_indep ((φ.valid' I).1 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h)), 
         ⟨φ.inj_on_of_indep (hJ.indep), λ x hx y hy, set.disjoint_iff_forall_ne.1 
         (linear_independent.union' h7 h8 h30 h6) (φ x) (mem_image_of_mem φ hx) 
         (φ y) (mem_image_of_mem φ hy)⟩⟩,
-      rw delete_indep_iff at h,
-      rw indep.contract_indep_iff hJ.indep at h,
       simp_rw [← mkq_apply _],
       rw linear_map.linear_independent_iff,
-      refine ⟨(φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).2
-        (indep.subset h.1.2 (subset_union_left I J)), _⟩,
+      refine ⟨(φ.valid' I).2 (indep.subset h.1.2 (subset_union_left I J)), _⟩,
       rw ker_mkq (span 𝔽 (φ.to_fun '' C)),
-      have h60 := linear_independent.image ((φ.valid' (I ∪ J) 
-        (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left)).2 h.1.2),
+      have h60 := linear_independent.image ((φ.valid' _).2 h.1.2),
       rw image_union at h60,
       rw [← image_univ, h21],
       simp_rw [to_fun_eq_coe],
@@ -465,23 +480,19 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       simp only,
       apply linear_independent.union'',
       { apply linear_independent.image 
-          ((φ.valid' J hJ.subset_ground_left).2 (indep.subset h.1.2 (subset_union_right I J))) },
+          ((φ.valid' J).2 (indep.subset h.1.2 (subset_union_right I J))) },
       { apply linear_independent.image 
-          ((φ.valid' I ((subset_diff.1 (subset_diff.1 hI).1).1)).2 
+          ((φ.valid' I).2 
           (indep.subset h.1.2 (subset_union_left I J))) },
       { rw disjoint.comm,
         apply disjoint_image_image,
         have h200 := inj_on_of_indep φ h.1.2,
         rw inj_on at h200,
         intros x hx y hy,
-        have h300 := mem_of_subset_of_mem (subset_union_left I J) hx,
         specialize h200 (mem_of_subset_of_mem (subset_union_left I J) hx) 
           (mem_of_subset_of_mem (subset_union_right I J) hy),
         apply mt h200,
-        by_contra,
-        apply not_mem_of_mem_diff (mem_of_subset_of_mem (subset_diff.1 hI).1 hx), 
-        rw h,
-        apply hy },
+        apply disjoint_iff_forall_ne.1 h.1.1 x hx y hy },
       rw [to_fun_eq_coe, union_comm _ _] at h60,
       apply h60,
     end }
