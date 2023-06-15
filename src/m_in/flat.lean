@@ -453,47 +453,79 @@ end
 /- changed `univ` to `M.E` -/
 /- question: should we change `univ` to `ground` in lemma's names? -/
 
+lemma ne_ground_iff_exists_not_mem (h : X ⊆ M.E . ssE) :
+  X ≠ M.E ↔ ∃ e ∈ M.E, e ∉ X :=
+begin
+  refine ⟨λ h', exists_of_ssubset (ssubset_iff_subset_ne.mpr ⟨h, h'⟩),
+          λ h' h'', _⟩,
+  rw h'' at h',
+  obtain ⟨e, he, he'⟩ := h',
+  exact he' he
+end 
+
+lemma ground_subset_iff (h : X ⊆ M.E . ssE) :
+  M.E ⊆ X ↔ X = M.E :=
+⟨λ h',  subset_antisymm h h', λ h', (eq.symm h').subset⟩
+/- question: what file to move these two lemmas to?
+   or are they a good addition in the first place? -/
+
 lemma base.hyperplane_of_cl_diff_singleton (hB : M.base B) (heB : e ∈ B) :
   M.hyperplane (M.cl (B \ {e})) :=
 begin
-  rw [hyperplane_iff_maximal_cl_ne_univ, cl_cl, ne_univ_iff_exists_not_mem],
-  refine ⟨⟨e, λ he, indep_iff_cl_diff_ne_forall.mp hB.indep _ heB (cl_diff_singleton_eq_cl he)⟩,
-    λ X hX, univ_subset_iff.mp _⟩,
-  obtain ⟨f,hfX, hfB⟩ := exists_of_ssubset hX,
+  rw [hyperplane_iff_maximal_cl_ne_univ, cl_cl, ne_ground_iff_exists_not_mem],
+  refine ⟨⟨e, hB.subset_ground heB,
+    λ he, indep_iff_cl_diff_ne_forall.mp hB.indep e heB (cl_diff_singleton_eq_cl he)⟩,
+    λ X hX, _⟩,
+  refine ground_subset_iff.mp _,
+  obtain ⟨f,hfX, hfB⟩ := exists_of_ssubset hX.2,
   obtain (rfl | hef) := eq_or_ne f e,
-  { have hu := union_subset (singleton_subset_iff.mpr hfX) ((subset_cl _ _).trans hX.subset),
+  { have hu := union_subset (singleton_subset_iff.mpr hfX) ((subset_cl _ _).trans hX.2.subset),
     rw [singleton_union, insert_diff_singleton, insert_eq_of_mem heB] at hu,
-    exact (hB.cl.symm.trans_subset (M.cl_subset hu))},
-  rw (hB.indep.diff {e}).not_mem_cl_iff at hfB,
+    exact (hB.cl.symm.trans_subset (M.cl_subset hu)) },
+  rw (hB.indep.diff {e}).not_mem_cl_iff (hX.1 hfX) at hfB,
   have  hf : f ∉ B,
   { refine λ hf, hef _,
     simp only [mem_diff, mem_singleton_iff, not_and, not_not] at hfB,
-    exact hfB.1 hf},
+    exact hfB.1 hf },
   rw ←(hB.exchange_base_of_indep heB hf hfB.2).cl,
-  exact M.cl_subset (insert_subset.mpr ⟨hfX,subset_trans (M.subset_cl _) hX.subset⟩),
+  exact M.cl_subset (insert_subset.mpr ⟨hfX,subset_trans (M.subset_cl _) hX.2.subset⟩),
 end
 
 lemma hyperplane.ssupset_eq_univ_of_flat (hH : M.hyperplane H) (hF : M.flat F) (h : H ⊂ F) :
-  F = univ :=
-by { rw hyperplane_iff_maximal_cl_ne_univ at hH, rw [←hH.2 F h, hF.cl] }
+  F = M.E :=
+by { rw hyperplane_iff_maximal_cl_ne_univ at hH, rw [←hH.2 F ⟨hF.subset_ground, h⟩, hF.cl] }
 
-lemma hyperplane.cl_insert_eq_univ (hH : M.hyperplane H) (he : e ∉ H) :
-  M.cl (insert e H) = univ :=
-hH.ssupset_eq_univ_of_flat (M.flat_of_cl _) ((ssubset_insert he).trans_subset (M.subset_cl _))
+lemma hyperplane.cl_insert_eq_univ (hH : M.hyperplane H) (he : e ∈ M.E \ H) :
+  M.cl (insert e H) = M.E :=
+begin
+  refine hH.ssupset_eq_univ_of_flat (M.flat_of_cl _)
+    ((ssubset_insert he.2).trans_subset (M.subset_cl _ _)),
+  rw [insert_eq, union_subset_iff, singleton_subset_iff],
+  exact ⟨he.1, hH.subset_ground⟩,
+end
+/- changed `univ` to `M.E` -/
+/- hypothesis: changed `e ∉ H` to `e ∈ M.E \ H` -/
 
-lemma exists_hyperplane_sep_of_not_mem_cl (h : e ∉ M.cl X) :
+-- change e ∈ M.E \ H
+
+lemma exists_hyperplane_sep_of_not_mem_cl (h : e ∈ M.E \ M.cl X) (hX : X ⊆ M.E . ssE) :
   ∃ H, M.hyperplane H ∧ X ⊆ H ∧ e ∉ H :=
 begin
-  obtain ⟨I,hI⟩ := M.exists_basis X,
-  rw [←hI.cl, hI.indep.not_mem_cl_iff] at h,  
-  obtain ⟨B, hB, heIB⟩ := h.2.exists_base_supset, 
+  obtain ⟨I, hI⟩ := M.exists_basis X,
+  rw ←hI.cl at h,
+  have h' := h.2,
+  rw hI.indep.not_mem_cl_iff at h',
+  obtain ⟨B, hB, heIB⟩ := h'.2.exists_base_supset,
   rw insert_subset at heIB,
-  refine ⟨M.cl (B \ {e}), hB.hyperplane_of_cl_diff_singleton heIB.1,_,λ hecl, _ ⟩,
-  { exact hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h.1)) },
-  exact indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl),
+  exact ⟨M.cl (B \ {e}), hB.hyperplane_of_cl_diff_singleton heIB.1,
+    hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h'.1)),
+    λ hecl, indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl)⟩,
 end
+/- hypothesis: changed `e ∉ M.cl X` to `e ∈ M.E \ M.cl X` -/
+/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
+   `M.hyperplane H` never holds -/
 
-lemma cl_eq_sInter_hyperplanes (M : matroid E) (X : set α) :
+lemma cl_eq_sInter_hyperplanes (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) :
   M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
 begin
   apply subset_antisymm,
@@ -501,10 +533,17 @@ begin
     exact λ H hH hXH, hH.flat.cl_subset_of_subset hXH},
   by_contra' h',
   obtain ⟨x, h, hx⟩ := not_subset.mp h',
-  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx,
+  
+  dsimp at h,
+  
+  -- question: is it possible to show `x ∈ M.E`?
+
+  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx hX,
   exact hxH (h H ⟨hH, hXH⟩),
 end
-
+/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
+   `M.hyperplane H` never holds -/
+   
 lemma mem_cl_iff_forall_hyperplane : e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
 by simp [cl_eq_sInter_hyperplanes]
 
