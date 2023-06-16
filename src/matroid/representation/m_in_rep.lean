@@ -174,7 +174,14 @@ inj_on_iff_injective.2 ((φ.valid' I).2 hI).injective
 
 lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
 begin
-  sorry 
+  by_contra,
+  apply he,
+  rw ← singleton_subset_iff,
+  apply indep.subset_ground,
+  rw ← φ.valid',
+  have h2 := @linear_independent_singleton 𝔽 W _ _ _ _ _ _ h,
+  rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
+  apply h2,
 end  
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : α → W)  := by { ext, refl }
@@ -183,27 +190,27 @@ lemma linear_independent_iff_coe (φ : rep 𝔽 W M) (hI : M.indep I) :
   linear_independent 𝔽 (λ e : I, φ e) ↔ linear_independent 𝔽 (coe : φ '' I → W) :=
 linear_independent_image $ inj_on_of_indep _ hI
 
-def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
+def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (hx : x ∈ M.E) : φ x ∈ rep.to_submodule φ :=
-by { rw [rep.to_submodule], refine subset_span _, simp, sorry }
+def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
+
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ rep.to_submodule φ :=
+by { by_cases x ∈ M.E, rw [rep.to_submodule], refine subset_span _, rw mem_range, use x,
+  rw φ.eq_zero_of_not_mem_ground h, simp only [submodule.zero_mem] }
 
 def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M := 
-{ to_fun := λ a, --⟨φ x, _⟩,
-    begin
-      refine ⟨φ a, _⟩,
-      /-have h2 := (rep.mem_to_submodule φ),
-      apply h2,-/
-      sorry,
-    end,
+{ to_fun := λ a, ⟨φ a, (rep.mem_to_submodule φ a)⟩,
   valid' := λ I, 
     begin
-      have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, rep.mem_to_submodule φ x⟩ : (span 𝔽 (range ⇑φ)))),
-        { simp only [subtype.coe_mk] },
-      have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, rep.mem_to_submodule φ x⟩ : span 𝔽 (range ⇑φ))),
+      have h8 : (λ (x : ↥I), φ x) = 
+        (λ (x : ↥I), ↑(⟨φ x, rep.mem_to_submodule φ x⟩ : (span 𝔽 (range ⇑φ)))),
+      { simp only [subtype.coe_mk] },
+      have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), 
+        (⟨φ x, rep.mem_to_submodule φ x⟩ : span 𝔽 (range ⇑φ))),
         { simp_rw [h8, ← submodule.coe_subtype],
-          apply linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
-      simp_rw [← h4], 
+          apply linear_map.linear_independent_iff 
+          ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
+      simp_rw [← h4],
       apply φ.valid,
     end } 
 
@@ -514,13 +521,14 @@ begin
     apply h,
     have h8 : span K (range (coe : s → V)) = span K s,
     simp only [subtype.range_coe_subtype, set_of_mem_eq],
-    apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
-    rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
+    apply _root_.basis.finite_index_of_rank_lt_aleph_0 (basis.span hs),
+    rw [← is_noetherian.iff_rank_lt_aleph_0, is_noetherian.iff_fg, h8],
     apply h3 },
 end 
 
 
-lemma of_r (φ : rep 𝔽 W M) (X : set α) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
+lemma of_r (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
+  finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   rw [←hI.card, ←φ.span_basis hI, finrank_span_set_eq_ncard, 
@@ -529,10 +537,12 @@ begin
 end
 
 lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
-by { convert of_r φ univ; simp }
+by { convert of_r φ M.E; simp }
 
-lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) : φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x hx.2 }
+lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
+  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x 
+  (mem_of_mem_of_subset hx (M.cl_subset_ground X)) }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set α} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
