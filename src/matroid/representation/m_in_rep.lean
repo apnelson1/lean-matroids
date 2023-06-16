@@ -251,16 +251,15 @@ lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (h
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  /-have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
-    (φ.valid' (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,-/
-  sorry,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
   φ e ∈ span 𝔽 (φ '' B) :=
-of_basis φ (base.basis_univ hB) he
+of_basis φ (base.basis_ground hB) he
 
 lemma span_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) : 
   span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
@@ -271,7 +270,7 @@ begin
 end
 
 lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
-  by { rw [span_basis φ (base.basis_univ hB)] }
+  by { rw [span_basis φ (base.basis_ground hB)] }
 
 -- use span
 /-lemma span_base' (φ : rep 𝔽 W M) (hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
@@ -287,7 +286,7 @@ end-/
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span 
-  ((φ.valid' B (base.subset_ground hB)).2 hB.indep) }
+  ((φ.valid' B).2 hB.indep) }
 
 
 /-lemma base_of_basis (φ : rep 𝔽 W M) {B : set α} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
@@ -462,6 +461,10 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       have h6 := linear_independent.union h7 h8 h30,
       rw [linear_independent_image, image_union],
       refine ⟨⟨_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6), h6⟩, _⟩,
+      apply @_root_.disjoint.of_image _ _ φ,
+      simp only [to_fun_eq_coe] at h30,
+      rw h10 at h30,
+      simp only [← to_fun_eq_coe] at h30,
       sorry,
       rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
       refine ⟨φ.inj_on_of_indep ((φ.valid' I).1 
@@ -556,11 +559,11 @@ namespace rep'
 
 lemma valid (φ : rep' 𝔽 M ι) : linear_independent 𝔽 (λ e : I, φ.to_fun e) ↔ M.indep I := φ.valid' _
 
-instance fun_like : fun_like (rep' 𝔽 M ι) E (λ _, ι → 𝔽) :=
+instance fun_like : fun_like (rep' 𝔽 M ι) α (λ _, ι → 𝔽) :=
 { coe := rep'.to_fun,
   coe_injective' := λ f g h, by cases f; cases g; congr' }
 
-instance : has_coe_to_fun (rep' 𝔽 M ι) (λ _, E → ι → 𝔽) := fun_like.has_coe_to_fun
+instance : has_coe_to_fun (rep' 𝔽 M ι) (λ _, α → ι → 𝔽) := fun_like.has_coe_to_fun
 
 @[simp] lemma to_fun_eq_coe' (φ : rep' 𝔽 M ι) : φ.to_fun = (φ : α → ι → 𝔽)  := by { ext, refl }
 
@@ -579,28 +582,36 @@ noncomputable def rep'_of_rep [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) {n
     W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
   end }
 
-lemma of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) (e : α) : φ e ∈ span 𝔽 (φ '' B) :=
+lemma of_basis' (φ : rep' 𝔽 M ι) {X I : set α} (hI : M.basis I X) {e : α} (he : e ∈ X): 
+  φ e ∈ span 𝔽 (φ '' I) :=
 begin
-  by_cases e ∈ B,
-  { exact subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e B, φ x) := φ.valid.not.2 (hB.dep_of_insert h),
+  by_cases e ∈ I, 
+  { apply subset_span (mem_image_of_mem _ h) },
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  exact (linear_independent_insert' h).2 ⟨φ.valid.2 hB.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
 end
 
-lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) :
-  span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) :=
+lemma of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
+  φ e ∈ span 𝔽 (φ '' B) := of_basis' φ (base.basis_ground hB) he
+
+lemma span_basis' (φ : rep' 𝔽 M ι) {X I : set α} (hI : M.basis I X) : 
+  span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
 begin
-  --refine (span_mono $ image_subset_range _ _).antisymm (span_le.2 _),
-  ext;
-  exact of_base' _ hB _,
+  refine (span_mono $ image_subset _ (basis.subset hI)).antisymm (span_le.2 _),
+  rintros _ ⟨y, ⟨hy1, rfl⟩⟩,
+  apply of_basis' φ hI hy1,
 end
+
+lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
+  by { rw [span_basis' φ (base.basis_ground hB)] }
 
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base' _ hB, image_eq_range], exact basis.span ((rep'.valid' φ B).2 hB.indep) }
 
-instance fin_dim_rep' (φ : rep' 𝔽 M ι) [finite E] [fintype 𝔽] : 
+instance fin_dim_rep' (φ : rep' 𝔽 M ι) [fintype 𝔽] : 
   finite_dimensional 𝔽 (span 𝔽 (φ '' M.E)) :=
 begin
   cases M.exists_base with B hB,
@@ -612,7 +623,7 @@ lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
 begin
   cases M.exists_base with B hB,
   -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.φ '' M.E)),
+  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (φ '' M.E)),
   rw [←span_base' φ hB, finrank_span_set_eq_card (φ '' B)],
   have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
   { simp_rw to_finset_card,
@@ -721,15 +732,13 @@ begin
       simp only [mem_insert_iff, eq_self_iff_true, true_or]},
     { obtain ⟨⟨a, ⟨⟨ha1, ha2⟩, rfl⟩⟩, ha3⟩ := h20,
       use a,
-      rw mem_diff_singleton,
-      refine ⟨ha1, _⟩,
+      apply mem_diff_singleton.2 ⟨ha1, _⟩,
+      simp only [mem_singleton_iff] at ha3,
       by_contra,
       rw h at ha3,
       apply ha3,
-      simp only [mem_singleton],
-      refine ⟨_, _⟩,
-      simp only [mem_diff, mem_univ, mem_singleton_iff, subtype.mk_eq_mk, true_and],
-      apply ha2,
+      refl,
+      refine ⟨(mem_diff _).2 ⟨mem_univ _, mem_singleton_iff.1.mt (subtype.mk_eq_mk.1.mt ha2)⟩, _⟩,
       simp only [subtype.coe_mk]} },
   rw h9 at h7, 
   apply h7,
