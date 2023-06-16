@@ -194,19 +194,19 @@ def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
 def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ rep.to_submodule φ :=
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ φ.to_submodule :=
 by { by_cases x ∈ M.E, rw [rep.to_submodule], refine subset_span _, rw mem_range, use x,
   rw φ.eq_zero_of_not_mem_ground h, simp only [submodule.zero_mem] }
 
-def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M := 
-{ to_fun := λ a, ⟨φ a, (rep.mem_to_submodule φ a)⟩,
+def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule) M := 
+{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule a)⟩,
   valid' := λ I, 
     begin
       have h8 : (λ (x : ↥I), φ x) = 
-        (λ (x : ↥I), ↑(⟨φ x, rep.mem_to_submodule φ x⟩ : (span 𝔽 (range ⇑φ)))),
+        (λ (x : ↥I), ↑(⟨φ x, φ.mem_to_submodule x⟩ : (span 𝔽 (range ⇑φ)))),
       { simp only [subtype.coe_mk] },
       have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), 
-        (⟨φ x, rep.mem_to_submodule φ x⟩ : span 𝔽 (range ⇑φ))),
+        (⟨φ x, φ.mem_to_submodule x⟩ : span 𝔽 (range ⇑φ))),
         { simp_rw [h8, ← submodule.coe_subtype],
           apply linear_map.linear_independent_iff 
           ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
@@ -214,25 +214,19 @@ def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M :=
       apply φ.valid,
     end } 
 
-def rep.compose (φ : rep 𝔽 W M) (e : rep.to_submodule φ ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
-{ to_fun := λ x, sorry,--e ⟨φ x, rep.mem_to_submodule φ x⟩,
-  valid' :=
-  begin
-    intros I,
-    rw [←φ.valid],
-    rw linear_independent_image sorry,
-    convert linear_map.linear_independent_iff e.to_linear_map sorry using 1,
+def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+{ to_fun := e ∘ φ,
+  valid' := λ I,
+    begin
+      rw comp.assoc,
+      have h2 := linear_map.linear_independent_iff e.to_linear_map e.ker,
+      simp only [linear_equiv.coe_to_linear_map] at h2,
+      rw h2,
+      apply φ.valid',
+    end }
 
-    -- have := ((linear_equiv.refl 𝔽 W).to_linear_map.dom_restrict (φ.to_submodule)).linear_independent_iff sorry,
-    rw ← iff_iff_eq,
-    simp,
-    
-    
-    --rw rep.valid φ,                      
-    sorry,
-
-    --rw linear_independent_equiv,
-  end  }
+def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+  (rep.compose (φ.rep_submodule) e)
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x}).2 hx.indep).ne_zero (⟨x, mem_singleton _⟩ : ({x} : set α))
