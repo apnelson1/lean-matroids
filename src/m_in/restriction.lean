@@ -79,6 +79,9 @@ by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 instance restrict_finite [M.finite] : (M ‖ R).finite := 
 ⟨M.ground_finite.subset (inter_subset_right _ _)⟩  
 
+@[simp] lemma restrict_empty (M : matroid_in α) : M ‖ (∅ : set α) = empty α :=
+by simp [←ground_eq_empty_iff_eq_empty]
+
 @[simp] lemma restrict_dep_iff : (M ‖ R).dep X ↔ M.dep X ∧ X ⊆ R :=
 begin
   rw [dep, restrict_indep_iff, dep, restrict_ground_eq', subset_inter_iff, and_comm (X ⊆ R), 
@@ -190,52 +193,116 @@ begin
   exact inter_subset_right _ _,  
 end 
 
+noncomputable def restrict_iso {β : Type*} {N : matroid_in β} (i : M ≃i N) (R : set α) : 
+  M ‖ R ≃i (N ‖ i.image R) := 
+let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_subset_right _ _)⟩, 
+    hf : f.injective := λ x y hxy, subtype.coe_inj.mp (by simpa using subtype.coe_inj.mp hxy) in 
+  iso_of_indep ((equiv.of_injective f hf).trans (equiv.set.of_eq 
+    (begin
+      simp_rw [restrict_ground_eq'], 
+      rw [inter_eq_self_of_subset_left (iso.image_subset_ground _ _), iso.image, 
+        subset_antisymm_iff], 
+      simp only [image_subset_iff], 
+      split, 
+      { rintro y ⟨⟨x,hx⟩, rfl⟩,
+        exact ⟨i ⟨x, (inter_subset_right _ _) hx⟩, ⟨⟨x, hx.2⟩ , hx.1, rfl⟩, rfl⟩ },
+      rintro x (hx : coe x ∈ R), 
+      simp only [mem_preimage, mem_range, set_coe.exists], 
+      refine ⟨x, ⟨hx,x.2⟩, _⟩, 
+      simp [subtype.coe_inj], 
+    end))) 
+  (begin
+    intros I, 
+    simp only [image_subset_iff, subtype.coe_mk, restrict_indep_iff, equiv.coe_trans, 
+      function.comp_app, equiv.of_injective_apply, equiv.set.of_eq_apply], 
+    rw [i.on_indep, and_iff_left, and_iff_left], 
+    { 
+      convert iff.rfl using 2,  
+      unfold iso.image, 
+      rw [subset_antisymm_iff], split, 
+      { rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩,
+        exact ⟨i ⟨z, (inter_subset_right _ _) z.prop⟩, ⟨_, by simpa, rfl⟩, rfl⟩ },
+      rintro x ⟨y, ⟨z,(hz : coe z ∈ coe '' I),rfl⟩, rfl⟩, 
 
-def foo {α β : Type*} {s : set α} {t : set β} (e : s ≃ t) (a : set s) : 
-  (coe '' a : set α) ≃ (coe '' (e '' a) : set β) :=
-begin
-  have := @equiv.subtype_equiv _ _ a (e '' a) e _, 
-  { refine (equiv.trans _ this).trans _,  
-    { symmetry, 
-      have := @equiv.subtype_subtype_equiv_subtype α s (coe '' a),   },  }, 
-  { rintro ⟨x, hx⟩, 
-    refine ⟨λ h, ⟨⟨x,hx⟩, h, rfl⟩ , _⟩,
-    rintro ⟨⟨y,hy⟩, hya, h⟩, 
-    convert hya, 
-    simpa using e.apply_eq_iff_eq.mp h.symm }, 
-  -- refine (@equiv.subtype_subtype_equiv_subtype α s (coe '' a) sorry).symm.trans _,  
-  -- apply @equiv.subtype_equiv (coe '' a : set α), 
-end 
--- { to_fun := λ x,  
---     let (hx : (x : α) ∈ s) := mem_of_mem_of_subset x.prop (by simp : coe '' a ⊆ s) in 
---   ⟨e ⟨x, hx⟩, 
---     begin
---        refine ⟨e ⟨x, hx⟩, ⟨⟨x,hx⟩,_,rfl⟩, rfl⟩,    
---         obtain ⟨y,hy,hy'⟩ := x.prop, 
---         convert hy,   apply subtype.coe_injective,   
---         rw [hy'], 
---         refl, 
---     end⟩,
---   inv_fun := ,
---   left_inv := _,
---   right_inv := _ }
+      refine ⟨⟨i z, _⟩, _, rfl⟩, 
+      { simp, sorry },
+      sorry },
+    { sorry, },
+    { sorry, }, 
+    sorry, 
+  end)
 
-def restrict_iso' (i : M ≃i N) (R : set M.E) : 
-  (M ‖ (coe '' R : set α)) ≃i (N ‖ (coe '' (i '' R) : set α)) := 
-{ to_fun := by {},
-  -- { to_fun := λ e, ⟨i ⟨e, by { apply mem_of_mem_of_subset e.2, simp } ⟩, 
-  --               by { simp,  }⟩ ,
-  -- inv_fun := _,
-  -- left_inv := _,
-  -- right_inv := _ } ,
+-- begin
+--   refine (is_empty_or_nonempty β).elim (λ h, _) (λ h, _), 
+--   { have : R ∩ M.E = ∅, 
+--     { refine eq_empty_of_forall_not_mem _, 
+--       rintro x ⟨-, hxE⟩, 
+--       apply h.elim' (i ⟨x,hxE⟩) },
+--     rw [ ←restrict_inter_ground, iso.image_eq_image_inter_ground, this, i.image_empty, 
+--       restrict_empty, restrict_empty],
+--     exact iso.of_empty _ _ },
+--   obtain b := @classical.arbitrary β h,
+--   refine iso_of_bij_on_indep (λ x, i x) _ _, 
+-- end 
+-- let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_subset_right _ _)⟩, 
+--   hf : f.injective := λ x y hxy, subtype.coe_inj.mp (by simpa using subtype.coe_inj.mp hxy)
+--   in 
+-- { to_equiv := (equiv.of_injective f hf).trans (equiv.set.of_eq 
+--   (begin
+--     simp_rw [restrict_ground_eq'], 
+--     rw [inter_eq_self_of_subset_left (iso.image_subset_ground _ _), iso.image, subset_antisymm_iff], 
+--     simp only [image_subset_iff], 
+--     split, 
+--     { rintro y ⟨⟨x,hx⟩, rfl⟩,
+--       exact ⟨i ⟨x, (inter_subset_right _ _) hx⟩, ⟨⟨x, hx.2⟩ , hx.1, rfl⟩, rfl⟩ },
+--     rintro x (hx : coe x ∈ R), 
+--     simp only [mem_preimage, mem_range, set_coe.exists], 
+--     refine ⟨x, ⟨hx,x.2⟩, _⟩, 
+--     simp [subtype.coe_inj], 
+--   end)),
+--   on_base := begin
+--     intro B, 
+--     simp only [subtype.coe_mk, equiv.to_fun_as_coe, equiv.coe_trans, function.comp_app, 
+--       equiv.of_injective_apply, equiv.set.of_eq_apply, restrict_base_iff], 
+    
+    
+--   end }
+  
+-- end 
 
-  on_base := sorry }
+-- noncomputable def foo {α β : Type*} {s : set α} {t : set β} (e : s ≃ t) (a : set s) : 
+--   (coe '' a : set α) ≃ (coe '' (e '' a) : set β) :=
+-- (equiv.set.image coe a subtype.coe_injective).symm.trans 
+--   ((e.image a).trans (equiv.set.image coe _ subtype.coe_injective))
+
+-- lemma restrict_iso_aux (R : set M.E) : (M ‖ (coe '' R : set α)).E = coe '' R :=
+-- by simp
+
+-- noncomputable def restrict_iso' (i : M ≃i N) (R : set M.E) : 
+--   (M ‖ (coe '' R : set α)) ≃i (N ‖ (coe '' (i '' R) : set α)) := 
+-- { to_fun := (equiv.set.of_eq (restrict_iso_aux _)).trans 
+--     ((foo i.to_fun R).trans (equiv.set.of_eq (restrict_iso_aux _)).symm), 
+--   on_base := begin
+--     simp only [restrict_base_iff, image_subset_iff, subtype.coe_preimage_self, preimage_univ, 
+--       subset_univ, auto_param_eq, equiv.coe_trans], 
+--     intros B, 
+--   end  }
 
 
-def restrict_iso (i : M ≃i N) (R : set α) : 
-  M ‖ R ≃i (N ‖ (coe '' (i '' (coe ⁻¹' R : set M.E)) : set α)) := 
-begin
-end 
+-- def restrict_iso (i : M ≃i N) (R : set α) : 
+--   M ‖ R ≃i (N ‖ (coe '' (i '' (coe ⁻¹' R : set M.E)) : set α)) := 
+-- begin
+--   refine ⟨_, _⟩, 
+--   {   
+
+
+--   },
+--   -- refine ⟨_,_⟩, 
+--   -- { set f : (M ‖ R).E → (N ‖ coe '' (⇑i '' (coe ⁻¹' R))).E := 
+--   --     λ ⟨x, hx⟩, ⟨i x, by {  },
+
+--   --     },
+-- end 
 
 end restrict 
 

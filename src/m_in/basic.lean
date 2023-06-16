@@ -1,5 +1,6 @@
 import mathlib.data.set.finite
 import mathlib.data.set.basic
+import mathlib.data.set.function
 import order.minimal 
 import mathlib.order.minimal
 import data.set.ncard
@@ -1183,6 +1184,10 @@ begin
   rw [he, subset_empty_iff] at hI, 
   simp [hI], 
 end 
+
+@[simp] lemma empty_ground : (empty α).E = ∅ := rfl  
+
+@[simp] lemma empty_base_iff : (empty α).base B ↔ B = ∅ := iff.rfl  
 
 end examples 
 

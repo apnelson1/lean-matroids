@@ -31,6 +31,9 @@ by { change M ‖ Rᶜᶜ = M ‖ R, rw compl_compl }
 
 @[simp] lemma restrict_compl (M : matroid_in α) (D : set α) : M ‖ Dᶜ = M ⟍ D := rfl    
 
+@[simp] lemma restrict_ground_diff (M : matroid_in α) (D : set α) : M ‖ (M.E \ D) = M ⟍ D :=
+by rw [←restrict_compl, ← M.restrict_inter_ground Dᶜ, diff_eq_compl_inter]
+
 @[simp] lemma delete_restriction (M : matroid_in α) (D : set α) : M ⟍ D ≤r M := 
 restrict_restriction _ _ 
 
@@ -139,6 +142,12 @@ by simp [←ground_eq_empty_iff_eq_empty]
 
 lemma delete_delete_diff (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
 by simp
+
+noncomputable def delete_iso {β : Type*} {N : matroid_in β} (i : M ≃i N) (D : set α) : 
+  M ⟍ D ≃i (N ⟍ i.image D) := 
+(iso.cast (M.restrict_ground_diff D).symm).trans 
+  ((restrict_iso i _).trans 
+  (iso.cast (by rw [i.image_ground_diff, restrict_ground_diff] )))
 
 end delete
 
@@ -359,6 +368,11 @@ begin
   exact (hB'.2.subset (subset_union_left _ _)).finite, 
 end 
 
+noncomputable def contract_iso {β : Type*} {N : matroid_in β} (i : M ≃i N) (C : set α) : 
+  M ⟋ C ≃i (N ⟋ i.image C) := 
+(delete_iso i.dual C).dual
+
+
 -- lemma contract_eq_delete_iff : M ⟋ X = M ⟍ X ↔ X ⊆ M.cl ∅ ∪ 
 
 -- lemma basis.foo (hI : M.basis I C) : M ⟋ C = M ⟋ I ⟍ (C \ I) :=
@@ -575,7 +589,8 @@ section iso
 
 variables {β : Type*} {N' M' : matroid_in α}
 
-def iso_minor (N M : matroid_in α) : Prop :=
+/-- We have `N ≤i M` if `M` has an `N`-minor; i.e. `N` is isomorphic to a minor of `M` -/
+def iso_minor (N : matroid_in β) (M : matroid_in α) : Prop :=
   ∃ (M' : matroid_in α), M' ≤m M ∧ nonempty (N ≃i M')
 
 infix ` ≤i ` :75 :=  matroid_in.iso_minor
@@ -583,47 +598,36 @@ infix ` ≤i ` :75 :=  matroid_in.iso_minor
 instance iso_minor_refl : is_refl (matroid_in α) (≤i) := 
 ⟨λ M, ⟨M, refl M, ⟨iso.refl M⟩⟩⟩ 
 
-lemma iso.iso_minor (e : N ≃i M) : N ≤i M :=
+lemma iso.iso_minor {N : matroid_in β} (e : N ≃i M) : N ≤i M :=
 ⟨M, minor.refl, ⟨e⟩⟩  
 
-lemma iso.trans_iso_minor (e : N ≃i N') (h : N ≤i M) : N' ≤i M := 
-by { obtain ⟨M', hNM', ⟨i'⟩⟩ := h, exact ⟨M', hNM', ⟨e.symm.trans i'⟩⟩ }
-
-lemma iso_minor.trans_iso (h : N ≤i M) (e : M ≃i M') : N ≤i M' :=
+lemma minor.trans_iso {M' : matroid_in β} (h : N ≤m M) (e : M ≃i M') : N ≤i M' :=
 begin
-  obtain ⟨N', h, ⟨i⟩⟩ := h, 
-  refine i.symm.trans_iso_minor _, 
-  -- suffices : N' ≤i M', 
-  -- have := i.trans_iso_minor, 
+  obtain ⟨C, hC, D, hD, hCD, rfl⟩ := h, 
+  set i := delete_iso (contract_iso e C) D, 
+  exact ⟨_,contract_delete_minor _ _ _,⟨i⟩⟩, 
 end 
-
--- lemma iso_minor.on_iso_right {N M M' : matroid_in α} (h : N ≤i M) (e : M ≃i M') : N ≤i M' :=
--- begin
---   obtain ⟨N', h, ⟨i⟩⟩ := h, 
-  
---   -- refine ⟨N', _, ⟨i⟩⟩,  
--- end 
 
 lemma minor.iso_minor (h : N ≤m M) : N ≤i M := 
 ⟨N, h, ⟨iso.refl N⟩⟩ 
 
-lemma iso_minor.trans_minor (h : N ≤i M) (h' : M ≤m M') : N ≤i M' := 
-by { obtain ⟨N', h, ⟨i⟩⟩ := h, exact ⟨N', h.trans h', ⟨i⟩⟩ } 
-
-lemma iso_minor.trans {M₁ M₂ M₃ : matroid_in α} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ :=
+lemma iso_minor.trans {α₁ α₂ α₃ : Type*} {M₁ : matroid_in α₁} {M₂ : matroid_in α₂} 
+{M₃ : matroid_in α₃} (h : M₁ ≤i M₂) (h' : M₂ ≤i M₃) : M₁ ≤i M₃ :=
 begin
-  obtain ⟨M₂', hM₂'M₂, ⟨i'⟩⟩ := h',
-  suffices : M₁ ≤i M₂', from this.trans_minor hM₂'M₂, 
-  suffices : M₁ ≤i M₂, from this.trans_iso i',
-  exact h, 
+  obtain ⟨M₂', hM₂'M₃, ⟨i'⟩⟩ := h',
+  obtain ⟨M₁', hM₁'M₂, ⟨i''⟩⟩ := h,
+  obtain ⟨N, hN, ⟨iN⟩⟩ := hM₁'M₂.trans_iso i',  
+  exact ⟨N, hN.trans hM₂'M₃, ⟨i''.trans iN⟩⟩, 
 end 
 
--- def iso_minor.antisymm (h : M ≤i N) (h' : N ≤i M) : nonempty (0M ≃i N := 
--- begin
-  
--- end  
+lemma iso.trans_iso_minor {N : matroid_in β} (e : N ≃i N') (h : N' ≤i M) : N ≤i M := 
+e.iso_minor.trans h
 
+lemma iso_minor.trans_minor {N : matroid_in β} (h : N ≤i M) (h' : M ≤m M') : N ≤i M' := 
+h.trans h'.iso_minor
 
+lemma minor.trans_iso_minor {M' : matroid_in β} (h : N ≤m M) (hM : M ≤i M') : N ≤i M' := 
+h.iso_minor.trans hM 
 
 end iso 
 
