@@ -821,8 +821,7 @@ begin
   exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', subset_univ _⟩ hBB'⟩, hIB⟩, 
 end 
 
-/-- If there is an absolute upper bound on the size of an independent set, then the maximality 
-  axiom isn't needed to define a matroid by independent sets. -/
+/-- If there is an absolute upper bound on the size of an independent set, then the maximality axiom isn't needed to define a matroid by independent sets. -/
 def matroid_of_indep_of_bdd (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
 (h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
 (h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
@@ -856,41 +855,53 @@ begin
   exact ⟨_, hB, subset.rfl⟩,  
 end 
 
-/-- A collection of sets in a finite type satisfying the usual independence axioms determines a 
-  matroid -/
+def matroid_of_indep_of_bdd' (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard →
+  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) (h_bdd : ∃ n, ∀ I, indep I → I.finite ∧ I.ncard ≤ n )
+(h_support : ∀ I, indep I → I ⊆ E) : matroid_in α :=
+matroid_of_indep_of_bdd E indep h_empty h_subset 
+(begin
+  intros I J hI hIn hJ, 
+  by_contra' h', 
+  obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
+  { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
+    exact h' e ⟨heJ,heI⟩ hi },
+  obtain (h_eq | hlt) := hle.eq_or_lt, 
+  { refine hIn ⟨hI, λ K (hK : indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
+      (λ h, h.symm.subset)⟩,
+    obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss _)), 
+    { exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
+    obtain ⟨n, hn⟩ := h_bdd, 
+    exact (hn K hK).1 },
+  obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
+    exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
+end) h_bdd h_support 
+
+@[simp] lemma matroid_of_indep_of_bdd'_apply (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard →
+  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) (h_bdd : ∃ n, ∀ I, indep I → I.finite ∧ I.ncard ≤ n )
+(h_support : ∀ I, indep I → I ⊆ E) : 
+(matroid_of_indep_of_bdd' E indep h_empty h_subset ind_aug h_bdd h_support).indep = indep :=
+by simp [matroid_of_indep_of_bdd']
+
+/-- A collection of sets in a finite type satisfying the usual independence axioms determines a matroid -/
 def matroid_of_indep_of_finite {E : set α} (hE : E.finite) (indep : set α → Prop)
-(exists_ind : ∃ I, indep I)
+(h_empty : indep ∅)
 (ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
 (ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) 
 (h_support : ∀ ⦃I⦄, indep I → I ⊆ E) :
   matroid_in α := 
-  matroid_of_indep E indep (exists.elim exists_ind (λ I hI, ind_mono hI (empty_subset _))) ind_mono 
-  (begin
-    intros I J hI hIn hJ, 
-    by_contra' h', 
-    obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
-    { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
-      exact h' e ⟨heJ,heI⟩ hi },
-    obtain (h_eq | hlt) := hle.eq_or_lt, 
-    { refine hIn ⟨hI, λ K (hK : indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
-        (λ h, h.symm.subset)⟩,
-      obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss _)), 
-      { exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
-      exact hE.subset (h_support hK), 
-       },
-    obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
-      exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
-  end) 
-  ( exists_maximal_subset_property_of_bounded ⟨E.ncard ,
-    (λ I hI, ⟨hE.subset (h_support hI), ncard_le_of_subset (h_support hI) hE⟩)⟩ )
-  h_support 
+matroid_of_indep_of_bdd' E indep h_empty ind_mono ind_aug 
+  ⟨E.ncard, λ I hI, ⟨hE.subset (h_support hI), ncard_le_of_subset (h_support hI) hE⟩⟩ h_support 
 
 @[simp] lemma matroid_of_indep_of_finite_apply {E : set α} (hE : E.finite) (indep : set α → Prop)
-(exists_ind : ∃ I, indep I)
+(h_empty : indep ∅)
 (ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
 (ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) 
 (h_support : ∀ ⦃I⦄, indep I → I ⊆ E) :
-  (matroid_of_indep_of_finite hE indep exists_ind ind_mono ind_aug h_support).indep = indep :=
+  (matroid_of_indep_of_finite hE indep h_empty ind_mono ind_aug h_support).indep = indep :=
 by simp [matroid_of_indep_of_finite]
 
 end from_axioms 
@@ -1174,7 +1185,7 @@ begin
   simp, 
 end 
 
-/-- The matroid on `X` with empty ground set -/
+/-- The matroid on `α` with empty ground set -/
 def empty (α : Type*) : matroid_in α := matroid_in.loopy_on ∅ 
 
 lemma ground_eq_empty_iff_eq_empty : M.E = ∅ ↔ M = empty α := 
@@ -1190,6 +1201,5 @@ end
 @[simp] lemma empty_base_iff : (empty α).base B ↔ B = ∅ := iff.rfl  
 
 end examples 
-
 
 end matroid_in 
