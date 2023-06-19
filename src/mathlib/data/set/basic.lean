@@ -69,4 +69,7 @@ by { ext, simp only [mem_inter_iff, mem_diff], tauto }
 lemma inter_diff_right_comm (s t r : set α) : s ∩ t \ r = (s \ r) ∩ t := 
 by rw [diff_eq, inter_right_comm, ←diff_eq]
 
+lemma not_mem_iff_mem_diff_of_mem (h : a ∈ s) : a ∉ t ↔ a ∈ s \ t :=
+(and_iff_right h).symm 
+
 end set

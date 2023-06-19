@@ -390,6 +390,9 @@ begin
   rw [h' hFE' hHF], 
 end 
 
+-- lemma hyperplane_iff_maximal_nonspanning : 
+--   M.hyperplane H ↔ H ∈ maximals (⊆) {X | X ⊆ M.E ∧ ¬ M.spanning X } :=
+
 @[simp] lemma compl_cocircuit_iff_hyperplane (hH : H ⊆ M.E . ssE) : 
   M.cocircuit (M.E \ H) ↔ M.hyperplane H :=
 begin

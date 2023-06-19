@@ -4,6 +4,7 @@ import mathlib.data.set.function
 import order.minimal 
 import mathlib.order.minimal
 import data.set.ncard
+import tactic
 -- import .ssfact 
 
 open_locale classical
