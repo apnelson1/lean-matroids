@@ -31,7 +31,7 @@ matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_in
     apply subset_union_right },
 
   have hi : M﹡.indep (M.E \ (B ∪ Y)), 
-  { rw [dual_indep_iff_exists], 
+  { rw [dual_indep_iff_coindep, coindep_iff_exists], 
     exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩ }, 
   have h_eq := hI'.eq_of_subset_indep hi hss 
     (by {rw [diff_subset_iff, union_assoc, union_diff_self, ←union_assoc], simp }), 
