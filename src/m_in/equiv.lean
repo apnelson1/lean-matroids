@@ -38,10 +38,6 @@ def iso.symm (e : M ≃i N) : N ≃i M :=
 
 @[simp] lemma coe_symm (e : M ≃i N) : (e.symm : N.E → M.E) = e.to_equiv.symm := rfl 
 
-lemma iso.of_empty (α β : Type*) : (empty α) ≃i (empty β) :=
-{ to_equiv := by {convert equiv.equiv_of_is_empty (∅ : set α) (∅ : set β)},
-  on_base' := by simp }
-
 def iso.cast {M N : matroid_in α} (h : M = N) : M ≃i N := 
 { to_equiv := equiv.cast (by rw h), 
   on_base' := by { subst h, simp } }

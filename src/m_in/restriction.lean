@@ -31,7 +31,7 @@ matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_in
     apply subset_union_right },
 
   have hi : M﹡.indep (M.E \ (B ∪ Y)), 
-  { rw [dual_indep_iff_exists, and_iff_right (diff_subset _ _)], 
+  { rw [dual_indep_iff_exists], 
     exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩ }, 
   have h_eq := hI'.eq_of_subset_indep hi hss 
     (by {rw [diff_subset_iff, union_assoc, union_diff_self, ←union_assoc], simp }), 
@@ -78,9 +78,6 @@ by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 
 instance restrict_finite [M.finite] : (M ‖ R).finite := 
 ⟨M.ground_finite.subset (inter_subset_right _ _)⟩  
-
-@[simp] lemma restrict_empty (M : matroid_in α) : M ‖ (∅ : set α) = empty α :=
-by simp [←ground_eq_empty_iff_eq_empty]
 
 @[simp] lemma restrict_dep_iff : (M ‖ R).dep X ↔ M.dep X ∧ X ⊆ R :=
 begin
@@ -136,9 +133,6 @@ begin
   rw [restrict_indep_iff, and_iff_left_iff_imp],
   exact λ _, hI, 
 end 
-
-@[simp] lemma restrict_empty_eq_empty (M : matroid_in α) : M ‖ (∅ : set α) = (empty α) :=  
-by rw [←ground_eq_empty_iff_eq_empty, restrict_ground_eq]
 
 lemma restrict_eq_self_iff : M ‖ X = M ↔ M.E ⊆ X := 
 begin

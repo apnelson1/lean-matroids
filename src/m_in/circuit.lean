@@ -138,10 +138,14 @@ begin
     exact subset_trans (diff_subset _ _) 
       ((sInter_subset_of_mem hI').trans (subset_sUnion_of_mem hI')) },
   rw [mem_insert_iff, mem_sInter, eq_comm, iff_false_intro hne, false_or] at hf, 
-  rw [←insert_diff_singleton_comm hne, indep.insert_indep_iff_of_not_mem], 
+  
+  have hi : M.indep (⋂₀ {J : set α | J ⊆ I ∧ e ∈ M.cl J} \ {f}), 
+  { exact hI.subset ((diff_subset _ _).trans (sInter_subset_of_mem hI')) },  
+  rw [←insert_diff_singleton_comm hne, hi.insert_indep_iff_of_not_mem], 
+  
   { intro hcl, 
     exact (hf _ ⟨(diff_subset _ _).trans (sInter_subset_of_mem hI'), hcl⟩).2 rfl,  },
-  { exact hI.subset ((diff_subset _ _).trans (sInter_subset_of_mem hI')) },  
+  
   exact λ h'e, he.2 ((diff_subset _ _).trans (sInter_subset_of_mem hI') h'e),  
 end 
 
@@ -371,6 +375,16 @@ begin
   exact ⟨⟨λ _, h1,hKE⟩, λ X hX hXE hXK , h2 (hX hXE) hXK ⟩, 
 end 
 
+lemma cocircuit_iff_mem_minimals_compl_nonspanning {K : set α} : 
+  M.cocircuit K ↔ K ∈ minimals (⊆) {X | ¬M.spanning (M.E \ X) } :=
+begin
+  convert cocircuit_iff_mem_minimals, 
+  ext X, 
+  simp_rw [spanning_iff_supset_base, not_exists, not_and, subset_diff, not_and, 
+    not_disjoint_iff_nonempty_inter, ←and_imp, and_iff_left_of_imp base.subset_ground, 
+    inter_comm X], 
+end 
+
 lemma cocircuit.finite [finitary M﹡] {K : set α} (hK : M.cocircuit K) : K.finite :=
 (dual_circuit_iff_cocircuit.mpr hK).finite 
 
@@ -398,11 +412,6 @@ begin
   exact M.empty_not_circuit hC, 
 end 
 
-@[simp] lemma girth_eq_zero_iff_free [finitary M] : M.girth = 0 ↔ M = free_on M.E :=
-begin
-  rw [←ground_indep_iff_eq_free_on, girth_eq_zero_iff, indep_iff_forall_subset_not_circuit], 
-  exact ⟨λ h C hCE hC, h C hC hC.finite, λ h C hC hi, h C hC.subset_ground hC⟩,
-end 
 
 lemma circuit.girth_le (hC : M.circuit C) (hCfin : C.finite) : M.girth ≤ C.ncard :=
 nat.Inf_le ⟨C, ⟨hC, hCfin⟩, rfl⟩

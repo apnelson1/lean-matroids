@@ -55,13 +55,17 @@ end
 
 lemma indep.r (hI : M.indep I) : M.r I = I.ncard := eq_r_iff.mpr ⟨I, hI.basis_self, rfl⟩
 
-lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := by rw [←hIX.card, hIX.indep.r]
+lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := 
+by rw [←hIX.card, hIX.indep.r]
 
-lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard := by rw [←hIX.r, ←hIX.indep.r]
+lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard :=
+by rw [←hIX.r, ←hIX.indep.r]
 
-lemma base.r (hB : M.base B) : M.r B = M.rk := by { rw base_iff_basis_univ at hB, rw hB.r, refl }
+lemma base.r (hB : M.base B) : M.r B = M.rk := 
+by { rw base_iff_basis_ground at hB, rw [hB.r, rk] }
 
-lemma base.card (hB : M.base B) : B.ncard = M.rk := by { rw (base_iff_basis_univ.mp hB).card, refl }
+lemma base.card (hB : M.base B) : B.ncard = M.rk := 
+by rw [(base_iff_basis_ground.mp hB).card, rk]
 
 lemma r_eq_r_inter_ground (M : matroid_in α) (X : set α) : M.r X = M.r (X ∩ M.E) :=
 by { obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), rwa [←hI.card_of_inter_ground, ←basis.card] }
@@ -113,7 +117,6 @@ end
 lemma r_le_card (M : matroid_in α) [finite M] (X : set α) (hX : X ⊆ M.E . ssE) : M.r X ≤ X.ncard :=
 M.r_le_card_of_finite (M.set_finite X)
 
-
 lemma indep_iff_r_eq_card_of_finite {M : matroid_in α} (hI : I.finite) :
   M.indep I ↔ M.r I = I.ncard :=
 begin
@@ -154,6 +157,8 @@ section r_fin
 def r_fin (M : matroid_in α) (X : set α) : Prop := ∃ I, M.basis I X ∧ I.finite  
 
 lemma r_fin.exists_finite_basis (h : M.r_fin X) : ∃ I, M.basis I X ∧ I.finite := h 
+
+lemma r_fin_def : M.r_fin X ↔ ∃ I, M.basis I X ∧ I.finite := iff.rfl 
 
 @[ssE_finish_rules] lemma r_fin.subset_ground (h : M.r_fin X) : X ⊆ M.E := 
 exists.elim h (λ I hI, hI.1.subset_ground)
@@ -208,6 +213,12 @@ end
 
 @[simp] lemma r_fin_cl_iff (hX : X ⊆ M.E . ssE) : M.r_fin (M.cl X) ↔ M.r_fin X := 
 ⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩
+
+lemma infinite_of_not_r_fin (hX : ¬M.r_fin X) (hXE : X ⊆ M.E . ssE) : X.infinite :=
+λ hX', hX (M.r_fin_of_finite hX') 
+
+lemma basis.infinite_of_not_r_fin (hIX : M.basis I X) (hX : ¬ M.r_fin X) : I.infinite :=
+hX ∘ (λ hI, hIX.r_fin_of_finite hI)
 
 /-- A set with no finite basis has the junk rank value of zero -/
 lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X) (hX : X ⊆ M.E . ssE) : M.r X = 0 :=
@@ -784,22 +795,23 @@ end
 
 end circuit 
 
--- section cl_flat
+section cl_flat
 
--- variables {F F' F₁ F₂ H H₁ H₂ : set α}
+variables {F F' F₁ F₂ H H₁ H₂ : set α}
 
--- lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (he : e ∉ F) (hfin : M.r_fin F):
+lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) (he : e ∉ F) 
+(heE : e ∈ M.E . ssE) :
+  M.r (insert e F) = M.r F + 1 :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis F, 
+  rw [←hF.cl, ←hI.cl, hI.indep.not_mem_cl_iff] at he, 
+  rw [←(hI.insert_basis_insert he.2).card, ←hI.card, 
+    ncard_insert_of_not_mem he.1 (hI.finite_of_r_fin hfin)],
+end
+
+-- lemma flat.r_insert_of_not_mem [finite_rk M] (hF : M.flat F) (he : e ∉ F) (heE : e ∈ M.E . ssE) :
 --   M.r (insert e F) = M.r F + 1 :=
--- begin
---   obtain ⟨I, hI⟩ := M.exists_basis F, 
---   rw [←hF.cl, ←hI.cl, hI.indep.not_mem_cl_iff] at he, 
---   rw [←(hI.insert_basis_insert he.2).card, ←hI.card, 
---     ncard_insert_of_not_mem he.1 (hI.finite_of_r_fin hfin)],
--- end
-
--- lemma flat.r_insert_of_not_mem [finite_rk M] (hF : M.flat F) (he : e ∉ F) :
---   M.r (insert e F) = M.r F + 1 :=
--- hF.r_insert_of_not_mem_of_r_fin he (M.to_r_fin F)
+-- hF.r_insert_of_not_mem_of_r_fin (M.to_r_fin F) he heE
 
 -- lemma flat_iff_r_lt_r_insert [finite_rk M] : M.flat F ↔ ∀ e ∉ F, M.r F < M.r (insert e F) :=
 -- begin
@@ -963,7 +975,7 @@ end circuit
 --   M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
 -- ⟨λ h, ⟨h.flat, h.r_add_one⟩, λ h, h.1.hyperplane_of_r_add_one_eq_rk h.2⟩
 
--- end cl_flat
+end cl_flat
 
 -- section loop
 

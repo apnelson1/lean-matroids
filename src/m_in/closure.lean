@@ -640,25 +640,92 @@ begin
   rwa [←h (I \ {e}), ←h I] at this,
 end
 
-lemma coindep_iff_cl_diff_eq_ground (hK : X ⊆ M.E . ssE) : M.coindep X ↔ M.cl (M.E \ X) = M.E :=
+
+section spanning
+
+variables {S T : set α}
+
+/-- A set is `spanning` in `M` if its closure is equal to `M.E`, or equivalently if it contains 
+  a base of `M`. -/
+def spanning (M : matroid_in α) (S : set α) := M.cl S = M.E ∧ S ⊆ M.E 
+
+@[ssE_finish_rules] lemma spanning.subset_ground (hS : M.spanning S) : S ⊆ M.E := 
+hS.2 
+
+lemma spanning.cl (hS : M.spanning S) : M.cl S = M.E := 
+hS.1
+
+lemma spanning_iff_cl (hS : S ⊆ M.E . ssE) : M.spanning S ↔ M.cl S = M.E := 
+⟨and.left, λ h, ⟨h,hS⟩⟩
+
+lemma not_spanning_iff_cl (hS : S ⊆ M.E . ssE) : ¬ M.spanning S ↔ M.cl S ⊂ M.E :=
 begin
-  rw [coindep_iff_disjoint_base], 
-  refine ⟨_, λ h, _⟩, 
-  { rintro ⟨B, hB, hXB⟩, 
-    refine (M.cl_subset_ground _).antisymm _, 
-    nth_rewrite 0 ←hB.cl,  
-    refine cl_subset _ _,
-    rw [subset_diff, and_iff_right hB.subset_ground],
-    exact hXB.symm  },
-  obtain ⟨B, hB⟩ := M.exists_basis (M.E \ X), 
-  rw [←hB.cl] at h, 
-  refine ⟨B, hB.indep.base_of_cl_eq_ground h, _⟩, 
-  rw [←subset_compl_iff_disjoint_left], 
-  exact hB.subset.trans (inter_subset_right _ _), 
+  rw [spanning_iff_cl, ssubset_iff_subset_ne, ne.def, iff_and_self, 
+    iff_true_intro (M.cl_subset_ground _)], 
+  refine λ _, trivial,  
+end  
+
+lemma spanning.supset (hS : M.spanning S) (hST : S ⊆ T) (hT : T ⊆ M.E . ssE) : M.spanning T :=
+begin
+  refine ⟨(M.cl_subset_ground _).antisymm _, hT⟩, 
+  rw ←hS.cl, 
+  exact M.cl_subset hST, 
 end 
 
-lemma coindep.cl_diff (hX : M.coindep X) : M.cl (M.E \ X) = M.E := 
-(coindep_iff_cl_diff_eq_ground hX.subset_ground).mp hX 
+lemma spanning.union_left (hS : M.spanning S) (hX : X ⊆ M.E . ssE) : M.spanning (S ∪ X) :=
+hS.supset (subset_union_left _ _) 
+
+lemma spanning.union_right (hS : M.spanning S) (hX : X ⊆ M.E . ssE) : M.spanning (X ∪ S) :=
+hS.supset (subset_union_right _ _) 
+
+lemma base.spanning (hB : M.base B) : M.spanning B := 
+⟨hB.cl, hB.subset_ground⟩ 
+
+lemma ground_spanning (M : matroid_in α) : M.spanning M.E := 
+⟨M.cl_ground, rfl.subset⟩ 
+
+lemma base.supset_spanning (hB : M.base B) (hBX : B ⊆ X) (hX : X ⊆ M.E . ssE) : M.spanning X := 
+hB.spanning.supset hBX 
+
+lemma spanning_iff_supset_base' : M.spanning S ↔ (∃ B, M.base B ∧ B ⊆ S) ∧ S ⊆ M.E := 
+begin
+  rw [spanning, and.congr_left_iff], 
+  refine λ hSE, ⟨λ h, _, _⟩,
+  { obtain ⟨B, hB⟩ := M.exists_basis S,
+    refine ⟨B, hB.indep.base_of_cl_eq_ground _, hB.subset⟩, 
+    rwa [hB.cl] },
+  rintro ⟨B, hB, hBS⟩, 
+  rw [subset_antisymm_iff, and_iff_right (M.cl_subset_ground _), ←hB.cl], 
+  exact M.cl_subset hBS, 
+end 
+
+lemma spanning_iff_supset_base (hS : S ⊆ M.E . ssE) : M.spanning S ↔ ∃ B, M.base B ∧ B ⊆ S := 
+by rw [spanning_iff_supset_base', and_iff_left hS]
+
+lemma coindep_iff_compl_spanning (hI : I ⊆ M.E . ssE) : M.coindep I ↔ M.spanning (M.E \ I) :=
+begin
+  simp_rw [coindep_iff_exists, spanning_iff_supset_base, subset_diff, disjoint.comm],  
+  exact ⟨Exists.imp (λ B hB, ⟨hB.1, hB.1.subset_ground, hB.2⟩), 
+    Exists.imp (λ B hB, ⟨hB.1, hB.2.2⟩)⟩, 
+end 
+
+lemma spanning_iff_compl_coindep (hI : S ⊆ M.E . ssE) : M.spanning S ↔ M.coindep (M.E \ S) :=
+by simp [coindep_iff_compl_spanning]
+
+lemma coindep.compl_spanning (hI : M.coindep I) : M.spanning (M.E \ I) := 
+coindep_iff_compl_spanning.mp hI 
+
+lemma spanning.compl_coindep (hS : M.spanning S) : M.coindep (M.E \ S) := 
+spanning_iff_compl_coindep.mp hS 
+
+lemma coindep_iff_cl_compl_eq_ground (hK : X ⊆ M.E . ssE) : M.coindep X ↔ M.cl (M.E \ X) = M.E :=
+by rw [coindep_iff_compl_spanning, spanning_iff_cl]
+
+lemma coindep.cl_compl (hX : M.coindep X) : M.cl (M.E \ X) = M.E := 
+(coindep_iff_cl_compl_eq_ground hX.subset_ground).mp hX 
+
+
+end spanning
 
 -- section from_axioms
 

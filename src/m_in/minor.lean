@@ -137,8 +137,6 @@ by simp
 @[simp] lemma delete_empty (M : matroid_in α) : M ⟍ (∅ : set α) = M := 
 by { rw [delete_eq_self_iff], exact empty_disjoint _ }
 
-@[simp] lemma delete_ground_eq_empty (M : matroid_in α) : M ⟍ M.E = empty α :=
-by simp [←ground_eq_empty_iff_eq_empty]
 
 lemma delete_delete_diff (M : matroid_in α) (D₁ D₂ : set α) : M ⟍ D₁ ⟍ D₂ = M ⟍ D₁ ⟍ (D₂ \ D₁) :=
 by simp
@@ -193,9 +191,6 @@ by rw [contract_contract, union_comm, contract_contract]
 
 lemma contract_eq_self_iff : M ⟋ C = M ↔ disjoint C M.E := 
 by rw [←dual_delete_dual_eq_contract, ←dual_inj_iff, dual_dual, delete_eq_self_iff, dual_ground]
-
-@[simp] lemma contract_ground_eq_empty (M : matroid_in α) : M ⟋ M.E = empty α :=
-by simp [←ground_eq_empty_iff_eq_empty]
 
 @[simp] lemma contract_empty (M : matroid_in α) : M ⟋ (∅ : set α) = M := 
 by { rw [contract_eq_self_iff], exact empty_disjoint _, }

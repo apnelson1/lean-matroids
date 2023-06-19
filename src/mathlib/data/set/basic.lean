@@ -59,6 +59,10 @@ by rw [subset_diff_iff_disjoint_left hsr, disjoint.comm, subset_diff_iff_disjoin
 lemma diff_eq_diff_iff_inter_eq_inter : r \ s = r \ t ↔ r ∩ s = r ∩ t := 
 by simp only [set.ext_iff, mem_diff, and.congr_right_iff, mem_inter_iff, not_iff_not]
 
+lemma diff_eq_diff_iff_eq (hsr : s ⊆ r) (htr : t ⊆ r) : r \ s = r \ t ↔ s = t := 
+by rw [diff_eq_diff_iff_inter_eq_inter, inter_eq_self_of_subset_right hsr, 
+  inter_eq_self_of_subset_right htr]
+
 @[simp] lemma diff_inter_diff_right (s t r : set α) : (s \ r) ∩ (t \ r) = (s ∩ t) \ r := 
 by { ext, simp only [mem_inter_iff, mem_diff], tauto }
 
