@@ -1,8 +1,10 @@
 import mathlib.data.set.finite
 import mathlib.data.set.basic
+import mathlib.data.set.function
 import order.minimal 
 import mathlib.order.minimal
 import data.set.ncard
+import tactic
 -- import .ssfact 
 
 open_locale classical
@@ -195,7 +197,7 @@ def basis (M : matroid_in α) (I X : set α) : Prop :=
 def circuit (M : matroid_in α) (C : set α) : Prop := C ∈ minimals (⊆) {X | M.dep X}
 
 /-- A coindependent set is a subset of `M.E` that is disjoint from some base -/
-def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B
+def coindep (M : matroid_in α) (I : set α) : Prop := I ⊆ M.E ∧ (∃ B, M.base B ∧ disjoint I B)  
 
 section properties
 
@@ -323,6 +325,9 @@ by { obtain ⟨B, hB, hIB⟩ := hI, exact hIB.trans hB.subset_ground }
 @[ssE_finish_rules] lemma dep.subset_ground (hD : M.dep D) : D ⊆ M.E :=
 hD.2 
 
+@[ssE_finish_rules] lemma coindep.subset_ground (hX : M.coindep X) : X ⊆ M.E :=
+hX.1
+
 lemma indep_or_dep (hX : X ⊆ M.E . ssE) : M.indep X ∨ M.dep X := 
 by { rw [dep, and_iff_left hX], apply em }
 
@@ -396,8 +401,7 @@ lemma base.dep_of_insert (hB : M.base B) (heB : e ∉ B) (he : e ∈ M.E . ssE) 
 hB.dep_of_ssubset (ssubset_insert heB)
 
 lemma base.exchange_base_of_indep (hB : M.base B) (he : e ∈ B) (hf : f ∉ B)
-(hI : M.indep (insert f (B \ {e}))) :
-  M.base (insert f (B \ {e})) :=
+(hI : M.indep (insert f (B \ {e}))) : M.base (insert f (B \ {e})) :=
 begin
   obtain ⟨B', hB', hIB'⟩ := hI,
   have hBeB' := (subset_insert _ _).trans hIB',
@@ -548,7 +552,7 @@ begin
     (inter_subset_right _ _),
 end
 
-lemma base_iff_basis_univ : M.base B ↔ M.basis B M.E :=
+lemma base_iff_basis_ground : M.base B ↔ M.basis B M.E :=
 begin
   rw [base_iff_maximal_indep, basis_iff, and_congr_right], 
   intro hB, 
@@ -556,7 +560,7 @@ begin
   exact ⟨λ h J hJ hBJ hJE, h _ hJ hBJ, λ h I hI hBI, h I hI hBI hI.subset_ground⟩,
 end 
 
-lemma base.basis_univ (hB : M.base B) : M.basis B M.E := base_iff_basis_univ.mp hB
+lemma base.basis_ground (hB : M.base B) : M.basis B M.E := base_iff_basis_ground.mp hB
 
 lemma indep.basis_of_forall_insert (hI : M.indep I) 
   (hIX : I ⊆ X) (he : ∀ e ∈ X \ I, ¬ M.indep (insert e I)) (hX : X ⊆ M.E . ssE) : M.basis I X :=
@@ -649,8 +653,7 @@ begin
   exact heBI.2 (hIX.mem_of_insert_indep (hBX heBI.1) he), 
 end 
 
-lemma base.basis_of_subset (hX : X ⊆ M.E . ssE) (hB : M.base B) (hBX : B ⊆ X) : 
-  M.basis B X :=
+lemma base.basis_of_subset (hX : X ⊆ M.E . ssE) (hB : M.base B) (hBX : B ⊆ X) : M.basis B X :=
 begin
   rw [basis_iff, and_iff_right hB.indep, and_iff_right hBX], 
   exact λ J hJ hBJ hJX, hB.eq_of_subset_indep hJ hBJ, 
@@ -677,7 +680,6 @@ lemma eq_of_indep_iff_indep_forall {M₁ M₂ : matroid_in α} (hE : M₁.E = M�
   M₁ = M₂ :=
 begin
   refine eq_of_base_iff_base_forall hE (λ B hB, _), 
-  
   rw [base_iff_maximal_indep, base_iff_maximal_indep], 
   split, 
   { rintro ⟨hBi, hmax⟩, 
@@ -817,8 +819,7 @@ begin
   exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', subset_univ _⟩ hBB'⟩, hIB⟩, 
 end 
 
-/-- If there is an absolute upper bound on the size of an independent set, then the maximality 
-  axiom isn't needed to define a matroid by independent sets. -/
+/-- If there is an absolute upper bound on the size of an independent set, then the maximality axiom isn't needed to define a matroid by independent sets. -/
 def matroid_of_indep_of_bdd (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
 (h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
 (h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
@@ -852,41 +853,53 @@ begin
   exact ⟨_, hB, subset.rfl⟩,  
 end 
 
-/-- A collection of sets in a finite type satisfying the usual independence axioms determines a 
-  matroid -/
+def matroid_of_indep_of_bdd' (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard →
+  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) (h_bdd : ∃ n, ∀ I, indep I → I.finite ∧ I.ncard ≤ n )
+(h_support : ∀ I, indep I → I ⊆ E) : matroid_in α :=
+matroid_of_indep_of_bdd E indep h_empty h_subset 
+(begin
+  intros I J hI hIn hJ, 
+  by_contra' h', 
+  obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
+  { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
+    exact h' e ⟨heJ,heI⟩ hi },
+  obtain (h_eq | hlt) := hle.eq_or_lt, 
+  { refine hIn ⟨hI, λ K (hK : indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
+      (λ h, h.symm.subset)⟩,
+    obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss _)), 
+    { exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
+    obtain ⟨n, hn⟩ := h_bdd, 
+    exact (hn K hK).1 },
+  obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
+    exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
+end) h_bdd h_support 
+
+@[simp] lemma matroid_of_indep_of_bdd'_apply (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard →
+  ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) (h_bdd : ∃ n, ∀ I, indep I → I.finite ∧ I.ncard ≤ n )
+(h_support : ∀ I, indep I → I ⊆ E) : 
+(matroid_of_indep_of_bdd' E indep h_empty h_subset ind_aug h_bdd h_support).indep = indep :=
+by simp [matroid_of_indep_of_bdd']
+
+/-- A collection of sets in a finite type satisfying the usual independence axioms determines a matroid -/
 def matroid_of_indep_of_finite {E : set α} (hE : E.finite) (indep : set α → Prop)
-(exists_ind : ∃ I, indep I)
+(h_empty : indep ∅)
 (ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
 (ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) 
 (h_support : ∀ ⦃I⦄, indep I → I ⊆ E) :
   matroid_in α := 
-  matroid_of_indep E indep (exists.elim exists_ind (λ I hI, ind_mono hI (empty_subset _))) ind_mono 
-  (begin
-    intros I J hI hIn hJ, 
-    by_contra' h', 
-    obtain (hlt | hle) := lt_or_le I.ncard J.ncard, 
-    { obtain ⟨e,heJ,heI, hi⟩ :=  ind_aug hI hJ.1 hlt, 
-      exact h' e ⟨heJ,heI⟩ hi },
-    obtain (h_eq | hlt) := hle.eq_or_lt, 
-    { refine hIn ⟨hI, λ K (hK : indep K) hIK, hIK.ssubset_or_eq.elim (λ hss, _) 
-        (λ h, h.symm.subset)⟩,
-      obtain ⟨f, hfK, hfJ, hi⟩ := ind_aug hJ.1 hK (h_eq.trans_lt (ncard_lt_ncard hss _)), 
-      { exact (hfJ (hJ.2 hi (subset_insert _ _) (mem_insert f _))).elim },
-      exact hE.subset (h_support hK), 
-       },
-    obtain ⟨e,heI, heJ, hi⟩ := ind_aug hJ.1 hI hlt, 
-      exact heJ (hJ.2 hi (subset_insert _ _) (mem_insert e _)), 
-  end) 
-  ( exists_maximal_subset_property_of_bounded ⟨E.ncard ,
-    (λ I hI, ⟨hE.subset (h_support hI), ncard_le_of_subset (h_support hI) hE⟩)⟩ )
-  h_support 
+matroid_of_indep_of_bdd' E indep h_empty ind_mono ind_aug 
+  ⟨E.ncard, λ I hI, ⟨hE.subset (h_support hI), ncard_le_of_subset (h_support hI) hE⟩⟩ h_support 
 
 @[simp] lemma matroid_of_indep_of_finite_apply {E : set α} (hE : E.finite) (indep : set α → Prop)
-(exists_ind : ∃ I, indep I)
+(h_empty : indep ∅)
 (ind_mono : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I)
 (ind_aug : ∀ ⦃I J⦄, indep I → indep J → I.ncard < J.ncard → ∃ e ∈ J, e ∉ I ∧ indep (insert e I)) 
 (h_support : ∀ ⦃I⦄, indep I → I ⊆ E) :
-  (matroid_of_indep_of_finite hE indep exists_ind ind_mono ind_aug h_support).indep = indep :=
+  (matroid_of_indep_of_finite hE indep h_empty ind_mono ind_aug h_support).indep = indep :=
 by simp [matroid_of_indep_of_finite]
 
 end from_axioms 
@@ -1014,10 +1027,21 @@ postfix `﹡`:(max+1) := has_matroid_dual.dual
 
 instance matroid_in_dual {α : Type*} : has_matroid_dual (matroid_in α) := ⟨matroid_in.dual⟩ 
 
-lemma dual_indep_iff_exists : (M﹡.indep I) ↔ I ⊆ M.E ∧ ∃ B, M.base B ∧ disjoint I B := 
+lemma dual_indep_iff_exists' : (M﹡.indep I) ↔ I ⊆ M.E ∧ (∃ B, M.base B ∧ disjoint I B) := 
 by simp [has_matroid_dual.dual, dual]
 
+lemma dual_indep_iff_exists (hI : I ⊆ M.E . ssE) : 
+  (M﹡.indep I) ↔ (∃ B, M.base B ∧ disjoint I B) := 
+by rw [dual_indep_iff_exists', and_iff_right hI]
+
 @[simp] lemma dual_ground : M﹡.E = M.E := rfl 
+
+lemma dual_dep_iff_forall : (M﹡.dep I) ↔ I ⊆ M.E ∧ ∀ B, M.base B → (I ∩ B).nonempty :=
+begin
+  simp_rw [dep_iff, dual_indep_iff_exists', and_comm, dual_ground, and.congr_right_iff, not_and, 
+    not_exists, not_and, not_disjoint_iff_nonempty_inter], 
+  exact λ hIE, by rw [imp_iff_right hIE], 
+end   
 
 instance dual_finite [M.finite] : M﹡.finite := 
 ⟨M.ground_finite⟩  
@@ -1026,9 +1050,9 @@ lemma set.subset_ground_dual (hX : X ⊆ M.E) : X ⊆ M﹡.E := hX
 
 lemma dual_base_iff (hB : B ⊆ M.E . ssE) : M﹡.base B ↔ M.base (M.E \ B) := 
 begin
-  rw [base_compl_iff_mem_maximals_disjoint_base', base_iff_maximal_indep, dual_indep_iff_exists, 
+  rw [base_compl_iff_mem_maximals_disjoint_base', base_iff_maximal_indep, dual_indep_iff_exists', 
     mem_maximals_set_of_iff],
-  simp [dual_indep_iff_exists],
+  simp [dual_indep_iff_exists'],
 end 
 
 lemma dual_base_iff' : M﹡.base B ↔ M.base (M.E \ B) ∧ B ⊆ M.E := 
@@ -1050,7 +1074,7 @@ begin
   simp only [sdiff_sdiff_right_self, inf_eq_inter, ground_inter_right], 
 end 
 
-lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := dual_indep_iff_exists
+lemma dual_indep_iff_coindep : M﹡.indep X ↔ M.coindep X := dual_indep_iff_exists'
 
 lemma base.compl_base_dual (hB : M.base B) : M﹡.base (M.E \ B) := 
 by { haveI := fact.mk hB.subset_ground, simpa [dual_base_iff] }
@@ -1099,8 +1123,7 @@ by rw [←dual_inj_iff, dual_dual, eq_comm]
 lemma dual_eq_comm {M₁ M₂ : matroid_in α} : M₁﹡ = M₂ ↔ M₂﹡ = M₁ := 
 by rw [←dual_inj_iff, dual_dual, eq_comm]
 
-lemma coindep_iff_disjoint_base (hX : X ⊆ M.E . ssE) : 
-  M.coindep X ↔ ∃ B, M.base B ∧ disjoint X B := 
+lemma coindep_iff_exists (hX : X ⊆ M.E . ssE) : M.coindep X ↔ ∃ B, M.base B ∧ disjoint X B := 
 by rw [coindep, and_iff_right hX]
 
 lemma coindep.exists_disjoint_base (hX : M.coindep X) : ∃ B, M.base B ∧ disjoint X B := hX.2
@@ -1115,74 +1138,5 @@ lemma base_iff_dual_base_compl (hB : B ⊆ M.E . ssE) : M.base B ↔ M﹡.base (
 by simp [dual_base_iff]
 
 end dual 
-
-
-section examples 
-
-/-- The matroid on `E` whose unique basis is the set `I` -/
-def trivial_on {I E : set α} (hIE : I ⊆ E) : matroid_in α := 
-matroid_of_base E (λ X, X = I) ⟨_, rfl⟩ 
-(by { rintro B₁ B₂ rfl rfl x h, simpa using h })
-(begin 
-  rintro J Y ⟨B, rfl, hJB⟩ hJY, 
-  use Y ∩ B,      
-  rw [mem_maximals_set_of_iff], 
-  simp only [exists_eq_left, inter_subset_right, subset_inter_iff, inter_subset_left, and_true, 
-    true_and, and_imp, and_iff_right hJY, and_iff_right hJB], 
-  exact λ Z hZB hJZ hZY hYBZ, hYBZ.antisymm (subset_inter hZY hZB),  
-end)
-(by simpa)
-
-@[simp] lemma trivial_on_ground {I E : set α} (hIE : I ⊆ E) : (trivial_on hIE).E = E := rfl 
-
-lemma trivial_on_base_iff {I E : set α} (hIE : I ⊆ E) : (trivial_on hIE).base B ↔ B = I := iff.rfl 
-
-lemma trivial_on_indep_iff {I E : set α} (hIE : I ⊆ E) : (trivial_on hIE).indep J ↔ J ⊆ I := 
-by { simp_rw [indep_iff_subset_base, trivial_on_base_iff], simp }
-
-/-- The matroid on `E` whose only basis is empty -/
-def loopy_on (E : set α) : matroid_in α := trivial_on (empty_subset E)
-
-@[simp] lemma loopy_on_ground (E : set α) : (loopy_on E).E = E := rfl 
-
-@[simp] lemma loopy_on_base_iff (E : set α) : (loopy_on E).base B ↔ B = ∅ :=
-by rw [loopy_on, trivial_on_base_iff]
-
-@[simp] lemma loopy_on_indep_iff (E : set α) : (loopy_on E).indep I ↔ I = ∅ :=
-by rw [loopy_on, trivial_on_indep_iff, subset_empty_iff]
-
-/-- The matroid on `E` whose only basis is `E` -/
-def free_on (E : set α) : matroid_in α := trivial_on (@subset.rfl _ E)
-
-@[simp] lemma free_on_ground (E : set α) : (free_on E).E = E := rfl 
-
-@[simp] lemma free_on_base_iff (E : set α) : (free_on E).base B ↔ B = E := 
-by rw [free_on, trivial_on_base_iff]
-
-@[simp] lemma free_on_indep_iff (E : set α) : (free_on E).indep I ↔ I ⊆ E := 
-by rw [free_on, trivial_on_indep_iff]
-
-lemma ground_indep_iff_eq_free_on : M.indep M.E ↔ M = free_on M.E := 
-begin
-  refine ⟨λ hi, eq_of_indep_iff_indep_forall rfl (λ I hI, _), λ hM, _⟩, 
-  { rw [free_on_indep_iff, iff_true_intro hI, iff_true],
-    exact hi.subset hI }, 
-  rw hM, 
-  simp, 
-end 
-
-/-- The matroid on `X` with empty ground set -/
-def empty (α : Type*) : matroid_in α := matroid_in.loopy_on ∅ 
-
-lemma ground_eq_empty_iff_eq_empty : M.E = ∅ ↔ M = empty α := 
-begin
-  simp_rw [eq_iff_indep_iff_indep_forall, empty, loopy_on_ground, loopy_on_indep_iff, iff_self_and], 
-  rintro he I hI, 
-  rw [he, subset_empty_iff] at hI, 
-  simp [hI], 
-end 
-
-end examples 
-
 
 end matroid_in 

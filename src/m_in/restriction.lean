@@ -1,4 +1,4 @@
-import .basic 
+import .equiv
 
 open set
 
@@ -31,7 +31,7 @@ matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_in
     apply subset_union_right },
 
   have hi : M﹡.indep (M.E \ (B ∪ Y)), 
-  { rw [dual_indep_iff_exists, and_iff_right (diff_subset _ _)], 
+  { rw [dual_indep_iff_coindep, coindep_iff_exists], 
     exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩ }, 
   have h_eq := hI'.eq_of_subset_indep hi hss 
     (by {rw [diff_subset_iff, union_assoc, union_diff_self, ←union_assoc], simp }), 
@@ -68,6 +68,9 @@ begin
   refine λ hI h, hI.subset_ground, 
 end 
 
+lemma indep.indep_restrict_of_subset (h : M.indep I) (hIR : I ⊆ R) : (M ‖ R).indep I := 
+restrict_indep_iff.mpr ⟨h,hIR⟩
+
 lemma restrict_ground_eq' : (M ‖ R).E = R ∩ M.E := rfl 
 
 @[simp] lemma restrict_ground_eq (hR : R ⊆ M.E . ssE) : (M ‖ R).E = R := 
@@ -103,9 +106,6 @@ end
 lemma restrict_inter_ground (M : matroid_in α) (R : set α) : M ‖ (R ∩ M.E) = M ‖ R := 
 by rw [restrict_eq_restrict_iff, inter_assoc, inter_self]
 
-lemma indep.indep_restrict_of_subset (hI : M.indep I) (hIX : I ⊆ X) : (M ‖ X).indep I :=
-restrict_indep_iff.mpr ⟨hI, hIX⟩ 
-
 lemma indep.of_restrict (hI : (M ‖ R).indep I) : M.indep I := 
 (restrict_indep_iff.mp hI).1 
 
@@ -134,9 +134,6 @@ begin
   exact λ _, hI, 
 end 
 
-@[simp] lemma restrict_empty_eq_empty (M : matroid_in α) : M ‖ (∅ : set α) = (empty α) :=  
-by rw [←ground_eq_empty_iff_eq_empty, restrict_ground_eq]
-
 lemma restrict_eq_self_iff : M ‖ X = M ↔ M.E ⊆ X := 
 begin
   simp only [eq_iff_indep_iff_indep_forall, restrict_indep_iff, and_iff_left_iff_imp, 
@@ -155,8 +152,17 @@ infix ` <r ` :75 :=  matroid_in.strict_restriction
 lemma restriction.eq_restrict (h : N ≤r M) : M ‖ N.E = N :=
 h 
 
+lemma restriction.ground_subset_ground (h : N ≤r M) : N.E ⊆ M.E :=
+by { rw [←h.eq_restrict], apply inter_subset_right }
+
+lemma restriction.exists_eq_restrict (h : N ≤r M) : ∃ R ⊆ M.E , N = M ‖ R := 
+by { rw ←h.eq_restrict, exact ⟨N.E, h.ground_subset_ground, rfl⟩ }
+
 lemma strict_restriction.restriction (h : N <r M) : N ≤r M :=
 h.1
+
+@[simp] lemma restrict_restriction (M : matroid_in α) (R : set α) : M ‖ R ≤r M := 
+by rw [restriction, restrict_ground_eq', restrict_inter_ground]
 
 lemma strict_pminor.ne (h : N <r M) : N ≠ M := 
 by { rintro rfl, exact h.2.ne rfl }
@@ -180,12 +186,50 @@ instance restriction.refl : is_refl (matroid_in α) (≤r) :=
 ⟨restrict_ground_eq_self⟩   
 
 instance restriction.antisymm : is_antisymm (matroid_in α) (≤r) :=
-begin
-  refine ⟨λ M M' (h : _ = M) (h' : _ = M'), _⟩,  
-  rw [←h', ←M.restrict_ground_eq_self, restrict_restrict, restrict_eq_restrict_iff, 
-    inter_right_comm, inter_self, eq_comm, inter_eq_left_iff_subset, ←h, restrict_ground_eq'],
-  exact inter_subset_right _ _,  
-end 
+⟨λ M M' h h', by rw [←h.eq_restrict, h.ground_subset_ground.antisymm h'.ground_subset_ground,
+  restrict_ground_eq_self]⟩ 
+
+/- This proof is HORRIBLE. There is possibly a much better way to do isomorphisms. -/
+noncomputable def restrict_iso {β : Type*} {N : matroid_in β} (i : M ≃i N) (R : set α) : 
+  M ‖ R ≃i (N ‖ i.image R) := 
+let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_subset_right _ _)⟩, 
+    hf : f.injective := λ x y hxy, subtype.coe_inj.mp (by simpa using subtype.coe_inj.mp hxy) in 
+  iso_of_indep ((equiv.of_injective f hf).trans (equiv.set.of_eq 
+    (begin
+      simp_rw [restrict_ground_eq'], 
+      rw [inter_eq_self_of_subset_left (iso.image_subset_ground _ _), iso.image, 
+        subset_antisymm_iff], 
+      simp only [image_subset_iff], 
+      split, 
+      { rintro y ⟨⟨x,hx⟩, rfl⟩,
+        exact ⟨i ⟨x, (inter_subset_right _ _) hx⟩, ⟨⟨x, hx.2⟩ , hx.1, rfl⟩, rfl⟩ },
+      rintro x (hx : coe x ∈ R), 
+      simp only [mem_preimage, mem_range, set_coe.exists], 
+      refine ⟨x, ⟨hx,x.2⟩, _⟩, 
+      simp [subtype.coe_inj], 
+    end))) 
+  (begin
+    intros I, 
+    simp only [image_subset_iff, subtype.coe_mk, restrict_indep_iff, equiv.coe_trans, 
+      function.comp_app, equiv.of_injective_apply, equiv.set.of_eq_apply], 
+    rw [i.on_indep, and_iff_left, and_iff_left], 
+    { convert iff.rfl using 2,  
+      unfold iso.image, 
+      rw [subset_antisymm_iff], split, 
+      { rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩,
+        exact ⟨i ⟨z, (inter_subset_right _ _) z.prop⟩, ⟨_, by simpa, rfl⟩, rfl⟩ },
+      rintro x ⟨y, ⟨⟨z,hzE⟩,⟨⟨w,hw⟩, hwI, (rfl : w = z)⟩,rfl⟩, rfl⟩, 
+      rw [restrict_ground_eq', mem_inter_iff] at hw, 
+      exact ⟨⟨i ⟨w,hzE⟩, ⟨⟨i ⟨w,hzE⟩,⟨_,by simpa using hw.1,rfl⟩,rfl⟩,by simp⟩⟩,
+        ⟨⟨w,hw⟩,hwI,rfl⟩,rfl⟩ },
+    { rintro ⟨x,hxR,hxE⟩ hxI, 
+      simp only [mem_preimage, subtype.coe_mk], 
+      exact ⟨i ⟨x, _⟩,⟨_, by simpa, rfl⟩,rfl⟩ },
+    { rintro ⟨x,hxR,hxE⟩ hxI, exact hxR }, 
+    rintro _ ⟨⟨x,hxR,hxE⟩, hI, rfl⟩, 
+    exact hxE, 
+  end)
+
 
 end restrict 
 

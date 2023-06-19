@@ -174,7 +174,14 @@ inj_on_iff_injective.2 ((φ.valid' I).2 hI).injective
 
 lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
 begin
-  sorry 
+  by_contra,
+  apply he,
+  rw ← singleton_subset_iff,
+  apply indep.subset_ground,
+  rw ← φ.valid',
+  have h2 := @linear_independent_singleton 𝔽 W _ _ _ _ _ _ h,
+  rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
+  apply h2,
 end  
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : α → W)  := by { ext, refl }
@@ -183,49 +190,43 @@ lemma linear_independent_iff_coe (φ : rep 𝔽 W M) (hI : M.indep I) :
   linear_independent 𝔽 (λ e : I, φ e) ↔ linear_independent 𝔽 (coe : φ '' I → W) :=
 linear_independent_image $ inj_on_of_indep _ hI
 
-def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
+def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (hx : x ∈ M.E) : φ x ∈ rep.to_submodule φ :=
-by { rw [rep.to_submodule], refine subset_span _, simp, sorry }
+def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (rep.to_submodule φ) M := 
-{ to_fun := λ a, --⟨φ x, _⟩,
-    begin
-      refine ⟨φ a, _⟩,
-      /-have h2 := (rep.mem_to_submodule φ),
-      apply h2,-/
-      sorry,
-    end,
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ φ.to_submodule :=
+by { by_cases x ∈ M.E, rw [rep.to_submodule], refine subset_span _, rw mem_range, use x,
+  rw φ.eq_zero_of_not_mem_ground h, simp only [submodule.zero_mem] }
+
+def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule) M := 
+{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule a)⟩,
   valid' := λ I, 
     begin
-      have h8 : (λ (x : ↥I), φ x) = (λ (x : ↥I), ↑(⟨φ x, rep.mem_to_submodule φ x⟩ : (span 𝔽 (range ⇑φ)))),
-        { simp only [subtype.coe_mk] },
-      have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), (⟨φ x, rep.mem_to_submodule φ x⟩ : span 𝔽 (range ⇑φ))),
+      have h8 : (λ (x : ↥I), φ x) = 
+        (λ (x : ↥I), ↑(⟨φ x, φ.mem_to_submodule x⟩ : (span 𝔽 (range ⇑φ)))),
+      { simp only [subtype.coe_mk] },
+      have h4 : linear_independent 𝔽 (λ (x : ↥I), φ x) ↔ linear_independent 𝔽 (λ (x : ↥I), 
+        (⟨φ x, φ.mem_to_submodule x⟩ : span 𝔽 (range ⇑φ))),
         { simp_rw [h8, ← submodule.coe_subtype],
-          apply linear_map.linear_independent_iff ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
-      simp_rw [← h4], 
+          apply linear_map.linear_independent_iff 
+          ((span 𝔽 (range ⇑φ)).subtype) (ker_subtype (span 𝔽 (range ⇑φ))) },
+      simp_rw [← h4],
       apply φ.valid,
     end } 
 
-def rep.compose (φ : rep 𝔽 W M) (e : rep.to_submodule φ ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
-{ to_fun := λ x, sorry,--e ⟨φ x, rep.mem_to_submodule φ x⟩,
-  valid' :=
-  begin
-    intros I,
-    rw [←φ.valid],
-    rw linear_independent_image sorry,
-    convert linear_map.linear_independent_iff e.to_linear_map sorry using 1,
+def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+{ to_fun := e ∘ φ,
+  valid' := λ I,
+    begin
+      rw comp.assoc,
+      have h2 := linear_map.linear_independent_iff e.to_linear_map e.ker,
+      simp only [linear_equiv.coe_to_linear_map] at h2,
+      rw h2,
+      apply φ.valid',
+    end }
 
-    -- have := ((linear_equiv.refl 𝔽 W).to_linear_map.dom_restrict (φ.to_submodule)).linear_independent_iff sorry,
-    rw ← iff_iff_eq,
-    simp,
-    
-    
-    --rw rep.valid φ,                      
-    sorry,
-
-    --rw linear_independent_equiv,
-  end  }
+def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+  (rep.compose (φ.rep_submodule) e)
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x}).2 hx.indep).ne_zero (⟨x, mem_singleton _⟩ : ({x} : set α))
@@ -250,16 +251,15 @@ lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (h
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  /-have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
-    (φ.valid' (insert e I)).not.2 (hI.insert_dep (mem_diff_of_mem he h)),
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,-/
-  sorry,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
   φ e ∈ span 𝔽 (φ '' B) :=
-of_basis φ (base.basis_univ hB) he
+of_basis φ (base.basis_ground hB) he
 
 lemma span_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) : 
   span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
@@ -270,7 +270,7 @@ begin
 end
 
 lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
-  by { rw [span_basis φ (base.basis_univ hB)] }
+  by { rw [span_basis φ (base.basis_ground hB)] }
 
 -- use span
 /-lemma span_base' (φ : rep 𝔽 W M) (hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
@@ -286,7 +286,7 @@ end-/
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base _ hB, image_eq_range], exact basis.span 
-  ((φ.valid' B (base.subset_ground hB)).2 hB.indep) }
+  ((φ.valid' B).2 hB.indep) }
 
 
 /-lemma base_of_basis (φ : rep 𝔽 W M) {B : set α} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
@@ -337,15 +337,37 @@ end
 
 def rep_of_del (N : matroid_in α) (φ : rep 𝔽 W N) (D : set α) : 
 rep 𝔽 W (N ⟍ D) := 
-{ to_fun := φ,
+{ to_fun := λ x, if x ∈ D then (0 : W) else φ x,
   valid' := λ I,
     begin
+      rw delete_indep_iff,
       refine ⟨λ h, _, λ h, _⟩,
-      apply delete_indep_iff.2,
-      refine ⟨(φ.valid' I).1 h, _⟩,
-      have h2 := linear_independent.restrict_of_comp_subtype h,
-      rw φ.valid' at h,
-      sorry,
+      -- deterministic timeout if i plug this in directly
+      have h5 := linear_independent.restrict_of_comp_subtype h,
+      have h4 : ∀ x : I, (I.restrict (λ (x : α), ite (x ∈ D) 0 (φ x))) x ≠ 0 :=
+      by { intros x, apply linear_independent.ne_zero x h5 },
+      simp only [restrict_apply, ne.def, ite_eq_left_iff, not_forall, 
+        exists_prop, set_coe.forall, subtype.coe_mk] at h4,
+      refine ⟨_, disjoint_left.2 (λ a ha, (h4 a ha).1)⟩,
+      have h10 : (λ (x : α), ite (x ∈ D) 0 (φ x)) ∘ (coe : I → α) = φ ∘ (coe : I → α),
+      { ext;
+        simp only [ite_eq_right_iff],
+        specialize h4 x.1 x.2,
+        rw imp_iff_not_or,
+        left,
+        apply h4.1 },
+      rw h10 at h,
+      rw ← φ.valid',
+      apply h,
+      have h10 : (λ (x : α), ite (x ∈ D) 0 (φ x)) ∘ (coe : I → α) = φ ∘ (coe : I → α),
+      { ext;
+        simp only [ite_eq_right_iff],
+        rw imp_iff_not_or,
+        left,
+        rw disjoint_left at h,
+        apply h.2 x.2 },
+      rw h10,
+      apply (φ.valid' I).2 h.1,
     end }
    --by { rw delete_ground at hI, 
     /-refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
@@ -422,42 +444,39 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         indep.contract_indep_iff hJ.indep],
       have h10 := span_basis φ hJ,
       refine ⟨λ h, _, λ h, _⟩,  
-      refine ⟨⟨(subset_diff.1 (subset_diff.1 hI).1).2, _⟩, (subset_diff.1 hI).2⟩,
       simp at h,
       simp_rw [← mkq_apply _] at h,
-      rw ← φ.valid' _ (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left),
+      rw ← φ.valid' _,
       have h30 : disjoint (span 𝔽 (φ.to_fun '' I)) (span 𝔽 (φ.to_fun '' J)),
       { simp_rw [← to_fun_eq_coe] at h10,
         rw h10,
         simp at h10,
         simp_rw [← to_fun_eq_coe],
         rw ← ker_mkq (span 𝔽 (φ.to_fun '' C)),
-        rw linear_map.linear_independent_iff at h,
-        --simp at h,
-        rw ← image_univ at h, 
-        rw [h21, disjoint.comm] at h,
+        rw [linear_map.linear_independent_iff, ← image_univ, h21, disjoint.comm] at h,
         exact h.2 },
       have h7 := linear_independent.image 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h),
-      have h8 := linear_independent.image ((φ.valid' J hJ.subset_ground_left).2 (hJ.indep)),
+      have h8 := linear_independent.image ((φ.valid' J).2 (hJ.indep)),
       have h6 := linear_independent.union h7 h8 h30,
       rw [linear_independent_image, image_union],
-      exact linear_independent.union h7 h8 h30,
-      rw inj_on_union (subset_diff.1 (subset_diff.1 hI).1).2,
-      refine ⟨φ.inj_on_of_indep ((φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).1 
+      refine ⟨⟨_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6), h6⟩, _⟩,
+      apply @_root_.disjoint.of_image _ _ φ,
+      simp only [to_fun_eq_coe] at h30,
+      rw h10 at h30,
+      simp only [← to_fun_eq_coe] at h30,
+      sorry,
+      rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
+      refine ⟨φ.inj_on_of_indep ((φ.valid' I).1 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h)), 
         ⟨φ.inj_on_of_indep (hJ.indep), λ x hx y hy, set.disjoint_iff_forall_ne.1 
         (linear_independent.union' h7 h8 h30 h6) (φ x) (mem_image_of_mem φ hx) 
         (φ y) (mem_image_of_mem φ hy)⟩⟩,
-      rw delete_indep_iff at h,
-      rw indep.contract_indep_iff hJ.indep at h,
       simp_rw [← mkq_apply _],
       rw linear_map.linear_independent_iff,
-      refine ⟨(φ.valid' I (subset_diff.1 (subset_diff.1 hI).1).1).2
-        (indep.subset h.1.2 (subset_union_left I J)), _⟩,
+      refine ⟨(φ.valid' I).2 (indep.subset h.1.2 (subset_union_left I J)), _⟩,
       rw ker_mkq (span 𝔽 (φ.to_fun '' C)),
-      have h60 := linear_independent.image ((φ.valid' (I ∪ J) 
-        (union_subset ((subset_diff.1 (subset_diff.1 hI).1).1) hJ.subset_ground_left)).2 h.1.2),
+      have h60 := linear_independent.image ((φ.valid' _).2 h.1.2),
       rw image_union at h60,
       rw [← image_univ, h21],
       simp_rw [to_fun_eq_coe],
@@ -465,23 +484,19 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       simp only,
       apply linear_independent.union'',
       { apply linear_independent.image 
-          ((φ.valid' J hJ.subset_ground_left).2 (indep.subset h.1.2 (subset_union_right I J))) },
+          ((φ.valid' J).2 (indep.subset h.1.2 (subset_union_right I J))) },
       { apply linear_independent.image 
-          ((φ.valid' I ((subset_diff.1 (subset_diff.1 hI).1).1)).2 
+          ((φ.valid' I).2 
           (indep.subset h.1.2 (subset_union_left I J))) },
       { rw disjoint.comm,
         apply disjoint_image_image,
         have h200 := inj_on_of_indep φ h.1.2,
         rw inj_on at h200,
         intros x hx y hy,
-        have h300 := mem_of_subset_of_mem (subset_union_left I J) hx,
         specialize h200 (mem_of_subset_of_mem (subset_union_left I J) hx) 
           (mem_of_subset_of_mem (subset_union_right I J) hy),
         apply mt h200,
-        by_contra,
-        apply not_mem_of_mem_diff (mem_of_subset_of_mem (subset_diff.1 hI).1 hx), 
-        rw h,
-        apply hy },
+        apply disjoint_iff_forall_ne.1 h.1.1 x hx y hy },
       rw [to_fun_eq_coe, union_comm _ _] at h60,
       apply h60,
     end }
@@ -503,13 +518,14 @@ begin
     apply h,
     have h8 : span K (range (coe : s → V)) = span K s,
     simp only [subtype.range_coe_subtype, set_of_mem_eq],
-    apply basis.finite_index_of_dim_lt_aleph_0 (basis.span hs),
-    rw [← is_noetherian.iff_dim_lt_aleph_0, is_noetherian.iff_fg, h8],
+    apply _root_.basis.finite_index_of_rank_lt_aleph_0 (basis.span hs),
+    rw [← is_noetherian.iff_rank_lt_aleph_0, is_noetherian.iff_fg, h8],
     apply h3 },
 end 
 
 
-lemma of_r (φ : rep 𝔽 W M) (X : set α) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
+lemma of_r (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
+  finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' X)) = M.r X :=
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   rw [←hI.card, ←φ.span_basis hI, finrank_span_set_eq_ncard, 
@@ -518,10 +534,12 @@ begin
 end
 
 lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
-by { convert of_r φ univ; simp }
+by { convert of_r φ M.E; simp }
 
-lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) : φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x hx.2 }
+lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
+  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
+by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x 
+  (mem_of_mem_of_subset hx (M.cl_subset_ground X)) }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set α} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -541,11 +559,11 @@ namespace rep'
 
 lemma valid (φ : rep' 𝔽 M ι) : linear_independent 𝔽 (λ e : I, φ.to_fun e) ↔ M.indep I := φ.valid' _
 
-instance fun_like : fun_like (rep' 𝔽 M ι) E (λ _, ι → 𝔽) :=
+instance fun_like : fun_like (rep' 𝔽 M ι) α (λ _, ι → 𝔽) :=
 { coe := rep'.to_fun,
   coe_injective' := λ f g h, by cases f; cases g; congr' }
 
-instance : has_coe_to_fun (rep' 𝔽 M ι) (λ _, E → ι → 𝔽) := fun_like.has_coe_to_fun
+instance : has_coe_to_fun (rep' 𝔽 M ι) (λ _, α → ι → 𝔽) := fun_like.has_coe_to_fun
 
 @[simp] lemma to_fun_eq_coe' (φ : rep' 𝔽 M ι) : φ.to_fun = (φ : α → ι → 𝔽)  := by { ext, refl }
 
@@ -564,28 +582,36 @@ noncomputable def rep'_of_rep [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) {n
     W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
   end }
 
-lemma of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) (e : α) : φ e ∈ span 𝔽 (φ '' B) :=
+lemma of_basis' (φ : rep' 𝔽 M ι) {X I : set α} (hI : M.basis I X) {e : α} (he : e ∈ X): 
+  φ e ∈ span 𝔽 (φ '' I) :=
 begin
-  by_cases e ∈ B,
-  { exact subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e B, φ x) := φ.valid.not.2 (hB.dep_of_insert h),
+  by_cases e ∈ I, 
+  { apply subset_span (mem_image_of_mem _ h) },
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
+    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  exact (linear_independent_insert' h).2 ⟨φ.valid.2 hB.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
 end
 
-lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) :
-  span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) :=
+lemma of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
+  φ e ∈ span 𝔽 (φ '' B) := of_basis' φ (base.basis_ground hB) he
+
+lemma span_basis' (φ : rep' 𝔽 M ι) {X I : set α} (hI : M.basis I X) : 
+  span 𝔽 (φ '' I) = span 𝔽 (φ '' X) :=
 begin
-  --refine (span_mono $ image_subset_range _ _).antisymm (span_le.2 _),
-  ext;
-  exact of_base' _ hB _,
+  refine (span_mono $ image_subset _ (basis.subset hI)).antisymm (span_le.2 _),
+  rintros _ ⟨y, ⟨hy1, rfl⟩⟩,
+  apply of_basis' φ hI hy1,
 end
+
+lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
+  by { rw [span_basis' φ (base.basis_ground hB)] }
 
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base' _ hB, image_eq_range], exact basis.span ((rep'.valid' φ B).2 hB.indep) }
 
-instance fin_dim_rep' (φ : rep' 𝔽 M ι) [finite E] [fintype 𝔽] : 
+instance fin_dim_rep' (φ : rep' 𝔽 M ι) [fintype 𝔽] : 
   finite_dimensional 𝔽 (span 𝔽 (φ '' M.E)) :=
 begin
   cases M.exists_base with B hB,
@@ -597,7 +623,7 @@ lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
 begin
   cases M.exists_base with B hB,
   -- need basis for this to work
-  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (set.φ '' M.E)),
+  have h3 := finite_dimensional.fin_basis 𝔽 (span 𝔽 (φ '' M.E)),
   rw [←span_base' φ hB, finrank_span_set_eq_card (φ '' B)],
   have h6 : (⇑φ '' B).to_finset.card = B.to_finset.card,
   { simp_rw to_finset_card,
@@ -706,15 +732,13 @@ begin
       simp only [mem_insert_iff, eq_self_iff_true, true_or]},
     { obtain ⟨⟨a, ⟨⟨ha1, ha2⟩, rfl⟩⟩, ha3⟩ := h20,
       use a,
-      rw mem_diff_singleton,
-      refine ⟨ha1, _⟩,
+      apply mem_diff_singleton.2 ⟨ha1, _⟩,
+      simp only [mem_singleton_iff] at ha3,
       by_contra,
       rw h at ha3,
       apply ha3,
-      simp only [mem_singleton],
-      refine ⟨_, _⟩,
-      simp only [mem_diff, mem_univ, mem_singleton_iff, subtype.mk_eq_mk, true_and],
-      apply ha2,
+      refl,
+      refine ⟨(mem_diff _).2 ⟨mem_univ _, mem_singleton_iff.1.mt (subtype.mk_eq_mk.1.mt ha2)⟩, _⟩,
       simp only [subtype.coe_mk]} },
   rw h9 at h7, 
   apply h7,

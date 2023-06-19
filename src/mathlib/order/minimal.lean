@@ -30,17 +30,15 @@ lemma mem_minimals_set_of_iff [is_antisymm α r] :
   x ∈ minimals r (set_of P) ↔ P x ∧ ∀ ⦃y⦄, P y → r y x → x = y :=
 mem_minimals_iff'
 
-lemma mem_minimals_set_of_iff' [partial_order α] : 
-  x ∈ minimals (≤) (set_of P) ↔ P x ∧ ∀ ⦃y⦄, y < x → ¬ P y := 
-begin
-  rw [mem_minimals_set_of_iff, and.congr_right_iff], 
-  exact λ hPx, ⟨λ h y hlt hPy, hlt.ne.symm (h hPy hlt.le), 
-    λ h y hPy h', h'.lt_or_eq.elim (λ hlt, (h hlt hPy).elim) eq.symm⟩,  
-end  
+lemma mem_minimals_set_of_iff' {P : set α → Prop} {x : set α} : 
+  x ∈ minimals (⊆) (set_of P) ↔ P x ∧ ∀ ⦃y⦄, y ⊂ x → ¬ P y := 
+by simp [mem_minimals_set_of_iff, and.congr_right_iff, 
+    ssubset_iff_subset_ne, and_imp, ne.def, not_imp_not, imp.swap, eq_comm]
 
-lemma mem_maximals_set_of_iff' [partial_order α] : 
-  x ∈ maximals (≤) (set_of P) ↔ P x ∧ ∀ ⦃y⦄, x < y → ¬ P y := 
-@mem_minimals_set_of_iff' αᵒᵈ _ _ _
+lemma mem_maximals_set_of_iff' {P : set α → Prop} {x : set α} : 
+  x ∈ maximals (⊆) (set_of P) ↔ P x ∧ ∀ ⦃y⦄, x ⊂ y → ¬ P y := 
+by simp [mem_maximals_set_of_iff, and.congr_right_iff, ssubset_iff_subset_ne, and_imp, 
+  not_imp_not, imp.swap]
 
 def maximal {α : Type*} (r : α → α → Prop) (P : α → Prop) (x : α) := 
   x ∈ maximals r (set_of P)

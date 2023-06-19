@@ -1,36 +1,356 @@
 import .basic
-import mathlib.data.set.image 
+import mathlib.data.set.image
+import mathlib.data.set.function
 
 noncomputable theory
-open_locale classical
 
 open set
 
 universe u
 
-variables {α β α₁ α₂ α₃ : Type*} {M : matroid_in α} {M₁ : matroid_in α₁} {M₂ : matroid_in α₂}
-  {M₃ : matroid_in α₃}
+variables {α β α₁ α₂ α₃ : Type*} {M : matroid_in α} {N : matroid_in β} 
 
 namespace matroid_in
 
 section iso
 
-
-structure iso (M₁ : matroid_in α₁) (M₂ : matroid_in α₂) :=
-  (to_fun : M₁.E ≃ M₂.E)
-  (on_base : ∀ (B : set M₂.E), M₂.base (coe '' B) ↔ M₁.base (coe '' (to_fun ⁻¹' B))) 
+structure iso (M₁ : matroid_in α₁) (M₂ : matroid_in α₂) extends equiv M₁.E M₂.E :=
+  (on_base' : ∀ (B : set M₁.E), M₁.base (coe '' B) ↔ M₂.base (coe '' (to_fun '' B))) 
 
 infix ` ≃i `:75 := matroid_in.iso 
 
-instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, M₁.E → M₂.E) := ⟨λ e, e.to_fun⟩ 
+instance iso.equiv_like {α β : Type*} {M₁ : matroid_in α} {M₂ : matroid_in β} : 
+  equiv_like (M₁ ≃i M₂) M₁.E M₂.E := 
+{ coe := λ e, e.to_equiv.to_fun,
+  inv := λ e, e.to_equiv.inv_fun,
+  left_inv := λ e, e.to_equiv.left_inv, 
+  right_inv := λ e, e.to_equiv.right_inv,
+  coe_injective' := λ e e' h h', by { cases e, cases e', simpa using h }   }
 
-def iso.refl (M : matroid_in α₁) : M ≃i M := ⟨equiv.refl M.E, by simp⟩ 
-def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := 
-⟨e.to_fun.symm, λ B, by { rw e.on_base, simp }⟩ 
+def iso.symm (e : M ≃i N) : N ≃i M := 
+{ to_equiv := e.symm, 
+  on_base' := begin
+    intro B, 
+    rw [e.on_base'], 
+    congr', 
+    exact (e.to_equiv.image_symm_image B).symm, 
+  end }
 
-def iso.trans (e₁ : M₁ ≃i M₂) (e₂ : M₂ ≃i M₃) : M₁ ≃i M₃ :=
-{ to_fun := e₁.to_fun.trans e₂.to_fun,
-  on_base := λ B, by { rw [e₂.on_base, e₁.on_base], convert iff.rfl } }
+@[simp] lemma coe_symm (e : M ≃i N) : (e.symm : N.E → M.E) = e.to_equiv.symm := rfl 
+
+def iso.cast {M N : matroid_in α} (h : M = N) : M ≃i N := 
+{ to_equiv := equiv.cast (by rw h), 
+  on_base' := by { subst h, simp } }
+
+def iso.refl (M : matroid_in α₁) : M ≃i M := 
+⟨equiv.refl M.E, by simp⟩ 
+
+def iso.trans {M₁ : matroid_in α₁} {M₂ : matroid_in α₂} {M₃ : matroid_in α₃} 
+(e₁ : M₁ ≃i M₂) (e₂ : M₂ ≃i M₃) : M₁ ≃i M₃ :=
+{ to_equiv := e₁.to_equiv.trans e₂.to_equiv,
+  on_base' := λ B, by { 
+    rw [e₁.on_base', e₂.on_base'], 
+    convert iff.rfl, 
+    rw [← image_comp], 
+    refl } }
+
+def iso_of_indep (e : M.E ≃ N.E) 
+(hi : ∀ (I : set M.E), M.indep (coe '' I) ↔ N.indep (coe '' (e '' I))) : M ≃i N := 
+{ to_equiv := e, 
+  on_base' := begin
+    intro B, 
+    simp_rw [base_iff_maximal_indep, equiv.to_fun_as_coe], 
+    simp only [image_subset_iff],  
+    simp_rw [← hi, and.congr_right_iff],
+    refine λ hI, ⟨λ h I hIN hBI, _, λ h I hI hBI, _ ⟩,  
+    { have hIE := hIN.subset_ground, 
+      rw ←@subtype.range_coe _ N.E at hIE,
+      obtain ⟨I, rfl⟩ := subset_range_iff_exists_image_eq.mp hIE, 
+      rw [← e.image_preimage I, ← hi] at hIN, 
+      have := h _ hIN,
+      simp only [subtype.preimage_image_coe, subtype.image_coe_eq_image_coe_iff] at this hBI,
+      simp [this hBI] },
+    specialize h (coe '' (e '' (coe ⁻¹' I))), 
+    simp only [subtype.preimage_image_coe, equiv.preimage_image, subtype.image_coe_eq_image_coe_iff, 
+      equiv.image_eq_iff_eq, ← hi, subtype.image_preimage_coe, 
+      inter_eq_self_of_subset_left hI.subset_ground] at h, 
+    simp only [h hI hBI, subtype.image_preimage_coe, inter_eq_left_iff_subset], 
+    exact hI.subset_ground, 
+  end }
+
+noncomputable def iso_of_bij_on (M : matroid_in α) (N : matroid_in β) (f : α → β) 
+  (hbij : bij_on f M.E N.E) (hf : ∀ X ⊆ M.E, M.base X ↔ N.base (f '' X)) : M ≃i N :=
+{ to_equiv := set.bij_on.equiv f hbij,
+  on_base' := begin
+    intro B, 
+    rw [equiv.to_fun_as_coe, hf _ (subtype.coe_image_subset (E M) B)],
+    convert iff.rfl, 
+    ext y, 
+    simp only [mem_image, set_coe.exists, subtype.coe_mk, exists_and_distrib_right, 
+      exists_eq_right], 
+    split, 
+    { rintro ⟨hy,x,hx, hxB, hb⟩ , 
+      refine ⟨x, ⟨hx, hxB⟩, _⟩, 
+      rw [←subtype.coe_inj, subtype.coe_mk] at hb, 
+      rw ←hb, 
+      refl }, 
+    rintro ⟨x, ⟨hx, hB⟩, rfl⟩, 
+    exact ⟨hbij.maps_to hx, x, hx, hB, rfl⟩, 
+  end }
+
+lemma iso.exists_bij_on [nonempty β] (e : M ≃i N) : 
+  ∃ f : α → β, bij_on f M.E N.E ∧ ∀ B ⊆ M.E, M.base B ↔ N.base (f '' B) :=
+begin
+  classical, 
+  let b := classical.arbitrary β, 
+  refine ⟨λ a, if h : a ∈ M.E then e ⟨a,h⟩ else b, ⟨λ x hx, _ ,_,_⟩, _⟩, 
+  { simp_rw dif_pos hx, exact (e ⟨x,hx⟩).2 },
+  { intros x hx x' hx' h, 
+    simp_rw [dif_pos hx ,dif_pos hx', subtype.coe_inj] at h,
+    simpa using e.to_equiv.apply_eq_iff_eq.mp h },
+  { refine λ y hy, ⟨e.symm ⟨y,hy⟩, subtype.mem _, _⟩,  
+    simp_rw [subtype.coe_prop, subtype.coe_eta, dite_eq_ite, if_true, subtype.coe_eq_iff], 
+    exact ⟨hy, e.to_equiv.apply_symm_apply _⟩ },
+  refine λ B hB, _, 
+  rw [←@subtype.range_coe _ M.E] at hB, 
+  obtain ⟨B, rfl⟩ := subset_range_iff_exists_image_eq.mp hB, 
+  rw e.on_base',  
+  convert iff.rfl, 
+  ext b,
+  simp only [mem_image, set_coe.exists, subtype.coe_mk, exists_and_distrib_right, exists_eq_right, 
+    equiv.to_fun_as_coe],  
+  split, 
+  { rintro ⟨a, ⟨ha, haB⟩, h⟩,
+    rw dif_pos ha at h, subst h, 
+    simp only [subtype.coe_prop, subtype.coe_eta, exists_true_left],
+    exact ⟨a, ha, haB, rfl⟩ },
+  rintro ⟨hb, a, ha, haB, he⟩,  
+  refine ⟨a, ⟨ha, haB⟩, _⟩, 
+  rw [dif_pos ha], 
+  apply_fun (coe : N.E → β) at he, 
+  exact he,
+end   
+
+noncomputable def iso_of_bij_on_indep (f : α → β) (hbij : bij_on f M.E N.E) 
+  (hf : ∀ X ⊆ M.E, M.indep X ↔ N.indep (f '' X)) : M ≃i N := 
+iso_of_bij_on M N f hbij 
+(begin
+  intros I hIE, 
+  simp_rw [base_iff_maximal_indep, ←hf I hIE, and.congr_right_iff], 
+  refine λ hI, ⟨λ h J hJ hIJ, _, λ h J hJ hIJ, _⟩, 
+  { have hJ_e := hbij.surj_on.image_preimage_inter hJ.subset_ground, 
+    rw [←hJ_e, h], 
+    { rwa [hf (f ⁻¹' J ∩ M.E) (inter_subset_right _ _), hJ_e] },
+    rwa [subset_inter_iff, and_iff_left hIE, ←image_subset_iff] },
+  have hIJ' := h (f '' J) _ (image_subset _ hIJ), 
+  { rwa hbij.inj_on.image_eq_image_iff (hIJ.trans hJ.subset_ground) hJ.subset_ground at hIJ' }, 
+  rwa [←hf _ hJ.subset_ground], 
+end) 
+
+lemma iso.exists_bij_on_indep [nonempty β] (e : M ≃i N) : 
+  ∃ f : α → β, bij_on f M.E N.E ∧ ∀ I ⊆ M.E, M.indep I ↔ N.indep (f '' I) :=
+begin
+  refine e.exists_bij_on.imp (λ f hf, ⟨hf.1, λ I hIE, _⟩), 
+  simp_rw [indep_iff_subset_base], 
+  split, 
+  { rintro ⟨B, hB, hIB⟩, exact ⟨f '' B, (hf.2 B hB.subset_ground).mp hB, image_subset _ hIB⟩ },
+  rintro ⟨B, hB, hIB⟩, 
+  have hB' := hf.1.surj_on.image_preimage_inter hB.subset_ground, 
+  refine ⟨f⁻¹' B ∩ M.E, _, _⟩,  
+  { rwa [hf.2 _ (inter_subset_right _ _), hB'] },
+  rwa [subset_inter_iff, ←image_subset_iff, and_iff_left hIE], 
+end 
+
+def iso.image (e : M ≃i N) (B : set α) : set β := coe '' (e '' (coe ⁻¹' B))
+
+def iso.preimage (e : M ≃i N) (B : set β) : set α := coe '' (e ⁻¹' (coe ⁻¹' B))
+
+@[ssE_finish_rules] lemma iso.image_subset_ground (e : M ≃i N) (X : set α) : e.image X ⊆ N.E :=
+subtype.coe_image_subset _ _
+
+@[ssE_finish_rules] lemma iso.preimage_subset_ground (e : M ≃i N) (X : set β) : 
+  e.preimage X ⊆ M.E :=
+subtype.coe_image_subset _ _
+
+@[simp] lemma iso.preimage_image (e : M ≃i N) {X : set α} (hX : X ⊆ M.E . ssE) : 
+  e.preimage (e.image X) = X :=
+begin
+  rw ←@subtype.range_coe _ M.E at hX, 
+  obtain ⟨X, rfl⟩ := subset_range_iff_exists_image_eq.mp hX, 
+  rw [iso.image, iso.preimage], 
+  simp only [subtype.preimage_image_coe, subtype.image_coe_eq_image_coe_iff], 
+  exact e.to_equiv.preimage_image X, 
+end 
+
+@[simp] lemma iso.image_preimage (e : M ≃i N) {X : set β} (hX : X ⊆ N.E . ssE) :
+  e.image (e.preimage X) = X := 
+begin
+  rw [auto_param_eq, ←@subtype.range_coe _ N.E] at hX, 
+  obtain ⟨X, rfl⟩ := subset_range_iff_exists_image_eq.mp hX, 
+  rw [iso.image, iso.preimage], 
+  simp_rw [subtype.preimage_image_coe, subtype.image_coe_eq_image_coe_iff], 
+  exact e.to_equiv.image_preimage X, 
+end 
+ 
+lemma iso.image_inj (e : M ≃i N) {X X' : set α} (hB : X ⊆ M.E) (hB' : X' ⊆ M.E) 
+(h : e.image X = e.image X') : X = X' :=
+begin
+  rwa [iso.image, iso.image, image_eq_image subtype.coe_injective, 
+    image_eq_image (equiv_like.injective e), preimage_eq_preimage'] at h;
+  rwa [subtype.range_coe],  
+end 
+
+lemma iso.preimage_inj (e : M ≃i N) {X X' : set β} (hB : X ⊆ N.E) (hB' : X' ⊆ N.E) 
+(h : e.preimage X = e.preimage X') : X = X' := 
+begin
+  rwa [iso.preimage, iso.preimage, image_eq_image subtype.coe_injective, 
+    preimage_eq_preimage (equiv_like.surjective e), preimage_eq_preimage'] at h;
+  rwa subtype.range_coe
+end 
+
+lemma iso.image_eq_preimage_symm (e : M ≃i N) {X : set α} : e.image X = e.symm.preimage X :=
+begin
+  rw [iso.preimage, coe_symm, iso.image, image_eq_image subtype.coe_injective, 
+    ←image_equiv_eq_preimage_symm], refl, 
+end 
+
+lemma iso.preimage_eq_image_symm (e : M ≃i N) {X : set β} : e.preimage X = e.symm.image X := 
+begin
+  rw [iso.image, coe_symm, iso.preimage, image_eq_image subtype.coe_injective, 
+    ←preimage_equiv_eq_image_symm], 
+  refl, 
+end 
+
+lemma iso.image_eq_image_inter_ground (e : M ≃i N) (X : set α) : e.image X = e.image (X ∩ M.E) :=
+by rw [iso.image, iso.image, ←preimage_inter_range, subtype.range_coe]
+
+lemma iso.preimage_eq_preimage_inter_ground (e : M ≃i N) (X : set β) : 
+  e.preimage X = e.preimage (X ∩ N.E) :=
+by rw [e.preimage_eq_image_symm, iso.image_eq_image_inter_ground, ←e.preimage_eq_image_symm]
+
+@[simp] lemma iso.image_ground (e : M ≃i N) : e.image M.E = N.E := 
+begin
+  rw [←@subtype.range_coe _ M.E, ←@subtype.range_coe _ N.E, iso.image], 
+  simp only [subtype.range_coe_subtype, set_of_mem_eq, subtype.coe_preimage_self, image_univ],  
+  convert image_univ, 
+  { exact e.to_equiv.range_eq_univ }, 
+  simp, 
+end 
+
+@[simp] lemma iso.preimage_ground (e : M ≃i N) : e.preimage N.E = M.E :=
+by rw [iso.preimage_eq_image_symm, iso.image_ground]
+
+lemma iso.image_inter (e : M ≃i N) (X Y : set α) : e.image (X ∩ Y) = e.image X ∩ e.image Y :=
+by rw [e.image_eq_image_inter_ground, inter_inter_distrib_right, iso.image, 
+    preimage_inter, image_inter (equiv_like.injective e), image_inter subtype.coe_injective, 
+    ← iso.image, ←iso.image, ←e.image_eq_image_inter_ground, ←e.image_eq_image_inter_ground ]
+
+lemma iso.preimage_compl (e : M ≃i N) (X : set β) : e.preimage Xᶜ = M.E \ e.preimage X :=
+by rw [iso.preimage, preimage_compl, preimage_compl, compl_eq_univ_diff, 
+    image_diff subtype.coe_injective, image_univ, subtype.range_coe, iso.preimage] 
+  
+lemma iso.image_compl (e : M ≃i N) (X : set α) : e.image Xᶜ = N.E \ e.image X :=
+by rw [iso.image_eq_preimage_symm, iso.preimage_compl, ←iso.image_eq_preimage_symm]
+
+lemma iso.image_diff (e : M ≃i N) (X Y : set α) : e.image (X \ Y) = e.image X \ e.image Y :=
+by rw [diff_eq, e.image_inter, e.image_compl, diff_eq, ←inter_assoc, diff_eq, 
+  inter_eq_self_of_subset_left (e.image_subset_ground _) ]
+
+@[simp] lemma iso.image_empty (e : M ≃i N) : e.image ∅ = ∅ := 
+by simp [iso.image]
+
+lemma iso.image_subset_image (e : M ≃i N) {X Y : set α} (hXY : X ⊆ Y) : e.image X ⊆ e.image Y :=
+by rw [←diff_eq_empty, ←e.image_diff, diff_eq_empty.mpr hXY, e.image_empty]
+
+lemma iso.image_ground_diff (e : M ≃i N) (X : set α) : e.image (M.E \ X) = N.E \ e.image X := 
+by rw [iso.image_diff, iso.image_ground]
+
+def iso.dual (e : M ≃i N) : M﹡ ≃i N﹡ :=
+{ to_equiv := e.to_equiv,
+  on_base' := begin
+    intro B,
+    rw [dual_base_iff', dual_base_iff', ← @subtype.range_coe _ M.E, ←@subtype.range_coe _ N.E,
+      and_iff_left (image_subset_range _ _), and_iff_left (image_subset_range _ _),
+      ← image_univ, ←image_diff subtype.coe_injective, e.on_base', ←image_univ, 
+      ← image_diff subtype.coe_injective, equiv.to_fun_as_coe, image_diff (equiv.injective _), 
+        image_univ, equiv.range_eq_univ],
+  end  }
+
+@[simp] lemma iso.dual_coe (e : M ≃i N) : (e.dual : M﹡.E → N﹡.E) = e := rfl 
+
+@[simp] lemma iso.dual_image (e : M ≃i N) : e.dual.image = e.image := rfl
+
+@[simp] lemma iso.dual_preimage (e : M ≃i N) : e.dual.preimage = e.preimage := rfl
+
+lemma iso.on_base (e : M ≃i N) {B : set α} (hI : B ⊆ M.E) : M.base B ↔ N.base (e.image B) := 
+begin
+  rw ←@subtype.range_coe _ M.E at hI, 
+  obtain ⟨B, rfl⟩ := subset_range_iff_exists_image_eq.mp hI,  
+  rw [iso.image, e.on_base', equiv.to_fun_as_coe], 
+  convert iff.rfl using 1, 
+  simp only [subtype.preimage_image_coe, eq_iff_iff], 
+  refl, 
+end 
+
+lemma iso.on_indep (e : M ≃i N) {I : set α} (hI : I ⊆ M.E) : 
+  M.indep I ↔ N.indep (e.image I) :=
+begin
+  rw [indep_iff_subset_base, indep_iff_subset_base], 
+  split, 
+  { rintro ⟨B, hB, hIB⟩,
+    exact ⟨e.image B, (e.on_base hB.subset_ground).mp hB, e.image_subset_image hIB⟩ },
+  rintro ⟨B, hB, hIB⟩, 
+  refine ⟨e.preimage B, _, _⟩, 
+  { rwa [iso.preimage_eq_image_symm, ←e.symm.on_base hB.subset_ground] },
+  rw [←e.preimage_image hI, e.preimage_eq_image_symm, e.preimage_eq_image_symm],
+  apply e.symm.image_subset_image hIB, 
+end 
+
+-- lemma iso.preimage_image (e : M ≃i N) {X : set β} (hX : X ⊆ N.E) : 
+--   e.preimage 
+
+-- instance : has_coe_to_fun (M₁ ≃i M₂) (λ _, M₁.E → M₂.E) := ⟨λ e, e.to_fun⟩ 
+
+-- def iso.refl (M : matroid_in α₁) : M ≃i M := 
+-- ⟨equiv.refl M.E, by simp⟩ 
+
+-- def iso.symm (e : M₁ ≃i M₂) : M₂ ≃i M₁ := 
+-- ⟨e.to_fun.symm, λ B, by { rw e.on_base, simp }⟩ 
+
+-- def iso.trans (e₁ : M₁ ≃i M₂) (e₂ : M₂ ≃i M₃) : M₁ ≃i M₃ :=
+-- { to_fun := e₁.to_fun.trans e₂.to_fun,
+--   on_base := λ B, by { rw [e₂.on_base, e₁.on_base], convert iff.rfl } }
+
+-- lemma on_base {B : set α₁} (i : M₁ ≃i M₂) (hB : M₁.base B) : M₂.base (i '' B)
+
+-- lemma on_indep (h : M₁ ≃i M₂) (I : set M₁.E) : M₁.indep I ↔ 
+
+-- def iso.image (e : M₁ ≃i M₂) (B : set α₁) : set α₂ := coe '' (e '' (coe ⁻¹' B))
+
+-- def iso.preimage (e : M₁ ≃i M₂) (B : set α₂) : set α₁ := coe '' (e ⁻¹' (coe ⁻¹' B))
+
+-- lemma iso.image_preimage (e : M₁ ≃i M₂) {X : set α₁} (hX : X ⊆ M₁.E) : 
+--   e.preimage (e.image X) = X :=
+-- begin
+--   rw ←@subtype.range_coe _ M₁.E at hX, 
+--   obtain ⟨X, rfl⟩ := subset_range_iff_exists_image_eq.mp hX, 
+--   rw [iso.image, iso.preimage], 
+--   simp only [subtype.preimage_image_coe, subtype.image_coe_eq_image_coe_iff], 
+--   exact e.to_equiv.preimage_image X, 
+-- end 
+
+-- lemma iso.base_iff_base (e : M₁ ≃i M₂) {B : set α₁} (hB : B ⊆ M₁.E) : 
+--   M₁.base B ↔ M₂.base (e.image B) :=
+-- begin
+--   rw ←@subtype.range_coe _ M₁.E at hB, 
+--   obtain ⟨B, rfl⟩ := subset_range_iff_exists_image_eq.mp hB, 
+--   rw [iso.image, e.symm.on_base, iso.symm],  
+--   convert iff.rfl, 
+--   convert equiv.image_eq_preimage _ _, 
+--   simp, 
+-- end 
+
+
 
 end iso 
 
