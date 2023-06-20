@@ -239,7 +239,8 @@ lemma basis.transfer (hIX : M.basis I X) (hJX : M.basis J X) (hXY : X ⊆ Y) (hJ
   M.basis I Y :=
 begin
   rw [←restrict_base_iff], 
-  exact (restrict_base_iff.mpr hJY).base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY), 
+  exact (restrict_base_iff.mpr hJY).base_of_basis_supset hJX.subset 
+    (hIX.basis_restrict_of_subset hXY), 
 end 
 
 lemma basis.transfer' (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) (hIY : I ⊆ Y) : 
@@ -295,6 +296,14 @@ end basis
 
 section finite
 
+lemma basis.encard_eq_encard_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : 
+  I.encard = J.encard :=
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.encard_eq_encard_of_base hJX }
+
+lemma basis.encard_diff_comm (hI : M.basis I X) (hJ : M.basis J X) :
+  (I \ J).encard = (J \ I).encard :=
+by { rw [←restrict_base_iff] at hI hJ, rw hJ.encard_diff_comm hI }
+
 lemma basis.card_eq_card_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : I.ncard = J.ncard :=
 by { rw [←restrict_base_iff] at hIX hJX, exact hIX.card_eq_card_of_base hJX }
 
@@ -334,6 +343,18 @@ begin
     he.2, hK.indep.subset (insert_subset.mpr ⟨he.1,hIK⟩)⟩, 
 end 
 
+lemma indep.augment_of_encard_lt (hI : M.indep I) (hJ : M.indep J) (hIJ : I.encard < J.encard) : 
+  ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
+begin
+  have hIfin := finite_of_encard_lt hIJ, 
+  have hle := enat.add_one_le_of_lt hIJ, 
+  obtain ⟨J', hJ'ss, hJ'⟩ := exists_subset_encard_eq hle, 
+  obtain ⟨x, hxJ', h⟩ := hI.augment_of_finite (hJ.subset hJ'ss) hIfin _, 
+  { exact ⟨_, hJ'ss hxJ', h⟩ },
+  rw [←encard_to_nat_eq J', hJ', enat.to_nat_add hIfin.encard_lt_top.ne];
+  simp, 
+end 
+
 /-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`, 
   there is an element `e` of `J \ I` whose insertion into `e` gives an independent set.  -/
 lemma indep.augment [finite_rk M] (hI : M.indep I) (hJ : M.indep J) (hIJ : I.ncard < J.ncard) :
@@ -354,15 +375,26 @@ lemma indep.ssubset_indep_of_card_lt [finite_rk M] (hI : M.indep I) (hJ : M.inde
   ∃ I', M.indep I' ∧ I ⊂ I' ∧ I' ⊆ I ∪ J :=
 hI.ssubset_indep_of_card_lt_of_finite hI.finite hJ hIJ
 
+lemma indep.le_encard_basis (hI : M.indep I) (hIX : I ⊆ X) (hJX : M.basis J X) : 
+  I.encard ≤ J.encard :=
+begin
+  obtain ⟨I', hI', h⟩ := hI.subset_basis_of_subset hIX, 
+  rw [hJX.encard_eq_encard_of_basis hI'], 
+  exact encard_mono h, 
+end 
+
 lemma indep.le_card_basis [finite_rk M] (hI : M.indep I) (hIX : I ⊆ X) (hJX : M.basis J X) :
   I.ncard ≤ J.ncard :=
 begin
-  refine le_of_not_lt (λ hlt, _),
-  obtain ⟨I', hI'⟩ := hJX.indep.ssubset_indep_of_card_lt hI hlt,
-  have := hJX.eq_of_subset_indep hI'.1 hI'.2.1.subset (hI'.2.2.trans (union_subset hJX.subset hIX)),
-  subst this,
-  exact hI'.2.1.ne rfl,
+  have hle := hI.le_encard_basis hIX hJX, 
+  rwa [hI.finite.encard_eq, hJX.finite.encard_eq, nat.cast_le] at hle, 
+  -- refine le_of_not_lt (λ hlt, _),
+  -- obtain ⟨I', hI'⟩ := hJX.indep.ssubset_indep_of_card_lt hI hlt,
+  -- have := hJX.eq_of_subset_indep hI'.1 hI'.2.1.subset (hI'.2.2.trans (union_subset hJX.subset hIX)),
+  -- subst this,
+  -- exact hI'.2.1.ne rfl,
 end
+
 
 end finite 
 
