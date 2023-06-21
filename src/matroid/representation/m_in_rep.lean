@@ -309,9 +309,21 @@ end
 @[simp] lemma mem_span_rep_range (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
 
-@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x ∈ M.E), φ x ∈ (span 𝔽 (φ '' M.E)) := 
-  λ x hx, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) 
-  (mem_image_of_mem φ hx) }
+@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x, by { 
+  by_cases x ∈ M.E,
+  apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h),
+  rw φ.eq_zero_of_not_mem_ground h,
+  simp only [submodule.zero_mem] }
+
+@[simp]
+lemma span_range_eq_span_image (φ : rep 𝔽 W M) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+begin
+  ext;
+  refine ⟨λ h, _, λ h, _⟩,
+  sorry,
+  sorry,
+end
 
 lemma mem_span_cl (φ : rep 𝔽 W M) {x : α} {X : set α} (hX : X ⊆ M.E) (hx : x ∈ M.cl X) : 
   φ x ∈ span 𝔽 (φ '' X) :=
@@ -533,7 +545,7 @@ begin
   exact linear_independent.image (φ.valid.mpr hI.indep), 
 end
 
-lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
+lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
 by { convert of_r φ M.E; simp }
 
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
@@ -641,15 +653,21 @@ end rep'
 namespace rep
 
 -- we have fin_dim_vectorspace_equiv
-lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
-  nonempty (rep' 𝔽 M (fin M.rk))  :=
+def foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
+  nonempty (rep' 𝔽 M (fin M.rk))  := 
 begin
-  have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
+  -- for some reason rep'.rep'_of_rep is giving deterministic timeout?
+  --have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
+  have h2 := (of_rank φ'),
+  have s := (φ'.rep_submodule),
+
   have h1 := eq.symm (@finite_dimensional.finrank_fin_fun 𝔽 _ sorry (M.rk)),
-  rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
-  cases h1 with l,
-  have h3 := λ (x : α), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
-  use φ,
+  have φ := rep'.rep'_of_rep (φ'.rep_submodule) _,
+  --rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
+  --cases h1 with l,
+  --have h3 := λ (x : α), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
+  --use φ,
+  sorry,
 end
 
 lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
