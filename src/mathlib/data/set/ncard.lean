@@ -6,9 +6,13 @@ variables {α : Type*} {s t r : set α} {x y z : α}
 lemma enat.exists_eq_top_or_coe (n : ℕ∞) : n = ⊤ ∨ (∃ n₀ : ℕ, n = n₀) :=
 by { cases n, exact or.inl rfl, exact or.inr ⟨_, rfl⟩ }
 
+lemma enat.coe_inj {m n : ℕ} : (m : ℕ∞) = n ↔ m = n := 
+nat.cast_inj
+
+lemma enat.coe_le_coe_iff {m n : ℕ} : (m : ℕ∞) ≤ n ↔ m ≤ n :=
+nat.cast_le  
+
 namespace set 
-
-
 
 /-- A fixed version that asserts in the conclusion that the set is finite. -/
 theorem infinite.exists_supset_ncard_eq' 
@@ -58,6 +62,13 @@ by rw [←encard_to_nat_eq, h, encard_to_nat_eq]
 lemma finite.encard_eq_encard_of_ncard_eq_ncard (hs : s.finite) (ht : t.finite) 
 (h : s.ncard = t.ncard) : s.encard = t.encard := 
 by rw [hs.encard_eq, ht.encard_eq, h]
+
+lemma encard_insert_of_not_mem (h : x ∉ s) : (insert x s).encard = s.encard + 1 :=
+begin
+  obtain (hs | hs) := s.finite_or_infinite, 
+  { rw [hs.encard_eq, (hs.insert x).encard_eq, ncard_insert_of_not_mem h hs], simp },
+  rw [hs.encard_eq, (hs.mono (subset_insert _ _)).encard_eq, with_top.top_add],  
+end 
 
 @[simp] lemma encard_eq_top_iff_infinite : s.encard = ⊤ ↔ s.infinite :=
 begin

@@ -340,9 +340,6 @@ lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
 infinite_iff_infinite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
 
-lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
-  (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
-by rw [←encard_to_nat_eq, hB₁.encard_diff_comm hB₂, encard_to_nat_eq]
   -- obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
   -- { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
   -- rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
