@@ -31,7 +31,7 @@ matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_in
     apply subset_union_right },
 
   have hi : M﹡.indep (M.E \ (B ∪ Y)), 
-  { rw [dual_indep_iff_exists, and_iff_right (diff_subset _ _)], 
+  { rw [dual_indep_iff_coindep, coindep_iff_exists], 
     exact ⟨B, hB, disjoint_of_subset_right (subset_union_left _ _) disjoint_sdiff_left⟩ }, 
   have h_eq := hI'.eq_of_subset_indep hi hss 
     (by {rw [diff_subset_iff, union_assoc, union_diff_self, ←union_assoc], simp }), 
@@ -78,9 +78,6 @@ by rwa [restrict_ground_eq', inter_eq_left_iff_subset]
 
 instance restrict_finite [M.finite] : (M ‖ R).finite := 
 ⟨M.ground_finite.subset (inter_subset_right _ _)⟩  
-
-@[simp] lemma restrict_empty (M : matroid_in α) : M ‖ (∅ : set α) = empty α :=
-by simp [←ground_eq_empty_iff_eq_empty]
 
 @[simp] lemma restrict_dep_iff : (M ‖ R).dep X ↔ M.dep X ∧ X ⊆ R :=
 begin
@@ -137,9 +134,6 @@ begin
   exact λ _, hI, 
 end 
 
-@[simp] lemma restrict_empty_eq_empty (M : matroid_in α) : M ‖ (∅ : set α) = (empty α) :=  
-by rw [←ground_eq_empty_iff_eq_empty, restrict_ground_eq]
-
 lemma restrict_eq_self_iff : M ‖ X = M ↔ M.E ⊆ X := 
 begin
   simp only [eq_iff_indep_iff_indep_forall, restrict_indep_iff, and_iff_left_iff_imp, 
@@ -157,6 +151,12 @@ infix ` <r ` :75 :=  matroid_in.strict_restriction
 
 lemma restriction.eq_restrict (h : N ≤r M) : M ‖ N.E = N :=
 h 
+
+lemma restriction.ground_subset_ground (h : N ≤r M) : N.E ⊆ M.E :=
+by { rw [←h.eq_restrict], apply inter_subset_right }
+
+lemma restriction.exists_eq_restrict (h : N ≤r M) : ∃ R ⊆ M.E , N = M ‖ R := 
+by { rw ←h.eq_restrict, exact ⟨N.E, h.ground_subset_ground, rfl⟩ }
 
 lemma strict_restriction.restriction (h : N <r M) : N ≤r M :=
 h.1
@@ -186,13 +186,10 @@ instance restriction.refl : is_refl (matroid_in α) (≤r) :=
 ⟨restrict_ground_eq_self⟩   
 
 instance restriction.antisymm : is_antisymm (matroid_in α) (≤r) :=
-begin
-  refine ⟨λ M M' (h : _ = M) (h' : _ = M'), _⟩,  
-  rw [←h', ←M.restrict_ground_eq_self, restrict_restrict, restrict_eq_restrict_iff, 
-    inter_right_comm, inter_self, eq_comm, inter_eq_left_iff_subset, ←h, restrict_ground_eq'],
-  exact inter_subset_right _ _,  
-end 
+⟨λ M M' h h', by rw [←h.eq_restrict, h.ground_subset_ground.antisymm h'.ground_subset_ground,
+  restrict_ground_eq_self]⟩ 
 
+/- This proof is HORRIBLE. There is possibly a much better way to do isomorphisms. -/
 noncomputable def restrict_iso {β : Type*} {N : matroid_in β} (i : M ≃i N) (R : set α) : 
   M ‖ R ≃i (N ‖ i.image R) := 
 let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_subset_right _ _)⟩, 
@@ -216,93 +213,23 @@ let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_s
     simp only [image_subset_iff, subtype.coe_mk, restrict_indep_iff, equiv.coe_trans, 
       function.comp_app, equiv.of_injective_apply, equiv.set.of_eq_apply], 
     rw [i.on_indep, and_iff_left, and_iff_left], 
-    { 
-      convert iff.rfl using 2,  
+    { convert iff.rfl using 2,  
       unfold iso.image, 
       rw [subset_antisymm_iff], split, 
       { rintro x ⟨y, ⟨z, hz, rfl⟩, rfl⟩,
         exact ⟨i ⟨z, (inter_subset_right _ _) z.prop⟩, ⟨_, by simpa, rfl⟩, rfl⟩ },
-      rintro x ⟨y, ⟨z,(hz : coe z ∈ coe '' I),rfl⟩, rfl⟩, 
-
-      refine ⟨⟨i z, _⟩, _, rfl⟩, 
-      { simp, sorry },
-      sorry },
-    { sorry, },
-    { sorry, }, 
-    sorry, 
+      rintro x ⟨y, ⟨⟨z,hzE⟩,⟨⟨w,hw⟩, hwI, (rfl : w = z)⟩,rfl⟩, rfl⟩, 
+      rw [restrict_ground_eq', mem_inter_iff] at hw, 
+      exact ⟨⟨i ⟨w,hzE⟩, ⟨⟨i ⟨w,hzE⟩,⟨_,by simpa using hw.1,rfl⟩,rfl⟩,by simp⟩⟩,
+        ⟨⟨w,hw⟩,hwI,rfl⟩,rfl⟩ },
+    { rintro ⟨x,hxR,hxE⟩ hxI, 
+      simp only [mem_preimage, subtype.coe_mk], 
+      exact ⟨i ⟨x, _⟩,⟨_, by simpa, rfl⟩,rfl⟩ },
+    { rintro ⟨x,hxR,hxE⟩ hxI, exact hxR }, 
+    rintro _ ⟨⟨x,hxR,hxE⟩, hI, rfl⟩, 
+    exact hxE, 
   end)
 
--- begin
---   refine (is_empty_or_nonempty β).elim (λ h, _) (λ h, _), 
---   { have : R ∩ M.E = ∅, 
---     { refine eq_empty_of_forall_not_mem _, 
---       rintro x ⟨-, hxE⟩, 
---       apply h.elim' (i ⟨x,hxE⟩) },
---     rw [ ←restrict_inter_ground, iso.image_eq_image_inter_ground, this, i.image_empty, 
---       restrict_empty, restrict_empty],
---     exact iso.of_empty _ _ },
---   obtain b := @classical.arbitrary β h,
---   refine iso_of_bij_on_indep (λ x, i x) _ _, 
--- end 
--- let f : (M ‖ R).E → β := λ x, i ⟨x, mem_of_mem_of_subset x.prop (inter_subset_right _ _)⟩, 
---   hf : f.injective := λ x y hxy, subtype.coe_inj.mp (by simpa using subtype.coe_inj.mp hxy)
---   in 
--- { to_equiv := (equiv.of_injective f hf).trans (equiv.set.of_eq 
---   (begin
---     simp_rw [restrict_ground_eq'], 
---     rw [inter_eq_self_of_subset_left (iso.image_subset_ground _ _), iso.image, subset_antisymm_iff], 
---     simp only [image_subset_iff], 
---     split, 
---     { rintro y ⟨⟨x,hx⟩, rfl⟩,
---       exact ⟨i ⟨x, (inter_subset_right _ _) hx⟩, ⟨⟨x, hx.2⟩ , hx.1, rfl⟩, rfl⟩ },
---     rintro x (hx : coe x ∈ R), 
---     simp only [mem_preimage, mem_range, set_coe.exists], 
---     refine ⟨x, ⟨hx,x.2⟩, _⟩, 
---     simp [subtype.coe_inj], 
---   end)),
---   on_base := begin
---     intro B, 
---     simp only [subtype.coe_mk, equiv.to_fun_as_coe, equiv.coe_trans, function.comp_app, 
---       equiv.of_injective_apply, equiv.set.of_eq_apply, restrict_base_iff], 
-    
-    
---   end }
-  
--- end 
-
--- noncomputable def foo {α β : Type*} {s : set α} {t : set β} (e : s ≃ t) (a : set s) : 
---   (coe '' a : set α) ≃ (coe '' (e '' a) : set β) :=
--- (equiv.set.image coe a subtype.coe_injective).symm.trans 
---   ((e.image a).trans (equiv.set.image coe _ subtype.coe_injective))
-
--- lemma restrict_iso_aux (R : set M.E) : (M ‖ (coe '' R : set α)).E = coe '' R :=
--- by simp
-
--- noncomputable def restrict_iso' (i : M ≃i N) (R : set M.E) : 
---   (M ‖ (coe '' R : set α)) ≃i (N ‖ (coe '' (i '' R) : set α)) := 
--- { to_fun := (equiv.set.of_eq (restrict_iso_aux _)).trans 
---     ((foo i.to_fun R).trans (equiv.set.of_eq (restrict_iso_aux _)).symm), 
---   on_base := begin
---     simp only [restrict_base_iff, image_subset_iff, subtype.coe_preimage_self, preimage_univ, 
---       subset_univ, auto_param_eq, equiv.coe_trans], 
---     intros B, 
---   end  }
-
-
--- def restrict_iso (i : M ≃i N) (R : set α) : 
---   M ‖ R ≃i (N ‖ (coe '' (i '' (coe ⁻¹' R : set M.E)) : set α)) := 
--- begin
---   refine ⟨_, _⟩, 
---   {   
-
-
---   },
---   -- refine ⟨_,_⟩, 
---   -- { set f : (M ‖ R).E → (N ‖ coe '' (⇑i '' (coe ⁻¹' R))).E := 
---   --     λ ⟨x, hx⟩, ⟨i x, by {  },
-
---   --     },
--- end 
 
 end restrict 
 
@@ -312,7 +239,8 @@ lemma basis.transfer (hIX : M.basis I X) (hJX : M.basis J X) (hXY : X ⊆ Y) (hJ
   M.basis I Y :=
 begin
   rw [←restrict_base_iff], 
-  exact (restrict_base_iff.mpr hJY).base_of_basis_supset hJX.subset (hIX.basis_restrict_of_subset hXY), 
+  exact (restrict_base_iff.mpr hJY).base_of_basis_supset hJX.subset 
+    (hIX.basis_restrict_of_subset hXY), 
 end 
 
 lemma basis.transfer' (hI : M.basis I X) (hJ : M.basis J Y) (hJX : J ⊆ X) (hIY : I ⊆ Y) : 
@@ -368,6 +296,14 @@ end basis
 
 section finite
 
+lemma basis.encard_eq_encard_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : 
+  I.encard = J.encard :=
+by { rw [←restrict_base_iff] at hIX hJX, exact hIX.encard_eq_encard_of_base hJX }
+
+lemma basis.encard_diff_comm (hI : M.basis I X) (hJ : M.basis J X) :
+  (I \ J).encard = (J \ I).encard :=
+by { rw [←restrict_base_iff] at hI hJ, rw hJ.encard_diff_comm hI }
+
 lemma basis.card_eq_card_of_basis (hIX : M.basis I X) (hJX : M.basis J X) : I.ncard = J.ncard :=
 by { rw [←restrict_base_iff] at hIX hJX, exact hIX.card_eq_card_of_base hJX }
 
@@ -407,6 +343,18 @@ begin
     he.2, hK.indep.subset (insert_subset.mpr ⟨he.1,hIK⟩)⟩, 
 end 
 
+lemma indep.augment_of_encard_lt (hI : M.indep I) (hJ : M.indep J) (hIJ : I.encard < J.encard) : 
+  ∃ x ∈ J, x ∉ I ∧ M.indep (insert x I) :=
+begin
+  have hIfin := finite_of_encard_lt hIJ, 
+  have hle := enat.add_one_le_of_lt hIJ, 
+  obtain ⟨J', hJ'ss, hJ'⟩ := exists_subset_encard_eq hle, 
+  obtain ⟨x, hxJ', h⟩ := hI.augment_of_finite (hJ.subset hJ'ss) hIfin _, 
+  { exact ⟨_, hJ'ss hxJ', h⟩ },
+  rw [←encard_to_nat_eq J', hJ', enat.to_nat_add hIfin.encard_lt_top.ne];
+  simp, 
+end 
+
 /-- The independence augmentation axiom; given independent sets `I,J` with `I` smaller than `J`, 
   there is an element `e` of `J \ I` whose insertion into `e` gives an independent set.  -/
 lemma indep.augment [finite_rk M] (hI : M.indep I) (hJ : M.indep J) (hIJ : I.ncard < J.ncard) :
@@ -427,15 +375,26 @@ lemma indep.ssubset_indep_of_card_lt [finite_rk M] (hI : M.indep I) (hJ : M.inde
   ∃ I', M.indep I' ∧ I ⊂ I' ∧ I' ⊆ I ∪ J :=
 hI.ssubset_indep_of_card_lt_of_finite hI.finite hJ hIJ
 
+lemma indep.le_encard_basis (hI : M.indep I) (hIX : I ⊆ X) (hJX : M.basis J X) : 
+  I.encard ≤ J.encard :=
+begin
+  obtain ⟨I', hI', h⟩ := hI.subset_basis_of_subset hIX, 
+  rw [hJX.encard_eq_encard_of_basis hI'], 
+  exact encard_mono h, 
+end 
+
 lemma indep.le_card_basis [finite_rk M] (hI : M.indep I) (hIX : I ⊆ X) (hJX : M.basis J X) :
   I.ncard ≤ J.ncard :=
 begin
-  refine le_of_not_lt (λ hlt, _),
-  obtain ⟨I', hI'⟩ := hJX.indep.ssubset_indep_of_card_lt hI hlt,
-  have := hJX.eq_of_subset_indep hI'.1 hI'.2.1.subset (hI'.2.2.trans (union_subset hJX.subset hIX)),
-  subst this,
-  exact hI'.2.1.ne rfl,
+  have hle := hI.le_encard_basis hIX hJX, 
+  rwa [hI.finite.encard_eq, hJX.finite.encard_eq, nat.cast_le] at hle, 
+  -- refine le_of_not_lt (λ hlt, _),
+  -- obtain ⟨I', hI'⟩ := hJX.indep.ssubset_indep_of_card_lt hI hlt,
+  -- have := hJX.eq_of_subset_indep hI'.1 hI'.2.1.subset (hI'.2.2.trans (union_subset hJX.subset hIX)),
+  -- subst this,
+  -- exact hI'.2.1.ne rfl,
 end
+
 
 end finite 
 

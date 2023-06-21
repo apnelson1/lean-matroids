@@ -1,7 +1,7 @@
 import .loop
-import tactic.linarith
+import .flat' 
 
-/- The rank of a set in a matroid `M` is the size of one of its bases. When `M` is infinite, 
+/- The rank of a set in a matroid `M` is the size of one of its bases. When such bases are infinite, 
   this quantity is not defined in general, so rank is not very useful when building API for 
   general matroids, even though it is often the easiest way to do things for finite matroids. 
 
@@ -55,13 +55,17 @@ end
 
 lemma indep.r (hI : M.indep I) : M.r I = I.ncard := eq_r_iff.mpr ⟨I, hI.basis_self, rfl⟩
 
-lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := by rw [←hIX.card, hIX.indep.r]
+lemma basis.r (hIX : M.basis I X) : M.r I = M.r X := 
+by rw [←hIX.card, hIX.indep.r]
 
-lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard := by rw [←hIX.r, ←hIX.indep.r]
+lemma basis.r_eq_card (hIX : M.basis I X) : M.r X = I.ncard :=
+by rw [←hIX.r, ←hIX.indep.r]
 
-lemma base.r (hB : M.base B) : M.r B = M.rk := by { rw base_iff_basis_univ at hB, rw hB.r, refl }
+lemma base.r (hB : M.base B) : M.r B = M.rk := 
+by { rw base_iff_basis_ground at hB, rw [hB.r, rk] }
 
-lemma base.card (hB : M.base B) : B.ncard = M.rk := by { rw (base_iff_basis_univ.mp hB).card, refl }
+lemma base.card (hB : M.base B) : B.ncard = M.rk := 
+by rw [(base_iff_basis_ground.mp hB).card, rk]
 
 lemma r_eq_r_inter_ground (M : matroid_in α) (X : set α) : M.r X = M.r (X ∩ M.E) :=
 by { obtain ⟨I, hI⟩ := M.exists_basis (X ∩ M.E), rwa [←hI.card_of_inter_ground, ←basis.card] }
@@ -113,7 +117,6 @@ end
 lemma r_le_card (M : matroid_in α) [finite M] (X : set α) (hX : X ⊆ M.E . ssE) : M.r X ≤ X.ncard :=
 M.r_le_card_of_finite (M.set_finite X)
 
-
 lemma indep_iff_r_eq_card_of_finite {M : matroid_in α} (hI : I.finite) :
   M.indep I ↔ M.r I = I.ncard :=
 begin
@@ -155,6 +158,8 @@ def r_fin (M : matroid_in α) (X : set α) : Prop := ∃ I, M.basis I X ∧ I.fi
 
 lemma r_fin.exists_finite_basis (h : M.r_fin X) : ∃ I, M.basis I X ∧ I.finite := h 
 
+lemma r_fin_def : M.r_fin X ↔ ∃ I, M.basis I X ∧ I.finite := iff.rfl 
+
 @[ssE_finish_rules] lemma r_fin.subset_ground (h : M.r_fin X) : X ⊆ M.E := 
 exists.elim h (λ I hI, hI.1.subset_ground)
 
@@ -187,9 +192,9 @@ M.r_fin_of_finite (finite_singleton e)
  
 @[simp] lemma r_fin_empty (M : matroid_in α) : M.r_fin ∅ := M.r_fin_of_finite finite_empty
 
-lemma r_fin.subset (h : M.r_fin Y) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) : M.r_fin X := 
+lemma r_fin.subset (h : M.r_fin Y) (hXY : X ⊆ Y) : M.r_fin X := 
 begin
-  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
+  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans h.subset_ground), 
   obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY),    
   exact hI.r_fin_of_finite ((hJ.finite_of_r_fin h).subset hIJ), 
 end 
@@ -208,6 +213,12 @@ end
 
 @[simp] lemma r_fin_cl_iff (hX : X ⊆ M.E . ssE) : M.r_fin (M.cl X) ↔ M.r_fin X := 
 ⟨λ h, h.subset (M.subset_cl _), r_fin.to_cl⟩
+
+lemma infinite_of_not_r_fin (hX : ¬M.r_fin X) (hXE : X ⊆ M.E . ssE) : X.infinite :=
+λ hX', hX (M.r_fin_of_finite hX') 
+
+lemma basis.infinite_of_not_r_fin (hIX : M.basis I X) (hX : ¬ M.r_fin X) : I.infinite :=
+hX ∘ (λ hI, hIX.r_fin_of_finite hI)
 
 /-- A set with no finite basis has the junk rank value of zero -/
 lemma r_eq_zero_of_not_r_fin (h : ¬M.r_fin X) (hX : X ⊆ M.E . ssE) : M.r X = 0 :=
@@ -585,6 +596,21 @@ begin
   rw [ncard_singleton], 
 end 
 
+lemma r_insert_eq_of_not_mem_ground (X : set α) (he : e ∉ M.E) : M.r (insert e X) = M.r X :=
+by rw [r_eq_r_inter_ground, insert_inter_of_not_mem he, ←r_eq_r_inter_ground]
+
+lemma r_diff_singleton_eq_of_not_mem_ground (X : set α) (he : e ∉ M.E) : M.r (X \ {e}) = M.r X :=
+by rw [←r_insert_eq_of_not_mem_ground (X \ {e}) he, insert_diff_singleton, 
+  r_insert_eq_of_not_mem_ground _ he]
+
+lemma r_insert_inter_ground (X : set α) (e : α) : 
+  M.r (insert e X) = M.r (insert e (X ∩ M.E)) :=
+begin
+  rw r_eq_r_inter_ground, 
+  refine (em (e ∈ M.E)).elim (λ he, by rw insert_inter_of_mem he) (λ he, _), 
+  rw [r_insert_eq_of_not_mem_ground _ he, insert_inter_of_not_mem he],
+end 
+
 lemma r_eq_of_le_insert (h : M.r (insert e X) ≤ M.r X) : M.r (insert e X) = M.r X :=
 h.antisymm (M.r_le_r_insert e X)
 
@@ -784,382 +810,390 @@ end
 
 end circuit 
 
--- section cl_flat
-
--- variables {F F' F₁ F₂ H H₁ H₂ : set α}
-
--- lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (he : e ∉ F) (hfin : M.r_fin F):
---   M.r (insert e F) = M.r F + 1 :=
--- begin
---   obtain ⟨I, hI⟩ := M.exists_basis F, 
---   rw [←hF.cl, ←hI.cl, hI.indep.not_mem_cl_iff] at he, 
---   rw [←(hI.insert_basis_insert he.2).card, ←hI.card, 
---     ncard_insert_of_not_mem he.1 (hI.finite_of_r_fin hfin)],
--- end
-
--- lemma flat.r_insert_of_not_mem [finite_rk M] (hF : M.flat F) (he : e ∉ F) :
---   M.r (insert e F) = M.r F + 1 :=
--- hF.r_insert_of_not_mem_of_r_fin he (M.to_r_fin F)
-
--- lemma flat_iff_r_lt_r_insert [finite_rk M] : M.flat F ↔ ∀ e ∉ F, M.r F < M.r (insert e F) :=
--- begin
---   refine ⟨λ hF e heF, nat.lt_iff_add_one_le.mpr (hF.r_insert_of_not_mem heF).symm.le,
---     λ h, flat_def.mpr (λ I X hIF hIX, _)⟩,
---   by_contra' hXF,
---   obtain ⟨e,heX,heF⟩ := not_subset.mp hXF,
---   apply (h _ heF).ne,
---   rw [←hIF.r_eq_r_insert, hIX.r_eq_r_insert, insert_eq_of_mem heX, ←hIF.r, ←hIX.r],
--- end
-
--- lemma flat.not_mem_iff_r_insert_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) : 
---   e ∉ F ↔ M.r (insert e F) = M.r F + 1 :=
--- begin
---   refine ⟨λ he, hF.r_insert_of_not_mem_of_r_fin he hfin, λ h he, _⟩,
---   rw [insert_eq_of_mem he, self_eq_add_right] at h,
---   simpa only using h,
--- end
-
--- lemma flat.not_mem_iff_r_insert [finite_rk M] (hF : M.flat F) : 
---   e ∉ F ↔ M.r (insert e F) = M.r F + 1 :=
--- hF.not_mem_iff_r_insert_of_r_fin (M.to_r_fin F)
-
--- lemma flat.r_lt_r_of_ssubset_of_r_fin (hF : M.flat F) (hFX : F ⊂ X) (hX : M.r_fin X) : 
---   M.r F < M.r X :=
--- begin
---   obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX, 
---   rw [nat.lt_iff_add_one_le, ←hF.r_insert_of_not_mem_of_r_fin heF (hX.subset hFX.subset)], 
---   exact hX.r_mono (insert_subset.mpr ⟨heX, hFX.subset⟩), 
--- end 
-
--- lemma flat.eq_of_r_le_r_subset_of_r_fin (hF : M.flat F) (hFfin : M.r_fin X) (hFX : F ⊆ X) 
--- (hr : M.r X ≤ M.r F) : 
---   F = X :=
--- by_contra (λ hne, (hF.r_lt_r_of_ssubset_of_r_fin (hFX.ssubset_of_ne hne) hFfin).not_le hr)
-
--- lemma flat.r_lt_r_of_ssubset [finite_rk M] (hF : M.flat F) (hFX : F ⊂ X) : M.r F < M.r X :=
--- hF.r_lt_r_of_ssubset_of_r_fin hFX (M.to_r_fin X)
-
--- lemma flat.eq_of_le_r_subset [finite_rk M] (hF : M.flat F) (hFX : F ⊆ X) (hr : M.r X ≤ M.r F) : 
---   F = X := 
--- hF.eq_of_r_le_r_subset_of_r_fin (M.to_r_fin X) hFX hr  
-
--- lemma flat.eq_univ_of_rk_le_r [finite_rk M] (hF : M.flat F) (hr : M.rk ≤ M.r F) : F = univ :=
--- hF.eq_of_le_r_subset (subset_univ _) hr
-
--- lemma r_fin.mem_cl_iff_r_insert (hX : M.r_fin X) : e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
--- by rw [←not_iff_not, ←ne.def, ←r_insert_eq_add_one_iff_r_ne, ←singleton_union, 
---     ←r_union_cl_right_eq_r_union, singleton_union, 
---     (M.flat_of_cl X).not_mem_iff_r_insert_of_r_fin hX.to_cl, r_cl]
-
--- lemma r_fin.not_mem_cl_iff_r_insert (hX : M.r_fin X) : e ∉ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
--- begin
---   rw [hX.mem_cl_iff_r_insert, ←ne.def],
---   refine ⟨r_insert_eq_add_one_of_r_ne, λ h,
---     by simp only [h, ne.def, nat.succ_ne_self, not_false_iff]⟩,
--- end
-
--- lemma mem_cl_iff_r_insert [finite_rk M] : e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
--- (M.to_r_fin X).mem_cl_iff_r_insert 
-
--- lemma not_mem_cl_iff_r_insert [finite_rk M] : e ∉ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
--- (M.to_r_fin X).not_mem_cl_iff_r_insert 
-
--- lemma subset_cl_iff_r_union_eq_r [finite_rk M] : X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
--- begin
---   refine ⟨λ h, r_union_eq_of_r_all_insert_le (λ e he, by rw mem_cl_iff_r_insert.mp (h he)),
---     λ hu e heX, mem_cl_iff_r_insert.mpr ((M.r_mono (subset_insert _ _)).antisymm' _)⟩,
---   rw ←hu,
---   apply r_mono,
---   rw insert_subset,
---   simp only [mem_union, subset_union_left, and_true],
---   exact or.inr heX,
--- end
-
--- lemma r_insert_eq_add_one_of_not_mem_cl [finite_rk M] (h : e ∉ M.cl X) :
---   M.r (insert e X) = M.r X + 1 :=
--- r_insert_eq_add_one_of_r_ne (h ∘ mem_cl_iff_r_insert.mpr)
-
--- lemma not_mem_cl_of_r_insert_gt [finite_rk M] (h : M.r X < M.r (insert e X)) : e ∉ M.cl X :=
--- h.ne.symm ∘ mem_cl_iff_r_insert.mp
-
--- lemma mem_cl_of_r_insert_le [finite_rk M] (h : M.r (insert e X) ≤ M.r X) : e ∈ M.cl X :=
--- mem_cl_iff_r_insert.mpr (h.antisymm (M.r_le_r_insert e X))
-
--- lemma r_eq_rk_iff_cl_eq_univ [finite_rk M] : M.r X = M.rk ↔ M.cl X = univ :=
--- ⟨λ h, eq_univ_iff_forall.mpr (λ e, mem_cl_of_r_insert_le ((M.r_le_rk _).trans_eq h.symm)), 
---     λ h, by rw [←M.r_cl, h, rk]⟩
-
--- lemma not_mem_cl_iff_r_insert_eq_add_one [finite_rk M] :
---   e ∉ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
--- ⟨r_insert_eq_add_one_of_not_mem_cl, λ h, not_mem_cl_of_r_insert_gt (by {rw h, apply lt_add_one})⟩
-
--- lemma r_le_iff_cl {n : ℕ} [finite_rk M] : M.r X ≤ n ↔ ∃ I, X ⊆ M.cl I ∧ I.ncard ≤ n ∧ I.finite :=
--- begin
---   refine ⟨λ h, _, _⟩,
---   { obtain ⟨I,hI⟩ := M.exists_basis X,
---     exact ⟨I, hI.subset_cl, by rwa hI.card, hI.finite⟩ },
---   rintro ⟨I, hXI, hIn⟩,
---   refine (M.r_mono hXI).trans _, 
---   rw [r_cl],
---   exact (M.r_le_card_of_finite hIn.2).trans hIn.1,
--- end
-
--- lemma le_r_iff_cl {n : ℕ} [finite_rk M] : n ≤ M.r X ↔ ∀ I, X ⊆ M.cl I → I.finite → n ≤ I.ncard :=
--- begin
---   cases n, simp,
---   rw [←not_lt, ←not_iff_not, not_not, not_forall],
---   simp_rw [not_imp, not_le, nat.lt_succ_iff],
---   rw r_le_iff_cl,
---   tauto, 
--- end
-
--- lemma flat.covby_iff_r_of_r_fin (hF : M.flat F) (hFfin : M.r_fin F) (hF' : M.flat F') :
---   M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
--- begin
---   rw hF.covby_iff_eq_cl_insert, 
---   refine ⟨_, λ h, _⟩,
---   { rintro ⟨e, he, rfl⟩, 
---     rw [and_iff_right (M.subset_cl_of_subset (subset_insert _ _)), r_cl, 
---       (hF.not_mem_iff_r_insert_of_r_fin hFfin).mp he] },
---   have hss : F ⊂ F', from h.1.ssubset_of_ne (by { rintro rfl, simpa using h.2 }), 
---   obtain ⟨e, heF', heF⟩ := exists_of_ssubset hss, 
---   refine ⟨e, heF, ((M.flat_of_cl _).eq_of_r_le_r_subset_of_r_fin _ _ _).symm⟩, 
---   { refine r_fin_of_r_ne_zero _, rw h.2, exact nat.succ_ne_zero _ },
---   { exact hF'.cl_subset_of_subset (insert_subset.mpr ⟨heF', h.1⟩) },
---   rw [h.2, r_cl, hF.r_insert_of_not_mem_of_r_fin heF hFfin], 
--- end 
-
--- lemma flat.covby_iff_r [finite_rk M] (hF : M.flat F) (hF' : M.flat F') : 
---   M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
--- hF.covby_iff_r_of_r_fin (M.to_r_fin F) hF'  
-
--- lemma hyperplane_iff_maximal_r [finite_rk M] : 
---   M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → M.r X = M.rk :=
--- by simp_rw [hyperplane_iff_maximal_cl_ne_univ, lt_rk_iff_ne_rk, ne.def, ←r_eq_rk_iff_cl_eq_univ]
-
--- lemma hyperplane.r_add_one [finite_rk M] (hH : M.hyperplane H) : M.r H + 1 = M.rk :=
--- begin
---   rw [hyperplane_iff_maximal_r] at hH,
---   obtain (rfl | hne) := eq_or_ne H univ, 
---   { exact (hH.1.ne rfl).elim },
---   obtain ⟨e, he⟩ := (ne_univ_iff_exists_not_mem _).mp hne,
---   refine (nat.lt_iff_add_one_le.mp hH.1).antisymm _,
---   rw [←hH.2 (insert e H) (ssubset_insert he)],
---   exact M.r_insert_le_add_one e H,  
--- end
-
--- lemma hyperplane.cast_r [finite_rk M] (hH : M.hyperplane H) : (M.r H : ℤ) = M.rk - 1 := 
--- by simp [←hH.r_add_one]
-
--- lemma flat.hyperplane_of_r_add_one_eq_rk [finite_rk M] (hF : M.flat F) (h : M.r F + 1 = M.rk) :
---   M.hyperplane F :=
--- begin
---   rw [hyperplane_iff_maximal_r, ←h, iff_true_intro (lt_add_one (M.r F)), true_and],
---   refine λ X hFX, ((M.r_le_rk X).trans_eq h.symm).antisymm 
---     (nat.add_one_le_iff.mpr (hF.r_lt_r_of_ssubset hFX)),  
--- end 
-
--- lemma hyperplane_iff_flat_r_add_one_eq_r [finite_rk M] : 
---   M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
--- ⟨λ h, ⟨h.flat, h.r_add_one⟩, λ h, h.1.hyperplane_of_r_add_one_eq_rk h.2⟩
-
--- end cl_flat
-
--- section loop
-
--- lemma loop_iff_r : M.loop e ↔ M.r {e} = 0 :=
--- begin
---   rw [loop_iff_dep, indep_iff_r_eq_card_of_finite (finite_singleton e), ncard_singleton],
---   refine ⟨λ h, nat.eq_zero_of_le_zero (nat.lt_succ_iff.mp _), 
---     λ h h', (nat.zero_ne_one (h.symm.trans h'))⟩, 
---   convert (M.r_le_card_of_finite (finite_singleton e)).lt_of_ne _,
---   { rw ncard_singleton }, 
---   rwa ncard_singleton,  
--- end 
-
--- lemma loop.r (he : M.loop e) : M.r {e} = 0 := loop_iff_r.mp he 
-
--- lemma r_eq_zero_iff_subset_loops [finite_rk M] : M.r X = 0 ↔ X ⊆ M.cl ∅ :=
--- (M.to_r_fin X).r_eq_zero_iff_subset_loops
-
--- lemma r_eq_zero_iff_forall_loop [finite_rk M] : M.r X = 0 ↔ ∀ e ∈ X, M.loop e :=
--- r_eq_zero_iff_subset_loops
-
--- lemma r_eq_zero_of_subset_loops (h : X ⊆ M.cl ∅) : M.r X = 0 := 
--- by rw [←r_cl, cl_eq_loops_of_subset h, r_cl, r_empty]
-
--- lemma nonloop_iff_r : M.nonloop e ↔ M.r {e} = 1 :=
--- by rw [←indep_singleton, indep_iff_r_eq_card_of_finite (finite_singleton e), ncard_singleton]
-
--- lemma nonloop.r (he : M.nonloop e) : M.r {e} = 1 := nonloop_iff_r.mp he 
-
--- lemma coloop.r_compl_add_one [finite_rk M] (he : M.coloop e) : M.r {e}ᶜ + 1 = M.rk :=
--- begin
---   rw coloop_iff_forall_mem_base at he, 
---   obtain ⟨I,hI⟩ := M.exists_basis {e}ᶜ,
---   obtain ⟨B, hB, hIB⟩ := hI.indep.subset_basis_of_subset (subset_univ I),
---   rw [←base_iff_basis_univ] at hB,
---   have heI : e ∉ I, from λ heI, by simpa using hI.subset heI,
---   have hIB' : B = insert e I,
---   { refine subset_antisymm _ _,
---     { rw [←union_singleton, ←inter_union_diff B {e}, union_subset_iff],
---       refine ⟨(inter_subset_right _ _).trans (subset_union_right _ _),
---         subset_union_of_subset_left _ _⟩,
---       rw hI.eq_of_subset_indep (hB.indep.diff {e}) (subset_diff_singleton hIB heI) _,
---       rw [compl_eq_univ_diff],
---       exact diff_subset_diff_left (subset_univ _) },
---     exact insert_subset.mpr ⟨he hB, hIB⟩},
---   subst hIB',
---   rw [←hI.r, hI.indep.r, ←hB.r, hB.indep.r, ncard_insert_of_not_mem heI hI.finite],
--- end
-
--- lemma coloop_iff_r_compl_add_one_eq [finite_rk M] : M.coloop e ↔ M.r {e}ᶜ + 1 = M.rk :=
--- begin
---   refine ⟨coloop.r_compl_add_one, 
---     (λ h, coloop_iff_forall_mem_base.mpr (λ B hB, by_contra (λ h', _)))⟩,
---   rw ←subset_compl_singleton_iff at h',
---   have hB' := M.r_mono h',
---   rw [hB.r, ←h] at hB',
---   simpa only [add_le_iff_nonpos_right, le_zero_iff, nat.one_ne_zero] using hB',
--- end
-
--- lemma coloop_iff_r_compl_lt [finite_rk M] : M.coloop e ↔ M.r {e}ᶜ < M.rk :=
--- begin
---   refine ⟨λ h, _,λ h, _⟩,
---   { rw ←h.r_compl_add_one, apply lt_add_one, },
---   have he :insert e ({e}ᶜ : set α) = univ,
---   {ext, simp [em]},
---   rw [rk, ←he] at h,
---   rw [coloop_iff_r_compl_add_one_eq, eq_comm, rk, ←he, r_insert_eq_add_one_of_r_ne h.ne.symm],
--- end
-
--- lemma coloop.coe_r_compl [finite_rk M] (he : M.coloop e) : (M.r {e}ᶜ : ℤ) = M.rk - 1 :=
--- by simp [←he.r_compl_add_one]
-
--- end loop 
-
--- section flat_of_r
-
--- variables {F F' P L : set α}
-
--- /-- `M.flat_of_r k F` means that `F` is a flat in `r` with finite rank `k`. -/
--- def flat_of_r (M : matroid_in α) (k : ℕ) (F : set α) := M.flat F ∧ M.r F = k ∧ M.r_fin F  
-
--- lemma flat_of_r.flat (h : M.flat_of_r k F) : M.flat F := h.1 
-
--- lemma flat_of_r.r (h : M.flat_of_r k F) : M.r F = k := h.2.1 
-
--- lemma flat_of_r.r_fin (h : M.flat_of_r k F) : M.r_fin F := h.2.2 
-
--- lemma flat.flat_of_r_of_ne_zero (hF : M.flat F) (hk : M.r F ≠ 0) : M.flat_of_r (M.r F) F :=
--- ⟨hF, rfl, r_fin_of_r_ne_zero hk⟩  
-
--- lemma flat.flat_of_r_of_ne_zero' (hF : M.flat F) (hr : M.r F = k) (hk : k ≠ 0) : 
---   M.flat_of_r (M.r F) F :=
--- hF.flat_of_r_of_ne_zero (by { subst hr, assumption } )   
-
--- lemma flat_of_r.nonempty (hF : M.flat_of_r k F) (hk : k ≠ 0) : F.nonempty := 
--- nonempty_of_r_nonzero (ne_of_eq_of_ne hF.r hk)
-
--- @[simp] lemma flat_of_r_zero_iff_loops : M.flat_of_r 0 F ↔ F = M.cl ∅ :=
--- begin
---   refine ⟨λ h,_, _⟩,
---   { obtain ⟨I, hI⟩ := M.exists_basis F, 
---     have hc := hI.card, 
---     rw [h.r, ncard_eq_zero (hI.finite_of_r_fin h.r_fin)] at hc, subst hc, 
---     rw [←h.flat.cl, hI.cl] },
---   rintro rfl, 
---   exact ⟨M.flat_of_cl _, by simp, M.r_fin_empty.to_cl⟩,   
--- end
-
--- lemma loops_flat_of_r_zero (M : matroid_in α) : M.flat_of_r 0 (M.cl ∅) :=
--- by rw flat_of_r_zero_iff_loops
-
--- lemma flat_of_r.covby_iff (hF : M.flat_of_r k F) : M.covby F F' ↔ M.flat_of_r (k+1) F' ∧ F ⊆ F' :=
--- begin
---   refine (em (M.flat F')).symm.elim (λ hF', iff_of_false (mt covby.flat_right hF') _) (λ hF', _), 
---   { exact mt (λ h, h.1.flat) hF' },
---   have hr := hF.r, subst hr, 
---   simp_rw [hF.flat.covby_iff_r_of_r_fin hF.r_fin hF', flat_of_r, and_comm, and.congr_right_iff, 
---     ← and_assoc, iff_and_self, and_iff_right hF'], 
---   refine λ h hF', r_fin_of_r_ne_zero _, 
---   rw hF', 
---   simp,  
--- end 
-
--- lemma flat_of_r.flat_of_r_add_one_of_covby (hF : M.flat_of_r k F) (hFF' : M.covby F F') : 
---   M.flat_of_r (k+1) F' := 
--- by { rw [hF.covby_iff] at hFF', exact hFF'.1 }
-
--- /-- A `point` is a rank-one flat -/
--- def point (M : matroid_in α) (P : set α) := M.flat_of_r 1 P 
-
--- /-- A `line` is a rank-two flat -/
--- def line (M : matroid_in α) (L : set α) := M.flat_of_r 2 L
-
--- /-- A `plane` is a rank-three flat -/
--- def plane (M : matroid_in α) (P : set α) := M.flat_of_r 3 P
-
--- lemma point.nonempty (hP : M.point P) : P.nonempty := flat_of_r.nonempty hP one_ne_zero
-
--- lemma line.nonempty (hL : M.line L) : L.nonempty := flat_of_r.nonempty hL two_ne_zero
-
--- lemma plane.nonempty (hP : M.plane P) : P.nonempty := flat_of_r.nonempty hP three_pos.ne.symm 
-
--- lemma nonloop.cl_point (he : M.nonloop e) : M.point (M.cl {e}) := 
--- begin
---   rw [point, ←ncard_singleton e, ←he.indep.r, ←r_cl ],
---   exact (M.flat_of_cl _).flat_of_r_of_ne_zero (by { rw [r_cl, he.indep.r], simp }), 
--- end
-
--- lemma point.diff_loops_nonempty (hP : M.point P) : (P \ M.cl ∅).nonempty := 
--- nonempty_of_r_nonzero (by { rw [←r_cl, cl_diff_loops_eq_cl, r_cl, hP.r], exact one_ne_zero })
-
--- lemma point.exists_eq_cl_nonloop (hP : M.point P) : ∃ e, M.nonloop e ∧ P = M.cl {e} := 
--- begin
---   obtain ⟨I, hI⟩ := M.exists_basis P,
---   have hc := hI.card, 
---   rw [hP.r, ncard_eq_one] at hc, 
---   obtain ⟨e, rfl⟩ := hc, 
---   use e, 
---   rw [hI.cl, hP.flat.cl, and_iff_left rfl, nonloop_iff_r, hI.r, hP.r], 
--- end 
-
--- lemma point.eq_cl_nonloop (hP : M.point P) (heP : e ∈ P) (he : M.nonloop e) : P = M.cl {e} := 
--- begin
---   obtain ⟨I, hI, heI⟩ := he.indep.subset_basis_of_subset (singleton_subset_iff.mpr heP), 
---   have hc := hI.card, 
---   rw [hP.r, ncard_eq_one] at hc,  
---   obtain ⟨e', rfl⟩ := hc, 
---   simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at heI, 
---   rw [←hP.flat.cl, ←hI.cl, heI], 
--- end 
-
--- /-- The set of elements that span a point are precisely its nonloop members -/
--- lemma point.eq_cl_singleton_iff (h : M.point P) : M.cl {e} = P ↔ e ∈ P ∧ M.nonloop e :=
--- begin
---   simp only [nonloop, loop, ←mem_diff,  mem_preimage, mem_singleton_iff], 
---   refine ⟨_, λ hP, _⟩,
---   { rintro rfl, 
---     refine ⟨M.mem_cl_self e, λ (he : M.loop e), he.dep _⟩,
---     have hr := h.r, 
---     rwa [r_cl, ←ncard_singleton e, ←indep_iff_r_eq_card_of_finite (finite_singleton e)] at hr },
---   have he : M.nonloop e := hP.2, 
---   obtain ⟨J, hJ, heJ⟩ :=  he.indep.subset_basis_of_subset (singleton_subset_iff.mpr hP.1), 
---   have hJcard := hJ.card, 
---   rw [h.r, ncard_eq_one] at hJcard, 
---   obtain ⟨e', rfl⟩ := hJcard, 
---   simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at heJ, subst heJ,   
---   rw [←h.flat.cl, hJ.cl], 
--- end 
-
--- lemma point_iff_loops_covby : M.point P ↔ M.covby (M.cl ∅) P := 
--- begin
---   rw [flat_of_r.covby_iff M.loops_flat_of_r_zero, zero_add, point, iff_self_and],  
---   exact λ h, h.flat.loops_subset,  
--- end
-
--- end flat_of_r
+section cl_flat
+
+variables {F F' F₁ F₂ H H₁ H₂ : set α}
+
+lemma flat.r_insert_of_not_mem_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) (he : e ∉ F) 
+(heE : e ∈ M.E . ssE) :
+  M.r (insert e F) = M.r F + 1 :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis F, 
+  rw [←hF.cl, ←hI.cl, hI.indep.not_mem_cl_iff] at he, 
+  rw [←(hI.insert_basis_insert he.2).card, ←hI.card, 
+    ncard_insert_of_not_mem he.1 (hI.finite_of_r_fin hfin)],
+end
+
+lemma flat.r_insert_of_mem_compl_of_r_fin (hF : M.flat F) (he : e ∈ M.E \ F) (hfin : M.r_fin F) :
+  M.r (insert e F) = M.r F + 1 := hF.r_insert_of_not_mem_of_r_fin hfin he.2 he.1 
+
+lemma flat.r_insert_of_mem_compl [finite_rk M] (hF : M.flat F) (he : e ∈ M.E \ F) :
+  M.r (insert e F) = M.r F + 1 := hF.r_insert_of_mem_compl_of_r_fin he (M.to_r_fin F)
+
+lemma flat_iff_r_lt_r_insert_forall [finite_rk M] (hFE : F ⊆ M.E . ssE) : 
+  M.flat F ↔ ∀ e ∈ M.E \ F, M.r F < M.r (insert e F) :=
+begin
+  refine ⟨λ hF e he, _, λ h, _⟩,
+  { rw [hF.r_insert_of_mem_compl he], norm_num },
+  rw [flat_iff_ssubset_cl_insert_forall], 
+  refine λ e he', (M.cl_subset (subset_insert _ _)).ssubset_of_ne (λ h_eq, (h e he').ne _), 
+  rw [←r_cl, h_eq, r_cl], 
+end
+
+lemma flat.mem_compl_iff_r_insert_of_r_fin (hF : M.flat F) (hfin : M.r_fin F) : 
+  e ∈ M.E \ F ↔ M.r (insert e F) = M.r F + 1 :=
+begin
+  refine (em' (e ∈ M.E)).elim (λ h, iff_of_false (not_mem_subset (diff_subset _ _) h) _) (λ heE, _), 
+  { simp [r_insert_eq_of_not_mem_ground _ h] },
+  refine ⟨λ he, hF.r_insert_of_mem_compl_of_r_fin he hfin, λ h, _⟩,
+  rw [r_insert_eq_add_one_iff_r_ne] at h, 
+  refine by_contra (λ hss, h _), 
+  rw [mem_diff, not_and, not_not] at hss, 
+  rw [insert_eq_of_mem (hss heE)], 
+end
+
+lemma flat.mem_compl_iff_r_insert_eq [finite_rk M] (hF : M.flat F) : 
+  e ∈ M.E \ F ↔ M.r (insert e F) = M.r F + 1 :=
+hF.mem_compl_iff_r_insert_of_r_fin (M.to_r_fin F)
+
+lemma flat.r_lt_r_of_ssubset_of_r_fin (hF : M.flat F) (hFX : F ⊂ X) (hX : M.r_fin X) : 
+  M.r F < M.r X :=
+begin
+  obtain ⟨e, heX, heF⟩ := exists_of_ssubset hFX, 
+  rw [nat.lt_iff_add_one_le, ←hF.r_insert_of_mem_compl_of_r_fin ⟨_, heF⟩ (hX.subset hFX.subset)], 
+  { exact hX.r_mono (insert_subset.mpr ⟨heX, hFX.subset⟩) },
+  exact hX.subset_ground heX,
+end 
+
+lemma flat.eq_of_r_le_r_subset_of_r_fin (hF : M.flat F) (hFfin : M.r_fin X) (hFX : F ⊆ X) 
+(hr : M.r X ≤ M.r F) : 
+  F = X :=
+by_contra (λ hne, (hF.r_lt_r_of_ssubset_of_r_fin (hFX.ssubset_of_ne hne) hFfin).not_le hr)
+
+lemma flat.r_lt_r_of_ssubset [finite_rk M] (hF : M.flat F) (hFX : F ⊂ X) (hX : X ⊆ M.E . ssE) :
+  M.r F < M.r X := hF.r_lt_r_of_ssubset_of_r_fin hFX (M.to_r_fin X)
+
+lemma flat.eq_of_le_r_subset [finite_rk M] (hF : M.flat F) (hFX : F ⊆ X) (hr : M.r X ≤ M.r F) 
+(hXE : X ⊆ M.E . ssE) : F = X := hF.eq_of_r_le_r_subset_of_r_fin (M.to_r_fin X) hFX hr  
+
+lemma flat.eq_ground_of_rk_le_r [finite_rk M] (hF : M.flat F) (hr : M.rk ≤ M.r F) : F = M.E :=
+hF.eq_of_le_r_subset hF.subset_ground hr
+
+lemma flat.r_eq_rk_iff_eq_ground [finite_rk M] (hF : M.flat F) : M.r F = M.rk ↔ F = M.E :=
+⟨λ h, hF.eq_ground_of_rk_le_r h.symm.le, by { rintro rfl, refl }⟩
+  
+lemma r_fin.mem_cl_iff_r_insert (hX : M.r_fin X) (he : e ∈ M.E . ssE) : 
+  e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
+by rw [←not_iff_not, ←ne.def, not_mem_iff_mem_diff_of_mem he, ←r_insert_eq_add_one_iff_r_ne, 
+    ←r_insert_cl_eq_r_insert, ←M.r_cl X, (M.flat_of_cl X).mem_compl_iff_r_insert_of_r_fin hX.to_cl]
+
+lemma r_fin.not_mem_cl_iff_r_insert (hX : M.r_fin X) :
+  e ∈ M.E \ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
+begin
+  rw [r_insert_eq_add_one_iff_r_ne, ne.def], 
+  refine (em' (e ∈ M.E)).elim (λ he, iff_of_false (not_mem_subset (diff_subset _ _) he) 
+    (by simp [r_insert_eq_of_not_mem_ground _ he])) (λ he, _), 
+  rw [← hX.mem_cl_iff_r_insert, mem_diff, and_iff_right he], 
+end
+
+lemma mem_cl_iff_r_insert [finite_rk M] (X : set α) (he : e ∈ M.E . ssE) : 
+  e ∈ M.cl X ↔ M.r (insert e X) = M.r X :=
+by rw [cl_eq_cl_inter_ground, r_eq_r_inter_ground, insert_inter_of_mem he, 
+      M.r_eq_r_inter_ground X, (M.to_r_fin (X ∩ M.E)).mem_cl_iff_r_insert]
+
+lemma mem_compl_cl_iff_r_insert [finite_rk M] : e ∈ M.E \ M.cl X ↔ M.r (insert e X) = M.r X + 1 :=
+by rw [r_insert_inter_ground, cl_eq_cl_inter_ground, M.r_eq_r_inter_ground X, 
+    (M.to_r_fin (X ∩ M.E)).not_mem_cl_iff_r_insert]
+
+lemma subset_cl_iff_r_union_eq_r [finite_rk M] (hX : X ⊆ M.E . ssE) : 
+  X ⊆ M.cl Y ↔ M.r (Y ∪ X) = M.r Y :=
+begin
+  refine ⟨λ h, _, λ h e heX, _⟩,
+  { rw [←r_union_cl_left_eq_r_union, union_eq_self_of_subset_right h, r_cl] }, 
+  rw [mem_cl_iff_r_insert _ (hX heX)], 
+  refine (M.r_mono (subset_insert _ _)).antisymm' ((M.r_mono _).trans_eq h),
+  exact insert_subset.mpr ⟨or.inr heX, subset_union_left _ _⟩,  
+end
+
+lemma r_insert_eq_add_one_of_not_mem_cl [finite_rk M] (h : e ∈ M.E \ M.cl X) :
+  M.r (insert e X) = M.r X + 1 := mem_compl_cl_iff_r_insert.mp h 
+
+lemma mem_compl_cl_of_r_insert_gt [finite_rk M] (h : M.r X < M.r (insert e X)) : e ∈ M.E \ M.cl X :=
+by { rw [mem_compl_cl_iff_r_insert, r_insert_eq_add_one_iff_r_ne], exact h.ne.symm  }
+
+lemma mem_cl_of_r_insert_le [finite_rk M] (h : M.r (insert e X) ≤ M.r X) (he : e ∈ M.E . ssE) :
+  e ∈ M.cl X :=
+by { rw [mem_cl_iff_r_insert], exact h.antisymm (M.r_mono (subset_insert _ _)) }
+
+lemma spanning.r_eq (hX : M.spanning X) : M.r X = M.rk :=
+by rw [←r_cl, hX.cl, rk]  
+
+lemma r_eq_rk_iff_spanning [finite_rk M] (hX : X ⊆ M.E . ssE) : M.r X = M.rk ↔ M.spanning X :=
+by rw [←r_cl, spanning_iff_cl, (M.flat_of_cl X).r_eq_rk_iff_eq_ground]
+
+lemma spanning_iff_r_eq_rk [finite_rk M] : M.spanning X ↔ M.r X = M.rk ∧ X ⊆ M.E :=
+by { rw [spanning, and.congr_left_iff], intro h, rw [←spanning_iff_cl, r_eq_rk_iff_spanning] }
+
+lemma rk_le_r_iff_spanning [finite_rk M] (hX : X ⊆ M.E . ssE) : M.rk ≤ M.r X ↔ M.spanning X :=
+by rw [←r_eq_rk_iff_spanning, le_iff_lt_or_eq, or_iff_right (M.r_le_rk X).not_lt, eq_comm]
+
+lemma r_le_iff_cl {n : ℕ} [finite_rk M] (hX : X ⊆ M.E . ssE) : 
+  M.r X ≤ n ↔ ∃ I, X ⊆ M.cl I ∧ I.ncard ≤ n ∧ I.finite :=
+begin
+  refine ⟨λ h, _, _⟩,
+  { obtain ⟨I,hI⟩ := M.exists_basis X,
+    exact ⟨I, hI.subset_cl, by rwa hI.card, hI.finite⟩ },
+  rintro ⟨I, hXI, hIn⟩,
+  refine (M.r_mono hXI).trans _, 
+  rw [r_cl],
+  exact (M.r_le_card_of_finite hIn.2).trans hIn.1,
+end
+
+lemma le_r_iff_cl {n : ℕ} [finite_rk M] (hX : X ⊆ M.E . ssE) : 
+  n ≤ M.r X ↔ ∀ I, X ⊆ M.cl I → I.finite → n ≤ I.ncard :=
+begin
+  cases n, simp,
+  rw [←not_lt, ←not_iff_not, not_not, not_forall],
+  simp_rw [not_imp, not_le, nat.lt_succ_iff],
+  rw r_le_iff_cl,
+  tauto, 
+end
+
+lemma flat.covby_iff_r_of_r_fin (hF : M.flat F) (hFfin : M.r_fin F) (hF' : M.flat F') :
+  M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
+begin
+  rw hF.covby_iff_eq_cl_insert, 
+  refine ⟨_, λ h, _⟩, 
+  { rintro ⟨e, he, rfl⟩,
+    rw [and_iff_right 
+      (M.subset_cl_of_subset (subset_insert e F) (insert_subset.mpr ⟨he.1, hF.subset_ground⟩)), 
+      r_cl, (hF.mem_compl_iff_r_insert_of_r_fin hFfin).mp he],  }, 
+  have hss : F ⊂ F', from h.1.ssubset_of_ne (by { rintro rfl, simpa using h.2 }), 
+  obtain ⟨e, heF', heF⟩ := exists_of_ssubset hss, 
+  refine ⟨e, ⟨hF'.subset_ground heF',heF⟩, 
+    ((M.flat_of_cl _).eq_of_r_le_r_subset_of_r_fin _ _ _).symm⟩, 
+  { refine r_fin_of_r_ne_zero _, rw h.2, exact nat.succ_ne_zero _ },
+  { exact hF'.cl_subset_of_subset (insert_subset.mpr ⟨heF', h.1⟩) },
+  rw [h.2, r_cl, hF.r_insert_of_mem_compl_of_r_fin ⟨hF'.subset_ground heF',heF⟩ hFfin], 
+end 
+
+lemma flat.covby_iff_r [finite_rk M] (hF : M.flat F) (hF' : M.flat F') : 
+  M.covby F F' ↔ F ⊆ F' ∧ M.r F' = M.r F + 1 :=
+hF.covby_iff_r_of_r_fin (M.to_r_fin F) hF'  
+
+lemma hyperplane_iff_maximal_r [finite_rk M] (hH : H ⊆ M.E . ssE) : 
+  M.hyperplane H ↔ M.r H < M.rk ∧ ∀ X, H ⊂ X → X ⊆ M.E → M.r X = M.rk :=
+begin
+  simp_rw [hyperplane_iff_maximal_nonspanning, mem_maximals_set_of_iff', not_and, not_not, 
+    lt_iff_not_le, and_iff_right hH, rk_le_r_iff_spanning, and.congr_right_iff], 
+  refine λ hH, ⟨λ h X hHX hXE, spanning.r_eq (h hHX hXE), λ h X hHX hXE, _⟩,
+  rw spanning_iff_r_eq_rk, 
+  exact ⟨h X hHX hXE, hXE⟩,
+end 
+
+lemma hyperplane.r_add_one [finite_rk M] (hH : M.hyperplane H) : M.r H + 1 = M.rk :=
+by rw [←((hH.flat.covby_iff_r M.ground_flat).mp hH.covby).2, rk]
+
+lemma hyperplane.cast_r [finite_rk M] (hH : M.hyperplane H) : (M.r H : ℤ) = M.rk - 1 := 
+by simp [←hH.r_add_one]
+
+lemma flat.hyperplane_of_r_add_one_eq_rk [finite_rk M] (hF : M.flat F) (h : M.r F + 1 = M.rk) :
+  M.hyperplane F :=
+by rwa [hyperplane_iff_covby, hF.covby_iff_r M.ground_flat, and_iff_right hF.subset_ground, eq_comm]
+
+lemma hyperplane_iff_flat_r_add_one_eq_r [finite_rk M] : 
+  M.hyperplane H ↔ M.flat H ∧ M.r H + 1 = M.rk :=
+⟨λ h, ⟨h.flat, h.r_add_one⟩, λ h, h.1.hyperplane_of_r_add_one_eq_rk h.2⟩
+
+end cl_flat
+
+section loop
+
+lemma loop_iff_r (he : e ∈ M.E . ssE) : M.loop e ↔ M.r {e} = 0 :=
+by rw [loop_iff_dep, ←r_lt_card_iff_dep_of_finite (finite_singleton e), ncard_singleton, 
+  nat.lt_one_iff]
+
+lemma loop.r (he : M.loop e) : M.r {e} = 0 := loop_iff_r.mp he 
+
+lemma r_eq_zero_iff_subset_loops [finite_rk M] (hX : X ⊆ M.E . ssE) : M.r X = 0 ↔ X ⊆ M.cl ∅ :=
+(M.to_r_fin X).r_eq_zero_iff_subset_loops
+
+lemma r_eq_zero_iff_inter_ground_subset_loops [finite_rk M] : M.r X = 0 ↔ X ∩ M.E ⊆ M.cl ∅ :=
+by rw [←r_eq_zero_iff_subset_loops, r_eq_r_inter_ground]
+
+lemma r_eq_zero_iff_forall_loop [finite_rk M] (hX : X ⊆ M.E . ssE) :
+  M.r X = 0 ↔ ∀ e ∈ X, M.loop e :=
+r_eq_zero_iff_subset_loops
+
+lemma r_eq_zero_of_subset_loops (h : X ⊆ M.cl ∅) : M.r X = 0 := 
+by rw [←r_cl, cl_eq_loops_of_subset h, r_cl, r_empty]
+
+lemma nonloop_iff_r : M.nonloop e ↔ M.r {e} = 1 :=
+by rw [←indep_singleton, indep_iff_r_eq_card_of_finite (finite_singleton e), ncard_singleton]
+
+lemma nonloop.r (he : M.nonloop e) : M.r {e} = 1 := nonloop_iff_r.mp he 
+
+lemma coloop.r_compl_add_one [finite_rk M] (he : M.coloop e) : M.r (M.E \ {e}) + 1 = M.rk :=
+begin
+  have := he.mem_ground,
+  rw [coloop_iff_cocircuit, ←compl_hyperplane_iff_cocircuit, hyperplane_iff_flat_r_add_one_eq_r] 
+    at he, 
+  exact he.2, 
+end
+
+lemma coloop_iff_r_compl_add_one_eq [finite_rk M] : M.coloop e ↔ M.r (M.E \ {e}) + 1 = M.rk :=
+begin
+  refine ⟨coloop.r_compl_add_one, λ h, _⟩, 
+  have he : e ∈ M.E, 
+  { by_contra he', rw [r_diff_singleton_eq_of_not_mem_ground _ he', rk_def] at h, simpa using h },
+  rw [coloop_iff_cocircuit, ←compl_hyperplane_iff_cocircuit (singleton_subset_iff.mpr he), 
+    hyperplane_iff_flat_r_add_one_eq_r, and_iff_left h], 
+  simp_rw [flat_iff_r_lt_r_insert_forall, sdiff_sdiff_right_self, inf_eq_inter, 
+    ground_inter_right, mem_singleton_iff, forall_eq, insert_diff_singleton, insert_eq_of_mem he, 
+    ←rk_def, nat.lt_iff_add_one_le], 
+  rw h,
+end
+
+lemma coloop_iff_r_compl_lt [finite_rk M] : M.coloop e ↔ M.r (M.E \ {e}) < M.rk :=
+by rw [coloop_iff_r_compl_add_one_eq, rk_def, nat.lt_iff_add_one_le, le_antisymm_iff, 
+    and_iff_left (M.r_le_r_diff_singleton_add_one e M.E)]
+
+lemma coloop.cast_r_compl [finite_rk M] (he : M.coloop e) : (M.r (M.E \ {e}) : ℤ) = M.rk - 1 :=
+by simp [←he.r_compl_add_one]
+
+end loop 
+
+section flat_of_r
+
+variables {F F' P L : set α}
+
+/-- `M.flat_of_r k F` means that `F` is a flat in `r` with finite rank `k`. -/
+def flat_of_r (M : matroid_in α) (k : ℕ) (F : set α) := M.flat F ∧ M.r F = k ∧ M.r_fin F  
+
+lemma flat_of_r.flat (h : M.flat_of_r k F) : M.flat F := h.1 
+
+@[ssE_finish_rules] lemma flat_of_r.subset_ground (h : M.flat_of_r k F) : F ⊆ M.E :=
+h.flat.subset_ground 
+
+lemma flat_of_r.r (h : M.flat_of_r k F) : M.r F = k := h.2.1 
+
+lemma flat_of_r.r_fin (h : M.flat_of_r k F) : M.r_fin F := h.2.2 
+
+lemma flat.flat_of_r_of_ne_zero (hF : M.flat F) (hk : M.r F ≠ 0) : M.flat_of_r (M.r F) F :=
+⟨hF, rfl, r_fin_of_r_ne_zero hk⟩  
+
+lemma flat.flat_of_r_of_ne_zero' (hF : M.flat F) (hr : M.r F = k) (hk : k ≠ 0) : 
+  M.flat_of_r (M.r F) F :=
+hF.flat_of_r_of_ne_zero (by { subst hr, assumption } )   
+
+lemma flat_of_r.nonempty (hF : M.flat_of_r k F) (hk : k ≠ 0) : F.nonempty := 
+nonempty_of_r_nonzero (ne_of_eq_of_ne hF.r hk)
+
+@[simp] lemma flat_of_r_zero_iff_loops : M.flat_of_r 0 F ↔ F = M.cl ∅ :=
+begin
+  refine ⟨λ h,_, _⟩,
+  { obtain ⟨I, hI⟩ := M.exists_basis F, 
+    have hc := hI.card, 
+    rw [h.r, ncard_eq_zero (hI.finite_of_r_fin h.r_fin)] at hc, subst hc, 
+    rw [←h.flat.cl, hI.cl] },
+  rintro rfl, 
+  exact ⟨M.flat_of_cl _, by simp, M.r_fin_empty.to_cl⟩,   
+end
+
+lemma loops_flat_of_r_zero (M : matroid_in α) : M.flat_of_r 0 (M.cl ∅) :=
+by rw flat_of_r_zero_iff_loops
+
+lemma flat_of_r.covby_iff (hF : M.flat_of_r k F) : M.covby F F' ↔ M.flat_of_r (k+1) F' ∧ F ⊆ F' :=
+begin
+  refine (em (M.flat F')).symm.elim (λ hF', iff_of_false (mt covby.flat_right hF') _) (λ hF', _), 
+  { exact mt (λ h, h.1.flat) hF' },
+  have hr := hF.r, subst hr, 
+  simp_rw [hF.flat.covby_iff_r_of_r_fin hF.r_fin hF', flat_of_r, and_comm, and.congr_right_iff, 
+    ← and_assoc, iff_and_self, and_iff_right hF'], 
+  refine λ h hF', r_fin_of_r_ne_zero _, 
+  rw hF', 
+  simp,  
+end 
+
+lemma flat_of_r.flat_of_r_add_one_of_covby (hF : M.flat_of_r k F) (hFF' : M.covby F F') : 
+  M.flat_of_r (k+1) F' := 
+by { rw [hF.covby_iff] at hFF', exact hFF'.1 }
+
+/-- A `point` is a rank-one flat -/
+def point (M : matroid_in α) (P : set α) := M.flat_of_r 1 P 
+
+/-- A `line` is a rank-two flat -/
+def line (M : matroid_in α) (L : set α) := M.flat_of_r 2 L
+
+/-- A `plane` is a rank-three flat -/
+def plane (M : matroid_in α) (P : set α) := M.flat_of_r 3 P
+
+lemma point.nonempty (hP : M.point P) : P.nonempty := flat_of_r.nonempty hP one_ne_zero
+
+@[ssE_finish_rules] lemma point.subset_ground (hP : M.point P) : P ⊆ M.E := hP.flat.subset_ground 
+
+lemma line.nonempty (hL : M.line L) : L.nonempty := flat_of_r.nonempty hL two_ne_zero
+
+@[ssE_finish_rules] lemma line.subset_ground (hL : M.line L) : L ⊆ M.E := hL.flat.subset_ground 
+
+lemma plane.nonempty (hP : M.plane P) : P.nonempty := flat_of_r.nonempty hP three_pos.ne.symm 
+
+@[ssE_finish_rules] lemma plane.subset_ground (hP : M.plane P) : P ⊆ M.E := hP.flat.subset_ground 
+
+lemma nonloop.cl_point (he : M.nonloop e) : M.point (M.cl {e}) := 
+begin
+  rw [point, ←ncard_singleton e, ←he.indep.r, ←r_cl ],
+  exact (M.flat_of_cl _).flat_of_r_of_ne_zero (by { rw [r_cl, he.indep.r], simp }), 
+end
+
+lemma point.diff_loops_nonempty (hP : M.point P) : (P \ M.cl ∅).nonempty := 
+nonempty_of_r_nonzero (by { rw [←r_cl, cl_diff_loops_eq_cl, r_cl, hP.r], exact one_ne_zero })
+
+lemma point.exists_eq_cl_nonloop (hP : M.point P) : ∃ e, M.nonloop e ∧ P = M.cl {e} := 
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis P,
+  have hc := hI.card, 
+  rw [hP.r, ncard_eq_one] at hc, 
+  obtain ⟨e, rfl⟩ := hc, 
+  use e, 
+  rw [hI.cl, hP.flat.cl, and_iff_left rfl, nonloop_iff_r, hI.r, hP.r], 
+end 
+
+lemma point.eq_cl_nonloop (hP : M.point P) (heP : e ∈ P) (he : M.nonloop e) : P = M.cl {e} := 
+begin
+  obtain ⟨I, hI, heI⟩ := he.indep.subset_basis_of_subset (singleton_subset_iff.mpr heP), 
+  have hc := hI.card, 
+  rw [hP.r, ncard_eq_one] at hc,  
+  obtain ⟨e', rfl⟩ := hc, 
+  simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at heI, 
+  rw [←hP.flat.cl, ←hI.cl, heI], 
+end 
+
+/-- The set of elements that span a point are precisely its nonloop members -/
+lemma point.eq_cl_singleton_iff (h : M.point P) : M.cl {e} = P ↔ e ∈ P ∧ M.nonloop e :=
+begin
+  simp only [nonloop, loop, ←mem_diff,  mem_preimage, mem_singleton_iff], 
+  refine ⟨_, λ hP, _⟩,
+  { rintro rfl, 
+    have hel : M.nonloop e,
+    { have he' := h.r, rwa [r_cl, ←nonloop_iff_r] at he',  }, 
+    exact ⟨M.mem_cl_self e, hel.not_loop, hel.mem_ground⟩ },
+  have he : M.nonloop e := hP.2, 
+  obtain ⟨J, hJ, heJ⟩ :=  he.indep.subset_basis_of_subset (singleton_subset_iff.mpr hP.1), 
+  have hJcard := hJ.card, 
+  rw [h.r, ncard_eq_one] at hJcard, 
+  obtain ⟨e', rfl⟩ := hJcard, 
+  simp only [subset_singleton_iff, mem_singleton_iff, forall_eq] at heJ, subst heJ,   
+  rw [←h.flat.cl, hJ.cl], 
+end 
+
+lemma point_iff_loops_covby : M.point P ↔ M.covby (M.cl ∅) P := 
+begin
+  rw [flat_of_r.covby_iff M.loops_flat_of_r_zero, zero_add, point, iff_self_and],  
+  exact λ h, h.flat.loops_subset,  
+end
+
+end flat_of_r
 
 -- section from_axioms
 

@@ -61,7 +61,6 @@ begin
   exact ⟨a, ha, λ a' ha' hf, hmax _ (mem_image_of_mem f ha') hf⟩, 
 end 
 
-
 /-- Is this somewhere in mathlib? Can't find it-/
 lemma nat.finite_iff_exists_ub {s : set ℕ} : s.finite ↔ ∃ m, ∀ x ∈ s, x ≤ m := 
 begin
