@@ -12,6 +12,12 @@ nat.cast_inj
 lemma enat.coe_le_coe_iff {m n : ℕ} : (m : ℕ∞) ≤ n ↔ m ≤ n :=
 nat.cast_le  
 
+lemma enat.to_nat_le_to_nat_of_lt_top {m n : ℕ∞} (hle : m ≤ n) (hn : n < ⊤) :
+  m.to_nat ≤ n.to_nat :=
+begin
+  
+end
+
 namespace set 
 
 /-- A fixed version that asserts in the conclusion that the set is finite. -/

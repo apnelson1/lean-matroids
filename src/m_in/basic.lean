@@ -326,7 +326,6 @@ instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M :=
   rw [insert_diff_singleton, insert_eq_of_mem heC],
 end ⟩  
 
-
 -- lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 -- card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
