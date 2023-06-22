@@ -12,11 +12,16 @@ nat.cast_inj
 lemma enat.coe_le_coe_iff {m n : ℕ} : (m : ℕ∞) ≤ n ↔ m ≤ n :=
 nat.cast_le  
 
-lemma enat.to_nat_le_to_nat_of_lt_top {m n : ℕ∞} (hle : m ≤ n) (hn : n < ⊤) :
+lemma enat.to_nat_le_to_nat_of_ne_top {m n : ℕ∞} (hle : m ≤ n) (hn : n ≠ ⊤) :
   m.to_nat ≤ n.to_nat :=
 begin
-  
+  have hm : m ≠ ⊤, rintro rfl, rw [top_le_iff] at hle, contradiction, 
+  rw [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.coe_le_coe_iff] at hle, 
+  rwa [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.to_nat_coe, enat.to_nat_coe], 
 end
+
+lemma enat.to_nat_add_coe_of_ne_top {m : ℕ∞} {n : ℕ} (h : m ≠ ⊤) : m.to_nat + n = (m + n).to_nat :=
+by { rw [←with_top.coe_untop m h, ←enat.coe_add, enat.to_nat_coe, enat.to_nat_coe] } 
 
 namespace set 
 

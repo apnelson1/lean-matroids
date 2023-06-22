@@ -494,7 +494,12 @@ lemma r_insert_le_add_one (M : matroid_in α) (e : α) (X : set α) :
   M.r (insert e X) ≤ M.r X + 1 :=
 begin
   have hle := M.er_insert_le_add_one e X, 
-  obtain ⟨
+  simp_rw [←er_to_nat_eq_r], 
+  obtain (h | h) := eq_or_ne (M.er X) ⊤, 
+  { have h' := M.er_mono (subset_insert e X), 
+    simp [h] at h', 
+    simp [h,h'] },
+  convert enat.to_nat_le_to_nat_of_ne_top hle _, 
 end 
 
 
