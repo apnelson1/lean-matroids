@@ -20,8 +20,6 @@ begin
   rwa [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.to_nat_coe, enat.to_nat_coe], 
 end
 
-lemma enat.to_nat_add_coe_of_ne_top {m : ℕ∞} {n : ℕ} (h : m ≠ ⊤) : m.to_nat + n = (m + n).to_nat :=
-by { rw [←with_top.coe_untop m h, ←enat.coe_add, enat.to_nat_coe, enat.to_nat_coe] } 
 
 namespace set 
 
@@ -113,6 +111,10 @@ begin
   exact h.2, 
 end 
 
+lemma finite.ncard_le_ncard_of_encard_le_encard (ht : t.finite) (h : s.encard ≤ t.encard) :
+  s.ncard ≤ t.ncard :=
+by { rw [ht.encard_eq, encard_le_coe_iff] at h, exact h.2 }
+
 lemma encard_eq_coe_iff {k : ℕ} : s.encard = k ↔ s.finite ∧ s.ncard = k :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
@@ -201,6 +203,16 @@ by rw [←encard_lt_top_iff_finite, ←encard_lt_top_iff_finite, h]
 lemma infinite_iff_infinite_of_encard_eq_encard (h : s.encard = t.encard) : 
   s.infinite ↔ t.infinite := by rw [←encard_eq_top_iff_infinite, h, encard_eq_top_iff_infinite]
 
+lemma finite.finite_of_encard_le (ht : t.finite) (hst : s.encard ≤ t.encard) : s.finite :=
+by { rw [←encard_lt_top_iff_finite] at *, exact hst.trans_lt ht }
+
+lemma finite.eq_of_subset_of_encard_le (ht : t.finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
+  s = t :=
+eq_of_subset_of_ncard_le hst ((ht.subset hst).ncard_le_ncard_of_encard_le_encard hts) ht
+
+lemma finite.eq_of_subset_of_encard_le' (hs : s.finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
+  s = t := 
+finite.eq_of_subset_of_encard_le (hs.finite_of_encard_le hts) hst hts
 
 
 end set 

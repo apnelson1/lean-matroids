@@ -566,6 +566,18 @@ begin
   exact λ K hK hJK hKX, hJK.antisymm (hJmax ⟨hK, hIJ.trans hJK, hKX⟩ hJK),  
 end
 
+
+lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
+let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
+
+lemma exists_basis_subset_basis (M : matroid_in α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ I J, M.basis I X ∧ M.basis J Y ∧ I ⊆ J :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  exact ⟨_, _, hI, hJ, hIJ⟩, 
+end    
+
 lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) : J = I :=
 hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 
@@ -577,8 +589,6 @@ end
 
 @[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I := ⟨basis.indep, indep.basis_self⟩
 
-lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
-let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
 
 lemma basis.exists_base (hI : M.basis I X) : ∃ B, M.base B ∧ I = B ∩ X :=
 begin

@@ -682,7 +682,7 @@ subset_inter (M.cl_subset hXY) (M.cl_subset_ground _)
 lemma cl_eq_cl_inter_ground (M : matroid_in α) (X : set α) : M.cl X = M.cl (X ∩ M.E) :=
 begin
   refine (M.cl_subset (inter_subset_left _ _)).antisymm' _,
-  rw [cl, cl, ←union_empty (X ∩ M.E), ←cl_union_cl_right_eq_cl_union],
+  rw [cl, cl, ←union_empty (X ∩ M.E), ←cl_union_cl_right_eq],
   refine inter_subset_inter_left _ ((M : matroid α).cl_mono _),
   rw [union_distrib_right],
   refine subset_inter (subset_union_left _ _) ((subset_univ X).trans _),
@@ -706,7 +706,7 @@ lemma subset_cl_iff_cl_subset_cl (hX : X ⊆ M.E) : X ⊆ M.cl Y ↔ M.cl X ⊆ 
   subset.rfl, λ h, subset_trans (subset_cl hX) h⟩
 
 lemma cl_union_cl_right_eq_cl (M : matroid_in α) (X Y : set α) : M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) :=
-by rw [eq_comm, cl, ←cl_union_cl_right_eq_cl_union, ←cl, eq_comm, cl_eq_cl_inter_ground, 
+by rw [eq_comm, cl, ←cl_union_cl_right_eq, ←cl, eq_comm, cl_eq_cl_inter_ground, 
     eq_comm, cl_eq_cl_inter_ground, inter_distrib_right, ←cl, inter_distrib_right, 
     inter_eq_self_of_subset_left (M.cl_subset_ground Y)]
 
@@ -775,8 +775,8 @@ begin
   refine (subset_cl hF.subset_ground).antisymm' _,
   convert inter_subset_inter_left M.E hF.1.cl.subset using 1,
   { convert rfl using 2,
-    rw [←cl_union_cl_right_eq_cl_union, cl_eq_loops_of_subset (compl_ground_subset_loops_coe _),
-      cl_union_cl_right_eq_cl_union, union_empty] },
+    rw [←cl_union_cl_right_eq, cl_eq_loops_of_subset (compl_ground_subset_loops_coe _),
+      cl_union_cl_right_eq, union_empty] },
   rw [inter_distrib_right, inter_eq_left_iff_subset.mpr hF.subset_ground, compl_inter_self,
     union_empty],
 end
