@@ -139,20 +139,26 @@ end
 lemma delete_loops_eq : (M ⟍ D).cl ∅ = M.cl ∅ \ D :=
 by simp 
 
-lemma delete_r_eq' (M : matroid_in α) (D X : set α) : (M ⟍ D).r X = M.r (X \ D) :=
+lemma delete_er_eq' (M : matroid_in α) (D X : set α) : (M ⟍ D).er X = M.er (X \ D) :=
 begin
-  rw [delete_eq_delete_inter_ground, r_eq_r_inter_ground, delete_ground, diff_inter_self_eq_diff, 
-    diff_eq, inter_comm M.E, ← inter_assoc, ←diff_eq, M.r_eq_r_inter_ground ( X \ D)],  
+  rw [delete_eq_delete_inter_ground, er_eq_er_inter_ground, delete_ground, diff_inter_self_eq_diff, 
+    diff_eq, inter_comm M.E, ← inter_assoc, ←diff_eq, M.er_eq_er_inter_ground ( X \ D)],  
   obtain ⟨I, hI⟩ := M.exists_basis ((X \ D) ∩ M.E), 
   rw [←(hI.to_delete (disjoint_of_subset (inter_subset_left _ _) (inter_subset_left _ _) 
-    disjoint_sdiff_left)).card, ←hI.card],
+    disjoint_sdiff_left)).encard, ←hI.encard],
 end 
+
+lemma delete_er_eq (M : matroid_in α) (hdj : disjoint X D) : (M ⟍ D).er X = M.er X :=
+by rw [delete_er_eq', sdiff_eq_self_iff_disjoint.mpr hdj.symm]
+
+lemma delete_r_eq' (M : matroid_in α) (D X : set α) : (M ⟍ D).r X = M.r (X \ D) :=
+by rw [←er_to_nat_eq_r, delete_er_eq', er_to_nat_eq_r]
 
 lemma delete_r_eq (M : matroid_in α) (hdj : disjoint X D) : (M ⟍ D).r X = M.r X :=
 by rw [delete_r_eq', sdiff_eq_self_iff_disjoint.mpr hdj.symm]
 
-lemma delete_r_fin_iff : (M ⟍ D).r_fin X ↔ M.r_fin X ∧ disjoint X D :=
-by { simp_rw [r_fin, delete_basis_iff], tauto! }
+lemma delete_r_fin_iff : (M ⟍ D).r_fin X ↔ M.r_fin (X \ D) :=
+by rw [r_fin_iff_er_lt_top, delete_er_eq', r_fin_iff_er_lt_top]
 
 @[simp] lemma delete_empty (M : matroid_in α) : M ⟍ (∅ : set α) = M := 
 by { rw [delete_eq_self_iff], exact empty_disjoint _ }
@@ -408,6 +414,31 @@ begin
   { rwa [mem_diff, and_iff_left heX, mem_diff, mem_union, or_iff_right heX, ←mem_diff ] at h' },  
   rw [←contract_loop_iff_mem_cl, ←contract_loop_iff_mem_cl, contract_contract, union_comm], 
 end 
+
+lemma foo (M : matroid_in α) (C X : set α) : (M ⟋ C).er X + M.er C = M.er (X ∪ C) :=
+begin
+  obtain ⟨I, D, hIC, hD, hDC, hM⟩ := M.exists_eq_contract_indep_delete C, 
+  obtain ⟨J, hJ, hIJ⟩ := hIC.indep.subset_basis_of_subset 
+    (hIC.subset.trans (subset_union_right (X ∩ M.E) _)) (by simp), 
+  rw [hM, delete_er_eq', M.er_eq_er_inter_ground, ←hIC.encard, M.er_eq_er_inter_ground, 
+    inter_distrib_right, ←hJ.encard, er_eq_er_inter_ground, contract_ground], 
+  suffices h' : (M ⟋ I).basis (J \ I) (X \ D ∩ (M.E \ I)), 
+  { rw [←h'.encard, encard_diff_add_encard_of_subset hIJ] },
+  apply basis.contract_basis_union_union, 
+  { rw [diff_union_of_subset hIJ, union_distrib_right, 
+      diff_union_of_subset hIC.indep.subset_ground], 
+    refine hJ.basis_subset (subset_inter _ hJ.subset_ground_left) _, 
+    {  rw [union_comm, ←diff_subset_iff, subset_diff, diff_subset_iff],  },
+     }, 
+  -- rw [ er_eq_er_inter_ground, contract_ground, M.er_eq_er_inter_ground,
+  --   M.er_eq_er_inter_ground (X ∪ C), inter_distrib_right, contract_eq_contract_inter_ground], 
+  -- obtain ⟨I, J, hI, hJ, hIJ⟩ := 
+  --   M.exists_basis_subset_basis (subset_union_right (X ∩ M.E) (C ∩ M.E)) (by simp), 
+  -- rw [←hI.encard, ←hJ.encard], 
+  -- suffices h' : (M ⟋ C).basis (J \ I) (X ∩ (M.E \C )), 
+  -- { },
+  -- obtain ⟨I, hI⟩ := M.exists_basis (C ∩ M.E), 
+end  
 
 lemma basis.diff_subset_loops_contract (hIX : M.basis I X) : X \ I ⊆ (M ⟋ I).cl ∅ :=
 begin

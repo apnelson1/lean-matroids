@@ -20,6 +20,16 @@ begin
   rwa [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.to_nat_coe, enat.to_nat_coe], 
 end
 
+lemma enat.eq_of_top_of_add_pos_le {m n : ℕ∞} (hn : 0 < n) (hmn : m + n ≤ m) : m = ⊤ :=
+begin
+  obtain (rfl | ⟨m, rfl⟩) := m.exists_eq_top_or_coe, refl, exfalso, 
+  obtain (rfl | ⟨n,rfl⟩) := n.exists_eq_top_or_coe,  
+  simpa using hmn, 
+  rw [←enat.coe_add, enat.coe_le_coe_iff, add_le_iff_nonpos_right, le_zero_iff] at hmn, 
+  subst hmn, 
+  simpa using hn, 
+end 
+
 
 namespace set 
 

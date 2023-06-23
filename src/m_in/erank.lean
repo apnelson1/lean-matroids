@@ -312,7 +312,17 @@ begin
     h.er, er_eq_er_inter_ground, ←hI.encard, encard_insert_of_not_mem hzI], 
 end 
 
-
+lemma er_eq_of_er_insert_le_forall (hXY : X ⊆ Y) (hY : ∀ e ∈ Y \ X, M.er (insert e X) ≤ M.er X) :
+  M.er X = M.er Y :=
+begin
+  refine (M.er_mono hXY).antisymm (le_of_not_lt (λ hlt, _)), 
+  obtain ⟨z, hz, hr⟩ := er_augment hlt, 
+  have hle := hY z hz, 
+  rw [hr] at hle, 
+  have := enat.eq_of_top_of_add_pos_le (by simp) hle, 
+  rw [this] at hlt, 
+  exact not_top_lt hlt, 
+end 
 
 end basic
 
