@@ -578,6 +578,22 @@ begin
   exact ⟨_, _, hI, hJ, hIJ⟩, 
 end    
 
+lemma basis.exists_basis_inter_eq_of_supset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ J, M.basis J Y ∧ J ∩ X = I :=
+begin
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  refine ⟨J, hJ, subset_antisymm _ (subset_inter hIJ hI.subset)⟩,  
+  exact λ e he, hI.mem_of_insert_indep he.2 (hJ.indep.subset (insert_subset.mpr ⟨he.1, hIJ⟩)), 
+end   
+
+lemma exists_basis_union_inter_basis (M : matroid_in α) (X Y : set α) (hX : X ⊆ M.E . ssE) 
+  (hY : Y ⊆ M.E . ssE) : ∃ I, M.basis I (X ∪ Y) ∧ M.basis (I ∩ Y) Y := 
+begin
+  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
+  exact (hJ.exists_basis_inter_eq_of_supset (subset_union_right X Y)).imp 
+    (λ I hI, ⟨hI.1, by rwa hI.2⟩), 
+end 
+
 lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) : J = I :=
 hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 
@@ -588,7 +604,6 @@ begin
 end 
 
 @[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I := ⟨basis.indep, indep.basis_self⟩
-
 
 lemma basis.exists_base (hI : M.basis I X) : ∃ B, M.base B ∧ I = B ∩ X :=
 begin

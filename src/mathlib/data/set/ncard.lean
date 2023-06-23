@@ -30,6 +30,14 @@ begin
   simpa using hn, 
 end 
 
+/-- This should be a `with_top` lemma-/
+lemma enat.add_eq_add_iff_left {n a b : ℕ∞} (hn : n ≠ ⊤) : n + a = n + b ↔ a = b := 
+by rw [le_antisymm_iff, with_top.add_le_add_iff_left hn, with_top.add_le_add_iff_left hn, 
+    le_antisymm_iff]
+
+lemma enat.add_eq_add_iff_right {n a b : ℕ∞} (hn : n ≠ ⊤) : a + n = b + n ↔ a = b := 
+by rw [add_comm a, add_comm b, enat.add_eq_add_iff_left hn]
+
 
 namespace set 
 

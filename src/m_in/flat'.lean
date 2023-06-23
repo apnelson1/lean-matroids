@@ -222,10 +222,10 @@ end
 /- hypothesis: added `e ∈ M.E` -/
 
 
-lemma flat.covby_partition (hF : M.flat F) : 
-  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
-begin
-    sorry
+-- lemma flat.covby_partition (hF : M.flat F) : 
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+-- begin
+--     sorry
     
     -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
     --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
@@ -272,29 +272,29 @@ begin
     
   --   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
   --   rw [hF'.2 F₁ heF₁ hFF₁] }, 
-end 
+-- end 
 
-lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
-  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
-begin
-  convert hF.covby_partition, 
-  rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
-  rintro (rfl | ⟨F', hF', h⟩) , 
-  { exact not_nonempty_empty hFne },
-  refine hF'.ssubset.not_subset _, 
-  simpa [diff_eq_empty] using h, 
-end 
+-- lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
+-- begin
+--   convert hF.covby_partition, 
+--   rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
+--   rintro (rfl | ⟨F', hF', h⟩) , 
+--   { exact not_nonempty_empty hFne },
+--   refine hF'.ssubset.not_subset _, 
+--   simpa [diff_eq_empty] using h, 
+-- end 
 
-lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
-  setoid.is_partition {F | M.covby ∅ F} := 
-begin
-  convert hF.covby_partition, 
-  simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
-  ext F,  
-  simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
-  rintro hF' rfl, 
-  exact hF'.ssubset.ne rfl, 
-end 
+-- lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
+--   setoid.is_partition {F | M.covby ∅ F} := 
+-- begin
+--   convert hF.covby_partition, 
+--   simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
+--   ext F,  
+--   simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
+--   rintro hF' rfl, 
+--   exact hF'.ssubset.ne rfl, 
+-- end 
 
 -- lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :
 --   F.ncard + ∑ᶠ F' ∈ {F' | M.covby F F'}, (F' \ F).ncard = nat.card E :=
@@ -529,48 +529,7 @@ begin
   exact (hY.symm.trans_subset (M.cl_mono hYH)),
 end
 
-lemma hyperplane.inter_right_covby_of_inter_left_covby
-(hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) (h : M.covby (H₁ ∩ H₂) H₁) :
-  M.covby (H₁ ∩ H₂) H₂ :=
-begin
-  sorry,
-  -- obtain (rfl | hne) := eq_or_ne H₁ H₂, assumption,
-  -- have hssu : H₁ ∩ H₂ ⊂ H₂,
-  -- { refine (inter_subset_right _ _).ssubset_of_ne (λh'', hne _ ),
-  --   rw [inter_eq_right_iff_subset, ←le_iff_subset] at h'',
-  --   rw eq_of_le_of_not_lt h'' (hH₂.not_ssubset hH₁)},
 
-  -- refine ⟨hH₁.flat.inter hH₂.flat, hH₂.flat, hssu, λ F hF hssF hFH₂, _⟩,
-  -- by_contra' h',
-
-  -- obtain ⟨x,hxF,hx⟩ := exists_of_ssubset (hssF.ssubset_of_ne (ne.symm h'.1)),
-  -- obtain ⟨y,hyH₂,hy⟩ := exists_of_ssubset (hFH₂.ssubset_of_ne h'.2),
-  -- obtain ⟨z,hzH₁,hz⟩ := exists_of_ssubset h.ssubset,
-  -- have hzcl : M.cl (insert z (H₁ ∩ H₂)) = H₁ := h.cl_insert_eq ⟨hzH₁,hz⟩,
-  -- have hxH₁ : x ∉ H₁ := λ hxH₁, hx ⟨hxH₁, hFH₂ hxF⟩,
-
-  -- have h₁ : z ∉ M.cl (insert x (H₁ ∩ H₂)),
-  -- { intro hz', apply hxH₁,
-  --   have h' := cl_exchange ⟨hz', by rwa (hH₁.flat.inter hH₂.flat).cl⟩,
-  --   rw [h.cl_insert_eq ⟨hzH₁,hz⟩] at h',
-  --   exact h'.1},
-
-  -- have hycl : y ∈ M.cl (insert z (insert x (H₁ ∩ H₂))) \ M.cl (insert x (H₁ ∩ H₂)),
-  -- { refine ⟨_,λ hy',hy _⟩,
-  --   { rw [insert_comm, ←cl_insert_cl_eq_cl_insert, hzcl, hH₁.cl_insert_eq_univ hxH₁],
-  --     exact mem_univ _ },
-  --   exact hF.cl_subset_of_subset (insert_subset.mpr ⟨hxF,hssF⟩) hy' },
-
-  -- refine hz ⟨hzH₁, mem_of_mem_of_subset (cl_exchange hycl) ((diff_subset _ _).trans
-  --   (hH₂.flat.cl_subset_of_subset _))⟩,
-  -- rw [insert_subset, insert_subset],
-  -- exact ⟨hyH₂, hFH₂ hxF, inter_subset_right _ _⟩,
-end
-
-lemma hyperplane.inter_covby_comm (hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) :
-  M.covby (H₁ ∩ H₂) H₁ ↔  M.covby (H₁ ∩ H₂) H₂ :=
-⟨hH₁.inter_right_covby_of_inter_left_covby hH₂,
-  by {rw inter_comm, intro h, exact hH₂.inter_right_covby_of_inter_left_covby hH₁ h}⟩
 
 end hyperplane
 
