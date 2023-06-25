@@ -2,7 +2,7 @@ import analysis.inner_product_space.gram_schmidt_ortho
 import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
-import m_in.minor
+import m_in.minor m_in.constructions
 import m_in.rank
 import m_in.equiv
 
@@ -316,14 +316,12 @@ end
   rw φ.eq_zero_of_not_mem_ground h,
   simp only [submodule.zero_mem] }
 
+-- it's not true that (φ '' M.E) = (range ⇑φ) because we can have φ x = 0 for some x ∉ M.E,
+-- but if M.E is loopless, there are no y ∈ M.E such that φ x = 0.  
 @[simp]
 lemma span_range_eq_span_image (φ : rep 𝔽 W M) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
-begin
-  ext;
-  refine ⟨λ h, _, λ h, _⟩,
-  sorry,
-  sorry,
-end
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}) 
+  (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep φ y })
 
 lemma mem_span_cl (φ : rep 𝔽 W M) {x : α} {X : set α} (hX : X ⊆ M.E) (hx : x ∈ M.cl X) : 
   φ x ∈ span 𝔽 (φ '' X) :=
@@ -545,13 +543,11 @@ begin
   exact linear_independent.image (φ.valid.mpr hI.indep), 
 end
 
-lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (range φ)) = M.rk :=
+lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
 by { convert of_r φ M.E; simp }
 
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
-  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x 
-  (mem_of_mem_of_subset hx (M.cl_subset_ground X)) }
+  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) := by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set α} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -586,11 +582,12 @@ def rep_of_rep' (φ : rep' 𝔽 M ι) : rep 𝔽 (ι → 𝔽) M := ⟨φ, λ I,
 
 noncomputable def rep'_of_rep [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) {n : ℕ} (h : finrank 𝔽 W = n) : 
   rep' 𝔽 M (fin n)  := 
-{ to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) (by simpa) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
+{ to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) 
+  (by simpa only [finrank_fin_fun]) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
   valid' := λ I, 
   begin
     rw [←φ.valid', rep.to_fun_eq_coe], 
-    exact (linear_equiv.of_finrank_eq _ _ (by simpa) : 
+    exact (linear_equiv.of_finrank_eq _ _ (by simpa only [finrank_fin_fun]) : 
     W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
   end }
 
@@ -630,6 +627,14 @@ begin
   apply finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
 end
 
+instance fin_dim_rep (φ : rep' 𝔽 M ι) [fintype 𝔽] : 
+  finite_dimensional 𝔽 (span 𝔽 (range φ)) :=
+begin
+  cases M.exists_base with B hB,
+  have h2 := finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
+  sorry,
+end
+
 lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
   finite_dimensional.finrank 𝔽 (span 𝔽 (φ '' M.E)) = M.rk :=
 begin
@@ -654,7 +659,7 @@ namespace rep
 
 -- we have fin_dim_vectorspace_equiv
 def foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
-  nonempty (rep' 𝔽 M (fin M.rk))  := 
+  rep' 𝔽 M (fin M.rk)  := 
 begin
   -- for some reason rep'.rep'_of_rep is giving deterministic timeout?
   --have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
@@ -673,7 +678,7 @@ end
 lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep 𝔽 (fin M.rk → 𝔽) M) :=
 begin
-  cases foo φ with φ,
+  have φ := foo φ,
   use rep'.rep_of_rep' φ,
 end
 
