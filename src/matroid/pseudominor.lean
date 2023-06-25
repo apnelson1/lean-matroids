@@ -335,8 +335,8 @@ begin
   obtain ⟨J, hIJ, hJ⟩ := hI.indep.of_loopify.subset_basis_of_subset hI.subset, 
   obtain ⟨ID, hID⟩ := M.exists_basis D,  
   refine r_fin.subset _ hI.subset_cl, 
-  rw [loopify.cl_eq, ←r_fin_cl_iff, cl_union_cl_left_eq_cl_union,
-     ←cl_union_cl_right_eq_cl_union, ← hID.cl, cl_union_cl_right_eq_cl_union, r_fin_cl_iff], 
+  rw [loopify.cl_eq, ←r_fin_cl_iff, cl_union_cl_left_eq,
+     ←cl_union_cl_right_eq, ← hID.cl, cl_union_cl_right_eq, r_fin_cl_iff], 
   exact M.r_fin_of_finite (((hI.finite_of_r_fin hX).diff _).union (hID.finite_of_r_fin hD)), 
 end 
 
@@ -386,7 +386,7 @@ begin
 end 
 
 @[simp] lemma project_cl_eq_project (M : matroid E) (C : set E) : M ⟋ (M.cl C) = M ⟋ C :=
-eq_of_cl_eq_cl_forall (λ X, by simp_rw [project.cl_eq, cl_union_cl_right_eq_cl_union]) 
+eq_of_cl_eq_cl_forall (λ X, by simp_rw [project.cl_eq, cl_union_cl_right_eq]) 
 
 @[simp] lemma project_empty (M : matroid E) : M ⟋ (∅ : set E) = M :=
 eq_of_cl_eq_cl_forall (λ X, by simp_rw [project.cl_eq, union_empty])
@@ -500,7 +500,7 @@ begin
   refine ⟨union_indep_of_project hI.indep hJ, _,
     union_subset_union hI.subset hJ.subset⟩,
   simp_rw [basis_iff_indep_cl, project.cl_eq] at hI,
-  rw [←cl_union_cl_right_eq_cl_union, hJ.cl, cl_union_cl_right_eq_cl_union],
+  rw [←cl_union_cl_right_eq, hJ.cl, cl_union_cl_right_eq],
   exact union_subset hI.2.1 ((subset_union_right _ _).trans (M.subset_cl _)),
 end
 
@@ -536,7 +536,7 @@ begin
     (indep.basis_of_subset_cl h'.indep (union_subset_union_left _ (λ e heI, _ )) _), 
   { refine ((subset_union_left I J).trans h'.subset heI).elim id (λ heC, _), 
     exact (h.1.ne_of_mem heI ((M.subset_cl C) heC) rfl).elim },
-  rw [h'.cl, ←cl_union_cl_right_eq_cl_union, ←hJ.cl, cl_union_cl_right_eq_cl_union], 
+  rw [h'.cl, ←cl_union_cl_right_eq, ←hJ.cl, cl_union_cl_right_eq], 
   exact M.subset_cl _, 
 end
 
@@ -568,7 +568,7 @@ begin
   obtain ⟨J, hIJ, hJ⟩ := hI.indep.of_project.subset_basis_of_subset hI.subset, 
   obtain ⟨IC, hIC⟩ := M.exists_basis C,  
   refine r_fin.subset _ hI.subset_cl, 
-  rw [project.cl_eq, ←cl_union_cl_right_eq_cl_union, ←hIC.cl, cl_union_cl_right_eq_cl_union, 
+  rw [project.cl_eq, ←cl_union_cl_right_eq, ←hIC.cl, cl_union_cl_right_eq, 
     r_fin_cl_iff], 
   exact M.r_fin_of_finite ((hI.finite_of_r_fin hX).union (hIC.finite_of_r_fin hC)), 
 end 

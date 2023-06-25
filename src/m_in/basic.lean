@@ -326,7 +326,6 @@ instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M :=
   rw [insert_diff_singleton, insert_eq_of_mem heC],
 end ⟩  
 
-
 -- lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
 -- card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
@@ -567,6 +566,34 @@ begin
   exact λ K hK hJK hKX, hJK.antisymm (hJmax ⟨hK, hIJ.trans hJK, hKX⟩ hJK),  
 end
 
+
+lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
+let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
+
+lemma exists_basis_subset_basis (M : matroid_in α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ I J, M.basis I X ∧ M.basis J Y ∧ I ⊆ J :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  exact ⟨_, _, hI, hJ, hIJ⟩, 
+end    
+
+lemma basis.exists_basis_inter_eq_of_supset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ J, M.basis J Y ∧ J ∩ X = I :=
+begin
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  refine ⟨J, hJ, subset_antisymm _ (subset_inter hIJ hI.subset)⟩,  
+  exact λ e he, hI.mem_of_insert_indep he.2 (hJ.indep.subset (insert_subset.mpr ⟨he.1, hIJ⟩)), 
+end   
+
+lemma exists_basis_union_inter_basis (M : matroid_in α) (X Y : set α) (hX : X ⊆ M.E . ssE) 
+  (hY : Y ⊆ M.E . ssE) : ∃ I, M.basis I (X ∪ Y) ∧ M.basis (I ∩ Y) Y := 
+begin
+  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
+  exact (hJ.exists_basis_inter_eq_of_supset (subset_union_right X Y)).imp 
+    (λ I hI, ⟨hI.1, by rwa hI.2⟩), 
+end 
+
 lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) : J = I :=
 hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 
@@ -577,9 +604,6 @@ begin
 end 
 
 @[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I := ⟨basis.indep, indep.basis_self⟩
-
-lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
-let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
 
 lemma basis.exists_base (hI : M.basis I X) : ∃ B, M.base B ∧ I = B ∩ X :=
 begin

@@ -12,6 +12,33 @@ nat.cast_inj
 lemma enat.coe_le_coe_iff {m n : ℕ} : (m : ℕ∞) ≤ n ↔ m ≤ n :=
 nat.cast_le  
 
+lemma enat.to_nat_le_to_nat_of_ne_top {m n : ℕ∞} (hle : m ≤ n) (hn : n ≠ ⊤) :
+  m.to_nat ≤ n.to_nat :=
+begin
+  have hm : m ≠ ⊤, rintro rfl, rw [top_le_iff] at hle, contradiction, 
+  rw [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.coe_le_coe_iff] at hle, 
+  rwa [←with_top.coe_untop _ hn, ←with_top.coe_untop _ hm, enat.to_nat_coe, enat.to_nat_coe], 
+end
+
+lemma enat.eq_of_top_of_add_pos_le {m n : ℕ∞} (hn : 0 < n) (hmn : m + n ≤ m) : m = ⊤ :=
+begin
+  obtain (rfl | ⟨m, rfl⟩) := m.exists_eq_top_or_coe, refl, exfalso, 
+  obtain (rfl | ⟨n,rfl⟩) := n.exists_eq_top_or_coe,  
+  simpa using hmn, 
+  rw [←enat.coe_add, enat.coe_le_coe_iff, add_le_iff_nonpos_right, le_zero_iff] at hmn, 
+  subst hmn, 
+  simpa using hn, 
+end 
+
+/-- This should be a `with_top` lemma-/
+lemma enat.add_eq_add_iff_left {n a b : ℕ∞} (hn : n ≠ ⊤) : n + a = n + b ↔ a = b := 
+by rw [le_antisymm_iff, with_top.add_le_add_iff_left hn, with_top.add_le_add_iff_left hn, 
+    le_antisymm_iff]
+
+lemma enat.add_eq_add_iff_right {n a b : ℕ∞} (hn : n ≠ ⊤) : a + n = b + n ↔ a = b := 
+by rw [add_comm a, add_comm b, enat.add_eq_add_iff_left hn]
+
+
 namespace set 
 
 /-- A fixed version that asserts in the conclusion that the set is finite. -/
@@ -102,6 +129,10 @@ begin
   exact h.2, 
 end 
 
+lemma finite.ncard_le_ncard_of_encard_le_encard (ht : t.finite) (h : s.encard ≤ t.encard) :
+  s.ncard ≤ t.ncard :=
+by { rw [ht.encard_eq, encard_le_coe_iff] at h, exact h.2 }
+
 lemma encard_eq_coe_iff {k : ℕ} : s.encard = k ↔ s.finite ∧ s.ncard = k :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
@@ -190,6 +221,16 @@ by rw [←encard_lt_top_iff_finite, ←encard_lt_top_iff_finite, h]
 lemma infinite_iff_infinite_of_encard_eq_encard (h : s.encard = t.encard) : 
   s.infinite ↔ t.infinite := by rw [←encard_eq_top_iff_infinite, h, encard_eq_top_iff_infinite]
 
+lemma finite.finite_of_encard_le (ht : t.finite) (hst : s.encard ≤ t.encard) : s.finite :=
+by { rw [←encard_lt_top_iff_finite] at *, exact hst.trans_lt ht }
+
+lemma finite.eq_of_subset_of_encard_le (ht : t.finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
+  s = t :=
+eq_of_subset_of_ncard_le hst ((ht.subset hst).ncard_le_ncard_of_encard_le_encard hts) ht
+
+lemma finite.eq_of_subset_of_encard_le' (hs : s.finite) (hst : s ⊆ t) (hts : t.encard ≤ s.encard) :
+  s = t := 
+finite.eq_of_subset_of_encard_le (hs.finite_of_encard_le hts) hst hts
 
 
 end set 

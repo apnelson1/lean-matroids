@@ -63,11 +63,11 @@ let ⟨I, hI⟩ := M.exists_basis X in by rw [←hI.r, ←hI.cl, hI.indep.basis_
 
 @[simp] lemma r_union_cl_right_eq_r_union (M : matroid E) (X Y : set E) :
   M.r (X ∪ M.cl Y) = M.r (X ∪ Y) :=
-by rw [←r_cl, cl_union_cl_right_eq_cl_union, r_cl]
+by rw [←r_cl, cl_union_cl_right_eq, r_cl]
 
 @[simp] lemma r_union_cl_left_eq_r_union (M : matroid E) (X Y : set E) :
   M.r (M.cl X ∪ Y) = M.r (X ∪ Y) :=
-by rw [←r_cl, cl_union_cl_left_eq_cl_union, r_cl]
+by rw [←r_cl, cl_union_cl_left_eq, r_cl]
 
 @[simp] lemma r_insert_cl_eq_r_insert (M : matroid E) (e : E) (X : set E) : 
   M.r (insert e (M.cl X)) = M.r (insert e X) :=
@@ -199,8 +199,8 @@ lemma r_fin.union (hX : M.r_fin X) (hY : M.r_fin Y) : M.r_fin (X ∪ Y) :=
 begin
   obtain ⟨I, hI⟩ := M.exists_basis X, 
   obtain ⟨J, hJ⟩ := M.exists_basis Y, 
-  rw [←r_fin_cl_iff, ←cl_union_cl_left_eq_cl_union, ←hI.cl, cl_union_cl_left_eq_cl_union, 
-    ←cl_union_cl_right_eq_cl_union, ←hJ.cl, cl_union_cl_right_eq_cl_union, r_fin_cl_iff], 
+  rw [←r_fin_cl_iff, ←cl_union_cl_left_eq, ←hI.cl, cl_union_cl_left_eq, 
+    ←cl_union_cl_right_eq, ←hJ.cl, cl_union_cl_right_eq, r_fin_cl_iff], 
   exact M.r_fin_of_finite ((hI.finite_of_r_fin hX).union (hJ.finite_of_r_fin hY)), 
 end 
 
@@ -451,8 +451,8 @@ lemma cl_eq_cl_of_subset_of_r_ge_r [finite_rk M] (hXY : X ⊆ Y) (hr : M.r Y ≤
 
 lemma r_union_eq_of_subset_of_r_le_r [finite_rk M] (Z : set E) (hXY : X ⊆ Y) (hr : M.r Y ≤ M.r X) :
   M.r (X ∪ Z) = M.r (Y ∪ Z) :=
-by rw [←r_cl, ←cl_union_cl_left_eq_cl_union, cl_eq_cl_of_subset_of_r_ge_r hXY hr, 
-    cl_union_cl_left_eq_cl_union, r_cl]
+by rw [←r_cl, ←cl_union_cl_left_eq, cl_eq_cl_of_subset_of_r_ge_r hXY hr, 
+    cl_union_cl_left_eq, r_cl]
 
 -- lemma r_union_eq_of_subset_of_r_eqs (hX : X ⊆ X') (hY : Y ⊆ Y')
 -- (hXX' : M.r X = M.r X') (hYY' : M.r Y = M.r Y') :

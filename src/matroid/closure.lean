@@ -58,7 +58,7 @@ begin
   exact M.cl_subset (insert_subset.mpr ⟨he, M.subset_cl _⟩),
 end
 
-@[simp] lemma cl_union_cl_right_eq_cl_union (M : matroid E) (X Y : set E) :
+@[simp] lemma cl_union_cl_right_eq (M : matroid E) (X Y : set E) :
   M.cl (X ∪ M.cl Y) = M.cl (X ∪ Y) :=
 begin
   refine ((M.cl_mono (union_subset_union_right X (M.subset_cl _)))).antisymm' _,
@@ -67,21 +67,21 @@ begin
     (M.cl_mono (subset_union_right _ _))),
 end
 
-@[simp] lemma cl_union_cl_left_eq_cl_union (M : matroid E) (X Y : set E) :
+@[simp] lemma cl_union_cl_left_eq (M : matroid E) (X Y : set E) :
   M.cl (M.cl X ∪ Y) = M.cl (X ∪ Y) :=
-by rw [union_comm, cl_union_cl_right_eq_cl_union, union_comm]
+by rw [union_comm, cl_union_cl_right_eq, union_comm]
 
 @[simp] lemma cl_cl_union_cl_eq_cl_union (M : matroid E) (X Y : set E) :
   M.cl (M.cl X ∪ M.cl Y) = M.cl (X ∪ Y) :=
-by rw [cl_union_cl_left_eq_cl_union, cl_union_cl_right_eq_cl_union]
+by rw [cl_union_cl_left_eq, cl_union_cl_right_eq]
 
 @[simp] lemma cl_insert_cl_eq_cl_insert (M : matroid E) (e : E) (X : set E) :
   M.cl (insert e (M.cl X)) = M.cl (insert e X) :=
-by simp_rw [←singleton_union, cl_union_cl_right_eq_cl_union]
+by simp_rw [←singleton_union, cl_union_cl_right_eq]
 
 @[simp] lemma cl_diff_loops_eq_cl (M : matroid E) (X : set E) : M.cl (X \ M.cl ∅) = M.cl X :=
-by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq_cl_union, diff_union_self, 
-    cl_union_cl_right_eq_cl_union, union_empty]
+by rw [←union_empty (X \ M.cl ∅), ←cl_union_cl_right_eq, diff_union_self, 
+    cl_union_cl_right_eq, union_empty]
 
 lemma mem_cl_self (M : matroid E) (e : E) : e ∈ M.cl {e} := (M.subset_cl {e}) (mem_singleton e)
 
