@@ -47,8 +47,10 @@ structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
   ∃ (W : Type) (hW : add_comm_group W) 
     (hFW : 
-      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
+      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
 
+-- this needs to be more general - set isn't sufficient, need a list or multiset or something,
+-- or needs to mirror how sets of vectors are done
 -- shouldn't maximality be a consequence of exchange property?
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   (s : set W) : 
@@ -148,15 +150,16 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
     end,
   subset_ground' := by tauto }
 
+-- we don't know for sure that I ⊆ s 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
 { to_fun := id,
   valid' := λ I, 
     begin
       simp only [comp.left_id],
-      rw indep,
+      rw [indep, matroid_of_module_set],
+      simp only,
       refine ⟨λ h, _, λ h, _⟩,
-      
       sorry, 
       sorry,
     end }
@@ -419,9 +422,9 @@ if and only if the family `v` is linearly independent. -/
 protected lemma linear_map.linear_independent_iff {ι : Type*} {v : ι → W} (f : W →ₗ[𝔽] W') :
   linear_independent 𝔽 (f ∘ v) ↔ linear_independent 𝔽 v ∧ disjoint (f.ker) (span 𝔽 (range v)) :=
 ⟨λ h, ⟨@linear_independent.of_comp _ _ _ W' _ _ _ 
-  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h, 
+  (@add_comm_group.to_add_comm_monoid W' _inst_4) _ _inst_5 f h, 
   disjoint.comm.1 (linear_independent.map'' (@linear_independent.of_comp _ _ _ W' _ _ _ 
-  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h) _ h)⟩, 
+  (@add_comm_group.to_add_comm_monoid W' _inst_4) _ _inst_5 f h) _ h)⟩, 
   λ h, linear_independent.map h.1 (disjoint.comm.1 h.2)⟩
 
 lemma linear_independent.union' {s t : set W}
@@ -572,7 +575,7 @@ by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ hX hx }
 
 end rep
 
-variables {ι : Type}
+variables {ι : Type} [fintype α]
 
 structure rep' (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
 (to_fun : α → ι → 𝔽)
@@ -631,13 +634,31 @@ end
 lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
   by { rw [span_basis' φ (base.basis_ground hB)] }
 
-lemma span_range_eq_span_image' (φ : rep' 𝔽 M ι) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
-span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}) _,
+lemma eq_zero_of_not_mem_ground' (φ : rep' 𝔽 M ι) {e : α} (he : e ∉ M.E) : φ e = 0 :=
 begin
-  apply span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}),
-  sorry,
-  sorry,
-end
+  by_contra,
+  apply he,
+  rw ← singleton_subset_iff,
+  apply indep.subset_ground,
+  rw ← φ.valid',
+  have h2 := @linear_independent_singleton 𝔽 _ _ _ _ _ _ _ h,
+  rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
+  apply h2,
+end  
+
+@[simp] lemma mem_span_rep' (φ : rep' 𝔽 M ι) : ∀ (x : α), φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x, by { 
+  by_cases x ∈ M.E,
+  apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h),
+  rw φ.eq_zero_of_not_mem_ground' h,
+  simp only [submodule.zero_mem] }
+
+@[simp] lemma mem_span_rep_range' (φ : rep' 𝔽 M ι) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
+  λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
+
+lemma span_range_eq_span_image' (φ : rep' 𝔽 M ι) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range' φ y}) 
+  (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep' φ y })
 
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
@@ -811,8 +832,7 @@ begin
   simp only [eq_self_iff_true],
   { intros x hx,
     simp only,
-    haveI := (@add_comm_group.to_add_comm_monoid W _inst_3),
-    --rw ← @one_smul W (zmod 2) (@add_comm_group.to_add_comm_monoid W _inst_3) _ (φ x),
+    haveI := (@add_comm_group.to_add_comm_monoid W _inst_2),
     -- for some reason i have to do this roundabout way of using one_smul because
     -- i can't figure out how to make my monoid instance work for it
     have hc : c (φ x) = 1,
