@@ -186,15 +186,16 @@ instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
-lemma valid (φ : rep 𝔽 W M) {I : set M.E} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
+lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
+  M.indep I := φ.valid' _ hI
 
 protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
-inj_on_iff_injective.2 ((φ.valid' I).2 hI).injective
+inj_on_iff_injective.2 ((φ.valid' I hI.subset_ground).2 hI).injective
 
-lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
+/-lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
 begin
   by_contra,
   apply he,
@@ -204,7 +205,7 @@ begin
   have h2 := @linear_independent_singleton 𝔽 W _ _ _ _ _ _ h,
   rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
   apply h2,
-end  
+end  -/
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : α → W)  := by { ext, refl }
 
@@ -216,9 +217,8 @@ def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
 def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ φ.to_submodule :=
-by { by_cases x ∈ M.E, rw [rep.to_submodule], refine subset_span _, rw mem_range, use x,
-  rw φ.eq_zero_of_not_mem_ground h, simp only [submodule.zero_mem] }
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule :=
+by { rw [rep.to_submodule], refine subset_span _, rw mem_range, use x }
 
 def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule) M := 
 { to_fun := λ a, ⟨φ a, (φ.mem_to_submodule a)⟩,
