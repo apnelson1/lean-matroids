@@ -41,19 +41,18 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := �
 
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
-(valid' : ∀ (I : set α), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
+(valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
   ∃ (W : Type) (hW : add_comm_group W) 
-    (hFW : 
-      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
+  (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
 
 -- this needs to be more general - set isn't sufficient, need a list or multiset or something,
 -- or needs to mirror how sets of vectors are done
 -- shouldn't maximality be a consequence of exchange property?
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  (s : set W) : 
+  [finite_dimensional 𝔽 W] (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -157,10 +156,15 @@ def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W
   valid' := λ I, 
     begin
       simp only [comp.left_id],
-      rw [indep, matroid_of_module_set],
+      rw [indep, matroid_of_module_set, ← ground_eq_E],
       simp only,
+      intros hI,
       refine ⟨λ h, _, λ h, _⟩,
-      sorry, 
+      use h.extend hI,
+      refine ⟨⟨h.extend_subset hI, ⟨_, h.linear_independent_extend hI⟩⟩, h.subset_extend hI⟩,
+      have h2 := h.subset_span_extend hI,
+      apply span_eq_span,
+      sorry,  
       sorry,
     end }
 
@@ -182,7 +186,7 @@ instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
-lemma valid (φ : rep 𝔽 W M) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
+lemma valid (φ : rep 𝔽 W M) {I : set M.E} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
 
 protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
