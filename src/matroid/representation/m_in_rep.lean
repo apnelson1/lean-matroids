@@ -24,7 +24,7 @@ open function set submodule finite_dimensional
 open_locale classical
 
 universe u 
-variables {α 𝔽 : Type*} [fintype α] {M : matroid_in α} {I B : set α} {x : α}
+variables {α 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
 -- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
@@ -51,7 +51,7 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
 
 -- shouldn't maximality be a consequence of exchange property?
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (s : set W) : 
+  (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -148,6 +148,19 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
     end,
   subset_ground' := by tauto }
 
+def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
+{ to_fun := id,
+  valid' := λ I, 
+    begin
+      simp only [comp.left_id],
+      rw indep,
+      refine ⟨λ h, _, λ h, _⟩,
+      
+      sorry, 
+      sorry,
+    end }
+
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
 lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
   ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
@@ -157,6 +170,8 @@ begin
 end
 
 namespace rep
+
+variables [fintype α]
 
 instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
 { coe := to_fun,
@@ -616,6 +631,14 @@ end
 lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
   by { rw [span_basis' φ (base.basis_ground hB)] }
 
+lemma span_range_eq_span_image' (φ : rep' 𝔽 M ι) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}) _,
+begin
+  apply span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}),
+  sorry,
+  sorry,
+end
+
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base' _ hB, image_eq_range], exact basis.span ((rep'.valid' φ B).2 hB.indep) }
@@ -632,7 +655,8 @@ instance fin_dim_rep (φ : rep' 𝔽 M ι) [fintype 𝔽] :
 begin
   cases M.exists_base with B hB,
   have h2 := finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
-  sorry,
+  rw ← span_range_eq_span_image',
+  apply h2,
 end
 
 lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
@@ -815,10 +839,28 @@ structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
+-- I think we might actually need 3-connectedness for this?
+lemma cocircuits_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) {x : α} (hx : x ∈ M.E) : -- M.E \ {x}  not hyperplane?
+  x ∈ M.cl (M.E \ {x}) :=
+begin
+  sorry,
+end   
+
+-- might need something that says if two matroids are rep. over the same field, then we can put them
+-- in the same module
+
 -- part (iii) in the proof of theorem 6.5.4
 lemma indep_eq_doubleton_of_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) (hI : M.indep I)
-  {Z : set α} {x y : α} (hxy : M.rk = M.r (univ \ {x, y})) (hxy2 : {x, y} ⊆ Z) : I = {x, y} :=
+  {Z : set α} {x y : α} (hx : x ∈ M.E) (hy : y ∈ M.E) (hxb : (M ⟍ ({x} : set α)).is_binary) 
+  (φy : (M ⟍ ({y} : set α)).is_binary) (hxy : M.rk = M.r (univ \ {x, y})) 
+  (hxy2 : {x, y} ⊆ I) : {x, y} = I :=
 begin
+  by_contra,
+  have h5 := indep.subset hI (diff_subset I {x, y}),
+  have h4 := nonempty_of_ssubset (ssubset_of_ne_of_subset h hxy2),
+  rw nonempty_iff_ne_empty at h4,
+  
+  have M' := matroid_of_module_set,
   sorry,
 end
 
