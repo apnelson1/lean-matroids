@@ -1,7 +1,6 @@
 import mathlib.data.set.finite
 import mathlib.data.set.basic
 import mathlib.data.set.function
-import mathlib.data.set.ncard
 import order.minimal 
 import mathlib.order.minimal
 import data.set.ncard
@@ -81,44 +80,26 @@ begin
     nat.succ_sub_one], 
 end  
 
-/- an `encard` version -/
-private lemma encard_diff_eq_of_exch {base : set α → Prop} (exch : exchange_property base) 
-(hB₁ : base B₁) (hB₂ : base B₂) : (B₁ \ B₂).encard = (B₂ \ B₁).encard :=
+private lemma finite_of_finite_of_exch {base : set α → Prop} (exch : exchange_property base) 
+(hB : base B) (hB' : base B') (h : B.finite) : 
+  B'.finite :=
 begin
-  obtain (hf | hi) := (B₁ \ B₂).finite_or_infinite, 
-  { obtain ⟨hf', he⟩ := diff_aux_of_exch exch hB₁ hB₂ hf, 
-    rw [hf.encard_eq, hf'.encard_eq, he] },
-  obtain (hf' | hi') := (B₂ \ B₁).finite_or_infinite, 
-  { obtain ⟨h, _⟩ := diff_aux_of_exch exch hB₂ hB₁ hf', 
-    exact (hi h).elim, },
-  rw [hi.encard_eq, hi'.encard_eq], 
+  rw [←inter_union_diff B' B], 
+  exact finite.union (h.subset (inter_subset_right _ _)) 
+    (diff_aux_of_exch exch hB hB' (h.diff _)).1, 
 end 
 
-private lemma encard_eq_of_exch {base : set α → Prop} (exch : exchange_property base)
-(hB₁ : base B₁) (hB₂ : base B₂) : B₁.encard = B₂.encard :=
-by rw [←encard_diff_add_encard_inter B₁ B₂, encard_diff_eq_of_exch exch hB₁ hB₂, inter_comm, 
-    encard_diff_add_encard_inter]
-
--- private lemma finite_of_finite_of_exch {base : set α → Prop} (exch : exchange_property base) 
--- (hB : base B) (hB' : base B') (h : B.finite) : 
---   B'.finite :=
--- begin
---   rw [←inter_union_diff B' B], 
---   exact finite.union (h.subset (inter_subset_right _ _)) 
---     (diff_aux_of_exch exch hB hB' (h.diff _)).1, 
--- end 
-
--- private lemma card_eq_card_of_exchange {base : set α → Prop} (exch : exchange_property base)
--- (hB₁ : base B₁) (hB₂ : base B₂) :
---   B₁.ncard = B₂.ncard :=
--- begin 
---   obtain (hB₁' | hB₁') := B₁.finite_or_infinite.symm,
---   { rw [hB₁'.ncard, infinite.ncard (λ h, hB₁' (finite_of_finite_of_exch exch hB₂ hB₁ h))] },
---   have hdcard := (diff_aux_of_exch exch hB₁ hB₂ (hB₁'.diff _)).2,
---   have hB₂' := finite_of_finite_of_exch exch hB₁ hB₂ hB₁', 
---   rw [←ncard_inter_add_ncard_diff_eq_ncard B₁ B₂ hB₁', ←hdcard, inter_comm, 
---     ncard_inter_add_ncard_diff_eq_ncard B₂ B₁ hB₂'],
--- end
+private lemma card_eq_card_of_exchange {base : set α → Prop} (exch : exchange_property base)
+(hB₁ : base B₁) (hB₂ : base B₂) :
+  B₁.ncard = B₂.ncard :=
+begin 
+  obtain (hB₁' | hB₁') := B₁.finite_or_infinite.symm,
+  { rw [hB₁'.ncard, infinite.ncard (λ h, hB₁' (finite_of_finite_of_exch exch hB₂ hB₁ h))] },
+  have hdcard := (diff_aux_of_exch exch hB₁ hB₂ (hB₁'.diff _)).2,
+  have hB₂' := finite_of_finite_of_exch exch hB₁ hB₂ hB₁', 
+  rw [←ncard_inter_add_ncard_diff_eq_ncard B₁ B₂ hB₁', ←hdcard, inter_comm, 
+    ncard_inter_add_ncard_diff_eq_ncard B₂ B₁ hB₂'],
+end
 
 end prelim
 
@@ -269,24 +250,8 @@ lemma base.eq_of_subset_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) (hB₁B
   B₁ = B₂ :=
 antichain_of_exch M.base_exchange' hB₁ hB₂ hB₁B₂
 
-lemma base.encard_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
-  (B₁ \ B₂).encard = (B₂ \ B₁).encard := encard_diff_eq_of_exch (M.base_exchange') hB₁ hB₂ 
-
-lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
-  (B₁ \ B₂).ncard = (B₂ \ B₁).ncard := 
-by rw [←encard_to_nat_eq, hB₁.encard_diff_comm hB₂, encard_to_nat_eq]
-
-lemma base.encard_eq_encard_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
-  B₁.encard = B₂.encard :=
-by rw [encard_eq_of_exch M.base_exchange' hB₁ hB₂]
-
-lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
-  B₁.ncard = B₂.ncard :=
-by rw [←encard_to_nat_eq B₁, hB₁.encard_eq_encard_of_base hB₂, encard_to_nat_eq]
-
 lemma base.finite_of_finite (hB : M.base B) (h : B.finite) (hB' : M.base B') : B'.finite :=
-(finite_iff_finite_of_encard_eq_encard (hB.encard_eq_encard_of_base hB')).mp h  
--- finite_of_finite_of_exch M.base_exchange' hB hB' h
+finite_of_finite_of_exch M.base_exchange' hB hB' h
 
 lemma base.infinite_of_infinite (hB : M.base B) (h : B.infinite) (hB₁ : M.base B₁) :
   B₁.infinite :=
@@ -326,27 +291,26 @@ instance finitary_of_finite_rk {M : matroid_in α} [finite_rk M] : finitary M :=
   rw [insert_diff_singleton, insert_eq_of_mem heC],
 end ⟩  
 
--- lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
--- card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
+lemma base.card_eq_card_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
+card_eq_card_of_exchange M.base_exchange' hB₁ hB₂ 
 
 lemma base.diff_finite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) :
   (B₁ \ B₂).finite ↔ (B₂ \ B₁).finite := 
-finite_iff_finite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
--- ⟨λ h, (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).1, 
---   λ h, (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h).1⟩
+⟨λ h, (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).1, 
+  λ h, (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h).1⟩
 
 lemma base.diff_infinite_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
   (B₁ \ B₂).infinite ↔ (B₂ \ B₁).infinite := 
-infinite_iff_infinite_of_encard_eq_encard (hB₁.encard_diff_comm hB₂)
+not_iff_not.mpr (hB₁.diff_finite_comm hB₂)
 
-  -- obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
-  -- { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
-  -- rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
-
-
-lemma base.ncard_eq_ncard_of_base (hB₁ : M.base B₁) (hB₂ : M.base B₂) : B₁.ncard = B₂.ncard :=
-by rw [←encard_to_nat_eq, hB₁.encard_eq_encard_of_base hB₂, encard_to_nat_eq]
-
+lemma base.card_diff_comm (hB₁ : M.base B₁) (hB₂ : M.base B₂) : 
+  (B₁ \ B₂).ncard = (B₂ \ B₁).ncard :=
+begin
+  obtain (h | h) := (B₁ \ B₂).finite_or_infinite, 
+  { rw (diff_aux_of_exch M.base_exchange' hB₁ hB₂ h).2 },
+  rw [h.ncard, infinite.ncard (λ h', h (diff_aux_of_exch M.base_exchange' hB₂ hB₁ h').1)], 
+end 
+  
 end base
 
 section dep_indep
@@ -566,34 +530,6 @@ begin
   exact λ K hK hJK hKX, hJK.antisymm (hJmax ⟨hK, hIJ.trans hJK, hKX⟩ hJK),  
 end
 
-
-lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
-let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
-
-lemma exists_basis_subset_basis (M : matroid_in α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
-  ∃ I J, M.basis I X ∧ M.basis J Y ∧ I ⊆ J :=
-begin
-  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
-  exact ⟨_, _, hI, hJ, hIJ⟩, 
-end    
-
-lemma basis.exists_basis_inter_eq_of_supset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
-  ∃ J, M.basis J Y ∧ J ∩ X = I :=
-begin
-  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
-  refine ⟨J, hJ, subset_antisymm _ (subset_inter hIJ hI.subset)⟩,  
-  exact λ e he, hI.mem_of_insert_indep he.2 (hJ.indep.subset (insert_subset.mpr ⟨he.1, hIJ⟩)), 
-end   
-
-lemma exists_basis_union_inter_basis (M : matroid_in α) (X Y : set α) (hX : X ⊆ M.E . ssE) 
-  (hY : Y ⊆ M.E . ssE) : ∃ I, M.basis I (X ∪ Y) ∧ M.basis (I ∩ Y) Y := 
-begin
-  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
-  exact (hJ.exists_basis_inter_eq_of_supset (subset_union_right X Y)).imp 
-    (λ I hI, ⟨hI.1, by rwa hI.2⟩), 
-end 
-
 lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) : J = I :=
 hJ.eq_of_subset_indep hI hJ.subset subset.rfl
 
@@ -604,6 +540,9 @@ begin
 end 
 
 @[simp] lemma basis_self_iff_indep : M.basis I I ↔ M.indep I := ⟨basis.indep, indep.basis_self⟩
+
+lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
+let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
 
 lemma basis.exists_base (hI : M.basis I X) : ∃ B, M.base B ∧ I = B ∩ X :=
 begin
@@ -795,9 +734,8 @@ matroid_of_base E base (let ⟨B,h⟩ := exists_finite_base in ⟨B,h.1⟩) base
   obtain ⟨B, hB, hfin⟩ := exists_finite_base,  
   apply exists_maximal_subset_property_of_bounded ⟨B.ncard, _⟩,
   rintro I ⟨B', hB', hIB'⟩,   
-  have hB'fin : B'.finite, 
-  { rwa [finite_iff_finite_of_encard_eq_encard (encard_eq_of_exch base_exchange hB' hB)] },
-  rw [←encard_to_nat_eq B, encard_eq_of_exch base_exchange hB hB', encard_to_nat_eq], 
+  have hB'fin : B'.finite, from finite_of_finite_of_exch base_exchange hB hB' hfin, 
+  rw card_eq_card_of_exchange base_exchange hB hB', 
   exact ⟨hB'fin.subset hIB', ncard_le_of_subset hIB' hB'fin⟩, 
 end) 
 support 

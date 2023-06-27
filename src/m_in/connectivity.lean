@@ -66,22 +66,84 @@ begin
   sorry
 end
 
--- def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) (hE : M₁.ground ∩ M₂.ground = ∅) :
---   matroid_in α :=
---    matroid_of_indep
---     (M₁.ground ∪ M₂.ground)
---     (λ I, ∃ I₁ I₂, M₁.indep I₁ ∧ M₂.indep I₂ ∧ I = I₁ ∪ I₂)
---     (by { use [∅, ∅, empty_indep _, empty_indep _], simp, })
---     (by {
---       sorry
---     })
---     (by {
---       rintro I X hI hI_not_max hX_max,
-      
---     })
---     (sorry)
---     (by { sorry })
+def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
+  (hE : M₁.ground ∩ M₂.ground = ∅) :
+  matroid_in α :=
+   matroid_of_indep
+    (M₁.ground ∪ M₂.ground)
+    (λ I, ∃ I₁ I₂, M₁.indep I₁ ∧ M₂.indep I₂ ∧ I = I₁ ∪ I₂)
+    (by { use [∅, ∅, empty_indep _, empty_indep _], simp, })
+    (by {
+      rintro I J ⟨J₁, J₂, ⟨hJ₁, hJ₂, Jeq⟩⟩ hIJ,
+      use [I ∩ J₁, I ∩ J₂, hJ₁.subset (inter_subset_right I J₁),
+        hJ₂.subset (inter_subset_right I J₂)],
+      rw [←inter_distrib_left, ←Jeq],
+      symmetry,
+      exact inter_eq_self_of_subset_left hIJ,
+    })
+    (by {
+      rintro I X ⟨I₁, I₂, hI₁, hI₂, Ieq⟩ hI_not_max ⟨⟨X₁, X₂, hX₁, hX₂, Xeq⟩, hX_max⟩,
 
+      -- at least one of I₁, I₂ not maximal
+      have hI : ¬ M₁.base I₁ ∨ ¬ M₂.base I₂,
+      { sorry, },
 
+      -- both X₁, X₂ maximal
+      have hX₁base : M₁.base X₁,
+      { sorry, },
+      have hX₂base : M₂.base X₂,
+      { sorry, },
+
+      cases hI with hI,
+      { obtain ⟨e, he, heI₁⟩ := hI₁.exists_insert_of_not_base hI hX₁base,
+        use e,
+        split,
+        { split,
+          { rw [Xeq, mem_union],
+            left, use he.1 },
+          { have : e ∉ I₁ := he.2,
+            have : e ∉ I₂,
+            { intro h,
+              have : e ∈ M₁.E ∩ M₂.E := ⟨heI₁.subset_ground (mem_insert e I₁), hI₂.subset_ground h⟩,
+              dsimp at hE,
+              rw hE at this,
+              exact not_mem_empty e this, },
+            
+            rw [Ieq, mem_union],
+            intro g, cases g with g;
+            contradiction } },
+        { use [(insert e I₁), I₂, heI₁, hI₂],
+          rw [Ieq, ←insert_union] } },
+        { obtain ⟨e, he, heI₂⟩ := hI₂.exists_insert_of_not_base hI hX₂base,
+          use e,
+          split,
+          { split,
+            { rw [Xeq, mem_union],
+              right, use he.1 },
+            { have : e ∉ I₂ := he.2,
+              have : e ∉ I₁,
+              { intro h,
+                have : e ∈ M₁.E ∩ M₂.E := ⟨hI₁.subset_ground h, heI₂.subset_ground (mem_insert e I₂)⟩,
+                dsimp at hE,
+                rw hE at this,
+                exact not_mem_empty e this, },
+              
+              rw [Ieq, mem_union],
+              intro g, cases g with g;
+              contradiction } },
+          { use [I₁, (insert e I₂), hI₁, heI₂],
+            rw [Ieq, union_comm _ (insert _ _), insert_union, union_comm],
+          } },
+    })
+    (by {
+      rintro X,
+    })
+    (by {
+      rintro I ⟨I₁, I₂, ⟨hI₁, hI₂, Ieq⟩⟩,
+      dsimp,
+      rw [Ieq, union_subset_iff],
+      exact ⟨(hI₁.subset_ground).trans ((M₁.E).subset_union_left (M₂.E)),
+             (hI₂.subset_ground).trans ((M₁.E).subset_union_right (M₂.E))⟩,
+    })
 
 end matroid_in
