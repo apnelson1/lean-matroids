@@ -222,10 +222,10 @@ end
 /- hypothesis: added `e ∈ M.E` -/
 
 
-lemma flat.covby_partition (hF : M.flat F) : 
-  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
-begin
-    sorry
+-- lemma flat.covby_partition (hF : M.flat F) : 
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁}) \ {∅}) := 
+-- begin
+--     sorry
     
     -- { simp only [mem_diff, mem_insert_iff, eq_self_iff_true, mem_image, mem_set_of_eq, true_or, 
     --   mem_singleton_iff, true_and, exists_unique_iff_exists, exists_prop, and_imp, forall_eq_or_imp, 
@@ -272,29 +272,29 @@ begin
     
   --   refine ⟨⟨⟨or.inr ⟨_, hF'.1.2, rfl⟩,⟨ e, hF'.1.1, heF⟩⟩,hF'.1.1⟩, λ F₁ hFF₁ hne heF₁, _⟩, 
   --   rw [hF'.2 F₁ heF₁ hFF₁] }, 
-end 
+-- end 
 
-lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
-  setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
-begin
-  convert hF.covby_partition, 
-  rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
-  rintro (rfl | ⟨F', hF', h⟩) , 
-  { exact not_nonempty_empty hFne },
-  refine hF'.ssubset.not_subset _, 
-  simpa [diff_eq_empty] using h, 
-end 
+-- lemma flat.covby_partition_of_nonempty (hF : M.flat F) (hFne : F.nonempty) : 
+--   setoid.is_partition (insert F ((λ F₁, F₁ \ F) '' {F₁ | M.covby F F₁})) := 
+-- begin
+--   convert hF.covby_partition, 
+--   rw [eq_comm, sdiff_eq_left, disjoint_singleton_right], 
+--   rintro (rfl | ⟨F', hF', h⟩) , 
+--   { exact not_nonempty_empty hFne },
+--   refine hF'.ssubset.not_subset _, 
+--   simpa [diff_eq_empty] using h, 
+-- end 
 
-lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
-  setoid.is_partition {F | M.covby ∅ F} := 
-begin
-  convert hF.covby_partition, 
-  simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
-  ext F,  
-  simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
-  rintro hF' rfl, 
-  exact hF'.ssubset.ne rfl, 
-end 
+-- lemma flat.covby_partition_of_empty (hF : M.flat ∅) : 
+--   setoid.is_partition {F | M.covby ∅ F} := 
+-- begin
+--   convert hF.covby_partition, 
+--   simp only [diff_empty, image_id', insert_diff_of_mem, mem_singleton, set_of],
+--   ext F,  
+--   simp_rw [mem_diff, mem_singleton_iff, iff_self_and], 
+--   rintro hF' rfl, 
+--   exact hF'.ssubset.ne rfl, 
+-- end 
 
 -- lemma flat.sum_ncard_diff_of_covby [finite E] (hF : M.flat F) :
 --   F.ncard + ∑ᶠ F' ∈ {F' | M.covby F F'}, (F' \ F).ncard = nat.card E :=
@@ -473,112 +473,63 @@ begin
     hI.subset_cl.trans (M.cl_subset (subset_diff_singleton heIB.2 h'.1)),
     λ hecl, indep_iff_cl_diff_ne_forall.mp hB.indep e heIB.1 (cl_diff_singleton_eq_cl hecl)⟩,
 end
-/- hypothesis: changed `e ∉ M.cl X` to `e ∈ M.E \ M.cl X` -/
-/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
-   `M.hyperplane H` never holds -/
 
 lemma cl_eq_sInter_hyperplanes (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) :
-  M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
+  M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} ∩ M.E :=
 begin
-  apply subset_antisymm,
-  { simp only [subset_sInter_iff, mem_set_of_eq, and_imp],
-    exact λ H hH hXH, hH.flat.cl_subset_of_subset hXH},
-  by_contra' h',
-  obtain ⟨x, h, hx⟩ := not_subset.mp h',
-  
-  dsimp at h,
-  sorry 
-  -- question: is it possible to show `x ∈ M.E`?
-
-  --obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx hX,
-  --exact hxH (h H ⟨hH, hXH⟩),
+  refine subset_antisymm (subset_inter _ (M.cl_subset_ground _)) _ ,   
+  { rw [subset_sInter_iff], rintro H ⟨hH, hXH⟩, exact hH.flat.cl_subset_of_subset hXH },
+  rintro e ⟨heH, heE⟩, 
+  refine by_contra (λ hx, _) , 
+  obtain ⟨H, hH, hXH, heH'⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨heE, hx⟩,
+  exact heH' (heH H ⟨hH, hXH⟩),  
 end
-/- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
-   `M.hyperplane H` never holds -/
    
-lemma mem_cl_iff_forall_hyperplane : e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
-by sorry -- simp [cl_eq_sInter_hyperplanes]
-
-lemma mem_dual_cl_iff_forall_circuit : 
-  e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (X ∩ C).nonempty :=
+lemma mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E . ssE) (he : e ∈ M.E . ssE) :
+  e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
 begin
-  sorry, 
-  --  rw [←dual_dual M], 
-  --  simp_rw [dual_circuit_iff_cocircuit, ←compl_hyperplane_iff_cocircuit, dual_dual, 
-  --   mem_cl_iff_forall_hyperplane], 
-  -- refine ⟨λ h K hH heK, _, λ h H hH hXH, (by_contra (λ heH, _))⟩,
-  -- { have h' := h _ hH,  
-  --   rwa [mem_compl_iff, iff_false_intro (not_not.mpr heK), imp_false, 
-  --     subset_compl_iff_disjoint_right, not_disjoint_iff_nonempty_inter] at h' },
-  -- obtain ⟨e, heX, heH⟩ := h Hᶜ (by rwa compl_compl) heH, 
-  -- exact heH (hXH heX), 
+  simp_rw [M.cl_eq_cl_inter_ground X, cl_eq_sInter_hyperplanes, mem_inter_iff, and_iff_left he, 
+    mem_sInter, mem_set_of_eq, and_imp], 
+  exact ⟨λ h H hH hXH, h _ hH ((inter_subset_left _ _).trans hXH), 
+    λ h H hH hXH, h H hH (by rwa inter_eq_self_of_subset_left hX at hXH)⟩,
 end 
 
-lemma flat.subset_hyperplane_of_ne_univ (hF : M.flat F) (h : F ≠ univ) : 
+lemma mem_dual_cl_iff_forall_circuit (hX : X ⊆ M.E . ssE) (he : e ∈ M.E . ssE) : 
+  e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (X ∩ C).nonempty :=
+begin
+  rw ←dual_dual M,  
+  simp_rw [dual_circuit_iff_cocircuit, dual_dual M, mem_cl_iff_forall_hyperplane],
+  refine ⟨λ h C hC heC, _, λ h H hH hXH, by_contra (λ heH, _)⟩,
+  { specialize h _ hC.compl_hyperplane, 
+    rwa [imp_iff_not (λ he, he.2 heC : e ∉ M﹡.E \ C), subset_diff, not_and, dual_ground, 
+      imp_iff_right hX, not_disjoint_iff_nonempty_inter] at h },
+  
+  obtain ⟨f, hf⟩ := h _ hH.compl_cocircuit ⟨he, heH⟩, 
+  exact hf.2.2 (hXH hf.1), 
+end 
+
+lemma flat.subset_hyperplane_of_ne_ground (hF : M.flat F) (h : F ≠ M.E) : 
   ∃ H, M.hyperplane H ∧ F ⊆ H :=
 begin
-  sorry,
-  -- obtain ⟨e,he⟩ := (ne_univ_iff_exists_not_mem _).mp h, 
-  -- rw ←hF.cl at he,  
-  -- obtain ⟨H, hH, hFH, -⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨he, _⟩ _, 
-  -- exact ⟨H, hH, hFH⟩,  
+  obtain ⟨e, heE, heF⟩ := exists_of_ssubset (hF.subset_ground.ssubset_of_ne h), 
+  rw ← hF.cl at heF, 
+  obtain ⟨H, hH, hFH, -⟩  := exists_hyperplane_sep_of_not_mem_cl ⟨heE, heF⟩, 
+  exact ⟨H, hH, hFH⟩, 
 end
 
 lemma subset_hyperplane_iff_cl_ne_ground (hY : Y ⊆ M.E . ssE) :
   M.cl Y ≠ M.E ↔ ∃ H, M.hyperplane H ∧ Y ⊆ H :=
 begin
-  sorry 
-  -- refine ⟨λ h, _,_⟩,
-  -- { obtain ⟨H, hH, hYH⟩ := (M.flat_of_cl Y).subset_hyperplane_of_ne_univ h,
-  --   exact ⟨H, hH, (M.subset_cl Y).trans hYH⟩},
-  -- rintro ⟨H, hH, hYH⟩ hY,
-  -- refine hH.ssubset_univ.not_subset _,
-  -- rw ←hH.flat.cl,
-  -- exact (hY.symm.trans_subset (M.cl_mono hYH)),
+  refine ⟨λ h, _,_⟩,
+  { obtain ⟨H, hH, hYH⟩ := (M.flat_of_cl Y).subset_hyperplane_of_ne_ground h,
+    exact ⟨H, hH, (M.subset_cl Y).trans hYH⟩},
+  rintro ⟨H, hH, hYH⟩ hY,
+  refine hH.ssubset_ground.not_subset _,
+  rw ←hH.flat.cl,
+  exact (hY.symm.trans_subset (M.cl_mono hYH)),
 end
 
-lemma hyperplane.inter_right_covby_of_inter_left_covby
-(hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) (h : M.covby (H₁ ∩ H₂) H₁) :
-  M.covby (H₁ ∩ H₂) H₂ :=
-begin
-  sorry,
-  -- obtain (rfl | hne) := eq_or_ne H₁ H₂, assumption,
-  -- have hssu : H₁ ∩ H₂ ⊂ H₂,
-  -- { refine (inter_subset_right _ _).ssubset_of_ne (λh'', hne _ ),
-  --   rw [inter_eq_right_iff_subset, ←le_iff_subset] at h'',
-  --   rw eq_of_le_of_not_lt h'' (hH₂.not_ssubset hH₁)},
 
-  -- refine ⟨hH₁.flat.inter hH₂.flat, hH₂.flat, hssu, λ F hF hssF hFH₂, _⟩,
-  -- by_contra' h',
-
-  -- obtain ⟨x,hxF,hx⟩ := exists_of_ssubset (hssF.ssubset_of_ne (ne.symm h'.1)),
-  -- obtain ⟨y,hyH₂,hy⟩ := exists_of_ssubset (hFH₂.ssubset_of_ne h'.2),
-  -- obtain ⟨z,hzH₁,hz⟩ := exists_of_ssubset h.ssubset,
-  -- have hzcl : M.cl (insert z (H₁ ∩ H₂)) = H₁ := h.cl_insert_eq ⟨hzH₁,hz⟩,
-  -- have hxH₁ : x ∉ H₁ := λ hxH₁, hx ⟨hxH₁, hFH₂ hxF⟩,
-
-  -- have h₁ : z ∉ M.cl (insert x (H₁ ∩ H₂)),
-  -- { intro hz', apply hxH₁,
-  --   have h' := cl_exchange ⟨hz', by rwa (hH₁.flat.inter hH₂.flat).cl⟩,
-  --   rw [h.cl_insert_eq ⟨hzH₁,hz⟩] at h',
-  --   exact h'.1},
-
-  -- have hycl : y ∈ M.cl (insert z (insert x (H₁ ∩ H₂))) \ M.cl (insert x (H₁ ∩ H₂)),
-  -- { refine ⟨_,λ hy',hy _⟩,
-  --   { rw [insert_comm, ←cl_insert_cl_eq_cl_insert, hzcl, hH₁.cl_insert_eq_univ hxH₁],
-  --     exact mem_univ _ },
-  --   exact hF.cl_subset_of_subset (insert_subset.mpr ⟨hxF,hssF⟩) hy' },
-
-  -- refine hz ⟨hzH₁, mem_of_mem_of_subset (cl_exchange hycl) ((diff_subset _ _).trans
-  --   (hH₂.flat.cl_subset_of_subset _))⟩,
-  -- rw [insert_subset, insert_subset],
-  -- exact ⟨hyH₂, hFH₂ hxF, inter_subset_right _ _⟩,
-end
-
-lemma hyperplane.inter_covby_comm (hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) :
-  M.covby (H₁ ∩ H₂) H₁ ↔  M.covby (H₁ ∩ H₂) H₂ :=
-⟨hH₁.inter_right_covby_of_inter_left_covby hH₂,
-  by {rw inter_comm, intro h, exact hH₂.inter_right_covby_of_inter_left_covby hH₁ h}⟩
 
 end hyperplane
 
