@@ -96,7 +96,7 @@ by rw [loop_iff_cl_eq_cl_empty', and_iff_left he]
 
 lemma cl_union_eq_cl_of_subset_loops {Y : set α} (hY : Y ⊆ M.cl ∅) (X : set α) :
   M.cl (X ∪ Y) = M.cl X := 
-by rw [←cl_union_cl_right_eq_cl_union, cl_eq_loops_of_subset hY, cl_union_cl_right_eq_cl_union, 
+by rw [←cl_union_cl_right_eq, cl_eq_loops_of_subset hY, cl_union_cl_right_eq, 
     union_empty]
 
 lemma cl_diff_eq_cl_of_subset_loops {Y : set α} (hY : Y ⊆ M.cl ∅) (X : set α) :
@@ -350,7 +350,7 @@ lemma cl_union_eq_of_subset_coloops (X : set α) {K : set α} (hK : K ⊆ M﹡.c
   M.cl (X ∪ K) = M.cl X ∪ K :=
 begin
   have hKE : K ⊆ M.E := hK.trans (cl_subset_ground _ _), 
-  rw [←cl_union_cl_left_eq_cl_union], 
+  rw [←cl_union_cl_left_eq], 
   refine (M.subset_cl _).antisymm' (λ e he, _), 
   obtain (he' | ⟨C, hC, heC, hCss⟩) := mem_cl_iff_exists_circuit.mp he, assumption,
   have hCX : C \ {e} ⊆ M.cl X, 

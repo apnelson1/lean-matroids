@@ -2,7 +2,7 @@ import analysis.inner_product_space.gram_schmidt_ortho
 import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
-import m_in.minor
+import m_in.minor m_in.constructions
 import m_in.rank
 import m_in.equiv
 
@@ -24,7 +24,7 @@ open function set submodule finite_dimensional
 open_locale classical
 
 universe u 
-variables {α 𝔽 : Type*} [fintype α] {M : matroid_in α} {I B : set α} {x : α}
+variables {α 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
 -- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
@@ -47,11 +47,13 @@ structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
   ∃ (W : Type) (hW : add_comm_group W) 
     (hFW : 
-      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ _ 𝔽 W _ hW hFW M)
+      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
 
+-- this needs to be more general - set isn't sufficient, need a list or multiset or something,
+-- or needs to mirror how sets of vectors are done
 -- shouldn't maximality be a consequence of exchange property?
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (s : set W) : 
+  (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -148,6 +150,20 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
     end,
   subset_ground' := by tauto }
 
+-- we don't know for sure that I ⊆ s 
+def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
+{ to_fun := id,
+  valid' := λ I, 
+    begin
+      simp only [comp.left_id],
+      rw [indep, matroid_of_module_set],
+      simp only,
+      refine ⟨λ h, _, λ h, _⟩,
+      sorry, 
+      sorry,
+    end }
+
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
 lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
   ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
@@ -157,6 +173,8 @@ begin
 end
 
 namespace rep
+
+variables [fintype α]
 
 instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
 { coe := to_fun,
@@ -309,9 +327,19 @@ end
 @[simp] lemma mem_span_rep_range (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
 
-@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x ∈ M.E), φ x ∈ (span 𝔽 (φ '' M.E)) := 
-  λ x hx, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) 
-  (mem_image_of_mem φ hx) }
+@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x, by { 
+  by_cases x ∈ M.E,
+  apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h),
+  rw φ.eq_zero_of_not_mem_ground h,
+  simp only [submodule.zero_mem] }
+
+-- it's not true that (φ '' M.E) = (range ⇑φ) because we can have φ x = 0 for some x ∉ M.E,
+-- but if M.E is loopless, there are no y ∈ M.E such that φ x = 0.  
+@[simp]
+lemma span_range_eq_span_image (φ : rep 𝔽 W M) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}) 
+  (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep φ y })
 
 lemma mem_span_cl (φ : rep 𝔽 W M) {x : α} {X : set α} (hX : X ⊆ M.E) (hx : x ∈ M.cl X) : 
   φ x ∈ span 𝔽 (φ '' X) :=
@@ -394,9 +422,9 @@ if and only if the family `v` is linearly independent. -/
 protected lemma linear_map.linear_independent_iff {ι : Type*} {v : ι → W} (f : W →ₗ[𝔽] W') :
   linear_independent 𝔽 (f ∘ v) ↔ linear_independent 𝔽 v ∧ disjoint (f.ker) (span 𝔽 (range v)) :=
 ⟨λ h, ⟨@linear_independent.of_comp _ _ _ W' _ _ _ 
-  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h, 
+  (@add_comm_group.to_add_comm_monoid W' _inst_4) _ _inst_5 f h, 
   disjoint.comm.1 (linear_independent.map'' (@linear_independent.of_comp _ _ _ W' _ _ _ 
-  (@add_comm_group.to_add_comm_monoid W' _inst_5) _ _inst_6 f h) _ h)⟩, 
+  (@add_comm_group.to_add_comm_monoid W' _inst_4) _ _inst_5 f h) _ h)⟩, 
   λ h, linear_independent.map h.1 (disjoint.comm.1 h.2)⟩
 
 lemma linear_independent.union' {s t : set W}
@@ -537,9 +565,7 @@ lemma of_rank (φ : rep 𝔽 W M) : finite_dimensional.finrank 𝔽 (span 𝔽 (
 by { convert of_r φ M.E; simp }
 
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
-  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) :=
-by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x 
-  (mem_of_mem_of_subset hx (M.cl_subset_ground X)) }
+  φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) := by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_rep φ x }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set α} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -549,7 +575,7 @@ by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ hX hx }
 
 end rep
 
-variables {ι : Type}
+variables {ι : Type} [fintype α]
 
 structure rep' (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
 (to_fun : α → ι → 𝔽)
@@ -574,11 +600,12 @@ def rep_of_rep' (φ : rep' 𝔽 M ι) : rep 𝔽 (ι → 𝔽) M := ⟨φ, λ I,
 
 noncomputable def rep'_of_rep [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) {n : ℕ} (h : finrank 𝔽 W = n) : 
   rep' 𝔽 M (fin n)  := 
-{ to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) (by simpa) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
+{ to_fun := λ v, (linear_equiv.of_finrank_eq W (fin n → 𝔽) 
+  (by simpa only [finrank_fin_fun]) :  W ≃ₗ[𝔽] (fin n → 𝔽)) (φ v), 
   valid' := λ I, 
   begin
     rw [←φ.valid', rep.to_fun_eq_coe], 
-    exact (linear_equiv.of_finrank_eq _ _ (by simpa) : 
+    exact (linear_equiv.of_finrank_eq _ _ (by simpa only [finrank_fin_fun]) : 
     W ≃ₗ[𝔽] (fin n → 𝔽)).to_linear_map.linear_independent_iff (linear_equiv.ker _), 
   end }
 
@@ -607,6 +634,32 @@ end
 lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
   by { rw [span_basis' φ (base.basis_ground hB)] }
 
+lemma eq_zero_of_not_mem_ground' (φ : rep' 𝔽 M ι) {e : α} (he : e ∉ M.E) : φ e = 0 :=
+begin
+  by_contra,
+  apply he,
+  rw ← singleton_subset_iff,
+  apply indep.subset_ground,
+  rw ← φ.valid',
+  have h2 := @linear_independent_singleton 𝔽 _ _ _ _ _ _ _ h,
+  rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
+  apply h2,
+end  
+
+@[simp] lemma mem_span_rep' (φ : rep' 𝔽 M ι) : ∀ (x : α), φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x, by { 
+  by_cases x ∈ M.E,
+  apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h),
+  rw φ.eq_zero_of_not_mem_ground' h,
+  simp only [submodule.zero_mem] }
+
+@[simp] lemma mem_span_rep_range' (φ : rep' 𝔽 M ι) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
+  λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
+
+lemma span_range_eq_span_image' (φ : rep' 𝔽 M ι) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range' φ y}) 
+  (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep' φ y })
+
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
 by { rw [←span_base' _ hB, image_eq_range], exact basis.span ((rep'.valid' φ B).2 hB.indep) }
@@ -616,6 +669,15 @@ instance fin_dim_rep' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
 begin
   cases M.exists_base with B hB,
   apply finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
+end
+
+instance fin_dim_rep (φ : rep' 𝔽 M ι) [fintype 𝔽] : 
+  finite_dimensional 𝔽 (span 𝔽 (range φ)) :=
+begin
+  cases M.exists_base with B hB,
+  have h2 := finite_dimensional.of_finite_basis (basis_of_base' φ hB) (base.finite hB),
+  rw ← span_range_eq_span_image',
+  apply h2,
 end
 
 lemma of_rank' (φ : rep' 𝔽 M ι) [fintype 𝔽] :
@@ -641,21 +703,27 @@ end rep'
 namespace rep
 
 -- we have fin_dim_vectorspace_equiv
-lemma foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
-  nonempty (rep' 𝔽 M (fin M.rk))  :=
+def foo (φ' : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
+  rep' 𝔽 M (fin M.rk)  := 
 begin
-  have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
+  -- for some reason rep'.rep'_of_rep is giving deterministic timeout?
+  --have φ := rep'.rep'_of_rep (φ'.rep_submodule) (of_rank φ'),
+  have h2 := (of_rank φ'),
+  have s := (φ'.rep_submodule),
+
   have h1 := eq.symm (@finite_dimensional.finrank_fin_fun 𝔽 _ sorry (M.rk)),
-  rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
-  cases h1 with l,
-  have h3 := λ (x : α), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
-  use φ,
+  have φ := rep'.rep'_of_rep (φ'.rep_submodule) _,
+  --rw [← rep'.of_rank' φ, ← finite_dimensional.nonempty_linear_equiv_iff_finrank_eq] at h1, 
+  --cases h1 with l,
+  --have h3 := λ (x : α), mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x),
+  --use φ,
+  sorry,
 end
 
 lemma foo' (φ : rep 𝔽 W M) [fintype 𝔽] [finite_dimensional 𝔽 W] :
   nonempty (rep 𝔽 (fin M.rk → 𝔽) M) :=
 begin
-  cases foo φ with φ,
+  have φ := foo φ,
   use rep'.rep_of_rep' φ,
 end
 
@@ -764,8 +832,7 @@ begin
   simp only [eq_self_iff_true],
   { intros x hx,
     simp only,
-    haveI := (@add_comm_group.to_add_comm_monoid W _inst_3),
-    --rw ← @one_smul W (zmod 2) (@add_comm_group.to_add_comm_monoid W _inst_3) _ (φ x),
+    haveI := (@add_comm_group.to_add_comm_monoid W _inst_2),
     -- for some reason i have to do this roundabout way of using one_smul because
     -- i can't figure out how to make my monoid instance work for it
     have hc : c (φ x) = 1,
@@ -792,10 +859,28 @@ structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
+-- I think we might actually need 3-connectedness for this?
+lemma cocircuits_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) {x : α} (hx : x ∈ M.E) : -- M.E \ {x}  not hyperplane?
+  x ∈ M.cl (M.E \ {x}) :=
+begin
+  sorry,
+end   
+
+-- might need something that says if two matroids are rep. over the same field, then we can put them
+-- in the same module
+
 -- part (iii) in the proof of theorem 6.5.4
 lemma indep_eq_doubleton_of_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) (hI : M.indep I)
-  {Z : set α} {x y : α} (hxy : M.rk = M.r (univ \ {x, y})) (hxy2 : {x, y} ⊆ Z) : I = {x, y} :=
+  {Z : set α} {x y : α} (hx : x ∈ M.E) (hy : y ∈ M.E) (hxb : (M ⟍ ({x} : set α)).is_binary) 
+  (φy : (M ⟍ ({y} : set α)).is_binary) (hxy : M.rk = M.r (univ \ {x, y})) 
+  (hxy2 : {x, y} ⊆ I) : {x, y} = I :=
 begin
+  by_contra,
+  have h5 := indep.subset hI (diff_subset I {x, y}),
+  have h4 := nonempty_of_ssubset (ssubset_of_ne_of_subset h hxy2),
+  rw nonempty_iff_ne_empty at h4,
+  
+  have M' := matroid_of_module_set,
   sorry,
 end
 

@@ -130,7 +130,7 @@ begin
   { refine hJN.indep.basis_of_subset_cl (hJN.subset.trans _) _,
     { exact union_subset (hIN.subset.trans (hIJM.trans hJM.subset)) 
       ((diff_subset JM _).trans hJM.subset) },
-    rw [hJN.cl, ←cl_union_cl_left_eq_cl_union, hIN.cl, cl_union_cl_left_eq_cl_union, 
+    rw [hJN.cl, ←cl_union_cl_left_eq, hIN.cl, cl_union_cl_left_eq, 
       union_diff_self, union_eq_right_iff_subset.mpr hIJM],
     exact hJM.subset_cl.trans (h _) },
   rw [←hINX.card, ←hJNY.card, ←hJM.card, ←hIM.card, ←ncard_diff_add_ncard_eq_ncard hIJM hJM.finite, 
