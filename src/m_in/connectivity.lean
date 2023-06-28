@@ -69,8 +69,7 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
 
       -- at least one of I₁, I₂ not maximal
       have hI : ¬ M₁.base I₁ ∨ ¬ M₂.base I₂,
-      {
-        by_contra', obtain ⟨h₁, h₂⟩ := this,
+      { by_contra', obtain ⟨h₁, h₂⟩ := this,
         apply hI_not_max,
         split,
         { use [I₁, I₂, hI₁, hI₂, Ieq], },
@@ -109,19 +108,38 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
         rw [Xeq, union_subset_iff] at h₁,
         obtain ⟨h₁, _⟩ := h₁,
         have : (insert e X₁) ⊆ X₁,
-        { -- TODO: rephrase in terms of sets
-          rintro x hx,
+        { rintro x hx,
           cases hx with hx,
-          { cases h₁ (mem_insert e X₁) with g,
+          { cases h₁ (mem_insert e X₁) with g g',
             { rw hx, exact g },
             { exfalso,
-              have : e ∈ M₁.E ∩ M₂.E := ⟨hB.subset_ground he.1, hX₂.subset_ground h_1⟩,
+              have : e ∈ M₁.E ∩ M₂.E := ⟨hB.subset_ground he.1, hX₂.subset_ground g'⟩,
               rw hE at this, exact not_mem_empty e this, } },
           { exact hx, } },
         exact this (mem_insert e X₁), },
-      have hX₂base : M₂.base X₂,
-      { sorry, },
-      -- same as `hX₁base : M₁.base X₁`
+      have hX₂base : M₂.base X₂, -- same as `hX₁base : M₁.base X₁`
+      { by_contra h,
+        obtain ⟨B, hB⟩ := M₂.exists_base,
+        obtain ⟨e, he, heX₂⟩ := hX₂.exists_insert_of_not_base h hB,
+        apply he.2,
+        have h₁ : (X₁ ∪ (insert e X₂)) ⊆ X,
+        { apply hX_max,
+          { use [X₁, (insert e X₂), hX₁, heX₂], },
+          { rw Xeq,
+            exact union_subset_union (subset_refl X₁) (subset_insert e X₂), } },
+        have h₂ := ((insert e X₂).subset_union_left X₁) (mem_insert e X₂),
+        rw [Xeq, union_subset_iff] at h₁,
+        obtain ⟨_, h₁⟩ := h₁,
+        have : (insert e X₂) ⊆ X₂,
+        { rintro x hx,
+          cases hx with hx,
+          { cases h₁ (mem_insert e X₂) with g g',
+            { exfalso,
+              have : e ∈ M₁.E ∩ M₂.E := ⟨hX₁.subset_ground g, hB.subset_ground he.1⟩,
+              rw hE at this, exact not_mem_empty e this, },
+            { rw hx, exact g', }, },
+          { exact hx, } },
+        exact this (mem_insert e X₂), },
 
       cases hI with hI,
       { obtain ⟨e, he, heI₁⟩ := hI₁.exists_insert_of_not_base hI hX₁base,
@@ -220,5 +238,9 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
       exact ⟨(hI₁.subset_ground).trans ((M₁.E).subset_union_left (M₂.E)),
              (hI₂.subset_ground).trans ((M₁.E).subset_union_right (M₂.E))⟩,
     end)
+
+def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) : matroid_in α :=
+  direct_sum' M₁ (M₂ ‖ (M₂.ground \ M₁.ground))
+  (by { simp only [ground_eq_E, restrict_ground_eq, inter_diff_self] })
 
 end matroid_in
