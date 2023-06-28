@@ -135,9 +135,57 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
             rw [Ieq, union_comm _ (insert _ _), insert_union, union_comm],
           } },
     })
-    (by {
-      rintro X,
-    })
+    (begin
+      rintro X Y ⟨X₁, X₂, ⟨hX₁, hX₂, Xeq⟩⟩ hXY,
+      subst Xeq,
+
+      have : X₁ ⊆ Y ∩ M₁.E := subset_inter ((subset_union_left X₁ X₂).trans hXY) (hX₁.subset_ground),
+      obtain ⟨B₁, ⟨hB₁, hX₁B₁⟩⟩ := hX₁.subset_basis_of_subset this,
+
+      have : X₂ ⊆ Y ∩ M₂.E := subset_inter ((subset_union_right X₁ X₂).trans hXY) (hX₂.subset_ground),
+      obtain ⟨B₂, ⟨hB₂, hX₂B₂⟩⟩ := hX₂.subset_basis_of_subset this,
+
+      use B₁ ∪ B₂,
+      split,
+      { simp,
+        use [B₁, hB₁.indep, B₂, hB₂.indep, (hX₁B₁.trans (subset_union_left B₁ B₂)),
+            (hX₂B₂.trans (subset_union_right B₁ B₂)), hB₁.subset.trans (inter_subset_left Y (M₁.E)),
+            hB₂.subset.trans (inter_subset_left Y (M₂.E))],
+      },
+      { simp,
+        rintro S T₁ hT₁ T₂ hT₂ rfl hS₁ hS₂ hSY hB₁S hB₂S,
+
+        have B₁eq : B₁ = T₁,
+        { have hB₁T₁ : B₁ ⊆ T₁,
+          { -- TODO: rephrase only in terms of sets
+            rintro b hb,
+            have hb' := hB₁S hb,
+            cases hb' with hb',
+            { exact hb' },
+            { exfalso,
+              have : b ∈ M₁.E ∩ M₂.E := ⟨hB₁.subset_ground_left hb, hT₂.subset_ground hb'⟩,
+              dsimp at hE,
+              rw hE at this,
+              exact not_mem_empty b this }
+          },
+          have hT₁' : T₁ ⊆ Y ∩ M₁.E := subset_inter ((subset_union_left T₁ T₂).trans hSY) (hT₁.subset_ground),
+          exact hB₁.eq_of_subset_indep hT₁ hB₁T₁ hT₁' },
+        have B₂eq : B₂ = T₂,
+        { have hB₂T₂ : B₂ ⊆ T₂,
+          { rintro b hb,
+            have hb' := hB₂S hb,
+            cases hb' with hb',
+            { exfalso,
+              have : b ∈ M₁.E ∩ M₂.E := ⟨hT₁.subset_ground hb', hB₂.subset_ground_left hb⟩,
+              dsimp at hE,
+              rw hE at this,
+              exact not_mem_empty b this },
+            { exact hb' },
+          },
+          have hT₂' : T₂ ⊆ Y ∩ M₂.E := subset_inter ((subset_union_right T₁ T₂).trans hSY) (hT₂.subset_ground),
+          exact hB₂.eq_of_subset_indep hT₂ hB₂T₂ hT₂', },
+        rw [B₁eq, B₂eq]} 
+    end)
     (by {
       rintro I ⟨I₁, I₂, ⟨hI₁, hI₂, Ieq⟩⟩,
       dsimp,
