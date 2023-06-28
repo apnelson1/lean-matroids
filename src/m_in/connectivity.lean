@@ -121,6 +121,7 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
         exact this (mem_insert e X₁), },
       have hX₂base : M₂.base X₂,
       { sorry, },
+      -- same as `hX₁base : M₁.base X₁`
 
       cases hI with hI,
       { obtain ⟨e, he, heI₁⟩ := hI₁.exists_insert_of_not_base hI hX₁base,
