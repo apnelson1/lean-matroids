@@ -86,7 +86,33 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
 
       -- at least one of I₁, I₂ not maximal
       have hI : ¬ M₁.base I₁ ∨ ¬ M₂.base I₂,
-      { sorry, },
+      {
+        by_contra', obtain ⟨h₁, h₂⟩ := this,
+        apply hI_not_max,
+        split,
+        { use [I₁, I₂, hI₁, hI₂, Ieq], },
+        { simp only [exists_and_distrib_left],
+          rintro S ⟨S₁, hS₁, S₂, hS₂, Seq⟩ hIS,
+          have hI₁S₁ : I₁ ⊆ S₁,
+          { subst Seq, subst Ieq,
+            rintro e he,
+            cases hIS ((subset_union_left I₁ I₂) he) with g,
+            { exact g, },
+            { exfalso,
+              have : e ∈ (M₁.E ∩ M₂.E) := ⟨hI₁.subset_ground he, hS₂.subset_ground h⟩,
+              dsimp at hE, rw hE at this,
+              exact not_mem_empty e this } },
+          have hI₂S₂ : I₂ ⊆ S₂,
+          { subst Seq, subst Ieq,
+            rintro e he,
+            cases hIS ((subset_union_right I₁ I₂) he) with g,
+            { exfalso,
+              have : e ∈ (M₁.E ∩ M₂.E) := ⟨hS₁.subset_ground g, hI₂.subset_ground he⟩,
+              dsimp at hE, rw hE at this,
+              exact not_mem_empty e this },
+            { exact h, } },
+          rw [Seq, Ieq, h₁.eq_of_subset_indep hS₁ hI₁S₁, h₂.eq_of_subset_indep hS₂ hI₂S₂] }
+      },
 
       -- both X₁, X₂ maximal
       have hX₁base : M₁.base X₁,
@@ -139,20 +165,23 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
       rintro X Y ⟨X₁, X₂, ⟨hX₁, hX₂, Xeq⟩⟩ hXY,
       subst Xeq,
 
-      have : X₁ ⊆ Y ∩ M₁.E := subset_inter ((subset_union_left X₁ X₂).trans hXY) (hX₁.subset_ground),
+      have : X₁ ⊆ Y ∩ M₁.E := subset_inter ((subset_union_left X₁ X₂).trans hXY)
+                                (hX₁.subset_ground),
       obtain ⟨B₁, ⟨hB₁, hX₁B₁⟩⟩ := hX₁.subset_basis_of_subset this,
 
-      have : X₂ ⊆ Y ∩ M₂.E := subset_inter ((subset_union_right X₁ X₂).trans hXY) (hX₂.subset_ground),
+      have : X₂ ⊆ Y ∩ M₂.E := subset_inter ((subset_union_right X₁ X₂).trans hXY)
+                                (hX₂.subset_ground),
       obtain ⟨B₂, ⟨hB₂, hX₂B₂⟩⟩ := hX₂.subset_basis_of_subset this,
 
       use B₁ ∪ B₂,
       split,
-      { simp,
+      { simp only [exists_and_distrib_left, union_subset_iff, mem_set_of_eq],
         use [B₁, hB₁.indep, B₂, hB₂.indep, (hX₁B₁.trans (subset_union_left B₁ B₂)),
             (hX₂B₂.trans (subset_union_right B₁ B₂)), hB₁.subset.trans (inter_subset_left Y (M₁.E)),
             hB₂.subset.trans (inter_subset_left Y (M₂.E))],
       },
-      { simp,
+      { simp only [exists_and_distrib_left, union_subset_iff, mem_set_of_eq,
+                and_imp, forall_exists_index],
         rintro S T₁ hT₁ T₂ hT₂ rfl hS₁ hS₂ hSY hB₁S hB₂S,
 
         have B₁eq : B₁ = T₁,
@@ -164,7 +193,7 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
             { exact hb' },
             { exfalso,
               have : b ∈ M₁.E ∩ M₂.E := ⟨hB₁.subset_ground_left hb, hT₂.subset_ground hb'⟩,
-              dsimp at hE,
+              simp only [ground_eq_E] at hE,
               rw hE at this,
               exact not_mem_empty b this }
           },
@@ -188,8 +217,7 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
     end)
     (by {
       rintro I ⟨I₁, I₂, ⟨hI₁, hI₂, Ieq⟩⟩,
-      dsimp,
-      rw [Ieq, union_subset_iff],
+      rw [ground_eq_E, Ieq, union_subset_iff],
       exact ⟨(hI₁.subset_ground).trans ((M₁.E).subset_union_left (M₂.E)),
              (hI₂.subset_ground).trans ((M₁.E).subset_union_right (M₂.E))⟩,
     })
