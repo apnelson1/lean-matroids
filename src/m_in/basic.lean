@@ -23,15 +23,18 @@ def exchange_property (P : set α → Prop) : Prop :=
 
 /-- A predicate `P` on sets satisfies the maximal subset property if, for all `X` containing some 
   `I` satisfying `P`, there is a maximal subset of `X` satisfying `P`. -/
-def exists_maximal_subset_property (P : set α → Prop) : Prop := 
-  ∀ I X, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
+-- def exists_maximal_subset_property (P : set α → Prop) : Prop := 
+--   ∀ I X, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
+
+def exists_maximal_subset_property (P : set α → Prop) (X : set α) : Prop := 
+  ∀ I, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
 
 lemma exists_maximal_subset_property_of_bounded {P : set α → Prop} 
-(h : ∃ n, ∀ I, P I → (I.finite ∧ I.ncard ≤ n)) : 
-  exists_maximal_subset_property P :=
+(h : ∃ n, ∀ I, P I → (I.finite ∧ I.ncard ≤ n)) (X : set α): 
+  exists_maximal_subset_property P X :=
 begin
   obtain ⟨n,h⟩ := h, 
-  intros I₀ X hI₀ hI₀X,
+  intros I₀ hI₀ hI₀X,
   set S := {I | P I ∧ I₀ ⊆ I ∧ I ⊆ X} with hS,
   haveI : nonempty S, from ⟨⟨I₀, hI₀, subset.rfl, hI₀X⟩⟩,  
   set f : {I | P I ∧ I₀ ⊆ I ∧ I ⊆ X} → fin (n+1) := 
@@ -111,8 +114,41 @@ end prelim
   (base : set α → Prop)
   (exists_base' : ∃ B, base B)
   (base_exchange' : exchange_property base)
-  (maximality : exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B))
+  (maximality : ∀ X ⊆ ground, exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B) X)
   (subset_ground' : ∀ B, base B → B ⊆ ground)
+
+-- def exists_maximal_subset_property (P : set α → Prop) : Prop := 
+--   ∀ I X, P I → I ⊆ X → (maximals (⊆) {Y | P Y ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty 
+
+/- This constructs a matroid using a slight weakening of the `exists_maximal_subset_property` 
+  rule, that -/
+-- def foo (α : Type*) (ground : set α) (base : set α → Prop) (exists_base' : ∃ B, base B) 
+--   (base_exchange' : exchange_property base) 
+--   -- (maximality' : ∀ I X, (∃ B, base B ∧ I ⊆ B) → I ⊆ X → X ⊆ ground → 
+--   --   (maximals (⊆) {Y | (∃ B, base B ∧ Y ⊆ B) ∧ I ⊆ Y ∧ Y ⊆ X}).nonempty )
+--   (maximality' : ∀ X, exists_maximal_subset_property' (λ I, ∃ B, base B ∧ I ⊆ B) X)
+--   (subset_ground' : ∀ B, base B → B ⊆ ground) : matroid_in α := 
+-- { ground := ground,
+--   base := base,
+--   exists_base' := exists_base',
+--   base_exchange' := base_exchange',
+--   maximality := 
+--   begin 
+--     rintro I X ⟨B, hB, hIB⟩ hIX, 
+--     obtain ⟨J, hJ⟩ := maximality' I (X ∩ ground) ⟨B, hB, hIB⟩ 
+--       (subset_inter hIX (hIB.trans (subset_ground' B hB))) (inter_subset_right _ _), 
+--     use J, 
+    
+--     simp only [mem_maximals_set_of_iff', not_and, forall_exists_index, and_imp] at *, 
+--     obtain ⟨⟨⟨B, hB, hJB⟩, hIJ, hJX⟩, h⟩ := hJ, 
+--     rw subset_inter_iff at hJX, 
+--     refine ⟨⟨⟨B, hB, hJB⟩,hIJ,hJX.1⟩,λ K hK B' hB' hKB' hIK hKX, h hK B' hB' hKB' hIK _⟩, 
+--     exact subset_inter hKX (hKB'.trans (subset_ground' B' hB')), 
+--   end,
+--   subset_ground' := subset_ground' } 
+
+
+
 
 -- instance {E : Type*} [finite E] : finite (matroid_in α) :=
 -- finite.of_injective (λ M, M.base) (λ M₁ M₂ h, (by { ext, dsimp only at h, rw h }))
@@ -524,11 +560,39 @@ lemma basis.not_basis_of_ssubset (hI : M.basis I X) (hJI : J ⊂ I) : ¬ M.basis
 lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) (hX : X ⊆ M.E . ssE) : 
   ∃ J, M.basis J X ∧ I ⊆ J :=
 begin
-  obtain ⟨J, ⟨(hJ : M.indep J),hIJ,hJX⟩, hJmax⟩ := M.maximality I X hI hIX, 
+   
+  obtain ⟨J, ⟨(hJ : M.indep J),hIJ,hJX⟩, hJmax⟩ := M.maximality X hX I hI hIX,
   use J, 
   rw [and_iff_left hIJ, basis_iff, and_iff_right hJ, and_iff_right hJX], 
   exact λ K hK hJK hKX, hJK.antisymm (hJmax ⟨hK, hIJ.trans hJK, hKX⟩ hJK),  
 end
+
+lemma exists_basis (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) : ∃ I, M.basis I X :=
+let ⟨I, hI, _⟩ := M.empty_indep.subset_basis_of_subset (empty_subset X) in ⟨_,hI⟩
+
+lemma exists_basis_subset_basis (M : matroid_in α) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ I J, M.basis I X ∧ M.basis J Y ∧ I ⊆ J :=
+begin
+  obtain ⟨I, hI⟩ := M.exists_basis X (hXY.trans hY), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  exact ⟨_, _, hI, hJ, hIJ⟩, 
+end    
+
+lemma basis.exists_basis_inter_eq_of_supset (hI : M.basis I X) (hXY : X ⊆ Y) (hY : Y ⊆ M.E . ssE) :
+  ∃ J, M.basis J Y ∧ J ∩ X = I :=
+begin
+  obtain ⟨J, hJ, hIJ⟩ := hI.indep.subset_basis_of_subset (hI.subset.trans hXY), 
+  refine ⟨J, hJ, subset_antisymm _ (subset_inter hIJ hI.subset)⟩,  
+  exact λ e he, hI.mem_of_insert_indep he.2 (hJ.indep.subset (insert_subset.mpr ⟨he.1, hIJ⟩)), 
+end   
+
+lemma exists_basis_union_inter_basis (M : matroid_in α) (X Y : set α) (hX : X ⊆ M.E . ssE) 
+  (hY : Y ⊆ M.E . ssE) : ∃ I, M.basis I (X ∪ Y) ∧ M.basis (I ∩ Y) Y := 
+begin
+  obtain ⟨J, hJ⟩ := M.exists_basis Y, 
+  exact (hJ.exists_basis_inter_eq_of_supset (subset_union_right X Y)).imp 
+    (λ I hI, ⟨hI.1, by rwa hI.2⟩), 
+end 
 
 lemma indep.eq_of_basis (hI : M.indep I) (hJ : M.basis J I) : J = I :=
 hJ.eq_of_subset_indep hI hJ.subset subset.rfl
@@ -714,13 +778,13 @@ section from_axioms
 
 def matroid_of_base {α : Type*} (E : set α) (base : set α → Prop) 
 (exists_base : ∃ B, base B) (base_exchange : exchange_property base) 
-(maximality : exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B))
+(maximality : ∀ X ⊆ E, exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B) X)
 (support : ∀ B, base B → B ⊆ E) : matroid_in α := 
 ⟨E, base, exists_base, base_exchange, maximality, support⟩
 
 @[simp] lemma matroid_of_base_apply {α : Type*} (E : set α) (base : set α → Prop) 
 (exists_base : ∃ B, base B) (base_exchange : exchange_property base) 
-(maximality : exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B))
+(maximality : ∀ X ⊆ E, exists_maximal_subset_property (λ I, ∃ B, base B ∧ I ⊆ B) X)
 (support : ∀ B, base B → B ⊆ E) :
 (matroid_of_base E base exists_base base_exchange maximality support).base = base := rfl 
 
@@ -732,6 +796,7 @@ def matroid_of_exists_finite_base {α : Type*} (E : set α) (base : set α → P
 matroid_of_base E base (let ⟨B,h⟩ := exists_finite_base in ⟨B,h.1⟩) base_exchange
 (begin
   obtain ⟨B, hB, hfin⟩ := exists_finite_base,  
+  intros X hXE, 
   apply exists_maximal_subset_property_of_bounded ⟨B.ncard, _⟩,
   rintro I ⟨B', hB', hIB'⟩,   
   have hB'fin : B'.finite, from finite_of_finite_of_exch base_exchange hB hB' hfin, 
@@ -768,13 +833,13 @@ def matroid_of_indep (E : set α) (indep : set α → Prop) (h_empty : indep ∅
 (h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
 (h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
   ∃ x ∈ B \ I, indep (insert x I))
-(h_maximal : exists_maximal_subset_property indep) 
+(h_maximal : ∀ X ⊆ E, exists_maximal_subset_property indep X) 
 (h_support : ∀ I, indep I → I ⊆ E) : 
   matroid_in α :=
 matroid_of_base E (λ B, B ∈ maximals (⊆) indep)
 (begin
-  obtain ⟨B, ⟨hB,-,-⟩, hB₁⟩ :=  h_maximal ∅ univ h_empty (subset_univ _),  
-  exact ⟨B, ⟨hB,λ B' hB' hBB', hB₁ ⟨hB', empty_subset _,subset_univ _⟩ hBB'⟩⟩,  
+  obtain ⟨B, ⟨hB,-,-⟩, hB₁⟩ := h_maximal E subset.rfl ∅ h_empty (empty_subset _), 
+  exact ⟨B, hB, λ B' hB' hBB', hB₁ ⟨hB',empty_subset _,h_support B' hB'⟩ hBB'⟩, 
 end)
 (begin
   rintros B B' ⟨hB,hBmax⟩ ⟨hB',hB'max⟩ e he, 
@@ -793,11 +858,12 @@ end)
   exact λ _, ⟨B, hB, subset_insert _ _, λ hss, (hss he.1).2 rfl⟩, 
 end)
 (begin
-  rintro I X ⟨B, hB,  hIB⟩ hIX, 
-  obtain ⟨J, ⟨hJ, hIJ, hJX⟩, hJmax⟩ := h_maximal I X (h_subset hB.1 hIB) hIX, 
-  obtain ⟨BJ, hBJ⟩ := h_maximal J univ hJ (subset_univ _), 
+  rintro X hXE I ⟨B, hB, hIB⟩ hIX, 
+  -- rintro I X ⟨B, hB,  hIB⟩ hIX, 
+  obtain ⟨J, ⟨hJ, hIJ, hJX⟩, hJmax⟩ := h_maximal X hXE I (h_subset hB.1 hIB) hIX, 
+  obtain ⟨BJ, hBJ⟩ := h_maximal E subset.rfl J hJ (h_support J hJ), 
   refine ⟨J, ⟨⟨BJ,_, hBJ.1.2.1⟩ ,hIJ,hJX⟩, _⟩,  
-  { exact ⟨hBJ.1.1, λ B' hB' hBJB', hBJ.2 ⟨hB',hBJ.1.2.1.trans hBJB', subset_univ _⟩ hBJB'⟩ },
+  { exact ⟨hBJ.1.1, λ B' hB' hBJB', hBJ.2 ⟨hB',hBJ.1.2.1.trans hBJB', h_support B' hB'⟩ hBJB'⟩ },
   simp only [mem_set_of_eq, and_imp, forall_exists_index], 
   rintro A B' ⟨(hB'i : indep _), hB'max⟩ hB'' hIA hAX hJA, 
   exact hJmax ⟨h_subset hB'i hB'', hIA, hAX⟩ hJA,
@@ -808,15 +874,15 @@ end )
 (h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
 (h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
   ∃ x ∈ B \ I, indep (insert x I))
-(h_maximal : exists_maximal_subset_property indep) 
+(h_maximal : ∀ X ⊆ E, exists_maximal_subset_property indep X) 
 (h_support : ∀ I, indep I → I ⊆ E)  : 
 (matroid_of_indep E indep h_empty h_subset h_aug h_maximal h_support).indep = indep :=
 begin
   ext I, 
   simp only [matroid_in.indep, matroid_of_indep], 
   refine ⟨λ ⟨B, hB, hIB⟩, h_subset hB.1 hIB, λ hI, _⟩, 
-  obtain ⟨B, ⟨hB, hIB, -⟩, hBmax⟩ :=  h_maximal I univ hI (subset_univ _), 
-  exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', subset_univ _⟩ hBB'⟩, hIB⟩, 
+  obtain ⟨B, ⟨hB, hIB, -⟩, hBmax⟩ :=  h_maximal E subset.rfl I hI (h_support _ hI), 
+  exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', h_support _ hB'⟩ hBB'⟩, hIB⟩, 
 end 
 
 /-- If there is an absolute upper bound on the size of an independent set, then the maximality axiom isn't needed to define a matroid by independent sets. -/
@@ -826,7 +892,7 @@ def matroid_of_indep_of_bdd (E : set α) (indep : set α → Prop) (h_empty : in
   ∃ x ∈ B \ I, indep (insert x I))
 (h_bdd : ∃ n, ∀ I, indep I → I.finite ∧ I.ncard ≤ n )
 (h_support : ∀ I, indep I → I ⊆ E) : matroid_in α :=
-matroid_of_indep E indep h_empty h_subset h_aug (exists_maximal_subset_property_of_bounded h_bdd) 
+matroid_of_indep E indep h_empty h_subset h_aug (λ X h, exists_maximal_subset_property_of_bounded h_bdd X) 
 h_support 
 
 @[simp] lemma matroid_of_indep_of_bdd_apply (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
@@ -975,7 +1041,7 @@ end)
   exact disjoint_of_subset_left hB''₂.2 disjoint_compl_left,
 end) 
 (begin
-  rintro I' X ⟨hI'E, B, hB, hI'B⟩ hI'X, 
+  rintro X hX I' ⟨hI'E, B, hB, hI'B⟩ hI'X, 
   obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ X) ,
   obtain ⟨B', hB', hIB', hB'IB⟩ := hI.indep.exists_base_subset_union_base hB, 
   refine ⟨(X \ B') ∩ M.E, 
