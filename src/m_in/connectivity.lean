@@ -259,8 +259,15 @@ def direct_sum_of_many {ι : Type*} (M : ι → matroid_in α)
   matroid_of_indep
   (⋃ i, (M i).ground)
   (λ I', ∃ (I : ι → set α), (∀ i, (M i).indep(I i)) ∧ (I' = ⋃ i, I i))
+  ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
   (begin
-    sorry
+    rintro I J ⟨J', ⟨J'ind, Jeq⟩⟩ hIJ,
+    use J',
+    refine ⟨_, _⟩,
+    {
+      intro i,
+      have := J'ind i,
+    }
   end)
 
 end matroid_in
