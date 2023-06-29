@@ -526,49 +526,46 @@ end
    `M.hyperplane H` never holds -/
 
 lemma cl_eq_sInter_hyperplanes (M : matroid_in α) (X : set α) (hX : X ⊆ M.E . ssE) :
-  M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} :=
+  M.cl X = ⋂₀ {H | M.hyperplane H ∧ X ⊆ H} ∩ M.E :=
 begin
   apply subset_antisymm,
-  { simp only [subset_sInter_iff, mem_set_of_eq, and_imp],
-    exact λ H hH hXH, hH.flat.cl_subset_of_subset hXH},
+  { rw subset_inter_iff,
+    refine ⟨_, M.cl_subset_ground X⟩,
+    simp only [subset_sInter_iff, mem_set_of_eq, and_imp],
+    exact λ H hH hXH, hH.flat.cl_subset_of_subset hXH },
   by_contra' h',
   obtain ⟨x, h, hx⟩ := not_subset.mp h',
-  
-  dsimp at h,
-  
-  -- question: is it possible to show `x ∈ M.E`?
-
-  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl hx hX,
-  exact hxH (h H ⟨hH, hXH⟩),
+  obtain ⟨H, hH, hXH, hxH⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨h.2, hx⟩ hX,
+  exact hxH (h.1 H ⟨hH, hXH⟩),
 end
 /- hypothesis: added `X ⊆ M.E` since otherwise `X ⊆ H` where
    `M.hyperplane H` never holds -/
+/- also added `∩ M.E` to RHS, but we discussed that on June 14 -/
    
-lemma mem_cl_iff_forall_hyperplane : e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
-by simp [cl_eq_sInter_hyperplanes]
+lemma mem_cl_iff_forall_hyperplane (hX : X ⊆ M.E . ssE) :
+  e ∈ M.cl X ↔ ∀ H, M.hyperplane H → X ⊆ H → e ∈ H :=
+begin
+  simp [cl_eq_sInter_hyperplanes],
+  sorry, -- question
+end
+/- hypothesis: added `hX` since otherwise `X ⊆ H` never holds -/
+
+lemma comp_comp_ground (X : set α) (hX : X ⊆ M.E . ssE) : M.E \ (M.E \ X) = X :=
+sorry
 
 lemma mem_dual_cl_iff_forall_circuit : 
-  e ∈ M﹡.cl X ↔ ∀ C, M.circuit C → e ∈ C → (X ∩ C).nonempty :=
-begin
-   rw [←dual_dual M], 
-   simp_rw [dual_circuit_iff_cocircuit, ←compl_hyperplane_iff_cocircuit, dual_dual, 
-    mem_cl_iff_forall_hyperplane], 
-  refine ⟨λ h K hH heK, _, λ h H hH hXH, (by_contra (λ heH, _))⟩,
-  { have h' := h _ hH,  
-    rwa [mem_compl_iff, iff_false_intro (not_not.mpr heK), imp_false, 
-      subset_compl_iff_disjoint_right, not_disjoint_iff_nonempty_inter] at h' },
-  obtain ⟨e, heX, heH⟩ := h Hᶜ (by rwa compl_compl) heH, 
-  exact heH (hXH heX), 
-end 
+  e ∈ M﹡.cl X ↔ ∀ C, C ⊆ M.E → M.circuit C → e ∈ C → (X ∩ C).nonempty :=
+sorry
 
-lemma flat.subset_hyperplane_of_ne_univ (hF : M.flat F) (h : F ≠ univ) : 
+lemma flat.subset_hyperplane_of_ne_univ (hF : M.flat F) (h : F ≠ M.E) : 
   ∃ H, M.hyperplane H ∧ F ⊆ H :=
 begin
-  obtain ⟨e,he⟩ := (ne_univ_iff_exists_not_mem _).mp h, 
-  rw ←hF.cl at he,  
-  obtain ⟨H, hH, hFH, -⟩ := exists_hyperplane_sep_of_not_mem_cl he, 
+  obtain ⟨e, ⟨he, he'⟩⟩ := (ne_ground_iff_exists_not_mem hF.subset_ground).mp h,
+  rw ←hF.cl at he',  
+  obtain ⟨H, hH, hFH, -⟩ := exists_hyperplane_sep_of_not_mem_cl ⟨he, he'⟩, 
   exact ⟨H, hH, hFH⟩,  
 end
+/- changed `univ` to `M.E` in `h` -/
 
 lemma subset_hyperplane_iff_cl_ne_univ : M.cl Y ≠ univ ↔ ∃ H, M.hyperplane H ∧ Y ⊆ H :=
 begin
@@ -581,8 +578,12 @@ begin
   exact (hY.symm.trans_subset (M.cl_mono hYH)),
 end
 
-lemma coindep_iff_cl_compl_eq_univ : M.coindep I ↔ M.cl Iᶜ = univ :=
-by { simp_rw [←base_subset_iff_cl_eq_univ, subset_compl_iff_disjoint_left, coindep], tauto }
+lemma coindep_iff_cl_compl_eq_univ : M.coindep I ↔ M.cl (M.E \ I) = M.E :=
+begin
+  simp_rw 
+end
+-- by { simp_rw [←base_subset_iff_cl_eq_univ, subset_compl_iff_disjoint_left, coindep], tauto }
+/- changed `univ` to `M.E`, and `Iᶜ` to `M.E \ I` -/
 
 lemma hyperplane.inter_right_covby_of_inter_left_covby
 (hH₁ : M.hyperplane H₁) (hH₂ : M.hyperplane H₂) (h : M.covby (H₁ ∩ H₂) H₁) :
