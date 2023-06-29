@@ -49,6 +49,17 @@ theorem gamma_trans (e f g : α)
   (hef : M.gamma e f) (hfg : M.gamma f g) : M.gamma e g :=
 sorry
 
+def component (M : matroid_in α) (T : set α) :=
+  ∀ t ∈ T, M.gamma_set t = T
+
+/- this property is usually called 2-connected -/
+def connected (M : matroid_in α) :=
+  M.component M.ground
+
+lemma connected_iff_exists_circuit (M : matroid_in α) :
+  M.connected ↔ ∀ e f, ∃ C, M.circuit C ∧ e ∈ C ∧ f ∈ C :=
+sorry
+
 def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
   (hE : M₁.ground ∩ M₂.ground = ∅) :
   matroid_in α :=
@@ -242,5 +253,14 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
 def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) : matroid_in α :=
   direct_sum' M₁ (M₂ ‖ (M₂.ground \ M₁.ground))
   (by { simp only [ground_eq_E, restrict_ground_eq, inter_diff_self] })
+
+def direct_sum_of_many {ι : Type*} (M : ι → matroid_in α)
+  (h : ∀ i j, i ≠ j → (M i).ground ∩ (M j).ground = ∅) : matroid_in α :=
+  matroid_of_indep
+  (⋃ i, (M i).ground)
+  (λ I', ∃ (I : ι → set α), (∀ i, (M i).indep(I i)) ∧ (I' = ⋃ i, I i))
+  (begin
+    sorry
+  end)
 
 end matroid_in
