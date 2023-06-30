@@ -66,7 +66,7 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
 begin
   apply matroid_of_indep_of_bdd' s (λ (I : set W), (linear_independent 𝔽 (coe : I → W)) ∧ I ⊆ s) 
     ⟨linear_independent_empty 𝔽 W, empty_subset s⟩ (λ I J hI hIJ, ⟨linear_independent.mono hIJ hI.1, 
-    subset.trans hIJ hI.2⟩) _ _ _,
+    subset.trans hIJ hI.2⟩) _ _ (by {tauto}),
   { intros I J hI hJ hIJ,
     haveI := finite.fintype (_root_.linear_independent.finite hI.1),
     haveI := finite.fintype (_root_.linear_independent.finite hJ.1),
@@ -94,7 +94,6 @@ begin
     rw [ncard, nat.card_eq_fintype_card],
     refine ⟨_root_.linear_independent.finite hI.1, 
       fintype_card_le_finrank_of_linear_independent hI.1⟩ },
-  { tauto },
 end
 
 -- we don't know for sure that I ⊆ s 
