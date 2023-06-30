@@ -1,5 +1,6 @@
 import .restriction
 import mathlib.data.set.basic 
+import function
 
 noncomputable theory
 open_locale classical
@@ -281,9 +282,9 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
     obtain ⟨i, hIsi⟩ := hIs',
     obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
 
-    refine ⟨e, ⟨subset_Union Bs i he.1, _⟩, _⟩,
-    { -- question: can we shorten this proof by contradiction?
-      rw [mem_Union, not_exists],
+    refine ⟨e, ⟨subset_Union Bs i he.1, _⟩,
+        ⟨Is.update i (insert e (Is i)), ⟨λ j, _, _⟩⟩⟩,
+    { rw [mem_Union, not_exists],
       rintro j he',
       by_cases g : i = j,
       { rw ←g at he',
@@ -292,11 +293,41 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
       { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
         rw h i j g at this,
         exact not_mem_empty e this } },
-    {
-      let Is' := (λ i, )
-    }
+    { simp_rw function.update_apply,
+      split_ifs with g,
+      { rw g, exact heIsi, },
+      { exact hIs j, } },
 
+    -- question: shortening this proof
+    show insert e (Union Is) = Union (function.update Is i (insert e (Is i))),
 
+    have h₁ : ∀ j, (Is j) ⊆ (Is.update i (insert e (Is i))) j,
+      { rintro j,
+        rw function.update_apply,
+        split_ifs with g,
+        { rw g, exact subset_insert _ _, },
+        { refl } },
+    have h₂ : { e } ⊆ Union (Is.update i (insert e (Is i))),
+      { have g₁ : { e } ⊆ (insert e (Is i)) := sorry,
+        have g₂ : (insert e (Is i)) = (Is.update i (insert e (Is i))) i,
+          { rw function.update_apply,
+            split_ifs with g,
+            { refl, },
+            { contradiction } },
+        have g₃ : (Is.update i (insert e (Is i))) i ⊆ Union (Is.update i (insert e (Is i))) :=
+          subset_Union _ _,
+        rw ←g₂ at g₃,
+        exact g₁.trans g₃ },
+    have h₃ : Union Is ⊆ Union (Is.update i (insert e (Is i))) :=
+      Union_mono h₁,
+    have h₃ : insert e (Union Is) ⊆ Union (Is.update i (insert e (Is i))),
+      { rw [insert_eq, union_subset_iff], exact ⟨h₂, h₃⟩, },
+    
+    -- refine subset_antisymm h₃ (λ f hf, _),
+    -- rw mem_Union at hf,
+    -- obtain ⟨j, hf⟩ := hf,
+    -- simp_rw function.update_apply at hf,
+    -- split_ifs with g at *,
   end)
   (begin -- a maximal indep. set exists
     rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
