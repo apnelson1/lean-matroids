@@ -258,7 +258,7 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
   (h : ∀ i j, i ≠ j → (Ms i).E ∩ (Ms j).E = ∅) : matroid_in α :=
   matroid_of_indep
   (⋃ i, (Ms i).E)
-  (λ I, ∃ (Is : ι → set α), (∀ i, (Ms i).indep(Is i)) ∧ (I = ⋃ i, Is i))
+  (λ I, ∃ (Is : ι → set α), (∀ i, (Ms i).indep(Is i)) ∧ (I = Union Is))
   ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
   (begin -- subsets of independent sets are independent
     rintro I J ⟨Js, ⟨Jsind, Jeq⟩⟩ hIJ,
@@ -268,7 +268,33 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
     exact hIJ,
   end)
   (begin -- augmentation
-    sorry
+    rintro I B ⟨Is, ⟨hIs, rfl⟩⟩ hI ⟨⟨Bs, ⟨hBs, rfl⟩⟩, hB⟩,
+    
+    -- at least one Is not maximal
+    have hIs' : ∃ i, ¬(Ms i).base (Is i) := sorry,
+    -- all Bs maximal
+    have hBs' : ∀ i, (Ms i).base (Bs i) := sorry,
+
+    -- can augment a non-maximal Is
+    obtain ⟨i, hIsi⟩ := hIs',
+    obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
+
+    refine ⟨e, ⟨subset_Union Bs i he.1, _⟩, _⟩,
+    { -- question: can we shorten this proof by contradiction?
+      rw [mem_Union, not_exists],
+      rintro j he',
+      by_cases g : i = j,
+      { rw ←g at he',
+        have := he.2,
+        contradiction },
+      { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
+        rw h i j g at this,
+        exact not_mem_empty e this } },
+    {
+      let Is' := (λ i, )
+    }
+
+
   end)
   (begin -- a maximal indep. set exists
     rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
@@ -287,6 +313,7 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
       rintro J Js hJs rfl hIsJ hJX hBsJ,
       simp only [Union_subset_iff],
       have hBsJs : ∀ i, (Bs i) ⊆ (Js i),
+        -- question: how could this proof be made shorter? 
         { rintro i e he, have := (hBsJ i) he,
           simp only [mem_Union] at this,
           obtain ⟨j, hj⟩ := this,
@@ -296,6 +323,7 @@ def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
             have : e ∈ (Ms i).E ∩ (Ms j).E :=
               ⟨(hBs i).1.subset_ground_left he, (hJs j).subset_ground hj⟩,
             rw h i j g at this, exact not_mem_empty e this } },
+        -- ends here
       have hJsXs : ∀ i, (Js i) ⊆ (Xs i) :=
         λ i e he, ⟨hJX (subset_Union Js i he), (hJs i).subset_ground he⟩,
       rintro i,
