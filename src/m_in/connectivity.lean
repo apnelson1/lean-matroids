@@ -254,15 +254,15 @@ def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) : matroid_in α :=
   direct_sum' M₁ (M₂ ‖ (M₂.ground \ M₁.ground))
   (by { simp only [ground_eq_E, restrict_ground_eq, inter_diff_self] })
 
-def direct_sum_of_many {ι : Type*} (M : ι → matroid_in α)
-  (h : ∀ i j, i ≠ j → (M i).ground ∩ (M j).ground = ∅) : matroid_in α :=
+def directSum {ι : Type*} (Ms : ι → matroid_in α)
+  (h : ∀ i j, i ≠ j → (Ms i).ground ∩ (Ms j).ground = ∅) : matroid_in α :=
   matroid_of_indep
-  (⋃ i, (M i).ground)
-  (λ I', ∃ (I : ι → set α), (∀ i, (M i).indep(I i)) ∧ (I' = ⋃ i, I i))
+  (⋃ i, (Ms i).ground)
+  (λ I, ∃ (Is : ι → set α), (∀ i, (Ms i).indep(Is i)) ∧ (I = ⋃ i, Is i))
   ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
   (begin -- subsets of independent sets are independent
-    rintro I J ⟨J', ⟨J'ind, Jeq⟩⟩ hIJ,
-    refine ⟨(λ i, (J' i) ∩ I), λ i, (J'ind i).subset (inter_subset_left (J' i) I), _⟩,
+    rintro I J ⟨Js, ⟨Jsind, Jeq⟩⟩ hIJ,
+    refine ⟨(λ i, (Js i) ∩ I), λ i, (Jsind i).subset (inter_subset_left (Js i) I), _⟩,
     rw [←Union_inter, ←Jeq], symmetry,
     rw inter_eq_right_iff_subset,
     exact hIJ,
@@ -271,7 +271,25 @@ def direct_sum_of_many {ι : Type*} (M : ι → matroid_in α)
     sorry
   end)
   (begin -- a maximal indep. set exists
-    sorry
+    rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
+    let Xs := λ i, X ∩ (Ms i).E,
+    have hIsXs : ∀ i, (Is i) ⊆ (Xs i) := sorry,
+    have h : ∀ i, ∃ B, (Ms i).basis B (Xs i) ∧ (Is i) ⊆ B :=
+       λ i, (hIs i).subset_basis_of_subset (hIsXs i),
+    choose! Bs hBs using h,
+    refine ⟨Union Bs, ⟨_, _⟩⟩,
+    { simp only [Union_subset_iff, mem_set_of_eq],
+      refine ⟨⟨Bs, ⟨λ i, (hBs i).1.indep, by { refl }⟩⟩,
+        ⟨λ i, (hBs i).2.trans (subset_Union Bs i),
+        λ i, (hBs i).1.subset.trans (inter_subset_left X (Ms i).E),⟩⟩, },
+    { simp only [Union_subset_iff, mem_set_of_eq, and_imp, forall_exists_index],
+      rintro J Js hJs rfl hIsJ hJX hBsJ,
+      simp only [Union_subset_iff],
+      have hBsJs : ∀ i, (Bs i) ⊆ (Js i) := sorry,
+      have hJsXs : ∀ i, (Js i) ⊆ (Xs i) := sorry,
+      rintro i,
+      rw ←(hBs i).1.eq_of_subset_indep (hJs i) (hBsJs i) (hJsXs i),
+      exact subset_Union Bs i, }
   end)
   (begin -- indep sets contained in ground set
     rintro I ⟨I', I'ind, rfl⟩,
