@@ -1,5 +1,4 @@
 import .closure
-import .restriction
 import mathlib.data.set.basic
 import data.nat.lattice 
 

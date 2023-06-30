@@ -13,4 +13,6 @@ exampl
 lemma foo {n : ℕ} : (P n ↔ Q n) := 
 begin
   suffices 
-end 
+end example (h : ∀ i : ℕ, i < 7 → ∃ j, i < j ∧ j < i+i) : true :=
+begin
+  choose! f h h' using h,
