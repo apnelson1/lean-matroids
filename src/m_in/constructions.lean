@@ -1,7 +1,6 @@
 import .minor
 import .erank
 import ..mathlib.data.set.ncard
-import set_theory.cardinal.finite
 
 variables {α : Type*} {M : matroid_in α} {k a b c : ℕ} {I J X C B E : set α}
 
@@ -263,8 +262,13 @@ end
 /-- A uniform matroid with a given rank and ground set -/
 def set.unif_on (E : set α) (k : ℕ) := (free_on E).truncate k 
 
+@[simp] lemma set.unif_on_ground_eq : (E.unif_on k).E = E := rfl 
+
 @[simp] lemma set.unif_on_indep_iff : (E.unif_on k).indep I ↔ I.finite ∧ I.ncard ≤ k ∧ I ⊆ E :=
 by simp [set.unif_on, and_comm (I ⊆ E), and_assoc]
+
+lemma set.unif_on_indep_iff' : (E.unif_on k).indep I ↔ I.encard ≤ k ∧ I ⊆ E := 
+by rw [encard_le_coe_iff, set.unif_on_indep_iff, and_assoc]
 
 lemma set.unif_on_base_iff_of_finite (hE : E.finite) (hk : k ≤ E.ncard) (hBE : B ⊆ E) : 
   (E.unif_on k).base B ↔ B.ncard = k :=
@@ -275,6 +279,15 @@ lemma set.unif_on_r_eq_of_finite (E : set α) (k : ℕ) {X : set α} (hX : X ⊆
 begin
   rw [set.unif_on, r_fin.truncate_r_eq, free_on_r_eq hX], 
   exact (free_on E).r_fin_of_finite hXfin
+end 
+
+lemma set.eq_unif_on_iff : M = E.unif_on a ↔ M.E = E ∧ ∀ I, M.indep I ↔ I.encard ≤ a ∧ I ⊆ E := 
+begin
+  simp_rw [eq_iff_indep_iff_indep_forall, set.unif_on_ground_eq, set.unif_on_indep_iff', 
+    and.congr_right_iff],  
+  rintro rfl, 
+  exact ⟨λ h I, ⟨λ hI, (h I hI.subset_ground).mp hI, λ hI, (h I hI.2).mpr hI⟩, 
+    λ h I hIE, h I⟩,
 end 
 
 -- lemma set.unif_on_r_eq_of_infinite (E : set α) (k : ℕ) (hXinf : X.infinite) (hXE : X ⊆ E):
@@ -301,6 +314,9 @@ def unif (a b : ℕ) := unif_on (fin b) a
 
 @[simp] lemma unif_indep_iff (I : set (fin b)) : (unif a b).indep I ↔ I.ncard ≤ a :=
 by rw [unif, unif_on_indep_iff]
+
+@[simp] lemma unif_indep_iff' (I : set (fin b)) : (unif a b).indep I ↔ I.encard ≤ a :=
+by rw [unif_indep_iff, encard_le_coe_iff, and_iff_right (to_finite I)]
 
 @[simp] lemma unif_r_eq (X : set (fin b)) : (unif a b).r X = min X.ncard a := 
 by { rw [unif, unif_on, set.unif_on_r_eq_of_finite _ _ (subset_univ _)], exact to_finite X } 
@@ -333,18 +349,78 @@ unif_dual' (two_mul a).symm
 
 
 
-lemma iso_unif_iff {a b : ℕ} (M : matroid_in α) : 
-  nonempty (M ≃i (unif a b)) ↔ (M.E.encard = b ∧ M = M.E.unif_on a) := 
+lemma iso_unif_iff {a b : ℕ} {M : matroid_in α} : 
+  nonempty (M ≃i (unif a b)) ↔ (M = M.E.unif_on a ∧ M.E.encard = (b : ℕ∞)) := 
 begin
   refine ⟨λ h, _, λ h, _⟩,
   { obtain ⟨i⟩ := h,
     set e := i.to_equiv, 
-    -- have := part_enat.card_congr,
-    -- rw [encard, part_enat.card_congr e], 
-
-  },
+    rw [encard, part_enat.card_congr e, unif_ground_eq, part_enat.card_eq_coe_fintype_card, 
+      part_enat.with_top_equiv_coe, nat.cast_inj, ←set.to_finset_card, to_finset_univ, 
+      finset.card_fin, eq_self_iff_true, and_true, eq_iff_indep_iff_indep_forall, 
+      set.unif_on_ground_eq, and_iff_right rfl], 
+    intros I hI, 
+    rw [set.unif_on_indep_iff, and_iff_left hI, ←encard_le_coe_iff, i.on_indep hI, unif_indep_iff', 
+      iso.image, encard_image_of_injective _ (subtype.coe_injective), 
+      encard_image_of_injective _ (equiv_like.injective i), 
+      encard_preimage_of_injective_subset_range subtype.coe_injective], 
+    rwa subtype.range_coe },
+  rw [encard_eq_coe_iff, ncard] at h, 
+  obtain ⟨h1, hfin, h'⟩ := h, 
+  haveI := finite_coe_iff.mpr hfin, 
+  set e := (finite.equiv_fin_of_card_eq h').trans (equiv.set.univ (fin b)).symm, 
+  refine ⟨@iso_of_indep _ _ M (unif a b) e (λ I, _)⟩,  
+  apply_fun indep at h1, 
+  rw [h1, set.unif_on_indep_iff'],  
+  simp only [image_subset_iff, subtype.coe_preimage_self, subset_univ, and_true, equiv.coe_trans, 
+    function.comp_app, equiv.set.univ_symm_apply, unif_indep_iff', 
+    encard_image_of_injective _ subtype.coe_injective],
+  rw [encard_image_of_injective], 
+  intros x y, 
+  simp,  
 end 
 
+/-- Horrible proof. Should be improved using `simple` api -/
+lemma iso_line_iff {k : ℕ} (hk : 2 ≤ k) : 
+  nonempty (M ≃i (unif 2 k)) ↔ 
+    (∀ e f ∈ M.E, M.indep {e,f}) ∧ M.rk = 2 ∧ M.E.finite ∧ M.E.ncard = k :=
+begin
+  simp_rw [iso_unif_iff, encard_eq_coe_iff, ← and_assoc, and.congr_left_iff, 
+    set.eq_unif_on_iff, and_iff_right rfl, nat.cast_bit0, enat.coe_one], 
+  rintro rfl hfin, 
+  have lem : ∀ x y, ({x,y} : set α).encard ≤ 2, 
+  { intros x y, 
+    rw [(({x,y} : set α).to_finite.encard_eq), ←nat.cast_two, nat.cast_le],   
+    exact (ncard_insert_le _ _).trans (by simp) },
+  haveI : M.finite := ⟨hfin⟩, 
+  refine ⟨λ h, ⟨λ e he f hf, (h _).mpr ⟨lem _ _,_⟩,_⟩, λ h I, _⟩,
+  
+  { rintro x ((rfl : x = e)| (rfl : x = f)); assumption  },
+  { rw [rk],
+    rw [←one_add_one_eq_two, nat.add_one_le_iff, one_lt_ncard_iff hfin] at hk, 
+    obtain ⟨a, b, ha, hb, hne⟩ := hk, 
+    have hss : {a,b} ⊆ M.E, by {rintro x ((rfl : x = a) | (rfl : x = b)); assumption}, 
+    have hlb := M.r_mono hss, 
+    rw [indep.r ((h _).mpr ⟨_, hss⟩), ncard_pair hne] at hlb, 
+    { refine hlb.antisymm' _, 
+      obtain ⟨B, hB⟩ := M.exists_base, 
+      rw [←rk, ←hB.card],
+      have h' := ((h B).mp hB.indep).1,
+      rw [←nat.cast_two, encard_le_coe_iff] at h', 
+      exact h'.2 },
+    apply lem },
+  rw [←nat.cast_two, encard_le_coe_iff], 
+  refine ⟨λ h', ⟨⟨h'.finite, _⟩, h'.subset_ground⟩, _⟩,
+  { rw [←h'.r, ←h.2], exact r_le_rk _ _ },
+  rintro ⟨⟨hfin, hcard⟩, hss⟩,  
+  rw [le_iff_eq_or_lt, nat.lt_iff_add_one_le, ncard_eq_two, ←one_add_one_eq_two, 
+    nat.add_le_add_iff_right, ncard_le_one_iff_eq hfin] at hcard, 
+  obtain (⟨x,y,-, rfl⟩ | rfl | ⟨e, rfl⟩ ) := hcard, 
+  { exact h.1 _ (hss (by simp)) _ (hss (by simp)) }, 
+  { simp }, 
+  convert h.1 e (hss (by simp)) e (hss (by simp)), 
+  simp, 
+end 
 
 section relax
 
