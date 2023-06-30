@@ -31,6 +31,14 @@ variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_co
 
 namespace matroid_in
 
+def loopless (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard = 1 → M.indep S 
+
+def simple' (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.indep S 
+
+def simple (M : matroid_in α) : Prop := ∀ (e ∈ M.E) (f ∈ M.E), M.indep {e, f}
+
+lemma simple.loopless (h : M.simple) : M.loopless := sorry
+
 /- A `𝔽`-matroid_in representation is a map from the base of the matroid_in to `ι → 𝔽` such that a set -/
 /-structure rep (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
 (to_fun : α → ι → 𝔽)
@@ -39,21 +47,26 @@ namespace matroid_in
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := ∃ (ι : Type), nonempty (rep 𝔽 M ι)-/
 
+-- this definition breaks injectivity of rep of simple matroids, i think we need
+-- to restrict the domain
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
-(valid' : ∀ (I : set α), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
+(valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
+
+structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
+(to_fun : M.E → W)
+(valid' : ∀ (I : set M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep ↑I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
   ∃ (W : Type) (hW : add_comm_group W) 
-    (hFW : 
-      @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
+  (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
 
 -- this needs to be more general - set isn't sufficient, need a list or multiset or something,
 -- or needs to mirror how sets of vectors are done
 -- shouldn't maximality be a consequence of exchange property?
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  (s : set W) : 
+  [finite_dimensional 𝔽 W] (s : set W) : 
   matroid_in W := 
 { ground := s,
   base := λ v, v ⊆ s ∧ span 𝔽 v = span 𝔽 s ∧ linear_independent 𝔽 (coe : v → W),--(λ (e : v), e.1),
@@ -157,19 +170,67 @@ def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W
   valid' := λ I, 
     begin
       simp only [comp.left_id],
-      rw [indep, matroid_of_module_set],
+      rw [indep, matroid_of_module_set, ← ground_eq_E],
       simp only,
+      intros hI,
       refine ⟨λ h, _, λ h, _⟩,
-      sorry, 
+      use h.extend hI,
+      refine ⟨⟨h.extend_subset hI, ⟨_, h.linear_independent_extend hI⟩⟩, h.subset_extend hI⟩,
+      have h2 := h.subset_span_extend hI,
+      apply span_eq_span,
+      sorry,  
       sorry,
     end }
 
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
-lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
-  ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
+lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (h4 : 4 ≤ M.E.ncard) 
+(hs : M.simple) : iso_minor (unif 2 4) M :=
 begin
-  sorry,
-
+  rw iso_minor,
+  rw simple at hs,
+  have h5 : 4 = (unif 2 4).E.ncard,
+    { simp only [unif_ground_eq],
+      rw ncard_eq_to_finset_card,
+      simp only [finite.to_finset_univ, finset.card_fin] },
+  rw h5 at h4,
+  have h6 : ∃ D ⊆ M.E, (M ⟍ D).E.ncard = 4,  
+    simp,
+    sorry,
+  obtain ⟨D, ⟨hD1, hD2⟩⟩ := h6,
+  use (M ⟍ D),
+  have f : (unif 2 4).E ≃ (M ⟍ D).E,
+    sorry,
+  have h11 : (∀ (I : set ↥((unif 2 4).E)), 
+    (unif 2 4).indep (coe '' I) ↔ (M ⟍ D).indep (coe '' (⇑f '' I))),
+  { intros I,
+    rw unif_indep_iff,
+    refine ⟨λ h, _, λ h, _⟩,
+    rw delete_indep_iff,
+    sorry,
+    -- need finite_rk instance for minors
+    haveI : M.finite_rk,
+    sorry,
+    /-haveI : (M ⟍ D).finite_rk,
+    sorry,-/
+    --have h2 := h.card_le_rk,
+    have h3 : (coe '' I).ncard = ((coe '' (⇑f '' I)) : set α).ncard,
+    apply nat.card_congr,
+    apply equiv.trans 
+      (equiv.trans (equiv.symm (equiv.set.image (coe : ↥((unif 2 4).E) → (fin 4)) I _)) 
+      (equiv.image f I)) (equiv.set.image (coe : ↥((M ⟍ D).E) → α) (⇑f '' I) _),
+    --rw has_lift.coe_eq_coe_fn,
+    intros x y h,
+    sorry,
+    intros x y h,
+    sorry,
+    rw h3,
+    have h80 : (M ⟍ D).rk ≤ M.rk,
+      sorry,
+    have h90 := le_trans (h.card_le_rk) h80, 
+    rw h2 at h90, 
+    apply h90 },
+  refine ⟨delete_minor M D, _⟩,
+  use iso_of_indep f h11,
 end
 
 namespace rep
@@ -182,15 +243,16 @@ instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
-lemma valid (φ : rep 𝔽 W M) : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := φ.valid' _
+lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
+  M.indep I := φ.valid' _ hI
 
 protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
-inj_on_iff_injective.2 ((φ.valid' I).2 hI).injective
+inj_on_iff_injective.2 ((φ.valid' I hI.subset_ground).2 hI).injective
 
-lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
+/-lemma eq_zero_of_not_mem_ground (φ : rep 𝔽 W M) {e : α} (he : e ∉ M.E) : φ e = 0 :=
 begin
   by_contra,
   apply he,
@@ -200,7 +262,7 @@ begin
   have h2 := @linear_independent_singleton 𝔽 W _ _ _ _ _ _ h,
   rw [← image_singleton, ← linear_independent_image (inj_on_singleton φ e)] at h2,
   apply h2,
-end  
+end  -/
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : α → W)  := by { ext, refl }
 
@@ -212,12 +274,14 @@ def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
 def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ φ.to_submodule :=
-by { by_cases x ∈ M.E, rw [rep.to_submodule], refine subset_span _, rw mem_range, use x,
-  rw φ.eq_zero_of_not_mem_ground h, simp only [submodule.zero_mem] }
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule :=
+by { rw [rep.to_submodule], refine subset_span _, rw mem_range, use x }
 
-def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule) M := 
-{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule a)⟩,
+lemma mem_to_submodule' (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule' :=
+by { rw [rep.to_submodule'], refine subset_span _, rw mem_image, use ⟨x, ⟨hx, rfl⟩⟩ }
+
+def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule') M := 
+{ to_fun := λ a, if a ∈ M.E then ⟨φ a, φ.mem_to_submodule' a⟩ else 0,
   valid' := λ I, 
     begin
       have h8 : (λ (x : ↥I), φ x) = 
@@ -243,25 +307,30 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
       apply φ.valid',
     end }
 
-def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
-((φ.valid' {x}).2 hx.indep).ne_zero (⟨x, mem_singleton _⟩ : ({x} : set α))
+((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
+(⟨x, mem_singleton _⟩ : ({x} : set α))
 
-lemma ne_zero_of_loopless (φ : rep 𝔽 W M) (hl : loopless M) (x : α) : φ x ≠ 0 :=
-ne_zero_of_nonloop _ $ hl _
+lemma ne_zero_of_loopless (φ : rep 𝔽 W M) (hl : loopless M) (x : α) (hx : x ∈ M.E) : φ x ≠ 0 :=
+φ.ne_zero_of_nonloop $ indep_singleton.1 (hl {x} (singleton_subset_iff.2 hx) (ncard_singleton x))
 
-lemma injective_of_simple (φ : rep 𝔽 W M) (hs : simple M) : injective φ :=
-injective_iff_forall_inj_on_pair.2 $ λ a b, inj_on_of_indep _ $ hs _ _
+lemma inj_on_ground_of_simple (φ : rep 𝔽 W M) (hs : simple M) : inj_on φ M.E :=
+λ a ha b hb, --inj_on_of_indep _ $ hs a ha b hb
+begin
+  apply φ.inj_on_of_indep (hs a ha b hb),
+  simp only [mem_insert_iff, eq_self_iff_true, true_or],
+  simp only [mem_insert_iff, eq_self_iff_true, mem_singleton, or_true],
+end
 
 lemma subset_nonzero_of_simple (φ : rep 𝔽 W M) (hs : simple M) :
   φ '' M.E ⊆ span 𝔽 (φ '' M.E) \ {0} :=
 begin
   refine subset_diff.2 ⟨subset_span, disjoint_left.2 _⟩,
-  /-rintro _ ⟨x, rfl⟩,
-  exact ne_zero_of_loopless _ hs.loopless _,-/
-  sorry
+  rintro x ⟨y, ⟨hy1, rfl⟩⟩,
+  apply ne_zero_of_loopless _ hs.loopless _ hy1,
 end
 
 lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (he : e ∈ X): 
@@ -269,10 +338,11 @@ lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (h
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
-    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := (φ.valid' (insert e I) 
+  (insert_subset.2 ⟨(mem_of_mem_of_subset he hI.subset_ground), hI.subset_ground_left⟩)).not.2 
+  (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I hI.subset_ground_left).2 hI.indep, h2⟩,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
@@ -302,9 +372,8 @@ begin
 end-/
 
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) :
-  _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
-by { rw [←span_base _ hB, image_eq_range], exact basis.span 
-  ((φ.valid' B).2 hB.indep) }
+  _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) := by {
+rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B hB.subset_ground).2 hB.indep) }
 
 
 /-lemma base_of_basis (φ : rep 𝔽 W M) {B : set α} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
