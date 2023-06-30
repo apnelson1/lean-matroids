@@ -536,6 +536,9 @@ by rw [←coe_r_eq_er, enat.coe_le_coe_iff]
 lemma r_fin.r_le_r_of_er_le_er (hY : M.r_fin Y) (hle : M.er X ≤ M.er Y) : M.r X ≤ M.r Y :=
 by { rwa [←(r_fin.er_le_er_iff _ hY)], exact hle.trans_lt hY.lt }
 
+lemma r_fin.r_mono (hY : M.r_fin Y) (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
+hY.r_le_r_of_er_le_er (M.er_mono hXY)
+
 lemma r_fin.er_le_er_of_r_le_r (hX : M.r_fin X) (hle : M.r X ≤ M.r Y) : M.er X ≤ M.er Y :=
 by { obtain (h | h) := em (M.r_fin Y), rwa hX.er_le_er_iff h, rw [not_r_fin_iff.mp h], simp }
 
@@ -933,8 +936,7 @@ end matroid_in
 --     λ h, hI.symm.trans_le (h I hIX.subset hIX.indep)⟩,
 -- end 
 
--- lemma r_fin.r_mono (hY : M.r_fin Y) (hXY : X ⊆ Y) : M.r X ≤ M.r Y :=
--- by { simp_rw [(hY.subset hXY).r_le_iff, hY.le_r_iff], exact λ I hIX hI, ⟨I,hIX.trans hXY,hI,rfl⟩ }
+
 
 -- lemma r_fin.r_eq_r_of_subset_le (h : M.r_fin Y) (hXY : X ⊆ Y) (hYX : M.r Y ≤ M.r X) : 
 --   M.r X = M.r Y :=
