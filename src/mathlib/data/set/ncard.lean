@@ -232,6 +232,24 @@ lemma finite.eq_of_subset_of_encard_le' (hs : s.finite) (hst : s ⊆ t) (hts : t
   s = t := 
 finite.eq_of_subset_of_encard_le (hs.finite_of_encard_le hts) hst hts
 
+lemma encard_image_of_injective {α β : Type*} {f : α → β} (s : set α) (hf : f.injective) : 
+  (f '' s).encard = s.encard  :=
+begin
+  obtain (hs | hs) := s.finite_or_infinite,
+  { rw [hs.encard_eq, (hs.image f).encard_eq, ncard_image_of_injective s hf] },
+  rw [hs.encard_eq, infinite.encard_eq], 
+  rwa infinite_image_iff (hf.inj_on _), 
+end
+
+lemma encard_preimage_of_injective_subset_range {α β : Type*} {f : α → β} {s : set β}
+  (hf : f.injective) (hs : s ⊆ range f) : (f ⁻¹' s).encard = s.encard :=
+begin
+  obtain ⟨t, rfl⟩ := subset_range_iff_exists_image_eq.mp hs, 
+  rw [← encard_image_of_injective _ hf, preimage_image_eq _ hf], 
+end
+
+-- lemma encard_coe_set_eq (s : set α) : 
+--   part_enat.with_top_equiv (part_enat.card s) (part_enat.card s = s.encard := 
 
 end set 
 
