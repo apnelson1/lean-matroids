@@ -884,6 +884,15 @@ lemma hyperplane.inter_covby_comm {H₁ H₂ : set α} (hH₁ : M.hyperplane H�
 
 end rank
 
+section unif
+
+def simple (M : matroid_in α) : Prop := ∀ (e ∈ M.E) (f ∈ M.E), M.indep {e, f}
+
+-- lemma unif_restr {a b : ℕ} (M : matroid_in α) (h4 : 4 ≤ M.E.ncard) (hs : M.simple) : (unif 2 4) ≤i M
+
+end unif 
+
+
 -- /-- The minor order on `matroid_in α`; we write `M₀ ≤ M` if `M₀ = M ⟋ C ⟍ D` where `C,D` are 
 --   disjoint subsets of `M.E` -/
 -- instance {α : Type*} : partial_order (matroid_in α) := 

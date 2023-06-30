@@ -1,6 +1,7 @@
 import .minor
-import .rank
+import .erank
 import ..mathlib.data.set.ncard
+import set_theory.cardinal.finite
 
 variables {α : Type*} {M : matroid_in α} {k a b c : ℕ} {I J X C B E : set α}
 
@@ -16,7 +17,7 @@ def trivial_on (I E : set α) : matroid_in α :=
 matroid_of_base E (λ X, X = I ∩ E) ⟨_, rfl⟩ 
 (by { rintro B₁ B₂ rfl rfl x h, simpa using h })
 (begin 
-  rintro J Y ⟨B, rfl, hJB⟩ hJY, 
+  rintro Y - J ⟨B, rfl, hJB⟩ hJY, 
   use I ∩ Y ∩ E,
   simp only [mem_maximals_set_of_iff, exists_eq_left, subset_inter_iff, inter_subset_right, 
     and_true, and_imp], 
@@ -224,11 +225,13 @@ lemma indep.ncard_le_of_truncate (h : (M.truncate k).indep I) : I.ncard ≤ k :=
 
 lemma r_fin.truncate_r_eq (hX : M.r_fin X) (k : ℕ) : (M.truncate k).r X = min (M.r X) k := 
 begin
-  obtain ⟨I, hI⟩ := (M.truncate k).exists_basis X hX.subset_ground, 
+  rw [r_eq_r_inter_ground, truncate_ground_eq, M.r_eq_r_inter_ground], 
+  have hX' := hX.inter_right M.E, 
+  obtain ⟨I, hI⟩ := (M.truncate k).exists_basis (X ∩ M.E),
   have hi := truncate_indep_iff.mp hI.indep, 
   obtain ⟨J, hJ, hIJ⟩ := hi.1.subset_basis_of_subset hI.subset, 
   rw [←hI.card, le_antisymm_iff, le_min_iff, and_iff_left hi.2.2, min_le_iff, ←hi.1.r, 
-    and_iff_right (hX.r_mono hI.subset), ←hJ.card, hi.1.r], 
+    and_iff_right (hX'.r_mono (hIJ.trans hJ.subset)), ←hJ.card, hi.1.r], 
   by_contra' h, 
   obtain ⟨e, heJ, heI⟩ := exists_mem_not_mem_of_ncard_lt_ncard h.1 hI.indep.finite, 
   rw hI.eq_of_subset_indep _ (subset_insert e I) (insert_subset.mpr ⟨hJ.subset heJ,hI.subset⟩) 
@@ -236,7 +239,7 @@ begin
   { exact heI (mem_insert _ _) },
   rw truncate_indep_iff, 
   refine ⟨hJ.indep.subset (insert_subset.mpr ⟨heJ, hIJ⟩), hI.finite.insert e, _⟩, 
-  refine (ncard_insert_le _ _).trans (nat.add_one_le_iff.mpr h.2), 
+  exact (ncard_insert_le _ _).trans (nat.add_one_le_iff.mpr h.2), 
 end 
 
 lemma truncate_r_eq [finite_rk M] (k : ℕ) (X : set α) : (M.truncate k).r X = min (M.r X) k := 
@@ -245,17 +248,17 @@ begin
   exact (M.to_r_fin (X ∩ M.E)).truncate_r_eq _, 
 end 
 
-lemma truncate_r_eq_of_not_r_fin (hX : ¬M.r_fin X) (k : ℕ) (hXE : X ⊆ M.E . ssE) :
-  (M.truncate k).r X = k :=
-begin
-  obtain ⟨I, hI⟩ := M.exists_basis X, 
-  obtain ⟨J, hJI, hJfin, rfl⟩ := (hI.infinite_of_not_r_fin hX).exists_subset_ncard_eq k, 
-  have hJfin' := M.r_fin_of_finite hJfin (hJI.trans hI.subset_ground_left), 
-  have hJi : (M.truncate J.ncard).indep J, by simp [hI.indep.subset hJI, hJfin],
-  obtain ⟨J', hJJ', hJ'⟩ := hJi.subset_basis_of_subset (hJI.trans hI.subset), 
-  rw [←hJJ'.card, eq_of_subset_of_ncard_le hJ' _ hJJ'.indep.finite], 
-  exact hJJ'.indep.ncard_le_of_truncate, 
-end 
+-- lemma truncate_r_eq_of_not_r_fin (hX : ¬M.r_fin X) (k : ℕ) (hXE : X ⊆ M.E . ssE) :
+--   (M.truncate k).r X = k :=
+-- begin
+--   obtain ⟨I, hI⟩ := M.exists_basis X, 
+--   obtain ⟨J, hJI, hJfin, rfl⟩ := (hI.infinite_of_not_r_fin hX).exists_subset_ncard_eq k, 
+--   have hJfin' := M.r_fin_of_finite hJfin (hJI.trans hI.subset_ground_left), 
+--   have hJi : (M.truncate J.ncard).indep J, by simp [hI.indep.subset hJI, hJfin],
+--   obtain ⟨J', hJJ', hJ'⟩ := hJi.subset_basis_of_subset (hJI.trans hI.subset), 
+--   rw [←hJJ'.card, eq_of_subset_of_ncard_le hJ' _ hJJ'.indep.finite], 
+--   exact hJJ'.indep.ncard_le_of_truncate, 
+-- end 
 
 /-- A uniform matroid with a given rank and ground set -/
 def set.unif_on (E : set α) (k : ℕ) := (free_on E).truncate k 
@@ -271,17 +274,16 @@ lemma set.unif_on_r_eq_of_finite (E : set α) (k : ℕ) {X : set α} (hX : X ⊆
   (E.unif_on k).r X = min X.ncard k := 
 begin
   rw [set.unif_on, r_fin.truncate_r_eq, free_on_r_eq hX], 
-  apply r_fin_of_finite _ hXfin _, 
-  ssE, 
+  exact (free_on E).r_fin_of_finite hXfin
 end 
 
-lemma set.unif_on_r_eq_of_infinite (E : set α) (k : ℕ) (hXinf : X.infinite) (hXE : X ⊆ E):
-  (E.unif_on k).r X = k :=
-begin
-  rw [set.unif_on, truncate_r_eq_of_not_r_fin], 
-  simp_rw [r_fin, not_exists, not_and, free_on_basis_iff hXE], 
-  simpa, 
-end 
+-- lemma set.unif_on_r_eq_of_infinite (E : set α) (k : ℕ) (hXinf : X.infinite) (hXE : X ⊆ E):
+--   (E.unif_on k).r X = k :=
+-- begin
+--   rw [set.unif_on, truncate_r_eq_of_not_r_fin], 
+--   simp_rw [r_fin, not_exists, not_and, free_on_basis_iff hXE], 
+--   simpa, 
+-- end 
 
 /-- A uniform matroid of a given rank whose ground set is the universe of a type -/
 def unif_on (α : Type*) (k : ℕ) := (univ : set α).unif_on k 
@@ -329,53 +331,68 @@ unif_dual' (nat.add_sub_of_le hab)
 lemma unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) := 
 unif_dual' (two_mul a).symm 
 
+
+
+lemma iso_unif_iff {a b : ℕ} (M : matroid_in α) : 
+  nonempty (M ≃i (unif a b)) ↔ (M.E.encard = b ∧ M = M.E.unif_on a) := 
+begin
+  refine ⟨λ h, _, λ h, _⟩,
+  { obtain ⟨i⟩ := h,
+    set e := i.to_equiv, 
+    -- have := part_enat.card_congr,
+    -- rw [encard, part_enat.card_congr e], 
+
+  },
+end 
+
+
 section relax
 
-def relax_set (M : matroid_in α) (Hs : set (set α)) := 
-matroid_of_base M.E (λ B, M.base B ∨ (B ∈ Hs ∧ M.circuit B ∧ M.cocircuit (M.E \ B))) 
-(M.exists_base.imp (λ _, or.inl)) 
-(begin
-  intros B B' hB hB' e he, 
-  have hBE : B ⊆ M.E := hB.elim base.subset_ground (λ h', h'.2.1.subset_ground), 
-  by_cases hel : M.coloop e, sorry,
-  have h1 : M.indep (B \ {e}), sorry, 
-  obtain ⟨B₁, hB₁⟩ := h1.subset_basis_of_subset (diff_subset_diff_left hBE) (diff_subset _ _), 
-  have h2 : ¬M.base (B \ {e}), sorry, 
-  rw coloop_iff_forall_mem_base at hel, push_neg at hel, 
-  obtain ⟨B₁, hB₁, heB₁⟩ := hel, 
+-- def relax_set (M : matroid_in α) (Hs : set (set α)) := 
+-- matroid_of_base M.E (λ B, M.base B ∨ (B ∈ Hs ∧ M.circuit B ∧ M.cocircuit (M.E \ B))) 
+-- (M.exists_base.imp (λ _, or.inl)) 
+-- (begin
+--   intros B B' hB hB' e he, 
+--   have hBE : B ⊆ M.E := hB.elim base.subset_ground (λ h', h'.2.1.subset_ground), 
+--   by_cases hel : M.coloop e, sorry,
+--   have h1 : M.indep (B \ {e}), sorry, 
+--   obtain ⟨B₁, hB₁⟩ := h1.subset_basis_of_subset (diff_subset_diff_left hBE) (diff_subset _ _), 
+--   have h2 : ¬M.base (B \ {e}), sorry, 
+--   rw coloop_iff_forall_mem_base at hel, push_neg at hel, 
+--   obtain ⟨B₁, hB₁, heB₁⟩ := hel, 
   
 
-  -- have h2 : ∃ B₂, M.base B₂ ∧ B \ {e} ⊆ B₂ ∧ B₂ ⊆ (B \ {e}) ∪ B', sorry, 
-  -- obtain ⟨B₂, hB₂, hssB₂, hB₂ss⟩ := h2, 
-  -- obtain ⟨B₃, hB₃, hB₃ss⟩ := h1.exists_base_supset, 
-  -- have := hB₃.exchange hB₂,  
-  -- have := hB₁.exchange hB₂, 
-  -- have h2 : ∃ x ∈ B' \ (B \ {e}), M.base (insert x (B \ {e})), 
-  -- {   },
+--   -- have h2 : ∃ B₂, M.base B₂ ∧ B \ {e} ⊆ B₂ ∧ B₂ ⊆ (B \ {e}) ∪ B', sorry, 
+--   -- obtain ⟨B₂, hB₂, hssB₂, hB₂ss⟩ := h2, 
+--   -- obtain ⟨B₃, hB₃, hB₃ss⟩ := h1.exists_base_supset, 
+--   -- have := hB₃.exchange hB₂,  
+--   -- have := hB₁.exchange hB₂, 
+--   -- have h2 : ∃ x ∈ B' \ (B \ {e}), M.base (insert x (B \ {e})), 
+--   -- {   },
 
-  -- obtain ⟨B1, hB1, hBeB1⟩ := h1.exists_base_supset,  
-  -- { have := hB1.exchange, },
+--   -- obtain ⟨B1, hB1, hBeB1⟩ := h1.exists_base_supset,  
+--   -- { have := hB1.exchange, },
 
   
-  -- obtain ⟨x, hx, hxB⟩ := h₁,  
-  -- have h' : ∃ B₁ ⊆ (B \ {e}) ∪ B', B \ {e} ⊆ B₁ ∧ M.base B₁, sorry, 
+--   -- obtain ⟨x, hx, hxB⟩ := h₁,  
+--   -- have h' : ∃ B₁ ⊆ (B \ {e}) ∪ B', B \ {e} ⊆ B₁ ∧ M.base B₁, sorry, 
 
-  -- have heB : M.indep (B \ {e}), sorry, 
-  -- rintro B B' (hB | ⟨hB, hBc, hBk⟩) (hB' | ⟨hB', hBc', hBk'⟩) e ⟨heB, heB'⟩, 
+--   -- have heB : M.indep (B \ {e}), sorry, 
+--   -- rintro B B' (hB | ⟨hB, hBc, hBk⟩) (hB' | ⟨hB', hBc', hBk'⟩) e ⟨heB, heB'⟩, 
   
-  -- { exact (hB.exchange hB' ⟨heB, heB'⟩).imp (λ f, Exists.imp (λ hf, or.inl)) },
-  -- { have h' : ∃ B₁ ⊆ (B \ {e}) ∪ B', M.base B₁, sorry, 
-  -- obtain ⟨B₁, hB₁ss, hB₁⟩ := h',  
-  -- obtain ⟨B₂, hB₂, hBB₂⟩ := heB.exists_base_supset, 
-  -- have := hB₂.exchange hB₁, 
-  -- have := hB₂.exchange hB₁ ⟨, 
-  --
-  --  have := hB.exchange hB₁, 
-  -- obtain ⟨f, hf, hBf⟩  := 
-  --   hB.exchange hB₁ ⟨heB, λ heB₁, (hB₁ss heB₁).elim (not_mem_diff_singleton _ _) _⟩, 
-  --   exact ⟨f, ⟨(hB₁ss hf.1).elim (λ h', (hf.2 h'.1).elim) id, hf.2⟩, or.inl hBf⟩ },
+--   -- { exact (hB.exchange hB' ⟨heB, heB'⟩).imp (λ f, Exists.imp (λ hf, or.inl)) },
+--   -- { have h' : ∃ B₁ ⊆ (B \ {e}) ∪ B', M.base B₁, sorry, 
+--   -- obtain ⟨B₁, hB₁ss, hB₁⟩ := h',  
+--   -- obtain ⟨B₂, hB₂, hBB₂⟩ := heB.exists_base_supset, 
+--   -- have := hB₂.exchange hB₁, 
+--   -- have := hB₂.exchange hB₁ ⟨, 
+--   --
+--   --  have := hB.exchange hB₁, 
+--   -- obtain ⟨f, hf, hBf⟩  := 
+--   --   hB.exchange hB₁ ⟨heB, λ heB₁, (hB₁ss heB₁).elim (not_mem_diff_singleton _ _) _⟩, 
+--   --   exact ⟨f, ⟨(hB₁ss hf.1).elim (λ h', (hf.2 h'.1).elim) id, hf.2⟩, or.inl hBf⟩ },
   
-end) sorry sorry 
+-- end) sorry sorry 
 
 end relax
 

@@ -190,7 +190,9 @@ def direct_sum' (M₁ : matroid_in α) (M₂ : matroid_in α)
           } },
     end)
     (begin
-      rintro X Y ⟨X₁, X₂, ⟨hX₁, hX₂, Xeq⟩⟩ hXY,
+      rintro X hX Y ⟨I₁, I₂, ⟨hI₁, hI₂, rfl⟩⟩ hYX, 
+      
+      -- rintro X Y ⟨X₁, X₂, ⟨hX₁, hX₂, Xeq⟩⟩ hXY,
       subst Xeq,
 
       have : X₁ ⊆ Y ∩ M₁.E := subset_inter ((subset_union_left X₁ X₂).trans hXY)
