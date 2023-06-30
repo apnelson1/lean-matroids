@@ -260,14 +260,25 @@ def direct_sum_of_many {ι : Type*} (M : ι → matroid_in α)
   (⋃ i, (M i).ground)
   (λ I', ∃ (I : ι → set α), (∀ i, (M i).indep(I i)) ∧ (I' = ⋃ i, I i))
   ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
-  (begin
+  (begin -- subsets of independent sets are independent
     rintro I J ⟨J', ⟨J'ind, Jeq⟩⟩ hIJ,
-    use J',
-    refine ⟨_, _⟩,
-    {
-      intro i,
-      have := J'ind i,
-    }
+    refine ⟨(λ i, (J' i) ∩ I), λ i, (J'ind i).subset (inter_subset_left (J' i) I), _⟩,
+    rw [←Union_inter, ←Jeq], symmetry,
+    rw inter_eq_right_iff_subset,
+    exact hIJ,
+  end)
+  (begin -- augmentation
+    sorry
+  end)
+  (begin -- a maximal indep. set exists
+    sorry
+  end)
+  (begin -- indep sets contained in ground set
+    rintro I ⟨I', I'ind, rfl⟩,
+    simp only [ground_eq_E, Union_subset_iff],
+    rintro i e he,
+    rw [mem_Union],
+    exact ⟨i, (I'ind i).subset_ground he⟩
   end)
 
 end matroid_in
