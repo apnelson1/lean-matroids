@@ -33,7 +33,11 @@ namespace matroid_in
 
 def loopless (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard = 1 → M.indep S 
 
-def simple (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.indep S  
+def simple' (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.indep S 
+
+def simple (M : matroid_in α) : Prop := ∀ (e ∈ M.E) (f ∈ M.E), M.indep {e, f}
+
+lemma simple.loopless (h : M.simple) : M.loopless := sorry
 
 /- A `𝔽`-matroid_in representation is a map from the base of the matroid_in to `ι → 𝔽` such that a set -/
 /-structure rep (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
@@ -43,9 +47,15 @@ def simple (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.inde
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := ∃ (ι : Type), nonempty (rep 𝔽 M ι)-/
 
+-- this definition breaks injectivity of rep of simple matroids, i think we need
+-- to restrict the domain
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
 (valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
+
+structure rep' (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
+(to_fun : M.E → W)
+(valid' : ∀ (I : set M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep ↑I)
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
@@ -271,7 +281,7 @@ lemma mem_to_submodule' (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈
 by { rw [rep.to_submodule'], refine subset_span _, rw mem_image, use ⟨x, ⟨hx, rfl⟩⟩ }
 
 def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule') M := 
-{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule' a)⟩,
+{ to_fun := λ a, if a ∈ M.E then ⟨φ a, φ.mem_to_submodule' a⟩ else 0,
   valid' := λ I, 
     begin
       have h8 : (λ (x : ↥I), φ x) = 
@@ -297,25 +307,30 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
       apply φ.valid',
     end }
 
-def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
+def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
-((φ.valid' {x}).2 hx.indep).ne_zero (⟨x, mem_singleton _⟩ : ({x} : set α))
+((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
+(⟨x, mem_singleton _⟩ : ({x} : set α))
 
-lemma ne_zero_of_loopless (φ : rep 𝔽 W M) (hl : loopless M) (x : α) : φ x ≠ 0 :=
-ne_zero_of_nonloop _ $ hl _
+lemma ne_zero_of_loopless (φ : rep 𝔽 W M) (hl : loopless M) (x : α) (hx : x ∈ M.E) : φ x ≠ 0 :=
+φ.ne_zero_of_nonloop $ indep_singleton.1 (hl {x} (singleton_subset_iff.2 hx) (ncard_singleton x))
 
-lemma injective_of_simple (φ : rep 𝔽 W M) (hs : simple M) : injective φ :=
-injective_iff_forall_inj_on_pair.2 $ λ a b, inj_on_of_indep _ $ hs _ _
+lemma inj_on_ground_of_simple (φ : rep 𝔽 W M) (hs : simple M) : inj_on φ M.E :=
+λ a ha b hb, --inj_on_of_indep _ $ hs a ha b hb
+begin
+  apply φ.inj_on_of_indep (hs a ha b hb),
+  simp only [mem_insert_iff, eq_self_iff_true, true_or],
+  simp only [mem_insert_iff, eq_self_iff_true, mem_singleton, or_true],
+end
 
 lemma subset_nonzero_of_simple (φ : rep 𝔽 W M) (hs : simple M) :
   φ '' M.E ⊆ span 𝔽 (φ '' M.E) \ {0} :=
 begin
   refine subset_diff.2 ⟨subset_span, disjoint_left.2 _⟩,
-  /-rintro _ ⟨x, rfl⟩,
-  exact ne_zero_of_loopless _ hs.loopless _,-/
-  sorry
+  rintro x ⟨y, ⟨hy1, rfl⟩⟩,
+  apply ne_zero_of_loopless _ hs.loopless _ hy1,
 end
 
 lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (he : e ∈ X): 
@@ -323,11 +338,11 @@ lemma of_basis (φ : rep 𝔽 W M) {X I : set α} (hI : M.basis I X) {e : α} (h
 begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
-  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
-  (φ.valid' (insert e I) (insert_subset.2 ⟨_, hI.subset_ground_left⟩)).not.2 
+  have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := (φ.valid' (insert e I) 
+  (insert_subset.2 ⟨(mem_of_mem_of_subset he hI.subset_ground), hI.subset_ground_left⟩)).not.2 
   (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I _).2 hI.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I hI.subset_ground_left).2 hI.indep, h2⟩,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
@@ -357,9 +372,8 @@ begin
 end-/
 
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) :
-  _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) :=
-by { rw [←span_base _ hB, image_eq_range], exact basis.span 
-  ((φ.valid' B).2 hB.indep) }
+  _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) := by {
+rw [←span_base _ hB, image_eq_range], exact basis.span ((φ.valid' B hB.subset_ground).2 hB.indep) }
 
 
 /-lemma base_of_basis (φ : rep 𝔽 W M) {B : set α} (hB : linear_independent 𝔽 (φ '' B)) : --(hB : _root_.basis B 𝔽 (span 𝔽 (φ '' M.E))) : 
