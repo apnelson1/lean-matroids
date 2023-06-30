@@ -59,15 +59,15 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop :=
   ∃ (W : Type) (hW : add_comm_group W) 
   (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
 
--- try def matroid_of_indep_of_bdd'
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : 
-  matroid_in W := 
-begin
-  apply matroid_of_indep_of_bdd' s (λ (I : set W), (linear_independent 𝔽 (coe : I → W)) ∧ I ⊆ s) 
-    ⟨linear_independent_empty 𝔽 W, empty_subset s⟩ (λ I J hI hIJ, ⟨linear_independent.mono hIJ hI.1, 
-    subset.trans hIJ hI.2⟩) _ _ (by {tauto}),
-  { intros I J hI hJ hIJ,
+  matroid_in W := matroid_of_indep_of_bdd' s 
+  (λ (I : set W), (linear_independent 𝔽 (coe : I → W)) ∧ I ⊆ s) 
+  ⟨linear_independent_empty 𝔽 W, empty_subset s⟩ 
+  (λ I J hI hIJ, ⟨linear_independent.mono hIJ hI.1, 
+    subset.trans hIJ hI.2⟩) 
+  begin
+    intros I J hI hJ hIJ,
     haveI := finite.fintype (_root_.linear_independent.finite hI.1),
     haveI := finite.fintype (_root_.linear_independent.finite hJ.1),
     have h3 : ∃ x ∈ J, x ∉ span 𝔽 I,
@@ -88,13 +88,16 @@ begin
       insert_subset.2 ⟨mem_of_subset_of_mem hJ.2 hx1, hI.2⟩⟩⟩⟩⟩,  
     by_contra,
     apply hx2,
-    apply mem_of_subset_of_mem subset_span h },
-  { refine ⟨finite_dimensional.finrank 𝔽 W, λ I hI, _⟩,
+    apply mem_of_subset_of_mem subset_span h
+  end
+  begin
+    refine ⟨finite_dimensional.finrank 𝔽 W, λ I hI, _⟩,
     haveI := finite.fintype (_root_.linear_independent.finite hI.1),
     rw [ncard, nat.card_eq_fintype_card],
     refine ⟨_root_.linear_independent.finite hI.1, 
-      fintype_card_le_finrank_of_linear_independent hI.1⟩ },
-end
+      fintype_card_le_finrank_of_linear_independent hI.1⟩,
+  end
+  (by {tauto})
 
 -- we don't know for sure that I ⊆ s 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
