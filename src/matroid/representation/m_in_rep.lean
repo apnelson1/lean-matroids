@@ -31,6 +31,10 @@ variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_co
 
 namespace matroid_in
 
+def loopless (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard = 1 → M.indep S 
+
+def simple (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.indep S  
+
 /- A `𝔽`-matroid_in representation is a map from the base of the matroid_in to `ι → 𝔽` such that a set -/
 /-structure rep (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
 (to_fun : α → ι → 𝔽)
@@ -169,11 +173,54 @@ def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W
     end }
 
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
-lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (hs : M.is_simple) : 
-  ∃ (D : set α), (M ⟍ D) ≃i unif 2 4 :=
+lemma unif24_of_rank_2_simple_le_4 (M : matroid_in α) (h2 : M.rk = 2) (h4 : 4 ≤ M.E.ncard) 
+(hs : M.simple) : iso_minor (unif 2 4) M :=
 begin
-  sorry,
-
+  rw iso_minor,
+  rw simple at hs,
+  have h5 : 4 = (unif 2 4).E.ncard,
+    { simp only [unif_ground_eq],
+      rw ncard_eq_to_finset_card,
+      simp only [finite.to_finset_univ, finset.card_fin] },
+  rw h5 at h4,
+  have h6 : ∃ D ⊆ M.E, (M ⟍ D).E.ncard = 4,  
+    simp,
+    sorry,
+  obtain ⟨D, ⟨hD1, hD2⟩⟩ := h6,
+  use (M ⟍ D),
+  have f : (unif 2 4).E ≃ (M ⟍ D).E,
+    sorry,
+  have h11 : (∀ (I : set ↥((unif 2 4).E)), 
+    (unif 2 4).indep (coe '' I) ↔ (M ⟍ D).indep (coe '' (⇑f '' I))),
+  { intros I,
+    rw unif_indep_iff,
+    refine ⟨λ h, _, λ h, _⟩,
+    rw delete_indep_iff,
+    sorry,
+    -- need finite_rk instance for minors
+    haveI : M.finite_rk,
+    sorry,
+    /-haveI : (M ⟍ D).finite_rk,
+    sorry,-/
+    --have h2 := h.card_le_rk,
+    have h3 : (coe '' I).ncard = ((coe '' (⇑f '' I)) : set α).ncard,
+    apply nat.card_congr,
+    apply equiv.trans 
+      (equiv.trans (equiv.symm (equiv.set.image (coe : ↥((unif 2 4).E) → (fin 4)) I _)) 
+      (equiv.image f I)) (equiv.set.image (coe : ↥((M ⟍ D).E) → α) (⇑f '' I) _),
+    --rw has_lift.coe_eq_coe_fn,
+    intros x y h,
+    sorry,
+    intros x y h,
+    sorry,
+    rw h3,
+    have h80 : (M ⟍ D).rk ≤ M.rk,
+      sorry,
+    have h90 := le_trans (h.card_le_rk) h80, 
+    rw h2 at h90, 
+    apply h90 },
+  refine ⟨delete_minor M D, _⟩,
+  use iso_of_indep f h11,
 end
 
 namespace rep
@@ -220,8 +267,11 @@ def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E
 lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule :=
 by { rw [rep.to_submodule], refine subset_span _, rw mem_range, use x }
 
-def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule) M := 
-{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule a)⟩,
+lemma mem_to_submodule' (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule' :=
+by { rw [rep.to_submodule'], refine subset_span _, rw mem_image, use ⟨x, ⟨hx, rfl⟩⟩ }
+
+def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule') M := 
+{ to_fun := λ a, ⟨φ a, (φ.mem_to_submodule' a)⟩,
   valid' := λ I, 
     begin
       have h8 : (λ (x : ↥I), φ x) = 
@@ -274,9 +324,10 @@ begin
   by_cases e ∈ I, 
   { apply subset_span (mem_image_of_mem _ h) },
   have h2 : ¬ linear_independent 𝔽 (λ x : insert e I, φ x) := 
-    (φ.valid' (insert e I)).not.2 (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
+  (φ.valid' (insert e I) (insert_subset.2 ⟨_, hI.subset_ground_left⟩)).not.2 
+  (dep_iff.1 (hI.insert_dep (mem_diff_of_mem he h))).1,
   contrapose! h2,
-  apply (linear_independent_insert' h).2 ⟨(φ.valid' I).2 hI.indep, h2⟩,
+  apply (linear_independent_insert' h).2 ⟨(φ.valid' I _).2 hI.indep, h2⟩,
 end
 
 lemma of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) (e : α) (he : e ∈ M.E) : 
