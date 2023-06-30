@@ -47,7 +47,7 @@ matroid_of_indep (X ∩ M.E) (λ I, M.indep I ∧ I ⊆ X ∩ M.E) ⟨M.empty_in
     insert_subset.mpr ⟨heBY.2,hssu.subset.trans (inter_subset_right _ _)⟩⟩, 
 end)
 (begin
-  rintro I A ⟨hI, hIX⟩ hIA, 
+  rintro X hX I ⟨hI, hIX⟩ hIA, 
   obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset (subset_inter hIA hIX), 
   refine ⟨J, ⟨⟨hJ.indep,hJ.subset.trans (inter_subset_right _ _)⟩,hIJ,
     hJ.subset.trans (inter_subset_left _ _)⟩, λ B hB hJB, _⟩, 

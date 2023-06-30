@@ -252,8 +252,8 @@ lemma indep.not_mem_cl_iff_of_not_mem (hI : M.indep I) (heI : e ∉ I) (he : e �
   e ∉ M.cl I ↔ M.indep (insert e I) :=
 by rw [hI.mem_cl_iff_of_not_mem heI, not_dep_iff]
 
-lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) [hι : nonempty ι] (h : M.indep (⋃ i, I i)) :
-  (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
+lemma Inter_cl_eq_cl_Inter_of_Union_indep {ι : Type*} (I : ι → set α) [hι : nonempty ι]
+  (h : M.indep (⋃ i, I i)) : (⋂ i, M.cl (I i)) = M.cl (⋂ i, I i) :=
 begin  
   have hi : ∀ i, M.indep (I i), from λ i, h.subset (subset_Union _ _), 
   refine subset.antisymm _ (subset_Inter (λ i, M.cl_subset (Inter_subset _ _))), 
