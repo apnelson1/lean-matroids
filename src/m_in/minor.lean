@@ -756,6 +756,21 @@ begin
   rw [←(hD.coindep_contract_of_disjoint hCD.symm).cl_compl, delete_ground], 
 end 
 
+
+/-- An excluded minor is a minimal nonelement of S -/
+def excluded_minor (S : set (matroid_in α)) (M : matroid_in α) := 
+  M ∈ minimals (≤m) Sᶜ 
+
+-- probably needs the hypothesis that `S` is closed under taking minors. 
+lemma excluded_minor_iff (S : set (matroid_in α)) :
+  excluded_minor S M ↔ M ∉ S ∧ ∀ e ∈ M.E, M ⟋ e ∈ S ∧ M ⟍ e ∈ S :=
+begin
+  rw [excluded_minor, mem_minimals_iff', mem_compl_iff, and.congr_right_iff],
+  sorry 
+  -- refine λ hM, ⟨λ h N hlt, (by_contra (λ hN, _)), λ h, _⟩,
+  -- { have := h hN hlt.minor, },
+end 
+
 section iso 
 
 variables {β : Type*} {N' M' : matroid_in α}
@@ -799,6 +814,7 @@ h.trans h'.iso_minor
 
 lemma minor.trans_iso_minor {M' : matroid_in β} (h : N ≤m M) (hM : M ≤i M') : N ≤i M' := 
 h.iso_minor.trans hM 
+
 
 end iso 
 
