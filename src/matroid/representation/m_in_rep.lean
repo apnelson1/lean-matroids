@@ -33,11 +33,6 @@ namespace matroid_in
 
 def loopless (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard = 1 → M.indep S 
 
--- watch out for infinite
-def simple' (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard ≤ 2 → M.indep S 
-
-def simple (M : matroid_in α) : Prop := ∀ (e ∈ M.E) (f ∈ M.E), M.indep {e, f}
-
 lemma simple.loopless (h : M.simple) : M.loopless := sorry
 
 /- A `𝔽`-matroid_in representation is a map from the base of the matroid_in to `ι → 𝔽` such that a set -/
@@ -78,6 +73,7 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
         simp only [finite.mem_to_finset, mem_to_finset],
       have h9 : (I.to_finite.to_finset) = I.to_finset,
         ext,
+        --simp only [finite.mem_to_finset, mem_to_finset],
         simp only [finite.mem_to_finset, mem_to_finset],
       apply not_le_of_lt hIJ,
       rw [ncard_eq_to_finset_card, ncard_eq_to_finset_card, h8, h9, 
@@ -99,24 +95,25 @@ def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [modu
   end
   (by {tauto})
 
--- we don't know for sure that I ⊆ s 
+lemma ground_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (s : set W) : (matroid_of_module_set 𝔽 W s).E = s := 
+begin
+  rw [matroid_of_module_set, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+    matroid_of_indep, matroid_of_base, ← ground_eq_E],
+end
+
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
 { to_fun := id,
   valid' := λ I hI, 
     begin
-      simp only [comp.left_id],
-      rw [indep, matroid_of_module_set],
-      simp only,
-      intros hI,
-      refine ⟨λ h, _, λ h, _⟩,
-      use h.extend hI,
-      refine ⟨⟨h.extend_subset hI, ⟨_, h.linear_independent_extend hI⟩⟩, h.subset_extend hI⟩,
-      have h2 := h.subset_span_extend hI,
-      apply span_eq_span,
-      sorry,  
-      sorry,
+      simp only [comp.left_id, matroid_of_module_set, matroid_of_indep_of_bdd'_apply, iff_self_and],
+      intros hI2,
+      rw ground_matroid_of_module_set at hI,
+      apply hI,
     end }
+
+
 
 -- use finite_rank stuff
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
@@ -499,6 +496,19 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       apply h60,
     end }
 
+def is_rep_of_minor_of_is_rep (N : matroid_in α) (hNM : N ≤m M) (hM : M.is_representable 𝔽) : 
+  N.is_representable 𝔽 := 
+begin
+  obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hM,
+  obtain ⟨C, ⟨D, ⟨hC, ⟨hD, ⟨hCD, rfl⟩⟩⟩⟩⟩ := minor.exists_contract_indep_delete_coindep hNM,
+  refine ⟨_, ⟨_, ⟨_, ⟨rep_of_del (M ⟋ C) 
+    (@rep_of_contr _ 𝔽 W _ hM_h_w hM_h_h_w _ M φ C hC.subset_ground) D⟩⟩⟩⟩,
+end
+
+structure excluded_minor (𝔽 : Type*) [field 𝔽] (M : matroid_in α) :=
+(hM : ¬ M.is_representable 𝔽)
+(hN : ∀ (N : matroid_in α), N <m M → N.is_representable 𝔽)
+
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
 finite_dimensional.finrank K (submodule.span K s) = s.ncard :=
@@ -812,7 +822,7 @@ structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
 -- I think we might actually need 3-connectedness for this?
-lemma cocircuits_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) {x : α} (hx : x ∈ M.E) : -- M.E \ {x}  not hyperplane?
+lemma cocircuits_nonbinary_minor (M : matroid_in α) (hM : ¬ M.is_binary) {x : α} (hx : x ∈ M.E) : -- M.E \ {x}  not hyperplane?
   x ∈ M.cl (M.E \ {x}) :=
 begin
   sorry,
