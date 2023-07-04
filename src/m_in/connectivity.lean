@@ -274,96 +274,28 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
     obtain ⟨i, hi⟩ := hI',
     obtain ⟨e, ⟨he, he'⟩⟩ := (h₂I i).exists_insert_of_not_base hi (hB' i),
 
-    use e,
-    use he.1.1,
+    refine ⟨e, ⟨⟨he.1.1, _⟩, ⟨_, λ j, _⟩⟩⟩,
     { have := he.2, dsimp at this, push_neg at this,
-      exact λ g, (this g) (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
-    },
-    split,
-    {
-      -- have := (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
-      rw insert_subset,
-      split,
-      {
-        exact (subset_Union (λ j, (Ms j).E) i)
-              (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
-      },
-      use h₁I,
-    },
-    {
-      intro j,
-      by_cases g : i = j,
-      {
-        subst g,
-        rw insert_inter_distrib at he',
-        rw insert_eq_of_mem he.1.2 at he',
-        exact he',
-      },
-      {
-        have : insert e (I ∩ (Ms i).E) ⊆ (Ms i).E,
-          {
-            rw insert_subset,
-            split,
-            {
-              exact he.1.2,
-            },
-            {
-              exact inter_subset_right I (Ms i).E,
-            }
-          },
-        
-      }
-    }
-    -- -- can augment a non-maximal Is
-    -- obtain ⟨i, hIsi⟩ := hIs',
-    -- obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
-
-    -- refine ⟨e, ⟨subset_Union Bs i he.1, _⟩,
-    --     ⟨Is.update i (insert e (Is i)), ⟨λ j, _, _⟩⟩⟩,
-    -- { rw [mem_Union, not_exists],
-    --   rintro j he',
-    --   by_cases g : i = j,
-    --   { rw ←g at he',
-    --     have := he.2,
-    --     contradiction },
-    --   { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
-    --     rw h i j g at this,
-    --     exact not_mem_empty e this } },
-    -- { simp_rw function.update_apply,
-    --   split_ifs with g,
-    --   { rw g, exact heIsi, },
-    --   { exact hIs j, } },
-
-    -- -- question: shortening this proof
-    -- show insert e (Union Is) = Union (function.update Is i (insert e (Is i))),
-
-    -- have h₁ : ∀ j, (Is j) ⊆ (Is.update i (insert e (Is i))) j,
-    --   { rintro j,
-    --     rw function.update_apply,
-    --     split_ifs with g,
-    --     { rw g, exact subset_insert _ _, },
-    --     { refl } },
-    -- have h₂ : { e } ⊆ Union (Is.update i (insert e (Is i))),
-    --   { have g₁ : { e } ⊆ (insert e (Is i)) := sorry,
-    --     have g₂ : (insert e (Is i)) = (Is.update i (insert e (Is i))) i,
-    --       { rw function.update_apply,
-    --         split_ifs with g,
-    --         { refl, },
-    --         { contradiction } },
-    --     have g₃ : (Is.update i (insert e (Is i))) i ⊆ Union (Is.update i (insert e (Is i))) :=
-    --       subset_Union _ _,
-    --     rw ←g₂ at g₃,
-    --     exact g₁.trans g₃ },
-    -- have h₃ : Union Is ⊆ Union (Is.update i (insert e (Is i))) :=
-    --   Union_mono h₁,
-    -- have h₃ : insert e (Union Is) ⊆ Union (Is.update i (insert e (Is i))),
-    --   { rw [insert_eq, union_subset_iff], exact ⟨h₂, h₃⟩, },
-    
-    -- refine subset_antisymm h₃ (λ f hf, _),
-    -- rw mem_Union at hf,
-    -- obtain ⟨j, hf⟩ := hf,
-    -- simp_rw function.update_apply at hf,
-    -- split_ifs with g at *,
+      exact λ g, (this g) (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))), },
+    { rw insert_subset, exact ⟨ (subset_Union (λ j, (Ms j).E) i)
+              (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))), h₁I⟩ },
+    { by_cases hij : i = j,
+      { subst hij, rw [insert_inter_distrib, insert_eq_of_mem he.1.2] at he',
+        exact he' },
+      { have h' : insert e I ∩ (Ms j).E = I ∩ (Ms j).E,
+          { refine subset_antisymm _ _,
+            { rintro f hf,
+              refine ⟨_, hf.2⟩,
+              cases eq_or_mem_of_mem_insert hf.1 with g g,
+              { exfalso, subst g,
+                exact hij (h.elim_set (mem_univ i) (mem_univ j) f (he.1.2) (hf.2)),
+              },
+              exact g, },
+            { rintro f hf,
+              refine ⟨_, hf.2⟩,
+              rw mem_insert_iff,
+              right, exact hf.1, } },
+        rw h', exact h₂I j, } },
   end)
   (begin -- a maximal indep. set exists
     rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
