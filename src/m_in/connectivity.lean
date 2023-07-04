@@ -257,111 +257,97 @@ def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) : matroid_in α :=
   direct_sum' M₁ (M₂ ‖ (M₂.ground \ M₁.ground))
   (by { simp only [ground_eq_E, restrict_ground_eq, inter_diff_self] })
 
-def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
-  (h : ∀ i j, i ≠ j → (Ms i).E ∩ (Ms j).E = ∅) : matroid_in α :=
+def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
+  (h : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
   matroid_of_indep
   (⋃ i, (Ms i).E)
-  (λ I, ∃ (Is : ι → set α), (∀ i, (Ms i).indep(Is i)) ∧ (I = Union Is))
-  ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
-  (begin -- subsets of independent sets are independent
-    rintro I J ⟨Js, ⟨Jsind, Jeq⟩⟩ hIJ,
-    refine ⟨(λ i, (Js i) ∩ I), λ i, (Jsind i).subset (inter_subset_left (Js i) I), _⟩,
-    rw [←Union_inter, ←Jeq], symmetry,
-    rw inter_eq_right_iff_subset,
-    exact hIJ,
-  end)
+  (λ I, I ⊆ (⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).indep (I ∩ (Ms i).E))
+  ⟨empty_subset _, λ _, (by { rw empty_inter, exact empty_indep _ })⟩
+  (λ I J ⟨h₁J, h₂J⟩ hIJ, ⟨hIJ.trans h₁J,
+    λ i, (h₂J i).subset (((Ms i).E).inter_subset_inter_left hIJ)⟩)
   (begin -- augmentation
-    rintro I B ⟨Is, ⟨hIs, rfl⟩⟩ hI ⟨⟨Bs, ⟨hBs, rfl⟩⟩, hB⟩,
-    
-    -- at least one Is not maximal
-    have hIs' : ∃ i, ¬(Ms i).base (Is i) := sorry,
-    -- all Bs maximal
-    have hBs' : ∀ i, (Ms i).base (Bs i) := sorry,
+    rintro I B ⟨h₁I, h₂I⟩ hI hB,
 
-    -- can augment a non-maximal Is
-    obtain ⟨i, hIsi⟩ := hIs',
-    obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
+    have hI' : ∃ i, ¬ (Ms i).base (I ∩ (Ms i).E) := sorry,
+    have hB' : ∀ i,   (Ms i).base (B ∩ (Ms i).E) := sorry,
 
-    refine ⟨e, ⟨subset_Union Bs i he.1, _⟩,
-        ⟨Is.update i (insert e (Is i)), ⟨λ j, _, _⟩⟩⟩,
-    { rw [mem_Union, not_exists],
-      rintro j he',
-      by_cases g : i = j,
-      { rw ←g at he',
-        have := he.2,
-        contradiction },
-      { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
-        rw h i j g at this,
-        exact not_mem_empty e this } },
-    { simp_rw function.update_apply,
-      split_ifs with g,
-      { rw g, exact heIsi, },
-      { exact hIs j, } },
+    obtain ⟨i, hi⟩ := hI',
+    obtain ⟨e, ⟨he, he'⟩⟩ := (h₂I i).exists_insert_of_not_base hi (hB' i),
 
-    -- question: shortening this proof
-    show insert e (Union Is) = Union (function.update Is i (insert e (Is i))),
-
-    have h₁ : ∀ j, (Is j) ⊆ (Is.update i (insert e (Is i))) j,
-      { rintro j,
-        rw function.update_apply,
-        split_ifs with g,
-        { rw g, exact subset_insert _ _, },
-        { refl } },
-    have h₂ : { e } ⊆ Union (Is.update i (insert e (Is i))),
-      { have g₁ : { e } ⊆ (insert e (Is i)) := sorry,
-        have g₂ : (insert e (Is i)) = (Is.update i (insert e (Is i))) i,
-          { rw function.update_apply,
-            split_ifs with g,
-            { refl, },
-            { contradiction } },
-        have g₃ : (Is.update i (insert e (Is i))) i ⊆ Union (Is.update i (insert e (Is i))) :=
-          subset_Union _ _,
-        rw ←g₂ at g₃,
-        exact g₁.trans g₃ },
-    have h₃ : Union Is ⊆ Union (Is.update i (insert e (Is i))) :=
-      Union_mono h₁,
-    have h₃ : insert e (Union Is) ⊆ Union (Is.update i (insert e (Is i))),
-      { rw [insert_eq, union_subset_iff], exact ⟨h₂, h₃⟩, },
-    
-    -- refine subset_antisymm h₃ (λ f hf, _),
-    -- rw mem_Union at hf,
-    -- obtain ⟨j, hf⟩ := hf,
-    -- simp_rw function.update_apply at hf,
-    -- split_ifs with g at *,
+    refine ⟨e, ⟨⟨he.1.1, _⟩, ⟨_, λ j, _⟩⟩⟩,
+    { have := he.2, dsimp at this, push_neg at this,
+      exact λ g, (this g) (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))), },
+    { rw insert_subset, exact ⟨ (subset_Union (λ j, (Ms j).E) i)
+              (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))), h₁I⟩ },
+    { by_cases hij : i = j,
+      { subst hij, rw [insert_inter_distrib, insert_eq_of_mem he.1.2] at he',
+        exact he' },
+      { have h' : insert e I ∩ (Ms j).E = I ∩ (Ms j).E,
+          { refine subset_antisymm _ _,
+            { rintro f hf,
+              refine ⟨_, hf.2⟩,
+              cases eq_or_mem_of_mem_insert hf.1 with g g,
+              { exfalso, subst g,
+                exact hij (h.elim_set (mem_univ i) (mem_univ j) f (he.1.2) (hf.2)),
+              },
+              exact g, },
+            { rintro f hf,
+              refine ⟨_, hf.2⟩,
+              rw mem_insert_iff,
+              right, exact hf.1, } },
+        rw h', exact h₂I j, } },
   end)
   (begin -- a maximal indep. set exists
-    rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
+    rintro X hX I ⟨h₁I, h₂I⟩ hIX,
     let Xs := λ i, X ∩ (Ms i).E,
-    have hIsXs : ∀ i, (Is i) ⊆ (Xs i) :=
-      λ i e he, ⟨hIsX ((subset_Union Is i) he), (hIs i).subset_ground he⟩, 
-    have h : ∀ i, ∃ B, (Ms i).basis B (Xs i) ∧ (Is i) ⊆ B :=
-      λ i, (hIs i).subset_basis_of_subset (hIsXs i),
-    choose! Bs hBs using h,
-    refine ⟨Union Bs, ⟨_, _⟩⟩,
-    { simp only [Union_subset_iff, mem_set_of_eq],
-      refine ⟨⟨Bs, ⟨λ i, (hBs i).1.indep, by { refl }⟩⟩,
-        ⟨λ i, (hBs i).2.trans (subset_Union Bs i),
-        λ i, (hBs i).1.subset.trans (inter_subset_left X (Ms i).E),⟩⟩, },
-    { simp only [Union_subset_iff, mem_set_of_eq, and_imp, forall_exists_index],
-      rintro J Js hJs rfl hIsJ hJX hBsJ,
-      simp only [Union_subset_iff],
-      have hBsJs : ∀ i, (Bs i) ⊆ (Js i),
-        -- question: how could this proof be made shorter? 
-        { rintro i e he, have := (hBsJ i) he,
-          simp only [mem_Union] at this,
-          obtain ⟨j, hj⟩ := this,
-          by_cases g : i = j,
-          { rw g, exact hj },
-          { exfalso,
-            have : e ∈ (Ms i).E ∩ (Ms j).E :=
-              ⟨(hBs i).1.subset_ground_left he, (hJs j).subset_ground hj⟩,
-            rw h i j g at this, exact not_mem_empty e this } },
-        -- ends here
-      have hJsXs : ∀ i, (Js i) ⊆ (Xs i) :=
-        λ i e he, ⟨hJX (subset_Union Js i he), (hJs i).subset_ground he⟩,
-      rintro i,
-      rw ←(hBs i).1.eq_of_subset_indep (hJs i) (hBsJs i) (hJsXs i),
-      exact subset_Union Bs i, }
+    have h' : ∀ i, ∃ B, (Ms i).basis B (Xs i) :=
+        λ i, (Ms i).exists_basis (Xs i),
+    choose! Bs hBs using h',
+
+    
+    refine ⟨Union Bs, ⟨⟨⟨λ e he, _, λ i, _⟩,_⟩, _⟩⟩,
+    { rw mem_Union at he |-,
+      obtain ⟨i, hi⟩ := he,
+      exact ⟨i, (hBs i).subset_ground_left hi⟩ },
+    { have h' : ∀ i, Union Bs ∩ (Ms i).E = (Bs i) := sorry,
+      simp_rw h', exact (hBs i).indep },
+    {
+      
+    }
+
+
+    -- rintro X hX I ⟨Is, hIs, rfl⟩ hIsX,
+    -- let Xs := λ i, X ∩ (Ms i).E,
+    -- have hIsXs : ∀ i, (Is i) ⊆ (Xs i) :=
+    --   λ i e he, ⟨hIsX ((subset_Union Is i) he), (hIs i).subset_ground he⟩, 
+    -- have h : ∀ i, ∃ B, (Ms i).basis B (Xs i) ∧ (Is i) ⊆ B :=
+    --   λ i, (hIs i).subset_basis_of_subset (hIsXs i),
+    -- choose! Bs hBs using h,
+    -- refine ⟨Union Bs, ⟨_, _⟩⟩,
+    -- { simp only [Union_subset_iff, mem_set_of_eq],
+    --   refine ⟨⟨Bs, ⟨λ i, (hBs i).1.indep, by { refl }⟩⟩,
+    --     ⟨λ i, (hBs i).2.trans (subset_Union Bs i),
+    --     λ i, (hBs i).1.subset.trans (inter_subset_left X (Ms i).E),⟩⟩, },
+    -- { simp only [Union_subset_iff, mem_set_of_eq, and_imp, forall_exists_index],
+    --   rintro J Js hJs rfl hIsJ hJX hBsJ,
+    --   simp only [Union_subset_iff],
+    --   have hBsJs : ∀ i, (Bs i) ⊆ (Js i),
+    --     -- question: how could this proof be made shorter? 
+    --     { rintro i e he, have := (hBsJ i) he,
+    --       simp only [mem_Union] at this,
+    --       obtain ⟨j, hj⟩ := this,
+    --       by_cases g : i = j,
+    --       { rw g, exact hj },
+    --       { exfalso,
+    --         have : e ∈ (Ms i).E ∩ (Ms j).E :=
+    --           ⟨(hBs i).1.subset_ground_left he, (hJs j).subset_ground hj⟩,
+    --         rw h i j g at this, exact not_mem_empty e this } },
+    --     -- ends here
+    --   have hJsXs : ∀ i, (Js i) ⊆ (Xs i) :=
+    --     λ i e he, ⟨hJX (subset_Union Js i he), (hJs i).subset_ground he⟩,
+    --   rintro i,
+    --   rw ←(hBs i).1.eq_of_subset_indep (hJs i) (hBsJs i) (hJsXs i),
+    --   exact subset_Union Bs i, }
   end)
   (begin -- indep sets contained in ground set
     rintro I ⟨I', I'ind, rfl⟩,

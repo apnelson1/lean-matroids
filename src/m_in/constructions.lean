@@ -347,8 +347,6 @@ unif_dual' (nat.add_sub_of_le hab)
 lemma unif_self_dual (a : ℕ) : (unif a (2*a))﹡ = unif a (2*a) := 
 unif_dual' (two_mul a).symm 
 
-
-
 lemma iso_unif_iff {a b : ℕ} {M : matroid_in α} : 
   nonempty (M ≃i (unif a b)) ↔ (M = M.E.unif_on a ∧ M.E.encard = (b : ℕ∞)) := 
 begin
