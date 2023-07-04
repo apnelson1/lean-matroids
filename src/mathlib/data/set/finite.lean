@@ -51,8 +51,7 @@ begin
   rw ht.2 t' ht'.2 ((image_subset_image_iff subtype.coe_injective).mp htt'),
 end 
 
-/-- This seems a strict improvement over the nonprimed version in mathlib - only the image 
-needs to be finite, not the set itself.  -/
+/-- This seems a strict improvement over the nonprimed version in mathlib - only the image needs to be finite, not the set itself.  -/
 lemma finite.exists_maximal_wrt' {α β : Type*} [partial_order β] (f : α → β) (s : set α) 
 (h : (f '' s).finite) (h₀ : s.nonempty) : 
   (∃ (a : α) (H : a ∈ s), ∀ (a' : α), a' ∈ s → f a ≤ f a' → f a = f a') :=
