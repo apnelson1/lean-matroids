@@ -102,6 +102,23 @@ begin
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
 
+-- i think we need this because it accounts for things like repeated columns
+def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) : 
+  matroid_in ι := matroid_of_indep_of_bdd' univ 
+  (λ (I : set ι), (linear_independent 𝔽 (λ x : I, v x)))  
+  begin
+    rw [linear_independent_image (inj_on_empty _), image_empty],
+    apply linear_independent_empty 𝔽 W,
+  end 
+  begin
+    intros I J hJ hIJ,
+    have hIJ2 := linear_independent.image hJ,
+    have h2 := image_subset v hIJ,
+    have hI2 := linear_independent.mono h2 hIJ2,
+    sorry,
+  end _ _ _
+
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
 { to_fun := id,
@@ -113,7 +130,11 @@ def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W
       apply hI,
     end }
 
-
+/-def rep_union (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (N N' : matroid_in α) 
+(hN : N ≤m M) (hN' : N' ≤m M) (hNN' : disjoint N.E N'.E) (hNN'2 : N.E ∪ N'.E = M.E) 
+(φ : rep 𝔽 W N) (φ2 : rep 𝔽 W N') 
+(hI : ∀ s ⊆ N.E, ∀ t ⊆ N'.E, linear_independent 𝔽 ((φ.to_fun ∘ coe : s → W) ∪ (φ2.to_fun ∘ coe : t → W))) ↔ M.indep (s ∪ t) 
+  : rep 𝔽 W M := -/
 
 -- use finite_rank stuff
 -- if M has rank 2, has at least 4 elements, and is simple, then M is deletion of U_{2, 4}
@@ -505,9 +526,48 @@ begin
     (@rep_of_contr _ 𝔽 W _ hM_h_w hM_h_h_w _ M φ C hC.subset_ground) D⟩⟩⟩⟩,
 end
 
-structure excluded_minor (𝔽 : Type*) [field 𝔽] (M : matroid_in α) :=
-(hM : ¬ M.is_representable 𝔽)
-(hN : ∀ (N : matroid_in α), N <m M → N.is_representable 𝔽)
+
+def extend_rep (M : matroid_in α) (x : α) (hx : x ∈ M.E) (φ : rep 𝔽 W (M ⟍ x)) 
+  (hx : x ∈ M.cl (M.E \ {x})) : rep 𝔽 W M := 
+begin
+  -- why is this giving me an error
+  -- induction tactic failed, recursor 'Exists.dcases_on' can only eliminate into Prop
+  --obtain ⟨I, hI⟩ :=  M.exists_basis (M.E \ {x}),
+  have J : set α,
+    sorry,
+  have hJ : M.basis J (M.E \ {x}),
+    sorry,
+  have C := (φ '' (M.fund_circuit x J \ {x})).to_finset,
+  have h3 := hJ.subset,
+  --obtain ⟨c, hc⟩ := h4,
+  --have f := λ a : α, if x = a then C.sum (λ i, i) else φ a, 
+  use λ a : α, if x = a then C.sum (λ i, i) else φ a,
+  intros I hI,
+  by_cases h10 : x ∈ I, 
+  
+  refine ⟨λ h, _, λ h, _⟩,  
+  sorry,
+  sorry,
+  have h6 := subset_diff_singleton hI h10,
+  rw ← delete_ground at h6, 
+  have h5 := φ.valid' I h6,
+  have h7 := @delete_indep_iff _ I {x} M,
+  rw ← M.delete_elem x at h7,
+  rw h7 at h5,
+  have h12 : ((λ a : α, if x = a then C.sum (λ i, i) else φ a) ∘ coe : I → W) = (φ.to_fun ∘ coe : I → W),
+    ext y;
+    simp only [to_fun_eq_coe, comp_app],
+    have h13 : x ≠ y,
+      sorry,
+    rw ite_eq_iff, 
+    right,
+    refine ⟨h13, rfl⟩,
+  rw h12,
+  rw h5,
+  simp only [disjoint_singleton_right, and_iff_left_iff_imp],
+  intros h2,
+  exact h10,
+end
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
   [module K V] (s : set V) (hs : linear_independent K (coe : s → V)) :
@@ -828,6 +888,46 @@ begin
   sorry,
 end   
 
+lemma cocircuits_excluded_minor (M : matroid_in α) 
+(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) {x : α} (hx : x ∈ M.E) : 
+  ¬ M.cocircuit {x} :=
+begin
+  by_contra,
+  rw excluded_minor_iff at hM,
+  obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := (hM.2 x hx).2,
+  haveI : has_zero W,
+    sorry,
+  rw cocircuit_iff_mem_minimals_compl_nonspanning at h,
+  rw mem_minimals_iff' at h,
+  simp at h,
+  apply hM.1,
+  simp,
+  --use ⟨W × 𝔽, ⟨_, ⟨_, ⟨_⟩⟩⟩⟩,
+  have f := λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
+  have h1 : add_comm_group W × 𝔽,
+    sorry,  
+  have h2 : module 𝔽 (W × 𝔽), 
+    sorry,
+  have h3 : M.is_representable 𝔽,
+  rw is_representable,
+  have h4 : rep 𝔽 (W × 𝔽) M,
+  use f,
+  intros I hI,
+  by_cases x ∈ I,
+  { refine ⟨λ h, _, λ h, _⟩,  
+    sorry,
+    --have h2 := linear_independent.inl_union_inr,
+    sorry, },  
+  { 
+    refine ⟨λ h, _, λ h, _⟩, 
+    sorry },
+
+  -- for some reason this isn't working but i think it should be
+  --use ⟨W × 𝔽, ⟨h1, ⟨h2, ⟨h4⟩⟩⟩⟩,
+  sorry,
+  sorry,
+end
+
 -- might need something that says if two matroids are rep. over the same field, then we can put them
 -- in the same module
 
@@ -921,7 +1021,7 @@ begin
   rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
   haveI := zmod.fintype 2,
   have φ := rep.rep_submodule φ',
-  rw rep.to_submodule at φ,
+  rw rep.to_submodule' at φ,
   cases foo' φ with φ,
   rw [unif_on_rk] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
