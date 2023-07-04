@@ -257,71 +257,107 @@ def direct_sum (M₁ : matroid_in α) (M₂ : matroid_in α) : matroid_in α :=
   direct_sum' M₁ (M₂ ‖ (M₂.ground \ M₁.ground))
   (by { simp only [ground_eq_E, restrict_ground_eq, inter_diff_self] })
 
-def direct_Sum {ι : Type*} (Ms : ι → matroid_in α)
-  (h : ∀ i j, i ≠ j → (Ms i).E ∩ (Ms j).E = ∅) : matroid_in α :=
+def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
+  (h : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
   matroid_of_indep
   (⋃ i, (Ms i).E)
-  (λ I, ∃ (Is : ι → set α), (∀ i, (Ms i).indep(Is i)) ∧ (I = Union Is))
-  ⟨λ _, ∅, λ_, empty_indep _, by { rw Union_empty }⟩
-  (begin -- subsets of independent sets are independent
-    rintro I J ⟨Js, ⟨Jsind, Jeq⟩⟩ hIJ,
-    refine ⟨(λ i, (Js i) ∩ I), λ i, (Jsind i).subset (inter_subset_left (Js i) I), _⟩,
-    rw [←Union_inter, ←Jeq], symmetry,
-    rw inter_eq_right_iff_subset,
-    exact hIJ,
-  end)
+  (λ I, I ⊆ (⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).indep (I ∩ (Ms i).E))
+  ⟨empty_subset _, λ _, (by { rw empty_inter, exact empty_indep _ })⟩
+  (λ I J ⟨h₁J, h₂J⟩ hIJ, ⟨hIJ.trans h₁J,
+    λ i, (h₂J i).subset (((Ms i).E).inter_subset_inter_left hIJ)⟩)
   (begin -- augmentation
-    rintro I B ⟨Is, ⟨hIs, rfl⟩⟩ hI ⟨⟨Bs, ⟨hBs, rfl⟩⟩, hB⟩,
-    
-    -- at least one Is not maximal
-    have hIs' : ∃ i, ¬(Ms i).base (Is i) := sorry,
-    -- all Bs maximal
-    have hBs' : ∀ i, (Ms i).base (Bs i) := sorry,
+    rintro I B ⟨h₁I, h₂I⟩ hI hB,
 
-    -- can augment a non-maximal Is
-    obtain ⟨i, hIsi⟩ := hIs',
-    obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
+    have hI' : ∃ i, ¬ (Ms i).base (I ∩ (Ms i).E) := sorry,
+    have hB' : ∀ i,   (Ms i).base (B ∩ (Ms i).E) := sorry,
 
-    refine ⟨e, ⟨subset_Union Bs i he.1, _⟩,
-        ⟨Is.update i (insert e (Is i)), ⟨λ j, _, _⟩⟩⟩,
-    { rw [mem_Union, not_exists],
-      rintro j he',
+    obtain ⟨i, hi⟩ := hI',
+    obtain ⟨e, ⟨he, he'⟩⟩ := (h₂I i).exists_insert_of_not_base hi (hB' i),
+
+    use e,
+    use he.1.1,
+    { have := he.2, dsimp at this, push_neg at this,
+      exact λ g, (this g) (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
+    },
+    split,
+    {
+      -- have := (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
+      rw insert_subset,
+      split,
+      {
+        exact (subset_Union (λ j, (Ms j).E) i)
+              (he'.subset_ground (mem_insert e (I ∩ (Ms i).E))),
+      },
+      use h₁I,
+    },
+    {
+      intro j,
       by_cases g : i = j,
-      { rw ←g at he',
-        have := he.2,
-        contradiction },
-      { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
-        rw h i j g at this,
-        exact not_mem_empty e this } },
-    { simp_rw function.update_apply,
-      split_ifs with g,
-      { rw g, exact heIsi, },
-      { exact hIs j, } },
+      {
+        subst g,
+        rw insert_inter_distrib at he',
+        rw insert_eq_of_mem he.1.2 at he',
+        exact he',
+      },
+      {
+        have : insert e (I ∩ (Ms i).E) ⊆ (Ms i).E,
+          {
+            rw insert_subset,
+            split,
+            {
+              exact he.1.2,
+            },
+            {
+              exact inter_subset_right I (Ms i).E,
+            }
+          },
+        
+      }
+    }
+    -- -- can augment a non-maximal Is
+    -- obtain ⟨i, hIsi⟩ := hIs',
+    -- obtain ⟨e, ⟨he, heIsi⟩⟩ := (hIs i).exists_insert_of_not_base hIsi (hBs' i),
 
-    -- question: shortening this proof
-    show insert e (Union Is) = Union (function.update Is i (insert e (Is i))),
+    -- refine ⟨e, ⟨subset_Union Bs i he.1, _⟩,
+    --     ⟨Is.update i (insert e (Is i)), ⟨λ j, _, _⟩⟩⟩,
+    -- { rw [mem_Union, not_exists],
+    --   rintro j he',
+    --   by_cases g : i = j,
+    --   { rw ←g at he',
+    --     have := he.2,
+    --     contradiction },
+    --   { have : e ∈ (Ms i).E ∩ (Ms j).E := ⟨(hBs i).subset_ground he.1, (hIs j).subset_ground he'⟩,
+    --     rw h i j g at this,
+    --     exact not_mem_empty e this } },
+    -- { simp_rw function.update_apply,
+    --   split_ifs with g,
+    --   { rw g, exact heIsi, },
+    --   { exact hIs j, } },
 
-    have h₁ : ∀ j, (Is j) ⊆ (Is.update i (insert e (Is i))) j,
-      { rintro j,
-        rw function.update_apply,
-        split_ifs with g,
-        { rw g, exact subset_insert _ _, },
-        { refl } },
-    have h₂ : { e } ⊆ Union (Is.update i (insert e (Is i))),
-      { have g₁ : { e } ⊆ (insert e (Is i)) := sorry,
-        have g₂ : (insert e (Is i)) = (Is.update i (insert e (Is i))) i,
-          { rw function.update_apply,
-            split_ifs with g,
-            { refl, },
-            { contradiction } },
-        have g₃ : (Is.update i (insert e (Is i))) i ⊆ Union (Is.update i (insert e (Is i))) :=
-          subset_Union _ _,
-        rw ←g₂ at g₃,
-        exact g₁.trans g₃ },
-    have h₃ : Union Is ⊆ Union (Is.update i (insert e (Is i))) :=
-      Union_mono h₁,
-    have h₃ : insert e (Union Is) ⊆ Union (Is.update i (insert e (Is i))),
-      { rw [insert_eq, union_subset_iff], exact ⟨h₂, h₃⟩, },
+    -- -- question: shortening this proof
+    -- show insert e (Union Is) = Union (function.update Is i (insert e (Is i))),
+
+    -- have h₁ : ∀ j, (Is j) ⊆ (Is.update i (insert e (Is i))) j,
+    --   { rintro j,
+    --     rw function.update_apply,
+    --     split_ifs with g,
+    --     { rw g, exact subset_insert _ _, },
+    --     { refl } },
+    -- have h₂ : { e } ⊆ Union (Is.update i (insert e (Is i))),
+    --   { have g₁ : { e } ⊆ (insert e (Is i)) := sorry,
+    --     have g₂ : (insert e (Is i)) = (Is.update i (insert e (Is i))) i,
+    --       { rw function.update_apply,
+    --         split_ifs with g,
+    --         { refl, },
+    --         { contradiction } },
+    --     have g₃ : (Is.update i (insert e (Is i))) i ⊆ Union (Is.update i (insert e (Is i))) :=
+    --       subset_Union _ _,
+    --     rw ←g₂ at g₃,
+    --     exact g₁.trans g₃ },
+    -- have h₃ : Union Is ⊆ Union (Is.update i (insert e (Is i))) :=
+    --   Union_mono h₁,
+    -- have h₃ : insert e (Union Is) ⊆ Union (Is.update i (insert e (Is i))),
+    --   { rw [insert_eq, union_subset_iff], exact ⟨h₂, h₃⟩, },
     
     -- refine subset_antisymm h₃ (λ f hf, _),
     -- rw mem_Union at hf,
