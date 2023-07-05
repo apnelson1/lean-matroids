@@ -585,7 +585,6 @@ lemma basis.not_basis_of_ssubset (hI : M.basis I X) (hJI : J ⊂ I) : ¬ M.basis
 lemma indep.subset_basis_of_subset (hI : M.indep I) (hIX : I ⊆ X) (hX : X ⊆ M.E . ssE) : 
   ∃ J, M.basis J X ∧ I ⊆ J :=
 begin
-   
   obtain ⟨J, ⟨(hJ : M.indep J),hIJ,hJX⟩, hJmax⟩ := M.maximality X hX I hI hIX,
   use J, 
   rw [and_iff_left hIJ, basis_iff, and_iff_right hJ, and_iff_right hJX], 
