@@ -82,7 +82,6 @@ lemma aux1 {ι : Type*}
   (hMs : univ.pairwise_disjoint (λ (i : ι), (Ms i).E)) : ∀ i, Is i ⊆ Js i :=
 sorry
 
-
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
   (h : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
   matroid_of_indep
@@ -109,36 +108,69 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
       { subst hij, rw [insert_inter_distrib, insert_eq_of_mem he.1.2] at he',
         exact he' },
       { have h' : insert e I ∩ (Ms j).E = I ∩ (Ms j).E,
-          { refine subset_antisymm _ _,
+          { -- question: likely possible to shorten / factor out
+            refine subset_antisymm _ _,
             { rintro f hf,
               refine ⟨_, hf.2⟩,
               cases eq_or_mem_of_mem_insert hf.1 with g g,
               { exfalso, subst g,
-                exact hij (h.elim_set (mem_univ i) (mem_univ j) f (he.1.2) (hf.2)),
-              },
+                exact hij (h.elim_set (mem_univ i) (mem_univ j) f (he.1.2) (hf.2)), },
               exact g, },
             { rintro f hf,
               refine ⟨_, hf.2⟩,
               rw mem_insert_iff,
-              right, exact hf.1, } },
+              right, exact hf.1, }
+          }, -- end question
         rw h', exact h₂I j, } },
   end)
+
   (begin -- a maximal indep. set exists
     rintro X hX I ⟨h₁I, h₂I⟩ hIX,
     let Xs := λ i, X ∩ (Ms i).E,
     let Is := λ i, I ∩ (Ms i).E,
-    have h' : ∀ i, ∃ B, (Ms i).basis B (Xs i) ∧ (Is i) ⊆ B :=
-      sorry,
+
+    have Xs_eq : Union Xs = X :=
+      by { symmetry, exact subset_eq_Union_inter_ground _ _ hX },
+    have Is_eq : Union Is = I :=
+      by { symmetry, exact subset_eq_Union_inter_ground I Ms h₁I },
+
+    have h' : ∀ i, ∃ B, (Ms i).basis B (Xs i) ∧ (Is i) ⊆ B,
+      { rintro i,
+        have : (Is i) ⊆ (Xs i),
+          { have q : ∀ i, I ∩ (Ms i).E ⊆ (Ms i).E :=
+              λ i, inter_subset_right I (Ms i).E,
+            have q': ∀ i, X ∩ (Ms i).E ⊆ (Ms i).E :=
+              λ i, inter_subset_right X (Ms i).E,
+            rw [←Is_eq, ←Xs_eq] at hIX,
+            exact aux1 Is Xs hIX Ms q q' h i, },
+        exact (h₂I i).subset_basis_of_subset this (by simp), },
     choose! Bs hBs using h',
 
     refine ⟨Union Bs, ⟨⟨⟨λ e he, _, λ i, _⟩, ⟨_, _⟩⟩, _⟩⟩,
     { rw mem_Union at he |-,
       obtain ⟨i, hi⟩ := he,
       exact ⟨i, (hBs i).1.subset_ground_left hi⟩ },
-    { have h' : ∀ i, Union Bs ∩ (Ms i).E = (Bs i) := sorry,
+    { have h' : ∀ i, Union Bs ∩ (Ms i).E = (Bs i),
+        { -- question: likely possible to shorten and factor out
+          rintro j,
+          refine subset_antisymm _
+            (subset_inter (subset_Union Bs j) ((hBs j).1.subset_ground_left)),
+          { rintro e ⟨he₁, he₂⟩,
+            rw [pairwise_disjoint, set.pairwise] at h,
+            rw mem_Union at he₁,
+            obtain ⟨k, hk⟩ := he₁,
+            by_cases g : j = k,
+            { subst g, exact hk },
+            { exfalso,
+              have g' := h (mem_univ j) (mem_univ k) g,
+              have q := (hBs k).1.subset_ground_left hk,
+              rw ←singleton_subset_iff at he₂ q,
+              have := g' he₂ q,
+              simp only [bot_eq_empty, le_eq_subset, singleton_subset_iff,
+                mem_empty_iff_false] at this,
+              exact this } }, }, -- end question
       simp_rw h', exact (hBs i).1.indep },
-    { -- same arg as below
-      have hI : I = Union Is := 
+    { have hI : I = Union Is := 
         subset_eq_Union_inter_ground I Ms h₁I,
       rw [hI, Union_subset_iff],
       rintro i,
@@ -153,19 +185,35 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
       rw [hJ, Union_subset_iff],
       rintro i,
       have hBs' : (Bs i) ⊆ (Js i),
-        {
+        { -- question: likely possible to shorten and factor out
           rw Union_subset_iff at hBsJ,
-          have := hBsJ i,
-        },
-      
-      -- have hi : J ∩ (Ms i).E ⊆ (Bs i) := sorry,
-      -- exact hi.trans (subset_Union Bs i)
+          rintro e he,
+          have he' := hBsJ i he,
+          rw [hJ, mem_Union] at he',
+          obtain ⟨k, hk⟩ := he',
+          by_cases g : k = i,
+          { rw ←g, exact hk },
+          { exfalso,
+            have q  : { e } ⊆ (Ms k).E :=
+              singleton_subset_iff.mpr hk.2,
+            have q' : { e } ⊆ (Ms i).E :=
+              singleton_subset_iff.mpr ((hBs i).1.subset_ground_left he),
+            rw [pairwise_disjoint, set.pairwise] at h,
+            have := (h (mem_univ k) (mem_univ i) g) q q',
+            simp only [bot_eq_empty, le_eq_subset,
+                singleton_subset_iff, mem_empty_iff_false] at this,
+            exact this } -- end question
+          },
+      have hJs' : (Js i) ⊆ (Xs i) := sorry,
+      exact (subset_antisymm_iff.mp ((hBs i).1.eq_of_subset_indep (h₂J i) hBs' hJs')).2.trans
+          (subset_Union Bs i),
     }
   end)
   (begin -- indep sets contained in ground set
     rintro I ⟨h₁I, h₂I⟩,
-    let Is := λ i, I ∩ (Ms i).E, -- repeated again
-    have hI : I = Union Is := sorry,
+    let Is := λ i, I ∩ (Ms i).E,
+    have hI : I = Union Is :=
+      subset_eq_Union_inter_ground I Ms h₁I,
     rw [hI, Union_subset_iff],
     rintro i,
     have hi : I ∩ (Ms i).E ⊆ (Ms i).E :=
