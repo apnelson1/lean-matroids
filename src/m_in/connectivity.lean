@@ -123,7 +123,6 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
           }, -- end question
         rw h', exact h₂I j, } },
   end)
-
   (begin -- a maximal indep. set exists
     rintro X hX I ⟨h₁I, h₂I⟩ hIX,
     let Xs := λ i, X ∩ (Ms i).E,
@@ -204,7 +203,25 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
                 singleton_subset_iff, mem_empty_iff_false] at this,
             exact this } -- end question
           },
-      have hJs' : (Js i) ⊆ (Xs i) := sorry,
+      have hJs' : (Js i) ⊆ (Xs i),
+        { -- question: likely possible to shorten and factor out
+          rintro e he,
+          rw hJ at hJX,
+          have he' := (subset_Union Js i).trans hJX he,
+          rw [←Xs_eq, mem_Union] at he',
+          obtain ⟨k, hk⟩ := he',
+          by_cases g : i = k,
+          { subst g, exact hk },
+          { exfalso,
+            have q : { e } ⊆ (Ms k).E :=
+              singleton_subset_iff.mpr hk.2,
+            have q' : { e } ⊆ (Ms i).E :=
+              singleton_subset_iff.mpr ((h₂J i).subset_ground he),
+            rw [pairwise_disjoint, set.pairwise] at h,
+            have := (h (mem_univ i) (mem_univ k) g) q' q,
+            simp only [bot_eq_empty, le_eq_subset,
+                singleton_subset_iff, mem_empty_iff_false] at this,
+            exact this } }, -- end question
       exact (subset_antisymm_iff.mp ((hBs i).1.eq_of_subset_indep (h₂J i) hBs' hJs')).2.trans
           (subset_Union Bs i),
     }
