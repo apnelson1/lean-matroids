@@ -526,6 +526,11 @@ begin
     (@rep_of_contr _ 𝔽 W _ hM_h_w hM_h_h_w _ M φ C hC.subset_ground) D⟩⟩⟩⟩,
 end
 
+lemma indep.union (M : matroid_in α) (I J : set α) : 
+  M.indep (I ∪ J) ↔ (∀ x ∈ M.cl I ∩ M.cl J, M.loop x) ∧ M.indep I ∧ M.indep J :=
+begin
+  sorry,
+end
 
 def extend_rep (M : matroid_in α) (x : α) (hx : x ∈ M.E) (φ : rep 𝔽 W (M ⟍ x)) 
   (hx : x ∈ M.cl (M.E \ {x})) : rep 𝔽 W M := 
@@ -537,16 +542,27 @@ begin
     sorry,
   have hJ : M.basis J (M.E \ {x}),
     sorry,
-  have C := (φ '' (M.fund_circuit x J \ {x})).to_finset,
   have h3 := hJ.subset,
   --obtain ⟨c, hc⟩ := h4,
   --have f := λ a : α, if x = a then C.sum (λ i, i) else φ a, 
-  use λ a : α, if x = a then C.sum (λ i, i) else φ a,
+  use λ a : α, if x = a then (φ '' (M.fund_circuit x J \ {x})).to_finset.sum (λ i, i) else φ a,
   intros I hI,
   by_cases h10 : x ∈ I, 
-  
-  refine ⟨λ h, _, λ h, _⟩,  
+  have h20 : I = (I \ {x}) ∪ {x},
+    simp only [diff_union_self, union_singleton],
+    simp only [insert_diff_singleton],
+    rw insert_eq_of_mem h10,
+  rw h20,
+  refine ⟨λ h, _, λ h, _⟩,
+  rw indep.union,
+  refine ⟨_, ⟨_, _⟩⟩,
   sorry,
+  have h30 := φ.valid' (I \ {x}) _,
+
+  sorry,
+  rw [delete_elem, delete_ground],
+  apply diff_subset_diff hI (subset_refl {x}),
+  sorry, 
   sorry,
   have h6 := subset_diff_singleton hI h10,
   rw ← delete_ground at h6, 
@@ -554,7 +570,7 @@ begin
   have h7 := @delete_indep_iff _ I {x} M,
   rw ← M.delete_elem x at h7,
   rw h7 at h5,
-  have h12 : ((λ a : α, if x = a then C.sum (λ i, i) else φ a) ∘ coe : I → W) = (φ.to_fun ∘ coe : I → W),
+  have h12 : ((λ a : α, if x = a then (φ '' (M.fund_circuit x J \ {x})).to_finset.sum (λ i, i) else φ a) ∘ coe : I → W) = (φ.to_fun ∘ coe : I → W),
     ext y;
     simp only [to_fun_eq_coe, comp_app],
     have h13 : x ≠ y,
@@ -562,11 +578,8 @@ begin
     rw ite_eq_iff, 
     right,
     refine ⟨h13, rfl⟩,
-  rw h12,
-  rw h5,
-  simp only [disjoint_singleton_right, and_iff_left_iff_imp],
-  intros h2,
-  exact h10,
+  simp only [h12, h5, disjoint_singleton_right, and_iff_left_iff_imp],
+  exact λ h2, h10,
 end
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
