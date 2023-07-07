@@ -27,10 +27,16 @@ lemma not_mem_of_pairwise_disjoint
   (Es : ι → set α)
   (hEs : univ.pairwise_disjoint Es)
   (he : e ∈ Es i)
-  (hij : i ≠ j)
-  :
+  (hij : i ≠ j) :
   e ∉ Es j :=
-sorry
+begin
+  intro he',
+  rw [pairwise_disjoint, set.pairwise] at hEs,
+  have := hEs (mem_univ i) (mem_univ j) hij,
+  simp only [function.on_fun_apply, disjoint_iff, inf_eq_inter, bot_eq_empty] at this,
+  have h : e ∈ Es i ∩ Es j := ⟨he, he'⟩,
+  rw this at h, exact (not_mem_empty _) h
+end
 
 lemma subsets_of_subsets_of_pairwise_disjoint
   {ι : Type*}
