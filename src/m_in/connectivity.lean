@@ -1,6 +1,6 @@
 import .restriction
 import mathlib.data.set.basic 
--- import function
+import .minor -- for deletion in direct_Sum
 
 noncomputable theory
 open_locale classical
@@ -258,5 +258,21 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
       inter_subset_right I (Ms i).E,
     exact hi.trans (subset_Union_of_subset i (by refl)),
   end)
+
+def direct_Sum {ι : Type*} (Ms : ι → matroid_in α) : matroid_in α :=
+direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
+(begin
+  rw [pairwise_disjoint, set.pairwise],
+  rintro i hi j hj hij,
+  simp only [ne.def, delete_ground, function.on_fun_apply, disjoint_iff],
+  refine subset_antisymm _ (empty_subset _),
+  rintro e ⟨⟨hei₁, hei₂⟩, ⟨hej₁, hej₂⟩⟩,
+  rw mem_Union at hei₂,
+  exfalso,
+  have : ∃ k, e ∈ ⋃ (x : k ≠ i), (Ms k).E,
+    { refine ⟨j, _⟩, rw mem_Union,
+      exact ⟨by { symmetry, exact hij }, hej₁⟩ },
+  exact hei₂ this
+end)
 
 end matroid_in
