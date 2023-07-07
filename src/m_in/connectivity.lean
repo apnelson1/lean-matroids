@@ -93,19 +93,38 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
 
         -- T is indep
         have hT : (T ⊆ ⋃ (i : ι), (Ms i).E) ∧ ∀ (i : ι), (Ms i).indep (T ∩ (Ms i).E),
-          {
-            refine ⟨_, _⟩,
+          { refine ⟨_, λ j, _⟩,
             { -- question: how to rewrite using let expressions
               have : T = insert e (⋃ (j : ι), B ∩ (Ms j).E) := eq.refl T,
               rw this, clear this,
               -- end question
               rw [insert_eq, union_subset_iff, singleton_subset_iff],
-              refine ⟨(subset_Union (λ i, (Ms i).E) i) (hTi.subset_ground he.1),
+              exact ⟨(subset_Union (λ i, (Ms i).E) i) (hTi.subset_ground he.1),
                 Union_mono (λ i, inter_subset_right _ _)⟩ },
-            {
-              sorry
-            }
-          },
+            { by_cases hji : j = i,
+              { subst hji, have h : T ∩ (Ms j).E = insert e (B ∩ (Ms j).E),
+                  { refine subset_antisymm _ _,
+                    { rintro f ⟨hf₁, hf₂⟩,
+                      cases eq_or_mem_of_mem_insert hf₁ with g g,
+                      { rw g, exact mem_insert e _ },
+                      { rw mem_Union at g, obtain ⟨i, hi⟩ := g,
+                        exact (subset_insert _ _) ⟨hi.1, hf₂⟩ } },
+                    { rintro f hf,
+                      cases eq_or_mem_of_mem_insert hf with g g,
+                      { rw g, exact ⟨mem_insert _ _, hTi.subset_ground he.1⟩ },
+                      { exact ⟨(subset_insert _ _) ((subset_Union _ j) g), g.2⟩ } } },
+                rw h, exact heTi },
+              { have h : T ∩ (Ms j).E = B ∩ (Ms j).E,
+                  { refine subset_antisymm _ _,
+                    { exact λ f ⟨hf₁, hf₂⟩, ⟨_, hf₂⟩,
+                      cases eq_or_mem_of_mem_insert hf₁ with g g,
+                      { exfalso, subst g,
+                        exact (not_mem_of_pairwise_disjoint
+                            f (λ i, (Ms i).E) hEs hf₂ hji) (hTi.subset_ground he.1) },
+                      { rw mem_Union at g, obtain ⟨k, hk⟩ := g, exact hk.1 } },
+                    { exact λ f hf, ⟨(subset_Union _ j).trans (subset_insert _ _) hf, hf.2⟩ } },
+                rw h, exact hB.1.2 j
+              } } },
         
         have hBT : B ⊂ T,
           { rw ssubset_def,
