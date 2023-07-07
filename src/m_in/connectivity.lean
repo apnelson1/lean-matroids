@@ -92,9 +92,21 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
         let T := insert e (⋃ j, B ∩ (Ms j).E),
 
         -- T is indep
-        have hT : (T ⊆ ⋃ (i : ι), (Ms i).E) ∧ ∀ (i : ι), (Ms i).indep (T ∩ (Ms i).E) := sorry,
+        have hT : (T ⊆ ⋃ (i : ι), (Ms i).E) ∧ ∀ (i : ι), (Ms i).indep (T ∩ (Ms i).E),
+          {
+            refine ⟨_, _⟩,
+            { -- question: how to rewrite using let expressions
+              have : T = insert e (⋃ (j : ι), B ∩ (Ms j).E) := eq.refl T,
+              rw this, clear this,
+              -- end question
+              rw [insert_eq, union_subset_iff, singleton_subset_iff],
+              refine ⟨(subset_Union (λ i, (Ms i).E) i) (hTi.subset_ground he.1),
+                Union_mono (λ i, inter_subset_right _ _)⟩ },
+            {
+              sorry
+            }
+          },
         
-        -- T properly contains B
         have hBT : B ⊂ T,
           { rw ssubset_def,
             refine ⟨_, _⟩,
