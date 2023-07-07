@@ -2,4 +2,3 @@
 /_target
 /leanpkg.path
 .DS_Store
-src/m_in/old_connectivity.lean
