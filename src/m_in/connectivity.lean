@@ -53,26 +53,36 @@ begin
     (not_mem_of_pairwise_disjoint e Es hEs heE hij) ((hJs j) hj) }
 end
 
-
-lemma empty_inter_of_nonmem_singleton
-  (e : α)
-  (S : set α)
-  (he : e ∉ S) :
-  { e } ∩ S = ∅ :=
-sorry
-
 lemma inter_Union_of_subsets_of_pairwise_disjoint
   {ι : Type*}
   (Is Es : ι → set α)
   (hEs : univ.pairwise_disjoint Es)
   (hIs : ∀ i, Is i ⊆ Es i) :
   ∀ i, Union Is ∩ Es i = Is i :=
-sorry
-
-lemma not_subset_of_proper_subset (A B : set α) (h : A ⊂ B) :
-  ¬ B ⊆ A :=
 begin
-  sorry
+  refine λ i, subset_antisymm _ _,
+  { rintro e ⟨he₁, he₂⟩,
+    rw mem_Union at he₁,
+    obtain ⟨j, hj⟩ := he₁,
+    by_cases hij : i = j,
+    { subst hij, exact hj },
+    { exfalso, exact not_mem_of_pairwise_disjoint
+        e Es hEs he₂ hij (hIs j hj) } },
+  { rw subset_inter_iff,
+    exact ⟨subset_Union _ _, hIs i⟩ }
+end
+
+-- TODO: remove, only used once
+lemma empty_inter_of_nonmem_singleton
+  (e : α)
+  (S : set α)
+  (he : e ∉ S) :
+  { e } ∩ S = ∅
+  :=
+begin
+  refine subset_antisymm _ (empty_subset _),
+  rintro f ⟨hf₁, hf₂⟩, rw mem_singleton_iff at hf₁,
+  subst hf₁, exfalso, exact he hf₂,
 end
 
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
@@ -154,7 +164,7 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
               rw [mem_inter_iff, not_and'] at this,
               exact ⟨e, mem_insert _ _, this (hTi.subset_ground he.1)⟩ } },
 
-        exact (not_subset_of_proper_subset _ _ hBT) (hB.2 hT hBT.subset),
+        exact hBT.2 (hB.2 hT hBT.subset),
       },
 
     obtain ⟨i, hi⟩ := hI',
