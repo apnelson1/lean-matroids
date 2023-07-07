@@ -83,7 +83,22 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
   (begin -- augmentation
     rintro I B ⟨h₁I, h₂I⟩ hI hB,
 
-    have hI' : ∃ i, ¬ (Ms i).base (I ∩ (Ms i).E) := sorry,
+    have hI' : ∃ i, ¬ (Ms i).base (I ∩ (Ms i).E),
+      { by_contra' h, apply hI,
+        refine ⟨⟨h₁I, h₂I⟩, _⟩,
+        { rintro J ⟨h₁J, h₂J⟩ hIJ,
+          rw [subset_eq_Union_inter_ground I Ms h₁I, subset_eq_Union_inter_ground J Ms h₁J] at hIJ,
+          have hIsJs : ∀ i, I ∩ (Ms i).E ⊆ J ∩ (Ms i).E :=
+            subsets_of_subsets_of_pairwise_disjoint
+              (λ i, I ∩ (Ms i).E) (λ i, J ∩ (Ms i).E) (λ i, (Ms i).E)
+              hIJ (by simp only [inter_subset_right, implies_true_iff])
+              (by simp only [inter_subset_right, implies_true_iff]) hEs,
+          rw [subset_eq_Union_inter_ground I Ms h₁I,
+              subset_eq_Union_inter_ground J Ms h₁J],
+          exact Union_mono
+            (λ i, superset_of_eq ((h i).eq_of_subset_indep (h₂J i) (hIsJs i))),
+        } },
+
     have hB' : ∀ i,   (Ms i).base (B ∩ (Ms i).E),
       { by_contra' h, obtain ⟨i, hi⟩ := h,
         obtain ⟨Ti, hTi⟩ := (Ms i).exists_base,
@@ -116,7 +131,8 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
                 rw h, exact heTi },
               { have h : T ∩ (Ms j).E = B ∩ (Ms j).E,
                   { refine subset_antisymm _ _,
-                    { exact λ f ⟨hf₁, hf₂⟩, ⟨_, hf₂⟩,
+                    { -- question: lambda expression
+                      rintro f ⟨hf₁, hf₂⟩, refine ⟨_, hf₂⟩,
                       cases eq_or_mem_of_mem_insert hf₁ with g g,
                       { exfalso, subst g,
                         exact (not_mem_of_pairwise_disjoint
