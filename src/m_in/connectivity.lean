@@ -14,20 +14,11 @@ variables {α : Type*} {M : matroid_in α} {I J B C X Y : set α} {e f x y : α}
 
 lemma subset_eq_Union_inter_ground {ι : Type*} (I : set α) (Ms : ι → matroid_in α) (hI : I ⊆ (⋃ i, (Ms i).E)) :
   I = Union (λ i, I ∩ (Ms i).E) :=
-sorry
-
-lemma aux0 {ι : Type*}
-  (Ms : ι → matroid_in α)
-  (Is : ι → set α)
-  (hIs : ∀ (i : ι), (Ms i).indep (Is i)) :
-  ∀ i, Is i ⊆ (Ms i).E :=
-sorry
-
-lemma aux1 {ι : Type*}
-  (Is : ι → set α) (Js : ι → set α) (hIsJs : Union Is ⊆ Union Js)
-  (Ms : ι → matroid_in α) (hIs : ∀ i, Is i ⊆ (Ms i).E) (hJs : ∀ i, Js i ⊆ (Ms i).E)
-  (hMs : univ.pairwise_disjoint (λ (i : ι), (Ms i).E)) : ∀ i, Is i ⊆ Js i :=
-sorry
+begin
+  refine subset_antisymm _ (Union_subset (λ i, inter_subset_left _ _)),
+  { rintro e he, obtain ⟨i, hi⟩ := mem_Union.mp (hI he),
+    rw mem_Union, exact ⟨i, he, hi⟩ },
+end
 
 lemma subsets_of_subsets_of_pairwise_disjoint
   {ι : Type*}
@@ -37,7 +28,9 @@ lemma subsets_of_subsets_of_pairwise_disjoint
   (hJs : ∀ i, Js i ⊆ Es i)
   (hEs : univ.pairwise_disjoint Es) :
   ∀ i, Is i ⊆ Js i :=
-sorry
+begin
+  
+end
 
 lemma not_mem_of_pairwise_disjoint
   {ι : Type*}
