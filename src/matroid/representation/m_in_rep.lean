@@ -1014,12 +1014,12 @@ begin
   have φ := rep.rep_submodule φ',
   rw rep.to_submodule' at φ,
   cases foo' φ with φ,
-  rw [unif_on_rk] at φ,
+  rw [rk_def, unif_r_eq] at φ,
   { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
     have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
-      (span (zmod 2) (φ '' M.E))),
-    rw [rep.of_rank, unif_on_rk] at h9,
+      (span (zmod 2) (φ '' (unif 2 4).E))),
+    rw [rep.of_rank, rk_def, unif_r_eq] at h9,
     { -- there's probably a cleaner way to talk about the card of diff than going
       -- between fintype and finset cards
       simp_rw [← to_finset_card, to_finset_diff] at h8,
@@ -1027,7 +1027,7 @@ begin
       { simp only [set.to_finset_card, set_like.coe_sort_coe, card_singleton] at h8,
         simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
         rw h9 at h8,
-        have h11 : fintype.card (φ '' M.E) = fintype.card (fin 4),
+        have h11 : fintype.card (φ '' (unif 2 4).E) = fintype.card (fin 4),
         rw card_range_of_injective (φ.injective_of_simple U24_simple),
         -- linarith doesn't see the contradiction unless I simplify the inequality
         simp only [h11, fintype.card_fin, pow_two, two_mul, nat.succ_add_sub_one] at h8,
