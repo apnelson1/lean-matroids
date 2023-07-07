@@ -20,18 +20,6 @@ begin
     rw mem_Union, exact ⟨i, he, hi⟩ },
 end
 
-lemma subsets_of_subsets_of_pairwise_disjoint
-  {ι : Type*}
-  (Is Js Es : ι → set α)
-  (h : Union Is ⊆ Union Js)
-  (hIs : ∀ i, Is i ⊆ Es i)
-  (hJs : ∀ i, Js i ⊆ Es i)
-  (hEs : univ.pairwise_disjoint Es) :
-  ∀ i, Is i ⊆ Js i :=
-begin
-  
-end
-
 lemma not_mem_of_pairwise_disjoint
   {ι : Type*}
   {i j : ι}
@@ -43,6 +31,28 @@ lemma not_mem_of_pairwise_disjoint
   :
   e ∉ Es j :=
 sorry
+
+lemma subsets_of_subsets_of_pairwise_disjoint
+  {ι : Type*}
+  (Is Js Es : ι → set α)
+  (h : Union Is ⊆ Union Js)
+  (hIs : ∀ i, Is i ⊆ Es i)
+  (hJs : ∀ i, Js i ⊆ Es i)
+  (hEs : univ.pairwise_disjoint Es) :
+  ∀ i, Is i ⊆ Js i :=
+begin
+  rintro i e heI,
+  have heE := hIs i heI,
+  have heJ : e ∈ Union Js :=
+    h ((subset_Union _ _) heI),
+  rw mem_Union at heJ,
+  obtain ⟨j, hj⟩ := heJ,
+  by_cases hij : i = j,
+  { subst hij, exact hj },
+  { exfalso, exact
+    (not_mem_of_pairwise_disjoint e Es hEs heE hij) ((hJs j) hj) }
+end
+
 
 lemma empty_inter_of_nonmem_singleton
   (e : α)
