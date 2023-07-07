@@ -65,8 +65,12 @@ lemma inter_Union_of_subsets_of_pairwise_disjoint
   (hIs : ∀ i, Is i ⊆ Es i) :
   ∀ i, Union Is ∩ Es i = Is i :=
 sorry
-  
 
+lemma not_subset_of_proper_subset (A B : set α) (h : A ⊂ B) :
+  ¬ B ⊆ A :=
+begin
+  sorry
+end
 
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
   (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
@@ -80,7 +84,28 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
     rintro I B ⟨h₁I, h₂I⟩ hI hB,
 
     have hI' : ∃ i, ¬ (Ms i).base (I ∩ (Ms i).E) := sorry,
-    have hB' : ∀ i,   (Ms i).base (B ∩ (Ms i).E) := sorry,
+    have hB' : ∀ i,   (Ms i).base (B ∩ (Ms i).E),
+      { by_contra' h, obtain ⟨i, hi⟩ := h,
+        obtain ⟨Ti, hTi⟩ := (Ms i).exists_base,
+        obtain ⟨e, he, heTi⟩ := (hB.1.2 i).exists_insert_of_not_base hi hTi,
+
+        let T := insert e (⋃ j, B ∩ (Ms j).E),
+
+        -- T is indep
+        have hT : (T ⊆ ⋃ (i : ι), (Ms i).E) ∧ ∀ (i : ι), (Ms i).indep (T ∩ (Ms i).E) := sorry,
+        
+        -- T properly contains B
+        have hBT : B ⊂ T,
+          { rw ssubset_def,
+            refine ⟨_, _⟩,
+            { rw subset_eq_Union_inter_ground B Ms hB.1.1,
+              exact subset_insert _ _ },
+            { rw not_subset, have := he.2,
+              rw [mem_inter_iff, not_and'] at this,
+              exact ⟨e, mem_insert _ _, this (hTi.subset_ground he.1)⟩ } },
+
+        exact (not_subset_of_proper_subset _ _ hBT) (hB.2 hT hBT.subset),
+      },
 
     obtain ⟨i, hi⟩ := hI',
     obtain ⟨e, ⟨he, he'⟩⟩ := (h₂I i).exists_insert_of_not_base hi (hB' i),
