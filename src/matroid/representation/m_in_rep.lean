@@ -103,6 +103,8 @@ begin
 end
 
 -- i think we need this because it accounts for things like repeated columns
+-- this also allows us to compare matroids on the same type in the U24 proof, 
+-- as opposed to comparing matroid_in α and matroid_in W. 
 def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) : 
   matroid_in ι := matroid_of_indep_of_bdd' univ 
@@ -113,11 +115,49 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
   end 
   begin
     intros I J hJ hIJ,
-    have hIJ2 := linear_independent.image hJ,
-    have h2 := image_subset v hIJ,
-    have hI2 := linear_independent.mono h2 hIJ2,
+    have hIJ3 := linear_independent.injective hJ, 
+    rw [← set.restrict, ← inj_on_iff_injective] at hIJ3,
+    rw linear_independent_image hIJ3 at hJ,
+    rw linear_independent_image (inj_on.mono hIJ hIJ3),
+    apply linear_independent.mono (image_subset v hIJ) hJ,
+  end 
+  begin
+    intros I J hI hJ hIJ,
+    have hJ2 := linear_independent.injective hJ, 
+    rw [← set.restrict, ← inj_on_iff_injective] at hJ2,
+    rw linear_independent_image hJ2 at hJ,
+    have hI2 := linear_independent.injective hI, 
+    rw [← set.restrict, ← inj_on_iff_injective] at hI2,
+    rw linear_independent_image hI2 at hI,
+    haveI := finite.fintype (_root_.linear_independent.finite hI),
+    haveI := finite.fintype (_root_.linear_independent.finite hJ),
+    have h3 : ∃ x ∈ J, v x ∉ span 𝔽 (v '' I),
+    { by_contra,
+      push_neg at h,
+      have h8 : ((v '' J).to_finite.to_finset) = (v '' J).to_finset,
+        ext,
+        simp only [finite.mem_to_finset, mem_to_finset],
+      have h9 : ((v '' I).to_finite.to_finset) = (v '' I).to_finset,
+        ext,
+        simp only [finite.mem_to_finset, mem_to_finset],
+      have h5 : (v '' I).ncard < (v '' J).ncard,
+        sorry,
+      apply not_le_of_lt h5,
+      rw [ncard_eq_to_finset_card, ncard_eq_to_finset_card, h8, h9, 
+      ← finrank_span_set_eq_card (v '' I) hI, ← finrank_span_set_eq_card (v '' J) hJ],
+      have h2 := (@span_le 𝔽 W _ _ _ (v '' J) (span 𝔽 (v '' I))).2 (λ j hj, _),
+      swap,
+      { obtain ⟨x, ⟨hx, rfl⟩⟩ := hj,
+        apply h x hx },
+      apply submodule.finrank_le_finrank_of_le h2 },
+    obtain ⟨x, ⟨hx1, hx2⟩⟩ := h3,
+    refine ⟨x, ⟨hx1, ⟨(mem_image_of_mem v).mt (not_mem_subset (subset_span) hx2), _⟩⟩⟩, 
+    have h50 := linear_independent.insert hI hx2,
+    rw ← image_insert_eq at h50,
+    by_contra,
+    apply hx2,
     sorry,
-  end _ _ _
+  end _ _
 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
@@ -558,7 +598,7 @@ begin
   sorry,
 end
 
-def extend_rep (M : matroid_in α) [M.finite_rk] [fintype 𝔽] (J : set α) (hJ : M.base J) (x : α) (hx : x ∈ M.E) (φ : rep 𝔽 W (M ⟍ x)) 
+def extend_rep (M : matroid_in α) [M.finite_rk] [fintype 𝔽] (J : set α) (hJ : M.base J) (x : α) (hx : x ∈ M.E)
   (hx : x ∈ M.cl (M.E \ {x})) (φ' : rep 𝔽 W' (M ⟍ x)) (φ : rep 𝔽 W M) : rep 𝔽 W' M := 
 begin
   have h2 := rep.compose' φ (linear_equiv.symm (span_equiv_of_rep φ' φ hx)),
@@ -781,7 +821,7 @@ begin
   have h8 : e ∈ ((M.fund_circuit e I) \ {y}),  
   { simp only [mem_diff, mem_singleton_iff],
     refine ⟨(M.mem_fund_circuit e I), ne.symm hy2⟩ },
-  have h7 := (linear_independent_iff_not_mem_span.1 ((φ.valid' (M.fund_circuit e I \ {y})).2 
+  have h7 := (linear_independent_iff_not_mem_span.1 ((φ.valid' (M.fund_circuit e I \ {y}) _).2 
     (circuit.diff_singleton_indep 
     (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, he2⟩)) hy1))) ⟨e, h8⟩,
   simp only [subtype.coe_mk, to_fun_eq_coe] at h7,
@@ -919,6 +959,13 @@ begin
   sorry,
 end
 
+lemma cocircuits_excluded_minor' (M : matroid_in α) 
+(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : x ∈ M.E) 
+(hy : y ∈ M.E) : ¬ M.cocircuit {x, y} :=
+begin
+  sorry,
+end
+
 -- might need something that says if two matroids are rep. over the same field, then we can put them
 -- in the same module
 
@@ -1039,6 +1086,37 @@ begin
     simp only [nat.card_eq_fintype_card, fintype.card_fin, bit0_le_bit0,
       nat.one_le_bit0_iff, nat.lt_one_iff]},
   simp,
+end
+
+lemma excluded_minor_binary_unif24 (M : matroid_in α) 
+  (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
+begin
+  -- this comes from hM
+  have hME : nontrivial M.E,
+    sorry,
+  rw nontrivial_coe_sort at hME,
+  rw nontrivial_iff_pair_subset at hME,
+  obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
+  have h2 := cocircuits_excluded_minor' M hM x y _ _,
+  swap,
+  apply singleton_subset_iff.1,
+  sorry,
+  swap,
+  apply singleton_subset_iff.1,
+  sorry,
+  rw excluded_minor_iff at hM,
+  have hxr := (hM.2 x sorry).2,
+  have hyr := (hM.2 y sorry).2,
+  have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
+    sorry,
+  obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hxyr,
+  obtain ⟨B, hB⟩ := M.exists_base,
+  have hxyx : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ x),
+    sorry,
+  have hxyy : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ y),
+    sorry,
+  --have h2 := extend_rep (M ⟍ x) B sorry y sorry,
+  sorry,
 end
 
 -- need the one-dimensional subspaces lemma for this
