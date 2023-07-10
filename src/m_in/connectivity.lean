@@ -78,19 +78,6 @@ begin
     exact ⟨subset_Union _ _, hIs i⟩ }
 end
 
--- TODO: remove, only used once
-lemma empty_inter_of_nonmem_singleton
-  (e : α)
-  (S : set α)
-  (he : e ∉ S) :
-  { e } ∩ S = ∅
-  :=
-begin
-  refine subset_antisymm _ (empty_subset _),
-  rintro f ⟨hf₁, hf₂⟩, rw mem_singleton_iff at hf₁,
-  subst hf₁, exfalso, exact he hf₂,
-end
-
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
   (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
   matroid_of_indep
@@ -187,9 +174,13 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
         { refine subset_antisymm _ (inter_subset_inter_left (Ms j).E (subset_insert e I)),
           { simp only [singleton_union, subset_inter_iff, inter_subset_right, and_true],
             simp_rw [insert_eq, inter_distrib_right, union_subset_iff, inter_subset_left, and_true],
-            rw empty_inter_of_nonmem_singleton _ _
-                (not_mem_of_pairwise_disjoint e (λ k, (Ms k).E) hEs he.1.2 hij),
-            exact empty_subset _ } },
+            have : {e} ∩ (Ms j).E = ∅, -- question: better style
+              { refine subset_antisymm _ (empty_subset _),
+                rintro f ⟨hf₁, hf₂⟩, rw mem_singleton_iff at hf₁,
+                have := (not_mem_of_pairwise_disjoint e (λ k, (Ms k).E) hEs he.1.2 hij),
+                subst hf₁, exfalso, exact this hf₂ },
+            rw this, exact empty_subset _
+          } },
         rw h', exact h₂I j, } },
   end)
   (begin -- a maximal indep. set exists
