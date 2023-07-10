@@ -820,7 +820,7 @@ open_locale big_operators
 --lemma mem_span_of_mem_cl 
 
 lemma mem_span_set_rep (φ : rep 𝔽 W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) (he2 : e ∉ I) :
+(e : α) (he : e ∈ M.cl I) :
  ∃ c : W →₀ 𝔽, (c.support : set W) = φ '' (M.fund_circuit e I \ {e}) ∧ 
   c.sum (λ mi r, r • mi) = φ e :=
 begin
@@ -884,7 +884,7 @@ end
 
 -- use finsum instead of finset.sum
 lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) (heI : e ∉ I) :
+(e : α) (he : e ∈ M.cl I) :
   ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
 begin
   have h3 := subset_insert e (M.fund_circuit e I),
@@ -1104,6 +1104,7 @@ begin
   simp,
 end
 
+-- define M' using sum of fund. circuit and that will just give matroid_of_module_func
 lemma excluded_minor_binary_unif24 (M : matroid_in α) 
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
