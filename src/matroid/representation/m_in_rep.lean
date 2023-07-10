@@ -111,7 +111,7 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
   (λ (I : set ι), (linear_independent 𝔽 (λ x : I, v x)) ∧ I ⊆ ground)  
   begin
     rw [linear_independent_image (inj_on_empty _), image_empty],
-    apply ⟨linear_independent_empty 𝔽 W, empty_subset ground⟩,
+    refine ⟨linear_independent_empty 𝔽 W, empty_subset ground⟩,
   end 
   begin
     intros I J hJ hIJ,
@@ -119,7 +119,7 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
     rw [← set.restrict, ← inj_on_iff_injective] at hIJ3,
     rw linear_independent_image hIJ3 at hJ,
     rw linear_independent_image (inj_on.mono hIJ hIJ3),
-    apply ⟨linear_independent.mono (image_subset v hIJ) hJ.1, _⟩,
+    refine ⟨linear_independent.mono (image_subset v hIJ) hJ.1, subset_trans hIJ hJ.2⟩,
   end 
   begin
     intros I J hI hJ hIJ,
@@ -152,8 +152,8 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
       apply submodule.finrank_le_finrank_of_le h2 },
     obtain ⟨x, ⟨hx1, hx2⟩⟩ := h3,
     refine ⟨x, ⟨hx1, ⟨(mem_image_of_mem v).mt (not_mem_subset (subset_span) hx2), _⟩⟩⟩, 
-    apply (linear_independent_insert' ((mem_image_of_mem v).mt 
-      (not_mem_subset (subset_span) hx2))).2 ⟨hI, hx2⟩,
+    refine ⟨(linear_independent_insert' ((mem_image_of_mem v).mt 
+      (not_mem_subset (subset_span) hx2))).2 ⟨hI.1, hx2⟩, _⟩,
   end 
   begin
     refine ⟨finite_dimensional.finrank 𝔽 W, λ I hI, _⟩,
