@@ -106,33 +106,33 @@ end
 -- this also allows us to compare matroids on the same type in the U24 proof, 
 -- as opposed to comparing matroid_in α and matroid_in W. 
 def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (v : ι → W) : 
-  matroid_in ι := matroid_of_indep_of_bdd' univ 
-  (λ (I : set ι), (linear_independent 𝔽 (λ x : I, v x)))  
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
+  matroid_in ι := matroid_of_indep_of_bdd' ground 
+  (λ (I : set ι), (linear_independent 𝔽 (λ x : I, v x)) ∧ I ⊆ ground)  
   begin
     rw [linear_independent_image (inj_on_empty _), image_empty],
-    apply linear_independent_empty 𝔽 W,
+    apply ⟨linear_independent_empty 𝔽 W, empty_subset ground⟩,
   end 
   begin
     intros I J hJ hIJ,
-    have hIJ3 := linear_independent.injective hJ, 
+    have hIJ3 := linear_independent.injective hJ.1, 
     rw [← set.restrict, ← inj_on_iff_injective] at hIJ3,
     rw linear_independent_image hIJ3 at hJ,
     rw linear_independent_image (inj_on.mono hIJ hIJ3),
-    apply linear_independent.mono (image_subset v hIJ) hJ,
+    apply ⟨linear_independent.mono (image_subset v hIJ) hJ.1, _⟩,
   end 
   begin
     intros I J hI hJ hIJ,
-    have hJ2 := linear_independent.injective hJ, 
-    rw [← set.restrict, ← inj_on_iff_injective] at hJ2,
-    rw linear_independent_image hJ2 at hJ,
-    have hI2 := linear_independent.injective hI, 
-    rw [← set.restrict, ← inj_on_iff_injective] at hI2,
-    rw linear_independent_image hI2 at hI,
-    haveI := finite.fintype (_root_.linear_independent.finite hI),
-    haveI := finite.fintype (_root_.linear_independent.finite hJ),
     have h3 : ∃ x ∈ J, v x ∉ span 𝔽 (v '' I),
-    { by_contra,
+    { have hJ2 := linear_independent.injective hJ.1, 
+      rw [← set.restrict, ← inj_on_iff_injective] at hJ2,
+      rw linear_independent_image hJ2 at hJ,
+      have hI2 := linear_independent.injective hI.1, 
+      rw [← set.restrict, ← inj_on_iff_injective] at hI2,
+      rw linear_independent_image hI2 at hI,
+      haveI := finite.fintype (_root_.linear_independent.finite hI.1),
+      haveI := finite.fintype (_root_.linear_independent.finite hJ.1),
+      by_contra,
       push_neg at h,
       have h8 : ((v '' J).to_finite.to_finset) = (v '' J).to_finset,
         ext,
@@ -144,7 +144,7 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
         sorry,
       apply not_le_of_lt h5,
       rw [ncard_eq_to_finset_card, ncard_eq_to_finset_card, h8, h9, 
-      ← finrank_span_set_eq_card (v '' I) hI, ← finrank_span_set_eq_card (v '' J) hJ],
+      ← finrank_span_set_eq_card (v '' I) hI.1, ← finrank_span_set_eq_card (v '' J) hJ.1],
       have h2 := (@span_le 𝔽 W _ _ _ (v '' J) (span 𝔽 (v '' I))).2 (λ j hj, _),
       swap,
       { obtain ⟨x, ⟨hx, rfl⟩⟩ := hj,
@@ -152,12 +152,27 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
       apply submodule.finrank_le_finrank_of_le h2 },
     obtain ⟨x, ⟨hx1, hx2⟩⟩ := h3,
     refine ⟨x, ⟨hx1, ⟨(mem_image_of_mem v).mt (not_mem_subset (subset_span) hx2), _⟩⟩⟩, 
-    have h50 := linear_independent.insert hI hx2,
-    rw ← image_insert_eq at h50,
-    by_contra,
-    apply hx2,
-    sorry,
-  end _ _
+    apply (linear_independent_insert' ((mem_image_of_mem v).mt 
+      (not_mem_subset (subset_span) hx2))).2 ⟨hI, hx2⟩,
+  end 
+  begin
+    refine ⟨finite_dimensional.finrank 𝔽 W, λ I hI, _⟩,
+    have hI2 := linear_independent.injective hI.1, 
+      rw [← set.restrict, ← inj_on_iff_injective] at hI2,
+      rw linear_independent_image hI2 at hI,
+    haveI := finite.fintype (_root_.linear_independent.finite hI.1),
+    rw ← linear_independent_image hI2 at hI, 
+    haveI : fintype I,
+      sorry,
+    rw [ncard, nat.card_eq_fintype_card],
+    refine ⟨sorry, fintype_card_le_finrank_of_linear_independent hI.1⟩,
+  end
+  (by { tauto })
+
+def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) : rep 𝔽 W (matroid_of_module_func 𝔽 W v) := 
+{ to_fun := v,
+  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply] } }
 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
@@ -598,8 +613,8 @@ begin
   sorry,
 end
 
-def extend_rep (M : matroid_in α) [M.finite_rk] [fintype 𝔽] (J : set α) (hJ : M.base J) (x : α) (hx : x ∈ M.E)
-  (hx : x ∈ M.cl (M.E \ {x})) (φ' : rep 𝔽 W' (M ⟍ x)) (φ : rep 𝔽 W M) : rep 𝔽 W' M := 
+def extend_rep (M : matroid_in α) [M.finite_rk] [fintype 𝔽] (J : set α) (hJ : M.base J) (x : α) 
+  (hx : x ∈ M.E) (hx : x ∈ M.cl (M.E \ {x})) (φ' : rep 𝔽 W' (M ⟍ x)) (φ : rep 𝔽 W M) : rep 𝔽 W' M := 
 begin
   have h2 := rep.compose' φ (linear_equiv.symm (span_equiv_of_rep φ' φ hx)),
   sorry,
@@ -821,7 +836,8 @@ begin
   have h8 : e ∈ ((M.fund_circuit e I) \ {y}),  
   { simp only [mem_diff, mem_singleton_iff],
     refine ⟨(M.mem_fund_circuit e I), ne.symm hy2⟩ },
-  have h7 := (linear_independent_iff_not_mem_span.1 ((φ.valid' (M.fund_circuit e I \ {y}) _).2 
+  have h7 := (linear_independent_iff_not_mem_span.1 ((φ.valid' (M.fund_circuit e I \ {y}) 
+    (subset.trans (diff_subset _ _) (fund_circuit_subset_ground he))).2 
     (circuit.diff_singleton_indep 
     (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, he2⟩)) hy1))) ⟨e, h8⟩,
   simp only [subtype.coe_mk, to_fun_eq_coe] at h7,
@@ -1110,12 +1126,39 @@ begin
   have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
     sorry,
   obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hxyr,
+  -- why isn't anything in this proof recognizing these instances?
+  /-haveI := hxyr_h_w,
+  haveI := hxyr_h_h_w,-/
   obtain ⟨B, hB⟩ := M.exists_base,
   have hxyx : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ x),
     sorry,
   have hxyy : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ y),
     sorry,
   --have h2 := extend_rep (M ⟍ x) B sorry y sorry,
+  have φy : @rep _ (zmod 2) W _ hxyr_h_w hxyr_h_h_w (M ⟍ x),
+    sorry,
+  have φx : @rep _ (zmod 2) W _ hxyr_h_w hxyr_h_h_w (M ⟍ y),
+    sorry,
+  let f := λ (a : α), if a ∉ {x, y} then φ a else (if a = x then φx a else φy a),
+  let M' := @matroid_of_module_func (zmod 2) W _ _ hxyr_h_w hxyr_h_h_w sorry f,
+  have hMM'x : (M ⟍ x) = (M' ⟍ x),
+    sorry,
+  have hMM'y : (M ⟍ y) = (M' ⟍ y),
+    sorry,
+  have hMM' : M ≠ M',
+    -- M nonbinary, M' binary
+    have φ' := @rep_of_matroid_of_module_func (zmod 2) W _ _ hxyr_h_w hxyr_h_h_w sorry f,
+    sorry,
+  have hMM'3 : M.E = M'.E,  
+    -- this will be annoying to prove
+    sorry,
+  have hMM'2 := (eq_of_indep_iff_indep_forall hMM'3).mt hMM',
+  push_neg at hMM'2,
+  obtain ⟨I, ⟨hI1, hI2⟩⟩ := hMM'2,
+  rw not_iff at hI2,
+  -- have to think about how to set up minimal and WLOG arguments here
+  let Z := set α,
+
   sorry,
 end
 
