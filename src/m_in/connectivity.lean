@@ -12,8 +12,8 @@ namespace matroid_in
 
 variables {α : Type*} {M : matroid_in α} {I J B C X Y : set α} {e f x y : α}
 
-lemma subset_eq_Union_inter_ground {ι : Type*} (I : set α) (Ms : ι → matroid_in α) (hI : I ⊆ (⋃ i, (Ms i).E)) :
-  I = Union (λ i, I ∩ (Ms i).E) :=
+lemma subset_eq_Union_inter_ground {ι : Type*} (I : set α) (Ms : ι → matroid_in α)
+  (hI : I ⊆ (⋃ i, (Ms i).E)) : I = Union (λ i, I ∩ (Ms i).E) :=
 begin
   refine subset_antisymm _ (Union_subset (λ i, inter_subset_left _ _)),
   { rintro e he, obtain ⟨i, hi⟩ := mem_Union.mp (hI he),
@@ -178,7 +178,7 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
               { refine subset_antisymm _ (empty_subset _),
                 rintro f ⟨hf₁, hf₂⟩, rw mem_singleton_iff at hf₁,
                 have := (not_mem_of_pairwise_disjoint e (λ k, (Ms k).E) hEs he.1.2 hij),
-                subst hf₁, exfalso, exact this hf₂ },
+                subst hf₁, contradiction },
             rw this, exact empty_subset _
           } },
         rw h', exact h₂I j, } },
@@ -259,11 +259,12 @@ direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
   refine subset_antisymm _ (empty_subset _),
   rintro e ⟨⟨hei₁, hei₂⟩, ⟨hej₁, hej₂⟩⟩,
   rw mem_Union at hei₂,
-  exfalso,
   have : ∃ k, e ∈ ⋃ (x : k ≠ i), (Ms k).E,
     { refine ⟨j, _⟩, rw mem_Union,
       exact ⟨by { symmetry, exact hij }, hej₁⟩ },
-  exact hei₂ this
+  contradiction
 end)
+
+-- question: exfalso + exact ... or contradiction
 
 end matroid_in
