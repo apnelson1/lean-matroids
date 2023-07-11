@@ -16,10 +16,6 @@ lemma subset_eq_Union_inter_ground {ι : Type*} (I : set α) (Ms : ι → matroi
   (hI : I ⊆ (⋃ i, (Ms i).E)) : I = Union (λ i, I ∩ (Ms i).E) :=
 begin
   rw [←inter_Union, inter_eq_self_of_subset_left hI],
-
-  -- refine subset_antisymm _ (Union_subset (λ i, inter_subset_left _ _)),
-  -- { rintro e he, obtain ⟨i, hi⟩ := mem_Union.mp (hI he),
-  --   rw mem_Union, exact ⟨i, he, hi⟩ },
 end
 
 lemma not_mem_of_pairwise_disjoint
@@ -32,13 +28,6 @@ lemma not_mem_of_pairwise_disjoint
   (hij : i ≠ j) :
   e ∉ Es j :=
 λ hej, hij (hEs.elim_set (mem_univ i) (mem_univ j) _ he hej)
-  
-  -- intro he',
-  -- rw [pairwise_disjoint, set.pairwise] at hEs,
-  -- have := hEs (mem_univ i) (mem_univ j) hij,
-  -- simp only [function.on_fun_apply, disjoint_iff, inf_eq_inter, bot_eq_empty] at this,
-  -- have h : e ∈ Es i ∩ Es j := ⟨he, he'⟩,
-  -- rw this at h, exact (not_mem_empty _) h
 
 
 lemma subsets_of_subsets_of_pairwise_disjoint
@@ -57,18 +46,6 @@ begin
   rw [disjoint_iff_inter_eq_empty.mp],
   { exact empty_subset _},
   exact disjoint_of_subset_right (hJs j) (hEs (mem_univ i) (mem_univ j) hne),
-
-
-  -- rintro e heI,
-  -- have heE := hIs i heI,
-  -- have heJ : e ∈ Union Js :=
-  --   h ((subset_Union _ _) heI),
-  -- rw mem_Union at heJ,
-  -- obtain ⟨j, hj⟩ := heJ,
-  -- by_cases hij : i = j,
-  -- { subst hij, exact hj },
-  -- { exfalso, exact
-  --   (not_mem_of_pairwise_disjoint e Es hEs heE hij) ((hJs j) hj) }
 end
 
 lemma inter_Union_of_subsets_of_pairwise_disjoint
@@ -82,20 +59,10 @@ begin
   convert bUnion_insert i (univ \ {i}) (λ j, Is j ∩ Es i) using 1, 
   { rw [insert_diff_singleton, ←union_singleton, univ_union]  },  
   { rw [inter_eq_self_of_subset_left (hIs i), 
-    Union₂_congr (_ : ∀ (x : ι) (H : x ∈ univ \ {i}), Is x ∩ Es i = ∅)] },
-  simp only [Union_empty, union_empty] },
-  -- rintro x ⟨-,(hne : x ≠ i)⟩, 
-  -- simp [inter_eq_self_of_subset_right (hIs _)], 
-  refine subset_antisymm (λ e he, _) _,
-  { obtain ⟨he₁, he₂⟩ := he,
-    rw mem_Union at he₁,
-    obtain ⟨j, hj⟩ := he₁,
-    by_cases hij : i = j,
-    { subst hij, exact hj },
-    { exfalso, exact not_mem_of_pairwise_disjoint
-        e Es hEs he₂ hij (hIs j hj) } },
-  { rw subset_inter_iff,
-    exact ⟨subset_Union _ _, hIs i⟩ }
+    Union₂_congr (_ : ∀ (x : ι) (H : x ∈ univ \ {i}), Is x ∩ Es i = ∅)],
+    simp_rw [Union_empty, union_empty, ←disjoint_iff_inter_eq_empty],
+    refine λ j hij, disjoint_of_subset_left (hIs j) (hEs (mem_univ j) (mem_univ i)
+      (by { have := hij.2, rw mem_singleton_iff at this, exact this })) },
 end
 
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
@@ -284,7 +251,5 @@ direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
       exact ⟨by { symmetry, exact hij }, hej₁⟩ },
   contradiction
 end)
-
--- question: exfalso + exact ... or contradiction
 
 end matroid_in
