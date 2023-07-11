@@ -258,6 +258,41 @@ lemma indep_of_direct_Sum_iff {ι : Type*}
     (∀ i, (Ms i).indep (I ∩ (Ms i).E)) :=
 by { rw [direct_Sum', matroid_of_indep_apply] }
 
+@[simp] lemma ground_of_direct_Sum {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) :
+  (direct_Sum' Ms hEs).E = Union (λ i , (Ms i).E) :=
+begin
+  -- rw direct_Sum',
+  sorry
+end
+
+lemma dep_of_direct_Sum_iff {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
+  (direct_Sum' Ms hEs).dep I ↔ (I ⊆ Union (λ i , (Ms i).E)) ∧ ∃ i, (Ms i).dep (I ∩ (Ms i).E) :=
+begin
+  simp_rw [dep_iff, ground_of_direct_Sum, indep_of_direct_Sum_iff, not_and,
+    (inter_subset_right _ _), and_true, not_forall],
+  exact ⟨λ ⟨h₁, h₂⟩, ⟨h₂, h₁ h₂⟩, λ ⟨h₁, h₂⟩, ⟨λ _, h₂, h₁⟩⟩
+end
+
+lemma circuit_of_direct_Sum_iff {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
+  (direct_Sum' Ms hEs).circuit I ↔ ∃ i, (Ms i).circuit I :=
+begin
+  sorry
+  -- split,
+  -- { sorry },
+  -- {
+  --   rintro ⟨i, hi⟩,
+  --   rw circuit_iff,
+  --   split,
+  --   {
+
+  --   }
+  -- }
+
+
+end
 
 -- lemma weak_direct_Sum_indep_iff {ι : Type*}
 --   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E))
