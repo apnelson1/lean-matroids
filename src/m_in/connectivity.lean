@@ -279,7 +279,12 @@ lemma direct_Sum_indep_of_subset_iff {ι : Type*}
   (I : set α) (i : ι) (hI : I ⊆ (Ms i).E) :
   (direct_Sum' Ms hEs).indep I ↔ (Ms i).indep I :=
 begin
-  sorry,
+  rw direct_Sum_indep_iff,
+  exact ⟨λ ⟨_, h⟩, by { rw ←inter_eq_self_of_subset_left hI, exact h i },
+    λ h, ⟨hI.trans (subset_Union (λ i , (Ms i).E) i), λ j, (eq_or_ne i j).elim
+      (λ hij, by { rw [←hij, inter_eq_self_of_subset_left hI], exact h })
+      (λ hij, by { rw disjoint_iff_inter_eq_empty.mp
+        (disjoint.mono_left hI (hEs (mem_univ i) (mem_univ j) hij)), exact empty_indep _ })⟩⟩,
 end
 
 lemma circuit_of_direct_Sum_iff {ι : Type*}
@@ -314,51 +319,5 @@ begin
     rw inter_eq_self_of_subset_left hi.1.subset_ground,
     exact hi.1 }
 end
-
--- lemma weak_direct_Sum_indep_iff {ι : Type*}
---   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E))
---   (I : set α) (hI : I ⊆ (direct_Sum' Ms hEs).E):
---   (direct_Sum' Ms hEs).indep I ↔ ∀ i, (Ms i).indep (I ∩ (Ms i).E) :=
--- begin
---   split,
---   {
-
---   }
--- end
--- assumption: `I` contained in ground set as in closure.lean
-
-
--- def direct_sum' (M₀ : matroid_in α) (M₁ : matroid_in α) (hEs : disjoint M₀.E M₁.E): matroid_in α :=
--- direct_Sum (λ i : bool, if i = false then M₀ else M₁)
-
--- @[simp] direct_sum_apply'
---   (E : set α)
---   (indep : set α → Prop)
---   (h_empty : indep ∅)
-
--- lemma indep_of_direct_Sum_iff' {ι : Type*} (Ms : ι → matroid_in α) (I : set α) :
--- (direct_Sum Ms).indep I ↔
---   (I ⊆ (⋃ i, (Ms i ⟍ ⋃ (j : ι) (H : j ≠ i), (Ms j).E).E)
---   ∧ ∀ i, (Ms i).indep (I ∩ (Ms i ⟍ ⋃ (j : ι) (H : j ≠ i), (Ms j).E).E)) :=
--- begin
---   refine ⟨λ hI, ⟨_, λ i, _⟩, λ hI, _⟩,
---   {
---     rw [direct_Sum, direct_Sum', matroid_of_indep_apply] at hI,
---     exact hI.1,
---   }, 
---   { 
---     rw [direct_Sum, direct_Sum', matroid_of_indep_apply] at hI,
---     exact hI.2 },
---   {
---     rw [direct_Sum, direct_Sum', matroid_of_indep_apply],
---     simp at *,
---     split,
---     {
-
---     }
---   }
--- end
-
-
 
 end matroid_in
