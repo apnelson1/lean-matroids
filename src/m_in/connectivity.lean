@@ -252,13 +252,13 @@ direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
   contradiction
 end)
 
-lemma indep_of_direct_Sum_iff {ι : Type*}
+lemma direct_Sum_indep_iff {ι : Type*}
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
   (direct_Sum' Ms hEs).indep I ↔ (I ⊆ Union (λ i , (Ms i).E)) ∧
     (∀ i, (Ms i).indep (I ∩ (Ms i).E)) :=
 by { rw [direct_Sum', matroid_of_indep_apply] }
 
-@[simp] lemma ground_of_direct_Sum {ι : Type*}
+@[simp] lemma direct_Sum_ground {ι : Type*}
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) :
   (direct_Sum' Ms hEs).E = Union (λ i , (Ms i).E) :=
 begin
@@ -266,31 +266,37 @@ begin
   sorry
 end
 
-lemma dep_of_direct_Sum_iff {ι : Type*}
+@[simp] lemma direct_Sum_dep {ι : Type*}
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
   (direct_Sum' Ms hEs).dep I ↔ (I ⊆ Union (λ i , (Ms i).E)) ∧ ∃ i, (Ms i).dep (I ∩ (Ms i).E) :=
 begin
-  simp_rw [dep_iff, ground_of_direct_Sum, indep_of_direct_Sum_iff, not_and,
+  simp_rw [dep_iff, direct_Sum_ground, direct_Sum_indep_iff, not_and,
     (inter_subset_right _ _), and_true, not_forall],
   exact ⟨λ ⟨h₁, h₂⟩, ⟨h₂, h₁ h₂⟩, λ ⟨h₁, h₂⟩, ⟨λ _, h₂, h₁⟩⟩
+end
+
+lemma direct_Sum_indep_of_subset_iff {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E))
+  (I : set α) (i : ι) (hI : I ⊆ (Ms i).E) :
+  (direct_Sum' Ms hEs).indep I ↔ (Ms i).indep I :=
+begin
+  sorry,
 end
 
 lemma circuit_of_direct_Sum_iff {ι : Type*}
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
   (direct_Sum' Ms hEs).circuit I ↔ ∃ i, (Ms i).circuit I :=
 begin
-  sorry
-  -- split,
-  -- { sorry },
-  -- {
-  --   rintro ⟨i, hi⟩,
-  --   rw circuit_iff,
-  --   split,
-  --   {
-
-  --   }
-  -- }
-
+  refine ⟨_, _⟩,
+  { sorry },
+  { rintro ⟨i, hi⟩,
+    rw circuit_iff_forall_ssubset at *,
+    refine ⟨_, λ J hJI, (direct_Sum_indep_of_subset_iff Ms hEs J i (hi.2 J hJI).subset_ground).mpr (hi.2 J hJI)⟩,
+    { rw direct_Sum_dep,
+      refine ⟨(hi.1.subset_ground).trans (subset_Union (λ (i : ι), (Ms i).E) i), i, _⟩,
+      rw inter_eq_self_of_subset_left hi.1.subset_ground,
+      exact hi.1 },
+  }
 
 end
 
