@@ -66,7 +66,7 @@ begin
 end
 
 def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
-  (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) : matroid_in α :=
+  (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E)) : matroid_in α :=
   matroid_of_indep
   (⋃ i, (Ms i).E)
   (λ I, I ⊆ (⋃ i, (Ms i).E) ∧ ∀ i, (Ms i).indep (I ∩ (Ms i).E))
@@ -237,8 +237,10 @@ def direct_Sum' {ι : Type*} (Ms : ι → matroid_in α)
     exact hi.trans (subset_Union_of_subset i (by refl)),
   end)
 
-def direct_Sum {ι : Type*} (Ms : ι → matroid_in α) : matroid_in α :=
-direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
+-- add new matroid to Ms, the loopy matroid on
+--    `⋂ i, (Ms i).E`
+def direct_Sum {ι : Type*} (Ms : ι → matroid_in α) (k : ι) : matroid_in α :=
+direct_Sum' (λ i, if i = k then Ms i else (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
 (begin
   rw [pairwise_disjoint, set.pairwise],
   rintro i hi j hj hij,
@@ -253,21 +255,21 @@ direct_Sum' (λ i, (Ms i) ⟍ (⋃ j ≠ i, (Ms j).E))
 end)
 
 lemma direct_Sum_indep_iff {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
-  (direct_Sum' Ms hEs).indep I ↔ (I ⊆ Union (λ i , (Ms i).E)) ∧
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E)) (I : set α) :
+  (direct_Sum' Ms hEs).indep I ↔ (I ⊆ Union (λ i, (Ms i).E)) ∧
     (∀ i, (Ms i).indep (I ∩ (Ms i).E)) :=
 by { rw [direct_Sum', matroid_of_indep_apply] }
 
 @[simp] lemma direct_Sum_ground {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) :
-  (direct_Sum' Ms hEs).E = Union (λ i , (Ms i).E) :=
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E)) :
+  (direct_Sum' Ms hEs).E = Union (λ i, (Ms i).E) :=
 begin
   sorry
 end
 
 @[simp] lemma direct_Sum_dep {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
-  (direct_Sum' Ms hEs).dep I ↔ (I ⊆ Union (λ i , (Ms i).E)) ∧ ∃ i, (Ms i).dep (I ∩ (Ms i).E) :=
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E)) (I : set α) :
+  (direct_Sum' Ms hEs).dep I ↔ (I ⊆ Union (λ i, (Ms i).E)) ∧ ∃ i, (Ms i).dep (I ∩ (Ms i).E) :=
 begin
   simp_rw [dep_iff, direct_Sum_ground, direct_Sum_indep_iff, not_and,
     (inter_subset_right _ _), and_true, not_forall],
@@ -275,20 +277,20 @@ begin
 end
 
 lemma direct_Sum_indep_of_subset_iff {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E))
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
   (I : set α) (i : ι) (hI : I ⊆ (Ms i).E) :
   (direct_Sum' Ms hEs).indep I ↔ (Ms i).indep I :=
 begin
   rw direct_Sum_indep_iff,
   exact ⟨λ ⟨_, h⟩, by { rw ←inter_eq_self_of_subset_left hI, exact h i },
-    λ h, ⟨hI.trans (subset_Union (λ i , (Ms i).E) i), λ j, (eq_or_ne i j).elim
+    λ h, ⟨hI.trans (subset_Union (λ i, (Ms i).E) i), λ j, (eq_or_ne i j).elim
       (λ hij, by { rw [←hij, inter_eq_self_of_subset_left hI], exact h })
       (λ hij, by { rw disjoint_iff_inter_eq_empty.mp
         (disjoint.mono_left hI (hEs (mem_univ i) (mem_univ j) hij)), exact empty_indep _ })⟩⟩,
 end
 
-lemma circuit_of_direct_Sum_iff {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
+lemma direct_Sum_circuit_iff {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E)) (I : set α) :
   (direct_Sum' Ms hEs).circuit I ↔ ∃ i, (Ms i).circuit I :=
 begin
   simp_rw circuit_iff_forall_ssubset,
@@ -319,5 +321,51 @@ begin
     rw inter_eq_self_of_subset_left hi.1.subset_ground,
     exact hi.1 }
 end
+
+lemma maximal_union_iff {ι : Type*}
+  (Is : ι → set α) (B : set α)
+  (h_global : set α → Prop)
+  (h_local  : set α → Prop)
+  (h : h_global B ↔ ∀ i, h_local (B ∩ Is i)) :
+  B ∈ maximals (⊆) { X | h_global X } ↔
+    ∀ i, (B ∩ Is i) ∈ maximals (⊆) { X | h_local X } :=
+begin
+  sorry
+end
+
+lemma direct_Sum_basis_iff' {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
+  (B : set α) (X : set α) :
+  (direct_Sum' Ms hEs).basis B X ↔
+    B ⊆ Union (λ i, (Ms i).E) ∧
+    X ⊆ Union (λ i, (Ms i).E) ∧
+    ∀ i, (Ms i).basis (B ∩ (Ms i).E) (X ∩ (Ms i).E) :=
+begin
+  sorry
+end
+
+lemma direct_Sum_basis_iff {ι : Type*}
+  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
+  (B : set α) (hB : B ⊆ Union (λ i, (Ms i).E)) (X : set α) (hX : X ⊆ Union (λ i, (Ms i).E)) :
+  (direct_Sum' Ms hEs).basis B X ↔
+    ∀ i, (Ms i).basis (B ∩ (Ms i).E) (X ∩ (Ms i).E) :=
+⟨λ h, ((direct_Sum_basis_iff' Ms hEs B X).mp h).2.2,
+ λ h, ((direct_Sum_basis_iff' Ms hEs B X).mpr ⟨hB, hX, h⟩)⟩
+-- `hB` and `hX` only needed for reverse direction
+
+
+-- translating skewness from `matroid/connectivity.lean`
+
+def skew (M : matroid_in α) (X Y : set α) : Prop := (M ⟋ X) ‖ Y = M ‖ Y 
+
+lemma skew_iff_project_lrestr_eq_lrestr : M.skew X Y ↔ (M ⟋ X) ‖ Y = M ‖ Y := iff.rfl 
+
+lemma skew.project_lrestr_eq (h : M.skew X Y) : (M ⟋ X) ‖ Y = M ‖ Y := h 
+
+lemma skew.symm (h : M.skew X Y) : M.skew Y X :=
+begin
+  sorry
+  -- needs pseudominor
+end 
 
 end matroid_in
