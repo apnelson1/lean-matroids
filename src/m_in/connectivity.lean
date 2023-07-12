@@ -262,7 +262,6 @@ by { rw [direct_Sum', matroid_of_indep_apply] }
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) :
   (direct_Sum' Ms hEs).E = Union (λ i , (Ms i).E) :=
 begin
-  -- rw direct_Sum',
   sorry
 end
 
@@ -287,17 +286,33 @@ lemma circuit_of_direct_Sum_iff {ι : Type*}
   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i , (Ms i).E)) (I : set α) :
   (direct_Sum' Ms hEs).circuit I ↔ ∃ i, (Ms i).circuit I :=
 begin
+  simp_rw circuit_iff_forall_ssubset,
   refine ⟨_, _⟩,
-  { sorry },
+  { intro hI,
+    have : ∃ i, I ⊆ (Ms i).E,
+      { by_contra' h,
+        have hIs : ∀ i, (Ms i).indep (I ∩ (Ms i).E),
+          { intro i,
+            have : I ∩ (Ms i).E ⊂ I,  
+              { rw ssubset_def,
+                refine ⟨by simp_rw [inter_subset_left], _⟩,
+                rw [subset_inter_iff, not_and_distrib],
+                right, exact h i },
+            rwa ←direct_Sum_indep_of_subset_iff Ms hEs
+              (I ∩ (Ms i).E) i (by simp_rw [inter_subset_right]),
+            exact hI.2 (I ∩ (Ms i).E) this },
+        exact hI.1.not_indep ((direct_Sum_indep_iff Ms hEs I).mpr ⟨hI.1.subset_ground, hIs⟩) },
+    obtain ⟨i, hi⟩ := this,
+    exact ⟨i,
+      ⟨(not_iff_not_of_iff (direct_Sum_indep_of_subset_iff Ms hEs I i hi)).mp (hI.1.not_indep), hi⟩,
+      λ J hJ, (direct_Sum_indep_of_subset_iff Ms hEs J i (hJ.subset.trans hi)).mp (hI.2 J hJ)⟩ },
   { rintro ⟨i, hi⟩,
-    rw circuit_iff_forall_ssubset at *,
-    refine ⟨_, λ J hJI, (direct_Sum_indep_of_subset_iff Ms hEs J i (hi.2 J hJI).subset_ground).mpr (hi.2 J hJI)⟩,
-    { rw direct_Sum_dep,
-      refine ⟨(hi.1.subset_ground).trans (subset_Union (λ (i : ι), (Ms i).E) i), i, _⟩,
-      rw inter_eq_self_of_subset_left hi.1.subset_ground,
-      exact hi.1 },
-  }
-
+    refine ⟨_, λ J hJI,
+      (direct_Sum_indep_of_subset_iff Ms hEs J i (hi.2 J hJI).subset_ground).mpr (hi.2 J hJI)⟩,
+    rw direct_Sum_dep,
+    refine ⟨(hi.1.subset_ground).trans (subset_Union (λ (i : ι), (Ms i).E) i), i, _⟩,
+    rw inter_eq_self_of_subset_left hi.1.subset_ground,
+    exact hi.1 }
 end
 
 -- lemma weak_direct_Sum_indep_iff {ι : Type*}
