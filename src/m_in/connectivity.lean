@@ -323,25 +323,32 @@ begin
 end
 
 lemma maximal_union_iff {ι : Type*}
-  (Is : ι → set α) (B : set α)
+  (Is : ι → set α)
   (h_global : set α → Prop)
-  (h_local  : set α → Prop)
-  (h : h_global B ↔ ∀ i, h_local (B ∩ Is i)) :
-  B ∈ maximals (⊆) { X | h_global X } ↔
-    ∀ i, (B ∩ Is i) ∈ maximals (⊆) { X | h_local X } :=
+  (h_local  : ι → set α → Prop)
+  (h : h_global (Union Is) ↔ ∀ i, h_local i (Is i)) :
+  (Union Is) ∈ maximals (⊆) { X | h_global X } ↔
+    ∀ i, (Is i) ∈ maximals (⊆) { X | ∀ i, h_local i X } :=
 begin
   sorry
 end
 
-lemma direct_Sum_basis_iff' {ι : Type*}
-  (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
-  (B : set α) (X : set α) :
-  (direct_Sum' Ms hEs).basis B X ↔
-    B ⊆ Union (λ i, (Ms i).E) ∧
-    X ⊆ Union (λ i, (Ms i).E) ∧
-    ∀ i, (Ms i).basis (B ∩ (Ms i).E) (X ∩ (Ms i).E) :=
+lemma direct_Sum_base_iff {ι : Type*}
+  (Ms : ι → matroid_in α)
+  (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
+  (Is : ι → set α) :
+  (direct_Sum' Ms hEs).base (Union Is) ↔ ∀ i, (Ms i).base (Is i) :=
 begin
-  sorry
+  simp_rw base_iff_mem_maximals,
+  -- let h_global := λ S, (direct_Sum' Ms hEs).indep S,
+  -- let h_local  := λ i S, (Ms i).indep S,
+  -- have h : h_global (Union Is) ↔ ∀ i, h_local i (Is i),
+  --   sorry,
+  -- rw maximal_union_iff Is h_global h_local h,
+
+  rw maximal_union_iff Is (λ S, (direct_Sum' Ms hEs).indep S) (λ i S, (Ms i).indep S) sorry,
+  simp,
+  
 end
 
 lemma direct_Sum_basis_iff {ι : Type*}
@@ -349,10 +356,23 @@ lemma direct_Sum_basis_iff {ι : Type*}
   (B : set α) (hB : B ⊆ Union (λ i, (Ms i).E)) (X : set α) (hX : X ⊆ Union (λ i, (Ms i).E)) :
   (direct_Sum' Ms hEs).basis B X ↔
     ∀ i, (Ms i).basis (B ∩ (Ms i).E) (X ∩ (Ms i).E) :=
-⟨λ h, ((direct_Sum_basis_iff' Ms hEs B X).mp h).2.2,
- λ h, ((direct_Sum_basis_iff' Ms hEs B X).mpr ⟨hB, hX, h⟩)⟩
+begin
+  sorry
+end
+-- ⟨λ h, ((direct_Sum_basis_iff' Ms hEs B X).mp h).2.2,
+--  λ h, ((direct_Sum_basis_iff' Ms hEs B X).mpr ⟨hB, hX, h⟩)⟩
 -- `hB` and `hX` only needed for reverse direction
 
+-- lemma direct_Sum_basis_iff' {ι : Type*}
+--   (Ms : ι → matroid_in α) (hEs : (univ : set ι).pairwise_disjoint (λ i, (Ms i).E))
+--   (B : set α) (X : set α) :
+--   (direct_Sum' Ms hEs).basis B X ↔
+--     B ⊆ Union (λ i, (Ms i).E) ∧
+--     X ⊆ Union (λ i, (Ms i).E) ∧
+--     ∀ i, (Ms i).basis (B ∩ (Ms i).E) (X ∩ (Ms i).E) :=
+-- begin
+--   sorry
+-- end
 
 -- translating skewness from `matroid/connectivity.lean`
 
