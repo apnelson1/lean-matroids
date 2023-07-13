@@ -153,7 +153,8 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
     obtain ⟨x, ⟨hx1, hx2⟩⟩ := h3,
     refine ⟨x, ⟨hx1, ⟨(mem_image_of_mem v).mt (not_mem_subset (subset_span) hx2), _⟩⟩⟩, 
     refine ⟨(linear_independent_insert' ((mem_image_of_mem v).mt 
-      (not_mem_subset (subset_span) hx2))).2 ⟨hI.1, hx2⟩, _⟩,
+      (not_mem_subset (subset_span) hx2))).2 ⟨hI.1, hx2⟩, insert_subset.2 
+        ⟨(mem_of_subset_of_mem hJ.2 hx1), hI.2⟩⟩,
   end 
   begin
     refine ⟨finite_dimensional.finrank 𝔽 W, λ I hI, _⟩,
@@ -170,9 +171,18 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
   (by { tauto })
 
 def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (v : ι → W) : rep 𝔽 W (matroid_of_module_func 𝔽 W v) := 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_func 𝔽 W v ground) := 
 { to_fun := v,
-  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply] } }
+  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply], simp, sorry } }
+
+
+lemma ground_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
+    (matroid_of_module_func 𝔽 W v ground).E = ground := 
+begin
+  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+    matroid_of_indep, matroid_of_base, ← ground_eq_E],
+end
 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
@@ -817,10 +827,23 @@ end
 
 open_locale big_operators
 
---lemma mem_span_of_mem_cl 
+lemma fund_circuit_inter_eq_diff_of_not_mem (e : α) (he : e ∈ M.cl I) (h2 : e ∉ I) : 
+  (M.fund_circuit e I ∩ I) = (M.fund_circuit e I \ {e}) :=
+begin
+  apply eq_of_subset_of_subset,
+  rw [diff_eq, compl_eq_univ_diff],
+  apply inter_subset_inter (subset.refl _) (subset_diff_singleton (subset_univ I) h),
+  apply subset_inter (diff_subset _ _),
+  apply (@insert_subset_insert_iff _ _ ((M.fund_circuit e I) \ {e}) I 
+    (not_mem_diff_singleton e (M.fund_circuit e I))).1,
+  rw [insert_diff_singleton, insert_eq_of_mem (mem_fund_circuit _ _ _)],
+  apply fund_circuit_subset_insert he,
+end
 
-lemma mem_span_set_rep (φ : rep 𝔽 W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) :
+--lemma mem_span_of_mem_cl 
+-- we need he2 because we are deleting {e} from the funamental circuit for this
+lemma mem_span_set_rep_of_not_mem (φ : rep 𝔽 W M) {I : set α} (hI : M.indep I) 
+(e : α) (he : e ∈ M.cl I) (he2 : e ∉ I) :
  ∃ c : W →₀ 𝔽, (c.support : set W) = φ '' (M.fund_circuit e I \ {e}) ∧ 
   c.sum (λ mi r, r • mi) = φ e :=
 begin
@@ -882,13 +905,28 @@ begin
   exact mem_span_set.2 h5,
 end
 
+lemma mem_span_set_rep (φ : rep 𝔽 W M) {I : set α} (hI : M.indep I) (e : α) (he : e ∈ M.cl I) :
+ ∃ c : W →₀ 𝔽, (c.support : set W) = φ '' (M.fund_circuit e I ∩ I) ∧ 
+  c.sum (λ mi r, r • mi) = φ e :=
+begin
+  by_cases e ∈ I,
+  rw [hI.fund_circuit_eq_of_mem h, singleton_inter_eq_of_mem h],
+  simp only [image_singleton, finset.coe_eq_singleton],
+  use finsupp.single (φ e) (1 : 𝔽),
+  simp only [finsupp.sum_single_index, smul_eq_zero, eq_self_iff_true, true_or, one_smul, and_true],
+  apply finsupp.support_single_ne_zero,
+  simp only [ne.def, one_ne_zero, not_false_iff],
+  rw fund_circuit_inter_eq_diff_of_not_mem _ he h,
+  apply mem_span_set_rep_of_not_mem φ hI e he h,
+end
+
 -- use finsum instead of finset.sum
-lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) :
+lemma mem_sum_basis_zmod2_of_not_mem [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
+(e : α) (he : e ∈ M.cl I) (heI : e ∉ I) :
   ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
 begin
   have h3 := subset_insert e (M.fund_circuit e I),
-  obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set_rep φ hI e he heI,
+  obtain ⟨c, ⟨hc1, hc2⟩⟩ := mem_span_set_rep_of_not_mem φ hI e he heI,
   rw ← hc2, 
   have h4 : c.support = (φ '' (M.fund_circuit e I \ {e})).to_finset := 
     by { simp_rw [← hc1, finset.to_finset_coe] },
@@ -921,6 +959,17 @@ begin
       (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, heI⟩)) (M.mem_fund_circuit e I)) },
 end
 
+lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
+(e : α) (he : e ∈ M.cl I) :
+  ∑ i in (M.fund_circuit e I ∩ I).to_finset, φ i = φ e :=
+begin
+  by_cases e ∈ I,
+  rw [hI.fund_circuit_eq_of_mem h, @to_finset_congr _ ({e}∩I) {e} _ _ (singleton_inter_eq_of_mem h),
+     to_finset_singleton, finset.sum_singleton],
+  rw to_finset_congr (fund_circuit_inter_eq_diff_of_not_mem _ he h),
+  apply mem_sum_basis_zmod2_of_not_mem φ hI e he h,
+end
+
 structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) 
 {B : set α} (hB : M.base B) extends rep 𝔽 W M :=
 (basis : true)
@@ -935,7 +984,7 @@ begin
   sorry,
 end   
 
-lemma cocircuits_excluded_minor (M : matroid_in α) 
+lemma cocircuits_excluded_minor (M : matroid_in α)
 (hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) {x : α} (hx : x ∈ M.E) : 
   ¬ M.cocircuit {x} :=
 begin
@@ -944,11 +993,10 @@ begin
   obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := (hM.2 x hx).2,
   haveI : has_zero W,
     sorry,
-  rw cocircuit_iff_mem_minimals_compl_nonspanning at h,
-  rw mem_minimals_iff' at h,
-  simp at h,
+  rw [cocircuit_iff_mem_minimals_compl_nonspanning, mem_minimals_iff'] at h,
+  simp only [mem_set_of_eq, subset_singleton_iff] at h,
   apply hM.1,
-  simp,
+  simp only,
   --use ⟨W × 𝔽, ⟨_, ⟨_, ⟨_⟩⟩⟩⟩,
   have f := λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
   have h1 : add_comm_group W × 𝔽,
@@ -1104,8 +1152,7 @@ begin
   simp,
 end
 
--- define M' using sum of fund. circuit and that will just give matroid_of_module_func
-lemma excluded_minor_binary_unif24 (M : matroid_in α) 
+lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
   -- this comes from hM
@@ -1122,33 +1169,43 @@ begin
   apply singleton_subset_iff.1,
   sorry,
   rw excluded_minor_iff at hM,
-  have hxr := (hM.2 x sorry).2,
-  have hyr := (hM.2 y sorry).2,
   have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
     sorry,
   obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hxyr,
-  -- why isn't anything in this proof recognizing these instances?
-  /-haveI := hxyr_h_w,
-  haveI := hxyr_h_h_w,-/
-  obtain ⟨B, hB⟩ := M.exists_base,
-  have hxyx : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ x),
-    sorry,
-  have hxyy : (M ⟍ ({x, y} : set α)) ≤m (M ⟍ y),
-    sorry,
-  --have h2 := extend_rep (M ⟍ x) B sorry y sorry,
-  have φy : @rep _ (zmod 2) W _ hxyr_h_w hxyr_h_h_w (M ⟍ x),
-    sorry,
-  have φx : @rep _ (zmod 2) W _ hxyr_h_w hxyr_h_h_w (M ⟍ y),
-    sorry,
-  let f := λ (a : α), if a ∉ {x, y} then φ a else (if a = x then φx a else φy a),
-  let M' := @matroid_of_module_func (zmod 2) W _ _ hxyr_h_w hxyr_h_h_w sorry f,
-  have hMM'x : (M ⟍ x) = (M' ⟍ x),
+  haveI := hxyr_h_w,
+  obtain ⟨B, hB⟩ := (M ⟍ ({x, y} : set α)).exists_base,
+  let φ' := λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i,
+  -- the sorries are for module and finite_dimensional instances,
+  -- i think i need to show that we have a finite dimensional rep of M \ {x, y} somehow
+  -- but i'm worried about making assumptions 
+  let M' := @matroid_of_module_func (zmod 2) W _ _ _inst sorry sorry φ' M.E,
+  have hMM'x : (M ⟍ x) = ((@matroid_of_module_func (zmod 2) W _ _ _inst sorry sorry φ' M.E) ⟍ x),
+    apply eq_of_indep_iff_indep_forall,
+    simp_rw [delete_elem, delete_ground],
+    rw ground_matroid_of_module_func,
+    intros I hI,
+    simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply],
+    refine ⟨λ hI2, _, λ hI2, _⟩,
+    simp only [delete_elem, delete_indep_iff, matroid_of_indep_of_bdd'_apply, disjoint_singleton_right],
+    refine ⟨⟨_, sorry⟩, sorry,⟩,
+    by_cases y ∈ I,
+      sorry,
+      have h3 : (M ⟍ ({x, y} : set α)).indep I,
+      have h4 : disjoint I {y},
+        sorry,
+      have h2 := delete_indep_iff.2 ⟨hI2, h4⟩,
+      rw [delete_elem, delete_delete, union_comm, union_singleton] at h2,
+      apply h2,
+      -- synthesized type class instance is not definitionally equal to expression inferred by 
+      -- typing rules, synthesized _inst inferred hxyr_h_w
+      -- what should i do with this?
+      --have h5 := φ.valid' I,
+      sorry, 
     sorry,
   have hMM'y : (M ⟍ y) = (M' ⟍ y),
     sorry,
   have hMM' : M ≠ M',
     -- M nonbinary, M' binary
-    have φ' := @rep_of_matroid_of_module_func (zmod 2) W _ _ hxyr_h_w hxyr_h_h_w sorry f,
     sorry,
   have hMM'3 : M.E = M'.E,  
     -- this will be annoying to prove
