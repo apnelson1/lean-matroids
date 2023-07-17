@@ -7,25 +7,24 @@ import m_in.erank
 import m_in.equiv
 
 
-namespace set
-variables {α β : Type*} {f : α → β}
 
-open function
 
-lemma injective_iff_forall_inj_on_pair : injective f ↔ ∀ a b, inj_on f {a, b} :=
+universe u 
+variables {α β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
+variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
+
+open function set submodule finite_dimensional
+
+lemma set.injective_iff_forall_inj_on_pair {f : α → β} : injective f ↔ ∀ a b, inj_on f {a, b} :=
 ⟨λ h a b, h.inj_on _, λ h a b hab,
   h _ _ (mem_insert _ _) (mem_insert_of_mem _ $ mem_singleton _) hab⟩
 
-end set
-
 noncomputable theory
 
-open function set submodule finite_dimensional 
+ 
 open_locale classical
 
-universe u 
-variables {α 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
-variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
+
 -- we should have semiring 𝔽 by default, idk why it doesn't see it
 -- why did we have finite E and not fintype E?
 
@@ -48,6 +47,19 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := �
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
 (valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
+(support : ∀ (e : α), e ∉ M.E → to_fun e = 0)
+
+instance fun_like {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] {M : matroid_in α } : 
+  fun_like (rep 𝔽 W M) α (λ _, W) := 
+{ coe := λ φ e, φ.to_fun e,
+  coe_injective' := λ f g h, by cases f; cases g; congr' }
+
+instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
+
+lemma valid {φ : rep 𝔽 W M} {I : set α} : linear_independent 𝔽 (φ ∘ coe : I → W) ↔ M.indep I := 
+begin
+  sorry
+end 
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
@@ -257,11 +269,7 @@ namespace rep
 
 variables [fintype α]
 
-instance fun_like : fun_like (rep 𝔽 W M) α (λ _, W) :=
-{ coe := to_fun,
-  coe_injective' := λ f g h, by cases f; cases g; congr' }
 
-instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
 lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
   M.indep I := φ.valid' _ hI
@@ -980,13 +988,23 @@ begin
   apply mem_sum_basis_zmod2_of_not_mem φ hI e he h,
 end
 
-def std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) 
-{B : set α} (hB : M.base B) : rep 𝔽 W M := 
-{ to_fun := _,
-  valid' := _ }
+
+noncomputable def std_rep {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+{M : matroid_in α} (φ : rep 𝔽 W M) (hB : M.base B) : rep 𝔽 (B → 𝔽) M := sorry  
+
 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
+
+
+lemma eq_of_forall_fund_circuit_eq {M M' : matroid_in α} (hMb : M.is_binary) (hM'b : M'.is_binary) 
+(hE : M.E = M'.E) (hB : M.base B) (hB' : M'.base B) 
+(he : ∀ e ∈ M.E \ B, M.fund_circuit e B = M'.fund_circuit e B) :
+  M = M' :=
+begin
+  sorry 
+end 
+  
 
 -- I think we might actually need 3-connectedness for this?
 lemma cocircuits_nonbinary_minor (M : matroid_in α) (hM : ¬ M.is_binary) {x : α} (hx : x ∈ M.E) : -- M.E \ {x}  not hyperplane?
