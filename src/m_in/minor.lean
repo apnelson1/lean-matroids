@@ -117,6 +117,18 @@ begin
   exact disjoint_of_subset_left hIC hdj, 
 end  
 
+lemma fund_circuit_delete (hI : M.indep I) (heI : e ∈ M.cl I \ I) 
+  (hdj : disjoint (insert e I) D) : (M ⟍ D).fund_circuit e I = M.fund_circuit e I :=
+begin
+  have hC : (M ⟍ D).circuit (M.fund_circuit e I),
+  { rw [delete_circuit_iff, and_iff_right (hI.fund_circuit_circuit heI)],
+    exact disjoint_of_subset_left (fund_circuit_subset_insert heI.1) hdj },
+
+  refine (hC.eq_fund_circuit_of_subset_insert_indep _ (fund_circuit_subset_insert heI.1)).symm,
+  rw [delete_indep_iff],
+  exact ⟨hI, disjoint_of_subset_left (subset_insert _ _) hdj⟩ 
+end 
+
 @[simp] lemma delete_cl_eq (M : matroid_in α) (D X : set α) : (M ⟍ D).cl X = M.cl (X \ D) \ D :=
 begin
   obtain ⟨I, hI⟩ := (M ⟍ D).exists_basis ((X \ D) ∩ (M ⟍ D).E), 
