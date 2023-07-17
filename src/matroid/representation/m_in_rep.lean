@@ -3,7 +3,7 @@ import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
-import m_in.rank
+import m_in.erank
 import m_in.equiv
 
 
@@ -345,6 +345,9 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
 
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
+
+def rep.of_base' (φ : rep 𝔽 W M) (B : set α) (hB : M.base B) (φ' : B → W') 
+  (hφ' : linear_independent 𝔽 φ') : rep 𝔽 W' M := sorry 
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
@@ -977,9 +980,10 @@ begin
   apply mem_sum_basis_zmod2_of_not_mem φ hI e he h,
 end
 
-structure std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) 
-{B : set α} (hB : M.base B) extends rep 𝔽 W M :=
-(basis : true)
+def std_rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) 
+{B : set α} (hB : M.base B) : rep 𝔽 W M := 
+{ to_fun := _,
+  valid' := _ }
 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
