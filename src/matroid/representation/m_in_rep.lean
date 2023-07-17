@@ -429,6 +429,13 @@ begin
   apply finite_dimensional.of_finite_basis (basis_of_base φ hB) (base.finite hB),
 end
 
+instance fin_dim_rep' (φ : rep 𝔽 W M) [M.finite_rk] [fintype 𝔽] : 
+  finite_dimensional 𝔽 φ.to_submodule' :=
+begin
+  cases M.exists_base with B hB,
+  apply finite_dimensional.of_finite_basis (basis_of_base φ hB) (base.finite hB),
+end
+
 @[simp] lemma mem_span_rep_range (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
 
@@ -1171,22 +1178,107 @@ begin
   rw excluded_minor_iff at hM,
   have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
     sorry,
-  obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hxyr,
-  haveI := hxyr_h_w,
+  obtain ⟨W, _⟩ := hxyr,
+  casesI hxyr_h with a ha,
+  casesI ha with b hb,
+  casesI hb with φ2,
+  have φ := φ2.rep_submodule,
+  haveI := φ2.fin_dim_rep,
+  --haveI := hxyr_h_w,
   obtain ⟨B, hB⟩ := (M ⟍ ({x, y} : set α)).exists_base,
+  /-have hB2 : M.base B,
+    rw delete_base_iff at hB,
+    rw cocircuit_iff_mem_minimals_compl_nonspanning at h2,
+    rw mem_minimals_iff' at h2,
+    push_neg at h2,
+    simp at h2,
+    
+    sorry,-/
   let φ' := λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i,
   -- the sorries are for module and finite_dimensional instances,
   -- i think i need to show that we have a finite dimensional rep of M \ {x, y} somehow
   -- but i'm worried about making assumptions 
-  let M' := @matroid_of_module_func (zmod 2) W _ _ _inst sorry sorry φ' M.E,
-  have hMM'x : (M ⟍ x) = ((@matroid_of_module_func (zmod 2) W _ _ _inst sorry sorry φ' M.E) ⟍ x),
+  have φy : rep (zmod 2) ↥(φ2.to_submodule') (M ⟍ x),
+    use (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i),
+    intros I hI,
+    rw delete_elem at hI,
+    have hfundcirc : ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), (M.fund_circuit a B) = 
+      ((M ⟍ ({x, y} : set α)).fund_circuit a B),
+        sorry,
+    by_cases y ∈ I, 
+    refine ⟨λ h5, _, λ h5, _⟩,  
+    have h4 : ((λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α)) = 
+      (λ e : I, (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) e),
+        simp only [eq_self_iff_true],
+    rw h4 at h5,
+    have h6 : I = insert y ((I \ {y}) : set α),
+      sorry,
+    rw [h6, indep.insert_indep_iff_of_not_mem],
+    sorry,
+    have h7 : disjoint (I \ {y}) {y},
+      simp only [disjoint_singleton_right, not_mem_diff_singleton, not_false_iff],
+    have hIM : (I \ {y}) ⊆ (M ⟍ ({x, y} : set α)).E,
+      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+      apply diff_subset_diff hI (subset.refl _), 
+    have h8 : (M ⟍ ({x, y} : set α)).indep (I \ {y}),
+      rw ← φ.valid',
+      have h4 : (φ.to_fun ∘ (coe : (I \ {y}) → α)) = (λ e : (I \ {y}), φ.to_fun e),
+        simp only [eq_self_iff_true],
+      rw h4,
+      have h10 := linear_independent.injective h5,
+      have h11 := linear_independent.image h5,
+      have h9 := linear_independent.mono (image_subset 
+        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (diff_subset I {y})) h11,
+      rw ← linear_independent_image at h9, 
+      have h12 : (λ (x_1 : ↥(I \ {y})), ∑ (i : α) in (M.fund_circuit ↑x_1 B ∩ B).to_finset, φ i) = 
+        (λ (e : ↥(I \ {y})), φ.to_fun ↑e),
+        ext;
+        simp only [to_finset_inter, coe_sum, to_fun_eq_coe],
+        rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
+        simp only [to_finset_inter, coe_sum], 
+        rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
+        apply x_1.2,
+      rw ← h12,
+      apply h9,
+      apply inj_on.mono (diff_subset I {y}) _,
+      have h20 := inj_on_of_injective h10 univ,
+      sorry,
+      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+      apply diff_subset_diff hI (subset.refl _),
+    rw [← union_singleton, union_comm, ← delete_delete, delete_indep_iff] at h8,
+    apply h8.1,
+    apply not_mem_diff_singleton,
+    sorry,
+    have hIM : I ⊆ (M ⟍ ({x, y} : set α)).E, 
+      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+      apply subset_diff_singleton hI h,
+    have h4 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) = 
+        (λ (e : I), φ e),
+        have h5 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) =
+          (λ (e : I), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i),
+          simp only,
+        rw h5,
+        ext;
+        rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
+        rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
+        apply x_1.2,
+    have h7 : (φ.to_fun ∘ (coe : I → α)) = (λ e : I, φ e),
+      simp only [to_fun_eq_coe],
+    rw [h4, ← h7, φ.valid' _ hIM, ← union_singleton, union_comm, ← delete_delete],
+    refine ⟨λ hI2, hI2.of_delete, λ hI2, delete_indep_iff.2 ⟨hI2, disjoint_singleton_right.2 h⟩⟩,
+
+    have φy' := rep_of_matroid_of_module_func (zmod 2) (φ2.to_submodule') 
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (M.E \ {x}),
+    have hMM'x : (M ⟍ x) = (matroid_of_module_func (zmod 2) (φ2.to_submodule')
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (M.E \ {x})),
     apply eq_of_indep_iff_indep_forall,
     simp_rw [delete_elem, delete_ground],
     rw ground_matroid_of_module_func,
     intros I hI,
-    simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply],
-    refine ⟨λ hI2, _, λ hI2, _⟩,
-    simp only [delete_elem, delete_indep_iff, matroid_of_indep_of_bdd'_apply, disjoint_singleton_right],
+    rw [← φy.valid' I hI, ← φy'.valid' I _],
+    have hφ : φy.to_fun = φy'.to_fun,
+      funext,
+    /-refine ⟨λ hI2, _, λ hI2, _⟩,
     refine ⟨⟨_, sorry⟩, sorry,⟩,
     by_cases y ∈ I,
       sorry,
@@ -1196,11 +1288,22 @@ begin
       have h2 := delete_indep_iff.2 ⟨hI2, h4⟩,
       rw [delete_elem, delete_delete, union_comm, union_singleton] at h2,
       apply h2,
-      -- synthesized type class instance is not definitionally equal to expression inferred by 
-      -- typing rules, synthesized _inst inferred hxyr_h_w
-      -- what should i do with this?
-      --have h5 := φ.valid' I,
-      sorry, 
+      have h5 := mem_sum_basis_zmod2 φ hB.indep,
+      rw ← φ.valid' I at h3,
+      simp at h3,
+      have h4 : (φ ∘ (coe : I → α)) = (λ e : I, φ e),
+        simp only [eq_self_iff_true],
+      rw h4 at h3,
+      have h6 : (λ (e : ↥I), φ ↑e) = (λ (x_1 : ↥I), ((M ⟍ ({x, y} : set α)).fund_circuit ↑x_1 B ∩ B).to_finset.sum φ),
+        ext;
+        rw ← h5,
+        simp, 
+        refine ⟨_, _⟩,
+        sorry,
+        push_neg,
+        sorry,
+      rw ← h6,
+      apply h3, 
     sorry,
   have hMM'y : (M ⟍ y) = (M' ⟍ y),
     sorry,
@@ -1217,7 +1320,7 @@ begin
   -- have to think about how to set up minimal and WLOG arguments here
   let Z := set α,
 
-  sorry,
+  sorry,-/
 end
 
 -- need the one-dimensional subspaces lemma for this
