@@ -170,12 +170,6 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
   end
   (by { tauto })
 
-def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_func 𝔽 W v ground) := 
-{ to_fun := v,
-  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply], simp, sorry } }
-
-
 lemma ground_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
     (matroid_of_module_func 𝔽 W v ground).E = ground := 
@@ -183,6 +177,12 @@ begin
   rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
+
+def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_func 𝔽 W v ground) := 
+{ to_fun := v,
+  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply], 
+    simp only [iff_self_and], intros h, rw ground_matroid_of_module_func at hI, apply hI } }
 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
@@ -1276,7 +1276,8 @@ begin
     rw ground_matroid_of_module_func,
     intros I hI,
     rw [← φy.valid' I hI, ← φy'.valid' I _],
-    have hφ : φy.to_fun = φy'.to_fun,
+    have hφ : φy.to_fun = (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i),
+      simp,
       funext,
     /-refine ⟨λ hI2, _, λ hI2, _⟩,
     refine ⟨⟨_, sorry⟩, sorry,⟩,
