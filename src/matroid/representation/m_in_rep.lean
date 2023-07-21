@@ -192,9 +192,26 @@ end
 
 def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_func 𝔽 W v ground) := 
-{ to_fun := v,
-  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply], 
-    simp only [iff_self_and], intros h, rw ground_matroid_of_module_func at hI, apply hI } }
+{ to_fun := λ x, if x ∈ ground then v x else 0,
+  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply],
+    rw ground_matroid_of_module_func at hI, 
+    have h2 : (λ (x : ι), if (x ∈ ground) then (v x) else 0) ∘ (coe : I → ι) = λ x : I, v x,
+      ext;
+      simp only [ite_eq_left_iff],
+      contrapose,
+      intros h,
+      push_neg,
+      apply mem_of_subset_of_mem hI x.2,
+    rw h2,
+    simp,
+    intros h, 
+    apply hI },
+  support := λ e he, 
+    begin
+      simp only [ite_eq_iff],
+      right,
+      refine ⟨he, rfl⟩,
+    end }
 
 def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : rep 𝔽 W (matroid_of_module_set 𝔽 W s) := 
@@ -205,7 +222,8 @@ def rep_of_matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W
       intros hI2,
       rw ground_matroid_of_module_set at hI,
       apply hI,
-    end }
+    end,
+  support := sorry }
 
 /-def rep_union (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (N N' : matroid_in α) 
 (hN : N ≤m M) (hN' : N' ≤m M) (hNN' : disjoint N.E N'.E) (hNN'2 : N.E ∪ N'.E = M.E) 
@@ -338,10 +356,16 @@ def rep_submodule (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule') M :=
           (φ.to_submodule'.subtype) (ker_subtype φ.to_submodule'),
       rw h4,
       apply φ.valid' I hI,
+    end,
+    support := λ e he, 
+    begin
+      simp only [dite_eq_iff],
+      right,
+      use he,
     end } 
 
 def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
-{ to_fun := e ∘ φ,
+{ to_fun := e ∘ φ.to_fun,
   valid' := λ I,
     begin
       rw comp.assoc,
@@ -349,7 +373,8 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
       simp only [linear_equiv.coe_to_linear_map] at h2,
       rw h2,
       apply φ.valid',
-    end }
+    end,
+  support := λ x hx, by { rw [comp_app, φ.support x hx, _root_.map_zero] } }
 
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
@@ -483,11 +508,28 @@ end
 
 def rep_of_del (N : matroid_in α) (φ : rep 𝔽 W N) (D : set α) : 
 rep 𝔽 W (N ⟍ D) := 
-{ to_fun := φ.to_fun,
+{ to_fun := λ x, if x ∈ D then 0 else φ.to_fun x,
   valid' := λ I hI, by { rw delete_ground at hI, 
     refine ⟨λ h, delete_indep_iff.2 ⟨((φ.valid' I (subset_trans hI (diff_subset N.E D))).1 h), 
     (subset_diff.1 hI).2⟩, λ h, (φ.valid' I (subset_trans hI (diff_subset N.E D))).2 
-    (matroid_in.delete_indep_iff.1 h).1⟩ } }
+    (matroid_in.delete_indep_iff.1 h).1⟩ },
+  support := λ e he,
+    begin
+      simp only [ite_eq_iff],
+      by_cases e ∈ D,
+      left,
+      refine ⟨h, rfl⟩,
+      right,
+      have h2 : e ∉ N.E,
+        rw delete_ground at he,
+        have h3 : N.E ⊆ (N.E \ D) ∪ D, 
+          simp only [diff_union_self, subset_union_left],
+        apply not_mem_subset h3,
+        rw mem_union,
+        push_neg,
+        refine ⟨he, h⟩,
+      refine ⟨h, φ.support e h2⟩,
+    end  }
 
 lemma linear_independent.map'' {ι : Type*} {v : ι → W} (hv : linear_independent 𝔽 v) (f : W →ₗ[𝔽] W')
    (hfv : linear_independent 𝔽 (f ∘ v)) : disjoint (span 𝔽 (range v)) f.ker :=
