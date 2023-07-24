@@ -292,6 +292,9 @@ variables [fintype α]
 lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
   M.indep I := φ.valid' _ hI
 
+lemma valid'' (φ : rep 𝔽 W M) {I : set α} (hI : I ⊆ M.E): linear_independent 𝔽 (λ e : I, φ e) ↔ 
+  M.indep I := φ.valid' _ hI
+
 protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
   is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
@@ -312,6 +315,9 @@ end  -/
 
 @[simp] lemma to_fun_eq_coe (φ : rep 𝔽 W M) : φ.to_fun = (φ : α → W)  := by { ext, refl }
 
+lemma support' {φ : rep 𝔽 W M} {e : α} (he : e ∉ M.E) : φ e = 0 := 
+by { rw ← to_fun_eq_coe, apply φ.support _ he }
+
 lemma linear_independent_iff_coe (φ : rep 𝔽 W M) (hI : M.indep I) :
   linear_independent 𝔽 (λ e : I, φ e) ↔ linear_independent 𝔽 (coe : φ '' I → W) :=
 linear_independent_image $ inj_on_of_indep _ hI
@@ -320,7 +326,7 @@ def to_submodule (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (range φ)
 
 def to_submodule' (φ : rep 𝔽 W M) : submodule 𝔽 W := span 𝔽 (φ '' M.E)
 
-lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) {hx : x ∈ M.E} : φ x ∈ φ.to_submodule :=
+lemma mem_to_submodule (φ : rep 𝔽 W M) (x : α) : φ x ∈ φ.to_submodule :=
 by { rw [rep.to_submodule], refine subset_span _, rw mem_range, use x }
 
 lemma mem_to_submodule' (φ : rep 𝔽 W M) (x : α) (hx : x ∈ M.E) : φ x ∈ φ.to_submodule' :=
@@ -379,8 +385,12 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
-def rep.of_base' (φ : rep 𝔽 W M) (B : set α) (hB : M.base B) (φ' : B → W') 
-  (hφ' : linear_independent 𝔽 φ') : rep 𝔽 W' M := sorry 
+def rep.of_base' (hM : M.is_representable 𝔽) (B : set α) (hB : M.base B) (φ' : α → (B → 𝔽)) 
+  (hφ' : linear_independent 𝔽 φ') : rep 𝔽 (B → 𝔽) M := 
+begin
+  have f := hφ'.repr,
+  sorry,
+end
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
@@ -475,14 +485,28 @@ end
 @[simp] lemma mem_span_rep_range (φ : rep 𝔽 W M) : ∀ (x : α), φ x ∈ (span 𝔽 (range ⇑φ)) := 
   λ x, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (range ⇑φ)) (mem_range_self x) }
 
-@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x ∈ M.E) , φ x ∈ (span 𝔽 (φ '' M.E)) := 
-  λ x h, by { apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h) }
-
--- it's not true that (φ '' M.E) = (range ⇑φ) because we can have φ x = 0 for some x ∉ M.E,
--- but if M.E is loopless, there are no y ∈ M.E such that φ x = 0.  
+@[simp] lemma mem_span_rep (φ : rep 𝔽 W M) : ∀ (x : α) , φ x ∈ (span 𝔽 (φ '' M.E)) := 
+  λ x, by { by_cases x ∈ M.E, 
+apply mem_of_subset_of_mem (@subset_span 𝔽 _ _ _ _ (φ '' M.E)) (mem_image_of_mem φ h),
+simp only [support' h, submodule.zero_mem] }
+ 
 @[simp]
-lemma span_range_eq_span_image (φ : rep 𝔽 W M) : span 𝔽 (φ '' M.E) ≤ span 𝔽 (range ⇑φ) :=
-sorry
+lemma span_range_eq_span_image (φ : rep 𝔽 W M) : span 𝔽 (φ '' M.E) = span 𝔽 (range ⇑φ) :=
+span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range φ y}) 
+  (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep φ y })
+
+lemma span_range_base (φ : rep 𝔽 W M) (hB: M.base B) : 
+  span 𝔽 (range (λ (e : ↥B), φ ↑e)) = span 𝔽 (range φ)  := 
+begin
+  rw [← span_range_eq_span_image, ← φ.span_base hB],
+  have h2 : range (λ (e : ↥B), φ ↑e) = (⇑φ '' B),
+    ext;
+    refine ⟨λ ⟨y, hy⟩, by { simp only at hy, rw ← hy, apply mem_image_of_mem φ y.2}, λ hx, _⟩, 
+    obtain ⟨y, ⟨hy1, rfl⟩⟩ := hx,
+    simp only [mem_range, set_coe.exists, subtype.coe_mk, exists_prop],
+    refine ⟨y, ⟨hy1, rfl⟩⟩,
+  rw h2,
+end
 
 lemma mem_span_cl (φ : rep 𝔽 W M) {x : α} {X : set α} (hX : X ⊆ M.E) (hx : x ∈ M.cl X) : 
   φ x ∈ span 𝔽 (φ '' X) :=
@@ -724,7 +748,7 @@ by { convert of_r φ M.E; simp }
 
 lemma cl_subset_span_range (φ : rep 𝔽 W M) (X : set α) (hX : X ⊆ M.E . ssE) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' M.E) := by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, 
-  apply mem_span_rep φ x (mem_of_subset_of_mem (M.cl_subset_ground X) hx) }
+  apply mem_span_rep φ x }
 
 lemma cl_subset_span_set (φ : rep 𝔽 W M) {X : set α} (hX : X ⊆ M.E) : 
   φ '' M.cl X ⊆ span 𝔽 (φ '' X) :=
@@ -804,7 +828,8 @@ lemma span_base' (φ : rep' 𝔽 M ι) (hB : M.base B) : span 𝔽 (φ '' B) = s
 
 lemma span_range_eq_span_image' (φ : rep' 𝔽 M ι) : span 𝔽 (φ '' M.E) ≤ span 𝔽 (range ⇑φ) :=
 sorry
-/-span_eq_span (λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range' φ y}) 
+
+/-(λ x ⟨y, ⟨hx1, hx2⟩⟩, by {rw ← hx2, apply mem_span_rep_range' φ y}) 
   (λ x ⟨y, hx⟩, by {rw ← hx, apply mem_span_rep' φ y })-/
 
 lemma basis_of_base' (φ : rep' 𝔽 M ι) {B : set α} (hB : M.base B) :
@@ -866,7 +891,30 @@ begin
 end
 
 def std_rep' (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
-  rep 𝔽 (B → 𝔽) M := sorry
+  rep 𝔽 (B →₀ 𝔽) M := 
+begin
+  have h4 := φ'.mem_span_rep_range, 
+  rw ← span_range_base φ' hB at h4, 
+  use λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, h4 e⟩,
+  intros I hI,
+  rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
+    linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr],
+  refine ⟨λ h, _, λ h, _⟩,
+  sorry,
+  /-have h2 : λ (x : ↥I), (⟨φ' x, φ'.mem_span_rep_range x⟩ : span 𝔽 (range φ')) = 
+    (λ (i : ↥I), ⟨(λ (e : ↥I), ⇑φ' ↑e) i, _⟩),-/
+  refine ⟨_, _⟩,
+  have h3 := linear_independent_span h,
+  simp only at h3,
+  simp_rw coe_mk,
+  --apply h3,
+  sorry,
+  simp only [linear_independent.repr_ker, disjoint_bot_left],
+  intros e he,
+  have h3 : (⟨φ' e, h4 e⟩ : span 𝔽 (range (λ (e : ↥B), φ' ↑e))) = 0,
+    simp only [mk_eq_zero, support' he],
+  simp only [h3, _root_.map_zero],  
+end
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
@@ -1263,74 +1311,74 @@ begin
   -- i think i need to show that we have a finite dimensional rep of M \ {x, y} somehow
   -- but i'm worried about making assumptions 
   have φy : rep (zmod 2) ↥(φ2.to_submodule') (M ⟍ x),
-    use (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i),
-    intros I hI,
-    rw delete_elem at hI,
-    have hfundcirc : ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), (M.fund_circuit a B) = 
-      ((M ⟍ ({x, y} : set α)).fund_circuit a B),
+    { use (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i),
+      intros I hI,
+      rw delete_elem at hI,
+      have hfundcirc : ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), (M.fund_circuit a B) = 
+        ((M ⟍ ({x, y} : set α)).fund_circuit a B),
+          sorry,
+      by_cases y ∈ I, 
+      refine ⟨λ h5, _, λ h5, _⟩,  
+      have h4 : ((λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α)) = 
+        (λ e : I, (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) e),
+          simp only [eq_self_iff_true],
+      rw h4 at h5,
+      have h6 : I = insert y ((I \ {y}) : set α),
         sorry,
-    by_cases y ∈ I, 
-    refine ⟨λ h5, _, λ h5, _⟩,  
-    have h4 : ((λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α)) = 
-      (λ e : I, (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) e),
-        simp only [eq_self_iff_true],
-    rw h4 at h5,
-    have h6 : I = insert y ((I \ {y}) : set α),
+      rw [h6, indep.insert_indep_iff_of_not_mem],
       sorry,
-    rw [h6, indep.insert_indep_iff_of_not_mem],
-    sorry,
-    have h7 : disjoint (I \ {y}) {y},
-      simp only [disjoint_singleton_right, not_mem_diff_singleton, not_false_iff],
-    have hIM : (I \ {y}) ⊆ (M ⟍ ({x, y} : set α)).E,
-      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
-      apply diff_subset_diff hI (subset.refl _), 
-    have h8 : (M ⟍ ({x, y} : set α)).indep (I \ {y}),
-      rw ← φ.valid',
-      have h4 : (φ.to_fun ∘ (coe : (I \ {y}) → α)) = (λ e : (I \ {y}), φ.to_fun e),
-        simp only [eq_self_iff_true],
-      rw h4,
-      have h10 := linear_independent.injective h5,
-      have h11 := linear_independent.image h5,
-      have h9 := linear_independent.mono (image_subset 
-        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (diff_subset I {y})) h11,
-      rw ← linear_independent_image at h9, 
-      have h12 : (λ (x_1 : ↥(I \ {y})), ∑ (i : α) in (M.fund_circuit ↑x_1 B ∩ B).to_finset, φ i) = 
-        (λ (e : ↥(I \ {y})), φ.to_fun ↑e),
-        ext;
-        simp only [to_finset_inter, coe_sum, to_fun_eq_coe],
-        rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
-        simp only [to_finset_inter, coe_sum], 
-        rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
-        apply x_1.2,
-      rw ← h12,
-      apply h9,
-      apply inj_on.mono (diff_subset I {y}) _,
-      have h20 := inj_on_of_injective h10 univ,
+      have h7 : disjoint (I \ {y}) {y},
+        simp only [disjoint_singleton_right, not_mem_diff_singleton, not_false_iff],
+      have hIM : (I \ {y}) ⊆ (M ⟍ ({x, y} : set α)).E,
+        rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+        apply diff_subset_diff hI (subset.refl _), 
+      have h8 : (M ⟍ ({x, y} : set α)).indep (I \ {y}),
+        rw ← φ.valid',
+        have h4 : (φ.to_fun ∘ (coe : (I \ {y}) → α)) = (λ e : (I \ {y}), φ.to_fun e),
+          simp only [eq_self_iff_true],
+        rw h4,
+        have h10 := linear_independent.injective h5,
+        have h11 := linear_independent.image h5,
+        have h9 := linear_independent.mono (image_subset 
+          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (diff_subset I {y})) h11,
+        rw ← linear_independent_image at h9, 
+        have h12 : (λ (x_1 : ↥(I \ {y})), ∑ (i : α) in (M.fund_circuit ↑x_1 B ∩ B).to_finset, φ i) = 
+          (λ (e : ↥(I \ {y})), φ.to_fun ↑e),
+          ext;
+          simp only [to_finset_inter, coe_sum, to_fun_eq_coe],
+          rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
+          simp only [to_finset_inter, coe_sum], 
+          rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
+          apply x_1.2,
+        rw ← h12,
+        apply h9,
+        apply inj_on.mono (diff_subset I {y}) _,
+        have h20 := inj_on_of_injective h10 univ,
+        sorry,
+        rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+        apply diff_subset_diff hI (subset.refl _),
+      rw [← union_singleton, union_comm, ← delete_delete, delete_indep_iff] at h8,
+      apply h8.1,
+      apply not_mem_diff_singleton,
       sorry,
-      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
-      apply diff_subset_diff hI (subset.refl _),
-    rw [← union_singleton, union_comm, ← delete_delete, delete_indep_iff] at h8,
-    apply h8.1,
-    apply not_mem_diff_singleton,
-    sorry,
-    have hIM : I ⊆ (M ⟍ ({x, y} : set α)).E, 
-      rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
-      apply subset_diff_singleton hI h,
-    have h4 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) = 
-        (λ (e : I), φ e),
-        have h5 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) =
-          (λ (e : I), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i),
-          simp only,
-        rw h5,
-        ext;
-        rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
-        rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
-        apply x_1.2,
-    have h7 : (φ.to_fun ∘ (coe : I → α)) = (λ e : I, φ e),
-      simp only [to_fun_eq_coe],
-    rw [h4, ← h7, φ.valid' _ hIM, ← union_singleton, union_comm, ← delete_delete],
-    refine ⟨λ hI2, hI2.of_delete, λ hI2, delete_indep_iff.2 ⟨hI2, disjoint_singleton_right.2 h⟩⟩,
-
+      have hIM : I ⊆ (M ⟍ ({x, y} : set α)).E, 
+        rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+        apply subset_diff_singleton hI h,
+      have h4 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) = 
+          (λ (e : I), φ e),
+          have h5 : (λ (e : α), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α) =
+            (λ (e : I), ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i),
+            simp only,
+          rw h5,
+          ext;
+          rw ← mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
+          rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
+          apply x_1.2,
+      have h7 : (φ.to_fun ∘ (coe : I → α)) = (λ e : I, φ e),
+        simp only [to_fun_eq_coe],
+      rw [h4, ← h7, φ.valid' _ hIM, ← union_singleton, union_comm, ← delete_delete],
+      refine ⟨λ hI2, hI2.of_delete, λ hI2, delete_indep_iff.2 ⟨hI2, disjoint_singleton_right.2 h⟩⟩,
+      sorry },
     have φy' := rep_of_matroid_of_module_func (zmod 2) (φ2.to_submodule') 
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (M.E \ {x}),
     have hMM'x : (M ⟍ x) = (matroid_of_module_func (zmod 2) (φ2.to_submodule')
@@ -1340,9 +1388,12 @@ begin
     rw ground_matroid_of_module_func,
     intros I hI,
     rw [← φy.valid' I hI, ← φy'.valid' I _],
-    have hφ : φy.to_fun = (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i),
+    have hφ : φy.to_fun = φy'.to_fun,
       simp,
       funext,
+      rw ← φy.mem_sum_basis_zmod2,
+      simp_rw delete_elem,
+      --simp_rw fund_circuit_delete,
     /-refine ⟨λ hI2, _, λ hI2, _⟩,
     refine ⟨⟨_, sorry⟩, sorry,⟩,
     by_cases y ∈ I,

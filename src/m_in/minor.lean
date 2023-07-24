@@ -117,14 +117,18 @@ begin
   exact disjoint_of_subset_left hIC hdj, 
 end  
 
-lemma fund_circuit_delete (hI : M.indep I) (heI : e ∈ M.cl I \ I) 
+lemma fund_circuit_delete (hI : M.indep I) (heI : e ∈ M.cl I) 
   (hdj : disjoint (insert e I) D) : (M ⟍ D).fund_circuit e I = M.fund_circuit e I :=
 begin
+  by_cases e ∈ I,
+  { rw [hI.fund_circuit_eq_of_mem h, (delete_indep_iff.2 ⟨hI, 
+      disjoint_of_subset_left (subset_insert e I) hdj⟩).fund_circuit_eq_of_mem h] },
   have hC : (M ⟍ D).circuit (M.fund_circuit e I),
-  { rw [delete_circuit_iff, and_iff_right (hI.fund_circuit_circuit heI)],
-    exact disjoint_of_subset_left (fund_circuit_subset_insert heI.1) hdj },
+  { rw [delete_circuit_iff, and_iff_right (hI.fund_circuit_circuit ((mem_diff e).2 ⟨heI, h⟩))],
+    exact disjoint_of_subset_left (fund_circuit_subset_insert ((mem_diff e).2 ⟨heI, h⟩).1) hdj },
 
-  refine (hC.eq_fund_circuit_of_subset_insert_indep _ (fund_circuit_subset_insert heI.1)).symm,
+  refine (hC.eq_fund_circuit_of_subset_insert_indep _ (fund_circuit_subset_insert 
+    ((mem_diff e).2 ⟨heI, h⟩).1)).symm,
   rw [delete_indep_iff],
   exact ⟨hI, disjoint_of_subset_left (subset_insert _ _) hdj⟩ 
 end 
