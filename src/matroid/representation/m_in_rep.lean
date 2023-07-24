@@ -893,36 +893,50 @@ begin
   use rep'.rep_of_rep' φ,
 end
 
-def std_rep' (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
+/-- The representation for `M` whose rows are indexed by a base `B` -/
+def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
   rep 𝔽 (B →₀ 𝔽) M := 
-begin
-  have h4 := φ'.mem_span_rep_range, 
-  rw ← span_range_base φ' hB at h4, 
-  use λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, h4 e⟩,
-  intros I hI,
-  rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
-    linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr],
-  refine ⟨λ h, _, λ h, _⟩,
-  sorry,
-  /-have h2 : λ (x : ↥I), (⟨φ' x, φ'.mem_span_rep_range x⟩ : span 𝔽 (range φ')) = 
-    (λ (i : ↥I), ⟨(λ (e : ↥I), ⇑φ' ↑e) i, _⟩),-/
-  refine ⟨_, _⟩,
-  have h3 := linear_independent_span h,
-  simp only at h3,
-  simp_rw coe_mk,
-  --apply h3,
-  sorry,
-  simp only [linear_independent.repr_ker, disjoint_bot_left],
-  intros e he,
-  have h3 : (⟨φ' e, h4 e⟩ : span 𝔽 (range (λ (e : ↥B), φ' ↑e))) = 0,
-    simp only [mk_eq_zero, support' he],
-  simp only [h3, _root_.map_zero],  
-end
+{ to_fun := λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, by
+    { have h4 := φ'.mem_span_rep_range, rw ← span_range_base φ' hB at h4, exact h4 e}⟩,
+  valid' := by 
+  { intros I hI,
+    rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
+      linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr, 
+      ←(submodule.subtype (span 𝔽 (range (λ (e : B), φ' ↑e)))).linear_independent_iff, 
+         submodule.coe_subtype, and_iff_left],
+    { refl }, 
+    { simp only [linear_independent.repr_ker, disjoint_bot_left] },
+    simp },
+  support := by
+  { intros e he, simp_rw [support' he], convert _root_.map_zero _} }
+
+
+
+-- begin
+--   have h4 := φ'.mem_span_rep_range, 
+--   rw ← span_range_base φ' hB at h4, 
+--   use λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, h4 e⟩,
+--   intros I hI,
+--   rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
+--     linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr],
+--   { rw [←(submodule.subtype (span 𝔽 (range (λ (e : B), φ' ↑e)))).linear_independent_iff, 
+--       submodule.coe_subtype, and_iff_left], 
+--     { refl },
+--     { simp only [linear_independent.repr_ker, disjoint_bot_left] },
+--     simp },
+  
+--   
+-- end
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
-  std_rep' φ hB e.1 e = 1 :=
-sorry
+  std_rep φ hB e.1 e = 1 :=
+begin
+  
+  simp [std_rep],
+
+  -- simp_rw [linear_independent.repr_eq_single], 
+end 
 
 lemma id_matrix_of_base' (φ : rep 𝔽 W M) {B : set α} (e f : B) (hB : M.base B) (hne : e ≠ f) : 
   std_rep' φ hB e.1 f = 0 :=
@@ -1082,8 +1096,8 @@ begin
 end
 
 
-noncomputable def std_rep {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-{M : matroid_in α} (φ : rep 𝔽 W M) (hB : M.base B) : rep 𝔽 (B → 𝔽) M := sorry  
+-- noncomputable def std_rep {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+-- {M : matroid_in α} (φ : rep 𝔽 W M) (hB : M.base B) : rep 𝔽 (B → 𝔽) M := sorry  
 
 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
@@ -1171,6 +1185,7 @@ begin
 end
 
 lemma indep_eq_doubleton_of_subset (MI MC : matroid_in α) (hIC : MI.E = MC.E) (x y : α) (hxy : x ≠ y)
+  -- (hiI : MI.coindep {x,y}) (hiC : MC.coindep {x,y})
   (hcocircuit : (∀ (X ⊆ {x, y}), ¬ MI.cocircuit X) ∨ (∀ (X ⊆ {x, y}), ¬ MC.cocircuit X))
   (hMx : MI ⟍ x = MC ⟍ x) (hMy : MI ⟍ y = MC ⟍ y)
   {Z J : set α} (hxZ : x ∈ Z) (hyZ : y ∈ Z) (hMIZ : MI.indep Z) (hMCZ : ¬ MC.indep Z) 
@@ -1582,6 +1597,17 @@ begin
   simp only [nat.card_eq_fintype_card, fintype.card_fin],
   apply hk,
 end
+
+lemma vandermonde_rep [fintype 𝔽] (a n : ℕ) (hn : n ≤ nat.card 𝔽) : 
+  is_representable 𝔽 (unif (a + 1) n) := 
+begin
+  -- Choose a matrix with rows (`fin a`) and columns of the form (x^0, x^1, ... x_i^{a-1}) for 
+  -- distinct `x ∈ 𝔽`, and one extra column `(0,0,...,1)`. This is (pretty much) a Vandermonde 
+  -- matrix, so all its a × a subdeterminants are nonsingular - see
+  -- https://leanprover-community.github.io/mathlib_docs/linear_algebra/vandermonde.html#matrix.vandermonde. 
+  -- it follows that the matroid it represents is uniform. 
+
+end 
 
 end rep
 
