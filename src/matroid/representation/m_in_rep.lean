@@ -44,6 +44,7 @@ def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := �
 
 -- this definition breaks injectivity of rep of simple matroids, i think we need
 -- to restrict the domain
+-- show that this is equivalent to the other definition
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
 (valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
@@ -907,9 +908,10 @@ begin
   /-have h2 : λ (x : ↥I), (⟨φ' x, φ'.mem_span_rep_range x⟩ : span 𝔽 (range φ')) = 
     (λ (i : ↥I), ⟨(λ (e : ↥I), ⇑φ' ↑e) i, _⟩),-/
   refine ⟨_, _⟩,
+  have h8 := (valid'' φ' hB.subset_ground).2 hB.indep,
   have h3 := linear_independent_span h,
   simp only at h3,
-  simp_rw coe_mk,
+  
   --apply h3,
   sorry,
   simp only [linear_independent.repr_ker, disjoint_bot_left],
@@ -1188,7 +1190,8 @@ begin
     delete_delete, union_singleton] at hMIxyJ2,
   -- i need something that tells me the rank of a matroid when you contract an independent set
   have hNIC : (MI ⟋ (J \ {x, y})).rk = (MC ⟋ (J \ {x, y})).rk,
-    { sorry },
+    { -- this is due to M and M' having the same rank
+      sorry },
   have hNIneNC : (MI ⟋ (J \ {x, y})) ≠ (MC ⟋ (J \ {x, y})),
   { simp only [ne.def, eq_iff_indep_iff_indep_forall, contract_ground, hIC, eq_self_iff_true, 
       true_and, not_forall, exists_prop],
@@ -1216,13 +1219,21 @@ begin
       ← contract_delete_comm _ (@disjoint_sdiff_left _ {x, y} J)] at hNCxyB,
   have hB : (MI ⟋ (J \ {x, y})).base B ↔ (MC ⟋ (J \ {x, y})).base B,
   { refine ⟨λ hI, _, λ hC, _⟩,
-    by_contra h2,
-    have hCB := hNCxyB.indep.of_delete,
-    obtain ⟨B', hB'⟩ := (MC ⟋ (J \ ({x, y} : set α))).exists_base,
-    rw [← hI.card, ← hB'.card] at hNIC,
-    obtain ⟨e, he⟩ := hCB.exists_insert_of_not_base h2 hB',
-    sorry,
-    sorry },
+    -- duplicate code, turn into lemma
+    { by_contra h2,
+      have hCB := hNCxyB.indep.of_delete,
+      obtain ⟨B', hB'⟩ := (MC ⟋ (J \ ({x, y} : set α))).exists_base,
+      rw [← hI.card] at hNIC,
+      apply h2,
+      apply hCB.base_of_rk_le_card,
+      rw hNIC },
+    { by_contra h2, 
+      have hIB := hNIxyB.indep.of_delete,
+      obtain ⟨B', hB'⟩ := (MI ⟋ (J \ ({x, y} : set α))).exists_base,
+      rw [← hC.card] at hNIC,
+      apply h2,
+      apply hIB.base_of_rk_le_card,
+      rw hNIC } },
   by_cases (MI ⟋ (J \ {x, y})).base B,
   { 
     sorry },
@@ -1548,7 +1559,7 @@ end
 
 -- need the one-dimensional subspaces lemma for this
 lemma card_of_unif_rep (k : ℕ) (hk : 1 < k) (h2 : is_representable 𝔽 (unif 2 k)) [fintype 𝔽]: 
-  k - 1 ≤ ncard (@univ 𝔽) :=
+  k - 1 ≤ nat.card (@univ 𝔽) :=
 begin
   rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
   have φ'' := @rep.rep_submodule _ _ _ _ _ _ hW hM φ',
