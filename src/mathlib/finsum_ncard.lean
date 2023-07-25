@@ -128,7 +128,7 @@ begin
 end
 
 lemma finsum_le_finsum_of_subset'  {ι M : Type*} [canonically_ordered_add_monoid M]  {f : ι → M}
-  {s t : set ι}  (h : s ⊆ t) (ht : (t ∩ f.support).finite) :
+  {s t : set ι} (h : s ⊆ t) (ht : (t ∩ f.support).finite) :
   ∑ᶠ x ∈ s, f x ≤ ∑ᶠ x ∈ t, f x :=
 begin
   rw ←finsum_mem_inter_support,
