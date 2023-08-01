@@ -907,48 +907,38 @@ def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) :
          submodule.coe_subtype, and_iff_left],
     { refl }, 
     { simp only [linear_independent.repr_ker, disjoint_bot_left] },
-    simp },
+    simp only [ker_subtype] },
   support := by
   { intros e he, simp_rw [support' he], convert _root_.map_zero _} }
 
-
-
--- begin
---   have h4 := φ'.mem_span_rep_range, 
---   rw ← span_range_base φ' hB at h4, 
---   use λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, h4 e⟩,
---   intros I hI,
---   rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
---     linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr],
---   { rw [←(submodule.subtype (span 𝔽 (range (λ (e : B), φ' ↑e)))).linear_independent_iff, 
---       submodule.coe_subtype, and_iff_left], 
---     { refl },
---     { simp only [linear_independent.repr_ker, disjoint_bot_left] },
---     simp },
-  
---   
--- end
-
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
-  std_rep φ hB e.1 e = 1 :=
+  std_rep φ hB e e = 1 :=
 begin
-  
+  rw ← to_fun_eq_coe,
   simp [std_rep],
-
-  -- simp_rw [linear_independent.repr_eq_single], 
+  rw [((valid'' φ hB.subset_ground).2 hB.indep).repr_eq_single e ⟨φ e, by
+    { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
+  simp only [finsupp.single_eq_same],
 end 
 
 lemma id_matrix_of_base' (φ : rep 𝔽 W M) {B : set α} (e f : B) (hB : M.base B) (hne : e ≠ f) : 
-  std_rep' φ hB e.1 f = 0 :=
-sorry
-
--- ∃ (c : ι →₀ R), x = finsupp.sum c (λ i x, x • b i)
-lemma mem_sum_basis' (φ : rep 𝔽 W M) {B : set α} (e : α) (hB : M.base B) :
-  ∃ (I : B →₀ 𝔽) , finsupp.sum I (λ i x, std_rep' φ hB i) = std_rep' φ hB e :=
+  std_rep φ hB e f = 0 :=
 begin
+  rw ← to_fun_eq_coe,
+  simp [std_rep],
+  rw [((valid'' φ hB.subset_ground).2 hB.indep).repr_eq_single e ⟨φ e, by
+    { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
+  apply finsupp.single_eq_of_ne hne,
+end
 
-  sorry,
+lemma std_rep_base_eq {M' : matroid_in α} (φ : rep 𝔽 W M) (φ' : rep 𝔽 W M') {B : set α} (hB : M.base B)
+(hB' : M'.base B) (e : B) : std_rep φ hB e = std_rep φ' hB' e :=
+begin
+  ext;
+  by_cases e = a, 
+  simp_rw [h, id_matrix_of_base],
+  simp_rw [id_matrix_of_base' φ e a hB h, id_matrix_of_base' φ' e a hB' h],
 end
 
 open_locale big_operators
@@ -958,7 +948,7 @@ lemma fund_circuit_inter_eq_diff_of_not_mem (e : α) (he : e ∈ M.cl I) (h2 : e
 begin
   apply eq_of_subset_of_subset,
   rw [diff_eq, compl_eq_univ_diff],
-  apply inter_subset_inter (subset.refl _) (subset_diff_singleton (subset_univ I) h),
+  apply inter_subset_inter (subset.refl _) (subset_diff_singleton (subset_univ I) h2),
   apply subset_inter (diff_subset _ _),
   apply (@insert_subset_insert_iff _ _ ((M.fund_circuit e I) \ {e}) I 
     (not_mem_diff_singleton e (M.fund_circuit e I))).1,
@@ -1105,12 +1095,40 @@ end
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
 
-lemma eq_of_forall_fund_circuit_eq {M M' : matroid_in α} (hMb : M.is_binary) (hM'b : M'.is_binary) 
+lemma eq_of_forall_fund_circuit_eq {M M' : matroid_in α} [module (zmod 2) W] 
+(φM : rep (zmod 2) W M) (φM' : rep (zmod 2) W M')
 (hE : M.E = M'.E) (hB : M.base B) (hB' : M'.base B) 
-(he : ∀ e ∈ M.E \ B, M.fund_circuit e B = M'.fund_circuit e B) :
+(he : ∀ e ∈ M.E, M.fund_circuit e B = M'.fund_circuit e B) :
   M = M' :=
 begin
-  sorry 
+  have φM := std_rep φM hB,
+  have φM' := std_rep φM' hB',
+  apply eq_of_indep_iff_indep_forall hE,
+  intros I hI,
+  have hI' := hI,
+  rw hE at hI',
+  rw [← (std_rep φM hB).valid' _ hI, ← (std_rep φM' hB').valid' _ hI'],
+  have h2 : (std_rep φM hB).to_fun ∘ coe = λ i : I, (std_rep φM hB).to_fun i,
+    simp only [eq_self_iff_true], 
+  have h3 : (std_rep φM' hB').to_fun ∘ coe = λ i : I, (std_rep φM' hB').to_fun i,
+    simp only [eq_self_iff_true],
+  rw [h2, h3],
+  simp only [to_fun_eq_coe],
+  simp_rw [λ (e : I), (std_rep φM hB).mem_sum_basis_zmod2 hB.indep _ (@base.mem_cl _ M B hB e (hI e.2)),
+    λ (e : I), (std_rep φM' hB').mem_sum_basis_zmod2 hB'.indep _ (@base.mem_cl _ M' B hB' e (hI' e.2))],
+  simp_rw λ (e : I), he e (hI e.2),
+  have h6 : (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (std_rep φM hB) x) 
+    = (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (std_rep φM' hB') x),
+    simp only,
+    have h10 :=  λ (i : ↥I), @finset.sum_congr _ _ (M'.fund_circuit i B ∩ B).to_finset 
+      (M'.fund_circuit i B ∩ B).to_finset (std_rep φM hB) (std_rep φM' hB') _ rfl _,
+    simp_rw  [λ (i : I), h10 i],
+    intros x hx,
+    rw mem_to_finset at hx,
+    have h12 := std_rep_base_eq φM φM' hB hB' ⟨x, (mem_of_mem_inter_right hx)⟩,
+    simp at h12,
+    rw h12,
+  simp_rw h6,
 end 
   
 
@@ -1160,9 +1178,9 @@ begin
   sorry,
 end
 
-lemma cocircuits_excluded_minor' (M : matroid_in α) 
-(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : x ∈ M.E) 
-(hy : y ∈ M.E) : ¬ M.cocircuit {x, y} :=
+lemma coindep_excluded_minor (M : matroid_in α) 
+(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x, y} ⊆ M.E) 
+  : M.coindep {x, y} :=
 begin
   sorry,
 end
@@ -1171,41 +1189,47 @@ end
 -- in the same module
 
 -- part (iii) in the proof of theorem 6.5.4
-lemma indep_eq_doubleton_of_nonbinary (M : matroid_in α) (hM : ¬ M.is_binary) (hI : M.indep I)
-  {Z : set α} {x y : α} (hx : x ∈ M.E) (hy : y ∈ M.E) (hxb : (M ⟍ ({x} : set α)).is_binary) 
-  (φy : (M ⟍ ({y} : set α)).is_binary) (hxy : M.rk = M.r (univ \ {x, y})) 
-  (hxy2 : {x, y} ⊆ I) : {x, y} = I :=
-begin
-  by_contra,
-  have h5 := indep.subset hI (diff_subset I {x, y}),
-  have h4 := nonempty_of_ssubset (ssubset_of_ne_of_subset h hxy2),
-  rw nonempty_iff_ne_empty at h4,
-  
-  have M' := matroid_of_module_set,
-  sorry,
-end
-
-lemma indep_eq_doubleton_of_subset (MI MC : matroid_in α) (hIC : MI.E = MC.E) (x y : α) (hxy : x ≠ y)
-  -- (hiI : MI.coindep {x,y}) (hiC : MC.coindep {x,y})
-  (hcocircuit : (∀ (X ⊆ {x, y}), ¬ MI.cocircuit X) ∨ (∀ (X ⊆ {x, y}), ¬ MC.cocircuit X))
+lemma indep_eq_doubleton_of_subset (MI MC : matroid_in α) [finite_rk MI] [finite_rk MC] (hIC : MI.E = MC.E) (x y : α) (hxy : x ≠ y)
+  (hiIC : MI.coindep {x,y} ∨ MC.coindep {x,y}) (hrk : MI.rk = MC.rk)
   (hMx : MI ⟍ x = MC ⟍ x) (hMy : MI ⟍ y = MC ⟍ y)
   {Z J : set α} (hxZ : x ∈ Z) (hyZ : y ∈ Z) (hMIZ : MI.indep Z) (hMCZ : ¬ MC.indep Z) 
-  (hZJ : Z ⊆ J) (hMIJ : MI.indep J) : J = {x, y} :=
+  (hZJ : Z ⊆ J) (hMIJ : MI.indep J) [module (zmod 2) W] (φI : rep (zmod 2) W (MI ⟋ (J \ {x, y})))
+  (φC : rep (zmod 2) W (MC ⟋ (J \ {x, y}))) : J = {x, y} :=
 begin
   apply subset_antisymm _ (insert_subset.2 ⟨hZJ hxZ, singleton_subset_iff.2 (hZJ hyZ)⟩),
   rw ← diff_eq_empty,
   by_contra,
   --have hMIxy : (MI ⟍ {x, y}).indep (J \ {x, y}),
   rw [MI.delete_elem x, MC.delete_elem x] at hMx, --← delete_delete,
+  rw [MI.delete_elem y, MC.delete_elem y] at hMy,
   have hMIxyJ := delete_indep_iff.2 ⟨hMIJ.subset (diff_subset J {x, y}), 
     @disjoint_sdiff_left _ {x, y} J⟩,
   have hMIxyJ2 := hMIxyJ,
-  rw [← union_singleton, ← delete_delete, ← MI.delete_elem y, hMy, MC.delete_elem y, 
+  rw [← union_singleton, ← delete_delete, hMy, 
     delete_delete, union_singleton] at hMIxyJ2,
   -- i need something that tells me the rank of a matroid when you contract an independent set
   have hNIC : (MI ⟋ (J \ {x, y})).rk = (MC ⟋ (J \ {x, y})).rk,
     { -- this is due to M and M' having the same rank
-      sorry },
+      have h2 := MI.er_contract_add_er_eq_er_union (J \ {x, y}) (MI.E \ (J \ {x, y})),
+      have h3 := MC.er_contract_add_er_eq_er_union (J \ {x, y}) (MC.E \ (J \ {x, y})),
+      rw [union_comm, union_diff_cancel (subset_trans (diff_subset _ _) (hMIJ.subset_ground))] at h2,
+      rw [union_comm, union_diff_cancel] at h3,
+      have h4 : MI.er (J \ {x, y}) = MC.er (J \ {x, y}),
+      { rw [← union_singleton, ← diff_diff, ← MI.delete_er_eq', ← MC.delete_er_eq', hMx] },
+      rw [rk_def, rk_def, ← er_eq_coe_iff, eq_comm] at hrk,
+      simp only [contract_ground, coe_r_eq_er] at hrk,
+      rw [hrk, ← h2, h4] at h3,
+      simp only [← coe_r_eq_er] at h3,
+      simp only [← enat.coe_add] at h3,
+      have h7 : ((MC ⟋ (J \ {x, y})).r (MC.E \ (J \ {x, y})) + MC.r (J \ {x, y})) = 
+        ((MI ⟋ (J \ {x, y})).r (MI.E \ (J \ {x, y})) + MC.r (J \ {x, y})),
+        sorry,
+      simp only [rk_def],
+      rw eq_comm,
+      simp only [contract_ground],
+      apply nat.add_right_cancel h7,
+      rw ← hIC,
+      apply subset_trans (diff_subset _ _) (hMIJ.subset_ground) },
   have hNIneNC : (MI ⟋ (J \ {x, y})) ≠ (MC ⟋ (J \ {x, y})),
   { simp only [ne.def, eq_iff_indep_iff_indep_forall, contract_ground, hIC, eq_self_iff_true, 
       true_and, not_forall, exists_prop],
@@ -1228,8 +1252,8 @@ begin
       apply indep.subset.mt (not_imp.2 ⟨hZJ, hMCZ⟩) } }, 
   obtain ⟨B, hNIxyB⟩ := (MI ⟋ (J \ {x, y}) ⟍ ({x, y} : set α)).exists_base,
     have hNCxyB := hNIxyB,
-    rw [contract_delete_comm _ (@disjoint_sdiff_left _ {x, y} J), ← union_singleton, ← delete_delete, 
-      ← MI.delete_elem y, hMy, MC.delete_elem y, delete_delete, union_singleton, 
+    rw [contract_delete_comm _ (@disjoint_sdiff_left _ {x, y} J), ← union_singleton, 
+      ← delete_delete, hMy, delete_delete, union_singleton, 
       ← contract_delete_comm _ (@disjoint_sdiff_left _ {x, y} J)] at hNCxyB,
   have hB : (MI ⟋ (J \ {x, y})).base B ↔ (MC ⟋ (J \ {x, y})).base B,
   { refine ⟨λ hI, _, λ hC, _⟩,
@@ -1249,10 +1273,54 @@ begin
       apply hIB.base_of_rk_le_card,
       rw hNIC } },
   by_cases (MI ⟋ (J \ {x, y})).base B,
-  { 
-    sorry },
   { apply hNIneNC,
-    sorry },
+    have hfund : ∀ e ∈ (MI ⟋ (J \ {x, y})).E, (MI ⟋ (J \ {x, y})).fund_circuit e B 
+      = (MC ⟋ (J \ {x, y})).fund_circuit e B, 
+      intros e he,
+      by_cases h2 : e = y,
+      { rw h2 at *,
+        have h3 : disjoint (insert y B) {x},
+          apply disjoint_singleton_right.2 (mem_insert_iff.1.mt _),
+          push_neg,
+          refine ⟨hxy, _⟩,
+          have h10 := hNIxyB.subset_ground,
+          rw [delete_ground, ← union_singleton, ← diff_diff] at h10,
+          apply not_mem_subset h10 (not_mem_diff_of_mem (mem_singleton x)),
+        have h5 : disjoint (J \ {x, y}) {x},
+          rw [← union_singleton, ← diff_diff],
+          apply disjoint_sdiff_left,
+        rw [← fund_circuit_delete h.indep (h.mem_cl y) h3, MI.contract_delete_comm h5, hMx,
+            ← MC.contract_delete_comm h5], 
+        rw [contract_ground, hIC, ← contract_ground] at he,
+        rw fund_circuit_delete (hB.1 h).indep ((hB.1 h).mem_cl y) h3 },
+      { have h3 : disjoint (insert e B) {y},
+          apply disjoint_singleton_right.2 (mem_insert_iff.1.mt _),
+          push_neg,
+          refine ⟨ne.symm h2, _⟩,
+          have h10 := hNIxyB.subset_ground,
+          rw [delete_ground, ← union_singleton, union_comm, ← diff_diff] at h10,
+          apply not_mem_subset h10 (not_mem_diff_of_mem (mem_singleton y)),
+        have h5 : disjoint (J \ {x, y}) {y},
+          rw [← union_singleton, union_comm, ← diff_diff],
+          apply disjoint_sdiff_left,
+        rw [← fund_circuit_delete h.indep (h.mem_cl e) h3, MI.contract_delete_comm h5, hMy,
+            ← MC.contract_delete_comm h5], 
+        rw [contract_ground, hIC, ← contract_ground] at he,
+        rw fund_circuit_delete (hB.1 h).indep ((hB.1 h).mem_cl e) h3 },
+      apply eq_of_forall_fund_circuit_eq φI φC _ h (hB.1 h) hfund,
+      simp_rw [contract_ground, hIC] },
+  { cases hiIC with hIc hCc,
+    { have h3 := (coindep_contract_iff.2 ⟨hIc, @disjoint_sdiff_right _ {x, y} J⟩).cl_compl,
+      rw delete_base_iff at hNIxyB,
+      rw ← hNIxyB.cl at h3,
+      apply h,
+      apply hNIxyB.indep.base_of_cl_eq_ground h3 },
+    { have h3 := (coindep_contract_iff.2 ⟨hCc, @disjoint_sdiff_right _ {x, y} J⟩).cl_compl,
+      rw delete_base_iff at hNCxyB,
+      rw ← hNCxyB.cl at h3,
+      apply h,
+      rw hB,
+      apply hNCxyB.indep.base_of_cl_eq_ground h3 } },
 end
  
 
@@ -1364,17 +1432,11 @@ lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
 begin
   -- this comes from hM
   have hME : nontrivial M.E,
+    by_contra,
     sorry,
-  rw nontrivial_coe_sort at hME,
-  rw nontrivial_iff_pair_subset at hME,
+  rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
   obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
-  have h2 := cocircuits_excluded_minor' M hM x y _ _,
-  swap,
-  apply singleton_subset_iff.1,
-  sorry,
-  swap,
-  apply singleton_subset_iff.1,
-  sorry,
+  have h2 := coindep_excluded_minor M hM x y hxy2,
   rw excluded_minor_iff at hM,
   have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
     sorry,
@@ -1386,6 +1448,7 @@ begin
   haveI := φ2.fin_dim_rep,
   --haveI := hxyr_h_w,
   obtain ⟨B, hB⟩ := (M ⟍ ({x, y} : set α)).exists_base,
+  have h3 := h2.base_of_basis_compl (delete_base_iff.1 hB),
   /-have hB2 : M.base B,
     rw delete_base_iff at hB,
     rw cocircuit_iff_mem_minimals_compl_nonspanning at h2,
@@ -1403,6 +1466,7 @@ begin
     { rw valid_func, 
       intros I hI,
       rw delete_elem at hI,
+      have hfundcirc := fund_circuit_delete hB.indep.of_delete,
       have hfundcirc : ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), (M.fund_circuit a B) = 
         ((M ⟍ ({x, y} : set α)).fund_circuit a B),
           sorry,
@@ -1512,15 +1576,22 @@ begin
       (λ (e : α), ((M.fund_circuit e B).to_finset ∩ B.to_finset).sum ⇑φ) M.E).indep A)},  
     { sorry },
     obtain ⟨Z, hZ⟩ := hZ,
+    simp_rw [iff_def, not_and_distrib, not_imp] at hZ,
     rw mem_minimals_set_of_iff' at hZ,
+    cases hZ.1 with hZ1 hZ2,
     have hxZ : x ∈ Z,
     { by_contra,
       sorry },
     have hZ1 := hZ.1,
-    wlog h : (M.indep Z → ¬ (matroid_of_module_func (zmod 2) ↥(φ2.to_submodule') 
-      (λ (e : α), ((M.fund_circuit e B).to_finset ∩ B.to_finset).sum ⇑φ) M.E).indep Z),
-    
     have hJZ : ∀ (J : set α), M.indep J → Z ⊆ J → J = {x, y}, 
+    { intros J hMJ hZJ,
+      by_cases M.indep Z,
+      { have h2 := indep_eq_doubleton_of_subset,
+        rw not_and_distrib at hZ1,
+        push_neg at hZ1,
+        
+        sorry },
+      { sorry }, },
     
 
 
