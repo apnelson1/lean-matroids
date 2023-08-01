@@ -932,7 +932,7 @@ begin
   apply finsupp.single_eq_of_ne hne,
 end
 
-lemma std_rep_base_eq {M' : matroid_in α} (φ : rep 𝔽 W M) (φ' : rep 𝔽 W M') {B : set α} (hB : M.base B)
+lemma std_rep_base_eq {M' : matroid_in α} (φ : rep 𝔽 W M) (φ' : rep 𝔽 W' M') {B : set α} (hB : M.base B)
 (hB' : M'.base B) (e : B) : std_rep φ hB e = std_rep φ' hB' e :=
 begin
   ext;
@@ -1427,6 +1427,13 @@ begin
   simp,
 end
 
+lemma coindep.base_of_basis_del {X : set α} (hX : M.coindep X) (hB : M.basis B (M.E \ X)) : 
+  M.base B :=
+begin
+  obtain ⟨B',hB'⟩ := hX.exists_disjoint_base, 
+  apply hB'.1.base_of_basis_supset (subset_diff.2 ⟨hB'.1.subset_ground, disjoint.symm hB'.2⟩) hB, 
+end 
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
@@ -1448,7 +1455,7 @@ begin
   haveI := φ2.fin_dim_rep,
   --haveI := hxyr_h_w,
   obtain ⟨B, hB⟩ := (M ⟍ ({x, y} : set α)).exists_base,
-  have h3 := h2.base_of_basis_compl (delete_base_iff.1 hB),
+  have h3 := coindep.base_of_basis_del h2 (delete_base_iff.1 hB),
   /-have hB2 : M.base B,
     rw delete_base_iff at hB,
     rw cocircuit_iff_mem_minimals_compl_nonspanning at h2,
@@ -1466,54 +1473,69 @@ begin
     { rw valid_func, 
       intros I hI,
       rw delete_elem at hI,
-      have hfundcirc := fund_circuit_delete hB.indep.of_delete,
+      --have hfundcirc := ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), fund_circuit_delete h3.indep,
       have hfundcirc : ∀ (a ∈ (M ⟍ ({x, y} : set α)).E), (M.fund_circuit a B) = 
         ((M ⟍ ({x, y} : set α)).fund_circuit a B),
-          sorry,
+          intros a ha,
+          rw delete_ground at ha,
+          rw fund_circuit_delete h3.indep (@base.mem_cl _ _ _ h3 a (mem_of_mem_diff ha)),
+          rw ← union_singleton,
+          apply disjoint_union_left.2,
+          refine ⟨_, disjoint_singleton_left.2 (not_mem_of_mem_diff ha)⟩,
+          have hb := hB.subset_ground,
+          rw delete_ground at hb,
+          apply (subset_diff.1 hb).2,
       by_cases y ∈ I, 
-      refine ⟨λ h5, _, λ h5, _⟩,  
-      have h4 : ((λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α)) = 
-        (λ e : I, (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) e),
-          simp only [eq_self_iff_true],
-      rw h4 at h5,
-      have h6 : I = insert y ((I \ {y}) : set α),
+      { refine ⟨λ h5, _, λ h5, _⟩,  
+        have h4 : ((λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ (coe : I → α)) = 
+          (λ e : I, (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) e),
+            simp only [eq_self_iff_true],
+        rw h4 at h5,
+        have h6 : I = insert y ((I \ {y}) : set α),
+          simp only [insert_diff_singleton, insert_eq_of_mem h],
+        rw [← insert_eq_of_mem h, ← insert_diff_singleton, indep.insert_indep_iff_of_not_mem],
+        rw [← insert_eq_of_mem h, ← insert_diff_singleton, ← union_singleton] at h5,
+        have h12 := h5.image,
+        rw image_union at h12,
+        /-have h11 := (linear_independent.mono (subset_union_left _ _) h12),
+        have h13 := (linear_independent.mono (subset_union_right _ _) h12),
+        rw ← mem_sum_basis_zmod2 at h11,
+        have h10 := linear_independent.union'' (linear_independent.mono),-/
         sorry,
-      rw [h6, indep.insert_indep_iff_of_not_mem],
-      sorry,
-      have h7 : disjoint (I \ {y}) {y},
-        simp only [disjoint_singleton_right, not_mem_diff_singleton, not_false_iff],
-      have hIM : (I \ {y}) ⊆ (M ⟍ ({x, y} : set α)).E,
-        rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
-        apply diff_subset_diff hI (subset.refl _), 
-      have h8 : (M ⟍ ({x, y} : set α)).indep (I \ {y}),
-        rw ← φ.valid',
-        have h4 : (φ.to_fun ∘ (coe : (I \ {y}) → α)) = (λ e : (I \ {y}), φ.to_fun e),
-          simp only [eq_self_iff_true],
-        rw h4,
-        have h10 := linear_independent.injective h5,
-        have h11 := linear_independent.image h5,
-        have h9 := linear_independent.mono (image_subset 
-          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (diff_subset I {y})) h11,
-        rw ← linear_independent_image at h9, 
-        have h12 : (λ (x_1 : ↥(I \ {y})), ∑ (i : α) in (M.fund_circuit ↑x_1 B ∩ B).to_finset, φ i) = 
-          (λ (e : ↥(I \ {y})), φ.to_fun ↑e),
-          ext;
-          simp only [to_finset_inter, coe_sum, to_fun_eq_coe],
-          rw mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
-          simp only [to_finset_inter, coe_sum], 
-          rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
-          apply x_1.2,
-        rw ← h12,
-        apply h9,
-        apply inj_on.mono (diff_subset I {y}) _,
-        have h20 := inj_on_of_injective h10 univ,
-        sorry,
-        rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
-        apply diff_subset_diff hI (subset.refl _),
-      rw [← union_singleton, union_comm, ← delete_delete, delete_indep_iff] at h8,
-      apply h8.1,
-      apply not_mem_diff_singleton,
-      sorry,
+        have h7 : disjoint (I \ {y}) {y},
+          simp only [disjoint_singleton_right, not_mem_diff_singleton, not_false_iff],
+        have hIM : (I \ {y}) ⊆ (M ⟍ ({x, y} : set α)).E,
+          rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+          apply diff_subset_diff hI (subset.refl _), 
+        have h8 : (M ⟍ ({x, y} : set α)).indep (I \ {y}),
+          rw ← φ.valid',
+          have h4 : (φ.to_fun ∘ (coe : (I \ {y}) → α)) = (λ e : (I \ {y}), φ.to_fun e),
+            simp only [eq_self_iff_true],
+          rw h4,
+          have h10 := linear_independent.injective h5,
+          have h11 := linear_independent.image h5,
+          have h9 := linear_independent.mono (image_subset 
+            (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i) (diff_subset I {y})) h11,
+          rw ← linear_independent_image at h9, 
+          have h12 : (λ (x_1 : ↥(I \ {y})), ∑ (i : α) in (M.fund_circuit ↑x_1 B ∩ B).to_finset, φ i) = 
+            (λ (e : ↥(I \ {y})), φ.to_fun ↑e),
+            ext;
+            simp only [to_finset_inter, coe_sum, to_fun_eq_coe],
+            rw mem_sum_basis_zmod2 φ hB.indep _ (hB.mem_cl _ (mem_of_subset_of_mem hIM _)),
+            simp only [to_finset_inter, coe_sum], 
+            rw hfundcirc x_1 (mem_of_subset_of_mem hIM x_1.2),
+            apply x_1.2,
+          rw ← h12,
+          apply h9,
+          apply inj_on.mono (diff_subset I {y}) _,
+          have h20 := inj_on_of_injective h10 univ,
+          sorry,
+          rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
+          apply diff_subset_diff hI (subset.refl _),
+        rw [← union_singleton, union_comm, ← delete_delete, delete_indep_iff] at h8,
+        apply h8.1,
+        apply not_mem_diff_singleton,
+        sorry },
       have hIM : I ⊆ (M ⟍ ({x, y} : set α)).E, 
         rw [← union_singleton, union_comm, ← delete_delete, delete_ground],
         apply subset_diff_singleton hI h,
@@ -1574,6 +1596,174 @@ begin
     have hZ : ∃ (Z : set α), Z ∈ minimals (⊆) {A | ¬(M.indep A ↔ 
       (matroid_of_module_func (zmod 2) ↥(φ2.to_submodule') 
       (λ (e : α), ((M.fund_circuit e B).to_finset ∩ B.to_finset).sum ⇑φ) M.E).indep A)},  
+    { sorry },
+    obtain ⟨Z, hZ⟩ := hZ,
+    simp_rw [iff_def, not_and_distrib, not_imp] at hZ,
+    rw mem_minimals_set_of_iff' at hZ,
+    cases hZ.1 with hZ1 hZ2,
+    have hxZ : x ∈ Z,
+    { by_contra,
+      sorry },
+    have hZ1 := hZ.1,
+    have hJZ : ∀ (J : set α), M.indep J → Z ⊆ J → J = {x, y}, 
+    { intros J hMJ hZJ,
+      by_cases M.indep Z,
+      { have h2 := indep_eq_doubleton_of_subset,
+        rw not_and_distrib at hZ1,
+        push_neg at hZ1,
+        
+        sorry },
+      { sorry }, },
+    
+
+
+    
+    
+    /-refine ⟨λ hI2, _, λ hI2, _⟩,
+    refine ⟨⟨_, sorry⟩, sorry,⟩,
+    by_cases y ∈ I,
+      sorry,
+      have h3 : (M ⟍ ({x, y} : set α)).indep I,
+      have h4 : disjoint I {y},
+        sorry,
+      have h2 := delete_indep_iff.2 ⟨hI2, h4⟩,
+      rw [delete_elem, delete_delete, union_comm, union_singleton] at h2,
+      apply h2,
+      have h5 := mem_sum_basis_zmod2 φ hB.indep,
+      rw ← φ.valid' I at h3,
+      simp at h3,
+      have h4 : (φ ∘ (coe : I → α)) = (λ e : I, φ e),
+        simp only [eq_self_iff_true],
+      rw h4 at h3,
+      have h6 : (λ (e : ↥I), φ ↑e) = (λ (x_1 : ↥I), ((M ⟍ ({x, y} : set α)).fund_circuit ↑x_1 B ∩ B).to_finset.sum φ),
+        ext;
+        rw ← h5,
+        simp, 
+        refine ⟨_, _⟩,
+        sorry,
+        push_neg,
+        sorry,
+      rw ← h6,
+      apply h3, 
+    sorry,
+  have hMM'y : (M ⟍ y) = (M' ⟍ y),
+    sorry,
+  have hMM' : M ≠ M',
+    -- M nonbinary, M' binary
+    sorry,
+  have hMM'3 : M.E = M'.E,  
+    -- this will be annoying to prove
+    sorry,
+  have hMM'2 := (eq_of_indep_iff_indep_forall hMM'3).mt hMM',
+  push_neg at hMM'2,
+  obtain ⟨I, ⟨hI1, hI2⟩⟩ := hMM'2,
+  rw not_iff at hI2,
+  -- have to think about how to set up minimal and WLOG arguments here
+  let Z := set α,
+
+  sorry,-/
+end
+
+lemma excluded_minor_binary_unif24' (M : matroid_in α) [finite_rk M]
+  (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
+begin
+  -- this comes from hM
+  have hME : nontrivial M.E,
+    by_contra,
+    sorry,
+  rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
+  obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
+  have h2 := coindep_excluded_minor M hM x y hxy2,
+  rw excluded_minor_iff at hM,
+  have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
+    sorry,
+  obtain ⟨W, _⟩ := hxyr,
+  casesI hxyr_h with hW ha,
+  casesI ha with hFW hb,
+  casesI hb with φ,
+  obtain ⟨B, hBxy⟩ := (M ⟍ ({x, y} : set α)).exists_base,
+
+  obtain ⟨Wx, _⟩ := (hM.2 x (hxy2 (mem_union_left {y} (mem_singleton x)))).2,
+  casesI h with hWx ha,
+  casesI ha with hFWx hb,
+  casesI hb with φx,
+
+  obtain ⟨Wy, _⟩ := (hM.2 y (hxy2 (mem_union_right {x} (mem_singleton y)))).2,
+  casesI h with hWy ha,
+  casesI ha with hFWy hb,
+  casesI hb with φy,
+  --haveI := φ.fin_dim_rep,
+  --haveI := hxyr_h_w,
+  --obtain ⟨B, hB⟩ := (M ⟍ ({x, y} : set α)).exists_base,
+  have hB := coindep.base_of_basis_del h2 (delete_base_iff.1 hBxy),
+
+  have hBy : (M ⟍ y).base B,
+    sorry,
+  
+  have hBx : (M ⟍ x).base B,
+    sorry,
+
+    have ψ := rep_of_matroid_of_module_func (zmod 2) (B →₀ zmod 2) 
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E,
+  have hψ : valid_func (zmod 2) (B →₀ zmod 2) (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E)
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i),
+    { intros I hI,
+      simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply],
+      rw ground_matroid_of_module_func at hI, 
+      have h2 : (λ (e : α), (M.fund_circuit e B ∩ B).to_finset.sum ⇑(std_rep φ hBxy)) ∘ (coe : I → α) = 
+        λ x : I, (M.fund_circuit x B ∩ B).to_finset.sum ⇑(std_rep φ hBxy), {ext; simp},
+    rw h2,
+    simp,
+    intros h, 
+    apply hI },
+  have hMM'x : (M ⟍ x) = (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ x,
+    apply eq_of_indep_iff_indep_forall,
+    simp_rw [delete_elem, delete_ground],
+    rw ground_matroid_of_module_func,
+    intros I hI,
+    rw [(matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).delete_elem x, 
+      delete_indep_iff, ← (std_rep φx hBx).valid' I hI],
+    --rw [delete_elem, delete_ground] at hI,
+    rw ← hψ I _,
+    simp only [to_finset_inter, disjoint_singleton_right, iff_self_and],
+    simp,
+    have h3 : ((φx.std_rep hBx) ∘ (coe : I → α)) = λ (e : I), ((φx.std_rep hBx) e),
+      sorry,
+    rw h3,
+    simp_rw λ (e : I), (std_rep φx hBx).mem_sum_basis_zmod2 hBx.indep _ 
+      (@base.mem_cl _ (M ⟍ x) B hBx e (hI e.2)),
+    have hBxs := hBx.subset_ground,
+    simp_rw [delete_elem, delete_ground] at *,
+    have h5 := diff_subset M.E {x},
+    simp_rw λ (e : I), fund_circuit_delete hB.indep (@base.mem_cl _ M B hB e ((diff_subset M.E {x}) 
+      (hI e.2))) (disjoint_singleton_right.2 (mem_insert_iff.1.mt (not_or (ne.symm 
+      (mem_diff_singleton.1 (hI e.2)).2) (not_mem_subset hBxs 
+      (not_mem_diff_of_mem (mem_singleton x)))))),
+    --simp_rw fund_circuit_delete,
+    have h12 := std_rep_base_eq φ φx hBxy hBx ⟨x, _⟩,
+    simp at h12,
+    simp_rw h12,
+    sorry,
+    intros x,
+    apply not_mem_subset hI (not_mem_diff_singleton x M.E),
+    rw ground_matroid_of_module_func,
+    apply subset_trans hI (diff_subset M.E {x}),
+    have hMM'y : (M ⟍ y) = (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ y,
+    { sorry },
+    have hMM' : M ≠ (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E),
+      sorry,
+    simp at hMM',
+    rw [eq_iff_indep_iff_indep_forall, ground_matroid_of_module_func] at hMM', 
+    simp only [eq_self_iff_true, true_and, not_forall, exists_prop] at hMM',
+    --obtain ⟨A, ⟨hA1, hA2⟩⟩ := hMM',
+    have hZ : ∃ (Z : set α), Z ∈ minimals (⊆) {A | ¬(M.indep A ↔ 
+      (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (λ (e : α), ((M.fund_circuit e B).to_finset ∩ B.to_finset).sum ⇑(std_rep φ hBxy)) M.E).indep A)},  
     { sorry },
     obtain ⟨Z, hZ⟩ := hZ,
     simp_rw [iff_def, not_and_distrib, not_imp] at hZ,
