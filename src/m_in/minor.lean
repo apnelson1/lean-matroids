@@ -725,6 +725,13 @@ begin
   exact h.to_dual, 
 end 
 
+lemma minor.ground_subset (h : N ≤m M) : N.E ⊆ M.E := 
+begin
+  obtain ⟨C, hC, D, hD, hCD, rfl⟩ := h, 
+  simp only [delete_ground, contract_ground], 
+  exact (diff_subset _ _).trans (diff_subset _ _), 
+end 
+
 /-- The scum theorem. We can always realize a minor by contracting an independent set and deleting
   a coindependent set -/
 theorem minor.exists_contract_indep_delete_coindep (h : N ≤m M) : 
@@ -786,6 +793,27 @@ begin
   -- refine λ hM, ⟨λ h N hlt, (by_contra (λ hN, _)), λ h, _⟩,
   -- { have := h hN hlt.minor, },
 end 
+
+lemma excluded_minor.contract_mem {S : set (matroid_in α)} (h : excluded_minor S M)
+(hC : (C ∩ M.E).nonempty) : M ⟋ C ∈ S := 
+begin
+  by_contra hn,
+  have := ((h.2 hn (contract_minor _ _)).ground_subset).antisymm 
+    (contract_ground_subset_ground M C),
+  rw [contract_ground, eq_comm, sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_comm] at this, 
+  simpa [this] using hC,
+end 
+
+lemma excluded_minor.delete_mem {S : set (matroid_in α)} (h : excluded_minor S M)
+(hD : (D ∩ M.E).nonempty) : M ⟍ D ∈ S := 
+begin
+  by_contra hn,
+  have := ((h.2 hn (delete_minor _ _)).ground_subset).antisymm 
+    (delete_ground_subset_ground M D),
+  rw [delete_ground, eq_comm, sdiff_eq_left, disjoint_iff_inter_eq_empty, inter_comm] at this, 
+  simpa [this] using hD,
+end 
+
 
 section iso 
 
