@@ -147,7 +147,7 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
         ext,
         simp only [finite.mem_to_finset, mem_to_finset],
       have h5 : (v '' I).ncard < (v '' J).ncard,
-        sorry,
+      { rwa [ncard_image_of_inj_on hJ2, ncard_image_of_inj_on hI2] },
       apply not_le_of_lt h5,
       rw [ncard_eq_to_finset_card, ncard_eq_to_finset_card, h8, h9, 
       ← finrank_span_set_eq_card (v '' I) hI.1, ← finrank_span_set_eq_card (v '' J) hJ.1],
@@ -169,10 +169,11 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
       rw linear_independent_image hI2 at hI,
     haveI := finite.fintype (_root_.linear_independent.finite hI.1),
     rw ← linear_independent_image hI2 at hI, 
-    haveI : fintype I,
-      sorry,
+    haveI := ((v '' I).to_finite.of_finite_image hI2).fintype,
+    
     rw [ncard, nat.card_eq_fintype_card],
-    refine ⟨sorry, fintype_card_le_finrank_of_linear_independent hI.1⟩,
+    refine ⟨to_finite I, fintype_card_le_finrank_of_linear_independent hI.1⟩,
+    
   end
   (by { tauto })
 
@@ -1021,7 +1022,7 @@ begin
       simp only [← enat.coe_add] at h3,
       have h7 : ((MC ⟋ (J \ {x, y})).r (MC.E \ (J \ {x, y})) + MC.r (J \ {x, y})) = 
         ((MI ⟋ (J \ {x, y})).r (MI.E \ (J \ {x, y})) + MC.r (J \ {x, y})),
-        sorry,
+      { rwa [enat.coe_inj] at h3 },
       simp only [rk_def],
       rw eq_comm,
       simp only [contract_ground],
