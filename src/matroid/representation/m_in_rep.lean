@@ -710,6 +710,8 @@ end rep'
 
 namespace rep
 
+-- make version of std_rep that uses is_representable instead of explicit φ
+-- to avoid using casesI a lot
 /-- The representation for `M` whose rows are indexed by a base `B` -/
 def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
   rep 𝔽 (B →₀ 𝔽) M := 
@@ -925,7 +927,7 @@ end
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
-
+-- change to is_binary instead of having reps
 lemma eq_of_forall_fund_circuit_eq {M M' : matroid_in α} [module (zmod 2) W] [module (zmod 2) W'] 
 (φM : rep (zmod 2) W M) (φM' : rep (zmod 2) W' M')
 (hE : M.E = M'.E) (hB : M.base B) (hB' : M'.base B) 
@@ -966,6 +968,8 @@ lemma coindep_excluded_minor (M : matroid_in α)
 (hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x, y} ⊆ M.E) 
   : M.coindep {x, y} :=
 begin
+  by_contra,
+  
   /-
   have f := λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
   have h1 : add_comm_group W × 𝔽,
@@ -1296,7 +1300,6 @@ begin
   rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
   obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
   have h2 := coindep_excluded_minor M hM x y hxy2,
-  rw excluded_minor_iff at hM,
   have hxyr : (M ⟍ ({x, y} : set α)).is_binary,
     sorry,
   obtain ⟨W, _⟩ := hxyr,
@@ -1305,12 +1308,12 @@ begin
   casesI hb with φ,
   obtain ⟨B, hBxy⟩ := (M ⟍ ({x, y} : set α)).exists_base,
 
-  obtain ⟨Wx, _⟩ := (hM.2 x (hxy2 (mem_union_left {y} (mem_singleton x)))).2,
+  obtain ⟨Wx, _⟩ := (((excluded_minor_iff _).1 hM).2 x (hxy2 (mem_union_left {y} (mem_singleton x)))).2,
   casesI h with hWx ha,
   casesI ha with hFWx hb,
   casesI hb with φx,
 
-  obtain ⟨Wy, _⟩ := (hM.2 y (hxy2 (mem_union_right {x} (mem_singleton y)))).2,
+  obtain ⟨Wy, _⟩ := (((excluded_minor_iff _).1 hM).2 y (hxy2 (mem_union_right {x} (mem_singleton y)))).2,
   casesI h with hWy ha,
   casesI ha with hFWy hb,
   casesI hb with φy,
@@ -1359,12 +1362,24 @@ begin
     rw mem_minimals_set_of_iff' at hZ,
     have hJZ : ∀ (J : set α), M.indep J → Z ⊆ J → J = {x, y}, 
     { intros J hMJ hZJ,
+      have hZxy : {x, y} ⊆ Z,
+        sorry, 
+      by_contra,
+      have hJxy : J \ {x, y} ≠ ∅,
+        apply diff_eq_empty.1.mt, 
+        by_contra h2,
+        apply h,
+        apply eq_of_subset_of_subset h2 (subset_trans hZxy hZJ),
       have hZx : x ∈ Z,
         sorry,
       have hZy : y ∈ Z,
         sorry,
       have h3 : M.coindep {x, y} ∨ (matroid_of_module_func (zmod 2) (↥B →₀ zmod 2) (λ (e : α), 
         ((M.fund_circuit e B).to_finset ∩ B.to_finset).sum ⇑(φ.std_rep hBxy)) M.E).coindep {x, y},
+        sorry,
+      rw excluded_minor at hM,
+      rw eq_of_mem_minimals at hM,
+      have hNrep : (M ⟋ (J \ {x, y} : set α)).is_binary,
         sorry,
       cases hZ.1 with hZ1 hZ2,
       --have h3 := (@or.intro_left h2 _),
