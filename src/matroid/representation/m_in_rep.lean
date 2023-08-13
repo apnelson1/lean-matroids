@@ -108,9 +108,7 @@ begin
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
 
--- i think we need this because it accounts for things like repeated columns
--- this also allows us to compare matroids on the same type in the U24 proof, 
--- as opposed to comparing matroid_in α and matroid_in W. 
+-- to do : matroid_of_module_func.base ↔ module.basis 
 def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
   matroid_in ι := matroid_of_indep_of_bdd' ground 
@@ -173,7 +171,7 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
     
     rw [ncard, nat.card_eq_fintype_card],
     refine ⟨to_finite I, fintype_card_le_finrank_of_linear_independent hI.1⟩,
-    
+
   end
   (by { tauto })
 
@@ -183,6 +181,13 @@ lemma matroid_of_module_func.ground (𝔽 W : Type*) {ι : Type*} [field 𝔽] [
 begin
   rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
+end
+
+lemma matroid_of_module_func.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
+  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : linear_independent 𝔽 (λ x : B, v x) :=
+begin
+  sorry,
 end
 
 def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
@@ -207,6 +212,13 @@ def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [ad
       right,
       refine ⟨he, rfl⟩,
     end }
+
+lemma equiv_matroid_of_module_func_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
+  [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) : 
+  is_representable 𝔽 M ↔ ((matroid_of_module_func 𝔽 W v ground) ≃ M) :=
+begin
+  sorry,
+end
 
 namespace rep
 
@@ -970,7 +982,17 @@ lemma coindep_excluded_minor (M : matroid_in α)
   : M.coindep {x, y} :=
 begin
   by_contra,
-  
+  rw coindep_iff_forall_subset_not_cocircuit at h,
+  push_neg at h,
+  obtain ⟨K, hK1, hK2⟩ := h,
+  have h2 := (dual_circuit_iff_cocircuit.2 hK2).nonempty,
+  rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
+  --have h3 := hM.delete_mem h2,
+  obtain ⟨W, _⟩ := hM.delete_mem h2,
+  casesI h with hW ha,
+  casesI ha with hFW hb,
+  casesI hb with φ,
+  obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
   /-
   have f := λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
   have h1 : add_comm_group W × 𝔽,
@@ -1108,17 +1130,15 @@ begin
         rw fund_circuit_delete (hB.1 h).indep ((hB.1 h).mem_cl e) h3 },
       apply eq_of_forall_fund_circuit_eq φI φC _ h (hB.1 h) hfund,
       simp_rw [contract_ground, hIC] },
-  { cases hiIC with hIc hCc,
+  { apply h,
+    rw delete_base_iff at hNIxyB hNCxyB,
+    cases hiIC with hIc hCc,
     { have h3 := (coindep_contract_iff.2 ⟨hIc, @disjoint_sdiff_right _ {x, y} J⟩).cl_compl,
-      rw delete_base_iff at hNIxyB,
       rw ← hNIxyB.cl at h3,
-      apply h,
       apply hNIxyB.indep.base_of_cl_eq_ground h3 },
     { have h3 := (coindep_contract_iff.2 ⟨hCc, @disjoint_sdiff_right _ {x, y} J⟩).cl_compl,
-      rw delete_base_iff at hNCxyB,
       rw ← hNCxyB.cl at h3,
-      apply h,
-      rw hB,
+      apply hB.2,
       apply hNCxyB.indep.base_of_cl_eq_ground h3 } },
 end
 
@@ -1139,7 +1159,7 @@ begin
   simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff],
   --rw ← fintype.card_fin 3 at h2,
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
-  have φ := @rep.mk _ _ (zmod 2) (fin 2 → zmod 2) _ _ _ (unif 2 3) (λ x, ↑(f.to_fun x)) _,
+  have φ := @rep.mk _ (zmod 2) (fin 2 → zmod 2) _ _ _ (unif 2 3) (λ x, (f x)) _ _,
   rw [matroid_in.is_binary, is_representable],
   { refine ⟨(fin 2 → zmod 2), ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ },
   intros I,
