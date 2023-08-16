@@ -185,8 +185,13 @@ end
 
 lemma matroid_of_module_func.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
-  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : linear_independent 𝔽 (λ x : B, v x) :=
+  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : 
+    linear_independent 𝔽 (λ x : B, v x) ∧ span 𝔽 (v '' B) = span 𝔽 (v '' ground) :=
 begin
+  have hMBi := hMB.indep,
+  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+    matroid_of_indep_apply] at hMBi,
+  refine ⟨hMBi.1, _⟩,
   sorry,
 end
 
@@ -214,15 +219,16 @@ def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [ad
     end }
 
 lemma equiv_matroid_of_module_func_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
-  [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) : 
-  is_representable 𝔽 M ↔ ((matroid_of_module_func 𝔽 W v ground) ≃ M) :=
+  [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) 
+  (ψ : ((matroid_of_module_func 𝔽 W v ground) ≃i M)): 
+  rep 𝔽 W M :=
 begin
   sorry,
 end
 
 namespace rep
 
-variables [fintype α]
+variables
 
 
 lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
@@ -309,6 +315,27 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
+def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
+{ to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else φ a,
+  valid' := λ I hI, 
+    begin
+      rw ψ.on_indep hI,
+      have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
+        (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
+        λ a : I, φ (ψ ⟨a, hI a.2⟩),  
+        ext;
+        simp,
+        simp_rw [dite_eq_iff],
+        left,
+        simp only [exists_apply_eq_apply],
+      rw h2,
+      rw ← φ.valid,
+      have h3 : (λ (e : ↥(ψ.image I)), φ ↑e) = λ a : I, φ (ψ ⟨a, hI a.2⟩),  
+        sorry,
+      sorry,
+    end,
+  support := _ } 
+
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
 (⟨x, mem_singleton _⟩ : ({x} : set α))
@@ -358,6 +385,20 @@ end
 
 lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
   by { rw [span_basis φ (base.basis_ground hB)] }
+
+lemma matroid_of_module_func.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
+  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : 
+    linear_independent 𝔽 (λ x : B, v x) ∧ span 𝔽 (v '' B) = span 𝔽 (v '' ground) :=
+begin
+  have hMBi := hMB.indep,
+  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+    matroid_of_indep_apply] at hMBi,
+  refine ⟨hMBi.1, _⟩,
+  have φ := rep_of_matroid_of_module_func 𝔽 W v ground,
+  have hφ := φ.span_base hMB,
+  sorry,
+end
 
 lemma basis_of_base (φ : rep 𝔽 W M) {B : set α} (hB : M.base B) :
   _root_.basis B 𝔽 (span 𝔽 (φ '' M.E)) := by {
@@ -732,7 +773,7 @@ def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) :
     { have h4 := φ'.mem_span_rep_range, rw ← span_range_base φ' hB at h4, exact h4 e}⟩,
   valid' := by 
   { intros I hI,
-    rw [← @valid _ _ _ _ _ _ _ _ φ' _ hI, 
+    rw [← @valid _ _ _ _ _ _ _ φ' _ hI, 
       linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr, 
       ←(submodule.subtype (span 𝔽 (range (λ (e : B), φ' ↑e)))).linear_independent_iff, 
          submodule.coe_subtype, and_iff_left],
@@ -1142,59 +1183,78 @@ begin
       apply hNCxyB.indep.base_of_cl_eq_ground h3 } },
 end
 
-/-lemma U23_binary : (unif 2 3).is_binary :=
+lemma U23_binary : (unif 2 3).is_binary :=
 begin
-  -- wait maybe i don't even need basis, maybe i could just map directly
-  -- cardinality of U23 is 3
-  -- cardinality of (fin 2 → zmod 2) \ {0} is 3
-  -- just use any bijection between the two, show that it works
-  have h1 := @fintype.card_fun (fin 2) (zmod 2) _ _ _,
-  rw [zmod.card 2, fintype.card_fin] at h1,
   have h2 : fintype.card ((set.univ \ {0}) : set (fin 2 → zmod 2)) = 3, 
-  --simp only [fintype.card_of_finset, mem_compl_iff, mem_singleton_iff, to_finset_univ],
-  rw [← to_finset_card, to_finset_diff, finset.card_sdiff, to_finset_card univ],
-  
-  simp only [to_finset_card, card_singleton],
-  sorry,
-  simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff],
-  --rw ← fintype.card_fin 3 at h2,
+  { rw [← to_finset_card, to_finset_diff, finset.card_sdiff, to_finset_univ, finset.card_univ, 
+      to_finset_card, card_singleton, @fintype.card_fun (fin 2) (zmod 2) _ _ _, zmod.card 2, 
+      fintype.card_fin, pow_two, nat.sub_one, nat.pred_eq_succ_iff, two_mul],
+    simp only [to_finset_univ, to_finset_subset, finset.coe_univ, singleton_subset_iff] },
   have f := equiv.symm (fintype.equiv_fin_of_card_eq h2),
   have φ := @rep.mk _ (zmod 2) (fin 2 → zmod 2) _ _ _ (unif 2 3) (λ x, (f x)) _ _,
   rw [matroid_in.is_binary, is_representable],
   { refine ⟨(fin 2 → zmod 2), ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ },
-  intros I,
-  have h3 := @finrank_fin_fun (zmod 2) _ sorry 2,
+  intros I hI,
+  rw [unif_indep_iff],
+  have h3 := @finrank_fin_fun (zmod 2) _ _ 2,
   refine ⟨λ h, _, λ h, _⟩,  
   -- now the possible sizes of vector families for h are 0, 1, 2.
   have h4 := fintype_card_le_finrank_of_linear_independent h,
   rw h3 at h4,
-  apply unif.indep_iff.2,
   { rw [ncard, nat.card_eq_fintype_card],
     apply h4 },
-  { sorry },
-  have h5 := inj_on_of_injective (equiv.injective f),
-  rw [unif.indep_iff, le_iff_lt_or_eq] at h,
+  have h5 : ((λ (x : fin 3), ((f x) : fin 2 → zmod 2)) ∘ (coe : I → fin 3)) = λ x : I, f x, 
+    ext;
+    simp only [eq_self_iff_true],
+  rw [h5, linear_independent_image (λ x hx y hy hxy, 
+    (f.injective.inj_on I) hx hy (subtype.coe_inj.1 hxy))],
+  rw le_iff_lt_or_eq at h, 
   cases h with h1 h2,
   have h4 := nat.le_of_lt_succ h1,
   rw le_iff_lt_or_eq at h4,
   cases h4 with h0 h1,
-  have h5 := nat.lt_one_iff.1 h0,
-  simp only [ncard_eq_zero] at h5,
-  rw h5,
-  simp only [equiv.to_fun_as_coe],
-  --have h6 := (linear_independent_image sorry).2,
-  --apply linear_independent_empty,
-  sorry,
-  rw ncard_eq_one at h1,
-  cases h1 with a ha,
-  --rw ha,
-  simp,
-  --have h7 := linear_independent_image,
-  --have h6 := linear_independent_image (inj_on_of_injective ↑(equiv.injective f) I),
-  sorry,
-  --have h2 := linear_independent_singleton,
-  sorry,
-end-/
+  { have h5 := nat.lt_one_iff.1 h0,
+    simp only [ncard_eq_zero] at h5,
+    rw h5,
+    rw [image_empty],
+    apply linear_independent_empty (zmod 2) _ },
+  
+  { rw ncard_eq_one at h1,
+    obtain ⟨a, rfl⟩ := h1,
+    rw [image_singleton],
+    apply linear_independent_singleton,
+    apply (mem_diff_singleton.1 (f a).2).2 },
+
+  { rw ncard_eq_two at h2,
+    obtain ⟨x, ⟨y, ⟨hxy, rfl⟩⟩⟩ := h2,
+    rw [image_insert_eq, image_singleton],
+    rw linear_independent_insert,
+    refine ⟨_, _⟩,
+    { apply linear_independent_singleton,
+      apply (mem_diff_singleton.1 (f y).2).2 },
+    rw mem_span_singleton,
+    push_neg,
+    intros a,
+    cases le_iff_lt_or_eq.1 (nat.le_of_lt_succ (zmod.val_lt a)) with h0 h1,
+    { have h6 := nat.lt_one_iff.1 h0,
+      rw zmod.val_eq_zero at h6, 
+      rw h6,
+      simp,
+      apply ne.symm (mem_diff_singleton.1 (f x).2).2 },
+    rw [← zmod.nat_cast_zmod_val a, h1],
+    simp only [algebra_map.coe_one, one_smul, ne.def], 
+    by_contra,
+    apply hxy,
+    apply f.injective (subtype.coe_inj.1 (eq.symm h)),
+    by_contra,
+    apply hxy,
+    apply mem_singleton_iff.2 (f.injective (subtype.coe_inj.1 (h))) },
+  intros e he,
+  by_contra,
+  apply he,
+  rw unif_ground_eq,
+  apply mem_univ,
+end
 
 -- this doesn't have sorry's but it relied on the unif_simple_iff lemma which isn't
 -- available right now
