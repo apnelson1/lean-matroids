@@ -610,6 +610,12 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
     end,
   support := sorry }
 
+/-def rep_of_dual {𝔽 W : Type*} [is_R_or_C 𝔽] [normed_add_comm_group W] [inner_product_space 𝔽 W] 
+  (M : matroid_in α) (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule)ᗮ M﹡ := 
+{ to_fun := λ e, _,
+  valid' := _,
+  support := _ }-/
+
 /-def is_rep_of_minor_of_is_rep (N : matroid_in α) (hNM : N ≤m M) (hM : M.is_representable 𝔽) : 
   N.is_representable 𝔽 := 
 begin
@@ -977,7 +983,7 @@ begin
   apply eq.symm (mem_sum_basis_zmod2_of_not_mem φ hI e he h),
 end
 
-
+ 
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
@@ -1017,6 +1023,114 @@ begin
     rw h12,
   simp_rw h6,
 end 
+
+lemma std_rep_cocircuit (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (hx : M.cocircuit {x}) 
+  (hB : (M ⟍ x).base B) : rep 𝔽 (B ∪ {x} → 𝔽) M := 
+{ to_fun := λ (e : α) (b : B ∪ {x}), 
+    if e ≠ x 
+      then 
+        (if hb : b.1 ≠ x 
+          then (φ.std_rep hB) e ⟨b.1, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩ 
+        else 0)
+    else 
+      (if hb : b.1 ≠ x 
+        then 0 
+      else 1),
+  valid' := λ I hI, 
+    begin
+      by_cases x ∈ I,
+      { sorry },
+      { --have h3 := ne.ite_eq_left_iff,
+        have h2 : ((λ (e : α) (b : (B ∪ {x})), ite (e ≠ x) 
+          (dite (b.val ≠ x) (λ (hb : b.val ≠ x), ((φ.std_rep hB) e) 
+            ⟨b.val, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩) 
+            (λ (hb : ¬b.val ≠ x), 0)) 
+          (dite (b.val ≠ x) (λ (hb : b.val ≠ x), 0) (λ (hb : ¬b.val ≠ x), 1))) ∘ coe) = 
+          
+          λ (e : I) (b : (B ∪ {x})), (dite (b.val ≠ x) (λ (hb : b.val ≠ x), ((φ.std_rep hB) e) 
+            ⟨b.val, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩) 
+            (λ (hb : ¬b.val ≠ x), 0)),
+        simp,
+        sorry,
+        rw h2,
+        sorry },
+    end,
+  support := _ } 
+
+lemma std_rep_cocircuit' (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (hx : M.cocircuit {x}) 
+  (hB : (M ⟍ x).base B) : rep 𝔽 (W × (({x} : set α) → 𝔽)) M := 
+{ to_fun := λ (e : α), 
+    if e ≠ x 
+    then 
+        linear_map.inl 𝔽 W (({x} : set α) → 𝔽) (φ e)
+    else 
+      linear_map.inr 𝔽 W (({x} : set α) → 𝔽) (λ e : ({x} : set α), 1),
+  valid' := λ I hI, 
+    begin
+      have h2 : ((λ (e : α),
+            ite (e ≠ x) (linear_map.inl 𝔽 W (({x} : set α) → 𝔽) (φ e))
+              ((linear_map.inr 𝔽 W (({x} : set α) → 𝔽)) (λ (e : ({x} : set α)), 1))) ∘
+         (coe : I → α)) = (λ (e : I),
+            ite (e.1 ≠ x) (linear_map.inl 𝔽 W (({x} : set α) → 𝔽) (φ e))
+              ((linear_map.inr 𝔽 W (({x} : set α) → 𝔽)) (λ (e : ({x} : set α)), 1))),
+          simp,
+          rw h2,
+      by_cases x ∈ I,
+      { 
+        sorry },
+      { have h5 : I ⊆ (M ⟍ x).E,
+          rw [delete_elem, delete_ground],
+          apply subset_diff_singleton hI h,
+        have h3 : ∀ (e : I), ite (e.1 ≠ x) (linear_map.inl 𝔽 W (({x} : set α) → 𝔽) (φ e))
+              ((linear_map.inr 𝔽 W (({x} : set α) → 𝔽)) (λ (e : ({x} : set α)), 1)) = 
+              linear_map.inl 𝔽 W (({x} : set α) → 𝔽) (φ e),
+        intros,
+        simp_rw [ite_eq_iff],
+        left,
+        refine ⟨ne_of_mem_of_not_mem e.2 h, rfl⟩,
+        simp_rw [λ (e : I), h3 e],
+        have h4 : (λ (e : ↥I), (linear_map.inl 𝔽 W (({x} : set α) → 𝔽)) (φ ↑e)) = 
+          (linear_map.inl 𝔽 W (({x} : set α)→ 𝔽))∘(λ (e : I), φ e),by {simp only[eq_self_iff_true]},
+        rw [h4, @_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ 
+          (linear_map.inl 𝔽 W (({x} : set α) → 𝔽)) 
+          (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid, delete_elem],
+        refine ⟨λ h2, h2.of_delete, 
+          λ h2, h2.indep_delete_of_disjoint (disjoint_singleton_right.2 h)⟩,
+        apply h5 },
+    end,
+  support := _ } 
+
+lemma coindep_singleton_excluded_minor (M : matroid_in α) 
+(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x} ⊆ M.E) 
+  : M.coindep {x} :=
+begin
+  by_contra,
+  rw coindep_iff_forall_subset_not_cocircuit at h,
+  push_neg at h,
+  obtain ⟨K, hK1, hK2⟩ := h,
+  have h2 := (dual_circuit_iff_cocircuit.2 hK2).nonempty,
+  rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
+  --have h3 := hM.delete_mem h2,
+  obtain ⟨W, _⟩ := hM.delete_mem h2,
+  casesI h with hW ha,
+  casesI ha with hFW hb,
+  casesI hb with φ,
+  obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
+  obtain hK0 | rfl := subset_singleton_iff_eq.1 hK1,
+  { apply (nonempty_iff_ne_empty.1 (dual_circuit_iff_cocircuit.2 hK2).nonempty) hK0 },
+  have h4 : rep 𝔽 (W × 𝔽) M,
+  use λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
+  { intros I hI,
+    by_cases x ∈ I, 
+    { refine ⟨λ h, _, λ h, _⟩,
+      { sorry },  
+      { --have h4 := linear_independent.inl_union_inr,
+        sorry } },
+    { 
+      sorry } },
+  { sorry },
+  { sorry },
+end
 
 lemma coindep_excluded_minor (M : matroid_in α) 
 (hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x, y} ⊆ M.E) 
@@ -1221,11 +1335,9 @@ begin
       apply ne.symm (mem_diff_singleton.1 (f x).2).2 },
       rw [← zmod.nat_cast_zmod_val a, h1, algebra_map.coe_one, one_smul], 
       by_contra,
-      apply hxy,
-      apply f.injective (subtype.coe_inj.1 (eq.symm h)),
+      apply hxy (f.injective (subtype.coe_inj.1 (eq.symm h))),
       by_contra,
-      apply hxy,
-      apply mem_singleton_iff.2 (f.injective (subtype.coe_inj.1 (h))) },
+      apply hxy (mem_singleton_iff.2 (f.injective (subtype.coe_inj.1 (h)))) },
 end
 
 -- this doesn't have sorry's but it relied on the unif_simple_iff lemma which isn't
