@@ -983,6 +983,18 @@ begin
   apply eq.symm (mem_sum_basis_zmod2_of_not_mem φ hI e he h),
 end
 
+lemma circuit_sum_zero [module (zmod 2) W] (φ : rep (zmod 2) W M) {C : set α} (hI : M.circuit C) :
+  ∑ i in C.to_finset, φ i = 0 :=
+begin
+  obtain ⟨e, he⟩ := hI.nonempty,
+  sorry,
+end
+
+/-lemma circuit_sum [module (zmod 2) W] (φ : rep (zmod 2) W M) {C X : set α} (hI : M.circuit C) 
+  (hXC : X ⊆ C) : ∑ i in X.to_finset, φ i = ∑ i in (C \ X).to_finset, φ i :=
+begin
+  sorry,
+end-/
  
 /- A matroid_in is binary if it has a `GF(2)`-representation -/
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
@@ -1024,41 +1036,9 @@ begin
   simp_rw h6,
 end 
 
-lemma std_rep_cocircuit (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (hx : M.cocircuit {x}) 
-  (hB : (M ⟍ x).base B) : rep 𝔽 (B ∪ {x} → 𝔽) M := 
-{ to_fun := λ (e : α) (b : B ∪ {x}), 
-    if e ≠ x 
-      then 
-        (if hb : b.1 ≠ x 
-          then (φ.std_rep hB) e ⟨b.1, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩ 
-        else 0)
-    else 
-      (if hb : b.1 ≠ x 
-        then 0 
-      else 1),
-  valid' := λ I hI, 
-    begin
-      by_cases x ∈ I,
-      { sorry },
-      { --have h3 := ne.ite_eq_left_iff,
-        have h2 : ((λ (e : α) (b : (B ∪ {x})), ite (e ≠ x) 
-          (dite (b.val ≠ x) (λ (hb : b.val ≠ x), ((φ.std_rep hB) e) 
-            ⟨b.val, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩) 
-            (λ (hb : ¬b.val ≠ x), 0)) 
-          (dite (b.val ≠ x) (λ (hb : b.val ≠ x), 0) (λ (hb : ¬b.val ≠ x), 1))) ∘ coe) = 
-          
-          λ (e : I) (b : (B ∪ {x})), (dite (b.val ≠ x) (λ (hb : b.val ≠ x), ((φ.std_rep hB) e) 
-            ⟨b.val, by { have h3 := (mem_union _ _ _).1 b.2, rw mem_singleton_iff at h3, tauto }⟩) 
-            (λ (hb : ¬b.val ≠ x), 0)),
-        simp,
-        sorry,
-        rw h2,
-        sorry },
-    end,
-  support := _ } 
-
-lemma std_rep_cocircuit' (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (φx : rep 𝔽 W' (M ‖ ({x} : set α))) 
-  (hx : M.cocircuit {x}) (hB : (M ⟍ x).base B) : rep 𝔽 (W × W') M := 
+lemma rep_cocircuit_singleton (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) 
+(φx : rep 𝔽 W' (M ‖ ({x} : set α))) (hx : M.cocircuit {x}) (hB : (M ⟍ x).base B) : 
+  rep 𝔽 (W × W') M := 
 { to_fun := λ (e : α), 
     if e ∈ ({x} : set α)
     then 
@@ -1099,7 +1079,8 @@ lemma std_rep_cocircuit' (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (φx 
               singleton_inter_nonempty] at hx,
             refine ⟨B2, ⟨hB2.1, union_subset hB2.2 (singleton_subset_iff.2 (hx.1 B2 hB2.1))⟩⟩ },  
         { rw [linear_independent_image, image_union],
-          have h12 : (λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inr 𝔽 W W') ∘ φx) ((linear_map.inl 𝔽 W W') ∘ φ) e) '' (I \ {x}) = 
+          have h12 : (λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inr 𝔽 W W') ∘ φx) 
+            ((linear_map.inl 𝔽 W W') ∘ φ) e) '' (I \ {x}) = 
             (linear_map.inl 𝔽 W W') '' (φ '' (I \ {x})),
             { simp_rw ite_apply,
               ext;
@@ -1192,6 +1173,105 @@ lemma std_rep_cocircuit' (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) (φx 
         apply φ.support e he2 },
     end  } 
 
+-- i think this works for any field but i want to do it for zmod 2 for now
+lemma rep_cocircuit_doubleton (x y : α) (B : set α) [module (zmod 2) W] 
+  (φ : rep (zmod 2) W (M ⟍ y)) (hx : M.cocircuit {x, y}) (hB : (M ⟍ y).base B) : 
+  rep (zmod 2) W M := 
+{ to_fun := λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i,
+  valid' := λ I hI, 
+    begin
+      have h8 : linear_independent (zmod 2) ((λ (e : α), ∑ (i : α) in 
+        (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ coe) = 
+        linear_independent (zmod 2) (λ (e : I), 
+          ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i),
+          { simp only },
+      rw h8,
+      by_cases y ∈ I, 
+      { refine ⟨λ h2, _, λ h2, _⟩,
+        { by_contra h3,
+          rw ← @not_not (linear_independent (zmod 2) (λ (e : I), ∑ (i : α) in 
+            (M.fund_circuit e B ∩ B).to_finset, φ i)) at h2,
+          apply h2,
+          by_cases hIy : (M ⟍ y).indep (I \ {y}), 
+          { rw delete_elem at hIy,
+            have h6 := (hIy.of_delete).mem_cl_iff_of_not_mem (not_mem_diff_singleton _ _),
+            rw [insert_diff_singleton, insert_eq_of_mem h] at h6,
+            rw [not_indep_iff, ← h6] at h3, 
+            rw ← delete_elem at hIy, 
+            by_cases M.fund_circuit y B = M.fund_circuit y (I \ {y}),
+            { sorry },
+            have hyB : y ∈ (M.cl B) \ B,
+              { sorry },
+              have hyI : y ∈ (M.cl (I \ {y})) \ (I \ {y}),
+              { sorry },
+              have hCB := hB.indep.of_delete.fund_circuit_circuit hyB,
+              have hCY := hIy.of_delete.fund_circuit_circuit hyI,
+              obtain ⟨C, ⟨hCs, hMC⟩⟩ := circuit.elimination hCB hCY h x, 
+              apply fintype.not_linear_independent_iff.2,
+              use (λ (e : I), if (e.1 ∈ C) then (1 : zmod 2) else (0 : zmod 2)),
+              refine ⟨_, _⟩,
+              sorry, -- fintype I, whatever
+              have hss : ∑ (i : I), ite (i.val ∈ C) 1 0 • ∑ (i : α) in 
+                (M.fund_circuit i B ∩ B).to_finset, φ i = 
+                ∑ (e : C), ∑ (i : α) in 
+                (M.fund_circuit e B ∩ B).to_finset, φ i,
+              simp,
+            /- have hs : ∑ (i : α) in (M.fund_circuit y B ∩ B).to_finset, φ i = 
+              ∑ (i : α) in (M.fund_circuit y (I \ {y}) ∩ (I \ {y})).to_finset, φ i,
+            by_cases M.fund_circuit y B = M.fund_circuit y (I \ {y}),
+            { rw h,
+              sorry },
+            { have hyB : y ∈ (M.cl B) \ B,
+              { sorry },
+              have hyI : y ∈ (M.cl (I \ {y})) \ (I \ {y}),
+              { sorry },
+              have hCB := hB.indep.of_delete.fund_circuit_circuit hyB,
+              have hCY := hIy.of_delete.fund_circuit_circuit hyI,
+              have hC := circuit.elimination hCB hCY h y, 
+              apply fintype.not_linear_independent_iff.2,
+              --have hs := set.symm_diff_def,
+              sorry },-/
+            sorry },
+          { rw ← (std_rep φ hB).valid at hIy,
+            apply hIy,
+           -- have h3 := linear_independent.image h2,
+            sorry,
+            rw [delete_elem, delete_ground],
+            apply diff_subset_diff_left hI } },
+        { sorry } },
+      { have h9 : ∀ (e : I), 
+          ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i = φ e,
+          { intros e,
+            rw φ.mem_sum_basis_zmod2 hB.indep e (hB.mem_cl e _),
+            simp_rw delete_elem,
+            have h7 : y ∉ B,
+              rw [delete_elem] at hB,
+              have h11 := hB.subset_ground,
+              rw delete_ground at h11,
+              rw subset_diff at h11,
+              rw disjoint_singleton_right at h11,
+              apply h11.2,
+            rw fund_circuit_delete (hB.indep).of_delete,
+            { rw ← diff_singleton_eq_self h7,
+              apply ((@mem_diff_singleton _ e.1 y _).1 _).1,
+              rw [← delete_cl_eq, ← delete_elem], 
+              apply hB.mem_cl _ _,
+              simp only [delete_elem, delete_ground, mem_diff, mem_singleton_iff, auto_param_eq],
+              refine ⟨hI e.2, has_mem.mem.ne_of_not_mem e.2 h⟩ },
+            { apply disjoint_singleton_right.2 (mem_insert_iff.1.mt (not_or 
+              (ne.symm (has_mem.mem.ne_of_not_mem e.2 h)) h7)) },
+            simp only [delete_elem, delete_ground, mem_diff, mem_singleton_iff, auto_param_eq],
+            refine ⟨hI e.2, has_mem.mem.ne_of_not_mem e.2 h⟩ },
+        simp_rw [λ (e : I), h9 e],
+        rw φ.valid,
+        simp only [delete_elem, delete_indep_iff, disjoint_singleton_right, and_iff_left_iff_imp],
+        intros,
+        apply h,
+        { rw [delete_elem, delete_ground],
+          apply subset_diff_singleton hI h } },
+    end,
+  support := _ }
+
 lemma coindep_singleton_excluded_minor (M : matroid_in α) 
 (hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x} ⊆ M.E) 
   : M.coindep {x} :=
@@ -1233,6 +1313,8 @@ begin
   push_neg at h,
   obtain ⟨K, hK1, hK2⟩ := h,
   have h2 := (dual_circuit_iff_cocircuit.2 hK2).nonempty,
+  cases ssubset_or_eq_of_subset hK1 with hKs hKeq,
+  rw ssubset_iff_insert at hKs,
   rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
   --have h3 := hM.delete_mem h2,
   obtain ⟨W, _⟩ := hM.delete_mem h2,
