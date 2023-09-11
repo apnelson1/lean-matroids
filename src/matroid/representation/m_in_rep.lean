@@ -1706,8 +1706,6 @@ begin
     simp only [iff_self, not_true, false_and, set_of_false] },
   { rw eq_iff_indep_iff_indep_forall,
     refine ⟨hmin.1, λ I hI, _⟩,
-    
-    
     sorry },
 end
 
@@ -1722,40 +1720,119 @@ lemma rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
         { apply indep.nonloop_of_mem.mt,
           simp only [not_forall, exists_prop],
           refine ⟨h, not_nonloop_iff.2 hf⟩ },
-        have hfφ := φ.support,
-        sorry },
-      refine ⟨λ h, _, λ h, _⟩,
-      sorry,
-      sorry,
+        have hfφ := φ.support f,
+        by_contra h3,
+        have h4 : linear_independent 𝔽 (φ ∘ coe) = linear_independent 𝔽 (λ (i : I), φ i),
+          simp only [eq_iff_iff],
+        rw h4 at h3,
+        apply @linear_independent.ne_zero _ 𝔽 W ((λ (i : I), φ i.1)) _ _ _ _ ⟨f, h⟩ h3,
+        simp only,
+        apply hfφ,
+        rw [delete_elem, delete_ground],
+        apply not_mem_diff_singleton },
+      have hIf := subset_diff_singleton hI h,
+      rw φ.valid,
+      simp only [delete_elem, delete_indep_iff, disjoint_singleton_right, and_iff_left_iff_imp],
+      intros hf2,
+      apply h,
+      rw [delete_elem, delete_ground],
+      apply hIf,
     end,
-  support := _ } 
+  support := λ e he, 
+    begin
+      by_cases e = f,
+      rw h,
+      apply φ.support,
+      simp only [delete_elem, delete_ground, not_mem_diff_singleton, not_false_iff],
+      apply φ.support,
+      simp only [delete_elem, delete_ground, mem_diff, mem_singleton_iff, not_and, not_not],
+      contrapose,
+      intros,
+      apply he
+    end } 
+
+lemma rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y) 
+  (hf : M.circuit {x, y}) (φ : rep 𝔽 W (M ⟍ ({y} : set α))) : rep 𝔽 W M := 
+{ to_fun := λ (e : α), if e = y then φ x else φ e,
+  valid' := λ I hI, 
+    begin
+      by_cases y ∈ I,
+      { sorry },
+      { sorry },
+    end,
+  support := _ }
 
 lemma excluded_minor_nonloop (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) {f : α} (hf : f ∈ M.E) : M.nonloop f :=
 begin
   by_contra,
-  rw excluded_minor at hM,
-  simp at h,
-  sorry,
+  have hfM : ({f} ∩ M.E).nonempty,
+    simp only [ground_inter_left, singleton_nonempty],
+  obtain ⟨W, hW⟩ := hM.delete_mem hfM,
+  casesI hW with hW hFW,
+  casesI hFW with hFW h,
+  casesI h with φ,
+  rw [excluded_minor, mem_minimals_prop_iff] at hM,
+  simp only [not_nonloop_iff] at h,
+  apply hM.1,
+  refine ⟨W, ⟨by { apply_instance }, ⟨by { apply_instance }, ⟨rep_of_loop M h φ⟩⟩⟩⟩,
+end
+
+lemma excluded_minor_nonpara (M : matroid_in α) [finite_rk M]
+  (hM : excluded_minor matroid_in.is_binary M) {x y : α} (hxy : x ≠ y) :
+  ¬ M.circuit {x, y}  :=
+begin
+  by_contra,
+  have hfM : ({y} ∩ M.E).nonempty,
+    simp only [singleton_inter_nonempty],
+    apply mem_of_subset_of_mem h.subset_ground,
+    simp only [mem_insert_iff, mem_singleton, or_true],
+  obtain ⟨W, hW⟩ := hM.delete_mem hfM,
+  casesI hW with hW hFW,
+  casesI hFW with hFW h,
+  casesI h with φ,
+  rw [excluded_minor, mem_minimals_prop_iff] at hM,
+  apply hM.1,
+  refine ⟨W, ⟨by { apply_instance }, ⟨by { apply_instance }, ⟨rep_of_parallel M hxy h φ⟩⟩⟩⟩,
 end
 
 lemma excluded_minor_simple (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : simple M :=
 begin
   intros e he f hf,
-  by_cases e = f,
+  rw indep_iff_forall_subset_not_circuit,
+  intros C hC,
+  { cases ssubset_or_eq_of_subset hC with hC heq,
+    { rw ssubset_iff_subset_diff_singleton at hC,
+      obtain ⟨x, ⟨hx1, hx2⟩⟩ := hC,
+      simp at hx1,
+      obtain ⟨rfl | rfl⟩ := hx1,
+      simp at hx2,
+      sorry,
+      sorry },
+    { rw heq,
+      sorry } },
+  /-by_cases e = f,
   { rw h,
-    simp,
-    sorry },
-  { sorry },
-end
-
-lemma unif_restr {a b : ℕ} (M : matroid_in α) (h4 : 4 ≤ M.E.ncard) (hs : M.simple) : 
-  (unif 2 4) ≤i M :=
-begin
-  rw unif,
+    simp only [pair_eq_singleton, indep_singleton],
+    apply excluded_minor_nonloop M hM hf },
+  { rw indep_iff_forall_subset_not_circuit,
+    intros C hC,
+    cases ssubset_or_eq_of_subset hC with heq hC,
+    
+    sorry },-/
   sorry,
 end
+
+/-lemma unif_restr {a b : ℕ} (M : matroid_in α) {k : ℕ} (hcard : M.E.ncard = k) (hs : M.simple) 
+  (hr : M.rk = 2) : (unif 2 k) ≃i M :=
+begin
+  rw unif,
+  apply iso_of_bij_on,
+  sorry,
+  sorry,
+  sorry,
+end-/
 
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
@@ -1881,6 +1958,12 @@ begin
           x y hxy1 (by { left, apply h2 }) hMM'x hMM'y hZx hZy hMZ.1 hMZ.2 hZJ hMJ φN φN') },
         { obtain ⟨BZ, hBZ⟩ := hMZ.1,
           specialize hJZ BZ hBZ.1.indep hBZ.2,
+          have hsimp := excluded_minor_simple M hM,
+          have hcard : 2 ≤ M.E.ncard,
+            sorry, 
+          have hunif := (iso_line_iff hcard).2 ⟨hsimp, _⟩,
+          have hcard4 : 4 ≤ M.E.ncard,
+            sorry, 
           sorry } },
       { sorry },
 end
