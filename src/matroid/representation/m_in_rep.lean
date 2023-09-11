@@ -315,7 +315,7 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
-def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
+/-def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
 { to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else φ a,
   valid' := λ I hI, 
     begin
@@ -334,7 +334,7 @@ def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep �
         sorry,
       sorry,
     end,
-  support := _ } 
+  support := _ } -/
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
@@ -1249,9 +1249,7 @@ lemma rep_cocircuit_doubleton (x y : α) (hxy : x ≠ y) (B : set α) [module (z
             have h7 : y ∉ B,
               rw [delete_elem] at hB,
               have h11 := hB.subset_ground,
-              rw delete_ground at h11,
-              rw subset_diff at h11,
-              rw disjoint_singleton_right at h11,
+              rw [delete_ground, subset_diff, disjoint_singleton_right] at h11,
               apply h11.2,
             rw fund_circuit_delete (hB.indep).of_delete,
             { rw ← diff_singleton_eq_self h7,
