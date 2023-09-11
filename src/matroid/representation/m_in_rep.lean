@@ -1231,9 +1231,11 @@ lemma rep_cocircuit_doubleton (x y : α) (hxy : x ≠ y) (B : set α) [module (z
               apply fintype.not_linear_independent_iff.2,
               --have hs := set.symm_diff_def,
               sorry },-/
+            sorry,
+            sorry,
             sorry },
           { rw ← (std_rep φ hB).valid at hIy,
-            apply hIy,
+            --apply hIy,
            -- have h3 := linear_independent.image h2,
             sorry,
             rw [delete_elem, delete_ground],
@@ -1573,7 +1575,7 @@ end
 
 -- this doesn't have sorry's but it relied on the unif_simple_iff lemma which isn't
 -- available right now
-/-lemma U24_nonbinary : ¬ (unif 2 4).is_binary :=
+lemma U24_nonbinary : ¬ (unif 2 4).is_binary :=
 begin
   have U24_simple : (unif 2 4).simple,
     sorry,
@@ -1581,14 +1583,22 @@ begin
   rw [matroid_in.is_binary, is_representable] at h2,
   rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
   haveI := zmod.fintype 2,
-  have φ := rep.rep_submodule φ',
-  rw rep.to_submodule' at φ,
-  cases foo' φ with φ,
-  rw [rk_def, unif_r_eq] at φ,
-  { have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
+  obtain ⟨B, hB⟩ := (unif 2 4).exists_base,
+  have φ := φ'.std_rep hB,
+  /-rw rep.to_submodule' at φ,
+  cases foo φ with φ,
+  rw [rk_def, unif_r_eq] at φ,-/
+  { --have h8 := card_le_of_subset (φ.subset_nonzero_of_simple U24_simple),
     -- need basis
-    have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
-      (span (zmod 2) (φ '' (unif 2 4).E))),
+    have h11 := ((valid'' φ' hB.subset_ground).2 hB.indep),
+    have h11 : (finrank (zmod 2) (B →₀ zmod 2)) = 2,
+      simp,
+      sorry,
+    have h10 := finite_dimensional.fin_basis (zmod 2) (B →₀ zmod 2),
+    rw h11 at h10,
+    have h9 := @module.card_fintype _ (zmod 2) (B →₀ zmod 2) _ _ _ _ h10 _ _,
+    /-have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
+      (span (zmod 2) (φ '' (unif 2 4).E))),-/
     rw [rep.of_rank, rk_def, unif_r_eq] at h9,
     { -- there's probably a cleaner way to talk about the card of diff than going
       -- between fintype and finset cards
@@ -1609,7 +1619,7 @@ begin
     simp only [nat.card_eq_fintype_card, fintype.card_fin, bit0_le_bit0,
       nat.one_le_bit0_iff, nat.lt_one_iff]},
   simp,
-end-/
+end
 
 lemma coindep.base_of_basis_del {X : set α} (hX : M.coindep X) (hB : M.basis B (M.E \ X)) : 
   M.base B :=
