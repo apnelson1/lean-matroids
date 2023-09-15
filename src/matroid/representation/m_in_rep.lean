@@ -1360,16 +1360,66 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
     end }
 
 -- i think we need e to be a cocircuit of M
-def series_extend (M : matroid_in α) (e f : α) (he : e ∈ M.E) (hec : M.cocircuit {e}) 
+def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hec : M.cocircuit {e}) 
   (hf : f ∉ M.E) : matroid_in α := 
 { ground := M.E ∪ {f},
   -- M.base B covers e ∈ B
-  base := λ B, M.base B ∨ (e ∉ B ∧ f ∈ B ∧ M.base (B \ {f} ∪ {e})) ∨ 
-    (e ∈ B ∧ f ∈ B ∧ M.indep B ∧ ¬ M.base B) ,
+  base := sorry,
   exists_base' := _,
   base_exchange' := _,
   maximality := _,
   subset_ground' := _ }
+
+lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
+  (hec : M.cocircuit {e}) (hf : f ∉ M.E) : M' = series_extend M he hec hf := sorry
+
+def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.cocircuit {x}) 
+  (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hec hy) := 
+{ to_fun := λ (e : α), 
+    if e ∈ ({x} : set α)
+    then 
+      linear_map.inl 𝔽 W 𝔽 (φ e) + linear_map.inr 𝔽 W 𝔽 1
+    else 
+      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else linear_map.inl 𝔽 W 𝔽 (φ x),
+  valid' := λ I hI, 
+    begin
+    by_cases hyI : y ∈ I,
+      { by_cases hxI : x ∈ I,
+        { 
+          sorry },
+        { sorry } },
+      { by_cases hxI : x ∈ I,
+        { 
+          sorry },
+        { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽) (φ e) + 
+          (linear_map.inr 𝔽 W 𝔽) 1) (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ x)))) ∘ coe) = 
+          (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
+          (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))),
+            --simp only [eq_self_iff_true],
+            sorry,
+          have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
+          (ite (↑e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e))) 
+          = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
+          { intros e,
+            rw ite_eq_iff,
+            right,
+            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hxI), _⟩,
+            apply ite_eq_iff.2,
+            apply or.intro_right,
+            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hyI), rfl⟩ },
+          rw h6,
+          simp_rw [λ (e : I), h7 e],
+          rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+            (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid, delete_elem],
+          refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
+            (disjoint_singleton_right.2 hyI)⟩,
+          rw [delete_elem, delete_ground],
+          apply subset_diff_singleton hI hyI } },
+      end,
+  support := _ }
 
 lemma rep_cocircuit_doubleton' (x y : α) (hxy : x ≠ y) [module 𝔽 W] 
   (φ : rep 𝔽 W (M ⟍ y)) (hx : M.cocircuit {x, y}) : 
@@ -2088,6 +2138,17 @@ begin
   sorry,
 end-/
 
+-- write congr lemma
+def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep 𝔽 W M' := 
+{ to_fun := φ.to_fun,
+  valid' := λ I hI, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at hI, 
+    rw ← (eq_iff_indep_iff_indep_forall.1 h).2, apply φ.valid' I hI, apply hI },
+  support := λ e he, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at he, apply φ.support e he } }
+
+-- write refl lemma for the above
+lemma rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : 
+  (φ : α → W) = (rep_of_congr φ h) := rfl
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
@@ -2136,6 +2197,7 @@ begin
   have hMM'y := delete_elem_eq_of_binary hByx hBy hB φyx φy,
   have hφ : ∀ (a : α), (φyx.std_rep hByx) a = (φ.std_rep hBxy) a,
   { intros a,
+    -- use rep_eq_of_congr
     /-rw [← union_singleton, union_comm, union_singleton] at *,
     rw [← union_singleton, union_comm, union_singleton] at φyx,-/
     sorry },
