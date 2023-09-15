@@ -1373,6 +1373,10 @@ def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hec : M.cocir
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
   (hec : M.cocircuit {e}) (hf : f ∉ M.E) : M' = series_extend M he hec hf := sorry
 
+lemma series_extend_contr_eq (M : matroid_in α) {e f : α} 
+  (he : e ∈ M.E) (hec : M.cocircuit {e}) (hf : f ∉ M.E) : 
+    M = series_extend M he hec hf ⟋ f := sorry
+
 def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.cocircuit {x}) 
   (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hec hy) := 
 { to_fun := λ (e : α), 
