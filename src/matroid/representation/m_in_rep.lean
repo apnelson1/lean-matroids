@@ -108,8 +108,8 @@ begin
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
 
--- to do : matroid_of_module_func.base ↔ module.basis 
-def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+-- to do : matroid_of_module_fun.base ↔ module.basis 
+def matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
   matroid_in ι := matroid_of_indep_of_bdd' ground 
   (λ (I : set ι), (linear_independent 𝔽 (λ x : I, v x)) ∧ I ⊆ ground)  
@@ -175,31 +175,31 @@ def matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_
   end
   (by { tauto })
 
-lemma matroid_of_module_func.ground (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+lemma matroid_of_module_fun.ground (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : 
-    (matroid_of_module_func 𝔽 W v ground).E = ground := 
+    (matroid_of_module_fun 𝔽 W v ground).E = ground := 
 begin
-  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+  rw [matroid_of_module_fun, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
 
-lemma matroid_of_module_func.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+lemma matroid_of_module_fun.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
-  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : 
+  (hMB : (matroid_of_module_fun 𝔽 W v ground).base B) : 
     linear_independent 𝔽 (λ x : B, v x) ∧ span 𝔽 (v '' B) = span 𝔽 (v '' ground) :=
 begin
   have hMBi := hMB.indep,
-  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+  rw [matroid_of_module_fun, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
     matroid_of_indep_apply] at hMBi,
   refine ⟨hMBi.1, _⟩,
   sorry,
 end
 
-def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_func 𝔽 W v ground) := 
+def rep_of_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_fun 𝔽 W v ground) := 
 { to_fun := λ x, if x ∈ ground then v x else 0,
-  valid' := λ I hI, by {simp only [matroid_of_module_func, matroid_of_indep_of_bdd'_apply],
-    rw matroid_of_module_func.ground at hI, 
+  valid' := λ I hI, by {simp only [matroid_of_module_fun, matroid_of_indep_of_bdd'_apply],
+    rw matroid_of_module_fun.ground at hI, 
     have h2 : (λ (x : ι), if (x ∈ ground) then (v x) else 0) ∘ (coe : I → ι) = λ x : I, v x,
       ext;
       simp only [ite_eq_left_iff],
@@ -218,12 +218,27 @@ def rep_of_matroid_of_module_func (𝔽 W : Type*) {ι : Type*} [field 𝔽] [ad
       refine ⟨he, rfl⟩,
     end }
 
-lemma equiv_matroid_of_module_func_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
+lemma equiv_matroid_of_module_fun_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
   [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) 
-  (ψ : ((matroid_of_module_func 𝔽 W v ground) ≃i M)): 
+  (ψ : ((matroid_of_module_fun 𝔽 W v ground) ≃i M)): 
   rep 𝔽 W M :=
 begin
   sorry,
+end
+
+lemma matroid_of_module_fun_rep_eq (M : matroid_in α) (𝔽 W : Type*) [field 𝔽] [add_comm_group W] 
+  [module 𝔽 W] [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) : 
+  M = matroid_of_module_fun 𝔽 W φ M.E :=
+begin
+  apply eq_of_indep_iff_indep_forall _ (λ I hI, _),
+  refl,
+  have hsigh : (λ (x : ↥I), φ x) = (φ.to_fun ∘ coe),
+  { ext, 
+    simp only [comp_app],
+    refl },
+  rw [matroid_of_module_fun, matroid_of_indep_of_bdd'_apply, hsigh, φ.valid'], 
+  refine ⟨λ h, ⟨h, hI⟩, λ h, h.1⟩, 
+  apply hI,
 end
 
 namespace rep
@@ -386,16 +401,16 @@ end
 lemma span_base (φ : rep 𝔽 W M) (hB : M.base B) : span 𝔽 (φ '' B) = span 𝔽 (φ '' M.E) := 
   by { rw [span_basis φ (base.basis_ground hB)] }
 
-/-lemma matroid_of_module_func.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+/-lemma matroid_of_module_fun.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
-  (hMB : (matroid_of_module_func 𝔽 W v ground).base B) : 
+  (hMB : (matroid_of_module_fun 𝔽 W v ground).base B) : 
     linear_independent 𝔽 (λ x : B, v x) ∧ span 𝔽 (v '' B) = span 𝔽 (v '' ground) :=
 begin
   have hMBi := hMB.indep,
-  rw [matroid_of_module_func, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
+  rw [matroid_of_module_fun, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
     matroid_of_indep_apply] at hMBi,
   refine ⟨hMBi.1, _⟩,
-  have φ := rep_of_matroid_of_module_func 𝔽 W v ground,
+  have φ := rep_of_matroid_of_module_fun 𝔽 W v ground,
   have hφ := φ.span_base hMB,
   sorry,
 end-/
@@ -1344,6 +1359,66 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
         apply φ.support e he2 },
     end }
 
+-- i think we need e to be a cocircuit of M
+def series_extend (M : matroid_in α) (e f : α) (he : e ∈ M.E) (hec : M.cocircuit {e}) 
+  (hf : f ∉ M.E) : matroid_in α := 
+{ ground := M.E ∪ {f},
+  -- M.base B covers e ∈ B
+  base := λ B, M.base B ∨ (e ∉ B ∧ f ∈ B ∧ M.base (B \ {f} ∪ {e})) ∨ 
+    (e ∈ B ∧ f ∈ B ∧ M.indep B ∧ ¬ M.base B) ,
+  exists_base' := _,
+  base_exchange' := _,
+  maximality := _,
+  subset_ground' := _ }
+
+lemma rep_cocircuit_doubleton' (x y : α) (hxy : x ≠ y) [module 𝔽 W] 
+  (φ : rep 𝔽 W (M ⟍ y)) (hx : M.cocircuit {x, y}) : 
+  rep 𝔽 (W × 𝔽) M := 
+{ to_fun := λ (e : α), 
+    if e ∈ ({x} : set α)
+    then 
+      linear_map.inl 𝔽 W 𝔽 (φ e) + linear_map.inr 𝔽 W 𝔽 1
+    else 
+      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else linear_map.inl 𝔽 W 𝔽 (φ e),
+  valid' := λ I hI, 
+    begin
+      by_cases hyI : y ∈ I,
+      { by_cases hxI : x ∈ I,
+        { 
+          sorry },
+        { sorry } },
+      { by_cases hxI : x ∈ I,
+        { 
+          sorry },
+        { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
+          (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))) ∘ coe) = 
+          (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
+          (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))),
+            simp only [eq_self_iff_true],
+          have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
+          (ite (↑e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e))) 
+          = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
+          { intros e,
+            rw ite_eq_iff,
+            right,
+            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hxI), _⟩,
+            apply ite_eq_iff.2,
+            apply or.intro_right,
+            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hyI), rfl⟩ },
+          rw h6,
+          simp_rw [λ (e : I), h7 e],
+          rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+            (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid, delete_elem],
+          refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
+            (disjoint_singleton_right.2 hyI)⟩,
+          rw [delete_elem, delete_ground],
+          apply subset_diff_singleton hI hyI } },
+    end,
+  support := _ }
+ 
 -- i think this works for any field but i want to do it for zmod 2 for now
 lemma rep_cocircuit_doubleton (x y : α) (hxy : x ≠ y) (B : set α) [module (zmod 2) W] 
   (φ : rep (zmod 2) W (M ⟍ y)) (hx : M.cocircuit {x, y}) (hB : (M ⟍ y).base B) : 
@@ -1802,19 +1877,19 @@ lemma delete_elem_eq_of_binary {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : 
   [module (zmod 2) W] (φ : rep (zmod 2) W (M ⟍ ({x, y} : set α))) {Wx : Type*} [add_comm_group Wx]
   [module (zmod 2) Wx]
   (φx : rep (zmod 2) Wx (M ⟍ x)) : (M ⟍ x) = 
-  (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+  (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
     (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ x :=
 begin
   apply eq_of_indep_iff_indep_forall,
     simp_rw [delete_elem, delete_ground],
-    rw matroid_of_module_func.ground,
+    rw matroid_of_module_fun.ground,
     intros I hI,
-    rw [(matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+    rw [(matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).delete_elem x, 
       delete_indep_iff, ← (std_rep φx hBx).valid' I hI],
-    rw ← (rep_of_matroid_of_module_func (zmod 2) (B →₀ zmod 2) 
+    rw ← (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2) 
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).valid' I _,
-    simp [rep_of_matroid_of_module_func],
+    simp [rep_of_matroid_of_module_fun],
     have h12 : (λ (x_1 : α), ite (x_1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
       ∩ B.to_finset, (φ.std_rep hBxy) x_1) 0) ∘ (coe : I → α) = 
       (λ (x_1 : I), ite (x_1.1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
@@ -1858,7 +1933,7 @@ begin
     simp_rw [h6, to_finset_inter, iff_self_and],
     apply λ h, not_mem_subset hI (not_mem_diff_singleton x M.E),
     rw [delete_elem, delete_ground] at hI,
-    rw matroid_of_module_func.ground,
+    rw matroid_of_module_fun.ground,
     apply subset_trans hI (diff_subset M.E {x}),
 end
 
@@ -1867,7 +1942,7 @@ lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x,
   [module (zmod 2) W] (φ : rep (zmod 2) W (M ⟍ ({x, y} : set α))) {Wy : Type*} [add_comm_group Wy]
   [module (zmod 2) Wy]
   (φx : rep (zmod 2) Wy (M ⟍ y)) : (M ⟍ y) = 
-  (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+  (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
     (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ y :=
 begin
   sorry
@@ -2050,9 +2125,9 @@ begin
   have hBx : (M ⟍ x).base B,
     sorry,
   
-  have hMM'E : M.E = (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+  have hMM'E : M.E = (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).E,
-    rw matroid_of_module_func.ground,
+    rw matroid_of_module_fun.ground,
   have hMM'x := delete_elem_eq_of_binary hBxy hBx hB φ φx,
   have hByx := hBxy,
   have φyx := φ,
@@ -2065,33 +2140,33 @@ begin
     rw [← union_singleton, union_comm, union_singleton] at φyx,-/
     sorry },
   simp_rw [λ (a : α), hφ a] at hMM'y,
-  have hB' : (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+  have hB' : (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).base B,
     { rw hMM'x at hBx,
       rw hMM'y at hBy,
-      rw [base_iff_basis_ground, ← @diff_empty _ (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      rw [base_iff_basis_ground, ← @diff_empty _ (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
         (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).E, 
         ← singleton_inter_eq_empty.2 (mem_singleton_iff.1.mt hxy1), diff_inter], 
       rw [delete_elem, delete_base_iff] at hBx hBy,
       apply basis.basis_union hBx hBy },
-  have hMM'r : M.rk = (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+  have hMM'r : M.rk = (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).rk,
     { rw [← hB'.card, hB.card] },
-    have hMM' : M ≠ (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+    have hMM' : M ≠ (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E),
     { by_contra,
       rw [excluded_minor, mem_minimals_prop_iff] at hM,
       apply hM.1,
       rw [h, mem_def, matroid_in.is_binary, is_representable],
       -- changed (α : Type *) to (α : Type) to make this work
-      refine ⟨B →₀ zmod 2, ⟨_, ⟨_, ⟨(rep_of_matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      refine ⟨B →₀ zmod 2, ⟨_, ⟨_, ⟨(rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
         (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E)⟩⟩⟩⟩ },
     simp at hMM',
-    rw [eq_iff_indep_iff_indep_forall, matroid_of_module_func.ground] at hMM', 
+    rw [eq_iff_indep_iff_indep_forall, matroid_of_module_fun.ground] at hMM', 
     simp only [eq_self_iff_true, true_and, not_forall, exists_prop] at hMM',
 
     have hZ : ∃ (Z : set α), Z ∈ minimals (⊆) {A | ¬(M.indep A ↔ 
-      (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+      (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).indep A) },  
     { -- has to exist since the matroids aren't equal
       sorry },
@@ -2129,10 +2204,10 @@ begin
         casesI hW with hW hFW,
         casesI hFW with hFW hN,
         casesI hN with φN,
-        have φN' := rep_of_contr _ (rep_of_matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+        have φN' := rep_of_contr _ (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
           (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) (J \ {x, y})
-          (by { rw matroid_of_module_func.ground, apply subset_trans (diff_subset _ _) hMJ.subset_ground }),
-        apply h (indep_eq_doubleton_of_subset M (matroid_of_module_func (zmod 2) (B →₀ zmod 2)
+          (by { rw matroid_of_module_fun.ground, apply subset_trans (diff_subset _ _) hMJ.subset_ground }),
+        apply h (indep_eq_doubleton_of_subset M (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
           (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) hMM'r hMM'E 
           x y hxy1 (by { left, apply h2 }) hMM'x hMM'y hZx hZy hMZ.1 hMZ.2 hZJ hMJ φN φN') },
         { obtain ⟨BZ, hBZ⟩ := hMZ.1,
