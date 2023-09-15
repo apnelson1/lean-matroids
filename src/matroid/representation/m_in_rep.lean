@@ -1036,7 +1036,7 @@ begin
   simp_rw h6,
 end 
 
-lemma rep_cocircuit_singleton (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) 
+def rep_cocircuit_singleton (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x)) 
 (φx : rep 𝔽 W' (M ‖ ({x} : set α))) (hx : M.cocircuit {x}) (hB : (M ⟍ x).base B) : 
   rep 𝔽 (W × W') M := 
 { to_fun := λ (e : α), 
@@ -1096,7 +1096,8 @@ lemma rep_cocircuit_singleton (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x))
                 rw [← hx2, ite_eq_iff],
                 right,
                 refine ⟨hx4, rfl⟩ } },
-          have h13 : (λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inr 𝔽 W W') ∘ φx) ((linear_map.inl 𝔽 W W') ∘ φ) e) '' {x} = 
+          have h13 : (λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inr 𝔽 W W') ∘ φx) 
+            ((linear_map.inl 𝔽 W W') ∘ φ) e) '' {x} = 
             (linear_map.inr 𝔽 W W') '' (φx '' {x}),
             { simp_rw [ite_apply, image_singleton, singleton_eq_singleton_iff, ite_eq_iff],
               left,
@@ -1172,6 +1173,176 @@ lemma rep_cocircuit_singleton (x : α) (B : set α) (φ : rep 𝔽 W (M ⟍ x))
           and_true],
         apply φ.support e he2 },
     end  } 
+
+def add_coloop (M : matroid_in α) {f : α} (hf : f ∉ M.E) : matroid_in α := 
+{ ground := M.E ∪ {f},
+  base := λ B, M.base (B \ {f} : set α) ∧ f ∈ B,
+  exists_base' := 
+    begin
+      obtain ⟨B, hB⟩ := M.exists_base,
+      use B ∪ {f},
+      simp only [union_singleton, insert_diff_of_mem, mem_singleton, mem_insert_iff, 
+        eq_self_iff_true, true_or, and_true],
+      rw diff_singleton_eq_self (not_mem_subset hB.subset_ground hf),
+      apply hB,
+    end,
+  base_exchange' := _,
+  maximality := _,
+  subset_ground' := λ B hB, 
+    begin
+      rw ← diff_union_of_subset (singleton_subset_iff.2 hB.2),
+      apply union_subset_union hB.1.subset_ground,
+      simp only [subset_singleton_iff, mem_singleton_iff, imp_self, implies_true_iff],
+    end }
+
+lemma add_coloop_equal (M M' : matroid_in α) {f : α} (hf : f ∉ M.E) : 
+  M' = add_coloop M hf ↔ M'.coloop f ∧ M' ⟍ f = M := sorry 
+
+lemma add_coloop_del_equal (M : matroid_in α) {f : α} (hf : f ∉ M.E) :
+  M = add_coloop M hf ⟍ f := sorry
+
+lemma add_coloop_ground (M : matroid_in α) {f : α} (hf : f ∉ M.E) : 
+  (add_coloop M hf).E = M.E ∪ {f} := by refl
+
+def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) : 
+  rep 𝔽 (W × 𝔽) (add_coloop M hf) := 
+{ to_fun := λ (e : α), if e ∈ ({f} : set α) then linear_map.inr 𝔽 W 𝔽 ((λ e : α, 1) e) else 
+    linear_map.inl 𝔽 W 𝔽 (φ e),
+  valid' := λ I hI, 
+    begin
+      by_cases f ∈ I,
+      { rw [← union_diff_cancel (singleton_subset_iff.2 h), union_comm],
+        simp only [← ite_apply _ (linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) (linear_map.inl 𝔽 W 𝔽 ∘ φ)],
+        refine ⟨λ h2, _, λ h2, _⟩,
+        { have h11 := linear_independent.image h2,
+          rw image_union at h11,
+          have hM : M.indep (I \ {f} : set α),
+            { have h10 := linear_independent.mono (subset_union_left _ _) h11,
+                rw ← linear_independent_image at h10,
+                have h12 : ∀ e : ((I \ {f}) : set α), (ite ((e : α) ∈ ({f} : set α)) 
+                  ((linear_map.inr 𝔽 W 𝔽) ↑1) ((linear_map.inl 𝔽 W 𝔽) (φ e)) 
+                  = ((linear_map.inl 𝔽 W 𝔽) ∘ φ) e),
+                { intros e,
+                  rw ite_eq_iff,
+                  right,
+                  refine ⟨not_mem_of_mem_diff e.2, rfl⟩ },
+              simp_rw [λ (e : (I \ {f} : set α)), h12 e, 
+                @_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+                (linear_map.ker_eq_bot_of_injective linear_map.inl_injective)] at h10,
+              rw φ.valid at h10, 
+              apply h10,
+              rw [diff_subset_iff, union_comm],
+              apply hI,
+              { intros a ha b hb hab,
+                have h13 := h2.injective,
+                rw [← restrict_eq, ← inj_on_iff_injective] at h13,
+                apply h13 (mem_union_left {f} ha) (mem_union_left {f} hb) hab } },
+            obtain ⟨B2, hB2⟩ := hM, 
+            refine ⟨B2 ∪ {f}, ⟨⟨_, mem_union_right _ (mem_singleton f)⟩, 
+              union_subset_union hB2.2 (subset_refl _)⟩⟩,
+            simp only [union_singleton, insert_diff_of_mem, mem_singleton],
+            rw diff_singleton_eq_self (not_mem_subset hB2.1.subset_ground hf),
+            apply hB2.1 },  
+        { rw [linear_independent_image, image_union],
+          have h12 : (λ (e : α), ite (e ∈ ({f} : set α)) ((linear_map.inr 𝔽 W 𝔽) ↑1) 
+            ((linear_map.inl 𝔽 W 𝔽) (φ e))) '' (I \ {f}) = 
+            (linear_map.inl 𝔽 W 𝔽) '' (φ '' (I \ {f})),
+            { ext;
+              simp only [mem_image, mem_diff, mem_singleton_iff, comp_app],
+              refine ⟨λ h, _, λ h, _⟩,  
+              { obtain ⟨x, ⟨⟨hx1, hx3⟩, hx2⟩⟩ := h,
+                refine ⟨φ x, ⟨⟨x, ⟨⟨hx1, hx3⟩, rfl⟩⟩, _⟩⟩,
+                rw [← hx2, eq_comm, ite_eq_iff],
+                right,
+                refine ⟨hx3, rfl⟩ },
+              { obtain ⟨x, ⟨⟨x2, ⟨⟨hx3, hx4⟩, rfl⟩⟩, hx2⟩⟩ := h,
+                refine ⟨x2, ⟨⟨hx3, hx4⟩, _⟩⟩,
+                rw [← hx2, ite_eq_iff],
+                right,
+                refine ⟨hx4, rfl⟩ } },
+          have h13 : (λ (e : α), ite (e ∈ ({f} : set α)) ((linear_map.inr 𝔽 W 𝔽) ↑1) 
+            ((linear_map.inl 𝔽 W 𝔽) (φ e))) '' {f} = (linear_map.inr 𝔽 W 𝔽) '' (↑1 '' ({f} : set α)),
+            { simp_rw [image_singleton, singleton_eq_singleton_iff, ite_eq_iff],
+              left,
+              refine ⟨mem_singleton _, rfl⟩ },
+          rw [h12, h13],
+          apply linear_independent.inl_union_inr,
+          { have h6 := (h2.subset (subset_union_left _ _)).indep_delete_of_disjoint 
+              (disjoint_sdiff_left),
+            rw [← delete_elem, ← add_coloop_del_equal, ← φ.valid] at h6,
+            apply h6.image,
+            apply h6.subset_ground },
+          { rw image_singleton,
+            apply linear_independent_singleton,
+            simp only [algebra_map.coe_one, pi.one_apply, ne.def, one_ne_zero, not_false_iff] },
+          rw inj_on_union (disjoint_sdiff_left),
+          refine ⟨_, ⟨inj_on_singleton _ _, _⟩⟩,
+          { intros a ha b hb hab,
+            simp only [if_neg (not_mem_of_mem_diff ha), if_neg (not_mem_of_mem_diff hb)] at hab,
+            have hab2 := linear_map.inl_injective hab,
+            have h4 := (h2.subset (subset_union_left _ _)).indep_delete_of_disjoint 
+              (disjoint_sdiff_left),
+            rw [← delete_elem, ← add_coloop_del_equal] at h4,
+            apply (inj_on_of_indep φ h4) ha hb (linear_map.inl_injective hab) },
+          intros a ha b hb,
+          simp only [if_pos hb, if_neg (not_mem_of_mem_diff ha)],
+          simp only [linear_map.coe_inl, linear_map.coe_inr, ne.def, prod.mk.inj_iff, not_and],
+          intros hc,
+          by_contra,
+          have h6 := (h2.subset (subset_union_left _ _)).indep_delete_of_disjoint 
+              (disjoint_sdiff_left),
+          rw [← delete_elem, ← add_coloop_del_equal] at h6,
+          apply φ.ne_zero_of_nonloop (h6.nonloop_of_mem ha),
+          rw hc } },
+      { have h8 : ((λ (e : α), ite (e ∈ ({f} : set α)) ((linear_map.inr 𝔽 W 𝔽) ↑((λ (e : α), 1) e)) 
+          ((linear_map.inl 𝔽 W 𝔽) (φ e))) ∘ coe) = 
+          (λ (e : I), ite ((e : α) ∈ ({f} : set α)) ((linear_map.inr 𝔽 W 𝔽) ↑((λ (e : α), 1) e))
+          ((linear_map.inl 𝔽 W 𝔽) (φ e))),
+          simp only [eq_self_iff_true],
+        rw h8,
+        have h3 : ∀ (e : I), (ite ((e : α) ∈ ({f} : set α)) 
+          ((linear_map.inr 𝔽 W 𝔽) ↑((λ (e : α), 1) e)) ((linear_map.inl 𝔽 W 𝔽) (φ e))) = 
+              ((linear_map.inl 𝔽 W 𝔽) ∘ φ) e,
+        { intros,
+          simp_rw [ite_eq_iff],
+          right,
+          refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 h), rfl⟩ },
+        simp_rw [λ (e : I), h3 e],
+        rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ 
+          (linear_map.inl 𝔽 W 𝔽) 
+          (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid],
+        refine ⟨λ h2, _, λ h2, _⟩,
+        { obtain ⟨B, hB⟩ := h2,
+          refine ⟨(B ∪ {f} : set α), ⟨⟨_, _⟩, _⟩⟩,
+          rw union_diff_cancel_right,
+          apply hB.1,
+          rw inter_comm,
+          rw subset_empty_iff,
+          apply singleton_inter_eq_empty.2,
+          apply not_mem_subset hB.1.subset_ground hf,
+          apply mem_union_right _ (mem_singleton _), 
+          apply subset_union_of_subset_left hB.2 },
+        { obtain ⟨B, ⟨⟨hB1, hB2⟩, hB3⟩⟩ := h2,
+          refine ⟨(B \ {f} : set α), ⟨hB1, subset_diff_singleton hB3 h⟩⟩ },
+        rw ← union_diff_cancel_right (subset_empty_iff.2 (inter_singleton_eq_empty.2 hf)),
+        apply subset_diff_singleton hI h },
+    end,
+  support := λ e he, 
+    begin
+      by_cases e ∈ {f},
+      { by_contra h2,
+        apply he,
+        rw mem_singleton_iff.1 h,
+        rw ← singleton_subset_iff,
+        apply subset_union_right },
+      { have he2 := not_mem_subset (subset_union_left _ _) he,
+        rw ite_eq_iff,
+        right,
+        refine ⟨h, _⟩,
+        simp only [linear_map.coe_inl, prod.mk_eq_zero, eq_self_iff_true, 
+          and_true],
+        apply φ.support e he2 },
+    end }
 
 -- i think this works for any field but i want to do it for zmod 2 for now
 lemma rep_cocircuit_doubleton (x y : α) (hxy : x ≠ y) (B : set α) [module (zmod 2) W] 
