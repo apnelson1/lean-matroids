@@ -1385,31 +1385,81 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
 { to_fun := λ (e : α), 
     if e ∈ ({x} : set α)
     then 
-      linear_map.inl 𝔽 W 𝔽 (φ e) + linear_map.inr 𝔽 W 𝔽 1
+      (linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e
     else 
-      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else linear_map.inl 𝔽 W 𝔽 (φ x),
+      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else (linear_map.inl 𝔽 W 𝔽 ∘ φ) e,
   valid' := λ I hI, 
     begin
-    have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽) (φ e) + 
-          (linear_map.inr 𝔽 W 𝔽) 1) (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ x)))) ∘ coe) = 
+    /-have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽 ∘ φ + 
+      linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e) (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
+          ((linear_map.inl 𝔽 W 𝔽 ∘ φ) e))) ∘ coe) = 
           (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
-          (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))),
+          ((linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e) 
+          (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽 ∘ φ) e))),
             --simp only [eq_self_iff_true],
             sorry,
-    rw h6,
+    rw h6,-/
     by_cases hyI : y ∈ I,
-      { by_cases hxI : x ∈ I,
-        { rw ← not_iff_not,
+      { 
+        --rw ← [linear_map.add_apply],
+        --rw linear_map.add_comp,
+         -- ← ite_apply ((linear_map.inl 𝔽 W 𝔽) ∘ φ + (linear_map.inr 𝔽 W 𝔽) 1) _ ],
+        by_cases hxI : x ∈ I,
+        simp only [← ite_apply _ (linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) (linear_map.inl 𝔽 W 𝔽 ∘ φ)],
+        simp only [← ite_apply _ _ _],
+        { have hxyI : {x, y} ⊆ I,
+            sorry,
+          rw [← union_diff_cancel hxyI, union_comm],
+          rw ← not_iff_not,
           sorry },
-        { sorry } },
+        { rw [← union_diff_cancel (singleton_subset_iff.2 hyI), union_comm],
+          --simp only [← ite_apply _ (linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) (linear_map.inl 𝔽 W 𝔽 ∘ φ)],
+          --simp only [← ite_apply _ _ _],
+          refine ⟨λ h2, _, λ h2, _⟩,
+          have h11 := linear_independent.image h2,  
+          rw image_union at h11,
+          have hM : M.indep (I \ {y} : set α),
+            { have h10 := linear_independent.mono (subset_union_left _ _) h11,
+                rw ← linear_independent_image at h10,
+                have h12 : ∀ e : ((I \ {y}) : set α), ite ((e : α) ∈ ({x} : set α)) 
+                  (((linear_map.inl 𝔽 W 𝔽) ∘ φ + (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) e) 
+                  (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
+                  (((linear_map.inl 𝔽 W 𝔽) ∘ φ) e)) 
+                  = ((linear_map.inl 𝔽 W 𝔽) ∘ φ) e,
+                { intros e,
+                  rw ite_eq_iff,
+                  right,
+                  refine ⟨sorry, _⟩,
+                  rw ite_eq_iff,
+                  right,
+                  refine ⟨not_mem_of_mem_diff e.2, rfl⟩, },
+              simp_rw [λ (e : (I \ {y} : set α)), h12 e, 
+                @_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+                (linear_map.ker_eq_bot_of_injective linear_map.inl_injective)] at h10,
+              rw φ.valid at h10, 
+              apply h10,
+              rw [diff_subset_iff, union_comm],
+              apply hI,
+              { intros a ha b hb hab,
+                have h13 := h2.injective,
+                rw [← restrict_eq, ← inj_on_iff_injective] at h13,
+                apply h13 (mem_union_left {y} ha) (mem_union_left {y} hb) hab } },
+          rw union_comm,
+          rw indep.union_indep_iff_contract_indep,
+          simp only [diff_singleton_eq_self, not_mem_diff_singleton, not_false_iff],
+          rw ← contract_elem,
+          rw ← series_extend_contr_eq M hx hy, 
+          apply hM,
+          -- this comes from cocircuit_iff_mem_minimals 
+          sorry,
+          { rw [linear_independent_image, image_union],
+            sorry } } },
       { by_cases hxI : x ∈ I,
-        { 
+        { rw [← union_diff_cancel (singleton_subset_iff.2 hxI), union_comm],
           sorry },
-        { have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
-          (ite (↑e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e))) 
+        { have h7 : ∀ (e : I), ite ((e : α) ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+            (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) (e : α)) (ite ((e : α) ∈ ({y} : set α)) 
+            ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) (e : α))) 
           = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
           { intros e,
             rw ite_eq_iff,
