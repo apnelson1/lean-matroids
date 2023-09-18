@@ -1360,7 +1360,7 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
     end }
 
 -- i think we need e to be a cocircuit of M
-def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hec : M.cocircuit {e}) 
+def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) 
   (hf : f ∉ M.E) : matroid_in α := 
 { ground := M.E ∪ {f},
   -- M.base B covers e ∈ B
@@ -1370,15 +1370,18 @@ def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hec : M.cocir
   maximality := _,
   subset_ground' := _ }
 
+-- don't need hf but keeping for convenience
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
-  (hec : M.cocircuit {e}) (hf : f ∉ M.E) : M' = series_extend M he hec hf := sorry
+  (h : M = M' ⟋ f) (hf : f ∉ M.E) : M' = series_extend M he hf := sorry
 
-lemma series_extend_contr_eq (M : matroid_in α) {e f : α} 
-  (he : e ∈ M.E) (hec : M.cocircuit {e}) (hf : f ∉ M.E) : 
-    M = series_extend M he hec hf ⟋ f := sorry
+lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) : 
+  (series_extend M he hf).cocircuit {e, f} := sorry
 
-def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.cocircuit {x}) 
-  (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hec hy) := 
+lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) : 
+    M = (series_extend M he hf) ⟋ f := sorry
+
+def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
+  (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hy) := 
 { to_fun := λ (e : α), 
     if e ∈ ({x} : set α)
     then 
@@ -1387,15 +1390,7 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.c
       if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else linear_map.inl 𝔽 W 𝔽 (φ x),
   valid' := λ I hI, 
     begin
-    by_cases hyI : y ∈ I,
-      { by_cases hxI : x ∈ I,
-        { 
-          sorry },
-        { sorry } },
-      { by_cases hxI : x ∈ I,
-        { 
-          sorry },
-        { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽) (φ e) + 
+    have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽) (φ e) + 
           (linear_map.inr 𝔽 W 𝔽) 1) (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
           ((linear_map.inl 𝔽 W 𝔽) (φ x)))) ∘ coe) = 
           (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
@@ -1403,7 +1398,16 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.c
           (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))),
             --simp only [eq_self_iff_true],
             sorry,
-          have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
+    rw h6,
+    by_cases hyI : y ∈ I,
+      { by_cases hxI : x ∈ I,
+        { rw ← not_iff_not,
+          sorry },
+        { sorry } },
+      { by_cases hxI : x ∈ I,
+        { 
+          sorry },
+        { have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
           ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
           (ite (↑e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e))) 
           = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
@@ -1414,14 +1418,26 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E) (hec : M.c
             apply ite_eq_iff.2,
             apply or.intro_right,
             refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hyI), rfl⟩ },
-          rw h6,
           simp_rw [λ (e : I), h7 e],
           rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
-            (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid, delete_elem],
-          refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
+            (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid],
+          rw (eq_iff_indep_iff_indep_forall.1 (series_extend_contr_eq M hx hy)).2 I,
+          rw contract_elem,
+          rw indep.contract_indep_iff,
+          refine ⟨λ h2, h2.2.subset (subset_union_left _ _), λ h2, 
+            ⟨disjoint_singleton_right.2 hyI, _⟩⟩,
+          simp,
+          rw @indep.insert_indep_iff_of_not_mem _ _ _ _ h2 hyI _,
+          have h3 := cocircuit_iff_mem_minimals_compl_nonspanning.1 (series_extend_cocircuit M hx hy),
+          rw mem_minimals_prop_iff at h3,
+          have h31 := h3.1,
+          have h4 : ¬(series_extend M hx hy).spanning ((series_extend M hx hy).E \ {x, y}),
+            apply h31,
+          rw not_spanning_iff_cl _ at h4,
+          /-refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
             (disjoint_singleton_right.2 hyI)⟩,
           rw [delete_elem, delete_ground],
-          apply subset_diff_singleton hI hyI } },
+          apply subset_diff_singleton hI hyI-/ } },
       end,
   support := _ }
 
