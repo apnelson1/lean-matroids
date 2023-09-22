@@ -1362,7 +1362,7 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
 -- i think we need e to be a cocircuit of M
 def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) 
   (hf : f ∉ M.E) : matroid_in α := 
-{ ground := M.E ∪ {f},
+{ ground := insert f M.E,
   -- M.base B covers e ∈ B
   base := sorry,
   exists_base' := _,
@@ -1374,12 +1374,14 @@ def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E)
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
   (h : M = M' ⟋ f) (hf : f ∉ M.E) : M' = series_extend M he hf := sorry
 
-lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) : 
-  (series_extend M he hf).cocircuit {e, f} := sorry
+-- e can't be coloop
+lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.coloop e)
+  (hf : f ∉ M.E) : (series_extend M he hf).cocircuit {e, f} := sorry
 
 lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) : 
     M = (series_extend M he hf) ⟋ f := sorry
 
+-- switch e ∈ {x} out for e = x
 def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
   (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hy) := 
 { to_fun := λ (e : α), 
@@ -1407,10 +1409,20 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         by_cases hxI : x ∈ I,
         simp only [← ite_apply _ (linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) (linear_map.inl 𝔽 W 𝔽 ∘ φ)],
         simp only [← ite_apply _ _ _],
-        { have hxyI : {x, y} ⊆ I,
+        { -- maybe by_cases M.indep I \ {x, y}?
+          by_cases (series_extend M hx hy).indep (I \ {x, y} : set α),
+          { have h2 : (series_extend M hx hy).indep (I \ {y} : set α),
+              -- comes from x ∈ cocircuit
+              sorry,
+            rw ← not_iff_not,
+            sorry },
+          -- this gives us that M.indep (I \ {y}) 
+          have hxyI : {x, y} ⊆ I,
             sorry,
           rw [← union_diff_cancel hxyI, union_comm],
           rw ← not_iff_not,
+          refine ⟨λ h2, _, λ h2, _⟩,
+          sorry, 
           sorry },
         { rw [← union_diff_cancel (singleton_subset_iff.2 hyI), union_comm],
           --simp only [← ite_apply _ (linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) (linear_map.inl 𝔽 W 𝔽 ∘ φ)],
@@ -1562,6 +1574,8 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
               apply ((series_extend_cocircuit M hx hy).nonloop_of_mem h5).indep,
               sorry,
               sorry,
+              rw ← image_comp,
+              
               sorry } },
           sorry },
         { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽 ∘ φ + 
