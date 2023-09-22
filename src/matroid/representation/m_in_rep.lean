@@ -1429,7 +1429,8 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
                 { intros e,
                   rw ite_eq_iff,
                   right,
-                  refine ⟨sorry, _⟩,
+                  refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 (not_mem_subset 
+                      (diff_subset I {y}) hxI)), _⟩,
                   rw ite_eq_iff,
                   right,
                   refine ⟨not_mem_of_mem_diff e.2, rfl⟩, },
@@ -1444,20 +1445,135 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
                 have h13 := h2.injective,
                 rw [← restrict_eq, ← inj_on_iff_injective] at h13,
                 apply h13 (mem_union_left {y} ha) (mem_union_left {y} hb) hab } },
-          rw union_comm,
-          rw indep.union_indep_iff_contract_indep,
+          rw [union_comm, indep.union_indep_iff_contract_indep],
           simp only [diff_singleton_eq_self, not_mem_diff_singleton, not_false_iff],
-          rw ← contract_elem,
-          rw ← series_extend_contr_eq M hx hy, 
+          rw [← contract_elem, ← series_extend_contr_eq M hx hy], 
           apply hM,
-          -- this comes from cocircuit_iff_mem_minimals 
-          sorry,
+          have h5 : y ∈ ({x, y} : set α),
+            simp only [mem_insert_iff, mem_singleton, or_true],
+          apply ((series_extend_cocircuit M hx hy).nonloop_of_mem h5).indep,
           { rw [linear_independent_image, image_union],
-            sorry } } },
+            have h7 : (λ (e : α), ite (e ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+              (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) e) (ite (e ∈ ({y} : set α)) 
+              ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) e))) '' (I \ {y}) = 
+              (linear_map.inl 𝔽 W 𝔽) '' (φ '' (I \ {y})),
+            sorry,
+            have h8 : (λ (e : α), ite (e ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+              (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) e) (ite (e ∈ ({y} : set α)) 
+              ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) e))) '' {y} = 
+              (linear_map.inr 𝔽 W 𝔽) '' (1 '' {y}),
+              sorry,
+            rw [h7, h8],
+            apply linear_independent.inl_union_inr,
+            apply linear_independent.image,
+            rw φ.valid, 
+            --rw union_comm at h2,
+            have h3 := h2.subset(subset_union_right _ _),
+            rw union_comm at h2,
+            rw indep.union_indep_iff_contract_indep h3 at h2,
+            simp only [diff_singleton_eq_self, not_mem_diff_singleton, not_false_iff] at h2,
+            simp_rw ← contract_elem at h2,
+            rw ← series_extend_contr_eq at h2,
+            apply h2,
+            sorry,
+            rw image_singleton,
+            apply linear_independent_singleton,
+            simp only [pi.one_apply, ne.def, one_ne_zero, not_false_iff],
+            sorry, } } },
       { by_cases hxI : x ∈ I,
         { rw [← union_diff_cancel (singleton_subset_iff.2 hxI), union_comm],
+          rw union_singleton,
+          rw linear_independent_insert',
+          --rw [linear_independent_image, image_union],
+          have h7 : (λ (e : α), ite (e ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+            (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) e) (ite (e ∈ ({y} : set α)) 
+            ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) e))) '' (I \ {x}) = 
+            (linear_map.inl 𝔽 W 𝔽) '' (φ '' (I \ {x})),
+            sorry,
+          have h8 : (λ (e : α), ite (e ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+            (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) e) (ite (e ∈ ({y} : set α)) 
+            ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) e))) '' {x} = 
+            (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+            (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1)) '' {x},
+            sorry,
+          have h9 : ∀ (x_1 : (I \ {x})), ite ((x_1 : α) ∈ ({x} : set α)) 
+            (((linear_map.inl 𝔽 W 𝔽) ∘ φ + (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) x_1) 
+            (ite ((x_1 : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) x_1))
+            = (((linear_map.inl 𝔽 W 𝔽) ∘ φ) x_1),
+            sorry,
+          have h10 : ite (x ∈ ({x} : set α)) 
+            (((linear_map.inl 𝔽 W 𝔽) ∘ φ + (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) x) 
+            (ite (x ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) x)) =
+            ((linear_map.inl 𝔽 W 𝔽) ∘ φ + (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) x,
+            sorry,
+          rw [h7, h10], --h8],
+          simp_rw [λ (e : (I \ {x})), h9 e],
+          { refine ⟨λ h2, _, λ h2, _⟩, 
+            { rw indep.insert_indep_iff_of_not_mem',
+              refine ⟨mem_union_left {y} hx, _⟩,
+              have h5 : I \ {x} ⊆ ((series_extend M hx hy).E \ {x, y} : set α),
+              { sorry
+                /-rw [← diff_singleton_eq_self hyI, diff_diff, union_comm, 
+                  union_singleton],
+                apply diff_subset_diff_left hI-/ },
+              apply not_mem_subset (cl_subset (series_extend M hx hy) h5),
+              rw (series_extend_cocircuit M hx hy).compl_hyperplane.flat.cl,
+              simp only [mem_diff, mem_insert_iff, eq_self_iff_true, true_or, 
+                not_true, and_false, not_false_iff],
+              rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+                (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid] at h2,
+              rw (eq_iff_indep_iff_indep_forall.1 (series_extend_contr_eq M hx hy)).2 (I \ {x}) at h2,
+              rw contract_elem at h2,
+              apply h2.1.of_contract,
+              /-apply diff_subset (series_extend M hx hy).E {x, y},
+              simp,
+              apply mem_union_right M.E (mem_singleton _),-/
+              /-have h5 : x ∈ ({x, y} : set α),
+                sorry,-/
+                --simp only [mem_insert_iff, mem_singleton, or_true],
+              --apply ((series_extend_cocircuit M hx hy).nonloop_of_mem h5).indep,
+              sorry,
+              sorry,
+              sorry },
+            { have h3 := (h2.subset (subset_insert x (I \ {x}))).insert_indep_iff_of_not_mem' 
+                (not_mem_diff_singleton x I),
+              refine ⟨_, _⟩,
+              rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
+                (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid],
+              rw (eq_iff_indep_iff_indep_forall.1 (series_extend_contr_eq M hx hy)).2 (I \ {x}),
+              rw contract_elem,
+              have h5 := h2.subset (subset_insert x (I \ {x})),
+              have h4 := (h2.subset (subset_insert x (I \ {x}))).insert_indep_iff_of_not_mem' 
+                (not_mem_subset (diff_subset _ _) hyI),
+              rw indep.contract_indep_iff,
+              { refine ⟨disjoint_singleton_right.2 (not_mem_subset (diff_subset _ _) hyI), _⟩,
+                rw union_singleton,
+                rw (h2.subset (subset_insert x (I \ {x}))).insert_indep_iff_of_not_mem' 
+                  (not_mem_subset (diff_subset _ _) hyI),
+                refine ⟨mem_union_right M.E (mem_singleton _), _⟩,
+                have h5 : I \ {x} ⊆ ((series_extend M hx hy).E \ {x, y} : set α),
+                { sorry },
+                apply not_mem_subset (cl_subset (series_extend M hx hy) h5),
+                rw (series_extend_cocircuit M hx hy).compl_hyperplane.flat.cl,
+                simp only [mem_diff, mem_insert_iff, mem_singleton, or_true, not_true, and_false, 
+                  not_false_iff] },
+              have h5 : y ∈ ({x, y} : set α),
+                simp only [mem_insert_iff, mem_singleton, or_true],
+              apply ((series_extend_cocircuit M hx hy).nonloop_of_mem h5).indep,
+              sorry,
+              sorry,
+              sorry } },
           sorry },
-        { have h7 : ∀ (e : I), ite ((e : α) ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
+        { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) ((linear_map.inl 𝔽 W 𝔽 ∘ φ + 
+            linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e) (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) 
+                ((linear_map.inl 𝔽 W 𝔽 ∘ φ) e))) ∘ coe) = 
+                (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
+                ((linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e) 
+                (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽 ∘ φ) e))),
+                  --simp only [eq_self_iff_true],
+                  sorry,
+          rw h6,
+          have h7 : ∀ (e : I), ite ((e : α) ∈ ({x} : set α)) (((linear_map.inl 𝔽 W 𝔽) ∘ φ + 
             (linear_map.inr 𝔽 W 𝔽) ∘ λ (e : α), 1) (e : α)) (ite ((e : α) ∈ ({y} : set α)) 
             ((linear_map.inr 𝔽 W 𝔽) 1) (((linear_map.inl 𝔽 W 𝔽) ∘ φ) (e : α))) 
           = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
@@ -1478,16 +1594,33 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
             ⟨disjoint_singleton_right.2 hyI, _⟩⟩,
           simp,
           rw @indep.insert_indep_iff_of_not_mem _ _ _ _ h2 hyI _,
+          --have h5 := (series_extend_cocircuit M hx hy).compl_hyperplane.flat.cl,
           have h3 := cocircuit_iff_mem_minimals_compl_nonspanning.1 (series_extend_cocircuit M hx hy),
           rw mem_minimals_prop_iff at h3,
           have h31 := h3.1,
-          have h4 : ¬(series_extend M hx hy).spanning ((series_extend M hx hy).E \ {x, y}),
+          have h4 : ¬(series_extend M hx hy).spanning ((series_extend M hx hy).E \ ({x, y} : set α)),
             apply h31,
           rw not_spanning_iff_cl _ at h4,
-          /-refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
-            (disjoint_singleton_right.2 hyI)⟩,
-          rw [delete_elem, delete_ground],
-          apply subset_diff_singleton hI hyI-/ } },
+          have h5 : I ⊆ ((series_extend M hx hy).E \ {x, y} : set α),
+          { rw [← diff_singleton_eq_self hyI, ← diff_singleton_eq_self hxI, diff_diff, union_comm, 
+              union_singleton],
+            apply diff_subset_diff_left hI },
+          apply not_mem_subset (cl_subset (series_extend M hx hy) h5),
+          rw (series_extend_cocircuit M hx hy).compl_hyperplane.flat.cl,
+          simp only [mem_diff, mem_insert_iff, mem_singleton, or_true, not_true, and_false, 
+            not_false_iff],
+          apply diff_subset (series_extend M hx hy).E {x, y},
+          simp,
+          apply mem_union_right M.E (mem_singleton _),
+          have h5 : y ∈ ({x, y} : set α),
+            simp only [mem_insert_iff, mem_singleton, or_true],
+          apply ((series_extend_cocircuit M hx hy).nonloop_of_mem h5).indep,
+          { rw [← diff_singleton_eq_self hyI, ← @union_diff_cancel_right _ M.E {y} 
+              (subset_empty_iff.2 (inter_singleton_eq_empty.2 hy))],
+            apply @diff_subset_diff_left _ _ _ {y} hI },
+          { rw [← diff_singleton_eq_self hyI, ← @union_diff_cancel_right _ M.E {y} 
+            (subset_empty_iff.2 (inter_singleton_eq_empty.2 hy))],
+            apply @diff_subset_diff_left _ _ _ {y} hI } } },
       end,
   support := _ }
 
