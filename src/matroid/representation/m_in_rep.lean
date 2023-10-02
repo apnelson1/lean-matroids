@@ -868,6 +868,20 @@ begin
   apply fund_circuit_subset_insert he,
 end
 
+-- modify to disjoint union of circuits for iff?
+lemma rep.circuit (φ : rep 𝔽 W M) {C : set α} (hMC : M.circuit C) : 
+  ∃ f : α →₀ 𝔽, (f.support : set α) = C ∧ finsupp.total α W 𝔽 φ f = 0 ∧ f ≠ 0 :=
+begin
+  obtain ⟨f, ⟨hfssup, ⟨hftot, hfne0⟩⟩⟩ := 
+    linear_dependent_comp_subtype'.1 ((φ.valid'' hMC.subset_ground).1.mt (not_indep_iff.2 hMC.dep)),
+  refine ⟨f, ⟨_, ⟨hftot, hfne0⟩⟩⟩,
+  apply subset.antisymm_iff.2 ⟨hfssup, λ x hx, _⟩,
+  by_contra,
+  apply (φ.valid'' (subset.trans (diff_subset _ _) hMC.subset_ground)).2.mt 
+    (linear_dependent_comp_subtype'.2 ⟨f, ⟨subset_diff_singleton hfssup h, ⟨hftot, hfne0⟩⟩⟩),
+  apply hMC.diff_singleton_indep hx,
+end
+
 --lemma mem_span_of_mem_cl 
 -- we need he2 because we are deleting {e} from the funamental circuit for this
 lemma mem_span_set_rep_of_not_mem (φ : rep 𝔽 W M) {I : set α} (hI : M.indep I) 
@@ -1638,47 +1652,179 @@ lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf
       end,
   support := _ }-/
 
+/-lemma contract_circuit_iff (I C : set α) (hI : M.indep I) : 
+  (M ⟋ I).circuit C ↔ disjoint C I ∧ M.circuit (C ∪ I) :=
+begin
+  simp_rw [circuit_iff_forall_ssubset],
+  refine ⟨λ hCM', ⟨_, ⟨(hI.contract_dep_iff.1 hCM'.1).2, λ I' hICI', _⟩⟩, λ hCM, _⟩,
+  have h2 := hCM'.1.subset_ground,
+  rw contract_ground at h2, --delete_dep_iff, and_imp], 
+  apply (subset_diff.1 h2).2,
+  have h3 := hCM'.2 (I' \ I) (diff_subset_diff_left),
+  /-rw [and_comm, ←and_assoc, and.congr_left_iff, and_comm, and.congr_right_iff],  
+  refine λ hdj hC, ⟨λ h I hI hIC, h I hI _ hIC, λ h I hI hdj' hIC, h I hI hIC⟩,
+  exact disjoint_of_subset_left hIC hdj, -/
+  sorry,
+end  -/
+
+/-lemma contract_circuit_iff_insert_circuit (e : α) (C : set α) (he : M.nonloop e) : 
+  (M ⟋ e).circuit C ↔ e ∉ C ∧ M.circuit (insert e C) :=
+begin
+  simp_rw circuit_iff_forall_ssubset,
+  refine ⟨λ hM'cct, _, λ heC, _⟩,
+  have h2 := hM'cct.1.subset_ground,
+  rw [contract_elem, contract_ground] at h2,
+  refine ⟨not_mem_subset h2 (not_mem_diff_singleton e M.E), _⟩,
+  have h3 := (he.indep.contract_dep_iff.1 hM'cct.1).2,
+  rw union_singleton at h3,
+  refine ⟨h3, _⟩,
+  intros I hI,
+  by_cases e ∈ I,
+  { have h5 : I \ {e} ⊂ C,
+      sorry,
+    sorry },
+  sorry,
+end-/
+
+lemma contract_circuit_of_insert_circuit (e : α) (C : set α) (he : M.nonloop e) (heC : e ∉ C)
+  (hMCe : M.circuit (insert e C)) : (M ⟋ e).circuit C :=
+begin
+  simp_rw [circuit_iff_forall_ssubset, contract_elem] at *,
+  refine ⟨_, λ I hI, _⟩,
+  rw [he.indep.contract_dep_iff, union_singleton],
+  refine ⟨disjoint_singleton_right.2 heC, hMCe.1⟩,
+  rw he.indep.contract_indep_iff,
+  refine ⟨disjoint_singleton_right.2 (not_mem_subset (subset_of_ssubset hI) heC), _⟩,
+  have h8 : insert e I ⊂ insert e C,
+    obtain ⟨a, ⟨haI, haIC⟩⟩ := ssubset_iff_insert.1 hI,
+    have ha : ¬(a = e ∨ a ∈ I),
+    { push_neg,
+      refine ⟨ne_of_mem_of_not_mem (mem_of_mem_of_subset (mem_insert _ I) haIC) heC, haI⟩ },
+    apply ssubset_iff_insert.2 ⟨a, ⟨mem_insert_iff.1.mt ha, _⟩⟩,
+    rw insert_comm,
+    apply insert_subset_insert haIC,
+  rw union_singleton,
+  apply hMCe.2 _ h8,
+end
+
+lemma series_pair_mem_circuit (x y : α) (C : set α) (hMC : M.circuit C) (hMxy : M.cocircuit {x, y}) 
+  : x ∈ C ↔ y ∈ C :=
+begin
+  refine ⟨_, _⟩,
+  sorry,
+  sorry,
+end
+
 def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
   (hy : y ∉ M.E) : rep 𝔽 (W × 𝔽) (series_extend M hx hy) := 
 { to_fun := λ (e : α), 
-    if e ∈ ({x} : set α)
+    if e = x
     then 
       (linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e
     else 
-      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else (linear_map.inl 𝔽 W 𝔽 ∘ φ) e,
+      if e = y then linear_map.inr 𝔽 W 𝔽 1 else (linear_map.inl 𝔽 W 𝔽 ∘ φ) e,
   valid' := λ I hI, 
     begin
       refine ⟨_, _⟩,
       { contrapose,
       intros h2,
-      rw not_linear_independent_iff,
+      rw linear_dependent_comp_subtype',
+      
+      rw not_indep_iff at h2,
+      obtain ⟨C, ⟨hCI, hCcct⟩⟩ := exists_circuit_subset_of_dep h2,
+      by_cases hxC : x ∈ C, 
+      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (series_extend_cocircuit M hx sorry hy)).1 hxC,
       --obtain ⟨s, ⟨g, ⟨hsum, hne0⟩⟩⟩ := h2,
-        have hyindep : (series_extend M hx hy).indep {y},
+        have hyindep : (series_extend M hx hy).nonloop y,
           sorry,
-        by_cases hyI : y ∈ I,
-        { rw not_indep_iff at h2,
-          rw [← @union_diff_cancel _ {y} I (singleton_subset_iff.2 hyI), union_comm] at h2,
-          have h3 := (hyindep.contract_dep_iff.2 ⟨disjoint_sdiff_left, h2⟩),
-          rw [← contract_elem, ← series_extend_contr_eq, ← not_indep_iff, ← φ.valid, 
-            not_linear_independent_iff] at h3,
-          obtain ⟨s, ⟨g, ⟨hsum, hne0⟩⟩⟩ := h3,
-          --have g2 := (λ e : I, if h : e.1 ∈ ((I \ {y}) : set α) then g ⟨e, h⟩ else 0),
-          /-have hsy : (↑↑s : set α) ⊆ I,
-            have hsy2 := subtype.coe_image_subset _ (↑s : set (I \ {y} : set α)),
-            have hsy4 := subset.trans hsy2 (diff_subset I {y}),
-            have hsy3 := subtype.coe_image_of_subset hsy4, 
-            sorry,-/
-          --have hsy3 := ({x : ↥I | ↑x ∈ (↑↑s : set α) ∪ ({y} : set α)}).to_finset,
-          --rw subtype.coe_image_of_subset,
-          by_cases x ∈ ↑({e : ↥I | ↑e ∈ (coe : I \ {y} → α) '' ↑s} : set I).to_finset,
-            have hxIy : x ∈ (I \ {y} : set α),
-              sorry, 
-            refine ⟨({e : ↥I | ↑e ∈ (coe : I \ {y} → α) '' ↑s} : set I).to_finset, 
-              ⟨(λ e : I, if h : e.1 ∈ ((I \ {y}) : set α) then g ⟨e, h⟩ else - g ⟨x, hxIy⟩), _⟩⟩,
-          simp,
-          --use ↑s,
-         -- have h4 := (linear_independent.mono (diff_subset I {y})).mt,
-          sorry },
+        rw [← @union_diff_cancel _ {y} C (singleton_subset_iff.2 hyC), union_comm, 
+          union_singleton] at hCcct,
+        have hMcct := contract_circuit_of_insert_circuit y (C \ {y}) hyindep 
+          (not_mem_diff_singleton _ _) hCcct,
+        rw ← series_extend_contr_eq at hMcct,
+          /-{ simp only [diff_union_self],
+            apply h2.supset (subset_union_left _ {y}) } },-/
+        obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ hMcct,
+        --let f := λ e : α, if e = y then - f x else f e,
+        refine ⟨(⟨(insert y f.support), (λ e : α, if e = y then - f x else f e), _⟩ : α →₀ 𝔽), _⟩,
+        intros a,
+        refine ⟨λ ha, _, _⟩,
+        obtain ⟨rfl | ha ⟩ := finset.mem_insert.1 ha,
+        simp only [eq_self_iff_true, if_true, ne.def, neg_eq_zero],
+        rw ← ne.def, 
+        rw ← finsupp.mem_support_iff,
+        have hxCy : x ∈ C \ {y},
+          sorry,
+        rw ← hC at hxCy,
+        apply hxCy, 
+        sorry,
+        sorry,
+        refine ⟨_, _⟩,
+        have hfI : ((insert y f.support : finset α) : set α) ⊆ I,
+          sorry,
+        --simp only [finsupp.support],
+        apply hfI,
+        refine ⟨_, _⟩,
+        rw finsupp.total_apply at *,
+        --simp,
+        simp only [← ite_apply],
+        simp_rw finset.insert_eq y f.support,
+        dsimp [finsupp.sum] at *,
+        rw [← @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _],
+        rw [finset.sum_union, finset.sum_union],
+        simp only [finset.sum_singleton, eq_self_iff_true, if_true, neg_smul, pi.add_apply, 
+          prod.mk_add_mk, add_zero, zero_add, prod.smul_mk, algebra.id.smul_eq_mul, mul_one],
+        simp only [ite_apply],
+        simp,
+        have h8 : x ≠ y,
+          sorry, 
+        simp only [iff_false_intro h8, iff_false_intro h8.symm, if_false],
+        have h9 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = y),
+          sorry,
+        simp_rw ite_smul,
+        rw finset.sum_ite_of_false _ _ h9,
+        simp_rw smul_ite,
+        have h10 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = x),
+          sorry,
+        rw finset.sum_ite_of_false _ _ h10,
+        /-have h11 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = y),
+          sorry, -/
+        rw finset.sum_ite_of_false _ _ h9,
+        simp only [prod.smul_mk, smul_zero, algebra.id.smul_eq_mul, mul_one, prod.neg_mk, neg_zero, 
+          mul_zero],
+        rw [add_comm ((0 : W), -f x) _, add_assoc],
+        simp only [prod.mk_add_mk, add_zero, add_right_neg],
+        have h11 : (λ e : α, (f e • φ e, (0 : 𝔽))) x = (f x • φ x, (0 : 𝔽)),
+          sorry,
+        rw ← h11,
+        rw ← @finset.sum_singleton _ _ x (λ e : α, (f e • φ e, (0 : 𝔽))), 
+        simp_rw h11,
+        rw ← finset.sum_union,
+        rw [@finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _],
+        --rw finset.sum_product,
+        have h30 : ∑ (x : α) in f.support, (f x • φ x, (0 : 𝔽)) = 
+          (∑ (x : α) in f.support, f x • φ x, (0 : 𝔽)),
+          sorry,
+        rw h30,
+        rw prod.mk_eq_zero,
+        refine ⟨hftot, rfl⟩,
+        
+        
+        /-have h6 := @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _,
+        simp_rw [← h6], -/
+        sorry,
+        sorry },
+      { have h4 := (@indep.of_contract _ _ {y} _).mt (not_indep_iff.2 hCcct.dep),
+        rw [← contract_elem, ← series_extend_contr_eq] at h4,
+        sorry },
+        --have h2 := finsupp.mem_support_iff,
+
+        /-refine ⟨f, ⟨subset.trans hCI (diff_subset _ _), ⟨_, hfne0⟩⟩⟩,
+        by_cases hxf : x ∈ f.support,
+        { sorry },
+        { simp,
+          sorry },-/
       { have h3 : ¬ (series_extend M hx hy).indep (I ∪ {y}),
           sorry,
         rw not_indep_iff at h3,
