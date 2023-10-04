@@ -183,18 +183,6 @@ begin
     matroid_of_indep, matroid_of_base, ← ground_eq_E],
 end
 
-lemma matroid_of_module_fun.base (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
-  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) {B : set ι} 
-  (hMB : (matroid_of_module_fun 𝔽 W v ground).base B) : 
-    linear_independent 𝔽 (λ x : B, v x) ∧ span 𝔽 (v '' B) = span 𝔽 (v '' ground) :=
-begin
-  have hMBi := hMB.indep,
-  rw [matroid_of_module_fun, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd, 
-    matroid_of_indep_apply] at hMBi,
-  refine ⟨hMBi.1, _⟩,
-  sorry,
-end
-
 def rep_of_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) : rep 𝔽 W (matroid_of_module_fun 𝔽 W v ground) := 
 { to_fun := λ x, if x ∈ ground then v x else 0,
@@ -218,13 +206,13 @@ def rep_of_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add
       refine ⟨he, rfl⟩,
     end }
 
-lemma equiv_matroid_of_module_fun_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
+/-lemma equiv_matroid_of_module_fun_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
   [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) 
   (ψ : ((matroid_of_module_fun 𝔽 W v ground) ≃i M)): 
   rep 𝔽 W M :=
 begin
   sorry,
-end
+end-/
 
 lemma matroid_of_module_fun_rep_eq (M : matroid_in α) (𝔽 W : Type*) [field 𝔽] [add_comm_group W] 
   [module 𝔽 W] [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) : 
@@ -600,12 +588,8 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       apply φ.ne_zero_of_nonloop,
       /-apply disjoint_of_subset (subset_span) 
         (subset_trans (image_subset _ (diff_subset _ _)) subset_span),-/
-      
-      rw to_fun_eq_coe at h30,
-      rw h10 at h30,
-      apply h30,
-      simp only [← to_fun_eq_coe] at h30,
       sorry,
+      apply h30,
       rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
       refine ⟨φ.inj_on_of_indep ((φ.valid' I _).1 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h)), 
@@ -643,7 +627,6 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         apply disjoint_iff_forall_ne.1 h.1.1 x hx y hy },
       rw [to_fun_eq_coe, union_comm _ _] at h60,
       apply h60,-/
-      sorry,
       sorry,
     end,
   support := sorry }
@@ -1033,13 +1016,6 @@ begin
      to_finset_singleton, finset.sum_singleton],
   rw to_finset_congr (fund_circuit_inter_eq_diff_of_not_mem _ he h),
   apply eq.symm (mem_sum_basis_zmod2_of_not_mem φ hI e he h),
-end
-
-lemma circuit_sum_zero [module (zmod 2) W] (φ : rep (zmod 2) W M) {C : set α} (hI : M.circuit C) :
-  ∑ i in C.to_finset, φ i = 0 :=
-begin
-  obtain ⟨e, he⟩ := hI.nonempty,
-  sorry,
 end
 
 /-lemma circuit_sum [module (zmod 2) W] (φ : rep (zmod 2) W M) {C X : set α} (hI : M.circuit C) 
@@ -2171,6 +2147,8 @@ begin
       sorry,
     have h10 := finite_dimensional.fin_basis (zmod 2) (B →₀ zmod 2),
     rw h11 at h10,
+    haveI : fintype (B →₀ zmod 2),
+      sorry,
     have h9 := @module.card_fintype _ (zmod 2) (B →₀ zmod 2) _ _ _ _ h10 _ _,
     /-have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
       (span (zmod 2) (φ '' (unif 2 4).E))),-/
@@ -2280,7 +2258,7 @@ begin
 end
 
 -- don't need this, just need that circuits are same in both matroids
-lemma eq_iff_indep_iff_minimals_empty {M₁ M₂ : matroid_in α} : 
+/-lemma eq_iff_indep_iff_minimals_empty {M₁ M₂ : matroid_in α} : 
   M₁ = M₂ ↔ (M₁.E = M₂.E) ∧ minimals (⊆) {A | ¬(M₁.indep A ↔ M₂.indep A)} = ∅ :=
 begin
   refine ⟨λ hM12, _, λ hmin, _⟩,
@@ -2293,7 +2271,7 @@ begin
   { rw eq_iff_indep_iff_indep_forall,
     refine ⟨hmin.1, λ I hI, _⟩,
     sorry },
-end
+end-/
 
 lemma rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f) 
   (φ : rep 𝔽 W (M ⟍ f)) : rep 𝔽 W M := 
