@@ -582,8 +582,28 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       rw [linear_independent_image, image_union],
       refine ⟨⟨_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6), h6⟩, _⟩,
       apply @_root_.disjoint.of_image _ _ φ,
-      simp only [to_fun_eq_coe] at h30,
+      rw submodule.disjoint_def at h30,
+      rw disjoint_iff_forall_ne,
+      intros x hxI y hyC, 
+      by_contra h2,
+      rw ← h2 at *,
+      rw to_fun_eq_coe at h30,
       rw h10 at h30,
+      --simp only [set_like.mem_coe] at h31,
+      specialize h30 x (set_like.mem_coe.1 (mem_of_subset_of_mem subset_span hxI))
+        (set_like.mem_coe.1 (mem_of_subset_of_mem 
+        (subset_trans (image_subset _ (diff_subset _ _)) subset_span) hyC)),
+      have h31 := mem_of_subset_of_mem 
+        (image_subset _ (diff_subset _ _)) hyC,
+      
+      obtain ⟨e, ⟨he, rfl⟩⟩ := (mem_image φ I x).1 hxI,
+      apply φ.ne_zero_of_nonloop,
+      /-apply disjoint_of_subset (subset_span) 
+        (subset_trans (image_subset _ (diff_subset _ _)) subset_span),-/
+      
+      rw to_fun_eq_coe at h30,
+      rw h10 at h30,
+      apply h30,
       simp only [← to_fun_eq_coe] at h30,
       sorry,
       rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
@@ -592,6 +612,9 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         ⟨φ.inj_on_of_indep (hJ.indep), λ x hx y hy, set.disjoint_iff_forall_ne.1 
         (linear_independent.union' h7 h8 h30 h6) (φ x) (mem_image_of_mem φ hx) 
         (φ y) (mem_image_of_mem φ hy)⟩⟩,
+     rw contract_ground at hI,
+     apply subset_trans hI (diff_subset _ _),
+      --simp_rw [← mkq_apply _],
       /-simp_rw [← mkq_apply _],
       rw linear_map.linear_independent_iff,
       refine ⟨(φ.valid' I).2 (indep.subset h.1.2 (subset_union_left I J)), _⟩,
@@ -1388,7 +1411,12 @@ def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E)
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
   (h : M = M' ⟋ f) (hf : f ∉ M.E) : M' = series_extend M he hf := sorry
 
--- e can't be coloop
+lemma cocircuit_contr_elem_eq_series_extend (M : matroid_in α) {e f : α} (hM : M.cocircuit {e, f}) 
+  (he : e ∈ (M ⟋ f).E) (hf : f ∉ (M ⟋ f).E) : series_extend (M ⟋ f) he hf = M :=
+begin
+  sorry,
+end
+
 lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.coloop e)
   (hf : f ∉ M.E) : (series_extend M he hf).cocircuit {e, f} := sorry
 
@@ -1652,21 +1680,6 @@ lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf
       end,
   support := _ }-/
 
-/-lemma contract_circuit_iff (I C : set α) (hI : M.indep I) : 
-  (M ⟋ I).circuit C ↔ disjoint C I ∧ M.circuit (C ∪ I) :=
-begin
-  simp_rw [circuit_iff_forall_ssubset],
-  refine ⟨λ hCM', ⟨_, ⟨(hI.contract_dep_iff.1 hCM'.1).2, λ I' hICI', _⟩⟩, λ hCM, _⟩,
-  have h2 := hCM'.1.subset_ground,
-  rw contract_ground at h2, --delete_dep_iff, and_imp], 
-  apply (subset_diff.1 h2).2,
-  have h3 := hCM'.2 (I' \ I) (diff_subset_diff_left),
-  /-rw [and_comm, ←and_assoc, and.congr_left_iff, and_comm, and.congr_right_iff],  
-  refine λ hdj hC, ⟨λ h I hI hIC, h I hI _ hIC, λ h I hI hdj' hIC, h I hI hIC⟩,
-  exact disjoint_of_subset_left hIC hdj, -/
-  sorry,
-end  -/
-
 /-lemma contract_circuit_iff_insert_circuit (e : α) (C : set α) (he : M.nonloop e) : 
   (M ⟋ e).circuit C ↔ e ∉ C ∧ M.circuit (insert e C) :=
 begin
@@ -1729,13 +1742,11 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
       { contrapose,
       intros h2,
       rw linear_dependent_comp_subtype',
-      
       rw not_indep_iff at h2,
       obtain ⟨C, ⟨hCI, hCcct⟩⟩ := exists_circuit_subset_of_dep h2,
       by_cases hxC : x ∈ C, 
       { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
           (series_extend_cocircuit M hx sorry hy)).1 hxC,
-      --obtain ⟨s, ⟨g, ⟨hsum, hne0⟩⟩⟩ := h2,
         have hyindep : (series_extend M hx hy).nonloop y,
           sorry,
         rw [← @union_diff_cancel _ {y} C (singleton_subset_iff.2 hyC), union_comm, 
@@ -1743,46 +1754,41 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         have hMcct := contract_circuit_of_insert_circuit y (C \ {y}) hyindep 
           (not_mem_diff_singleton _ _) hCcct,
         rw ← series_extend_contr_eq at hMcct,
-          /-{ simp only [diff_union_self],
-            apply h2.supset (subset_union_left _ {y}) } },-/
         obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ hMcct,
         rw ← hC at *,
         have h8 : x ≠ y,
           sorry, 
-        --let f := λ e : α, if e = y then - f x else f e,
-        refine ⟨(⟨(insert y f.support), (λ e : α, if e = y then - f x else f e), _⟩ : α →₀ 𝔽), _⟩,
-        intros a,
-        refine ⟨λ ha, _, _⟩,
-        obtain ⟨rfl | ha ⟩ := finset.mem_insert.1 ha,
+        refine ⟨(⟨(insert y f.support), (λ e : α, if e = y then - f x else f e), λ a, 
+          ⟨λ ha, _, _⟩⟩ : α →₀ 𝔽), _⟩,
+        obtain ⟨rfl | ha⟩ := finset.mem_insert.1 ha,
         simp only [eq_self_iff_true, if_true, ne.def, neg_eq_zero],
-        rw ← ne.def, 
-        rw ← finsupp.mem_support_iff,
+        rw [← ne.def, ← finsupp.mem_support_iff],
         have hxCy : x ∈ C \ {y},
           sorry,
         rw ← hC at hxCy,
         apply hxCy, 
+        have h2 : ite (a = y) (-f x) (f a) = f a,
+          rw ite_eq_iff,
+          right,
+          sorry,
         sorry,
         sorry,
         refine ⟨_, _⟩,
         have hfI : ((insert y f.support : finset α) : set α) ⊆ I,
           sorry,
-        --simp only [finsupp.support],
         apply hfI,
         refine ⟨_, _⟩,
         rw finsupp.total_apply at *,
-        --simp,
         simp only [← ite_apply],
         simp_rw finset.insert_eq y f.support,
         dsimp [finsupp.sum],
         dsimp [finsupp.sum] at hftot,
-        rw finset.sum_union,
-        rw [← @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _],
-        rw [finset.sum_union],
+        rw [finset.sum_union, ← @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _, 
+          finset.sum_union],
         simp only [finset.sum_singleton, eq_self_iff_true, if_true, neg_smul, pi.add_apply, 
-          prod.mk_add_mk, add_zero, zero_add, prod.smul_mk, algebra.id.smul_eq_mul, mul_one],
-        simp only [ite_apply],
-        simp,
-        simp only [iff_false_intro h8, iff_false_intro h8.symm, if_false],
+          prod.mk_add_mk, add_zero, zero_add, prod.smul_mk, algebra.id.smul_eq_mul, mul_one,
+          ite_apply, pi.add_apply, prod.mk_add_mk, add_zero, zero_add, eq_self_iff_true, 
+          if_true, iff_false_intro h8, iff_false_intro h8.symm, if_false],
         have h9 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = y),
           sorry,
         simp_rw ite_smul,
@@ -1790,27 +1796,20 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         simp_rw smul_ite,
         have h10 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = x),
           sorry,
-        rw finset.sum_ite_of_false _ _ h10,
-        /-have h11 : ∀ (e : α), e ∈ (f.support \ {x}) → ¬ (e = y),
-          sorry, -/
-        rw finset.sum_ite_of_false _ _ h9,
+        rw [finset.sum_ite_of_false _ _ h10, finset.sum_ite_of_false _ _ h9],
         simp only [prod.smul_mk, smul_zero, algebra.id.smul_eq_mul, mul_one, prod.neg_mk, neg_zero, 
           mul_zero],
         rw [add_comm ((0 : W), -f x) _, add_assoc],
         simp only [prod.mk_add_mk, add_zero, add_right_neg],
         have h11 : (λ e : α, (f e • φ e, (0 : 𝔽))) x = (f x • φ x, (0 : 𝔽)),
           sorry,
-        rw ← h11,
-        rw ← @finset.sum_singleton _ _ x (λ e : α, (f e • φ e, (0 : 𝔽))), 
+        rw [← h11, ← @finset.sum_singleton _ _ x (λ e : α, (f e • φ e, (0 : 𝔽)))], 
         simp_rw h11,
-        rw ← finset.sum_union,
-        rw [@finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _],
-        --rw finset.sum_product,
+        rw [← finset.sum_union, @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _],
         have h30 : ∑ (x : α) in f.support, (f x • φ x, (0 : 𝔽)) = 
           (∑ (x : α) in f.support, f x • φ x, (0 : 𝔽)),
           sorry,
-        rw h30,
-        rw prod.mk_eq_zero,
+        rw [h30, prod.mk_eq_zero],
         refine ⟨hftot, rfl⟩,
         rw [finset.singleton_subset_iff, ← finset.mem_coe, hC, mem_diff_singleton],
         refine ⟨hxC, h8⟩,
@@ -1828,237 +1827,30 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         ext,
         rw ← h,
         simp,
-        sorry,
-        --by_cases a = y,
-         },
-      { have h4 := (@indep.of_contract _ _ {y} _).mt (not_indep_iff.2 hCcct.dep),
+        sorry },
+      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (series_extend_cocircuit M hx sorry hy)).2.mt hxC,
+        have h4 := (@indep.of_contract _ _ {y} _).mt (not_indep_iff.2 hCcct.dep),
         rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
           linear_dependent_comp_subtype'] at h4, 
         obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := h4,
         refine ⟨f, ⟨subset_trans hC hCI, ⟨_, hfne0⟩⟩⟩,
-        --apply subset_trans hC hCI,
-        
-        sorry },
-        --have h2 := finsupp.mem_support_iff,
-
-        /-refine ⟨f, ⟨subset.trans hCI (diff_subset _ _), ⟨_, hfne0⟩⟩⟩,
-        by_cases hxf : x ∈ f.support,
-        { sorry },
-        { simp,
-          sorry },-/
-      { have h3 : ¬ (series_extend M hx hy).indep (I ∪ {y}),
+        rw finsupp.total_apply at *,
+        dsimp [finsupp.sum],
+        dsimp [finsupp.sum] at hftot,
+        have h9 : ∀ (e : α), e ∈ f.support → ¬ (e = y),
           sorry,
-        rw not_indep_iff at h3,
-        have h4 := (hyindep.contract_dep_iff.2 ⟨disjoint_singleton_right.2 hyI, h3⟩),
-        rw [← contract_elem, ← series_extend_contr_eq, ← not_indep_iff, ← φ.valid, 
-            not_linear_independent_iff] at h4,
-        obtain ⟨s, ⟨g, ⟨hsum, hne0⟩⟩⟩ := h4,
-        refine ⟨s, ⟨g, ⟨_, hne0⟩⟩⟩,
-        by_cases hxI : x ∈ I,
-        have hxs : (⟨x, hxI⟩ : I) ∉ s,
+        have h10 : ∀ (e : α), e ∈ f.support → ¬ (e = x),
           sorry,
-        sorry, sorry, sorry } },
-      --rw indep.union_indep_iff_contract_indep,
-      contrapose,
-      intros h2,
-      rw not_linear_independent_iff at h2,
-      obtain ⟨s, ⟨g, ⟨hsum, hne0⟩⟩⟩ := h2,
-      have hyindep : (series_extend M hx hy).indep {y},
+        simp_rw smul_ite,
+        rw [finset.sum_ite_of_false _ _ h10, finset.sum_ite_of_false _ _ h9],
+        simp only [prod.smul_mk, algebra.id.smul_eq_mul, mul_zero],
         sorry,
-      by_cases hyI : y ∈ I,
-      { rw [not_indep_iff, ← @union_diff_cancel _ {y} I (singleton_subset_iff.2 hyI), union_comm],
-        apply (hyindep.contract_dep_iff.1 _).2,
-        rw [← contract_elem, ← series_extend_contr_eq, ← not_indep_iff, ← φ.valid, 
-            not_linear_independent_iff],
-        by_cases hxI : x ∈ I,
-        simp only [mem_singleton_iff, linear_map.coe_inl, linear_map.coe_inr, pi.add_apply, 
-          comp_app, prod.mk_add_mk, add_zero, zero_add] at hsum,
-        { 
-          sorry },
-        { sorry },
-        sorry, 
-        sorry }, 
-    end,
-  support := _ }
-
-/-lemma rep_cocircuit_doubleton' (x y : α) (hxy : x ≠ y) [module 𝔽 W] 
-  (φ : rep 𝔽 W (M ⟍ y)) (hx : M.cocircuit {x, y}) : 
-  rep 𝔽 (W × 𝔽) M := 
-{ to_fun := λ (e : α), 
-    if e ∈ ({x} : set α)
-    then 
-      linear_map.inl 𝔽 W 𝔽 (φ e) + linear_map.inr 𝔽 W 𝔽 1
-    else 
-      if e ∈ ({y} : set α) then linear_map.inr 𝔽 W 𝔽 1 else linear_map.inl 𝔽 W 𝔽 (φ e),
-  valid' := λ I hI, 
-    begin
-      by_cases hyI : y ∈ I,
-      { by_cases hxI : x ∈ I,
-        { 
-          sorry },
-        { sorry } },
-      { by_cases hxI : x ∈ I,
-        { 
-          sorry },
-        { have h6 : ((λ (e : α), ite (e ∈ ({x} : set α)) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
-          (ite (e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))) ∘ coe) = 
-          (λ (e : I), ite ((e : α) ∈ ({x} : set α)) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
-          (ite ((e : α) ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e)))),
-            simp only [eq_self_iff_true],
-          have h7 : ∀ (e : I), ite (↑e ∈ ({x} : set α)) 
-          ((linear_map.inl 𝔽 W 𝔽) (φ e) + (linear_map.inr 𝔽 W 𝔽) 1) 
-          (ite (↑e ∈ ({y} : set α)) ((linear_map.inr 𝔽 W 𝔽) 1) ((linear_map.inl 𝔽 W 𝔽) (φ e))) 
-          = ((linear_map.inl 𝔽 W 𝔽) (φ e)),
-          { intros e,
-            rw ite_eq_iff,
-            right,
-            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hxI), _⟩,
-            apply ite_eq_iff.2,
-            apply or.intro_right,
-            refine ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem e.2 hyI), rfl⟩ },
-          rw h6,
-          simp_rw [λ (e : I), h7 e],
-          rw [@_root_.linear_map.linear_independent_iff _ _ _ _ _ _ _ _ _ _ (linear_map.inl 𝔽 W 𝔽) 
-            (linear_map.ker_eq_bot_of_injective linear_map.inl_injective), φ.valid, delete_elem],
-          refine ⟨λ h2, h2.of_delete, λ h2, h2.indep_delete_of_disjoint 
-            (disjoint_singleton_right.2 hyI)⟩,
-          rw [delete_elem, delete_ground],
-          apply subset_diff_singleton hI hyI } },
-    end,
-  support := _ }
- 
--- i think this works for any field but i want to do it for zmod 2 for now
-lemma rep_cocircuit_doubleton (x y : α) (hxy : x ≠ y) (B : set α) [module (zmod 2) W] 
-  (φ : rep (zmod 2) W (M ⟍ y)) (hx : M.cocircuit {x, y}) (hB : (M ⟍ y).base B) : 
-  rep (zmod 2) W M := 
-{ to_fun := λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, φ i,
-  valid' := λ I hI, 
-    begin
-      have h8 : linear_independent (zmod 2) ((λ (e : α), ∑ (i : α) in 
-        (M.fund_circuit e B ∩ B).to_finset, φ i) ∘ coe) = 
-        linear_independent (zmod 2) (λ (e : I), 
-          ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i),
-          { simp only },
-      rw h8,
-      by_cases y ∈ I, 
-      { refine ⟨λ h2, _, λ h2, _⟩,
-        { by_contra h3,
-          rw ← @not_not (linear_independent (zmod 2) (λ (e : I), ∑ (i : α) in 
-            (M.fund_circuit e B ∩ B).to_finset, φ i)) at h2,
-          apply h2,
-          by_cases hIy : (M ⟍ y).indep (I \ {y}), 
-          { rw delete_elem at hIy,
-            have h6 := (hIy.of_delete).mem_cl_iff_of_not_mem (not_mem_diff_singleton _ _),
-            rw [insert_diff_singleton, insert_eq_of_mem h] at h6,
-            rw [not_indep_iff, ← h6] at h3, 
-            rw ← delete_elem at hIy, 
-            by_cases M.fund_circuit y B = M.fund_circuit y (I \ {y}),
-            { sorry },
-            have hyB : y ∈ (M.cl B) \ B,
-              { sorry },
-              have hyI : y ∈ (M.cl (I \ {y})) \ (I \ {y}),
-              { sorry },
-              have hCB := hB.indep.of_delete.fund_circuit_circuit hyB,
-              have hCY := hIy.of_delete.fund_circuit_circuit hyI,
-              obtain ⟨C, ⟨hCs, hMC⟩⟩ := circuit.elimination hCB hCY h x, 
-              apply fintype.not_linear_independent_iff.2,
-              use (λ (e : I), if (e.1 ∈ C) then (1 : zmod 2) else (0 : zmod 2)),
-              refine ⟨_, _⟩,
-              sorry, -- fintype I, whatever
-              have hss : ∑ (i : I), ite (i.val ∈ C) 1 0 • ∑ (i : α) in 
-                (M.fund_circuit i B ∩ B).to_finset, φ i = 
-                ∑ (e : C), ∑ (i : α) in 
-                (M.fund_circuit e B ∩ B).to_finset, φ i,
-              simp,
-            /- have hs : ∑ (i : α) in (M.fund_circuit y B ∩ B).to_finset, φ i = 
-              ∑ (i : α) in (M.fund_circuit y (I \ {y}) ∩ (I \ {y})).to_finset, φ i,
-            by_cases M.fund_circuit y B = M.fund_circuit y (I \ {y}),
-            { rw h,
-              sorry },
-            { have hyB : y ∈ (M.cl B) \ B,
-              { sorry },
-              have hyI : y ∈ (M.cl (I \ {y})) \ (I \ {y}),
-              { sorry },
-              have hCB := hB.indep.of_delete.fund_circuit_circuit hyB,
-              have hCY := hIy.of_delete.fund_circuit_circuit hyI,
-              have hC := circuit.elimination hCB hCY h y, 
-              apply fintype.not_linear_independent_iff.2,
-              --have hs := set.symm_diff_def,
-              sorry },-/
-            sorry,
-            sorry,
-            sorry },
-          { rw ← (std_rep φ hB).valid at hIy,
-            --apply hIy,
-           -- have h3 := linear_independent.image h2,
-            sorry,
-            rw [delete_elem, delete_ground],
-            apply diff_subset_diff_left hI } },
-        { sorry } },
-      { have h9 : ∀ (e : I), 
-          ∑ (i : α) in (M.fund_circuit e B ∩ B).to_finset, φ i = φ e,
-          { intros e,
-            rw φ.mem_sum_basis_zmod2 hB.indep e (hB.mem_cl e _),
-            simp_rw delete_elem,
-            have h7 : y ∉ B,
-              rw [delete_elem] at hB,
-              have h11 := hB.subset_ground,
-              rw [delete_ground, subset_diff, disjoint_singleton_right] at h11,
-              apply h11.2,
-            rw fund_circuit_delete (hB.indep).of_delete,
-            { rw ← diff_singleton_eq_self h7,
-              apply ((@mem_diff_singleton _ e.1 y _).1 _).1,
-              rw [← delete_cl_eq, ← delete_elem], 
-              apply hB.mem_cl _ _,
-              simp only [delete_elem, delete_ground, mem_diff, mem_singleton_iff, auto_param_eq],
-              refine ⟨hI e.2, has_mem.mem.ne_of_not_mem e.2 h⟩ },
-            { apply disjoint_singleton_right.2 (mem_insert_iff.1.mt (not_or 
-              (ne.symm (has_mem.mem.ne_of_not_mem e.2 h)) h7)) },
-            simp only [delete_elem, delete_ground, mem_diff, mem_singleton_iff, auto_param_eq],
-            refine ⟨hI e.2, has_mem.mem.ne_of_not_mem e.2 h⟩ },
-        simp_rw [λ (e : I), h9 e],
-        rw φ.valid,
-        simp only [delete_elem, delete_indep_iff, disjoint_singleton_right, and_iff_left_iff_imp],
-        intros,
-        apply h,
-        { rw [delete_elem, delete_ground],
-          apply subset_diff_singleton hI h } },
-    end,
-  support := _ }-/
-
-lemma coindep_singleton_excluded_minor (M : matroid_in α) 
-(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hx : {x} ⊆ M.E) 
-  : M.coindep {x} :=
-begin
-  by_contra,
-  rw coindep_iff_forall_subset_not_cocircuit at h,
-  push_neg at h,
-  obtain ⟨K, hK1, hK2⟩ := h,
-  have h2 := (dual_circuit_iff_cocircuit.2 hK2).nonempty,
-  rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
-  --have h3 := hM.delete_mem h2,
-  obtain ⟨W, _⟩ := hM.delete_mem h2,
-  casesI h with hW ha,
-  casesI ha with hFW hb,
-  casesI hb with φ,
-  obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
-  obtain hK0 | rfl := subset_singleton_iff_eq.1 hK1,
-  { apply (nonempty_iff_ne_empty.1 (dual_circuit_iff_cocircuit.2 hK2).nonempty) hK0 },
-  have h4 : rep 𝔽 (W × 𝔽) M,
-  use λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
-  { intros I hI,
-    by_cases x ∈ I, 
-    { refine ⟨λ h, _, λ h, _⟩,
-      { sorry },  
-      { --have h4 := linear_independent.inl_union_inr,
+        
         sorry } },
-    { 
-      sorry } },
-  { sorry },
-  { sorry },
-end
+      { sorry }, 
+    end,
+  support := _ }
 
 lemma coindep_excluded_minor (M : matroid_in α) 
 (hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hxy : x ≠ y) 
@@ -2074,6 +1866,7 @@ begin
   obtain ⟨a, ⟨ha1, ha2⟩⟩ := ssubset_iff_subset_diff_singleton.1 hKs,
   obtain ⟨rfl | h2⟩ := (mem_insert_iff.1 ha1),
   -- duplicate code
+  -- use add_coloop_rep,
   { simp only [insert_diff_of_mem, mem_singleton, diff_singleton_eq_self 
       (mem_singleton_iff.1.mt hxy), subset_singleton_iff_eq] at ha2,
     cases ha2 with hempty hs,
@@ -2084,7 +1877,17 @@ begin
     casesI h3 with hW ha,
     casesI ha with hFW hb,
     casesI hb with φ,
-    obtain ⟨B, hB⟩ := (M ⟍ ({y} : set α)).exists_base,
+    have hyMy : y ∉ (M ⟋ y).E,
+      rw [contract_elem, contract_ground],
+      apply not_mem_diff_of_mem (mem_singleton _),
+    have φM := add_coloop_rep φ hyMy,
+    simp only [excluded_minor, mem_minimals_prop_iff] at hM,
+    apply hM.1,
+    --refine ⟨(W × 𝔽 : Type*), _⟩,
+    sorry,
+    --use W × 𝔽,
+    --obtain ⟨W, hW⟩ := φM,
+    /-obtain ⟨B, hB⟩ := (M ⟍ ({y} : set α)).exists_base,
     rw ← delete_elem at *, 
     have hmem := (mem_diff x).2 ⟨(mem_of_subset_of_mem hx ha1), mem_singleton_iff.1.mt hxy⟩,
     rw [← @ground_inter_left _ (M.E \ {y}) _ (diff_subset _ _)] at hmem,
@@ -2097,7 +1900,7 @@ begin
     have φM := rep_cocircuit_singleton y B φ φy hK2 hB,
     simp only [excluded_minor, mem_minimals_prop_iff] at hM,
     apply hM.1,
-    refine ⟨W × W', ⟨by {apply_instance}, ⟨_, ⟨φM⟩⟩⟩⟩ },
+    refine ⟨W × W', ⟨by {apply_instance}, ⟨_, ⟨φM⟩⟩⟩⟩-/ },
   { rw mem_singleton_iff.1 h at *,
     rw [← union_singleton, union_comm, union_singleton] at *,
     simp only [insert_diff_of_mem, mem_singleton, diff_singleton_eq_self 
@@ -2126,13 +1929,31 @@ begin
     apply hM.1,
     refine ⟨W × W', ⟨by {apply_instance}, ⟨_, ⟨φM⟩⟩⟩⟩ },
   have hyy : ({y} ∩ M.E).nonempty,
-  rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
-  --have h3 := hM.delete_mem h2,
-  obtain ⟨W, _⟩ := hM.delete_mem h2,
-  casesI h with hW ha,
+    sorry,
+  --rw [ground_inter_left _] at hyy,
+  have h3 := hM.contract_mem hyy,
+  rw hKeq at *,
+  obtain ⟨W, _⟩ := h3,
+  casesI h3_h with hW ha,
   casesI ha with hFW hb,
   casesI hb with φ,
-  obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
+  rw ← M.contract_elem y at φ, 
+  have hxMy : x ∈ (M ⟋ y).E,
+    rw [contract_elem, contract_ground],
+    apply (mem_diff x).2,
+    refine ⟨_, mem_singleton_iff.1.mt hxy⟩,
+    apply mem_of_subset_of_mem hx,
+    simp only [mem_insert_iff, eq_self_iff_true, true_or],
+  have hyMy : y ∉ (M ⟋ y).E,
+    rw [contract_elem, contract_ground],
+    apply not_mem_diff_of_mem (mem_singleton _),
+ --have hf := series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy,
+  simp only [excluded_minor, mem_minimals_prop_iff] at hM,
+  apply hM.1,
+  rw series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy,
+  obtain φM := series_extend_rep φ hxMy hyMy,
+  refine ⟨W × 𝔽, ⟨by {apply_instance}, ⟨_, ⟨φM⟩⟩⟩⟩,
+  --obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
   --have hrep := rep_cocircuit_doubleton x y hxy,
   /-
   have f := λ a : α, if a = x then (⟨0, 1⟩ : W × 𝔽) else ⟨φ a, 0⟩,
@@ -2610,6 +2431,10 @@ def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep �
 lemma rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : 
   (φ : α → W) = (rep_of_congr φ h) := rfl
 
+lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') {B : set α} 
+  (hMB : M.base B) (hMB' : M'.base B) : 
+  ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
@@ -2652,16 +2477,13 @@ begin
     rw matroid_of_module_fun.ground,
   have hMM'x := delete_elem_eq_of_binary hBxy hBx hB φ φx,
   have hByx := hBxy,
-  have φyx := φ,
+  have hxyyx : M ⟍ {x, y} = M ⟍ {y, x},
+    rw [← union_singleton, union_comm, union_singleton],
   rw [← union_singleton, union_comm, union_singleton] at hByx,
-  rw [← union_singleton, union_comm, union_singleton] at φyx,
-  have hMM'y := delete_elem_eq_of_binary hByx hBy hB φyx φy,
-  have hφ : ∀ (a : α), (φyx.std_rep hByx) a = (φ.std_rep hBxy) a,
+  have hMM'y := delete_elem_eq_of_binary hByx hBy hB (rep_of_congr φ hxyyx) φy,
+  have hφ : ∀ (a : α), ((rep_of_congr φ hxyyx).std_rep hByx) a = (φ.std_rep hBxy) a,
   { intros a,
-    -- use rep_eq_of_congr
-    /-rw [← union_singleton, union_comm, union_singleton] at *,
-    rw [← union_singleton, union_comm, union_singleton] at φyx,-/
-    sorry },
+    rw φ.std_rep_eq_of_congr hxyyx },
   simp_rw [λ (a : α), hφ a] at hMM'y,
   have hB' : (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).base B,
@@ -2681,22 +2503,16 @@ begin
       rw [excluded_minor, mem_minimals_prop_iff] at hM,
       apply hM.1,
       rw [h, mem_def, matroid_in.is_binary, is_representable],
-      -- changed (α : Type *) to (α : Type) to make this work
       refine ⟨B →₀ zmod 2, ⟨_, ⟨_, ⟨(rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
         (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E)⟩⟩⟩⟩ },
-    simp at hMM',
+    rw ne.def at hMM',
     rw [eq_iff_indep_iff_indep_forall, matroid_of_module_fun.ground] at hMM', 
     simp only [eq_self_iff_true, true_and, not_forall, exists_prop] at hMM',
-
-    have hZ : ∃ (Z : set α), Z ∈ minimals (⊆) {A | ¬(M.indep A ↔ 
-      (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).indep A) },  
-    { -- has to exist since the matroids aren't equal
-      sorry },
-    obtain ⟨Z, hZ⟩ := hZ,
-    simp_rw [iff_def, not_and_distrib, not_imp] at hZ,
-    rw mem_minimals_prop_iff at hZ,
-    cases hZ.1 with hMZ hM'Z,
+    obtain ⟨Z, ⟨hZM, hZ⟩⟩ := hMM',
+    rw iff_def at hZ,
+    rw not_and_distrib at hZ,
+    push_neg at hZ,
+    cases hZ with hMZ hM'Z,
     { have hJZ : ∀ (J : set α), M.indep J → Z ⊆ J → J = {x, y}, 
       { intros J hMJ hZJ,
         -- duplicate code
@@ -2733,15 +2549,26 @@ begin
         apply h (indep_eq_doubleton_of_subset M (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
           (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) hMM'r hMM'E 
           x y hxy1 (by { left, apply h2 }) hMM'x hMM'y hZx hZy hMZ.1 hMZ.2 hZJ hMJ φN φN') },
+        have hnxy : ({x, y} : set α).ncard = 2,
+        { rw ncard_eq_to_finset_card,
+          simp only [finite.to_finset_insert, finite.to_finset_singleton],
+          apply finset.card_insert_of_not_mem (finset.not_mem_singleton.2 hxy1) },
         { obtain ⟨BZ, hBZ⟩ := hMZ.1,
           specialize hJZ BZ hBZ.1.indep hBZ.2,
+          rw hJZ at *,
           have hsimp := excluded_minor_simple M hM,
           have hcard : 2 ≤ M.E.ncard,
-            sorry, 
-          have hunif := (iso_line_iff hcard).2 ⟨hsimp, _⟩,
+            rw ← hnxy,
+            apply ncard_le_of_subset hxy2, 
+          obtain ⟨ψ⟩ := (iso_line_iff hcard).2 ⟨hsimp, _⟩,
           have hcard4 : 4 ≤ M.E.ncard,
             sorry, 
-          sorry } },
+          -- need unif_iso_minor lemma to finish this
+          have hψ := ψ.symm.trans_iso_minor (minor.refl.iso_minor),
+          sorry,
+          rw [← hBZ.1.card, hnxy],
+          refine ⟨rfl, ⟨_, rfl⟩⟩,
+          sorry }, },
       { sorry },
 end
 
