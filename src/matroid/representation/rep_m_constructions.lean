@@ -162,12 +162,8 @@ begin
     (@rep_of_contr _ 𝔽 W _ hM_h_w hM_h_h_w _ M φ C hC.subset_ground) D⟩⟩⟩⟩,
 end-/
 
-end rep
-
 variables [fintype α]
 
-
-namespace rep
 
 open_locale big_operators
 
@@ -756,16 +752,6 @@ def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y)
     end,
   support := sorry }
 
-/-lemma unif_restr {a b : ℕ} (M : matroid_in α) {k : ℕ} (hcard : M.E.ncard = k) (hs : M.simple) 
-  (hr : M.rk = 2) : (unif 2 k) ≃i M :=
-begin
-  rw unif,
-  apply iso_of_bij_on,
-  sorry,
-  sorry,
-  sorry,
-end-/
-
 -- write congr lemma
 def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep 𝔽 W M' := 
 { to_fun := φ.to_fun,
@@ -845,54 +831,6 @@ def rep_singleton (𝔽 : Type*) [field 𝔽] (M : matroid_in α) {x : α} (hMx 
       rw [hMx, mem_singleton_iff] at he,
       refine ⟨(or.intro_right (¬ M.nonloop x)) he, rfl⟩,
     end }
-
--- need the one-dimensional subspaces lemma for this
-/--lemma card_of_unif_rep (k : ℕ) (hk : 1 < k) (h2 : is_representable 𝔽 (unif 2 k)) [fintype 𝔽]: 
-  k - 1 ≤ nat.card (@univ 𝔽) :=
-begin
-  rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
-  have φ'' := @rep.rep_submodule _ _ _ _ _ _ hW hM φ',
-  rw rep.to_submodule at φ'',
-  cases foo' φ'' with φ,
-  rw [unif_on_rk] at φ,
-  { have hs : (unif 2 k).simple,
-    rw [← fintype.card_fin k, ← nat.card_eq_fintype_card] at hk,
-    apply (@unif_on_simple_iff (fin k) hk 2).2,
-    simp only [nat.one_lt_bit0_iff, le_refl, forall_true_left],
-    have h8 := card_le_of_subset (φ.subset_nonzero_of_simple hs),
-    have h9 := module.card_fintype (finite_dimensional.fin_basis 𝔽
-      (span 𝔽 (φ '' M.E))),
-    rw [rep.of_rank, unif_on_rk] at h9,
-    { simp_rw [← to_finset_card, to_finset_diff] at h8,
-      rw finset.card_sdiff at h8,
-    { simp only [set.to_finset_card, set_like.coe_sort_coe, card_singleton] at h8,
-      simp only [fintype.card_of_finset, zmod.card, fintype.card_fin] at h9,
-      rw h9 at h8,
-      simp_rw card_range_of_injective (φ.injective_of_simple hs) at *,
-      simp only [fintype.card_fin, ← nat.card_eq_fintype_card] at h8,
-      by_contra hle,
-      push_neg at hle,
-      have hsubs : ∀ (x y : (fin k)), φ y ∈ (𝔽 ∙ φ x) → x = y, 
-      intros x y hxy,
-      sorry },
-    { simp only [set.to_finset_subset, coe_to_finset, singleton_subset_iff,
-        set_like.mem_coe, zero_mem] } },
-    simp only [nat.card_eq_fintype_card, fintype.card_fin],
-    apply hk, },
-  simp only [nat.card_eq_fintype_card, fintype.card_fin],
-  apply hk,
-end-/
-
-lemma vandermonde_rep [fintype 𝔽] (a n : ℕ) (hn : n ≤ nat.card 𝔽) : 
-  is_representable 𝔽 (unif (a + 1) n) := 
-begin
-  -- Choose a matrix with rows (`fin a`) and columns of the form (x^0, x^1, ... x_i^{a-1}) for 
-  -- distinct `x ∈ 𝔽`, and one extra column `(0,0,...,1)`. This is (pretty much) a Vandermonde 
-  -- matrix, so all its a × a subdeterminants are nonsingular - see
-  -- https://leanprover-community.github.io/mathlib_docs/linear_algebra/vandermonde.html#matrix.vandermonde. 
-  -- it follows that the matroid it represents is uniform. 
-  sorry,
-end 
 
 end rep
 
