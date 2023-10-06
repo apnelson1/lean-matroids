@@ -1,5 +1,5 @@
 import analysis.inner_product_space.gram_schmidt_ortho
-import data.zmod.basic
+import data.zmod.basic data.finsupp.fintype
 import linear_algebra.basis
 import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
@@ -612,12 +612,12 @@ begin
       apply hxy (mem_singleton_iff.2 (f.injective (subtype.coe_inj.1 (h)))) },
 end
 
+lemma U24_simple : (unif 2 4).simple := sorry
+
 -- this doesn't have sorry's but it relied on the unif_simple_iff lemma which isn't
 -- available right now
 lemma U24_nonbinary : ¬ matroid_in.is_binary (unif 2 4) :=
 begin
-  have U24_simple : (unif 2 4).simple,
-    sorry,
   by_contra h2,
   rw [matroid_in.is_binary, is_representable] at h2,
   rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
@@ -625,12 +625,14 @@ begin
   obtain ⟨B, hB⟩ := (unif 2 4).exists_base,
   have φ := φ'.std_rep hB,
   have φ2 := φ.rep_submodule,
-  /-cases foo φ with φ,
-  rw [rk_def, unif_r_eq] at φ,-/
   { have h8 := ((φ'.std_rep hB).subset_nonzero_of_simple U24_simple),
+    have h50 := @span_mono (zmod 2) _ _ _ _ _ _ (subset_univ ((φ'.std_rep hB) '' (unif 2 4).E)),
+    rw ← span_span at h50,
+    have h70 := subset_trans h8 (@diff_subset_diff_left _ _ _ 
+      ({0} : set (B →₀ zmod 2)) (span_le.1 h50)),
     -- need basis
     have h11 := ((valid'' (φ'.std_rep hB) hB.subset_ground).2 hB.indep),
-    have h11 : (finrank (zmod 2) (B →₀ zmod 2)) = 2,
+    have h20 : (finrank (zmod 2) (B →₀ zmod 2)) = 2,
       simp only [finrank_finsupp, fintype.card_of_finset, finset.filter_congr_decidable],
       rw unif_base_iff at hB,
       rw filter_mem_univ_eq_to_finset,
@@ -638,48 +640,23 @@ begin
       rw [ncard_def, nat.card_eq_fintype_card, to_finset_card],
       simp only [bit0_le_bit0, nat.one_le_bit0_iff, nat.lt_one_iff],
     have h10 := finite_dimensional.fin_basis (zmod 2) (B →₀ zmod 2),
-    rw h11 at h10,
+    rw h20 at h10,
     haveI : fintype (B →₀ zmod 2),
-      sorry,
+      apply finsupp.fintype,
     have h9 := @module.card_fintype _ (zmod 2) (B →₀ zmod 2) _ _ _ _ h10 _ _,
-    simp at h9,
-    /-have h9 := module.card_fintype (finite_dimensional.fin_basis (zmod 2)
-      (span (zmod 2) (φ '' (unif 2 4).E))),-/
-    --rw [rep.of_rank, rk_def, unif_r_eq] at h9,
-    { -- there's probably a cleaner way to talk about the card of diff than going
-      -- between fintype and finset cards
-      have h12 := fintype.card_le_of_embedding (embedding_of_subset _ _ h8),
-      /-have h14 := subset_trans (diff_subset _ _) _,
-      have h13 := embedding_of_subset _ _ h8,
-      simp_rw [← to_finset_card, to_finset_diff] at h12,
-      rw finset.card_sdiff at h12,
-      have h18 : (span (zmod 2) ((φ'.std_rep hB) '' (unif 2 4).E)) ≤ 
-        (⊤ : submodule (zmod 2) (B →₀ zmod 2)),
-        simp only [le_top],
-      rw span_le at h18,
-      have h11 : fintype.card ((φ'.std_rep hB) '' (unif 2 4).E) = fintype.card (fin 4),
-        --rw card_range_of_injective ((φ'.std_rep hB).inj_on_ground_of_simple U24_simple),
-        sorry,-/
-      /-have h15 := subset_univ 
-        ((span (zmod 2) ((φ'.std_rep hB) '' (unif 2 4).E)).set_like : (set B →₀ zmod 2)),-/
-      /-have h16 := fintype.card_le_of_embedding (embedding_of_subset _ _ h15),
-      have h17 := nat.sub_le_sub_right h16 1,
-      { simp only [set.to_finset_card, set_like.coe_sort_coe, card_singleton] at h12,
-        
-        simp only [fintype.card_of_finset] at h9,
-        rw h9 at h8,
-        have h11 : fintype.card (φ '' (unif 2 4).E) = fintype.card (fin 4),
-        rw card_range_of_injective (φ.injective_of_simple U24_simple),
-        -- linarith doesn't see the contradiction unless I simplify the inequality
-        simp only [h11, fintype.card_fin, pow_two, two_mul, nat.succ_add_sub_one] at h8,
-        linarith },
-      -- this comes from finset.card_sdiff, will make nicer later
-      simp only [set.to_finset_subset, coe_to_finset, singleton_subset_iff,
-        set_like.mem_coe, zero_mem] },
-    -- this part comes from unif_rk needing 2 ≤ 4, will make nicer later
-    simp only [nat.card_eq_fintype_card, fintype.card_fin, bit0_le_bit0,
-      nat.one_le_bit0_iff, nat.lt_one_iff]},-/
-    sorry } },
+    simp only [zmod.card, fintype.card_fin] at h9,
+    have h12 := fintype.card_le_of_embedding (embedding_of_subset _ _ h70),
+    simp_rw [← to_finset_card, to_finset_diff] at h12,
+    rw [finset.card_sdiff, span_univ, top_coe, to_finset_univ, finset.card_univ, h9,
+      to_finset_card, to_finset_singleton, finset.card_singleton] at h12,
+    have h80 : fintype.card ((φ'.std_rep hB) '' (unif 2 4).E) = fintype.card (fin 4),
+    { rw card_image_of_inj_on ((φ'.std_rep hB).inj_on_ground_of_simple U24_simple),
+      simp only [unif_ground_eq, ← to_finset_card, to_finset_univ, finset.card_univ] },
+    rw [h80, fintype.card_fin] at h12,
+    rw [pow_two, two_mul, nat.succ_add_sub_one] at h12,
+    linarith,
+    simp only [span_univ, top_coe, to_finset_univ, to_finset_subset, 
+      finset.coe_univ, singleton_subset_iff], },
 end
 
 def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f) 

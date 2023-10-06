@@ -206,14 +206,6 @@ def rep_of_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add
       refine ⟨he, rfl⟩,
     end }
 
-/-lemma equiv_matroid_of_module_fun_iff_rep (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] 
-  [module 𝔽 W] [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (M : matroid_in ι) 
-  (ψ : ((matroid_of_module_fun 𝔽 W v ground) ≃i M)): 
-  rep 𝔽 W M :=
-begin
-  sorry,
-end-/
-
 lemma matroid_of_module_fun_rep_eq (M : matroid_in α) (𝔽 W : Type*) [field 𝔽] [add_comm_group W] 
   [module 𝔽 W] [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) : 
   M = matroid_of_module_fun 𝔽 W φ M.E :=
