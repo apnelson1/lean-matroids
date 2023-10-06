@@ -2273,7 +2273,7 @@ begin
     sorry },
 end-/
 
-lemma rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f) 
+def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f) 
   (φ : rep 𝔽 W (M ⟍ f)) : rep 𝔽 W M := 
 { to_fun := φ,
   valid' := λ I hI, 
@@ -2315,14 +2315,30 @@ lemma rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
       apply he
     end } 
 
-lemma rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y) 
+def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y) 
   (hf : M.circuit {x, y}) (φ : rep 𝔽 W (M ⟍ ({y} : set α))) : rep 𝔽 W M := 
 { to_fun := λ (e : α), if e = y then φ x else φ e,
   valid' := λ I hI, 
     begin
       by_cases y ∈ I,
-      { sorry },
-      { sorry },
+      { rw ← not_iff_not,
+        refine ⟨λ h2, _, λ h2, _⟩,
+        rw not_indep_iff,
+        rw dep_iff_supset_circuit,
+        sorry,
+        sorry },
+      { have h8 : ((λ (e : α), ite (e = y) (φ x) (φ e)) ∘ (coe : I → α)) = 
+        ((λ (e : α), (φ e)) ∘ coe),
+          sorry,
+        rw h8,
+        refine ⟨λ h2, _, λ h2, _⟩,
+        apply indep.of_delete (φ.valid.1 h2),
+        rw delete_ground,
+        apply subset_diff_singleton hI h,
+        rw [φ.valid, delete_indep_iff],
+        refine ⟨h2, disjoint_singleton_right.2 h⟩,
+        rw delete_ground,
+        apply subset_diff_singleton hI h, },
     end,
   support := _ }
 
@@ -2363,29 +2379,43 @@ end
 lemma excluded_minor_simple (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : simple M :=
 begin
-  intros e he f hf,
+  intros e he f hf, 
   rw indep_iff_forall_subset_not_circuit,
   intros C hC,
-  { cases ssubset_or_eq_of_subset hC with hC heq,
-    { rw ssubset_iff_subset_diff_singleton at hC,
-      obtain ⟨x, ⟨hx1, hx2⟩⟩ := hC,
+  by_cases hef : e = f,
+  { rw hef at *,
+    rw insert_eq_of_mem (mem_singleton f) at hC,
+    cases ssubset_or_eq_of_subset hC with hempty heq,
+    { rw ssubset_singleton_iff.1 hempty,
+      apply empty_not_circuit },
+    { rw heq,
+      rw ← loop_iff_circuit,
+      apply (excluded_minor_nonloop M hM hf).1 } },
+  { cases ssubset_or_eq_of_subset hC with hC2 heq,
+    { rw ssubset_iff_subset_diff_singleton at hC2,
+      obtain ⟨x, ⟨hx1, hx2⟩⟩ := hC2,
       simp at hx1,
       obtain ⟨rfl | rfl⟩ := hx1,
-      simp at hx2,
-      sorry,
-      sorry },
-    { rw heq,
-      sorry } },
-  /-by_cases e = f,
-  { rw h,
-    simp only [pair_eq_singleton, indep_singleton],
-    apply excluded_minor_nonloop M hM hf },
-  { rw indep_iff_forall_subset_not_circuit,
-    intros C hC,
-    cases ssubset_or_eq_of_subset hC with heq hC,
-    
-    sorry },-/
-  sorry,
+      { simp at hx2,
+        rw subset_diff at hx2,
+        cases (subset_iff_ssubset_or_eq.1 hx2.1) with hempty heq,
+        rw ssubset_singleton_iff.1 hempty,
+        apply empty_not_circuit,
+        rw heq,
+        rw ← loop_iff_circuit,
+        apply (excluded_minor_nonloop M hM hf).1 }, 
+      { rw hx1 at *,
+        rw [← union_singleton, union_comm, union_singleton] at hx2,
+        simp at hx2,
+        rw subset_diff at hx2,
+        cases (subset_iff_ssubset_or_eq.1 hx2.1) with hempty heq,
+        rw ssubset_singleton_iff.1 hempty,
+        apply empty_not_circuit,
+        rw [heq, ← loop_iff_circuit],
+        apply (excluded_minor_nonloop M hM he).1 } },
+    rw heq,
+    apply excluded_minor_nonpara M hM hef },
+  apply insert_subset.2 ⟨he, singleton_subset_iff.2 hf⟩,
 end
 
 /-lemma unif_restr {a b : ℕ} (M : matroid_in α) {k : ℕ} (hcard : M.E.ncard = k) (hs : M.simple) 
@@ -2413,13 +2443,91 @@ lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M'
   (hMB : M.base B) (hMB' : M'.base B) : 
   ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
 
+def rep_empty (𝔽 : Type*) [field 𝔽] (M : matroid_in α) 
+  (hM : M.E = ∅) : rep 𝔽 𝔽 M := 
+{ to_fun := λ e, 0,
+  valid' := λ I hI, 
+    begin
+      rw [hM, subset_empty_iff] at hI,
+      rw [hI, @linear_independent_image _ _ _ _ _ _ (∅ : set α) _ (inj_on_empty _),
+          image_empty],
+        simp only [empty_indep, linear_independent_empty 𝔽 𝔽, iff_true]
+    end,
+  support := λ e he, rfl }
+
+def rep_singleton (𝔽 : Type*) [field 𝔽] (M : matroid_in α) {x : α} (hMx : M.E = {x}) : 
+  rep 𝔽 𝔽 M := 
+{ to_fun := λ e, if hMx : M.nonloop x ∧ e = x then (1 : 𝔽) else (0 : 𝔽),
+  valid' := λ I hI, 
+    begin 
+      rw hMx at *,
+      cases ssubset_or_eq_of_subset hI with hIempty hIsing,
+      { rw ssubset_singleton_iff.1 hIempty,
+        rw [@linear_independent_image _ _ _ _ _ _ (∅ : set α) _ (inj_on_empty _),
+          image_empty],
+        simp only [empty_indep, linear_independent_empty 𝔽 𝔽, iff_true] },
+      rw hIsing,
+      by_cases M.loop x,
+      { have hd : (λ (e : α), dite (M.nonloop x ∧ e = x) (λ (hMx : M.nonloop x ∧ e = x), (1 : 𝔽)) 
+        (λ (hMx : ¬(M.nonloop x ∧ e = x)), (0 : 𝔽))) ∘ (coe : ({x} : set α) → α)
+        = λ x : ({x} : set α), (0 : 𝔽),
+          ext;
+          simp only [dite_eq_iff],
+          right,
+          simp_rw not_and_distrib,
+          refine ⟨(or.intro_left (¬↑x_1 = x)) h.not_nonloop, rfl⟩,
+        rw [hd, ← not_iff_not],
+        refine ⟨λ h2, h.dep.not_indep, λ h2, _⟩,
+        by_contra,
+        apply @linear_independent.ne_zero _ 𝔽 _ ((λ (e : α), (0 : 𝔽)) ∘ (coe : ({x} : set α) → α)) 
+          _ _ _ _ ⟨x, mem_singleton x⟩ h,
+        simp only },
+      { have hd : (λ (e : α), dite (M.nonloop x ∧ e = x) (λ (hMx : M.nonloop x ∧ e = x), (1 : 𝔽)) 
+        (λ (hMx : ¬(M.nonloop x ∧ e = x)), (0 : 𝔽))) ∘ (coe : ({x} : set α) → α)
+        = λ x : ({x} : set α), (1 : 𝔽),
+          ext;
+          simp only [dite_eq_iff],
+          left,
+          have h2 := mem_singleton_iff.1 x_1.2,
+          simp only [subtype.val_eq_coe] at h2,
+          refine ⟨⟨(not_loop_iff (by {rw hMx, apply mem_singleton _})).1 h, h2⟩, rfl⟩,
+        rw hd,
+        refine ⟨λ h2, indep_singleton.2 ((not_loop_iff (by {rw hMx, apply mem_singleton _})).1 h), 
+          λ h2, _⟩,
+        rw [@linear_independent_image _ _ _ _ _ _ ({x} : set α) (λ e : α, (1 : 𝔽)) 
+          (inj_on_singleton _ _), image_singleton],
+        apply linear_independent_singleton,
+        simp only [ne.def, one_ne_zero, not_false_iff] },
+    end,
+  support := λ e he, 
+    begin
+      simp only [dite_eq_iff],
+      right,
+      simp_rw not_and_distrib,
+      rw [hMx, mem_singleton_iff] at he,
+      refine ⟨(or.intro_right (¬ M.nonloop x)) he, rfl⟩,
+    end }
+
+-- should be an instance but i can't figure it out rn
+lemma nontrivial_excluded_minor (M : matroid_in α) [finite_rk M]
+  (hM : excluded_minor matroid_in.is_binary M) : nontrivial M.E := 
+begin
+  by_contra,
+    simp only [nontrivial_coe_sort, not_nontrivial_iff] at h,
+    rw [excluded_minor, mem_minimals_prop_iff] at hM,
+    apply hM.1,
+    cases h.eq_empty_or_singleton with hempty hsing,
+    { refine ⟨(zmod 2), ⟨by { apply_instance}, ⟨by { apply_instance}, 
+        ⟨rep_empty (zmod 2) M hempty⟩⟩⟩⟩ },
+    { obtain ⟨x, hx⟩ := hsing,
+      refine ⟨(zmod 2), ⟨by { apply_instance}, ⟨by { apply_instance}, 
+        ⟨rep_singleton (zmod 2) M hx⟩⟩⟩⟩ },
+end
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
-  -- this comes from hM
-  have hME : nontrivial M.E,
-    by_contra,
-    sorry,
+  haveI hME := nontrivial_excluded_minor M hM,
   rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
   obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
   have h2 := coindep_excluded_minor M hM x y hxy1 hxy2,
@@ -2444,11 +2552,22 @@ begin
   have hB := coindep.base_of_basis_del h2 (delete_base_iff.1 hBxy),
 
   have hBy : (M ⟍ y).base B,
-    rw delete_elem,
-    sorry,
+    rw [delete_elem, delete_base_iff],
+    apply hB.basis_of_subset _,
+    apply subset.trans,
+    apply hBxy.subset_ground,
+    rw [delete_ground, ← union_singleton, union_comm, ← diff_diff],
+    apply diff_subset_diff_left (diff_subset _ _),
+    apply diff_subset M.E ({y} : set α),
   
   have hBx : (M ⟍ x).base B,
-    sorry,
+    rw [delete_elem, delete_base_iff],
+    apply hB.basis_of_subset _,
+    apply subset.trans,
+    apply hBxy.subset_ground,
+    rw [delete_ground, ← union_singleton, ← diff_diff],
+    apply diff_subset_diff_left (diff_subset _ _),
+    apply diff_subset M.E ({x} : set α),
   
   have hMM'E : M.E = (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
       (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).E,
@@ -2483,12 +2602,10 @@ begin
       rw [h, mem_def, matroid_in.is_binary, is_representable],
       refine ⟨B →₀ zmod 2, ⟨_, ⟨_, ⟨(rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
         (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E)⟩⟩⟩⟩ },
-    rw ne.def at hMM',
-    rw [eq_iff_indep_iff_indep_forall, matroid_of_module_fun.ground] at hMM', 
+    rw [ne.def, eq_iff_indep_iff_indep_forall, matroid_of_module_fun.ground] at hMM', 
     simp only [eq_self_iff_true, true_and, not_forall, exists_prop] at hMM',
     obtain ⟨Z, ⟨hZM, hZ⟩⟩ := hMM',
-    rw iff_def at hZ,
-    rw not_and_distrib at hZ,
+    rw [iff_def, not_and_distrib] at hZ,
     push_neg at hZ,
     cases hZ with hMZ hM'Z,
     { have hJZ : ∀ (J : set α), M.indep J → Z ⊆ J → J = {x, y}, 
@@ -2534,11 +2651,10 @@ begin
         { obtain ⟨BZ, hBZ⟩ := hMZ.1,
           specialize hJZ BZ hBZ.1.indep hBZ.2,
           rw hJZ at *,
-          have hsimp := excluded_minor_simple M hM,
           have hcard : 2 ≤ M.E.ncard,
             rw ← hnxy,
             apply ncard_le_of_subset hxy2, 
-          obtain ⟨ψ⟩ := (iso_line_iff hcard).2 ⟨hsimp, _⟩,
+          obtain ⟨ψ⟩ := (iso_line_iff hcard).2 ⟨excluded_minor_simple M hM, _⟩,
           have hcard4 : 4 ≤ M.E.ncard,
             sorry, 
           -- need unif_iso_minor lemma to finish this
