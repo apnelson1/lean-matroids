@@ -653,7 +653,7 @@ begin
     { -- there's probably a cleaner way to talk about the card of diff than going
       -- between fintype and finset cards
       have h12 := fintype.card_le_of_embedding (embedding_of_subset _ _ h8),
-      have h14 := subset_trans (diff_subset _ _) _,
+      /-have h14 := subset_trans (diff_subset _ _) _,
       have h13 := embedding_of_subset _ _ h8,
       simp_rw [← to_finset_card, to_finset_diff] at h12,
       rw finset.card_sdiff at h12,
@@ -663,10 +663,10 @@ begin
       rw span_le at h18,
       have h11 : fintype.card ((φ'.std_rep hB) '' (unif 2 4).E) = fintype.card (fin 4),
         --rw card_range_of_injective ((φ'.std_rep hB).inj_on_ground_of_simple U24_simple),
-        sorry,
-      have h15 := subset_univ 
-        ((span (zmod 2) ((φ'.std_rep hB) '' (unif 2 4).E)).set_like : (set B →₀ zmod 2)),
-      have h16 := fintype.card_le_of_embedding (embedding_of_subset _ _ h15),
+        sorry,-/
+      /-have h15 := subset_univ 
+        ((span (zmod 2) ((φ'.std_rep hB) '' (unif 2 4).E)).set_like : (set B →₀ zmod 2)),-/
+      /-have h16 := fintype.card_le_of_embedding (embedding_of_subset _ _ h15),
       have h17 := nat.sub_le_sub_right h16 1,
       { simp only [set.to_finset_card, set_like.coe_sort_coe, card_singleton] at h12,
         
@@ -682,8 +682,8 @@ begin
         set_like.mem_coe, zero_mem] },
     -- this part comes from unif_rk needing 2 ≤ 4, will make nicer later
     simp only [nat.card_eq_fintype_card, fintype.card_fin, bit0_le_bit0,
-      nat.one_le_bit0_iff, nat.lt_one_iff]},
-  simp,
+      nat.one_le_bit0_iff, nat.lt_one_iff]},-/
+    sorry } },
 end
 
 def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f) 
@@ -754,7 +754,7 @@ def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y)
         rw delete_ground,
         apply subset_diff_singleton hI h, },
     end,
-  support := _ }
+  support := sorry }
 
 /-lemma unif_restr {a b : ℕ} (M : matroid_in α) {k : ℕ} (hcard : M.E.ncard = k) (hs : M.simple) 
   (hr : M.rk = 2) : (unif 2 k) ≃i M :=
