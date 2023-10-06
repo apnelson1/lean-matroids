@@ -2169,6 +2169,8 @@ begin
         (⊤ : submodule (zmod 2) (B →₀ zmod 2)),
         simp only [le_top],
       rw span_le at h18,
+      have h11 : fintype.card ((φ'.std_rep hB) '' (unif 2 4).E) = fintype.card (fin 4),
+        rw card_range_of_injective ((φ'.std_rep hB).injective_of_simple U24_simple),
       have h15 := subset_univ 
         ((span (zmod 2) ((φ'.std_rep hB) '' (unif 2 4).E)).set_like : (set B →₀ zmod 2)),
       have h16 := fintype.card_le_of_embedding (embedding_of_subset _ _ h15),
@@ -2332,6 +2334,7 @@ def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
       apply he
     end } 
 
+-- use matroid_of_module_func and write parallel_extend_rep
 def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y) 
   (hf : M.circuit {x, y}) (φ : rep 𝔽 W (M ⟍ ({y} : set α))) : rep 𝔽 W M := 
 { to_fun := λ (e : α), if e = y then φ x else φ e,
