@@ -32,7 +32,7 @@ variables [fintype α]
 open_locale big_operators
 
 lemma coindep_excluded_minor (M : matroid_in α) 
-(hM : excluded_minor (λ (N : matroid_in α), N.is_representable 𝔽) M) (x y : α) (hxy : x ≠ y) 
+(hM : excluded_minor {N : matroid_in α | N.is_representable 𝔽} M) (x y : α) (hxy : x ≠ y) 
 (hx : {x, y} ⊆ M.E) 
   : M.coindep {x, y} :=
 begin
@@ -130,8 +130,11 @@ begin
  --have hf := series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy,
   simp only [excluded_minor, mem_minimals_prop_iff] at hM,
   apply hM.1,
-  rw series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy,
+  rw [series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy, mem_set_of],
+  
   obtain φM := series_extend_rep φ hxMy hyMy,
+  exact is_representable_of_rep φM, 
+  -- refine is_representable_of_rep _
   --refine ⟨W × 𝔽, ⟨by {apply_instance}, ⟨_, ⟨φM⟩⟩⟩⟩,
   --obtain ⟨B, hB⟩ := (M ⟍ K).exists_base,
   --have hrep := rep_cocircuit_doubleton x y hxy,

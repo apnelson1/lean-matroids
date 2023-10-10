@@ -56,9 +56,12 @@ instance fun_like {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
 /-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
+-- def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
+--   ∃ (W : Type) (hW : add_comm_group W) 
+--   (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
+
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
-  ∃ (W : Type) (hW : add_comm_group W) 
-  (hFW : @module 𝔽 W _ (@add_comm_group.to_add_comm_monoid W hW)), nonempty (@rep _ 𝔽 W _ hW hFW M)
+  ∃ (B : set α) (hB : M.base B), nonempty (rep 𝔽 (B →₀ 𝔽) M)
 
 def matroid_of_module_set (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] 
   [finite_dimensional 𝔽 W] (s : set W) : 
@@ -231,9 +234,6 @@ lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independen
 
 lemma valid'' (φ : rep 𝔽 W M) {I : set α} (hI : I ⊆ M.E): linear_independent 𝔽 (λ e : I, φ e) ↔ 
   M.indep I := φ.valid' _ hI
-
-protected lemma is_representable {W : Type} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
-  is_representable 𝔽 M := ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
 inj_on_iff_injective.2 ((φ.valid' I hI.subset_ground).2 hI).injective
@@ -572,6 +572,14 @@ def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) :
     simp only [ker_subtype] },
   support := by
   { intros e he, simp_rw [support' he], convert _root_.map_zero _} }
+
+/-- A representation over *any* module certifies representability-/
+lemma is_representable_of_rep {W : Type*} [add_comm_group W] [module 𝔽 W] (φ : rep 𝔽 W M) : 
+    is_representable 𝔽 M := 
+  begin
+    obtain ⟨B, hB⟩ := M.exists_base, 
+    exact ⟨B, hB, ⟨std_rep φ hB⟩⟩, 
+  end
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
