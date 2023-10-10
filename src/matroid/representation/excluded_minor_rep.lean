@@ -62,6 +62,7 @@ begin
     have φM := add_coloop_rep φ hyMy,
     simp only [excluded_minor, mem_minimals_prop_iff] at hM,
     apply hM.1,
+    --obtain ⟨B, hB⟩ := (add_coloop (M ⟍ {y}) hyMy).exists_base,
     --refine ⟨(W × 𝔽 : Type*), _⟩,
     sorry,
     --use W × 𝔽,
@@ -239,6 +240,13 @@ begin
         ⟨rep_singleton (zmod 2) M hx⟩⟩⟩⟩ },
 end
 
+lemma excluded_minor_binary_unif (hM : excluded_minor matroid_in.is_binary M) 
+  (ψ : M ≃i unif 2 M.E.ncard) (h2 : 2 ≤ M.E.ncard) : 4 ≤ M.E.ncard :=
+begin
+ -- rw le_iff_eq_or_lt at h2,
+  sorry,
+end
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
@@ -370,8 +378,7 @@ begin
             rw ← hnxy,
             apply ncard_le_of_subset hxy2, 
           obtain ⟨ψ⟩ := (iso_line_iff hcard).2 ⟨excluded_minor_simple M hM, _⟩,
-          have hcard4 : 4 ≤ M.E.ncard,
-            sorry, 
+          have hcard4 := excluded_minor_binary_unif hM ψ hcard,
           -- need unif_iso_minor lemma to finish this
           have hψ := ψ.symm.trans_iso_minor (minor.refl.iso_minor),
           sorry,
