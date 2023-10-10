@@ -91,9 +91,7 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
       intros x hxI y hyC, 
       by_contra h2,
       rw ← h2 at *,
-      rw to_fun_eq_coe at h30,
-      rw h10 at h30,
-      --simp only [set_like.mem_coe] at h31,
+      rw [to_fun_eq_coe, h10] at h30,
       specialize h30 x (set_like.mem_coe.1 (mem_of_subset_of_mem subset_span hxI))
         (set_like.mem_coe.1 (mem_of_subset_of_mem 
         (subset_trans (image_subset _ (diff_subset _ _)) subset_span) hyC)),
@@ -101,11 +99,11 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         (image_subset _ (diff_subset _ _)) hyC,
       
       obtain ⟨e, ⟨he, rfl⟩⟩ := (mem_image φ I x).1 hxI,
-      apply φ.ne_zero_of_nonloop,
-      /-apply disjoint_of_subset (subset_span) 
-        (subset_trans (image_subset _ (diff_subset _ _)) subset_span),-/
-      sorry,
-      apply h30,
+      rw to_fun_eq_coe at h7,
+      apply @linear_independent.ne_zero _ 𝔽 W _ _ _ _ _ (⟨φ e, hxI⟩ : φ '' I) h7,
+      simp_rw h30,
+      simp only [subtype.coe_mk],
+
       rw inj_on_union (_root_.disjoint.of_image (linear_independent.union' h7 h8 h30 h6)),
       refine ⟨φ.inj_on_of_indep ((φ.valid' I _).1 
         (linear_independent.of_comp ((span 𝔽 (φ '' C)).mkq) h)), 
@@ -114,23 +112,26 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         (φ y) (mem_image_of_mem φ hy)⟩⟩,
      rw contract_ground at hI,
      apply subset_trans hI (diff_subset _ _),
+     rw contract_ground at hI,
+     apply union_subset (subset_trans hI (diff_subset _ _)) hJ.subset_ground_left,
       --simp_rw [← mkq_apply _],
-      /-simp_rw [← mkq_apply _],
+      simp_rw [← mkq_apply _],
       rw linear_map.linear_independent_iff,
-      refine ⟨(φ.valid' I).2 (indep.subset h.1.2 (subset_union_left I J)), _⟩,
+      refine ⟨(φ.valid' I (indep.subset h.1.2 (subset_union_left I J)).subset_ground).2 
+        (indep.subset h.1.2 (subset_union_left I J)), _⟩,
       rw ker_mkq (span 𝔽 (φ.to_fun '' C)),
-      have h60 := linear_independent.image ((φ.valid' _).2 h.1.2),
+      have h60 := linear_independent.image ((φ.valid' _ h.1.2.subset_ground).2 h.1.2),
       rw image_union at h60,
       rw [← image_univ, h21],
       simp_rw [to_fun_eq_coe],
       rw [← h10],
       simp only,
-      apply linear_independent.union'',-/
-      sorry,
-      /-{ apply linear_independent.image 
-          ((φ.valid' J).2 (indep.subset h.1.2 (subset_union_right I J))) },
+      apply linear_independent.union'',
       { apply linear_independent.image 
-          ((φ.valid' I).2 
+          ((φ.valid' J (indep.subset h.1.2 (subset_union_right I J)).subset_ground).2 
+            (indep.subset h.1.2 (subset_union_right I J))) },
+      { apply linear_independent.image 
+          ((φ.valid' I (indep.subset h.1.2 (subset_union_left I J)).subset_ground).2 
           (indep.subset h.1.2 (subset_union_left I J))) },
       { rw disjoint.comm,
         apply disjoint_image_image,
@@ -142,10 +143,18 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
         apply mt h200,
         apply disjoint_iff_forall_ne.1 h.1.1 x hx y hy },
       rw [to_fun_eq_coe, union_comm _ _] at h60,
-      apply h60,-/
-      sorry,
+      apply h60,
     end,
-  support := sorry }
+  support := λ e he, 
+    begin
+      rw contract_ground at he,
+      by_cases e ∈ C,
+      rw quotient.mk_eq_zero,
+      apply mem_of_subset_of_mem subset_span (mem_image_of_mem _ h),
+      rw [φ.support, quotient.mk_zero],
+      rw ← union_diff_cancel hC,
+      apply (mem_union _ _ _).1.mt (not_or_distrib.2 ⟨h, he⟩),
+    end }
 
 /-def rep_of_dual {𝔽 W : Type*} [is_R_or_C 𝔽] [normed_add_comm_group W] [inner_product_space 𝔽 W] 
   (M : matroid_in α) (φ : rep 𝔽 W M) : rep 𝔽 (φ.to_submodule)ᗮ M﹡ := 
@@ -612,10 +621,13 @@ begin
       apply hxy (mem_singleton_iff.2 (f.injective (subtype.coe_inj.1 (h)))) },
 end
 
+lemma U22_binary : matroid_in.is_binary (unif 2 2) := 
+begin
+  sorry,
+end
+
 lemma U24_simple : (unif 2 4).simple := sorry
 
--- this doesn't have sorry's but it relied on the unif_simple_iff lemma which isn't
--- available right now
 lemma U24_nonbinary : ¬ matroid_in.is_binary (unif 2 4) :=
 begin
   by_contra h2,
