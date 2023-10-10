@@ -590,7 +590,7 @@ begin
   have φ := @rep.mk _ (zmod 2) (fin 2 → zmod 2) _ _ _ (unif 2 3) (λ x, (f x)) (λ I hI, _) 
     (by { simp only [unif_ground_eq, mem_univ, not_true, is_empty.forall_iff, forall_const]}),
   { rw [matroid_in.is_binary, is_representable],
-    refine ⟨(fin 2 → zmod 2), ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ },
+    apply is_representable_of_rep φ },
   rw [unif_indep_iff],
   refine ⟨λ h, _, λ h, _⟩,  
   -- now the possible sizes of vector families for h are 0, 1, 2.
@@ -633,18 +633,14 @@ lemma U24_nonbinary : ¬ matroid_in.is_binary (unif 2 4) :=
 begin
   by_contra h2,
   rw [matroid_in.is_binary, is_representable] at h2,
-  rcases h2 with ⟨W, ⟨hW, ⟨hM, ⟨φ'⟩⟩⟩⟩,
-  haveI := zmod.fintype 2,
-  obtain ⟨B, hB⟩ := (unif 2 4).exists_base,
-  have φ := φ'.std_rep hB,
-  have φ2 := φ.rep_submodule,
-  { have h8 := ((φ'.std_rep hB).subset_nonzero_of_simple U24_simple),
-    have h50 := @span_mono (zmod 2) _ _ _ _ _ _ (subset_univ ((φ'.std_rep hB) '' (unif 2 4).E)),
+  obtain ⟨B, ⟨hB, ⟨φ'⟩⟩⟩ := h2,
+  { have h8 := (φ'.subset_nonzero_of_simple U24_simple),
+    have h50 := @span_mono (zmod 2) _ _ _ _ _ _ (subset_univ (φ' '' (unif 2 4).E)),
     rw ← span_span at h50,
     have h70 := subset_trans h8 (@diff_subset_diff_left _ _ _ 
       ({0} : set (B →₀ zmod 2)) (span_le.1 h50)),
     -- need basis
-    have h11 := ((valid'' (φ'.std_rep hB) hB.subset_ground).2 hB.indep),
+    have h11 := ((valid'' φ' hB.subset_ground).2 hB.indep),
     have h20 : (finrank (zmod 2) (B →₀ zmod 2)) = 2,
       simp only [finrank_finsupp, fintype.card_of_finset, finset.filter_congr_decidable],
       rw unif_base_iff at hB,
@@ -662,8 +658,8 @@ begin
     simp_rw [← to_finset_card, to_finset_diff] at h12,
     rw [finset.card_sdiff, span_univ, top_coe, to_finset_univ, finset.card_univ, h9,
       to_finset_card, to_finset_singleton, finset.card_singleton] at h12,
-    have h80 : fintype.card ((φ'.std_rep hB) '' (unif 2 4).E) = fintype.card (fin 4),
-    { rw card_image_of_inj_on ((φ'.std_rep hB).inj_on_ground_of_simple U24_simple),
+    have h80 : fintype.card (φ' '' (unif 2 4).E) = fintype.card (fin 4),
+    { rw card_image_of_inj_on (φ'.inj_on_ground_of_simple U24_simple),
       simp only [unif_ground_eq, ← to_finset_card, to_finset_univ, finset.card_univ] },
     rw [h80, fintype.card_fin] at h12,
     rw [pow_two, two_mul, nat.succ_add_sub_one] at h12,
