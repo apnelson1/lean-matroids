@@ -549,8 +549,6 @@ by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ hX hx, }-/
 
 end rep
 
-variables [fintype α]
-
 
 namespace rep
 
@@ -580,6 +578,8 @@ lemma is_representable_of_rep {W : Type*} [add_comm_group W] [module 𝔽 W] (φ
     obtain ⟨B, hB⟩ := M.exists_base, 
     exact ⟨B, hB, ⟨std_rep φ hB⟩⟩, 
   end
+
+variables [fintype α]
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
@@ -1105,6 +1105,21 @@ begin
     apply subset_trans hI (diff_subset M.E {x}),
 end
 
+-- write congr lemma
+def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep 𝔽 W M' := 
+{ to_fun := φ.to_fun,
+  valid' := λ I hI, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at hI, 
+    rw ← (eq_iff_indep_iff_indep_forall.1 h).2, apply φ.valid' I hI, apply hI },
+  support := λ e he, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at he, apply φ.support e he } }
+
+-- write refl lemma for the above
+lemma rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : 
+  (φ : α → W) = (rep_of_congr φ h) := rfl
+
+lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') {B : set α} 
+  (hMB : M.base B) (hMB' : M'.base B) : 
+  ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
+
 lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : set α)).base B)
   (hBx : (M ⟍ y).base B) (hB : M.base B)
   [module (zmod 2) W] (φ : rep (zmod 2) W (M ⟍ ({x, y} : set α))) {Wy : Type*} [add_comm_group Wy]
@@ -1113,7 +1128,12 @@ lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x,
   (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
     (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ y :=
 begin
-  sorry
+  have hMxyyx : M ⟍ ({x, y} : set α) = M ⟍ ({y, x} : set α),
+    rw [← union_singleton, union_comm, union_singleton],
+  have hByx := hBxy,
+  rw [← union_singleton, union_comm, union_singleton] at hByx,
+  rw std_rep_eq_of_congr φ hMxyyx hBxy hByx,
+  apply delete_elem_eq_of_binary hByx hBx hB (rep_of_congr φ hMxyyx) φx,
 end
 
 /-lemma unif_restr {a b : ℕ} (M : matroid_in α) {k : ℕ} (hcard : M.E.ncard = k) (hs : M.simple) 

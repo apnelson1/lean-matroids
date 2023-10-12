@@ -180,13 +180,13 @@ lemma nontrivial_excluded_minor (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : nontrivial M.E := 
 begin
   by_contra,
-    simp only [nontrivial_coe_sort, not_nontrivial_iff] at h,
-    rw [excluded_minor, mem_minimals_prop_iff] at hM,
-    apply hM.1,
-    cases h.eq_empty_or_singleton with hempty hsing,
-    { apply is_representable_of_rep (rep_empty (zmod 2) M hempty) },
-    { obtain ⟨x, hx⟩ := hsing,
-      apply is_representable_of_rep (rep_singleton (zmod 2) M hx) },
+  simp only [nontrivial_coe_sort, not_nontrivial_iff] at h,
+  rw [excluded_minor, mem_minimals_prop_iff] at hM,
+  apply hM.1,
+  cases h.eq_empty_or_singleton with hempty hsing,
+  { apply is_representable_of_rep (rep_empty (zmod 2) M hempty) },
+  { obtain ⟨x, hx⟩ := hsing,
+    apply is_representable_of_rep (rep_singleton (zmod 2) M hx) },
 end
 
 lemma excluded_minor_binary_unif (hM : excluded_minor matroid_in.is_binary M) 
@@ -203,8 +203,12 @@ begin
   rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
   obtain ⟨x, ⟨y, ⟨hxy1, hxy2⟩⟩⟩ := hME,
   have h2 := coindep_excluded_minor M hM x y hxy1 hxy2,
+
   have hxyr : matroid_in.is_binary (M ⟍ ({x, y} : set α)),
-    sorry,
+    apply excluded_minor.delete_mem hM,
+    rw ground_inter_left,
+    apply insert_nonempty,
+
   obtain ⟨B, ⟨hBxy, ⟨φ⟩⟩⟩ := hxyr,
 
   obtain ⟨Bx, ⟨hBx, ⟨φx⟩⟩⟩ := (((excluded_minor_iff _).1 hM).2 x 

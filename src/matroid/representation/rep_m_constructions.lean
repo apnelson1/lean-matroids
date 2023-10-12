@@ -163,14 +163,13 @@ def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α)
   valid' := _,
   support := _ }-/
 
-/-def is_rep_of_minor_of_is_rep (N : matroid_in α) (hNM : N ≤m M) (hM : M.is_representable 𝔽) : 
+def is_rep_of_minor_of_is_rep (N : matroid_in α) (hNM : N ≤m M) (hM : M.is_representable 𝔽) : 
   N.is_representable 𝔽 := 
 begin
-  obtain ⟨W, ⟨_, ⟨_, ⟨φ⟩⟩⟩⟩ := hM,
+  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM,
   obtain ⟨C, ⟨D, ⟨hC, ⟨hD, ⟨hCD, rfl⟩⟩⟩⟩⟩ := minor.exists_contract_indep_delete_coindep hNM,
-  refine ⟨_, ⟨_, ⟨_, ⟨rep_of_del (M ⟋ C) 
-    (@rep_of_contr _ 𝔽 W _ hM_h_w hM_h_h_w _ M φ C hC.subset_ground) D⟩⟩⟩⟩,
-end-/
+  apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),
+end
 
 variables [fintype α]
 
@@ -359,7 +358,11 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         have h2 : ite (a = y) (-f x) (f a) = f a,
           rw ite_eq_iff,
           right,
+          refine ⟨_, rfl⟩,
           sorry,
+        rw h2,
+        apply finsupp.mem_support_iff.1 h,
+        by_cases a = y,
         sorry,
         sorry,
         refine ⟨_, _⟩,
@@ -599,21 +602,6 @@ def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y)
         apply subset_diff_singleton hI h, },
     end,
   support := sorry }
-
--- write congr lemma
-def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep 𝔽 W M' := 
-{ to_fun := φ.to_fun,
-  valid' := λ I hI, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at hI, 
-    rw ← (eq_iff_indep_iff_indep_forall.1 h).2, apply φ.valid' I hI, apply hI },
-  support := λ e he, by { rw ← (eq_iff_indep_iff_indep_forall.1 h).1 at he, apply φ.support e he } }
-
--- write refl lemma for the above
-lemma rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : 
-  (φ : α → W) = (rep_of_congr φ h) := rfl
-
-lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') {B : set α} 
-  (hMB : M.base B) (hMB' : M'.base B) : 
-  ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
 
 def rep_empty (𝔽 : Type*) [field 𝔽] (M : matroid_in α) 
   (hM : M.E = ∅) : rep 𝔽 𝔽 M := 
