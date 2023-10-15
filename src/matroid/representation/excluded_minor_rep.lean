@@ -5,7 +5,7 @@ import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
-import .m_in_rep .rep_m_constructions
+import .m_in_rep .rep_m_constructions .rep_m_constructions2
 
 
 universe u 
