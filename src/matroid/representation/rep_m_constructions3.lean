@@ -35,14 +35,10 @@ variables [fintype α]
 open_locale big_operators
 
 
-def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
-  (hy : y ∉ M.E) (hMx : ¬ M.coloop x) : rep 𝔽 (W × 𝔽) (series_extend M hx hy hMx) := 
+def parallel_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
+  (hy : y ∉ M.E) (hMx : ¬ M.loop x) : rep 𝔽 W (parallel_extend M hx hy hMx) := 
 { to_fun := λ (e : α), 
-    if e = x
-    then 
-      (linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e
-    else 
-      if e = y then linear_map.inr 𝔽 W 𝔽 1 else (linear_map.inl 𝔽 W 𝔽 ∘ φ) e,
+    if e = y then φ x else φ e,
   valid' := λ I hI, 
     begin
       refine ⟨_, λ h2, _⟩,
@@ -51,15 +47,62 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
       rw linear_dependent_comp_subtype',
       rw not_indep_iff at h2,
       obtain ⟨C, ⟨hCI, hCcct⟩⟩ := exists_circuit_subset_of_dep h2,
-      by_cases hxC : x ∈ C, 
-      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
-          (series_extend_cocircuit M hx hMx hy)).1 hxC,
+      by_cases hyC : y ∈ C, 
+      { by_cases hxC : x ∈ C,
+        { have h4 := parallel_extend_circuit M hx hMx hy,
+          have h5 := hCcct.eq_of_dep_subset (parallel_extend_circuit M hx hMx hy).dep 
+            (insert_subset.2 ⟨hxC, singleton_subset_iff.2 hyC⟩),
+          refine ⟨(⟨{x, y}, (λ e : α, if e = y then - 1 else (if e = x then 1 else 0)), λ a, 
+            ⟨λ ha, _, λ ha, _⟩⟩ : α →₀ 𝔽), _⟩,
+          sorry,
+          sorry,
+          sorry },
+        { obtain ⟨C2, ⟨hC2, ⟨hC3, hC4⟩⟩⟩ := (parallel_extend_circuit M hx hMx hy).strong_elimination hCcct 
+            (mem_inter (mem_insert_of_mem x (mem_singleton y)) hyC) 
+            (mem_diff_of_mem (mem_insert x {y}) hxC),
+          have hC2y : disjoint C2 {y},
+            sorry,
+          have h2 := delete_circuit_iff.2 ⟨hC3, hC2y⟩,
+          rw ← delete_elem at h2,
+          rw [← parallel_extend_delete_eq] at h2,
+          obtain ⟨f, ⟨rfl, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ h2,
+          refine ⟨(⟨(insert y (f.support \ {x})), (λ e : α, if e = x then 0 else 
+            (if e = y then f x else f e)), λ a, ⟨λ ha, _, λ ha, _⟩⟩ : α →₀ 𝔽), _⟩,
+          rw if_neg,
+          rw finset.mem_insert at ha,
+          cases ha with hay ha,
+          { rw if_pos hay,
+            apply finsupp.mem_support_iff.1 hC4 },
+          { rw if_neg,
+            apply finsupp.mem_support_iff.1 (finset.mem_sdiff.1 ha).1,
+            apply ne_of_mem_of_not_mem (finset.mem_sdiff.1 ha).1,
+            apply not_mem_subset hC2 (not_mem_diff_of_mem (mem_singleton y)) },
+          --have hf := finsupp.mem_support_iff,
+          --obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ hC3.1,
+          sorry,
+          sorry,
+          refine ⟨_, ⟨_, _⟩⟩,
+          { rw finsupp.mem_supported,
+            simp only [finset.coe_insert],
+            apply insert_subset.2 ⟨mem_of_subset_of_mem hCI hyC, _⟩,
+            simp only [finset.coe_sdiff, finset.coe_singleton, diff_singleton_subset_iff],
+            sorry },
+          { dsimp [finsupp.total_apply, finsupp.sum],
+            dsimp [finsupp.total_apply, finsupp.sum] at hftot,
+            simp only [← ite_apply],
+            simp_rw [ite_smul, zero_smul],
+            rw [finset.sum_ite_of_false _ _ _],
+            sorry,
+            --simp only [prod.ext_iff],
+            sorry },
+          sorry },
+        /-have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (parallel_extend_circuit M hx hMx hy)).1 hxC,
         rw [← @union_diff_cancel _ {y} C (singleton_subset_iff.2 hyC), union_comm, 
           union_singleton] at hCcct,
-        have hMcct := contract_circuit_of_insert_circuit y (C \ {y}) 
-          ((series_extend_cocircuit M hx hMx hy).nonloop_of_mem 
-          (mem_insert_of_mem x (mem_singleton _))) (not_mem_diff_singleton _ _) hCcct,
-        rw [← series_extend_contr_eq] at hMcct,
+        have hMcct := contract_circuit_of_insert_circuit y (C \ {y}) hyindep 
+          (not_mem_diff_singleton _ _) hCcct,
+        rw [← parallel_extend_contr_eq] at hMcct,
         obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ hMcct,
         rw ← hC at hCcct hMcct,
         refine ⟨(⟨(insert y f.support), (λ e : α, if e = y then - f x else f e), λ a, 
@@ -140,11 +183,11 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         rw if_neg (ne_of_mem_of_not_mem hx hy),
         apply finsupp.mem_support_iff.1,
         rw [← finset.mem_coe, hC],
-        apply mem_diff_singleton.2 ⟨hxC, ne_of_mem_of_not_mem hx hy⟩ },
-      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
-          (series_extend_cocircuit M hx hMx hy)).2.mt hxC,
+        apply mem_diff_singleton.2 ⟨hxC, ne_of_mem_of_not_mem hx hy⟩-/ },
+      { /-have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (parallel_extend_circuit M hx hMx hy)).2.mt hxC,
         have h4 := (@indep.of_contract _ _ {y} _).mt (not_indep_iff.2 hCcct.dep),
-        rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+        rw [← contract_elem, ← parallel_extend_contr_eq, ← φ.valid, 
           linear_dependent_comp_subtype'] at h4, 
         obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := h4,
         refine ⟨f, ⟨subset_trans hC hCI, ⟨_, hfne0⟩⟩⟩,
@@ -167,9 +210,9 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
           prod.snd_zero, finset.filter_eq', finset.filter_ne', ← prod_mk_sum, 
           finset.sum_const_zero, zero_add, add_zero],
         intros l hl hl0,
-        by_cases hyI : (series_extend M hx hy hMx).indep ({y} ∪ I : set α),
+        by_cases hyI : (parallel_extend M hx hy hMx).indep ({y} ∪ I : set α),
         { have hyI2 := (hyI.subset (subset_union_left _ _)).union_indep_iff_contract_indep.1 hyI,
-          rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+          rw [← contract_elem, ← parallel_extend_contr_eq, ← φ.valid, 
             linear_independent_comp_subtype] at hyI2,
           simp_rw [finsupp.total_apply] at hyI2,
           have hxl : x ∉ l.support,
@@ -216,36 +259,32 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
           apply hl0.2 },
         rw [if_neg hxl, finset.sum_empty, zero_add] at hl0,
         rw not_indep_iff _ at hyI,
-        have hIxy : (series_extend M hx hy hMx).indep ({y} ∪ (I \ {x}) : set α),  
+        have hIxy : (parallel_extend M hx hy hMx).indep ({y} ∪ (I \ {x}) : set α),  
         { by_contra hIyxn, 
           obtain ⟨C, ⟨hC, hC2⟩⟩ := exists_circuit_subset_of_dep ((not_indep_iff _).1 hIyxn),
           have hyC : y ∈ C,
           { by_contra hyC,
             rw [singleton_union, subset_insert_iff_of_not_mem hyC] at hC,
             apply hC2.dep.not_indep (h2.subset (subset_trans hC (diff_subset _ _))) },
-          rw ← series_pair_mem_circuit _ _ _ hC2 (series_extend_cocircuit M hx hMx hy) at hyC,
+          rw ← series_pair_mem_circuit _ _ _ hC2 (parallel_extend_circuit M hx hMx hy) at hyC,
           apply (not_mem_subset hC ((mem_union _ _ _).1.mt 
             (not_or_distrib.2 ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem hx hy), 
             not_mem_diff_singleton _ _⟩))) hyC,
           apply subset_trans (union_subset_union_right _ (diff_subset I {x})) hyI.subset_ground },
         have hyx := (hIxy.subset (subset_union_left _ _)).union_indep_iff_contract_indep.1 hIxy,
-        rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+        rw [← contract_elem, ← parallel_extend_contr_eq, ← φ.valid, 
           linear_independent_comp_subtype] at hyx,
         rw [finset.erase_eq_of_not_mem hxl, finset.erase_eq_of_not_mem hyl] at hl0,
         apply hyx l ((l.mem_supported _).2 
           (subset_diff_singleton (subset_diff_singleton ((l.mem_supported _).1 hl) hxl) hyl)) hl0.1,
       apply hyx.subset_ground,
       simp only [singleton_union, auto_param_eq],
-      apply insert_subset.2 ⟨mem_insert _ _, hI⟩ } }, 
+      apply insert_subset.2 ⟨mem_insert _ _, hI⟩ -/ 
+      sorry } }, 
+      { 
+        sorry },
     end,
-  support := λ e he, 
-    begin
-      rw [if_neg, if_neg],
-      simp only [linear_map.coe_inl, prod.mk_eq_zero, eq_self_iff_true, and_true],
-      apply φ.support _ (not_mem_subset (subset_insert _ _) he),
-      apply ne.symm (ne_of_mem_of_not_mem (mem_insert y _) he),
-      apply ne.symm (ne_of_mem_of_not_mem (mem_insert_of_mem _ hx) he),
-    end }
+  support := λ e he, sorry }
 
 end rep
 

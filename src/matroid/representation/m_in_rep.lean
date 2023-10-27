@@ -842,7 +842,7 @@ lemma add_coloop_ground (M : matroid_in α) {f : α} (hf : f ∉ M.E) :
 
 -- i think we need e to be a cocircuit of M
 def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) 
-  (hf : f ∉ M.E) : matroid_in α := 
+  (hf : f ∉ M.E) (hMe : ¬ M.coloop e) : matroid_in α := 
 { ground := insert f M.E,
   -- M.base B covers e ∈ B
   base := sorry,
@@ -853,19 +853,47 @@ def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E)
 
 -- don't need hf but keeping for convenience
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
-  (h : M = M' ⟋ f) (hf : f ∉ M.E) : M' = series_extend M he hf := sorry
+  (h : M = M' ⟋ f) (hf : f ∉ M.E) (hMe : ¬ M.coloop e) : M' = series_extend M he hf hMe := sorry
 
 lemma cocircuit_contr_elem_eq_series_extend (M : matroid_in α) {e f : α} (hM : M.cocircuit {e, f}) 
-  (he : e ∈ (M ⟋ f).E) (hf : f ∉ (M ⟋ f).E) : series_extend (M ⟋ f) he hf = M :=
+  (he : e ∈ (M ⟋ f).E) (hf : f ∉ (M ⟋ f).E) (hMe : ¬ (M ⟋ f).coloop e) : 
+  series_extend (M ⟋ f) he hf hMe = M :=
 begin
   sorry,
 end
 
 lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.coloop e)
-  (hf : f ∉ M.E) : (series_extend M he hf).cocircuit {e, f} := sorry
+  (hf : f ∉ M.E) : (series_extend M he hf hMe).cocircuit {e, f} := sorry
 
-lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) : 
-    M = (series_extend M he hf) ⟋ f := sorry
+lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) 
+  (hMe : ¬ M.coloop e) : M = (series_extend M he hf hMe) ⟋ f := sorry
+
+def parallel_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) (hMe : ¬ M.loop e) :
+  matroid_in α := 
+{ ground := insert f M.E,
+  -- M.base B covers e ∈ B
+  base := sorry,
+  exists_base' := sorry,
+  base_exchange' := sorry,
+  maximality := sorry,
+  subset_ground' := sorry }
+
+-- don't need hf but keeping for convenience
+lemma parallel_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.circuit {e, f}) (he : e ∈ M.E) 
+  (h : M = M' ⟍ f) (hf : f ∉ M.E) (hMe : ¬ M.loop e) : M' = parallel_extend M he hf hMe := sorry
+
+lemma circuit_delete_elem_eq_parallel_extend (M : matroid_in α) {e f : α} (hM : M.circuit {e, f}) 
+  (he : e ∈ (M ⟍ f).E) (hf : f ∉ (M ⟍ f).E) (hMe : ¬(M ⟍ f).loop e) : 
+  parallel_extend (M ⟍ f) he hf hMe = M :=
+begin
+  sorry,
+end
+
+lemma parallel_extend_circuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.loop e)
+  (hf : f ∉ M.E) : (parallel_extend M he hf hMe).circuit {e, f} := sorry
+
+lemma parallel_extend_delete_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) 
+  (hMe : ¬ M.loop e): M = (parallel_extend M he hf hMe) ⟍ f := sorry
 
 lemma contract_circuit_of_insert_circuit (e : α) (C : set α) (he : M.nonloop e) (heC : e ∉ C)
   (hMCe : M.circuit (insert e C)) : (M ⟋ e).circuit C :=
