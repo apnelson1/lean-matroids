@@ -83,7 +83,6 @@ def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
         { simp_rw finset.insert_eq y f.support,
           dsimp [finsupp.total_apply, finsupp.sum],
           dsimp [finsupp.total_apply, finsupp.sum] at hftot,
-          simp only [← ite_apply],
           simp_rw [ite_smul, smul_ite],
           simp only [prod.ext_iff, prod.smul_mk, zero_add, add_zero, algebra.id.smul_eq_mul, 
             mul_one, smul_zero],

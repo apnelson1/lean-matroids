@@ -100,9 +100,11 @@ begin
   simp only [excluded_minor, mem_minimals_prop_iff] at hM,
   apply hM.1,
   rw [series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy, mem_set_of],
-  
-  obtain φM := series_extend_rep φ hxMy hyMy,
+  have hMx : ¬(M ⟋ y).coloop x,
+    sorry,
+  obtain φM := series_extend_rep φ hxMy hyMy hMx,
   exact is_representable_of_rep φM, 
+  sorry,
 end
 
 lemma excluded_minor_nonloop (M : matroid_in α) [finite_rk M]

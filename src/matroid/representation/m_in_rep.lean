@@ -209,6 +209,29 @@ def rep_of_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add
       refine ⟨he, rfl⟩,
     end }
 
+lemma delete_matroid_of_module_fun (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v : ι → W) (ground : set ι) (D : set ι) : 
+    matroid_of_module_fun 𝔽 W v (ground \ D) = (matroid_of_module_fun 𝔽 W v ground) ⟍ D :=
+begin
+  apply eq_of_indep_iff_indep_forall,
+  simp only [delete_ground, matroid_of_module_fun.ground],
+  intros I hI,
+  simp only [delete_indep_iff, matroid_of_module_fun, matroid_of_indep_of_bdd', subset_diff, 
+    matroid_of_indep_of_bdd_apply, and_assoc],
+end
+
+lemma matroid_of_module_fun_congr (𝔽 W : Type*) {ι : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] 
+  [finite_dimensional 𝔽 W] (v w : ι → W) (ground : set ι) (hvw : ∀ (e : ι), e ∈ ground → v e = w e) :
+  matroid_of_module_fun 𝔽 W v ground = matroid_of_module_fun 𝔽 W w ground :=
+begin
+  apply eq_of_indep_iff_indep_forall,
+  simp only [matroid_of_module_fun.ground],
+  intros I hI,
+  simp only [matroid_of_module_fun, matroid_of_indep_of_bdd', matroid_of_indep_of_bdd_apply,
+    λ e : I, hvw e (mem_of_mem_of_subset e.2 hI)],
+end
+
+
 lemma matroid_of_module_fun_rep_eq (M : matroid_in α) (𝔽 W : Type*) [field 𝔽] [add_comm_group W] 
   [module 𝔽 W] [finite_dimensional 𝔽 W] (φ : rep 𝔽 W M) : 
   M = matroid_of_module_fun 𝔽 W φ M.E :=
@@ -868,7 +891,7 @@ lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (h
 lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) 
   (hMe : ¬ M.coloop e) : M = (series_extend M he hf hMe) ⟋ f := sorry
 
-def parallel_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) (hMe : ¬ M.loop e) :
+def parallel_extend (M : matroid_in α) {e f : α} (hMe : M.nonloop e) (hf : f ∉ M.E) :
   matroid_in α := 
 { ground := insert f M.E,
   -- M.base B covers e ∈ B
@@ -879,21 +902,21 @@ def parallel_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ 
   subset_ground' := sorry }
 
 -- don't need hf but keeping for convenience
-lemma parallel_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.circuit {e, f}) (he : e ∈ M.E) 
-  (h : M = M' ⟍ f) (hf : f ∉ M.E) (hMe : ¬ M.loop e) : M' = parallel_extend M he hf hMe := sorry
+lemma parallel_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.circuit {e, f}) 
+  (h : M = M' ⟍ f) (hMe : M.nonloop e) (hf : f ∉ M.E) : M' = parallel_extend M hMe hf := sorry
 
 lemma circuit_delete_elem_eq_parallel_extend (M : matroid_in α) {e f : α} (hM : M.circuit {e, f}) 
-  (he : e ∈ (M ⟍ f).E) (hf : f ∉ (M ⟍ f).E) (hMe : ¬(M ⟍ f).loop e) : 
-  parallel_extend (M ⟍ f) he hf hMe = M :=
+  (hMe : (M ⟍ f).nonloop e) (hf : f ∉ (M ⟍ f).E) : 
+  parallel_extend (M ⟍ f) hMe hf = M :=
 begin
   sorry,
 end
 
-lemma parallel_extend_circuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.loop e)
-  (hf : f ∉ M.E) : (parallel_extend M he hf hMe).circuit {e, f} := sorry
+lemma parallel_extend_circuit (M : matroid_in α) {e f : α} (hMe : M.nonloop e)
+  (hf : f ∉ M.E) : (parallel_extend M hMe hf).circuit {e, f} := sorry
 
-lemma parallel_extend_delete_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) 
-  (hMe : ¬ M.loop e): M = (parallel_extend M he hf hMe) ⟍ f := sorry
+lemma parallel_extend_delete_eq (M : matroid_in α) {e f : α} (hMe : M.nonloop e) (hf : f ∉ M.E) 
+  : M = (parallel_extend M hMe hf) ⟍ f := sorry
 
 lemma contract_circuit_of_insert_circuit (e : α) (C : set α) (he : M.nonloop e) (heC : e ∉ C)
   (hMCe : M.circuit (insert e C)) : (M ⟋ e).circuit C :=
