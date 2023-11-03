@@ -520,12 +520,11 @@ lemma linear_independent.union'' {s t : set W}
   (hst : disjoint s t) (hst2 : linear_independent 𝔽 (λ x, x : (s ∪ t) → W))
     :  disjoint (span 𝔽 s) (span 𝔽 t) := 
 begin
-  --rw disjoint_def,
-  rw [set.disjoint_iff, subset_empty_iff, eq_empty_iff_forall_not_mem] at hst,
-  have h20 := λ (x : W) (h : x ∈ s), mem_union_left t h,
-  --have h21 := (coe : s ∪ t → set W) ⁻¹' s,
-  --have h10 := @linear_independent.disjoint_span_image _ 𝔽 W ((λ (x : (s ∪ t)), x)) _ _ _ hst2,
-  sorry
+  convert hst2.disjoint_span_image (show disjoint (coe ⁻¹' s) (coe ⁻¹' t), from _), 
+  { rw [eq_comm, image_preimage_eq_iff, subtype.range_coe], apply subset_union_left },
+  { rw [eq_comm, image_preimage_eq_iff, subtype.range_coe], apply subset_union_right },
+  rw [set.disjoint_iff, subset_empty_iff] at ⊢ hst,
+  rw [← preimage_inter, hst, preimage_empty],
 end
 
 theorem finrank_span_set_eq_ncard {K V : Type*} [division_ring K] [add_comm_group V] 
