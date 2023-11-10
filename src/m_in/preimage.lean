@@ -112,12 +112,15 @@ def add_coloop (M : matroid_in α) (f : α) : matroid_in α := (M﹡.add_loop f)
 /-- extend `e` in `M` by a parallel element `f`. -/
 def parallel_extend [decidable_eq α] (M : matroid_in α) [M.finite] (e f : α) (hf : f ∉ M.E) : 
     matroid_in α := 
-  M.preimage ((@id α).update e f) (begin
+  M.preimage ((@id α).update f e) (begin
     rintro x hx, 
     refine ⟨x, function.update_noteq _ _ _⟩, 
     rintro rfl, 
     exact hf hx
   end)
+
+def series_extend [decidable_eq α] (M : matroid_in α) [M.finite] (e f : α) (hf : f ∉ M.E) :
+    matroid_in α := (M﹡.parallel_extend e f hf)﹡ 
 
 end matroid_in 
     
