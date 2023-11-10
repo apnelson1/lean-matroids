@@ -55,100 +55,42 @@ instance fun_like {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 
 
 instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
 
+
+lemma rep.valid (φ : rep 𝔽 W M) {I : set α} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := 
+begin
+  refine (em (I ⊆ M.E)).elim (φ.valid' _) (fun hIE, _), 
+  obtain ⟨e, heI, heE⟩ := not_subset.1 hIE,  
+  exact iff_of_false (fun hli, hli.ne_zero ⟨e, heI⟩ (φ.support _ heE)) 
+    (fun hI, hIE hI.subset_ground), 
+end 
+
 def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
   ∃ (B : set α) (hB : M.base B), nonempty (rep 𝔽 (B →₀ 𝔽) M)
 
-def iso.rep (M : matroid_in α) (M' : matroid_in γ) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
-{ to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else 0,
+def iso.rep (M : matroid_in α) (M' : matroid_in γ) (ψ : M' ≃i M) (v : rep 𝔽 W M) : rep 𝔽 W M' := 
+{ to_fun := function.extend coe (fun (x : M'.E), v (ψ x)) 0,
   valid' := λ I hI, 
     begin
-      rw ψ.on_indep hI,
-      sorry,
-      /-have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
-        (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
-        λ a : I, φ (ψ ⟨a, hI a.2⟩),  
-        ext;
-        simp only [comp_app],
-        simp_rw [dite_eq_iff],
-        left,
-        simp only [exists_apply_eq_apply],
-      rw h2,
-      --simp only [← comp_app φ (λ e : I, ↑(ψ ⟨e, hI e.2⟩))],
-      rw iso.image,
-      sorry,
-      -/
-      /-have h4 := ψ.to_equiv,
-      have h6 := λ a : I, (⟨a, hI a.2⟩ : M'.E),
-        sorry, -/
-     /- have h5 := @equiv.bij_on_image _ _ ψ.to_equiv (ψ.image I),-/
-      /-have h5 := @equiv.mk M'.E M.E (λ A : set M'.E, 
-        (⟨ψ.image (A : set α), ψ.image_subset_ground A⟩ : set M.E)) _ _ _,-/
-      /-have h6 := ψ.to_equiv.image (λ e : M'.E, e.1 ∈ I),
-      simp at h6,
-      have h7 : ∀ e : I, e.1 ∈ ((λ (e : ↥(M'.E)), ↑e ∈ I) : set M'.E),-/
-      /-
-      simp only [left_inverse],
-      refine λ x, ψ.preimage_image x,-/
-      /-have h3 : ψ.image I ≃ I,
-        
-        --use ψ,
-        sorry,
-      --have h6 : inj_on ψ (I : set M.E),
-      --rw φ.valid,-/
-      /-rw ← φ.valid,
-      --rw linear_independent_image,
-      rw iso.image,
-      have h4 : ∀ e : M'.E, e.1 ∈ I ↔ (ψ e).1 ∈ ψ.image I, 
-        sorry,
-      have h5 : ∀ e : I, (ψ ⟨e, hI e.2⟩).1 ∈ ψ.image I,
-        sorry,
-      /-have h6 : ψ.to_equiv '' I = ψ.image I,
-        sorry,-/
-      rw [← image_comp],
-      simp only [← comp_app φ _],-/
-      
-      
-      --rw [← @linear_independent_image _ _ _ _ _ _ _ (coe : M.E → α)],
-     /- have h4 : (φ ∘ (λ e : I, ↑(ψ ⟨e, hI e.2⟩))) = λ (e : ↥(coe ∘ ψ '' (coe ⁻¹' I))), φ ↑e,
-        ext;
-        simp only [comp_app],
-        have h5 : ((ψ ⟨↑(h3 x), hI (h3 x).2⟩) : α) = x,
-          
-          sorry,
-        sorry,-/
-     -- have h5 := @linear_independent_equiv M'.E M.E 𝔽 W _ _ _ ψ.to_equiv (M.E.restrict φ),
-      
-      /-have h3 : (λ (a : ↥I), φ ↑(ψ ⟨↑a, _⟩)) ∘ h3 = (λ (e : ↥(ψ.image I)), φ ↑e),
-        intros,-/
-      
-      --have h3 : (λ (a : ↥I), φ (ψ ⟨a, hI a.2⟩)) = (λ (e : ↥(ψ.image I)), φ ↑e),
-      --rw linear_independent_equiv ψ,
-      --rw linear_map.linear_independent_iff,
-      /-have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
-        (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
-        λ a : I, φ (ψ ⟨a, hI a.2⟩),  
-        ext;
-        simp,
-        simp_rw [dite_eq_iff],
-        left,
-        simp only [exists_apply_eq_apply],
-      rw h2,
-      rw ← φ.valid,
-      have h3 : (λ (e : ↥(ψ.image I)), φ ↑e) = λ a : I, φ (ψ ⟨a, hI a.2⟩),  
-        sorry,-/
+      set eI : I → ψ.image I := λ x, ⟨ψ ⟨x,hI x.2⟩, ⟨_,mem_image_of_mem _ (by simp), rfl⟩⟩ with heI,
+      have hbij : bijective eI, 
+      { refine ⟨fun x y hxy, _, fun x, _⟩, 
+        { rwa [heI, subtype.mk_eq_mk, subtype.coe_inj, (equiv_like.injective ψ).eq_iff, 
+            subtype.mk_eq_mk, subtype.coe_inj] at hxy },
+        obtain ⟨_, ⟨_, ⟨z,hz,rfl⟩, rfl⟩⟩ := x,
+        exact ⟨⟨z,hz⟩, by simp⟩ },
+      rw [ψ.on_indep hI, ← v.valid ],
+      refine linear_independent_equiv' (equiv.of_bijective _ hbij) _, 
+      ext, 
+      simp only [comp_app, equiv.of_bijective_apply, subtype.coe_mk], 
+      exact ((@subtype.coe_injective _ M'.E).extend_apply (λ x, v (ψ x)) 0 (inclusion hI x)).symm,
     end,
-  support := sorry } 
-
-lemma vandermonde_rep [fintype 𝔽] (a n : ℕ) (hn : n ≤ nat.card 𝔽) : 
-  is_representable 𝔽 (unif (a + 1) n) := 
-begin
-  -- Choose a matrix with rows (`fin a`) and columns of the form (x^0, x^1, ... x_i^{a-1}) for 
-  -- distinct `x ∈ 𝔽`, and one extra column `(0,0,...,1)`. This is (pretty much) a Vandermonde 
-  -- matrix, so all its a × a subdeterminants are nonsingular - see
-  -- https://leanprover-community.github.io/mathlib_docs/linear_algebra/vandermonde.html#matrix.vandermonde. 
-  -- it follows that the matroid it represents is uniform. 
-  sorry,
-end 
+  support := 
+    begin
+      rintro e he, 
+      rw [extend_apply', pi.zero_apply], 
+      rintro ⟨a,rfl⟩, 
+      exact he a.2, 
+    end } 
 
 def add_coloop (M : matroid_in α) {f : α} (hf : f ∉ M.E) : matroid_in α := 
 { ground := M.E ∪ {f},

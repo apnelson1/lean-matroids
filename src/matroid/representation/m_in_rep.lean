@@ -219,11 +219,13 @@ namespace rep
 variables
 
 
-lemma valid (φ : rep 𝔽 W M) {I : set α} {hI : I ⊆ M.E}: linear_independent 𝔽 (λ e : I, φ e) ↔ 
-  M.indep I := φ.valid' _ hI
-
-lemma valid'' (φ : rep 𝔽 W M) {I : set α} (hI : I ⊆ M.E): linear_independent 𝔽 (λ e : I, φ e) ↔ 
-  M.indep I := φ.valid' _ hI
+lemma valid (φ : rep 𝔽 W M) {I : set α} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := 
+begin
+  refine (em (I ⊆ M.E)).elim (φ.valid' _) (fun hIE, _), 
+  obtain ⟨e, heI, heE⟩ := not_subset.1 hIE,  
+  exact iff_of_false (fun hli, hli.ne_zero ⟨e, heI⟩ (φ.support _ heE)) 
+    (fun hI, hIE hI.subset_ground), 
+end 
 
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
 inj_on_iff_injective.2 ((φ.valid' I hI.subset_ground).2 hI).injective
@@ -525,12 +527,12 @@ namespace rep
 /-- The representation for `M` whose rows are indexed by a base `B` -/
 def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
   rep 𝔽 (B →₀ 𝔽) M := 
-{ to_fun := λ e : α, ((valid'' φ' hB.subset_ground).2 hB.indep).repr ⟨φ' e, by
+{ to_fun := λ e : α, ((valid φ').2 hB.indep).repr ⟨φ' e, by
     { have h4 := φ'.mem_span_rep_range, rw ← span_range_base φ' hB at h4, exact h4 e}⟩,
   valid' := by 
   { intros I hI,
-    rw [← @valid _ _ _ _ _ _ _ φ' _ hI, 
-      linear_map.linear_independent_iff ((valid'' φ' hB.subset_ground).2 hB.indep).repr, 
+    rw [← @valid _ _ _ _ _ _ _ φ' I, 
+      linear_map.linear_independent_iff ((valid φ').2 hB.indep).repr, 
       ←(submodule.subtype (span 𝔽 (range (λ (e : B), φ' ↑e)))).linear_independent_iff, 
          submodule.coe_subtype, and_iff_left],
     { refl }, 
@@ -555,7 +557,7 @@ lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B)
 begin
   rw ← to_fun_eq_coe,
   simp [std_rep],
-  rw [((valid'' φ hB.subset_ground).2 hB.indep).repr_eq_single e ⟨φ e, by
+  rw [((valid φ).2 hB.indep).repr_eq_single e ⟨φ e, by
     { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
   simp only [finsupp.single_eq_same],
 end 
@@ -565,7 +567,7 @@ lemma id_matrix_of_base' (φ : rep 𝔽 W M) {B : set α} (e f : B) (hB : M.base
 begin
   rw ← to_fun_eq_coe,
   simp [std_rep],
-  rw [((valid'' φ hB.subset_ground).2 hB.indep).repr_eq_single e ⟨φ e, by
+  rw [(φ.valid.2 hB.indep).repr_eq_single e ⟨φ e, by
     { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
   apply finsupp.single_eq_of_ne hne,
 end
@@ -599,11 +601,11 @@ lemma rep.circuit (φ : rep 𝔽 W M) {C : set α} (hMC : M.circuit C) :
   ∃ f : α →₀ 𝔽, (f.support : set α) = C ∧ finsupp.total α W 𝔽 φ f = 0 ∧ f ≠ 0 :=
 begin
   obtain ⟨f, ⟨hfssup, ⟨hftot, hfne0⟩⟩⟩ := 
-    linear_dependent_comp_subtype'.1 ((φ.valid'' hMC.subset_ground).1.mt (not_indep_iff.2 hMC.dep)),
+    linear_dependent_comp_subtype'.1 (φ.valid.1.mt (not_indep_iff.2 hMC.dep)),
   refine ⟨f, ⟨_, ⟨hftot, hfne0⟩⟩⟩,
   apply subset.antisymm_iff.2 ⟨hfssup, λ x hx, _⟩,
   by_contra,
-  apply (φ.valid'' (subset.trans (diff_subset _ _) hMC.subset_ground)).2.mt 
+  apply φ.valid.2.mt 
     (linear_dependent_comp_subtype'.2 ⟨f, ⟨subset_diff_singleton hfssup h, ⟨hftot, hfne0⟩⟩⟩),
   apply hMC.diff_singleton_indep hx,
 end
