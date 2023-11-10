@@ -88,7 +88,7 @@ begin
       apply h3,
     simp_rw [h2, if_false],
     rw [linear_independent_image (inj_on_singleton _ _), image_singleton],
-    refine linear_independent_singleton (φ.ne_zero_of_nonloop hMx) },
+    exact linear_independent_singleton (φ.ne_zero_of_nonloop hMx) },
   simp only [delete_elem, ← delete_matroid_of_module_fun, insert_diff_of_mem, mem_singleton,
     diff_singleton_eq_self hy],
   have h10 : ∀ e : α, e ∈ M.E → ite (e = y) (-φ x) (φ e) = φ e,
