@@ -8,7 +8,7 @@ import m_in.equiv
 
 
 universe u 
-variables {α : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
+variables {α γ : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
 
 open function set submodule finite_dimensional
@@ -48,14 +48,23 @@ structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (
 (valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
 (support : ∀ (e : α), e ∉ M.E → to_fun e = 0)
 
-namespace rep 
+instance fun_like {𝔽 W : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] {M : matroid_in α } : 
+  fun_like (rep 𝔽 W M) α (λ _, W) := 
+{ coe := λ φ e, φ.to_fun e,
+  coe_injective' := λ f g h, by cases f; cases g; congr' }
 
-def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
-{ to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else φ a,
+instance : has_coe_to_fun (rep 𝔽 W M) (λ _, α → W) := fun_like.has_coe_to_fun
+
+def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := 
+  ∃ (B : set α) (hB : M.base B), nonempty (rep 𝔽 (B →₀ 𝔽) M)
+
+def iso.rep (M : matroid_in α) (M' : matroid_in γ) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
+{ to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else 0,
   valid' := λ I hI, 
     begin
       rw ψ.on_indep hI,
-      have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
+      sorry,
+      /-have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
         (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
         λ a : I, φ (ψ ⟨a, hI a.2⟩),  
         ext;
@@ -67,7 +76,7 @@ def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep �
       --simp only [← comp_app φ (λ e : I, ↑(ψ ⟨e, hI e.2⟩))],
       rw iso.image,
       sorry,
-      
+      -/
       /-have h4 := ψ.to_equiv,
       have h6 := λ a : I, (⟨a, hI a.2⟩ : M'.E),
         sorry, -/
@@ -128,8 +137,110 @@ def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep �
       have h3 : (λ (e : ↥(ψ.image I)), φ ↑e) = λ a : I, φ (ψ ⟨a, hI a.2⟩),  
         sorry,-/
     end,
-  support := _ } 
+  support := sorry } 
 
-end rep
+lemma vandermonde_rep [fintype 𝔽] (a n : ℕ) (hn : n ≤ nat.card 𝔽) : 
+  is_representable 𝔽 (unif (a + 1) n) := 
+begin
+  -- Choose a matrix with rows (`fin a`) and columns of the form (x^0, x^1, ... x_i^{a-1}) for 
+  -- distinct `x ∈ 𝔽`, and one extra column `(0,0,...,1)`. This is (pretty much) a Vandermonde 
+  -- matrix, so all its a × a subdeterminants are nonsingular - see
+  -- https://leanprover-community.github.io/mathlib_docs/linear_algebra/vandermonde.html#matrix.vandermonde. 
+  -- it follows that the matroid it represents is uniform. 
+  sorry,
+end 
+
+def add_coloop (M : matroid_in α) {f : α} (hf : f ∉ M.E) : matroid_in α := 
+{ ground := M.E ∪ {f},
+  base := λ B, M.base (B \ {f} : set α) ∧ f ∈ B,
+  exists_base' := 
+    begin
+      obtain ⟨B, hB⟩ := M.exists_base,
+      use B ∪ {f},
+      simp only [union_singleton, insert_diff_of_mem, mem_singleton, mem_insert_iff, 
+        eq_self_iff_true, true_or, and_true],
+      rw diff_singleton_eq_self (not_mem_subset hB.subset_ground hf),
+      apply hB,
+    end,
+  base_exchange' := sorry,
+  maximality := sorry,
+  subset_ground' := λ B hB, 
+    begin
+      rw ← diff_union_of_subset (singleton_subset_iff.2 hB.2),
+      apply union_subset_union hB.1.subset_ground,
+      simp only [subset_singleton_iff, mem_singleton_iff, imp_self, implies_true_iff],
+    end }
+
+lemma add_coloop_equal (M M' : matroid_in α) {f : α} (hf : f ∉ M.E) : 
+  M' = add_coloop M hf ↔ M'.coloop f ∧ M' ⟍ f = M := sorry 
+
+lemma add_coloop_del_equal (M : matroid_in α) {f : α} (hf : f ∉ M.E) :
+  M = add_coloop M hf ⟍ f := sorry
+
+def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) 
+  (hf : f ∉ M.E) (hMe : ¬ M.coloop e) : matroid_in α := 
+{ ground := insert f M.E,
+  -- M.base B covers e ∈ B
+  base := sorry,
+  exists_base' := sorry,
+  base_exchange' := sorry,
+  maximality := sorry,
+  subset_ground' := sorry }
+
+-- don't need hf but keeping for convenience
+lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
+  (h : M = M' ⟋ f) (hf : f ∉ M.E) (hMe : ¬ M.coloop e) : M' = series_extend M he hf hMe := sorry
+
+lemma cocircuit_contr_elem_eq_series_extend (M : matroid_in α) {e f : α} (hM : M.cocircuit {e, f}) 
+  (he : e ∈ (M ⟋ f).E) (hf : f ∉ (M ⟋ f).E) (hMe : ¬ (M ⟋ f).coloop e) : 
+  series_extend (M ⟋ f) he hf hMe = M :=
+begin
+  sorry,
+end
+
+lemma series_extend_cocircuit (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hMe : ¬ M.coloop e)
+  (hf : f ∉ M.E) : (series_extend M he hf hMe).cocircuit {e, f} := sorry
+
+lemma series_extend_contr_eq (M : matroid_in α) {e f : α} (he : e ∈ M.E) (hf : f ∉ M.E) 
+  (hMe : ¬ M.coloop e) : M = (series_extend M he hf hMe) ⟋ f := sorry
+
+def parallel_extend (M : matroid_in α) {e f : α} (hMe : M.nonloop e) (hf : f ∉ M.E) :
+  matroid_in α := 
+{ ground := insert f M.E,
+  -- M.base B covers e ∈ B
+  base := sorry,
+  exists_base' := sorry,
+  base_exchange' := sorry,
+  maximality := sorry,
+  subset_ground' := sorry }
+
+-- don't need hf but keeping for convenience
+lemma parallel_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.circuit {e, f}) 
+  (h : M = M' ⟍ f) (hMe : M.nonloop e) (hf : f ∉ M.E) : M' = parallel_extend M hMe hf := sorry
+
+lemma circuit_delete_elem_eq_parallel_extend (M : matroid_in α) {e f : α} (hM : M.circuit {e, f}) 
+  (hMe : (M ⟍ f).nonloop e) (hf : f ∉ (M ⟍ f).E) : 
+  parallel_extend (M ⟍ f) hMe hf = M :=
+begin
+  sorry,
+end
+
+lemma parallel_extend_circuit (M : matroid_in α) {e f : α} (hMe : M.nonloop e)
+  (hf : f ∉ M.E) : (parallel_extend M hMe hf).circuit {e, f} := sorry
+
+lemma parallel_extend_delete_eq (M : matroid_in α) {e f : α} (hMe : M.nonloop e) (hf : f ∉ M.E) 
+  : M = (parallel_extend M hMe hf) ⟍ f := sorry
+
+lemma series_pair_mem_circuit (x y : α) (C : set α) (hMC : M.circuit C) (hMxy : M.cocircuit {x, y}) 
+  : x ∈ C ↔ y ∈ C :=
+begin
+  refine ⟨_, _⟩,
+  sorry,
+  sorry,
+end
+
+lemma U24_simple : (unif 2 4).simple := sorry
+
+lemma unif_iso_minor {n m k : ℕ} (hjk : m ≤ n) : unif k m ≤i unif k n := sorry
 
 end matroid_in

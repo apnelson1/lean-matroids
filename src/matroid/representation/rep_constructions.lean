@@ -9,7 +9,7 @@ import .m_in_rep
 
 
 universe u 
-variables {α : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
+variables {α γ : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
 
 open function set submodule finite_dimensional
@@ -171,13 +171,12 @@ begin
   apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),
 end
 
-def is_rep_of_iso_minor_of_is_rep (N : matroid_in α) (hNM : N ≤i M) (hM : M.is_representable 𝔽) : 
+def is_rep_of_iso_minor_of_is_rep (N : matroid_in γ) (hNM : N ≤i M) (hM : M.is_representable 𝔽) : 
   N.is_representable 𝔽 := 
 begin
-  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM,
-  /-obtain ⟨C, ⟨D, ⟨hC, ⟨hD, ⟨hCD, rfl⟩⟩⟩⟩⟩ := minor.exists_contract_indep_delete_coindep hNM,
-  apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),-/
-  sorry,
+  obtain ⟨M', ⟨hM'M, ⟨ψ⟩⟩⟩ := hNM,
+  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := is_rep_of_minor_of_is_rep M' hM'M hM,
+  apply is_representable_of_rep (iso.rep M' N ψ φ),
 end
 
 variables [fintype α]
@@ -370,14 +369,10 @@ end
 
 lemma U22_binary : matroid_in.is_binary (unif 2 2) := 
 begin
-  have h3 : unif 2 2 ≤i unif 2 3,
-    sorry, 
-  obtain h4 := U23_binary,
-  --have h5 := is_rep_of_minor_of_is_rep,
-  sorry,
+  have h23 : 2 ≤ 3,
+    simp only [nat.bit0_le_bit1_iff],
+  apply is_rep_of_iso_minor_of_is_rep (unif 2 2) (unif_iso_minor h23) U23_binary,
 end
-
-lemma U24_simple : (unif 2 4).simple := sorry
 
 lemma U24_nonbinary : ¬ matroid_in.is_binary (unif 2 4) :=
 begin
@@ -460,33 +455,304 @@ def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
       apply he
     end } 
 
+-- matroid_of_module_fun requires finite_dimensional
+lemma parallel_extend_rep (φ : rep 𝔽 W M) {x y : α} (hMx : M.nonloop x) (hy : y ∉ M.E) 
+[finite_dimensional 𝔽 W] :
+  matroid_of_module_fun 𝔽 W (λ (e : α), if e = y then - φ x else φ e) (insert y M.E) = 
+  parallel_extend M hMx hy := 
+begin
+  apply parallel_extend_eq _ _ _ _ hMx hy,
+  { rw circuit_iff_dep_forall_diff_singleton_indep,
+    refine ⟨_, λ e he, _⟩,
+    rw dep,
+    refine ⟨_, _⟩,
+    { simp only [matroid_of_module_fun, matroid_of_indep_of_bdd'_apply, not_and_distrib],
+      left,
+      --simp_rw [← ite_apply],
+      rw not_linear_independent_iff,
+      refine ⟨finset.univ, ⟨λ e, 1, _⟩⟩,
+      simp only [one_smul, finset.mem_univ, ne.def, one_ne_zero, not_false_iff, set_coe.exists, 
+        mem_insert_iff, mem_singleton_iff, exists_prop, and_true, exists_or_eq_right],
+      convert_to (∑ (x_1 : α) in {x, y}, ite (x_1 = y) (-φ x) (φ x_1) = 0), 
+      rw @finset.sum_subtype _ _ _ ({x, y} : set α) _ {x, y},
+      refl,
+      intros e,
+      rw [← finset.mem_coe, finset.coe_insert, finset.coe_singleton],
+      refl,
+      rw [finset.sum_insert (finset.mem_singleton.1.mt (ne_of_mem_of_not_mem hMx.mem_ground hy)), 
+        finset.sum_singleton, if_pos rfl, if_neg (ne_of_mem_of_not_mem hMx.mem_ground hy)],
+      simp only [add_right_neg] },
+    rw [insert_eq, union_comm, ← insert_eq],
+    apply insert_subset_insert (singleton_subset_iff.2 hMx.mem_ground),
+    obtain ⟨rfl | _⟩ := mem_insert_iff.1 he,
+    { simp only [insert_diff_of_mem, mem_singleton, 
+        diff_singleton_eq_self (mem_singleton_iff.1.mt (ne_of_mem_of_not_mem hMx.mem_ground hy)), 
+        matroid_of_module_fun, matroid_of_indep_of_bdd'_apply, not_and_distrib],
+      refine ⟨_, singleton_subset_iff.2 (mem_insert y _)⟩,
+      have h2 : ∀ e : ({y} : set α), ↑e = y,
+        intros e,
+        apply mem_singleton_iff.1 e.2,
+      simp_rw [h2, eq_self_iff_true, if_true],
+      rw [@linear_independent_image _ _ _ _ _ _ _ (λ (e : α), - φ x) (inj_on_singleton _ _), 
+        image_singleton],
+      apply @linear_independent_singleton 𝔽 _ _ _ _ _ _ _ 
+        (neg_ne_zero.2 (φ.ne_zero_of_nonloop hMx)) },
+    rw [mem_singleton_iff.1 h, insert_eq x {y}, union_comm, ← insert_eq],
+    simp only [insert_diff_of_mem, mem_singleton, 
+      diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm 
+      (ne_of_mem_of_not_mem hMx.mem_ground hy))), matroid_of_module_fun, 
+      matroid_of_indep_of_bdd'_apply, not_and_distrib],
+    refine ⟨_, singleton_subset_iff.2 (mem_of_mem_of_subset hMx.mem_ground (subset_insert y _))⟩,
+    have h2 : ∀ e : ({x} : set α), ↑e ≠ y,
+      intros e,
+      have h3 := (ne_of_mem_of_not_mem hMx.mem_ground hy),
+      rw ← mem_singleton_iff.1 e.2 at h3,
+      apply h3,
+    simp_rw [h2, if_false],
+    rw [linear_independent_image (inj_on_singleton _ _), image_singleton],
+    exact linear_independent_singleton (φ.ne_zero_of_nonloop hMx) },
+  simp only [delete_elem, ← delete_matroid_of_module_fun, insert_diff_of_mem, mem_singleton,
+    diff_singleton_eq_self hy],
+  have h10 : ∀ e : α, e ∈ M.E → ite (e = y) (-φ x) (φ e) = φ e,
+    intros e he,
+    rw if_neg (ne_of_mem_of_not_mem he hy),
+  simp_rw [matroid_of_module_fun_congr 𝔽 W _ _ _ h10],
+  apply matroid_of_module_fun_rep_eq,
+end
+
 -- use matroid_of_module_func and write parallel_extend_rep
-def rep_of_parallel (M : matroid_in α) [finite_rk M] {x y : α} (hxy : x ≠ y) 
-  (hf : M.circuit {x, y}) (φ : rep 𝔽 W (M ⟍ ({y} : set α))) : rep 𝔽 W M := 
-{ to_fun := λ (e : α), if e = y then φ x else φ e,
+def rep_of_parallel (M : matroid_in α) [finite_rk M] [finite_dimensional 𝔽 W] {x y : α} 
+  (hxy : x ≠ y) (hf : M.circuit {x, y}) (φ : rep 𝔽 W (M ⟍ y)) : rep 𝔽 W M := 
+begin
+  have hx : (M ⟍ y).nonloop x,
+    have hyxy : y ∈ {x, y},
+      rw [insert_eq, union_comm, ← insert_eq],
+      -- squeeze_simp breaks
+      simp,
+    have h2 := hf.diff_singleton_indep hyxy,
+    rw [insert_eq, union_comm, ← insert_eq] at h2,
+    simp at h2,
+    rw diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm hxy)) at h2,
+    have h3 := delete_indep_iff.2 ⟨h2, disjoint_singleton.2 hxy⟩,
+    rw delete_elem,
+    apply h3.nonloop,
+  have hy : y ∉ (M ⟍ y).E,
+    rw [delete_elem, delete_ground],
+    simp only [not_mem_diff_singleton, not_false_iff],
+  rw [parallel_extend_eq _ _ hf rfl hx hy, ← parallel_extend_rep φ],
+  apply rep_of_matroid_of_module_fun,
+end
+
+def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
+  (hy : y ∉ M.E) (hMx : ¬ M.coloop x) : rep 𝔽 (W × 𝔽) (series_extend M hx hy hMx) := 
+{ to_fun := λ (e : α), 
+    if e = x
+    then 
+      (linear_map.inl 𝔽 W 𝔽 ∘ φ + linear_map.inr 𝔽 W 𝔽 ∘ (λ e : α, 1)) e
+    else 
+      if e = y then linear_map.inr 𝔽 W 𝔽 1 else (linear_map.inl 𝔽 W 𝔽 ∘ φ) e,
   valid' := λ I hI, 
     begin
-      by_cases y ∈ I,
-      { rw ← not_iff_not,
-        refine ⟨λ h2, _, λ h2, _⟩,
-        rw not_indep_iff,
-        rw dep_iff_supset_circuit,
-        sorry,
-        sorry },
-      { have h8 : ((λ (e : α), ite (e = y) (φ x) (φ e)) ∘ (coe : I → α)) = 
-        ((λ (e : α), (φ e)) ∘ coe),
-          sorry,
-        rw h8,
-        refine ⟨λ h2, _, λ h2, _⟩,
-        apply indep.of_delete (φ.valid.1 h2),
-        rw delete_ground,
-        apply subset_diff_singleton hI h,
-        rw [φ.valid, delete_indep_iff],
-        refine ⟨h2, disjoint_singleton_right.2 h⟩,
-        rw delete_ground,
-        apply subset_diff_singleton hI h, },
+      refine ⟨_, λ h2, _⟩,
+      { contrapose,
+      intros h2,
+      rw linear_dependent_comp_subtype',
+      rw not_indep_iff at h2,
+      obtain ⟨C, ⟨hCI, hCcct⟩⟩ := exists_circuit_subset_of_dep h2,
+      by_cases hxC : x ∈ C, 
+      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (series_extend_cocircuit M hx hMx hy)).1 hxC,
+        rw [← @union_diff_cancel _ {y} C (singleton_subset_iff.2 hyC), union_comm, 
+          union_singleton] at hCcct,
+        have hMcct := contract_circuit_of_insert_circuit y (C \ {y}) 
+          ((series_extend_cocircuit M hx hMx hy).nonloop_of_mem 
+          (mem_insert_of_mem x (mem_singleton _))) (not_mem_diff_singleton _ _) hCcct,
+        rw [← series_extend_contr_eq] at hMcct,
+        obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := rep.circuit φ hMcct,
+        rw ← hC at hCcct hMcct,
+        refine ⟨(⟨(insert y f.support), (λ e : α, if e = y then - f x else f e), λ a, 
+          ⟨λ ha, _, λ ha, _⟩⟩ : α →₀ 𝔽), _⟩,
+        { obtain ⟨rfl | ha⟩ := finset.mem_insert.1 ha,
+          { simp only [eq_self_iff_true, if_true, ne.def, neg_eq_zero],
+            rw [← ne.def, ← finsupp.mem_support_iff, ← finset.mem_coe, hC],
+            apply mem_diff_of_mem hxC (mem_singleton_iff.1.mt (ne_of_mem_of_not_mem hx hy)) },
+          { rw if_neg (ne_of_mem_of_not_mem (finset.mem_coe.2 h) 
+              (not_mem_subset (subset_of_eq hC) (not_mem_diff_singleton _ _))),
+            apply finsupp.mem_support_iff.1 h } },
+        { apply finset.mem_insert.2,
+          by_cases hay : a = y,
+          { apply or.intro_left _ hay },
+          { rw if_neg hay at ha,
+            apply or.intro_right _ (finsupp.mem_support_iff.2 ha) } },
+        refine ⟨_, ⟨_, _⟩⟩,
+        { rw finsupp.mem_supported,
+          simp only [finset.coe_insert, hC],
+          apply insert_subset.2 ⟨mem_of_subset_of_mem hCI hyC, subset_trans (diff_subset _ _) hCI⟩},
+        { simp_rw finset.insert_eq y f.support,
+          dsimp [finsupp.total_apply, finsupp.sum],
+          dsimp [finsupp.total_apply, finsupp.sum] at hftot,
+          simp_rw [ite_smul, smul_ite],
+          simp only [prod.ext_iff, prod.smul_mk, zero_add, add_zero, algebra.id.smul_eq_mul, 
+            mul_one, smul_zero],
+          rw [finset.sum_union, ← @finset.sdiff_union_of_subset _ _ ({x} : finset α) f.support _, 
+            finset.sum_union, finset.sum_singleton],
+          simp only [if_pos rfl, if_neg (ne_of_mem_of_not_mem hx hy), 
+            if_neg (ne.symm (ne_of_mem_of_not_mem hx hy)), ← prod_mk_sum],
+          have hx2 : ∀ (e : α), e ∈ ({x} : finset α) → e ≠ y,
+            intros e he,
+            rw [finset.mem_singleton.1 he],
+            apply ne_of_mem_of_not_mem hx hy,
+          have hx3 : ∀ (e : α), e ∈ ({x} : finset α) → e = x,
+            intros e he,
+            rw [finset.mem_singleton.1 he],
+          
+          rw [finset.sum_ite_of_false _ _ hx2, finset.sum_ite_of_true _ _ hx3],
+          simp only [neg_smul, eq_self_iff_true, if_true, pi.add_apply, 
+            prod.mk_add_mk, add_zero, zero_add, prod.smul_mk, algebra.id.smul_eq_mul, mul_one, 
+            prod.neg_mk],
+          
+          simp only [prod.fst_add, zero_add, prod.fst_zero, prod.snd_add, prod.snd_zero],
+          rw [finset.sum_ite_of_false _ _ (λ e he, _), finset.sum_ite_of_false _ _ (λ e he, _)],
+          simp only [finset.sum_ite_of_false _ _ (λ e he, _), ← prod_mk_sum], 
+          rw finset.sum_ite_of_false _ _ (λ e he, _),
+          rw [← prod_mk_sum, finset.sum_const_zero, zero_add],
+          simp only,
+          rw ← finset.sum_union, --(finset.sdiff_disjoint), 
+          simp only [finset.sdiff_union_self_eq_union, finset.sum_singleton, add_left_neg, 
+            eq_self_iff_true, and_true],
+          rw [finset.union_comm, ← finset.insert_eq, finset.insert_eq_of_mem],
+          apply hftot,
+          rw [← finset.mem_coe, hC],
+          apply mem_diff_singleton.2 ⟨hxC, ne_of_mem_of_not_mem hx hy⟩,
+          simp only [finset.disjoint_singleton_right, finset.mem_sdiff, finset.mem_singleton, 
+            eq_self_iff_true, not_true, and_false, not_false_iff], -- avoiding decidable_eq instance
+          rw [← finset.mem_coe, finset.coe_sdiff, hC, mem_diff, mem_diff] at he,
+          apply mem_singleton_iff.2.mt he.1.2,
+          rw [finset.mem_sdiff, finset.mem_singleton] at he,
+          apply he.2,
+          rw [← finset.mem_coe, finset.coe_sdiff, hC, mem_diff, mem_diff] at he,
+          apply mem_singleton_iff.2.mt he.1.2,
+          simp only [finset.disjoint_singleton_right, finset.mem_sdiff, finset.mem_singleton, 
+            eq_self_iff_true, not_true, and_false, not_false_iff],
+          rw [finset.singleton_subset_iff, ← finset.mem_coe, hC],
+          apply mem_diff_singleton.2 ⟨hxC, ne_of_mem_of_not_mem hx hy⟩,
+          rw [← finset.disjoint_coe, hC],
+          simp only [finset.coe_singleton, disjoint_singleton_left, not_mem_diff_singleton, 
+            not_false_iff] },
+        rw ne.def,
+        rw finsupp.ext_iff,
+        push_neg,
+        use x,
+        simp only [ne.def, finsupp.coe_mk, finsupp.coe_zero, pi.zero_apply],
+        rw if_neg (ne_of_mem_of_not_mem hx hy),
+        apply finsupp.mem_support_iff.1,
+        rw [← finset.mem_coe, hC],
+        apply mem_diff_singleton.2 ⟨hxC, ne_of_mem_of_not_mem hx hy⟩ },
+      { have hyC := (series_pair_mem_circuit _ _ _ hCcct 
+          (series_extend_cocircuit M hx hMx hy)).2.mt hxC,
+        have h4 := (@indep.of_contract _ _ {y} _).mt (not_indep_iff.2 hCcct.dep),
+        rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+          linear_dependent_comp_subtype'] at h4, 
+        obtain ⟨f, ⟨hC, ⟨hftot, hfne0⟩⟩⟩ := h4,
+        refine ⟨f, ⟨subset_trans hC hCI, ⟨_, hfne0⟩⟩⟩,
+        dsimp [finsupp.total_apply, finsupp.sum],
+        dsimp [finsupp.total_apply, finsupp.sum] at hftot,
+        simp_rw smul_ite,
+        rw [finset.sum_ite_of_false _ _ (λ e he, _), 
+          finset.sum_ite_of_false _ _ (λ e he, _)],
+        simp only [prod.smul_mk, algebra.id.smul_eq_mul, mul_zero, ← prod_mk_sum, hftot, 
+          finset.sum_const_zero, prod.mk_eq_zero, eq_self_iff_true, and_self],
+        { apply ne_of_mem_of_not_mem (finset.mem_coe.2 he) 
+            (not_mem_subset ((f.mem_supported _).1 hC) hyC) },
+        { apply ne_of_mem_of_not_mem (finset.mem_coe.2 he) 
+            (not_mem_subset ((f.mem_supported _).1 hC) hxC) },
+        apply (subset_insert_iff_of_not_mem hyC).1 hCcct.subset_ground } },
+      { simp_rw [linear_independent_comp_subtype, finsupp.total_apply, smul_ite],
+        dsimp [finsupp.sum],
+        simp only [add_zero, zero_add, mul_one, smul_zero, mul_zero, finset.sum_ite, prod.ext_iff,
+          finset.filter_congr_decidable, prod.fst_add, prod.fst_zero, prod.snd_add, 
+          prod.snd_zero, finset.filter_eq', finset.filter_ne', ← prod_mk_sum, 
+          finset.sum_const_zero, zero_add, add_zero],
+        intros l hl hl0,
+        by_cases hyI : (series_extend M hx hy hMx).indep ({y} ∪ I : set α),
+        { have hyI2 := (hyI.subset (subset_union_left _ _)).union_indep_iff_contract_indep.1 hyI,
+          rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+            linear_independent_comp_subtype] at hyI2,
+          simp_rw [finsupp.total_apply] at hyI2,
+          have hxl : x ∉ l.support,
+          { by_contra hxl,
+            rw [if_pos hxl] at hl0,
+            specialize hyI2 (l.filter (≠ y)) _ _,
+            { rw [finsupp.mem_supported, finsupp.support_filter, finset.filter_ne', 
+                finset.coe_erase],
+              apply diff_subset_diff_left ((l.mem_supported _).1 hl) },
+            { rw [finsupp.sum_filter_index, finsupp.support_filter, finset.filter_ne',
+                finset.sum_eq_add_sum_diff_singleton (finset.mem_erase.2 
+                ⟨ne_of_mem_of_not_mem hx hy, hxl⟩), ← finset.erase_eq],
+              rw [finset.erase_right_comm, finset.sum_singleton] at hl0,
+              apply hl0.1 },
+            apply finsupp.mem_support_iff.1 hxl,
+            rw [← l.filter_apply_pos (≠ y) (ne_of_mem_of_not_mem hx hy), hyI2], 
+            simp only [finsupp.coe_zero, pi.zero_apply] },
+          simp only [if_neg hxl, finset.sum_empty, zero_add] at hl0,
+          have hyl : y ∉ l.support,
+          { by_contra hyl,
+            rw [if_pos (finset.mem_erase.2 ⟨ne.symm (ne_of_mem_of_not_mem hx hy), hyl⟩), 
+              finset.sum_singleton] at hl0,
+             apply finsupp.mem_support_iff.1 hyl,
+             apply hl0.2 },
+          specialize hyI2 l _ _,
+          { rw [finsupp.mem_supported],
+            apply subset_diff_singleton ((l.mem_supported 𝔽).2 hl) hyl },
+          { dsimp [finsupp.sum],
+            rw [finset.erase_eq_of_not_mem hxl, finset.erase_eq_of_not_mem hyl] at hl0,
+            apply hl0.1 },
+          apply hyI2,
+          apply hyI2.subset_ground },
+      { have hyl : y ∉ l.support,
+        { by_contra,
+          rw [singleton_union, insert_eq_of_mem (mem_of_subset_of_mem 
+            ((l.mem_supported _).1 hl) h)] at hyI,
+          apply hyI h2 },
+        rw [if_neg (finset.mem_erase.1.mt (not_and_distrib.2 (or.intro_right _ hyl))), 
+          finset.sum_empty, add_zero] at hl0,
+        have hxl : x ∉ l.support,
+        { by_contra hxl,
+          simp only [if_pos hxl, finset.sum_singleton] at hl0,
+          apply finsupp.mem_support_iff.1 hxl,
+          apply hl0.2 },
+        rw [if_neg hxl, finset.sum_empty, zero_add] at hl0,
+        rw not_indep_iff _ at hyI,
+        have hIxy : (series_extend M hx hy hMx).indep ({y} ∪ (I \ {x}) : set α),  
+        { by_contra hIyxn, 
+          obtain ⟨C, ⟨hC, hC2⟩⟩ := exists_circuit_subset_of_dep ((not_indep_iff _).1 hIyxn),
+          have hyC : y ∈ C,
+          { by_contra hyC,
+            rw [singleton_union, subset_insert_iff_of_not_mem hyC] at hC,
+            apply hC2.dep.not_indep (h2.subset (subset_trans hC (diff_subset _ _))) },
+          rw ← series_pair_mem_circuit _ _ _ hC2 (series_extend_cocircuit M hx hMx hy) at hyC,
+          apply (not_mem_subset hC ((mem_union _ _ _).1.mt 
+            (not_or_distrib.2 ⟨mem_singleton_iff.1.mt (ne_of_mem_of_not_mem hx hy), 
+            not_mem_diff_singleton _ _⟩))) hyC,
+          apply subset_trans (union_subset_union_right _ (diff_subset I {x})) hyI.subset_ground },
+        have hyx := (hIxy.subset (subset_union_left _ _)).union_indep_iff_contract_indep.1 hIxy,
+        rw [← contract_elem, ← series_extend_contr_eq, ← φ.valid, 
+          linear_independent_comp_subtype] at hyx,
+        rw [finset.erase_eq_of_not_mem hxl, finset.erase_eq_of_not_mem hyl] at hl0,
+        apply hyx l ((l.mem_supported _).2 
+          (subset_diff_singleton (subset_diff_singleton ((l.mem_supported _).1 hl) hxl) hyl)) hl0.1,
+      apply hyx.subset_ground,
+      simp only [singleton_union, auto_param_eq],
+      apply insert_subset.2 ⟨mem_insert _ _, hI⟩ } }, 
     end,
-  support := sorry }
+  support := λ e he, 
+    begin
+      rw [if_neg, if_neg],
+      simp only [linear_map.coe_inl, prod.mk_eq_zero, eq_self_iff_true, and_true],
+      apply φ.support _ (not_mem_subset (subset_insert _ _) he),
+      apply ne.symm (ne_of_mem_of_not_mem (mem_insert y _) he),
+      apply ne.symm (ne_of_mem_of_not_mem (mem_insert_of_mem _ hx) he),
+    end }
 
 def rep_empty (𝔽 : Type*) [field 𝔽] (M : matroid_in α) 
   (hM : M.E = ∅) : rep 𝔽 𝔽 M := 

@@ -5,7 +5,7 @@ import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
-import .m_in_rep .rep_m_constructions .rep_m_constructions2 .rep_m_constructions3
+import .m_in_rep .rep_constructions
 
 
 universe u 
@@ -215,8 +215,23 @@ end
 lemma excluded_minor_binary_unif (hM : excluded_minor matroid_in.is_binary M) 
   (ψ : M ≃i unif 2 M.E.ncard) (h2 : 2 ≤ M.E.ncard) : 4 ≤ M.E.ncard :=
 begin
- -- rw le_iff_eq_or_lt at h2,
-  sorry,
+  rw [excluded_minor, mem_minimals_prop_iff] at hM,
+  rw le_iff_eq_or_lt at h2,
+  cases h2 with h2 h3,
+  { by_contra,
+    apply hM.1,
+    rw ← h2 at ψ, 
+    obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := U22_binary,
+    apply is_representable_of_rep (iso.rep _ _ ψ φ) },
+  { have h2 := nat.add_one_le_iff.2 h3,
+    rw le_iff_eq_or_lt at h2,
+    cases h2 with h2 h3,
+    { by_contra, 
+      apply hM.1,
+      rw ← h2 at ψ, 
+      obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := U23_binary,
+      apply is_representable_of_rep (iso.rep _ _ ψ φ) },
+    { apply nat.add_one_le_iff.2 h3 } },
 end
 
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
@@ -392,9 +407,8 @@ begin
     rw ← hnxy,
     apply ncard_le_of_subset hxy2, 
   obtain ⟨ψ⟩ := (iso_line_iff hcard).2 ⟨excluded_minor_simple M hM, _⟩,
-  have hcard4 := excluded_minor_binary_unif hM ψ hcard,
-  apply iso_minor.trans _ (ψ.symm.trans_iso_minor (minor.refl.iso_minor)),
-  sorry,
+  apply iso_minor.trans (unif_iso_minor (excluded_minor_binary_unif hM ψ hcard)) 
+    (ψ.symm.trans_iso_minor (minor.refl.iso_minor)),
   refine ⟨hMrk, ⟨to_finite M.E, rfl⟩⟩,
 end
 
