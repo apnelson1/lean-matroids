@@ -35,7 +35,7 @@ variables [fintype α]
 
 open_locale big_operators
 
-lemma parallel_extend_rep' (φ : rep 𝔽 W M) {x y : α} (hMx : M.nonloop x) (hy : y ∉ M.E) :
+lemma parallel_extend_rep (φ : rep 𝔽 W M) {x y : α} (hMx : M.nonloop x) (hy : y ∉ M.E) :
   matroid_of_module_fun 𝔽 W (λ (e : α), if e = y then - φ x else φ e) (insert y M.E) = 
   parallel_extend M hMx hy := 
 begin
@@ -88,10 +88,7 @@ begin
       apply h3,
     simp_rw [h2, if_false],
     rw [linear_independent_image (inj_on_singleton _ _), image_singleton],
-    apply linear_independent_singleton (φ.ne_zero_of_nonloop hMx),
-    -- why is this not recognizing the instances?
-    apply_instance,
-    apply_instance },
+    refine linear_independent_singleton (φ.ne_zero_of_nonloop hMx) },
   simp only [delete_elem, ← delete_matroid_of_module_fun, insert_diff_of_mem, mem_singleton,
     diff_singleton_eq_self hy],
   have h10 : ∀ e : α, e ∈ M.E → ite (e = y) (-φ x) (φ e) = φ e,

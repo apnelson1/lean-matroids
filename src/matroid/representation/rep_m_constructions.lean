@@ -171,6 +171,15 @@ begin
   apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),
 end
 
+def is_rep_of_iso_minor_of_is_rep (N : matroid_in α) (hNM : N ≤i M) (hM : M.is_representable 𝔽) : 
+  N.is_representable 𝔽 := 
+begin
+  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM,
+  /-obtain ⟨C, ⟨D, ⟨hC, ⟨hD, ⟨hCD, rfl⟩⟩⟩⟩⟩ := minor.exists_contract_indep_delete_coindep hNM,
+  apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),-/
+  sorry,
+end
+
 variables [fintype α]
 
 
@@ -361,6 +370,10 @@ end
 
 lemma U22_binary : matroid_in.is_binary (unif 2 2) := 
 begin
+  have h3 : unif 2 2 ≤i unif 2 3,
+    sorry, 
+  obtain h4 := U23_binary,
+  --have h5 := is_rep_of_minor_of_is_rep,
   sorry,
 end
 

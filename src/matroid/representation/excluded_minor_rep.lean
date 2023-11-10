@@ -5,7 +5,7 @@ import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
-import .m_in_rep .rep_m_constructions .rep_m_constructions2
+import .m_in_rep .rep_m_constructions .rep_m_constructions2 .rep_m_constructions3
 
 
 universe u 
@@ -99,12 +99,17 @@ begin
  --have hf := series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy,
   simp only [excluded_minor, mem_minimals_prop_iff] at hM,
   apply hM.1,
-  rw [series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy, mem_set_of],
   have hMx : ¬(M ⟋ y).coloop x,
-    sorry,
+    rw [contract_elem, coloop, contract_dual_eq_dual_delete, not_loop_iff, delete_nonloop_iff],
+    rw [cocircuit, circuit_iff_dep_forall_diff_singleton_indep] at hK2,
+    cases hK2 with hxy2 hin,
+    specialize hin y (mem_insert_of_mem _ (mem_singleton y)),
+    rw [insert_eq, union_comm, ← insert_eq, insert_diff_of_mem _ (mem_singleton _),
+      diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm hxy))] at hin,
+    refine ⟨indep_singleton.1 hin, mem_singleton_iff.1.mt hxy⟩,
+  rw [series_extend_eq (M ⟋ y) M hK2 hxMy rfl hyMy hMx, mem_set_of],
   obtain φM := series_extend_rep φ hxMy hyMy hMx,
   exact is_representable_of_rep φM, 
-  sorry,
 end
 
 lemma excluded_minor_nonloop (M : matroid_in α) [finite_rk M]
@@ -132,7 +137,23 @@ begin
   obtain  ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem hfM,
   rw [excluded_minor, mem_minimals_prop_iff] at hM,
   apply hM.1,
-  apply is_representable_of_rep (rep_of_parallel M hxy h φ),
+  have hx : (M ⟍ y).nonloop x,
+    rw [delete_elem, delete_nonloop_iff],
+    rw circuit_iff_dep_forall_diff_singleton_indep at h,
+    cases h with hxy2 hin,
+    specialize hin y (mem_insert_of_mem _ (mem_singleton y)),
+    rw [insert_eq, union_comm, ← insert_eq, insert_diff_of_mem _ (mem_singleton _),
+      diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm hxy))] at hin,
+    refine ⟨indep_singleton.1 hin, mem_singleton_iff.1.mt hxy⟩,
+  have hy : y ∉ (M ⟍ y).E,
+    rw [delete_elem, delete_ground],
+    apply not_mem_diff_singleton,
+  obtain φM := parallel_extend_rep φ hx hy,
+  simp_rw ← delete_elem at φM,
+  rw circuit_delete_elem_eq_parallel_extend M h hx hy at φM,
+  apply is_representable_of_rep (rep_of_congr (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2) 
+    (λ (e : α), ite (e = y) (-φ x) (φ e)) (insert y (M ⟍ y).E)) φM),
+  --rw parallel_extend_eq,
 end
 
 lemma excluded_minor_simple (M : matroid_in α) [finite_rk M]

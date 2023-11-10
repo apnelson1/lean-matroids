@@ -333,12 +333,72 @@ def rep.compose (φ : rep 𝔽 W M) (e : W ≃ₗ[𝔽] W') : rep 𝔽 W' M :=
 def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : rep 𝔽 W' M := 
   (rep.compose (φ.rep_submodule) e)
 
-/-def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
+def iso.rep (M M' : matroid_in α) (ψ : M' ≃i M) (φ : rep 𝔽 W M) : rep 𝔽 W M' := 
 { to_fun := λ a, if h : a ∈ M'.E then φ (ψ ⟨a, h⟩) else φ a,
   valid' := λ I hI, 
     begin
       rw ψ.on_indep hI,
       have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
+        (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
+        λ a : I, φ (ψ ⟨a, hI a.2⟩),  
+        ext;
+        simp only [comp_app],
+        simp_rw [dite_eq_iff],
+        left,
+        simp only [exists_apply_eq_apply],
+      rw h2,
+      --simp only [← comp_app φ (λ e : I, ↑(ψ ⟨e, hI e.2⟩))],
+      rw iso.image,
+      sorry,
+      
+      /-have h4 := ψ.to_equiv,
+      have h6 := λ a : I, (⟨a, hI a.2⟩ : M'.E),
+        sorry, -/
+     /- have h5 := @equiv.bij_on_image _ _ ψ.to_equiv (ψ.image I),-/
+      /-have h5 := @equiv.mk M'.E M.E (λ A : set M'.E, 
+        (⟨ψ.image (A : set α), ψ.image_subset_ground A⟩ : set M.E)) _ _ _,-/
+      /-have h6 := ψ.to_equiv.image (λ e : M'.E, e.1 ∈ I),
+      simp at h6,
+      have h7 : ∀ e : I, e.1 ∈ ((λ (e : ↥(M'.E)), ↑e ∈ I) : set M'.E),-/
+      /-
+      simp only [left_inverse],
+      refine λ x, ψ.preimage_image x,-/
+      /-have h3 : ψ.image I ≃ I,
+        
+        --use ψ,
+        sorry,
+      --have h6 : inj_on ψ (I : set M.E),
+      --rw φ.valid,-/
+      /-rw ← φ.valid,
+      --rw linear_independent_image,
+      rw iso.image,
+      have h4 : ∀ e : M'.E, e.1 ∈ I ↔ (ψ e).1 ∈ ψ.image I, 
+        sorry,
+      have h5 : ∀ e : I, (ψ ⟨e, hI e.2⟩).1 ∈ ψ.image I,
+        sorry,
+      /-have h6 : ψ.to_equiv '' I = ψ.image I,
+        sorry,-/
+      rw [← image_comp],
+      simp only [← comp_app φ _],-/
+      
+      
+      --rw [← @linear_independent_image _ _ _ _ _ _ _ (coe : M.E → α)],
+     /- have h4 : (φ ∘ (λ e : I, ↑(ψ ⟨e, hI e.2⟩))) = λ (e : ↥(coe ∘ ψ '' (coe ⁻¹' I))), φ ↑e,
+        ext;
+        simp only [comp_app],
+        have h5 : ((ψ ⟨↑(h3 x), hI (h3 x).2⟩) : α) = x,
+          
+          sorry,
+        sorry,-/
+     -- have h5 := @linear_independent_equiv M'.E M.E 𝔽 W _ _ _ ψ.to_equiv (M.E.restrict φ),
+      
+      /-have h3 : (λ (a : ↥I), φ ↑(ψ ⟨↑a, _⟩)) ∘ h3 = (λ (e : ↥(ψ.image I)), φ ↑e),
+        intros,-/
+      
+      --have h3 : (λ (a : ↥I), φ (ψ ⟨a, hI a.2⟩)) = (λ (e : ↥(ψ.image I)), φ ↑e),
+      --rw linear_independent_equiv ψ,
+      --rw linear_map.linear_independent_iff,
+      /-have h2 : ((λ (a : α), dite (a ∈ M'.E) (λ (h : a ∈ M'.E), φ ↑(ψ ⟨a, h⟩)) 
         (λ (h : a ∉ M'.E), φ a)) ∘ coe) = 
         λ a : I, φ (ψ ⟨a, hI a.2⟩),  
         ext;
@@ -349,10 +409,9 @@ def rep.compose' (φ : rep 𝔽 W M) (e : φ.to_submodule' ≃ₗ[𝔽] W') : re
       rw h2,
       rw ← φ.valid,
       have h3 : (λ (e : ↥(ψ.image I)), φ ↑e) = λ a : I, φ (ψ ⟨a, hI a.2⟩),  
-        sorry,
-      sorry,
+        sorry,-/
     end,
-  support := _ } -/
+  support := _ } 
 
 lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 ((φ.valid' {x} (indep_singleton.2 hx).subset_ground).2 hx.indep).ne_zero 
