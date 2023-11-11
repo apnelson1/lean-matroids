@@ -5,6 +5,7 @@ import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
+import m_in.preimage
 
 
 universe u 
@@ -22,27 +23,12 @@ noncomputable theory
  
 open_locale classical
 
-
--- we should have semiring 𝔽 by default, idk why it doesn't see it
--- why did we have finite E and not fintype E?
-
 namespace matroid_in
 
 def loopless (M : matroid_in α) : Prop := ∀ S ⊆ M.E, S.ncard = 1 → M.indep S 
 
 lemma simple.loopless (h : M.simple) : M.loopless := sorry
 
-/- A `𝔽`-matroid_in representation is a map from the base of the matroid_in to `ι → 𝔽` such that a set -/
-/-structure rep (𝔽 : Type*) [field 𝔽] (M : matroid_in α) (ι : Type) :=
-(to_fun : α → ι → 𝔽)
-(valid' : ∀ I : set α, linear_independent 𝔽 (λ e : I, to_fun e) ↔ M.indep I)
-
-/-- `M` is `𝔽`-representable if it has an `𝔽`-representation. -/
-def is_representable (𝔽 : Type*) [field 𝔽] (M : matroid_in α) : Prop := ∃ (ι : Type), nonempty (rep 𝔽 M ι)-/
-
--- this definition breaks injectivity of rep of simple matroids, i think we need
--- to restrict the domain
--- show that this is equivalent to the other definition
 structure rep (𝔽 W : Type*) [field 𝔽] [add_comm_group W] [module 𝔽 W] (M : matroid_in α) :=
 (to_fun : α → W)
 (valid' : ∀ (I ⊆ M.E), linear_independent 𝔽 (to_fun ∘ coe : I → W) ↔ M.indep I)
@@ -91,43 +77,6 @@ def iso.rep (M : matroid_in α) (M' : matroid_in γ) (ψ : M' ≃i M) (v : rep �
       rintro ⟨a,rfl⟩, 
       exact he a.2, 
     end } 
-
-def add_coloop (M : matroid_in α) {f : α} (hf : f ∉ M.E) : matroid_in α := 
-{ ground := M.E ∪ {f},
-  base := λ B, M.base (B \ {f} : set α) ∧ f ∈ B,
-  exists_base' := 
-    begin
-      obtain ⟨B, hB⟩ := M.exists_base,
-      use B ∪ {f},
-      simp only [union_singleton, insert_diff_of_mem, mem_singleton, mem_insert_iff, 
-        eq_self_iff_true, true_or, and_true],
-      rw diff_singleton_eq_self (not_mem_subset hB.subset_ground hf),
-      apply hB,
-    end,
-  base_exchange' := sorry,
-  maximality := sorry,
-  subset_ground' := λ B hB, 
-    begin
-      rw ← diff_union_of_subset (singleton_subset_iff.2 hB.2),
-      apply union_subset_union hB.1.subset_ground,
-      simp only [subset_singleton_iff, mem_singleton_iff, imp_self, implies_true_iff],
-    end }
-
-lemma add_coloop_equal (M M' : matroid_in α) {f : α} (hf : f ∉ M.E) : 
-  M' = add_coloop M hf ↔ M'.coloop f ∧ M' ⟍ f = M := sorry 
-
-lemma add_coloop_del_equal (M : matroid_in α) {f : α} (hf : f ∉ M.E) :
-  M = add_coloop M hf ⟍ f := sorry
-
-def series_extend (M : matroid_in α) {e f : α} (he : e ∈ M.E) 
-  (hf : f ∉ M.E) (hMe : ¬ M.coloop e) : matroid_in α := 
-{ ground := insert f M.E,
-  -- M.base B covers e ∈ B
-  base := sorry,
-  exists_base' := sorry,
-  base_exchange' := sorry,
-  maximality := sorry,
-  subset_ground' := sorry }
 
 -- don't need hf but keeping for convenience
 lemma series_extend_eq (M M' : matroid_in α) {e f : α} (hM' : M'.cocircuit {e, f}) (he : e ∈ M.E) 
