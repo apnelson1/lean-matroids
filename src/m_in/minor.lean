@@ -779,19 +779,55 @@ begin
   rw [←(hD.coindep_contract_of_disjoint hCD.symm).cl_compl, delete_ground], 
 end 
 
+theorem minor.eq_of_ground_subset (h : N ≤m M) (hE : M.E ⊆ N.E) : M = N := 
+begin
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep, 
+  simp only [delete_ground, contract_ground] at hE, 
+  rw [subset_diff, subset_diff] at hE, 
+  rw [contract_eq_contract_inter_ground, hE.1.2.symm.inter_eq, contract_empty,
+    delete_eq_delete_inter_ground, hE.2.symm.inter_eq, delete_empty], 
+end
+
+theorem minor.minor_contract_or_minor_delete (h : N ≤m M) (he : e ∈ M.E \ N.E) :
+    N ≤m (M ⟋ e) ∨ N ≤m (M ⟍ e) := 
+begin
+  obtain ⟨C, D, hC, hD, hCD, rfl⟩ := h.exists_contract_indep_delete_coindep, 
+  rw [delete_ground, contract_ground, diff_diff, 
+    diff_diff_cancel_left (union_subset hC.subset_ground hD.subset_ground)] at he, 
+  obtain (heC | heD) := he, 
+  { left, 
+    apply (delete_minor _ _).trans _, 
+    rw [← insert_eq_self.2 heC, ← union_singleton, union_comm, ← contract_contract], 
+    exact contract_minor _ _ },
+  right, 
+  rw [contract_delete_comm _ hCD], 
+  apply (contract_minor _ _).trans _, 
+  rw [← insert_eq_self.2 heD, ← union_singleton, union_comm, ← delete_delete], 
+  apply delete_minor, 
+end 
+
 
 /-- An excluded minor is a minimal nonelement of S -/
 def excluded_minor (S : set (matroid_in α)) (M : matroid_in α) := 
   M ∈ minimals (≤m) Sᶜ 
 
--- probably needs the hypothesis that `S` is closed under taking minors. 
-lemma excluded_minor_iff (S : set (matroid_in α)) :
+/-- A class is minor-closed if minors of matroids in the class are all in the class. -/
+def minor_closed (S : set (matroid_in α)) : Prop := ∀ {M N}, N ≤m M → M ∈ S → N ∈ S  
+
+lemma excluded_minor_iff (S : set (matroid_in α)) (hS : minor_closed S) :
   excluded_minor S M ↔ M ∉ S ∧ ∀ e ∈ M.E, M ⟋ e ∈ S ∧ M ⟍ e ∈ S :=
 begin
   rw [excluded_minor, mem_minimals_iff', mem_compl_iff, and.congr_right_iff],
-  sorry 
-  -- refine λ hM, ⟨λ h N hlt, (by_contra (λ hN, _)), λ h, _⟩,
-  -- { have := h hN hlt.minor, },
+  intro hMS, 
+  refine ⟨λ h e he, ⟨by_contra (fun hM', _),by_contra (fun hM', _)⟩, fun h N hN hNM, _⟩,
+  { rw [h hM' (M.contract_minor {e}), contract_elem, contract_ground] at he, 
+    exact he.2 rfl },
+  { rw [h hM' (M.delete_minor _), delete_elem, delete_ground] at he, 
+    exact he.2 rfl },
+  refine hNM.eq_of_ground_subset (fun e heM, by_contra (fun heN, hN _)),  
+  obtain (h1 | h1) := hNM.minor_contract_or_minor_delete ⟨heM, heN⟩, 
+  { exact hS h1 (h e heM).1 },
+  exact hS h1 (h e heM).2
 end 
 
 lemma excluded_minor.contract_mem {S : set (matroid_in α)} (h : excluded_minor S M)
