@@ -181,6 +181,13 @@ by simp [truncate]
 
 @[simp] lemma truncate_ground_eq : (M.truncate k).E = M.E := rfl 
 
+lemma truncate_eq_self [finite_rk M] (hle : M.rk ≤ k) : M.truncate k = M := 
+begin
+  rw [eq_iff_indep_iff_indep_forall, truncate_ground_eq, and_iff_right rfl], 
+  simp_rw [truncate_indep_iff, and_iff_left_iff_imp],  
+  exact fun I hIE hI, ⟨hI.finite, hI.card_le_rk.trans hle⟩, 
+end 
+
 lemma truncate_base_iff [finite_rk M] (h : k ≤ M.rk) :
   (M.truncate k).base B ↔ M.indep B ∧ B.ncard = k :=
 begin
@@ -327,6 +334,12 @@ begin
   simp only [unif, unif_on, set.unif_on], 
   rw [truncate_base_iff, free_on_indep_iff, and_iff_right (subset_univ _)], 
   rwa [free_on_rk_eq, ncard_eq_to_finset_card, finite.to_finset_univ, finset.card_fin], 
+end 
+
+lemma unif_eq_free (hba : b ≤ a) : (unif a b) = free_on univ :=
+begin
+  apply truncate_eq_self,
+  rwa [free_on_rk_eq, ncard_univ, nat.card_eq_fintype_card, fintype.card_fin],   
 end 
 
 lemma unif_dual' (h : a + b = c) : (unif a c)﹡ = unif b c := 

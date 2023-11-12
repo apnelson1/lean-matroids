@@ -306,6 +306,25 @@ begin
   tauto!, 
 end  
 
+lemma circuit.contract_circuit_of_ssubset (hC : M.circuit C) (hI : I ⊂ C) : 
+  (M ⟋ I).circuit (C \ I) :=
+begin
+  have hIi := hC.ssubset_indep hI,
+  rw [circuit_iff_forall_ssubset, dep_iff, hIi.contract_indep_iff, not_and, 
+    diff_union_self, union_eq_self_of_subset_right hI.subset, iff_false_intro hC.dep.not_indep, 
+    not_false_iff, implies_true_iff, true_and, diff_subset_iff, contract_ground, union_diff_self, 
+    and_iff_right (subset_union_of_subset_right hC.subset_ground _)], 
+  refine fun J hJss, hIi.contract_indep_iff.2 ⟨(subset_diff.1 hJss.subset).2,
+    hC.ssubset_indep _⟩, 
+  rw [ssubset_iff_subset_ne, subset_diff ] at hJss, 
+  rw [ssubset_iff_subset_ne, and_iff_right (union_subset hJss.1.1 hI.subset)], 
+  rintro rfl, 
+  apply hJss.2, 
+  rw [union_diff_right, eq_comm, sdiff_eq_self_iff_disjoint], 
+  exact hJss.1.2.symm, 
+end 
+
+
 lemma indep.union_contract_basis_union_of_basis (hI : M.indep I) (hB : (M ⟋ I).basis J X) :
    M.basis (J ∪ I) (X ∪ I) :=
 begin
@@ -982,7 +1001,7 @@ end rank
 
 section unif
 
-def simple (M : matroid_in α) : Prop := ∀ (e ∈ M.E) (f ∈ M.E), M.indep {e, f}
+
 
 -- lemma unif_restr {a b : ℕ} (M : matroid_in α) (h4 : 4 ≤ M.E.ncard) (hs : M.simple) : (unif 2 4) ≤i M
 
