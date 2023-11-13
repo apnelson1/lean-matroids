@@ -547,7 +547,7 @@ begin
 end
 
 def series_extend_rep (φ : rep 𝔽 W M) {x y : α} (hx : x ∈ M.E)
-  (hy : y ∉ M.E) (hMx : ¬ M.coloop x) : rep 𝔽 (W × 𝔽) (series_extend M hx hy hMx) := 
+  (hy : y ∉ M.E) (hMx : ¬ M.coloop x) : rep 𝔽 (W × 𝔽) (series_extend M x y) := 
 { to_fun := λ (e : α), 
     if e = x
     then 
