@@ -5,6 +5,7 @@ import linear_algebra.linear_independent
 import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
+import m_in.single_extensions
 import .rep_sorry
 
 
@@ -218,15 +219,6 @@ namespace rep
 
 variables
 
-
-lemma valid (φ : rep 𝔽 W M) {I : set α} : linear_independent 𝔽 (λ e : I, φ e) ↔ M.indep I := 
-begin
-  refine (em (I ⊆ M.E)).elim (φ.valid' _) (fun hIE, _), 
-  obtain ⟨e, heI, heE⟩ := not_subset.1 hIE,  
-  exact iff_of_false (fun hli, hli.ne_zero ⟨e, heI⟩ (φ.support _ heE)) 
-    (fun hI, hIE hI.subset_ground), 
-end 
-
 lemma inj_on_of_indep (φ : rep 𝔽 W M) (hI : M.indep I) : inj_on φ I :=
 inj_on_iff_injective.2 ((φ.valid' I hI.subset_ground).2 hI).injective
 
@@ -307,7 +299,7 @@ lemma ne_zero_of_nonloop (φ : rep 𝔽 W M) (hx : M.nonloop x) : φ x ≠ 0 :=
 (⟨x, mem_singleton _⟩ : ({x} : set α))
 
 lemma ne_zero_of_loopless (φ : rep 𝔽 W M) (hl : loopless M) (x : α) (hx : x ∈ M.E) : φ x ≠ 0 :=
-φ.ne_zero_of_nonloop $ indep_singleton.1 (hl {x} (singleton_subset_iff.2 hx) (ncard_singleton x))
+ φ.ne_zero_of_nonloop (hl x hx)
 
 lemma inj_on_ground_of_simple (φ : rep 𝔽 W M) (hs : simple M) : inj_on φ M.E :=
 λ a ha b hb,
@@ -779,9 +771,6 @@ begin
     rw h12,
   simp_rw h6,
 end 
-
-lemma add_coloop_ground (M : matroid_in α) {f : α} (hf : f ∉ M.E) : 
-  (add_coloop M hf).E = M.E ∪ {f} := by refl
 
 lemma contract_circuit_of_insert_circuit (e : α) (C : set α) (he : M.nonloop e) (heC : e ∉ C)
   (hMCe : M.circuit (insert e C)) : (M ⟋ e).circuit C :=
