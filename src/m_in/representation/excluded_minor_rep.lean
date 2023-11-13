@@ -150,7 +150,7 @@ begin
     apply not_mem_diff_singleton,
   obtain φM := parallel_extend_rep φ hx hy,
   simp_rw ← delete_elem at φM,
-  rw circuit_delete_elem_eq_parallel_extend M h hx hy at φM,
+  rw ← (eq_parallel_extend_iff hx hy).2 ⟨h, rfl⟩ at φM,
   apply is_representable_of_rep (rep_of_congr (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2) 
     (λ (e : α), ite (e = y) (-φ x) (φ e)) (insert y (M ⟍ y).E)) φM),
   --rw parallel_extend_eq,
@@ -234,6 +234,7 @@ begin
     { apply nat.add_one_le_iff.2 h3 } },
 end
 
+-- need minor_closed is_binary
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
 begin
@@ -249,10 +250,10 @@ begin
 
   obtain ⟨B, ⟨hBxy, ⟨φ⟩⟩⟩ := hxyr,
 
-  obtain ⟨Bx, ⟨hBx, ⟨φx⟩⟩⟩ := (((excluded_minor_iff _).1 hM).2 x 
+  obtain ⟨Bx, ⟨hBx, ⟨φx⟩⟩⟩ := (((excluded_minor_iff _ (@minor_closed_rep _ (zmod 2) _)).1 hM).2 x 
     (hxy2 (mem_union_left {y} (mem_singleton x)))).2,
 
-  obtain ⟨By, ⟨hBy, ⟨φy⟩⟩⟩ := (((excluded_minor_iff _).1 hM).2 y 
+  obtain ⟨By, ⟨hBy, ⟨φy⟩⟩⟩ := (((excluded_minor_iff _ (@minor_closed_rep _ (zmod 2) _)).1 hM).2 y 
     (hxy2 (mem_union_right {x} (mem_singleton y)))).2,
   
   have hB := coindep.base_of_basis_del h2 (delete_base_iff.1 hBxy),

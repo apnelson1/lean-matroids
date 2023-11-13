@@ -541,7 +541,7 @@ lemma is_representable_of_rep {W : Type*} [add_comm_group W] [module 𝔽 W] (φ
     exact ⟨B, hB, ⟨std_rep φ hB⟩⟩, 
   end
 
-variables [fintype α]
+variables
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
@@ -683,8 +683,8 @@ begin
 end
 
 -- use finsum instead of finset.sum
-lemma mem_sum_basis_zmod2_of_not_mem [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) (heI : e ∉ I) :
+lemma mem_sum_basis_zmod2_of_not_mem [fintype α] [module (zmod 2) W] (φ : rep (zmod 2) W M) 
+{I : set α} (hI : M.indep I) (e : α) (he : e ∈ M.cl I) (heI : e ∉ I) :
   ∑ i in (M.fund_circuit e I \ {e}).to_finset, φ i = φ e :=
 begin
   have h3 := subset_insert e (M.fund_circuit e I),
@@ -721,8 +721,8 @@ begin
       (indep.fund_circuit_circuit hI ((mem_diff e).2 ⟨he, heI⟩)) (M.mem_fund_circuit e I)) },
 end
 
-lemma mem_sum_basis_zmod2 [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} (hI : M.indep I) 
-(e : α) (he : e ∈ M.cl I) :
+lemma mem_sum_basis_zmod2 [fintype α] [module (zmod 2) W] (φ : rep (zmod 2) W M) {I : set α} 
+(hI : M.indep I) (e : α) (he : e ∈ M.cl I) :
   φ e = ∑ i in (M.fund_circuit e I ∩ I).to_finset, φ i :=
 begin
   by_cases e ∈ I,
@@ -736,8 +736,8 @@ end
 @[reducible, inline] def matroid_in.is_binary (M : matroid_in α) := M.is_representable (zmod 2)
 
 -- change to is_binary instead of having reps
-lemma eq_of_forall_fund_circuit_eq {M M' : matroid_in α} [module (zmod 2) W] [module (zmod 2) W'] 
-(φM : rep (zmod 2) W M) (φM' : rep (zmod 2) W' M')
+lemma eq_of_forall_fund_circuit_eq [fintype α] {M M' : matroid_in α} [module (zmod 2) W] 
+[module (zmod 2) W'] (φM : rep (zmod 2) W M) (φM' : rep (zmod 2) W' M')
 (hE : M.E = M'.E) (hB : M.base B) (hB' : M'.base B) 
 (he : ∀ e ∈ M.E, M.fund_circuit e B = M'.fund_circuit e B) :
   M = M' :=
@@ -797,9 +797,9 @@ end
 -- in the same module
 
 -- part (iii) in the proof of theorem 6.5.4
-lemma indep_eq_doubleton_of_subset (MI MC : matroid_in α) [finite_rk MI] [finite_rk MC] (hrk : MI.rk = MC.rk)
-  (hIC : MI.E = MC.E) (x y : α) (hxy : x ≠ y) (hiIC : MI.coindep {x,y} ∨ MC.coindep {x,y})
-  (hMx : MI ⟍ x = MC ⟍ x) (hMy : MI ⟍ y = MC ⟍ y)
+lemma indep_eq_doubleton_of_subset [fintype α] (MI MC : matroid_in α) [finite_rk MI] [finite_rk MC] 
+  (hrk : MI.rk = MC.rk) (hIC : MI.E = MC.E) (x y : α) (hxy : x ≠ y) 
+  (hiIC : MI.coindep {x,y} ∨ MC.coindep {x,y}) (hMx : MI ⟍ x = MC ⟍ x) (hMy : MI ⟍ y = MC ⟍ y)
   {Z J : set α} (hxZ : x ∈ Z) (hyZ : y ∈ Z) (hMIZ : MI.indep Z) (hMCZ : ¬ MC.indep Z) 
   (hZJ : Z ⊆ J) (hMIJ : MI.indep J) [module (zmod 2) W] [module (zmod 2) W'] 
   (φI : rep (zmod 2) W (MI ⟋ (J \ {x, y})))
@@ -938,7 +938,7 @@ begin
 end 
 
 lemma delete_elem_eq_of_binary {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : set α)).base B)
-  (hBx : (M ⟍ x).base B) (hB : M.base B)
+  (hBx : (M ⟍ x).base B) (hB : M.base B) [fintype α]
   [module (zmod 2) W] (φ : rep (zmod 2) W (M ⟍ ({x, y} : set α))) {Wx : Type*} [add_comm_group Wx]
   [module (zmod 2) Wx]
   (φx : rep (zmod 2) Wx (M ⟍ x)) : (M ⟍ x) = 
@@ -1018,7 +1018,7 @@ lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M'
   ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
 
 lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : set α)).base B)
-  (hBx : (M ⟍ y).base B) (hB : M.base B)
+  (hBx : (M ⟍ y).base B) (hB : M.base B) [fintype α]
   [module (zmod 2) W] (φ : rep (zmod 2) W (M ⟍ ({x, y} : set α))) {Wy : Type*} [add_comm_group Wy]
   [module (zmod 2) Wy]
   (φx : rep (zmod 2) Wy (M ⟍ y)) : (M ⟍ y) = 

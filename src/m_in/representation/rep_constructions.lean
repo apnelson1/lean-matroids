@@ -171,6 +171,9 @@ begin
   apply is_representable_of_rep (rep_of_del (M ⟋ C) (rep_of_contr M φ C hC.subset_ground) D),
 end
 
+lemma minor_closed_rep : minor_closed (matroid_in.is_representable 𝔽 : matroid_in α → Prop) := 
+  λ M N hNM hM, is_rep_of_minor_of_is_rep N hNM hM
+
 def is_rep_of_iso_minor_of_is_rep (N : matroid_in γ) (hNM : N ≤i M) (hM : M.is_representable 𝔽) : 
   N.is_representable 𝔽 := 
 begin
@@ -185,7 +188,7 @@ variables [fintype α]
 open_locale big_operators
 
 def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) : 
-  rep 𝔽 (W × 𝔽) (add_coloop M hf) := 
+  rep 𝔽 (W × 𝔽) (add_coloop M f) := 
 { to_fun := λ (e : α), if e ∈ ({f} : set α) then linear_map.inr 𝔽 W 𝔽 ((λ e : α, 1) e) else 
     linear_map.inl 𝔽 W 𝔽 (φ e),
   valid' := λ I hI, 
@@ -211,14 +214,16 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
                 (linear_map.ker_eq_bot_of_injective linear_map.inl_injective)] at h10,
               rw φ.valid at h10, 
               apply h10,
-              rw [diff_subset_iff, union_comm],
-              apply hI,
+             /- rw [diff_subset_iff, union_comm],
+              apply hI,-/
+              --sorry,
               { intros a ha b hb hab,
                 have h13 := h2.injective,
                 rw [← restrict_eq, ← inj_on_iff_injective] at h13,
                 apply h13 (mem_union_left {f} ha) (mem_union_left {f} hb) hab } },
-            obtain ⟨B2, hB2⟩ := hM, 
-            refine ⟨B2 ∪ {f}, ⟨⟨_, mem_union_right _ (mem_singleton f)⟩, 
+            obtain ⟨B2, hB2⟩ := hM,
+            --rw [diff_subset_iff, union_comm] at hB2,
+            refine ⟨B2 ∪ {f}, ⟨_, 
               union_subset_union hB2.2 (subset_refl _)⟩⟩,
             simp only [union_singleton, insert_diff_of_mem, mem_singleton],
             rw diff_singleton_eq_self (not_mem_subset hB2.1.subset_ground hf),
@@ -385,7 +390,7 @@ begin
     have h70 := subset_trans h8 (@diff_subset_diff_left _ _ _ 
       ({0} : set (B →₀ zmod 2)) (span_le.1 h50)),
     -- need basis
-    have h11 := ((valid'' φ' hB.subset_ground).2 hB.indep),
+    have h11 := ((φ'.valid' _ hB.subset_ground).2 hB.indep),
     have h20 : (finrank (zmod 2) (B →₀ zmod 2)) = 2,
       simp only [finrank_finsupp, fintype.card_of_finset, finset.filter_congr_decidable],
       rw unif_base_iff at hB,
@@ -439,8 +444,6 @@ def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
       simp only [delete_elem, delete_indep_iff, disjoint_singleton_right, and_iff_left_iff_imp],
       intros hf2,
       apply h,
-      rw [delete_elem, delete_ground],
-      apply hIf,
     end,
   support := λ e he, 
     begin
@@ -459,11 +462,11 @@ def rep_of_loop (M : matroid_in α) [finite_rk M] {f : α} (hf : M.loop f)
 lemma parallel_extend_rep (φ : rep 𝔽 W M) {x y : α} (hMx : M.nonloop x) (hy : y ∉ M.E) 
 [finite_dimensional 𝔽 W] :
   matroid_of_module_fun 𝔽 W (λ (e : α), if e = y then - φ x else φ e) (insert y M.E) = 
-  parallel_extend M hMx hy := 
+  parallel_extend M x y := 
 begin
-  apply parallel_extend_eq _ _ _ _ hMx hy,
-  { rw circuit_iff_dep_forall_diff_singleton_indep,
-    refine ⟨_, λ e he, _⟩,
+  rw ← (eq_parallel_extend_iff hMx hy).2,
+  rw circuit_iff_dep_forall_diff_singleton_indep,
+    refine ⟨⟨_, λ e he, _⟩, _⟩,
     rw dep,
     refine ⟨_, _⟩,
     { simp only [matroid_of_module_fun, matroid_of_indep_of_bdd'_apply, not_and_distrib],
@@ -510,14 +513,14 @@ begin
       apply h3,
     simp_rw [h2, if_false],
     rw [linear_independent_image (inj_on_singleton _ _), image_singleton],
-    exact linear_independent_singleton (φ.ne_zero_of_nonloop hMx) },
+    exact linear_independent_singleton (φ.ne_zero_of_nonloop hMx),
   simp only [delete_elem, ← delete_matroid_of_module_fun, insert_diff_of_mem, mem_singleton,
     diff_singleton_eq_self hy],
   have h10 : ∀ e : α, e ∈ M.E → ite (e = y) (-φ x) (φ e) = φ e,
     intros e he,
     rw if_neg (ne_of_mem_of_not_mem he hy),
   simp_rw [matroid_of_module_fun_congr 𝔽 W _ _ _ h10],
-  apply matroid_of_module_fun_rep_eq,
+  rw ← matroid_of_module_fun_rep_eq,
 end
 
 -- use matroid_of_module_func and write parallel_extend_rep
