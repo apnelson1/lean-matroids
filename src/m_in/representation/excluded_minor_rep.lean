@@ -236,7 +236,7 @@ end
 
 -- need minor_closed is_binary
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
-  (hM : excluded_minor matroid_in.is_binary M) : iso_minor (unif 2 4) M :=
+  (hM : excluded_minor (set_of matroid_in.is_binary) M) : (unif 2 4) ≤i M :=
 begin
   haveI hME := nontrivial_excluded_minor M hM,
   rw [nontrivial_coe_sort, nontrivial_iff_pair_subset] at hME,
@@ -412,6 +412,7 @@ begin
     (ψ.symm.trans_iso_minor (minor.refl.iso_minor)),
   refine ⟨hMrk, ⟨to_finite M.E, rfl⟩⟩,
 end
+
 
 end rep
 

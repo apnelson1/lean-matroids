@@ -869,6 +869,23 @@ begin
   simpa [this] using hD,
 end 
 
+theorem mem_iff_no_excluded_minor_minor [M.finite] {S : set (matroid_in α)} (hS : minor_closed S) : 
+  M ∈ S ↔ ∀ N, excluded_minor S N → ¬(N ≤m M) := 
+begin
+  refine ⟨λ h N hN hNM, hN.1 (hS hNM h), λ h, by_contra (λ hMS, _)⟩,
+  set minground := {X : (set α)ᵒᵈ | ∃ N, N ≤m M ∧ N.E = X ∧ N ∉ S},
+  have hne : minground.nonempty := ⟨M.E, M, minor.refl, rfl, hMS⟩, 
+  have hfin : minground.finite,
+  { refine M.ground_finite.finite_subsets.subset _,
+    rintro X ⟨N, hN, rfl, h⟩, 
+    exact hN.ground_subset },
+  obtain ⟨X, ⟨N, hN, rfl, hNS⟩, hmax⟩ := finite.exists_maximal_wrt id _ hfin hne, 
+  refine h N ⟨hNS, fun M' (hM' : M' ∉ S) hM'N, _⟩ hN, 
+  have hNM' : N.E = M'.E := hmax M'.E ⟨M', (hM'N.trans hN), rfl, hM'⟩ hM'N.ground_subset,  
+  rw [hM'N.eq_of_ground_subset hNM'.subset],
+  exact minor.refl,
+end 
+
 
 section iso 
 
