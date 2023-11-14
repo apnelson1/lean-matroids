@@ -42,6 +42,8 @@ end
 
 def add_coloop (M : matroid_in α) (f : α) : matroid_in α := (M﹡.add_loop f)﹡  
 
+@[simp] lemma add_coloop_ground (M : matroid_in α) (f : α) : (M.add_coloop f).E = insert f M.E := rfl
+
 lemma add_coloop_eq (M M' : matroid_in α) (hf : f ∉ M.E) : 
     M' = add_coloop M f ↔ M'.coloop f ∧ M' ⟍ f = M := 
 begin
