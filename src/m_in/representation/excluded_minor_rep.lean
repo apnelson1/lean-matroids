@@ -1,4 +1,3 @@
-import analysis.inner_product_space.gram_schmidt_ortho
 import data.zmod.basic
 import linear_algebra.basis
 import linear_algebra.linear_independent
@@ -6,7 +5,17 @@ import m_in.minor m_in.constructions
 import m_in.erank
 import m_in.equiv
 import .m_in_rep .rep_constructions
+-- make new lean project, mwe for this theorem
 
+-- intro should have section of formalization, history of formalization, context of lean & mathlib
+-- four color theorem, liquid tensor experiment, goal for undergrad formalization
+-- moving stuff from lean 3 to lean 4
+-- matroids, representations, tutte's 1959 theorem
+-- search up all matroid formalization attempts (michael stoll, brian chen)
+
+-- ch 2 is design stuff
+
+-- ch 3 is actual proof
 
 universe u 
 variables {α γ : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
@@ -465,6 +474,16 @@ end
 lemma excluded_minor_binary_iso_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor (set_of matroid_in.is_binary) M) : nonempty (M ≃i (unif 2 4)) := 
 by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M hM }  
+
+lemma U24_excluded_minor : excluded_minor (set_of matroid_in.is_binary) (unif 2 4) :=
+begin
+  by_contra,
+  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _) at h,
+  rw not_and_distrib at h,
+  cases h with ha hb,
+  apply ha U24_nonbinary,
+  sorry
+end
 
 /-def excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor (set_of matroid_in.is_binary) M) : M ≃i (unif 2 4) := 
