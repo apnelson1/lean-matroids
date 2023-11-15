@@ -464,7 +464,7 @@ end
 
 lemma excluded_minor_binary_iso_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor (set_of matroid_in.is_binary) M) : nonempty (M ≃i (unif 2 4)) := 
-by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M hM }
+by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M hM }  
 
 /-def excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor (set_of matroid_in.is_binary) M) : M ≃i (unif 2 4) := 
@@ -473,6 +473,25 @@ by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M 
   left_inv := sorry,
   right_inv := sorry,
   on_base' := sorry }-/
+
+/-lemma binary_iff_no_24_minor (M : matroid_in α) [finite_rk M] : 
+  matroid_in.is_binary M ↔ ¬ unif 2 4 ≤i M :=
+begin
+  rw matroid_in.is_binary,
+  refine ⟨λ hfM, _, _⟩,
+  by_contra,
+  rw iso_minor at h,
+  obtain ⟨M', ⟨hM'M, ⟨φ⟩⟩⟩ := h,
+  apply (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
+    (@minor_closed_rep _ (zmod 2) _)).1 hfM M' _ hM'M,
+  sorry,
+  have h2 :=  (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
+    (@minor_closed_rep _ (zmod 2) _)).2,
+  contrapose,
+  intros hM,
+  push_neg,
+  sorry,
+end-/
 
 end rep
 
