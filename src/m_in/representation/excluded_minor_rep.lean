@@ -9,7 +9,7 @@ import .m_in_rep .rep_constructions
 
 
 universe u 
-variables {α : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
+variables {α γ : Type} {β 𝔽 : Type*} {M : matroid_in α} {I B : set α} {x : α}
 variables {W W' : Type*} [field 𝔽] [add_comm_group W] [module 𝔽 W] [add_comm_group W'] [module 𝔽 W'] 
 
 open function set submodule finite_dimensional
@@ -234,7 +234,45 @@ begin
     { apply nat.add_one_le_iff.2 h3 } },
 end
 
--- need minor_closed is_binary
+lemma excluded_minor_binary_unif' (hM : excluded_minor matroid_in.is_binary M) 
+  (ψ : M ≃i unif 2 M.E.ncard) (h2 : 2 ≤ M.E.ncard) (hMr : M.rk = 2) : 4 = M.E.ncard :=
+begin
+  have h3 := excluded_minor_binary_unif hM ψ h2,
+  rw le_iff_eq_or_lt at h3,
+  cases h3 with h3 h4,
+  { apply h3 },
+  { by_contra,
+    obtain ⟨ψ2⟩ := (iso_line_iff h2).2 ⟨excluded_minor_simple M hM, ⟨hMr, ⟨to_finite M.E, rfl⟩⟩⟩,
+    have h4 := (excluded_minor_iff matroid_in.is_binary (@minor_closed_rep _ (zmod 2) _)).1 hM,
+    have h5 := iso_minor.trans (@unif_iso_minor _ _ 2 (excluded_minor_binary_unif hM ψ2 h2)) 
+      (ψ2.symm.iso_minor),
+    rw iso_minor at h5,
+    obtain ⟨M', ⟨hM'M, ⟨g⟩⟩⟩ := h5,
+    have h8 := ncard_le_of_subset hM'M.ground_subset,
+    rw le_iff_eq_or_lt at h8,
+    cases h8 with hcontra hlt,
+    { rw ncard_eq_to_finset_card M.E at hcontra,
+      have h9 := (fintype.bijective_iff_injective_and_card ψ2).1 ψ2.bijective,
+      apply h,
+      rw [← to_finset_card, ← finite.to_finset_eq_to_finset, ← ncard_eq_to_finset_card M.E] at h9,
+      rw h9.2,
+      have h10 := (fintype.bijective_iff_injective_and_card g).1 g.bijective,
+      rw [← to_finset_card M'.E, ← finite.to_finset_eq_to_finset, 
+        ← ncard_eq_to_finset_card M'.E] at h10,
+      rw [← ncard_eq_to_finset_card M.E] at hcontra,
+      rw [← hcontra, ← h10.2, unif_ground_eq, ← to_finset_card univ, to_finset_univ, 
+        finset.card_univ, fintype.card_fin, unif_ground_eq, ← to_finset_card univ, to_finset_univ, 
+        finset.card_univ, fintype.card_fin] },
+    { obtain ⟨e, ⟨heM, heM'⟩⟩ := exists_mem_not_mem_of_ncard_lt_ncard hlt, 
+      have h7 := hM'M.minor_contract_or_minor_delete ((mem_diff e).2 ⟨heM, heM'⟩),
+      apply U24_nonbinary,
+      cases h7 with hMe hMe,
+      { obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := is_rep_of_minor_of_is_rep _ hMe (h4.2 e heM).1,
+        apply is_representable_of_rep (iso.rep _ _ g φ) },
+      { obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := is_rep_of_minor_of_is_rep _ hMe (h4.2 e heM).2,
+        apply is_representable_of_rep (iso.rep _ _ g φ) } } },
+end
+
 lemma excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor (set_of matroid_in.is_binary) M) : (unif 2 4) ≤i M :=
 begin
@@ -412,7 +450,6 @@ begin
     (ψ.symm.trans_iso_minor (minor.refl.iso_minor)),
   refine ⟨hMrk, ⟨to_finite M.E, rfl⟩⟩,
 end
-
 
 end rep
 
