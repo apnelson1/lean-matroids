@@ -64,8 +64,8 @@ rep 𝔽 W (N ⟍ D) :=
       refine ⟨h, φ.support e h2⟩,
     end  }
 
-def rep_of_contr (N : matroid_in α) (φ : matroid_in.rep 𝔽 W N) (C : set α) (hC : C ⊆ N.E):
-  matroid_in.rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
+def rep_of_contr (N : matroid_in α) (φ : rep 𝔽 W N) (C : set α) (hC : C ⊆ N.E):
+  rep 𝔽 (W ⧸ span 𝔽 (φ.to_fun '' C)) (N ⟋ C) := 
 { to_fun := λ x, submodule.quotient.mk (φ.to_fun x),
   valid' := λ I hI,
     begin
@@ -319,6 +319,30 @@ def add_coloop_rep (φ : rep 𝔽 W M) {f : α} (hf : f ∉ M.E) :
         apply φ.support e he.2 },
     end }
 
+lemma U1k_representable (k : ℕ) (hk : 1 ≤ k) [nontrivial 𝔽] : (unif 1 k).is_representable 𝔽 :=
+begin
+  have φ := @rep.mk _ 𝔽 _ _ _ _ (unif 1 k) (λ x, (1 : 𝔽)) (λ I hI, _) 
+    (by { intros e he,
+          by_contra,
+          apply he,
+          simp only [unif_ground_eq, mem_univ] }),
+  { rw [is_representable],
+    apply is_representable_of_rep φ },
+  rw [unif_indep_iff],
+  refine ⟨λ h, _, λ h, _⟩,  
+  { rw [ncard, nat.card_eq_fintype_card, ← finrank_self 𝔽],
+    apply fintype_card_le_finrank_of_linear_independent h },
+  { cases le_iff_lt_or_eq.1 h with h0 h1,
+    { rw [ncard_eq_zero.1 (nat.lt_one_iff.1 h0), linear_independent_image (λ x hx y hy hxy, 
+        (inj_on_empty (λ x, (1 : 𝔽))) hx hy rfl), image_empty],
+      apply linear_independent_empty 𝔽 _ },
+    { obtain ⟨a, rfl⟩ := ncard_eq_one.1 h1,
+      rw [linear_independent_image (λ x hx y hy hxy, (inj_on_singleton (λ x, (1 : 𝔽)) a) hx hy rfl), 
+        image_singleton],
+      apply linear_independent_singleton,
+      simp only [ne.def, one_ne_zero, not_false_iff] } },
+end
+
 lemma U23_binary : matroid_in.is_binary (unif 2 3) :=
 begin
   have hcard3 : fintype.card ((set.univ \ {0}) : set (fin 2 → zmod 2)) = 3, 
@@ -401,8 +425,7 @@ begin
     have h80 : fintype.card (φ' '' (unif 2 4).E) = fintype.card (fin 4),
     { rw card_image_of_inj_on (φ'.inj_on_ground_of_simple U24_simple),
       simp only [unif_ground_eq, ← to_finset_card, to_finset_univ, finset.card_univ] },
-    rw [h80, fintype.card_fin] at h12,
-    rw [pow_two, two_mul, nat.succ_add_sub_one] at h12,
+    rw [h80, fintype.card_fin, pow_two, two_mul, nat.succ_add_sub_one] at h12,
     linarith,
     simp only [span_univ, top_coe, to_finset_univ, to_finset_subset, 
       finset.coe_univ, singleton_subset_iff], },

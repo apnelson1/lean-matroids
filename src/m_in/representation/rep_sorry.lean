@@ -175,7 +175,7 @@ end
 
 lemma U24_simple : (unif 2 4).simple := 
   unif_simple 2 4 rfl.le
-
+3
 lemma unif_iso_minor {n m k : ℕ} (hjk : m ≤ n) : unif k m ≤i unif k n :=
 begin
   set D : set (fin n) := (range (fin.cast_le hjk))ᶜ with hD, 

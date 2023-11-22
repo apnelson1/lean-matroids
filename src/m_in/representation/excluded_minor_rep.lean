@@ -285,7 +285,7 @@ begin
     apply diff_subset M.E ({x} : set α),
   
   have hMM'E : M.E = (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).E,
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).E,
     rw matroid_of_module_fun.ground,
   have hMM'x := delete_elem_eq_of_binary hBxy hBx hB φ φx,
   have hByx := hBxy,
@@ -293,34 +293,34 @@ begin
     rw [← union_singleton, union_comm, union_singleton],
   rw [← union_singleton, union_comm, union_singleton] at hByx,
   have hMM'y := delete_elem_eq_of_binary hByx hBy hB (rep_of_congr φ hxyyx) φy,
-  have hφ : ∀ (a : α), ((rep_of_congr φ hxyyx).std_rep hByx) a = (φ.std_rep hBxy) a,
+  have hφ : ∀ (a : α), ((rep_of_congr φ hxyyx).standard_rep hByx) a = (φ.standard_rep hBxy) a,
   { intros a,
-    rw φ.std_rep_eq_of_congr hxyyx },
+    rw φ.standard_rep_eq_of_congr hxyyx },
   simp_rw [λ (a : α), hφ a] at hMM'y,
   have hB' : (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).base B,
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).base B,
   { rw hMM'x at hBx,
     rw hMM'y at hBy,
     rw [base_iff_basis_ground, ← @diff_empty _ (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).E, 
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).E, 
       ← singleton_inter_eq_empty.2 (mem_singleton_iff.1.mt hxy1), diff_inter], 
     rw [delete_elem, delete_base_iff] at hBx hBy,
     apply basis.basis_union hBx hBy },
   have hMM'r : M.rk = (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).rk,
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).rk,
   { rw [← hB'.card, hB.card] },
   have hnxy : ({x, y} : set α).ncard = 2,
     { rw ncard_eq_to_finset_card,
       simp only [finite.to_finset_insert, finite.to_finset_singleton],
       apply finset.card_insert_of_not_mem (finset.not_mem_singleton.2 hxy1) },
   have hMM' : M ≠ (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E),
+    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E),
     { by_contra,
       rw [excluded_minor, mem_minimals_prop_iff] at hM,
       apply hM.1,
       rw [h, mem_def],
       apply is_representable_of_rep (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) },
+        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) },
     rw [ne.def, eq_iff_indep_iff_indep_forall, matroid_of_module_fun.ground] at hMM', 
     simp only [eq_self_iff_true, true_and, not_forall, exists_prop] at hMM',
     obtain ⟨Z, ⟨hZM, hZ⟩⟩ := hMM',
@@ -355,25 +355,25 @@ begin
           apply h (eq_of_subset_of_subset h2 (subset_trans hZxy hZJ)) },
         obtain ⟨BN, ⟨hBN, ⟨φN⟩⟩⟩ := hM.contract_mem hJxyM,
         have φN' := rep_of_contr _ (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) (J \ {x, y})
+          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) (J \ {x, y})
           (by { rw matroid_of_module_fun.ground, apply subset_trans (diff_subset _ _) 
           hMJ.subset_ground }),
         apply h (indep_eq_doubleton_of_subset M (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) hMM'r hMM'E 
+          (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) hMM'r hMM'E 
           x y hxy1 (by { left, apply h2 }) hMM'x hMM'y hZx hZy hMZ.1 hMZ.2 hZJ hMJ φN φN') },
       obtain ⟨BZ, hBZ⟩ := hMZ.1,
       specialize hJZ BZ hBZ.1.indep hBZ.2,
       rw hJZ at *,
       rw [← hBZ.1.card, hnxy] },
   { have hJZ : ∀ (J : set α), (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).indep J 
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).indep J 
       → Z ⊆ J → J = {x, y}, 
     { intros J hMJ hZJ,
       have hZx : x ∈ Z,
         { by_contra,
         have hZs : ((matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
           (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, 
-          (std_rep φ hBxy) i) M.E) ⟍ x).indep Z,
+          (standard_rep φ hBxy) i) M.E) ⟍ x).indep Z,
         { rw [delete_elem, delete_indep_iff],
           refine ⟨hM'Z.1, disjoint_singleton_right.2 h⟩ },
         rw [← hMM'x, delete_elem] at hZs,
@@ -382,7 +382,7 @@ begin
         { by_contra,
           have hZs : ((matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
             (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, 
-            (std_rep φ hBxy) i) M.E) ⟍ y).indep Z,
+            (standard_rep φ hBxy) i) M.E) ⟍ y).indep Z,
           { rw [delete_elem, delete_indep_iff],
             refine ⟨hM'Z.1, disjoint_singleton_right.2 h⟩ },
           rw [← hMM'y, delete_elem] at hZs,
@@ -392,7 +392,7 @@ begin
       by_contra,
       have hJxyM' : ((J \ {x, y}) ∩ (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
             (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, 
-            (std_rep φ hBxy) i) M.E).E).nonempty,
+            (standard_rep φ hBxy) i) M.E).E).nonempty,
       { simp only [ground_inter_left],
         apply nonempty_iff_ne_empty.2,
         apply diff_eq_empty.1.mt, 
@@ -400,11 +400,11 @@ begin
         apply h (eq_of_subset_of_subset h2 (subset_trans hZxy hZJ)) },
       obtain ⟨BN, ⟨hBN, ⟨φN⟩⟩⟩ := hM.contract_mem hJxyM',
       have φN' := rep_of_contr _ (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) (J \ {x, y})
+        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) (J \ {x, y})
         (by { rw matroid_of_module_fun.ground, apply subset_trans (diff_subset _ _) 
         hMJ.subset_ground }),
       apply h (indep_eq_doubleton_of_subset (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) M 
+        (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) M 
         (eq.symm hMM'r) (eq.symm hMM'E) x y hxy1 (by { right, apply h2 }) (eq.symm hMM'x)
         (eq.symm hMM'y) hZx hZy hM'Z.1 hM'Z.2 hZJ hMJ φN' φN) },
     obtain ⟨BZ, hBZ⟩ := hM'Z.1,
@@ -477,11 +477,12 @@ by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M 
 
 lemma U24_excluded_minor : excluded_minor (set_of matroid_in.is_binary) (unif 2 4) :=
 begin
-  by_contra,
-  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _) at h,
-  rw not_and_distrib at h,
-  cases h with ha hb,
-  apply ha U24_nonbinary,
+  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _),
+  refine ⟨U24_nonbinary, _⟩,
+  intros e he,
+  refine ⟨_, _⟩,
+  -- i have U1k representable and U23 representable, what's the best way to show this
+  sorry,
   sorry
 end
 

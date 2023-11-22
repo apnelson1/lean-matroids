@@ -309,6 +309,32 @@ begin
   simp only [mem_insert_iff, eq_self_iff_true, mem_singleton, or_true],
 end
 
+lemma span_disj_of_simple (φ : rep 𝔽 W M) (hs : simple M) {x y : α} (hx : x ∈ M.E) (hy : y ∈ M.E) 
+(hxy : x ≠ y) : disjoint (𝔽 ∙ (φ x)) (𝔽 ∙ (φ y)) :=
+begin
+  have h5 : x ∈ ({x, y} : set α), 
+    rw [insert_eq, union_comm, ← insert_eq],
+    simp only [mem_insert_iff, mem_singleton, or_true], 
+  have h6 : y ∈ ({x, y} : set α),
+    simp only [mem_insert_iff, mem_singleton, or_true],
+  have h7 : (⟨x, h5⟩ : ({x, y} : set α)) ≠ ⟨y, h6⟩,
+    simp only [ne.def],
+    apply hxy,
+  have h3 := (φ.valid.2 (hs x hx y hy)).disjoint_span_image (disjoint_singleton.2 h7),
+  simp only [image_singleton, subtype.coe_mk] at h3,
+  apply h3,
+end
+
+lemma span_inj_of_simple (φ : rep 𝔽 W M) (hs : simple M) : inj_on (λ x : α, 𝔽 ∙ (φ x)) M.E :=
+begin
+  rw inj_on,
+  intros x hx y hy hxy,
+  by_contra,
+  have h2 := span_disj_of_simple φ hs hx hy h,
+  rw [hxy, disjoint_self, span_singleton_eq_bot] at h2,
+  apply (φ.ne_zero_of_loopless hs.loopless y hy) h2,
+end
+
 lemma subset_nonzero_of_simple (φ : rep 𝔽 W M) (hs : simple M) :
   φ '' M.E ⊆ span 𝔽 (φ '' M.E) \ {0} :=
 begin
@@ -509,15 +535,10 @@ by { rintros _ ⟨x, ⟨hx, rfl⟩⟩, apply mem_span_cl φ hX hx, }-/
 
 --lemma rep_of_minor (φ : rep 𝔽 W M) (N : matroid_in α) (hNM : N ≤ matroid_in.to_matroid_in M) : 
 
-end rep
-
-
-namespace rep
-
--- make version of std_rep that uses is_representable instead of explicit φ
+-- make version of standard_rep that uses is_representable instead of explicit φ
 -- to avoid using casesI a lot
 /-- The representation for `M` whose rows are indexed by a base `B` -/
-def std_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
+def standard_rep (φ' : rep 𝔽 W M) {B : set α} (hB : M.base B) : 
   rep 𝔽 (B →₀ 𝔽) M := 
 { to_fun := λ e : α, ((valid φ').2 hB.indep).repr ⟨φ' e, by
     { have h4 := φ'.mem_span_rep_range, rw ← span_range_base φ' hB at h4, exact h4 e}⟩,
@@ -538,34 +559,32 @@ lemma is_representable_of_rep {W : Type*} [add_comm_group W] [module 𝔽 W] (φ
     is_representable 𝔽 M := 
   begin
     obtain ⟨B, hB⟩ := M.exists_base, 
-    exact ⟨B, hB, ⟨std_rep φ hB⟩⟩, 
+    exact ⟨B, hB, ⟨standard_rep φ hB⟩⟩, 
   end
-
-variables
 
 @[simp]
 lemma id_matrix_of_base (φ : rep 𝔽 W M) {B : set α} (e : B) (hB : M.base B) : 
-  std_rep φ hB e e = 1 :=
+  standard_rep φ hB e e = 1 :=
 begin
   rw ← to_fun_eq_coe,
-  simp [std_rep],
+  simp [standard_rep],
   rw [((valid φ).2 hB.indep).repr_eq_single e ⟨φ e, by
     { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
   simp only [finsupp.single_eq_same],
 end 
 
 lemma id_matrix_of_base' (φ : rep 𝔽 W M) {B : set α} (e f : B) (hB : M.base B) (hne : e ≠ f) : 
-  std_rep φ hB e f = 0 :=
+  standard_rep φ hB e f = 0 :=
 begin
   rw ← to_fun_eq_coe,
-  simp [std_rep],
+  simp [standard_rep],
   rw [(φ.valid.2 hB.indep).repr_eq_single e ⟨φ e, by
     { have h4 := φ.mem_span_rep_range, rw ← span_range_base φ hB at h4, exact h4 e}⟩ rfl],
   apply finsupp.single_eq_of_ne hne,
 end
 
-lemma std_rep_base_eq {M' : matroid_in α} (φ : rep 𝔽 W M) (φ' : rep 𝔽 W' M') {B : set α} (hB : M.base B)
-(hB' : M'.base B) (e : B) : std_rep φ hB e = std_rep φ' hB' e :=
+lemma standard_rep_base_eq {M' : matroid_in α} (φ : rep 𝔽 W M) (φ' : rep 𝔽 W' M') {B : set α} (hB : M.base B)
+(hB' : M'.base B) (e : B) : standard_rep φ hB e = standard_rep φ' hB' e :=
 begin
   ext;
   by_cases e = a, 
@@ -742,31 +761,31 @@ lemma eq_of_forall_fund_circuit_eq [fintype α] {M M' : matroid_in α} [module (
 (he : ∀ e ∈ M.E, M.fund_circuit e B = M'.fund_circuit e B) :
   M = M' :=
 begin
-  have φM := std_rep φM hB,
-  have φM' := std_rep φM' hB',
+  have φM := standard_rep φM hB,
+  have φM' := standard_rep φM' hB',
   apply eq_of_indep_iff_indep_forall hE,
   intros I hI,
   have hI' := hI,
   rw hE at hI',
-  rw [← (std_rep φM hB).valid' _ hI, ← (std_rep φM' hB').valid' _ hI'],
-  have h2 : (std_rep φM hB).to_fun ∘ coe = λ i : I, (std_rep φM hB).to_fun i,
+  rw [← (standard_rep φM hB).valid' _ hI, ← (standard_rep φM' hB').valid' _ hI'],
+  have h2 : (standard_rep φM hB).to_fun ∘ coe = λ i : I, (standard_rep φM hB).to_fun i,
     simp only [eq_self_iff_true], 
-  have h3 : (std_rep φM' hB').to_fun ∘ coe = λ i : I, (std_rep φM' hB').to_fun i,
+  have h3 : (standard_rep φM' hB').to_fun ∘ coe = λ i : I, (standard_rep φM' hB').to_fun i,
     simp only [eq_self_iff_true],
   rw [h2, h3],
   simp only [to_fun_eq_coe],
-  simp_rw [λ (e : I), (std_rep φM hB).mem_sum_basis_zmod2 hB.indep _ (@base.mem_cl _ M B hB e (hI e.2)),
-    λ (e : I), (std_rep φM' hB').mem_sum_basis_zmod2 hB'.indep _ (@base.mem_cl _ M' B hB' e (hI' e.2))],
+  simp_rw [λ (e : I), (standard_rep φM hB).mem_sum_basis_zmod2 hB.indep _ (@base.mem_cl _ M B hB e (hI e.2)),
+    λ (e : I), (standard_rep φM' hB').mem_sum_basis_zmod2 hB'.indep _ (@base.mem_cl _ M' B hB' e (hI' e.2))],
   simp_rw λ (e : I), he e (hI e.2),
-  have h6 : (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (std_rep φM hB) x) 
-    = (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (std_rep φM' hB') x),
+  have h6 : (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (standard_rep φM hB) x) 
+    = (λ (i : ↥I), ∑ (x : α) in (M'.fund_circuit ↑i B ∩ B).to_finset, (standard_rep φM' hB') x),
     simp only,
     have h10 :=  λ (i : ↥I), @finset.sum_congr _ _ (M'.fund_circuit i B ∩ B).to_finset 
-      (M'.fund_circuit i B ∩ B).to_finset (std_rep φM hB) (std_rep φM' hB') _ rfl _,
+      (M'.fund_circuit i B ∩ B).to_finset (standard_rep φM hB) (standard_rep φM' hB') _ rfl _,
     simp_rw  [λ (i : I), h10 i],
     intros x hx,
     rw mem_to_finset at hx,
-    have h12 := std_rep_base_eq φM φM' hB hB' ⟨x, (mem_of_mem_inter_right hx)⟩,
+    have h12 := standard_rep_base_eq φM φM' hB hB' ⟨x, (mem_of_mem_inter_right hx)⟩,
     simp at h12,
     rw h12,
   simp_rw h6,
@@ -943,27 +962,27 @@ lemma delete_elem_eq_of_binary {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : 
   [module (zmod 2) Wx]
   (φx : rep (zmod 2) Wx (M ⟍ x)) : (M ⟍ x) = 
   (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ x :=
+    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) ⟍ x :=
 begin
   apply eq_of_indep_iff_indep_forall,
     simp_rw [delete_elem, delete_ground],
     rw matroid_of_module_fun.ground,
     intros I hI,
     rw [(matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).delete_elem x, 
-      delete_indep_iff, ← (std_rep φx hBx).valid' I hI],
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).delete_elem x, 
+      delete_indep_iff, ← (standard_rep φx hBx).valid' I hI],
     rw ← (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2) 
-      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E).valid' I _,
+      (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E).valid' I _,
     simp [rep_of_matroid_of_module_fun],
     have h12 : (λ (x_1 : α), ite (x_1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
-      ∩ B.to_finset, (φ.std_rep hBxy) x_1) 0) ∘ (coe : I → α) = 
+      ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0) ∘ (coe : I → α) = 
       (λ (x_1 : I), ite (x_1.1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
-      ∩ B.to_finset, (φ.std_rep hBxy) x_1) 0),
+      ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0),
       simp only [eq_self_iff_true],
       simp only [subtype.val_eq_coe],
     have h10 : ∀ (x_1 : I), ite (x_1.1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
-      ∩ B.to_finset, (φ.std_rep hBxy) x_1) 0 = (∑ (x_1 : α) in 
-      (M.fund_circuit x_1 B).to_finset ∩ B.to_finset, (φ.std_rep hBxy) x_1),
+      ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0 = (∑ (x_1 : α) in 
+      (M.fund_circuit x_1 B).to_finset ∩ B.to_finset, (φ.standard_rep hBxy) x_1),
       { simp only,
         simp only [subtype.val_eq_coe],
         intros e,
@@ -972,10 +991,10 @@ begin
         rw delete_elem at hI,
         refine ⟨(M.delete_ground_subset_ground {x}) (hI e.2), rfl⟩ },
     simp_rw [h12, h10],
-    have h3 : ((φx.std_rep hBx) ∘ (coe : I → α)) = λ (e : I), ((φx.std_rep hBx) e),
+    have h3 : ((φx.standard_rep hBx) ∘ (coe : I → α)) = λ (e : I), ((φx.standard_rep hBx) e),
       simp only [eq_self_iff_true],
     rw [h3],
-    simp_rw λ (e : I), (std_rep φx hBx).mem_sum_basis_zmod2 hBx.indep _ 
+    simp_rw λ (e : I), (standard_rep φx hBx).mem_sum_basis_zmod2 hBx.indep _ 
       (@base.mem_cl _ (M ⟍ x) B hBx e (hI e.2)),
     have hBxs := hBx.subset_ground,
     simp_rw [delete_elem, delete_ground] at *,
@@ -984,15 +1003,15 @@ begin
       (hI e.2))) (disjoint_singleton_right.2 (mem_insert_iff.1.mt (not_or (ne.symm 
       (mem_diff_singleton.1 (hI e.2)).2) (not_mem_subset hBxs 
       (not_mem_diff_of_mem (mem_singleton x)))))),
-    have h6 : (λ (e : ↥I), ∑ (x : α) in (M.fund_circuit ↑e B ∩ B).to_finset, (std_rep φx hBx) x) = 
-      (λ (e : ↥I), ∑ (x : α) in (M.fund_circuit ↑e B ∩ B).to_finset, (std_rep φ hBxy) x),
+    have h6 : (λ (e : ↥I), ∑ (x : α) in (M.fund_circuit ↑e B ∩ B).to_finset, (standard_rep φx hBx) x) = 
+      (λ (e : ↥I), ∑ (x : α) in (M.fund_circuit ↑e B ∩ B).to_finset, (standard_rep φ hBxy) x),
       simp only,
       have h10 :=  λ (i : ↥I), @finset.sum_congr _ _ (M.fund_circuit i B ∩ B).to_finset 
-        (M.fund_circuit i B ∩ B).to_finset (std_rep φx hBx) (std_rep φ hBxy) _ rfl _,
+        (M.fund_circuit i B ∩ B).to_finset (standard_rep φx hBx) (standard_rep φ hBxy) _ rfl _,
       simp_rw  [λ (i : I), h10 i],
       intros x hx,
       rw mem_to_finset at hx,
-      have h12 := std_rep_base_eq φx φ hBx hBxy ⟨x, (mem_of_mem_inter_right hx)⟩,
+      have h12 := standard_rep_base_eq φx φ hBx hBxy ⟨x, (mem_of_mem_inter_right hx)⟩,
       simp at h12,
       rw h12,
     simp_rw [h6, to_finset_inter, iff_self_and],
@@ -1013,9 +1032,9 @@ def rep_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : rep �
 lemma rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') : 
   (φ : α → W) = (rep_of_congr φ h) := rfl
 
-lemma std_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') {B : set α} 
+lemma standard_rep_eq_of_congr {M M' : matroid_in α} (φ : rep 𝔽 W M) (h : M = M') {B : set α} 
   (hMB : M.base B) (hMB' : M'.base B) : 
-  ((std_rep φ hMB) : α → B →₀ 𝔽) = (std_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
+  ((standard_rep φ hMB) : α → B →₀ 𝔽) = (standard_rep (rep_of_congr φ h) hMB' :  α → B →₀ 𝔽)  := rfl
 
 lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x, y} : set α)).base B)
   (hBx : (M ⟍ y).base B) (hB : M.base B) [fintype α]
@@ -1023,13 +1042,13 @@ lemma delete_elem_eq_of_binary_right {B : set α} {x y : α} (hBxy : (M ⟍ ({x,
   [module (zmod 2) Wy]
   (φx : rep (zmod 2) Wy (M ⟍ y)) : (M ⟍ y) = 
   (matroid_of_module_fun (zmod 2) (B →₀ zmod 2)
-    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (std_rep φ hBxy) i) M.E) ⟍ y :=
+    (λ e : α, ∑ i in (M.fund_circuit e B ∩ B).to_finset, (standard_rep φ hBxy) i) M.E) ⟍ y :=
 begin
   have hMxyyx : M ⟍ ({x, y} : set α) = M ⟍ ({y, x} : set α),
     rw [← union_singleton, union_comm, union_singleton],
   have hByx := hBxy,
   rw [← union_singleton, union_comm, union_singleton] at hByx,
-  rw std_rep_eq_of_congr φ hMxyyx hBxy hByx,
+  rw standard_rep_eq_of_congr φ hMxyyx hBxy hByx,
   apply delete_elem_eq_of_binary hByx hBx hB (rep_of_congr φ hMxyyx) φx,
 end
 

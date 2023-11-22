@@ -257,10 +257,22 @@ noncomputable def of_span' [fintype V] : finpartition ({0}ᶜ : finset V) :=
         rw [← hb1, ← ha2, submodule.span_singleton_eq_span_singleton],
         obtain ⟨c, hc⟩ := hxH, 
         obtain ⟨d, hd⟩ := hyP,
+        have hc2 : c ≠ 0,
+          rw [← hc, smul_ne_zero_iff] at hx0,
+          apply hx0.1,
         rw [← hc, ← hd] at hxy,
+        have hd : d ≠ 0,
+          rw [← hc, hxy, smul_ne_zero_iff] at hx0,
+          apply hx0.1,
+        rw [← smul_right_inj (inv_ne_zero hd), ← mul_smul, ← mul_smul] at hxy, 
         use d⁻¹ * c,
-        
-        sorry, },
+        use c⁻¹ * d,
+        rw [← mul_assoc, mul_assoc _ c _, mul_inv_cancel hc2, mul_one, inv_mul_cancel hd],
+        rw [← mul_assoc, mul_assoc _ d _, mul_inv_cancel hd, mul_one, inv_mul_cancel hc2],
+        rw [inv_mul_cancel hd, one_smul] at hxy,
+        rw ← hxy,
+        refl,
+        apply_instance },
       have haY : A = Y,
       { rw [← hP2, ← hHP, ← hH2] },
       rw ← haY at hY1,
@@ -270,7 +282,9 @@ noncomputable def of_span' [fintype V] : finpartition ({0}ᶜ : finset V) :=
   not_bot_mem := _ }
 
 lemma card_subspace_rem_zero [fintype V] [nontrivial V] :
-  (∀ (x : finset V), x ∈ finset.image subspace_rem_zero_finset ({S : submodule K V | finite_dimensional.finrank K S = 1}.to_finset) → finset.card x = (fintype.card K) - 1) :=
+  (∀ (x : finset V), x ∈ finset.image subspace_rem_zero_finset 
+  ({S : submodule K V | finite_dimensional.finrank K S = 1}.to_finset) → 
+  finset.card x = (fintype.card K) - 1) :=
 begin
   simp_rw [mem_image, set.mem_to_finset, set.mem_set_of_eq,
     subspace_rem_zero_finset, subspace_rem_zero],
@@ -287,19 +301,22 @@ begin
   { use (equiv.of_bijective h9.to_equiv h9.to_equiv.bijective) },
   rw [← hb, ← (span_singleton_eq_iff_mem_dim_one h y.1 hy').2 ⟨y.2, ha⟩,
     set.to_finset_diff, card_sdiff, set.to_finset_card],
-  simp only [set_like.coe_sort_coe, ← fintype.card_eq.2 h13,
-    set.to_finset_card, set.card_singleton],
+  simp only [set_like.coe_sort_coe, ← fintype.card_eq.2 h13],
+    --set.to_finset_card, set.card_singleton],
   simp only [set.to_finset_subset, set.coe_to_finset,
     set.singleton_subset_iff, set_like.mem_coe, submodule.zero_mem],
 end
 
 lemma num_subspaces_dim_one [nontrivial V] :
-  fintype.card {S : subspace K V | finite_dimensional.finrank K S = 1} * ((fintype.card K) - 1) = (fintype.card K) ^ (finite_dimensional.finrank K V) - 1 :=
+  fintype.card {S : subspace K V | finite_dimensional.finrank K S = 1} * ((fintype.card K) - 1) 
+  = (fintype.card K) ^ (finite_dimensional.finrank K V) - 1 :=
 begin
-  haveI := module.fintype_of_fintype (finite_dimensional.fin_basis K V), -- this part is necessary for fintype V instance
+  haveI := module.fintype_of_fintype (finite_dimensional.fin_basis K V), 
+  -- this part is necessary for fintype V instance
 
   have h5 := @finpartition.sum_card_parts V _ ({0}ᶜ : finset V) (@of_span K V _ _ _ _ _ _ _ _),
-  have h6 : (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), i.card) = (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), ((fintype.card K) - 1)),
+  have h6 : (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), i.card) = 
+    (@of_span K V _ _ _ _ _ _ _ _).parts.sum (λ (i : finset V), ((fintype.card K) - 1)),
   apply sum_congr rfl,
   { exact λ a ha, card_subspace_rem_zero a ha },
 
