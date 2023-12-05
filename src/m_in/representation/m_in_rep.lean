@@ -978,13 +978,11 @@ begin
       ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0) ∘ (coe : I → α) = 
       (λ (x_1 : I), ite (x_1.1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
       ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0),
-      simp only [eq_self_iff_true],
-      simp only [subtype.val_eq_coe],
+      simp only [eq_self_iff_true, subtype.val_eq_coe],
     have h10 : ∀ (x_1 : I), ite (x_1.1 ∈ M.E) (∑ (x_1 : α) in (M.fund_circuit x_1 B).to_finset 
       ∩ B.to_finset, (φ.standard_rep hBxy) x_1) 0 = (∑ (x_1 : α) in 
       (M.fund_circuit x_1 B).to_finset ∩ B.to_finset, (φ.standard_rep hBxy) x_1),
-      { simp only,
-        simp only [subtype.val_eq_coe],
+      { simp only [subtype.val_eq_coe],
         intros e,
         simp_rw [ite_eq_iff],
         left,

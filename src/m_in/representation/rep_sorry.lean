@@ -175,7 +175,37 @@ end
 
 lemma U24_simple : (unif 2 4).simple := 
   unif_simple 2 4 rfl.le
-3
+
+lemma delete_elem_unif (k n : ℕ) (e : fin (n + 1)) : nonempty (unif k (n + 1) ⟍ e ≃i unif k n) := 
+begin
+  rw [iso_unif_iff, delete_elem, eq_iff_indep_iff_indep_forall, delete_ground, unif_ground_eq, 
+    encard_eq_coe_iff, ncard_diff (singleton_subset_iff.2 (mem_univ e)), ncard_singleton, 
+    ncard_univ, nat.card_eq_fintype_card, fintype.card_fin, nat.add_succ_sub_one, add_zero],
+  refine ⟨⟨rfl, λ I hI, _⟩, ⟨finite.diff (@univ (fin (n + 1))).to_finite {e}, rfl⟩⟩,
+  simp only [← compl_eq_univ_diff, delete_indep_iff, unif_indep_iff', disjoint_singleton_right, 
+    set.unif_on_indep_iff, subset_compl_singleton_iff, encard_le_coe_iff, and_assoc],
+end
+
+lemma contract_elem_unif (k n : ℕ) (e : fin (n + 1)) : 
+  nonempty (unif (k + 1) (n + 1) ⟋ e ≃i unif k n) :=
+begin
+  rw [iso_unif_iff, contract_elem, eq_iff_indep_iff_indep_forall, contract_ground, unif_ground_eq, 
+    encard_eq_coe_iff, ncard_diff (singleton_subset_iff.2 (mem_univ e)), ncard_singleton, 
+    ncard_univ, nat.card_eq_fintype_card, fintype.card_fin, nat.add_succ_sub_one, add_zero],
+  refine ⟨⟨rfl, λ I hI, _⟩, ⟨finite.diff (@univ (fin (n + 1))).to_finite {e}, rfl⟩⟩,
+  simp only [← compl_eq_univ_diff],
+  rw [indep.contract_indep_iff, unif_indep_iff', disjoint_singleton_right, set.unif_on_indep_iff, 
+    subset_compl_singleton_iff, encard_le_coe_iff, union_singleton, and_comm, ← and_assoc],
+  refine ⟨λ h, ⟨_, h.2⟩, λ h, ⟨_, h.2⟩⟩,
+  { refine ⟨h.1.1.subset (subset_insert _ _), _⟩,
+    rw [← add_le_add_iff_right 1, ← ncard_insert_of_not_mem h.2],
+    apply h.1.2 },
+  { refine ⟨h.1.1.insert _, _⟩,
+    rw [ncard_insert_of_not_mem h.2, add_le_add_iff_right],
+    apply h.1.2 },
+  simp only [unif_indep_iff, ncard_singleton, le_add_iff_nonneg_left, zero_le'],
+end
+
 lemma unif_iso_minor {n m k : ℕ} (hjk : m ≤ n) : unif k m ≤i unif k n :=
 begin
   set D : set (fin n) := (range (fin.cast_le hjk))ᶜ with hD, 

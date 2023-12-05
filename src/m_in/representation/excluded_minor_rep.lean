@@ -39,7 +39,7 @@ namespace rep
 variables [fintype α]
 
 open_locale big_operators
-
+-- can remove hxy
 lemma coindep_excluded_minor (M : matroid_in α) 
 (hM : excluded_minor {N : matroid_in α | N.is_representable 𝔽} M) (x y : α) (hxy : x ≠ y) 
 (hx : {x, y} ⊆ M.E) 
@@ -481,9 +481,45 @@ begin
   refine ⟨U24_nonbinary, _⟩,
   intros e he,
   refine ⟨_, _⟩,
-  -- i have U1k representable and U23 representable, what's the best way to show this
-  sorry,
-  sorry
+  obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U1k_representable (zmod 2) _ 3 _ _,
+  obtain ⟨ψc⟩ := (contract_elem_unif 1 3 e),
+  apply is_representable_of_rep (iso.rep _ _ ψc φc),
+  simp only [one_le_bit1, zero_le'],
+  obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U23_binary,
+  obtain ⟨ψc⟩ := (delete_elem_unif 2 3 e),
+  apply is_representable_of_rep (iso.rep _ _ ψc φc),
+end
+
+lemma excluded_minor_binary_iff_iso_unif24 (M : matroid_in α) [finite_rk M] :
+  excluded_minor (set_of matroid_in.is_binary) M ↔ nonempty (M ≃i (unif 2 4)) := 
+begin
+  refine ⟨λ hM, excluded_minor_binary_iso_unif24 M hM, λ hφ, _⟩,
+  obtain ⟨φ2⟩ := hφ,
+  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _),
+  refine ⟨_, _⟩,
+  by_contra,
+  obtain ⟨B, ⟨hB, ⟨φ24⟩⟩⟩ := h,
+  obtain φ := iso.rep _ _ φ2.symm φ24,
+  apply U24_nonbinary (is_representable_of_rep (iso.rep _ _ φ2.symm φ24)),
+  intros e he,
+  have hcoe : (coe : M.E → α)⁻¹' {e} = {(⟨e, he⟩ : M.E)},
+  { ext;
+    simp only [mem_preimage, mem_singleton_iff],
+    refine ⟨λ h, subtype.coe_eq_of_eq_mk h, λ h, by { rw h,
+      apply subtype.coe_mk e he }⟩ },
+  refine ⟨_, _⟩,
+  obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U1k_representable (zmod 2) _ 3 _ _,
+  obtain ⟨ψc⟩ := (contract_elem_unif 1 3 (φ2 ⟨e, he⟩)),
+  rw [contract_elem, ← image_singleton, ← image_singleton, ← hcoe, ← iso.image] at ψc,
+  rw contract_elem,
+  apply is_representable_of_rep (iso.rep _ _ (iso.trans (contract_iso φ2 {e}) ψc) φc),
+  simp only [one_le_bit1, zero_le'],
+
+  obtain ⟨B, ⟨hB, ⟨φd⟩⟩⟩ := U23_binary,
+  obtain ⟨ψd⟩ := (delete_elem_unif 2 3 (φ2 ⟨e, he⟩)),
+  rw [delete_elem, ← image_singleton, ← image_singleton, ← hcoe, ← iso.image] at ψd,
+  rw delete_elem,
+  apply is_representable_of_rep (iso.rep _ _ (iso.trans (delete_iso φ2 {e}) ψd) φd),
 end
 
 /-def excluded_minor_binary_unif24 (M : matroid_in α) [finite_rk M]
@@ -494,24 +530,27 @@ end
   right_inv := sorry,
   on_base' := sorry }-/
 
-/-lemma binary_iff_no_24_minor (M : matroid_in α) [finite_rk M] : 
+lemma binary_iff_no_24_minor (M : matroid_in α) [finite_rk M] : 
   matroid_in.is_binary M ↔ ¬ unif 2 4 ≤i M :=
 begin
-  rw matroid_in.is_binary,
+  rw [matroid_in.is_binary, iso_minor],
   refine ⟨λ hfM, _, _⟩,
   by_contra,
-  rw iso_minor at h,
-  obtain ⟨M', ⟨hM'M, ⟨φ⟩⟩⟩ := h,
+  obtain ⟨M', ⟨hM', ⟨ψ⟩⟩⟩ := h,
+  apply ((excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _)).1 
+    ((excluded_minor_binary_iff_iso_unif24 M').2 ⟨ψ.symm⟩)).1 (is_rep_of_minor_of_is_rep _ hM' hfM),
+  
+  intros h3,
   apply (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
-    (@minor_closed_rep _ (zmod 2) _)).1 hfM M' _ hM'M,
-  sorry,
-  have h2 :=  (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
     (@minor_closed_rep _ (zmod 2) _)).2,
-  contrapose,
-  intros hM,
-  push_neg,
-  sorry,
-end-/
+  intros M' hM',
+  by_contra,
+  apply h3,
+  use M',
+  refine ⟨h, _⟩,
+  obtain ⟨ψ⟩ := excluded_minor_binary_iso_unif24 M' hM',
+  use ψ.symm,
+end
 
 end rep
 

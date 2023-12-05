@@ -118,6 +118,8 @@ begin
     ← card_compl, ← @finpartition.sum_card_parts V _ ({0}ᶜ : finset V) (of_span K V)],
 end
 
+-- check out projectivization?
+
 --variables [fintype (subspace K V)]
 -- for general dimension of the subspace we might be able to set up an induction argument
 -- need to show that if S is k-dimensional subspace, there are k (unique?) 1-dimensional subspaces whose closure is S
