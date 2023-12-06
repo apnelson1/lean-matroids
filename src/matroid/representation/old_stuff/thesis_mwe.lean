@@ -295,6 +295,21 @@ end)
 end )
 (λ B hB, h_support B hB.1)
 
+@[simp] lemma matroid_of_indep_apply (E : set α) (indep : set α → Prop) (h_empty : indep ∅) 
+(h_subset : ∀ ⦃I J⦄, indep J → I ⊆ J → indep I) 
+(h_aug : ∀⦃I B⦄, indep I → I ∉ maximals (⊆) indep → B ∈ maximals (⊆) indep → 
+  ∃ x ∈ B \ I, indep (insert x I))
+(h_maximal : ∀ X ⊆ E, exists_maximal_subset_property indep X) 
+(h_support : ∀ I, indep I → I ⊆ E)  : 
+(matroid_of_indep E indep h_empty h_subset h_aug h_maximal h_support).indep = indep :=
+begin
+  ext I, 
+  simp only [matroid_in.indep, matroid_of_indep], 
+  refine ⟨λ ⟨B, hB, hIB⟩, h_subset hB.1 hIB, λ hI, _⟩, 
+  obtain ⟨B, ⟨hB, hIB, -⟩, hBmax⟩ :=  h_maximal E subset.rfl I hI (h_support _ hI), 
+  exact ⟨B, ⟨hB, λ B' hB' hBB', hBmax ⟨hB', hIB.trans hBB', h_support _ hB'⟩ hBB'⟩, hIB⟩, 
+end 
+
 lemma eq_of_base_iff_base_forall {M₁ M₂ : matroid_in α} (hE : M₁.E = M₂.E) 
 (h : ∀ B ⊆ M₁.E, (M₁.base B ↔ M₂.base B)) : M₁ = M₂ :=
 begin
@@ -829,13 +844,76 @@ by rw [←dual_inj_iff, dual_dual, eq_comm]
 
 def add_loop (M : matroid_in α) (f : α) : matroid_in α := M.restrict' (insert f M.E)
 
+lemma loop_iff_mem_cl_empty {e : α} : M.loop e ↔ e ∈ M.cl ∅ := iff.rfl 
+
 @[simp] lemma add_loop_ground (M : matroid_in α) (f : α) : (M.add_loop f).E = insert f M.E := rfl
+
+@[simp] lemma restrict'_indep_iff {M : matroid_in α} {X I : set α} : 
+  (M.restrict' X).indep I ↔ M.indep I ∧ I ⊆ X := 
+begin
+  simp only [restrict', subset_inter_iff, matroid_of_indep_apply, and.congr_right_iff, 
+    and_iff_left_iff_imp], 
+  exact fun h _, h.subset_ground 
+end 
 
 @[simp] lemma add_loop_indep_iff {f : α} : (M.add_loop f).indep I ↔ M.indep I := 
 begin
   rw [add_loop, restrict'_indep_iff, and_iff_left_iff_imp],
   exact fun hI, hI.subset_ground.trans (subset_insert _ _), 
 end 
+
+lemma indep.basis_self (hI : M.indep I) : M.basis I I := 
+begin
+  rw [basis_iff', and_iff_left hI.subset_ground, and_iff_right hI, and_iff_right subset.rfl], 
+  exact λ _ _, subset_antisymm, 
+end 
+
+lemma indep.cl_eq_set_of_basis (hI : M.indep I) : M.cl I = {x | M.basis I (insert x I)} :=
+begin
+  set F := {x | M.basis I (insert x I)} with hF, 
+  have hIF : M.basis I F,
+  { rw basis_iff, 
+    refine ⟨hI, (λ e he, by { rw [hF, mem_set_of, insert_eq_of_mem he], exact hI.basis_self }), 
+      λ J hJ hIJ hJF, hIJ.antisymm (λ e he, _)⟩,
+    rw basis.eq_of_subset_indep (hJF he) (hJ.subset (insert_subset.mpr ⟨he, hIJ⟩)) 
+      (subset_insert _ _) subset.rfl, 
+    exact mem_insert _ _ },
+  
+  have hF : M.flat F, 
+  { refine λ J Y hJ hJY y hy, (indep.basis_of_forall_insert hI (subset_insert _ _) (λ e he heI, _)), 
+    refine (hIF.transfer hJ (subset_union_right _ _) (hJY.basis_union hJ)).insert_dep
+      (mem_of_mem_of_subset he _) heI, 
+    rw [diff_subset_iff, union_diff_self, insert_subset], 
+    exact ⟨or.inr (or.inl hy), subset_union_left _ _⟩ },
+  
+  rw [subset_antisymm_iff, cl, subset_sInter_iff], 
+  refine ⟨sInter_subset_of_mem ⟨hF, hIF.subset⟩, _⟩, 
+
+  rintro F' ⟨hF',hIF'⟩ e (he : M.basis I (insert e I)), 
+  obtain ⟨J, hJ, hIJ⟩ := hI.subset_basis_of_subset hIF', 
+  exact (hF' hJ (he.basis_union_of_subset hJ.indep hIJ)) (or.inr (mem_insert _ _)), 
+end
+
+lemma indep.mem_cl_iff' (hI : M.indep I) : 
+  x ∈ M.cl I ↔ (x ∈ M.E ∧ (M.indep (insert x I) → x ∈ I)) :=
+begin
+  simp_rw [hI.cl_eq_set_of_basis, mem_set_of_eq],
+  refine ⟨λ h, ⟨h.subset_ground (mem_insert _ _), λ h', h.mem_of_insert_indep (mem_insert _ _) h'⟩, 
+    λ h, _⟩, 
+  refine hI.basis_of_forall_insert (subset_insert x I) (λ e he hei, he.2  _) 
+    (insert_subset.mpr ⟨h.1, hI.subset_ground⟩), 
+  rw [←singleton_union, union_diff_right, mem_diff, mem_singleton_iff] at he,
+  rw [he.1] at ⊢ hei, 
+  exact h.2 hei,
+end
+
+lemma indep.mem_cl_iff_of_not_mem {e : α} (hI : M.indep I) (heI : e ∉ I) : 
+  e ∈ M.cl I ↔ M.dep (insert e I) :=
+by { rw [hI.mem_cl_iff', dep_iff, insert_subset, and_iff_left hI.subset_ground], tauto }
+
+lemma loop_iff_dep {e : α} : M.loop e ↔ M.dep {e} := 
+by rw [loop_iff_mem_cl_empty, 
+  M.empty_indep.mem_cl_iff_of_not_mem (not_mem_empty e), insert_emptyc_eq]
 
 lemma eq_add_loop_iff {f : α} (M M' : matroid_in α) (hf : f ∉ M.E) : 
     M' = add_loop M f ↔ M'.loop f ∧ M' ⟍ f = M :=
