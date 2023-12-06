@@ -1597,8 +1597,7 @@ begin
           by_contra,
           apply he,
           simp only [unif_ground_eq, mem_univ] }),
-  { rw [is_representable],
-    apply is_representable_of_rep φ },
+  { apply is_representable_of_rep φ },
   rw [unif_indep_iff],
   refine ⟨λ h, _, λ h, _⟩,  
   { rw [ncard, nat.card_eq_fintype_card, ← finrank_self 𝔽],
@@ -1714,12 +1713,10 @@ lemma nontrivial_excluded_minor (M : matroid_in α) [finite_rk M]
 begin
   by_contra,
   simp only [nontrivial_coe_sort, not_nontrivial_iff] at h,
-  rw [excluded_minor, mem_minimals_prop_iff] at hM,
-  apply hM.1,
   cases h.eq_empty_or_singleton with hempty hsing,
-  { apply is_representable_of_rep (rep_empty (zmod 2) M hempty) },
+  { apply hM.1 (is_representable_of_rep (rep_empty (zmod 2) M hempty)) },
   { obtain ⟨x, hx⟩ := hsing,
-    apply is_representable_of_rep (rep_singleton (zmod 2) M hx) },
+    apply hM.1 (is_representable_of_rep (rep_singleton (zmod 2) M hx)) },
 end
 
 -- can remove hxy
@@ -1737,7 +1734,6 @@ begin
   obtain ⟨a, ⟨ha1, ha2⟩⟩ := ssubset_iff_subset_diff_singleton.1 hKs,
   obtain ⟨rfl | h2⟩ := (mem_insert_iff.1 ha1),
   -- duplicate code
-  -- use add_coloop_rep,
   { simp only [insert_diff_of_mem, mem_singleton, diff_singleton_eq_self 
       (mem_singleton_iff.1.mt hxy), subset_singleton_iff_eq] at ha2,
     cases ha2 with hempty hs,
@@ -1811,10 +1807,8 @@ begin
   have hfM : ({f} ∩ M.E).nonempty,
     simp only [ground_inter_left, singleton_nonempty],
   obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem hfM,
-  rw [excluded_minor, mem_minimals_prop_iff] at hM,
   simp only [not_nonloop_iff] at h,
-  apply hM.1,
-  apply is_representable_of_rep (rep_of_loop M h φ),
+  apply hM.1 (is_representable_of_rep (rep_of_loop M h φ)),
 end
 
 lemma excluded_minor_nonpara (M : matroid_in α) [finite_rk M]
@@ -1822,93 +1816,74 @@ lemma excluded_minor_nonpara (M : matroid_in α) [finite_rk M]
   ¬ M.circuit {x, y}  :=
 begin
   by_contra,
-  have hfM : ({y} ∩ M.E).nonempty,
-    simp only [singleton_inter_nonempty],
-    apply mem_of_subset_of_mem h.subset_ground,
-    simp only [mem_insert_iff, mem_singleton, or_true],
-  obtain  ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem hfM,
-  rw [excluded_minor, mem_minimals_prop_iff] at hM,
-  apply hM.1,
+  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem (singleton_inter_nonempty.2 (mem_of_subset_of_mem 
+    h.subset_ground (mem_insert_iff.2 (or.intro_right (y = x) (mem_singleton y))))),
   have hx : (M ⟍ y).nonloop x,
     rw [delete_elem, delete_nonloop_iff],
-    rw circuit_iff_dep_forall_diff_singleton_indep at h,
-    cases h with hxy2 hin,
-    specialize hin y (mem_insert_of_mem _ (mem_singleton y)),
-    rw [insert_eq, union_comm, ← insert_eq, insert_diff_of_mem _ (mem_singleton _),
-      diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm hxy))] at hin,
-    refine ⟨indep_singleton.1 hin, mem_singleton_iff.1.mt hxy⟩,
-  have hy : y ∉ (M ⟍ y).E,
-    rw [delete_elem, delete_ground],
-    apply not_mem_diff_singleton,
-  obtain φM := parallel_extend_rep φ hx hy,
-  simp_rw ← delete_elem at φM,
-  rw ← (eq_parallel_extend_iff hx hy).2 ⟨h, rfl⟩ at φM,
-  apply is_representable_of_rep (rep_of_congr (rep_of_matroid_of_module_fun (zmod 2) (B →₀ zmod 2) 
-    (λ (e : α), ite (e = y) (-φ x) (φ e)) (insert y (M ⟍ y).E)) φM),
-  --rw parallel_extend_eq,
+    cases circuit_iff_dep_forall_diff_singleton_indep.1 h with hxy2 hin,
+    { specialize hin y (mem_insert_of_mem _ (mem_singleton y)),
+      rw [insert_eq, union_comm, ← insert_eq, insert_diff_of_mem _ (mem_singleton _),
+        diff_singleton_eq_self (mem_singleton_iff.1.mt (ne.symm hxy))] at hin,
+      refine ⟨indep_singleton.1 hin, mem_singleton_iff.1.mt hxy⟩ },
+    { have hy : y ∉ (M ⟍ y).E,
+        rw [delete_elem, delete_ground],
+        apply not_mem_diff_singleton,
+      obtain φM := parallel_extend_rep φ hx hy,
+      simp_rw ← delete_elem at φM,
+      rw ← (eq_parallel_extend_iff hx hy).2 ⟨h, rfl⟩ at φM,
+      apply hM.1 (is_representable_of_rep (rep_of_congr (rep_of_matroid_of_module_fun (zmod 2) 
+        (B →₀ zmod 2) (λ (e : α), ite (e = y) (-φ x) (φ e)) (insert y (M ⟍ y).E)) φM)) },
 end
 
 lemma excluded_minor_simple (M : matroid_in α) [finite_rk M]
   (hM : excluded_minor matroid_in.is_binary M) : simple M :=
 begin
-  intros e he f hf, 
-  rw indep_iff_forall_subset_not_circuit,
-  intros C hC,
+  apply λ e he f hf, (indep_iff_forall_subset_not_circuit (insert_subset.2 
+    ⟨he, singleton_subset_iff.2 hf⟩)).2 (λ C hC, _),
   by_cases hef : e = f,
   { rw hef at *,
     rw insert_eq_of_mem (mem_singleton f) at hC,
     cases ssubset_or_eq_of_subset hC with hempty heq,
     { rw ssubset_singleton_iff.1 hempty,
       apply empty_not_circuit },
-    { rw heq,
-      rw ← loop_iff_circuit,
+    { rw [heq, ← loop_iff_circuit],
       apply (excluded_minor_nonloop M hM hf).1 } },
   { cases ssubset_or_eq_of_subset hC with hC2 heq,
-    { rw ssubset_iff_subset_diff_singleton at hC2,
-      obtain ⟨x, ⟨hx1, hx2⟩⟩ := hC2,
-      simp at hx1,
+    { obtain ⟨x, ⟨hx1, hx2⟩⟩ := ssubset_iff_subset_diff_singleton.1 hC2,
+      simp only [mem_insert_iff, mem_singleton_iff] at hx1,
       obtain ⟨rfl | rfl⟩ := hx1,
-      { simp at hx2,
-        rw subset_diff at hx2,
+      { simp only [insert_diff_of_mem, mem_singleton, subset_diff] at hx2,
         cases (subset_iff_ssubset_or_eq.1 hx2.1) with hempty heq,
-        rw ssubset_singleton_iff.1 hempty,
-        apply empty_not_circuit,
-        rw heq,
-        rw ← loop_iff_circuit,
-        apply (excluded_minor_nonloop M hM hf).1 }, 
+        { rw ssubset_singleton_iff.1 hempty,
+          apply empty_not_circuit },
+        { rw [heq, ← loop_iff_circuit],
+          apply (excluded_minor_nonloop M hM hf).1 } }, 
       { rw hx1 at *,
         rw [← union_singleton, union_comm, union_singleton] at hx2,
-        simp at hx2,
-        rw subset_diff at hx2,
+        simp only [insert_diff_of_mem, mem_singleton, 
+          subset_diff] at hx2,
         cases (subset_iff_ssubset_or_eq.1 hx2.1) with hempty heq,
-        rw ssubset_singleton_iff.1 hempty,
-        apply empty_not_circuit,
-        rw [heq, ← loop_iff_circuit],
-        apply (excluded_minor_nonloop M hM he).1 } },
+        { rw ssubset_singleton_iff.1 hempty,
+          apply empty_not_circuit },
+        { rw [heq, ← loop_iff_circuit],
+          apply (excluded_minor_nonloop M hM he).1 } } },
     rw heq,
     apply excluded_minor_nonpara M hM hef },
-  apply insert_subset.2 ⟨he, singleton_subset_iff.2 hf⟩,
 end
 
 lemma excluded_minor_binary_unif (hM : excluded_minor matroid_in.is_binary M) 
   (ψ : M ≃i unif 2 M.E.ncard) (h2 : 2 ≤ M.E.ncard) : 4 ≤ M.E.ncard :=
 begin
-  rw [excluded_minor, mem_minimals_prop_iff] at hM,
-  rw le_iff_eq_or_lt at h2,
-  cases h2 with h2 h3,
+  cases le_iff_eq_or_lt.1 h2 with h2 h3,
   { by_contra,
-    apply hM.1,
     rw ← h2 at ψ, 
     obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := U22_binary,
-    apply is_representable_of_rep (rep_of_iso _ _ ψ φ) },
-  { have h2 := nat.add_one_le_iff.2 h3,
-    rw le_iff_eq_or_lt at h2,
-    cases h2 with h2 h3,
+    apply hM.1 (is_representable_of_rep (rep_of_iso _ _ ψ φ)) },
+  { cases le_iff_eq_or_lt.1 (nat.add_one_le_iff.2 h3) with h2 h3,
     { by_contra, 
-      apply hM.1,
       rw ← h2 at ψ, 
       obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := U23_binary,
-      apply is_representable_of_rep (rep_of_iso _ _ ψ φ) },
+      apply hM.1 (is_representable_of_rep (rep_of_iso _ _ ψ φ)) },
     { apply nat.add_one_le_iff.2 h3 } },
 end
 
@@ -2103,37 +2078,26 @@ lemma excluded_minor_binary_iso_unif (M : matroid_in α) [finite_rk M]
 lemma excluded_minor_binary_ncard4 (hM : excluded_minor matroid_in.is_binary M) : 4 = M.E.ncard :=
 begin
   obtain ⟨ψ⟩ := excluded_minor_binary_iso_unif M hM,
-  have h3 := excluded_minor_binary_unif hM ψ (excluded_minor_binary_ncard M hM),
-  rw le_iff_eq_or_lt at h3,
-  cases h3 with h3 h4,
+  cases le_iff_eq_or_lt.1 (excluded_minor_binary_unif hM ψ (excluded_minor_binary_ncard M hM)) 
+    with h3 h4,
   { apply h3 },
   { by_contra,
     obtain ⟨ψ2⟩ := (iso_line_iff (excluded_minor_binary_ncard M hM)).2 ⟨excluded_minor_simple M hM, ⟨excluded_minor_binary_rk2 M hM, 
       ⟨to_finite M.E, rfl⟩⟩⟩,
     have h4 := (excluded_minor_iff matroid_in.is_binary (@minor_closed_rep _ (zmod 2) _)).1 hM,
-    have h5 := iso_minor.trans (@unif_iso_minor _ _ 2 (excluded_minor_binary_unif hM ψ2 
-      (excluded_minor_binary_ncard M hM))) (ψ2.symm.iso_minor),
-    rw iso_minor at h5,
-    obtain ⟨M', ⟨hM'M, ⟨g⟩⟩⟩ := h5,
-    have h8 := ncard_le_of_subset hM'M.ground_subset,
-    rw le_iff_eq_or_lt at h8,
-    cases h8 with hcontra hlt,
-    { rw ncard_eq_to_finset_card M.E at hcontra,
-      have h9 := (fintype.bijective_iff_injective_and_card ψ2).1 ψ2.bijective,
-      apply h,
-      rw [← to_finset_card, ← finite.to_finset_eq_to_finset, ← ncard_eq_to_finset_card M.E] at h9,
-      rw h9.2,
-      have h10 := (fintype.bijective_iff_injective_and_card g).1 g.bijective,
-      rw [← to_finset_card M'.E, ← finite.to_finset_eq_to_finset, 
-        ← ncard_eq_to_finset_card M'.E] at h10,
-      rw [← ncard_eq_to_finset_card M.E] at hcontra,
-      rw [← hcontra, ← h10.2, unif_ground_eq, ← to_finset_card univ, to_finset_univ, 
-        finset.card_univ, fintype.card_fin, unif_ground_eq, ← to_finset_card univ, to_finset_univ, 
-        finset.card_univ, fintype.card_fin] },
+    obtain ⟨M', ⟨hM'M, ⟨g⟩⟩⟩ := iso_minor.trans (@unif_iso_minor _ _ 2 
+      (excluded_minor_binary_unif hM ψ2 (excluded_minor_binary_ncard M hM))) (ψ2.symm.iso_minor),
+    cases le_iff_eq_or_lt.1 (ncard_le_of_subset hM'M.ground_subset) with hcontra hlt,
+    { apply h,
+      rw [ncard_eq_to_finset_card M.E, finite.to_finset_eq_to_finset, to_finset_card, 
+        ((fintype.bijective_iff_injective_and_card ψ2).1 ψ2.bijective).2, ← hcontra, 
+        ncard_eq_to_finset_card M'.E, finite.to_finset_eq_to_finset, to_finset_card M'.E,
+        ← ((fintype.bijective_iff_injective_and_card g).1 g.bijective).2, unif_ground_eq, 
+        ← to_finset_card univ, to_finset_univ, finset.card_univ, fintype.card_fin, unif_ground_eq, 
+        ← to_finset_card univ, to_finset_univ, finset.card_univ, fintype.card_fin] },
     { obtain ⟨e, ⟨heM, heM'⟩⟩ := exists_mem_not_mem_of_ncard_lt_ncard hlt, 
-      have h7 := hM'M.minor_contract_or_minor_delete ((mem_diff e).2 ⟨heM, heM'⟩),
       apply U24_nonbinary,
-      cases h7 with hMe hMe,
+      cases hM'M.minor_contract_or_minor_delete ((mem_diff e).2 ⟨heM, heM'⟩) with hMe hMe,
       { obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := is_rep_of_minor_of_is_rep _ hMe (h4.2 e heM).1,
         apply is_representable_of_rep (rep_of_iso _ _ g φ) },
       { obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := is_rep_of_minor_of_is_rep _ hMe (h4.2 e heM).2,
@@ -2146,17 +2110,15 @@ by { rw excluded_minor_binary_ncard4 hM, apply excluded_minor_binary_iso_unif M 
 
 lemma U24_excluded_minor : excluded_minor (set_of matroid_in.is_binary) (unif 2 4) :=
 begin
-  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _),
-  refine ⟨U24_nonbinary, _⟩,
-  intros e he,
-  refine ⟨_, _⟩,
-  obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U1k_representable (zmod 2) _ 3 _ _,
-  obtain ⟨ψc⟩ := (contract_elem_unif 1 3 e),
-  apply is_representable_of_rep (rep_of_iso _ _ ψc φc),
-  simp only [one_le_bit1, zero_le'],
-  obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U23_binary,
-  obtain ⟨ψc⟩ := (delete_elem_unif 2 3 e),
-  apply is_representable_of_rep (rep_of_iso _ _ ψc φc),
+  apply (excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _)).2 
+    ⟨U24_nonbinary, λ e he, ⟨_, _⟩⟩,
+  { obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U1k_representable (zmod 2) _ 3 _ _,
+    obtain ⟨ψc⟩ := (contract_elem_unif 1 3 e),
+    apply is_representable_of_rep (rep_of_iso _ _ ψc φc),
+    simp only [one_le_bit1, zero_le'] },
+  { obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U23_binary,
+    obtain ⟨ψc⟩ := (delete_elem_unif 2 3 e),
+    apply is_representable_of_rep (rep_of_iso _ _ ψc φc) },
 end
 
 lemma excluded_minor_binary_iff_iso_unif24 (M : matroid_in α) [finite_rk M] :
@@ -2164,13 +2126,12 @@ lemma excluded_minor_binary_iff_iso_unif24 (M : matroid_in α) [finite_rk M] :
 begin
   refine ⟨λ hM, excluded_minor_binary_iso_unif24 M hM, λ hφ, _⟩,
   obtain ⟨φ2⟩ := hφ,
-  rw excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _),
-  refine ⟨_, _⟩,
-  by_contra,
-  obtain ⟨B, ⟨hB, ⟨φ24⟩⟩⟩ := h,
-  obtain φ := rep_of_iso _ _ φ2.symm φ24,
-  apply U24_nonbinary (is_representable_of_rep (rep_of_iso _ _ φ2.symm φ24)),
-  intros e he,
+  apply (excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _)).2 
+    ⟨_, λ e he, _⟩,
+  { by_contra,
+    obtain ⟨B, ⟨hB, ⟨φ24⟩⟩⟩ := h,
+    obtain φ := rep_of_iso _ _ φ2.symm φ24,
+    apply U24_nonbinary (is_representable_of_rep (rep_of_iso _ _ φ2.symm φ24)) },
   have hcoe : (coe : M.E → α)⁻¹' {e} = {(⟨e, he⟩ : M.E)},
   { ext;
     simp only [mem_preimage, mem_singleton_iff],
@@ -2180,37 +2141,28 @@ begin
   obtain ⟨B, ⟨hB, ⟨φc⟩⟩⟩ := @U1k_representable (zmod 2) _ 3 _ _,
   obtain ⟨ψc⟩ := (contract_elem_unif 1 3 (φ2 ⟨e, he⟩)),
   rw [contract_elem, ← image_singleton, ← image_singleton, ← hcoe, ← iso.image] at ψc,
-  rw contract_elem,
   apply is_representable_of_rep (rep_of_iso _ _ (iso.trans (contract_iso φ2 {e}) ψc) φc),
   simp only [one_le_bit1, zero_le'],
 
   obtain ⟨B, ⟨hB, ⟨φd⟩⟩⟩ := U23_binary,
   obtain ⟨ψd⟩ := (delete_elem_unif 2 3 (φ2 ⟨e, he⟩)),
   rw [delete_elem, ← image_singleton, ← image_singleton, ← hcoe, ← iso.image] at ψd,
-  rw delete_elem,
   apply is_representable_of_rep (rep_of_iso _ _ (iso.trans (delete_iso φ2 {e}) ψd) φd),
 end
 
 lemma binary_iff_no_u24_minor (M : matroid_in α) [finite_rk M] : 
   matroid_in.is_binary M ↔ ¬ unif 2 4 ≤i M :=
 begin
-  rw [matroid_in.is_binary, iso_minor],
-  refine ⟨λ hfM, _, _⟩,
-  by_contra,
-  obtain ⟨M', ⟨hM', ⟨ψ⟩⟩⟩ := h,
-  apply ((excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _)).1 
-    ((excluded_minor_binary_iff_iso_unif24 M').2 ⟨ψ.symm⟩)).1 (is_rep_of_minor_of_is_rep _ hM' hfM),
-  
-  intros h3,
-  apply (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
-    (@minor_closed_rep _ (zmod 2) _)).2,
-  intros M' hM',
-  by_contra,
-  apply h3,
-  use M',
-  refine ⟨h, _⟩,
-  obtain ⟨ψ⟩ := excluded_minor_binary_iso_unif24 M' hM',
-  use ψ.symm,
+  refine ⟨λ hfM, _, λ h3, (@mem_iff_no_excluded_minor_minor _ M _ (matroid_in.is_binary) 
+    (@minor_closed_rep _ (zmod 2) _)).2 (λ M' hM', _)⟩,
+  { by_contra,
+    obtain ⟨M', ⟨hM', ⟨ψ⟩⟩⟩ := h,
+    apply ((excluded_minor_iff (set_of matroid_in.is_binary) (@minor_closed_rep _ (zmod 2) _)).1 
+      ((excluded_minor_binary_iff_iso_unif24 M').2 ⟨ψ.symm⟩)).1 
+      (is_rep_of_minor_of_is_rep _ hM' hfM) },
+  { by_contra,
+    obtain ⟨ψ⟩ := excluded_minor_binary_iso_unif24 M' hM',
+    refine h3 ⟨M', ⟨h, ⟨ψ.symm⟩⟩⟩ },
 end
 
 end rep
