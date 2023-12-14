@@ -786,7 +786,7 @@ begin
     intros x hx,
     rw mem_to_finset at hx,
     have h12 := standard_rep_base_eq φM φM' hB hB' ⟨x, (mem_of_mem_inter_right hx)⟩,
-    simp at h12,
+    simp only [subtype.coe_mk] at h12,
     rw h12,
   simp_rw h6,
 end 

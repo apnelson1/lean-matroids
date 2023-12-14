@@ -39,6 +39,26 @@ namespace rep
 variables [fintype α]
 
 open_locale big_operators
+
+lemma excluded_minor_noncoloop (M : matroid_in α) [finite_rk M]
+  (hM : excluded_minor {N : matroid_in α | N.is_representable 𝔽} M) {y : α} (hf : y ∈ M.E) : 
+  ¬ M.cocircuit {y} :=
+begin
+  by_contra hcy,
+  have h2 := (dual_circuit_iff_cocircuit.2 hcy).nonempty,
+  rw [← ground_inter_left (hcy.subset_ground)] at h2,
+  obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem h2,
+  have hyMy : y ∉ (M ⟋ y).E,
+      rw [contract_elem, contract_ground],
+      apply not_mem_diff_of_mem (mem_singleton _),
+    have φM := add_coloop_rep φ hyMy,
+    simp only [excluded_minor, mem_minimals_prop_iff] at hM,
+  apply hM.1,
+  rw [contract_elem, contract_ground, ← delete_ground ] at hyMy,
+  rw (add_coloop_eq (M ⟍ {y}) M hyMy).2 ⟨coloop_iff_cocircuit.2 hcy, 
+    delete_elem M y⟩,
+  apply is_representable_of_rep φM,
+end
 -- can remove hxy
 lemma coindep_excluded_minor (M : matroid_in α) 
 (hM : excluded_minor {N : matroid_in α | N.is_representable 𝔽} M) (x y : α) (hxy : x ≠ y) 
@@ -60,17 +80,7 @@ begin
     cases ha2 with hempty hs,
     { apply (nonempty_iff_ne_empty.1 h2) hempty },
     rw hs at *,
-    rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
-    obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem h2,
-    have hyMy : y ∉ (M ⟋ y).E,
-      rw [contract_elem, contract_ground],
-      apply not_mem_diff_of_mem (mem_singleton _),
-    have φM := add_coloop_rep φ hyMy,
-    simp only [excluded_minor, mem_minimals_prop_iff] at hM,
-    apply hM.1,
-    rw [contract_elem, contract_ground, ← delete_ground ] at hyMy,
-    rw (add_coloop_eq (M ⟍ {y}) M hyMy).2 ⟨coloop_iff_cocircuit.2 hK2, delete_elem M y⟩,
-    apply is_representable_of_rep φM, },
+    apply excluded_minor_noncoloop M hM (singleton_subset_iff.1 hK2.subset_ground) hK2 },
   { rw mem_singleton_iff.1 h at *,
     rw [← union_singleton, union_comm, union_singleton] at *,
     simp only [insert_diff_of_mem, mem_singleton, diff_singleton_eq_self 
@@ -78,17 +88,7 @@ begin
     cases ha2 with hempty hs,
     { apply (nonempty_iff_ne_empty.1 h2) hempty },
     rw hs at *,
-    rw [← ground_inter_left (subset_trans hK1 hx)] at h2,
-    obtain ⟨B, ⟨hB, ⟨φ⟩⟩⟩ := hM.delete_mem h2,
-    have hyMy : x ∉ (M ⟋ x).E,
-      rw [contract_elem, contract_ground],
-      apply not_mem_diff_of_mem (mem_singleton _),
-    have φM := add_coloop_rep φ hyMy,
-    simp only [excluded_minor, mem_minimals_prop_iff] at hM,
-    apply hM.1,
-    rw [contract_elem, contract_ground, ← delete_ground] at hyMy,
-    rw (add_coloop_eq (M ⟍ {x}) M hyMy).2 ⟨coloop_iff_cocircuit.2 hK2, delete_elem M x⟩,
-    apply is_representable_of_rep φM },
+    apply excluded_minor_noncoloop M hM (singleton_subset_iff.1 hK2.subset_ground) hK2 },
   rw hKeq at *,
   have hyy := singleton_nonempty y,
   rw ← ground_inter_left (insert_subset.1 hx).2 at hyy,
